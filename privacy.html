@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#f3e6cf">
+<title>개인정보처리방침 — 우리 캘린더</title>
+<style>
+:root{--bg:#f3e6cf;--card:#fbf2e0;--text:#3a2418;--sub:#8a6a4d;--accent:#8b3a2a;--gold:#b08742;--border:rgba(139,58,42,.18)}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Pretendard","Apple SD Gothic Neo","Noto Sans KR",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.7;background-image:radial-gradient(circle,rgba(139,58,42,.10) 1px,transparent 1px);background-size:22px 22px}
+.wrap{max-width:680px;margin:0 auto;padding:32px 24px 60px}
+.back{display:inline-block;color:var(--accent);text-decoration:none;font-size:14px;margin-bottom:18px;font-weight:700}
+.back:before{content:'‹ ';margin-right:4px}
+.head{font-family:'Noto Serif KR',serif;font-weight:700;font-size:28px;color:var(--text);letter-spacing:1px;margin:8px 0 6px;text-align:center}
+.sub{font-size:13px;color:var(--sub);text-align:center;margin-bottom:34px}
+h2{font-family:'Noto Serif KR',serif;font-weight:700;font-size:17px;color:var(--accent);margin:32px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+p,li{font-size:14px;color:var(--text)}
+ul{padding-left:18px;margin:8px 0}
+li{margin-bottom:6px}
+.note{background:var(--card);border:1px solid var(--border);padding:14px 16px;border-radius:10px;margin-top:18px;font-size:13px;color:var(--sub)}
+table{width:100%;border-collapse:collapse;margin:8px 0;font-size:13px}
+th,td{padding:8px 10px;text-align:left;border:1px solid var(--border)}
+th{background:var(--card);font-weight:700}
+@media (max-width:480px){.head{font-size:22px}.wrap{padding:24px 18px 50px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="index.html" class="back">돌아가기</a>
+  <div class="head">개인정보처리방침</div>
+  <div class="sub">우리 캘린더 개인정보처리방침 · 2026년 5월 시행</div>
+
+  <p>"우리 캘린더"(이하 "서비스")는 이용자의 개인정보를 소중히 여기며, 「개인정보 보호법」에 따라 본 처리방침을 준수합니다.</p>
+
+  <h2>1. 수집하는 개인정보 항목</h2>
+  <table>
+    <tr><th>구분</th><th>항목</th><th>수집 시점</th></tr>
+    <tr><td>필수</td><td>이메일, 닉네임 (또는 카카오 계정 식별자)</td><td>회원가입 시</td></tr>
+    <tr><td>선택</td><td>프로필 사진</td><td>이용자 직접 등록 시</td></tr>
+    <tr><td>자동</td><td>접속 IP, 브라우저 종류, 접속 시간</td><td>서비스 이용 중</td></tr>
+  </table>
+
+  <h2>2. 개인정보 수집 및 이용 목적</h2>
+  <ul>
+    <li>회원 식별 및 본인 확인</li>
+    <li>방 생성·입장·멤버 관리 등 서비스 핵심 기능 제공</li>
+    <li>일정·반응 등 이용자 데이터의 저장 및 동기화</li>
+    <li>서비스 개선 및 보안 점검</li>
+  </ul>
+
+  <h2>3. 개인정보의 보유 및 이용 기간</h2>
+  <p>회원 탈퇴 시까지 보유하며, 탈퇴 시 즉시 파기합니다. 단 관련 법령에 따라 보존 의무가 있는 경우 해당 기간 동안 보관합니다.</p>
+
+  <h2>4. 개인정보의 제3자 제공</h2>
+  <p>서비스는 이용자의 개인정보를 제3자에게 제공하지 않습니다. 다만 다음 위탁업체를 통해 안전하게 처리됩니다.</p>
+  <ul>
+    <li><b>Supabase</b> — 데이터베이스 및 인증 서비스</li>
+    <li><b>Vercel</b> — 호스팅 및 CDN</li>
+    <li><b>Kakao</b> — 카카오 로그인 인증</li>
+  </ul>
+
+  <h2>5. 이용자 권리 및 행사 방법</h2>
+  <ul>
+    <li>본인 정보 열람 및 수정: 프로필 시트에서 직접 변경</li>
+    <li>탈퇴(개인정보 삭제): 본인이 방장인 방을 삭제하거나, lsung179@naver.com로 요청</li>
+    <li>일정 데이터 삭제: 시트의 "삭제" 버튼으로 직접 삭제</li>
+  </ul>
+
+  <h2>6. 개인정보 안전성 확보 조치</h2>
+  <ul>
+    <li>전송 구간 암호화 (HTTPS)</li>
+    <li>Supabase Row Level Security 정책으로 권한 분리</li>
+    <li>비밀번호 미저장 (카카오 OAuth, 매직 링크 인증)</li>
+  </ul>
+
+  <h2>7. 쿠키 및 로컬 스토리지</h2>
+  <p>서비스는 자동 로그인 및 캐시 목적으로 브라우저 localStorage를 사용합니다. 사용자는 브라우저 설정으로 데이터를 삭제할 수 있습니다.</p>
+
+  <h2>8. 개인정보 보호 책임자</h2>
+  <p>이름: 이원석<br>이메일: lsung179@naver.com</p>
+
+  <h2>9. 처리방침 변경</h2>
+  <p>본 방침은 변경 시 적용일자 7일 전부터 공지합니다.</p>
+
+  <div class="note">
+    본 방침은 베타 버전이며, 정식 출시 시 변경될 수 있습니다.
+  </div>
+</div>
+</body>
+</html>
