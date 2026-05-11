@@ -452,7 +452,7 @@ body{background:var(--bg)}
 
 /* 캘린더 일정 바 — 함께 표시 (작은 도트) */
 .cal-evbar.shared{position:relative}
-.cal-evbar-chip{display:inline-flex;align-items:center;justify-content:center;min-width:14px;height:13px;padding:0 4px;margin-right:4px;background:var(--card);color:var(--text);border-radius:7px;font-size:9px;font-weight:700;line-height:1;vertical-align:1px;letter-spacing:0;font-variant-numeric:tabular-nums}
+.cal-evbar-marker{display:inline-block;width:3px;height:11px;background:var(--card);margin-right:5px;vertical-align:0;border-radius:1.5px;flex-shrink:0}
 
 /* 일정 복사 옵션 (방 만들기/입장 시) */
 .copy-option{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fdf6e8;border:1.5px solid var(--borderL);border-radius:10px;margin:4px 0 10px;cursor:pointer}
@@ -2479,10 +2479,10 @@ function cellHtml(y,m,d,isOther,todayKey){
     if(ev._rangePos==='start')rangeCls=' range-start';
     else if(ev._rangePos==='mid'){rangeCls=' range-mid';displayTitle='';}
     else if(ev._rangePos==='end'){rangeCls=' range-end';displayTitle='';}
-    // 함께 막대 + 첫날: 멤버 수 흰 칩 표시
-    const memberChip=(ev._isShared&&ev._memberCount>1&&(ev._rangePos==='single'||ev._rangePos==='start'))
-      ?`<span class="cal-evbar-chip">${ev._memberCount}</span>`:'';
-    evsHtml+=`<div class="cal-evbar${sharedCls}${rangeCls}" style="background:${hex}">${memberChip}${displayTitle}</div>`;
+    // 함께 막대 + 첫날: 좌측에 짧은 cream 마커 (미니멀)
+    const sharedMarker=(ev._isShared&&(ev._rangePos==='single'||ev._rangePos==='start'))
+      ?`<span class="cal-evbar-marker"></span>`:'';
+    evsHtml+=`<div class="cal-evbar${sharedCls}${rangeCls}" style="background:${hex}">${sharedMarker}${displayTitle}</div>`;
   });
   if(evs.length>maxShow){
     evsHtml+=`<div class="cal-evmore">+${evs.length-maxShow}</div>`;
