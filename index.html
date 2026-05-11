@@ -849,7 +849,7 @@ body{background:var(--bg)}
       <div class="cal-room-name" id="calRoomName">방 이름</div>
     </div>
     <div class="cal-actions">
-      <button class="cal-avatar" id="calAvatar" onclick="openProfile()" title="프로필">—</button>
+      <button class="cal-avatar" id="calAvatar" onclick="toast('1: 클릭됨');try{openProfile();toast('2: 함수실행 OK');}catch(e){toast('ERR: '+e.message);}" title="프로필">—</button>
       <button class="cal-menu-btn" onclick="openSearch()" title="검색" aria-label="검색"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.5" y2="16.5"/></svg></button>
       <button class="cal-menu-btn" onclick="openRoomSettings()" title="방 설정">⋮</button>
     </div>
