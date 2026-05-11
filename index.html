@@ -2755,32 +2755,12 @@ function openDateSheet(key){
   document.getElementById('dpCard').classList.add('on');
 }
 
-/* 함께 멤버 섹션 (멤버 2명 이상일 때 — 각 멤버별 일정 + 이모지 한눈에) */
+/* 멤버 섹션 — 날짜 시트에선 더 이상 표시하지 않음
+   (함께 일정 생성 시엔 일정 모달에서 멤버 선택 UI 별도 제공) */
 function renderDateSheetMembers(){
   const sec=document.getElementById('dpMembers');
   if(!sec)return;
-  if(_myMembers.length<2){sec.style.display='none';return}
-  sec.style.display='flex';
-  sec.innerHTML='';
-  const allEvs=_events[_selectedDate]||[];
-  _myMembers.forEach(m=>{
-    const isMe=m.user_id===_currentUser?.id;
-    const myEvs=allEvs.filter(e=>e.user_id===m.user_id);
-    const initial=(m.name||'?').trim().charAt(0).toUpperCase();
-    // 이 멤버의 반응(이모지)들 모음 — 단독+함께 모두
-    const emojis=myEvs.filter(e=>e.reaction).map(e=>e.reaction).slice(0,3).join(' ');
-    const div=document.createElement('div');
-    div.className='dp-member-line'+(isMe?' me':'');
-    div.innerHTML=`
-      <div class="dp-member-stamp">${escapeHtml(initial)}</div>
-      <div class="dp-member-info">
-        <span class="dp-member-name">${escapeHtml(m.name)}${isMe?' (나)':''}</span>
-        ${emojis?`<span class="dp-member-emoji">${emojis}</span>`:''}
-      </div>
-      <span class="dp-member-eventcount">${myEvs.length>0?`${myEvs.length}개`:'없음'}</span>
-    `;
-    sec.appendChild(div);
-  });
+  sec.style.display='none';
 }
 function closeDateSheet(){
   document.getElementById('dpOverlay').classList.remove('on');
