@@ -1,0 +1,4017 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<meta name="color-scheme" content="light only">
+<meta name="theme-color" content="#f3e6cf">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="우리 캘린더">
+<title>우리 캘린더</title>
+<style>
+:root{
+  --bg:#f3e6cf;
+  --card:#fbf2e0;
+  --text:#3a2418;
+  --sub:#8a6a4d;
+  --mute:#b8a285;
+  --border:rgba(139,58,42,.18);
+  --borderL:rgba(139,58,42,.10);
+  --accent:#8b3a2a;
+  --aL:#a85040;
+  --aP:#e8d4be;
+  --gold:#b08742;
+  --sun:#d4382a;
+  --sat:#1f5b9a;
+  --kakao:#FEE500;
+  --kakaoText:#191919;
+  --shadow:0 1px 2px rgba(60,40,25,.08),0 8px 24px rgba(60,40,25,.05);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:#e5dec7}
+html,body{margin:0;padding:0;height:100%;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Pretendard","Apple SD Gothic Neo","Noto Sans KR",sans-serif;-webkit-font-smoothing:antialiased;color-scheme:light only;overflow:hidden}
+body{background:var(--bg)}
+
+.app{position:fixed;inset:0;overflow:hidden}
+
+/* PC: 모바일 사이즈로 가운데 표시 (430x844 가운데, 양옆 옅은 모래) */
+@media (min-width:480px){
+  body{background:#e5dec7;background-image:none;display:flex;align-items:center;justify-content:center}
+  .app{
+    position:relative;inset:auto;
+    width:430px;height:844px;max-height:calc(100vh - 40px);
+    background:var(--bg);
+    border-radius:24px;
+    box-shadow:0 16px 60px rgba(60,40,25,.18);
+  }
+  /* fixed 요소들 가운데 정렬 */
+  .toast{left:50%!important;transform:translateX(-50%) translateY(20px)!important}
+  .toast.on{transform:translateX(-50%) translateY(0)!important}
+  .loading{width:430px;height:844px;max-height:calc(100vh - 40px);left:50%;top:50%;transform:translate(-50%,-50%);inset:auto;border-radius:24px}
+  .mo-overlay{width:430px;height:844px;max-height:calc(100vh - 40px);left:50%;top:50%;transform:translate(-50%,-50%);inset:auto;border-radius:24px}
+  .r-footer{left:50%!important;right:auto!important;width:430px!important;transform:translateX(-50%)!important;bottom:calc(50vh - 422px + 20px)!important}
+  .mo-card,.dp-card{
+    left:50%!important;right:auto!important;width:430px!important;
+    bottom:calc(50vh - 422px + 20px)!important;
+    max-height:600px!important;
+    transform:translateX(-50%) translateY(100%)!important;
+  }
+  .mo-card.on,.dp-card.on{transform:translateX(-50%) translateY(0)!important}
+  .cal-fab{right:calc(50vw - 215px + 24px)!important;bottom:calc(50vh - 422px + 80px)!important}
+}
+.screen{position:absolute;inset:0;padding:0 28px;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .35s ease}
+.screen.show{opacity:1;pointer-events:auto}
+
+/* 로고 */
+/* ── 빈티지 도장 마크 (환영 화면) ── */
+.stamp{
+  width:170px;height:170px;border-radius:50%;
+  border:5px solid var(--accent);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:relative;background:transparent;
+}
+.stamp::before{
+  content:'';position:absolute;inset:8px;
+  border:1px solid var(--accent);border-radius:50%;pointer-events:none;
+}
+.stamp-our{
+  font-family:'Noto Serif KR',serif;font-weight:700;
+  font-size:32px;color:var(--accent);letter-spacing:1px;
+  margin-top:-8px;line-height:1;
+}
+.stamp-line{
+  width:60px;height:1.5px;background:var(--accent);
+  margin:10px 0;position:relative;
+}
+.stamp-line::before,.stamp-line::after{
+  content:'';position:absolute;top:50%;transform:translateY(-50%);
+  width:5px;height:5px;border-radius:50%;background:var(--accent);
+}
+.stamp-line::before{left:-7px}
+.stamp-line::after{right:-7px}
+.stamp-cal{
+  font-size:11px;font-weight:700;letter-spacing:2px;color:var(--accent);
+}
+.stamp-est{
+  font-size:9px;color:var(--accent);letter-spacing:1.5px;
+  margin-top:5px;opacity:.85;
+}
+
+/* 환영 화면 텍스트 */
+.welcome-name-kr{
+  font-family:'Noto Serif KR',serif;font-weight:700;
+  font-size:18px;color:var(--text);letter-spacing:1px;
+  margin-top:26px;
+}
+.welcome-tagline{
+  font-family:'Noto Serif KR',serif;
+  font-size:13px;color:var(--sub);letter-spacing:.3px;
+  margin-top:10px;
+}
+.welcome-deco{
+  display:flex;align-items:center;gap:8px;margin:24px 0;
+}
+.welcome-deco-line{height:1px;width:42px;background:var(--gold)}
+.welcome-deco-diamond{
+  width:6px;height:6px;background:var(--gold);
+  transform:rotate(45deg);
+}
+
+/* 환영 화면 */
+.welcome-tagline{font-size:14px;color:var(--sub);margin-top:24px;margin-bottom:64px;letter-spacing:.3px;line-height:1.7;text-align:center}
+.btn-stack{width:100%;max-width:320px;display:flex;flex-direction:column;gap:10px}
+.btn{width:100%;padding:16px 18px;border:none;border-radius:14px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .12s ease,opacity .12s ease;letter-spacing:.2px}
+.btn:active{transform:scale(.98);opacity:.9}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-kakao{background:var(--kakao);color:var(--kakaoText)}
+.btn-email{background:var(--card);color:var(--text);border:1px solid var(--border);box-shadow:var(--shadow)}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:var(--shadow)}
+.btn-primary:disabled{background:var(--aL)}
+.btn-ghost{background:transparent;color:var(--sub);font-weight:500;font-size:13px;padding:12px}
+
+.terms{position:absolute;bottom:36px;left:0;right:0;font-size:11px;color:var(--mute);text-align:center;letter-spacing:.2px;padding:0 28px;line-height:1.6}
+.terms a{color:var(--sub);text-decoration:underline;text-underline-offset:2px}
+
+/* 이메일 입력 화면 */
+.back{position:absolute;top:max(20px,env(safe-area-inset-top));left:18px;background:transparent;border:none;color:var(--text);font-size:22px;cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:300}
+.title{font-family:'Noto Serif KR',serif;font-size:22px;font-weight:700;color:var(--text);text-align:center;letter-spacing:.5px;line-height:1.4}
+.sub{font-size:14px;color:var(--sub);text-align:center;margin-top:10px;line-height:1.6}
+
+.email-form{width:100%;max-width:320px;margin-top:36px;display:flex;flex-direction:column;gap:14px}
+.fi{width:100%;padding:15px 16px;border:1px solid var(--border);border-radius:12px;font-size:15px;font-family:inherit;background:var(--card);color:var(--text);outline:none;transition:border-color .15s ease}
+.fi:focus{border-color:var(--accent)}
+.fi::placeholder{color:var(--mute)}
+
+/* 메일 발송 후 */
+.check-wrap{width:64px;height:64px;border-radius:50%;background:var(--aP);display:flex;align-items:center;justify-content:center;margin-bottom:24px;color:var(--accent);font-size:28px;font-weight:300}
+.sent-email{font-size:15px;color:var(--accent);font-weight:600;margin-top:6px}
+.hint{font-size:12px;color:var(--mute);margin-top:32px;line-height:1.7;max-width:280px;text-align:center}
+
+/* 환영 (로그인 후 임시) */
+.welcome-card{background:var(--card);border:1px solid var(--borderL);border-radius:18px;padding:28px 22px;width:100%;max-width:320px;text-align:center;box-shadow:var(--shadow)}
+.welcome-name{font-size:18px;font-weight:600;color:var(--text);margin-top:14px}
+.welcome-email{font-size:13px;color:var(--sub);margin-top:6px}
+.welcome-note{font-size:12px;color:var(--mute);margin-top:18px;line-height:1.6}
+
+/* 토스트 */
+.toast{position:fixed;left:50%;bottom:48px;transform:translateX(-50%) translateY(20px);background:#3a2418;color:#fbf2e0;padding:11px 18px;border-radius:24px;font-size:13px;opacity:0;pointer-events:none;transition:all .25s ease;z-index:999;box-shadow:0 6px 20px rgba(0,0,0,.18);max-width:80vw;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* 로딩 (초기 세션 확인) */
+.loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:1000;transition:opacity .3s ease}
+.loading.hide{opacity:0;pointer-events:none}
+.spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ═══════════════════════════════════
+   2단계: 방 목록 화면
+   ═══════════════════════════════════ */
+.screen.rooms{padding:0;justify-content:flex-start;align-items:stretch}
+.r-header{display:flex;align-items:center;justify-content:space-between;padding:max(20px,env(safe-area-inset-top)) 24px 16px;flex-shrink:0}
+.r-logo{display:flex;align-items:center;gap:10px}
+.r-logo-mini-stamp{
+  width:34px;height:34px;border:2px solid var(--accent);
+  border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex-shrink:0;position:relative;
+}
+.r-logo-mini-stamp::before{
+  content:'';position:absolute;inset:3px;border:1px solid var(--accent);border-radius:50%;pointer-events:none;
+}
+.r-logo-mini-our{
+  font-family:'Noto Serif KR',serif;font-weight:700;
+  font-size:8px;color:var(--accent);letter-spacing:.3px;line-height:1;
+}
+.r-logo-mini-line{width:14px;height:1px;background:var(--accent);margin:1px 0}
+.r-logo-mini-cal{font-size:5px;font-weight:700;letter-spacing:.5px;color:var(--accent);line-height:1}
+.r-logo-title{font-family:'Noto Serif KR',serif;font-size:15px;font-weight:700;color:var(--text);letter-spacing:1px}
+.r-avatar{width:36px;height:36px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--card);cursor:pointer;border:none;font-family:inherit;flex-shrink:0;transition:opacity .15s}
+.r-avatar:active{opacity:.7}
+.r-content{flex:1;overflow-y:auto;padding:8px 24px 120px;-webkit-overflow-scrolling:touch}
+.r-section-row{display:flex;align-items:center;gap:8px;margin:14px 0 14px}
+.r-section-title{font-family:'Noto Serif KR',serif;font-size:14px;font-weight:700;color:var(--text);letter-spacing:.5px}
+.r-section-count{font-size:12px;color:var(--sub)}
+.r-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:transform .12s ease,box-shadow .15s ease;box-shadow:0 1px 2px rgba(60,40,25,.04)}
+.r-card:active{transform:scale(.98)}
+.r-card-seal{
+  width:38px;height:38px;border:1.5px solid var(--accent);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;background:transparent;
+}
+.r-card-seal-letter{
+  font-family:'Noto Serif KR',serif;font-weight:700;
+  font-size:17px;color:var(--accent);margin-top:-1px;
+}
+.r-card-info{flex:1;min-width:0}
+.r-card-name{font-family:'Noto Serif KR',serif;font-size:17px;font-weight:700;color:var(--text);letter-spacing:.2px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r-card-meta{font-size:12px;color:var(--sub);display:flex;align-items:center;gap:6px}
+.r-card-code{color:var(--accent);font-weight:700;letter-spacing:.5px;font-family:-apple-system,monospace}
+.r-card-arrow{font-size:22px;font-weight:300;color:var(--mute);flex-shrink:0;line-height:1}
+.r-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px 0}
+.r-empty-icon{
+  width:120px;height:120px;border-radius:50%;
+  border:1.5px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:30px;position:relative;background:transparent;
+}
+.r-empty-icon::before{
+  content:'';position:absolute;inset:8px;
+  border:1px solid var(--border);border-radius:50%;
+}
+.r-empty-icon-cross{position:relative;width:36px;height:36px;z-index:1}
+.r-empty-icon-cross::before,.r-empty-icon-cross::after{content:'';position:absolute;background:var(--gold)}
+.r-empty-icon-cross::before{top:50%;left:0;right:0;height:2px;transform:translateY(-50%)}
+.r-empty-icon-cross::after{left:50%;top:0;bottom:0;width:2px;transform:translateX(-50%)}
+.r-empty-title{font-family:'Noto Serif KR',serif;font-size:18px;font-weight:700;color:var(--text);margin-bottom:10px}
+.r-empty-sub{font-size:13px;color:var(--sub);text-align:center;line-height:1.7}
+.r-footer{position:fixed;left:0;right:0;bottom:0;padding:12px 24px max(16px,env(safe-area-inset-bottom));background:linear-gradient(to top,var(--bg) 75%,rgba(243,230,207,0));display:flex;gap:10px;z-index:10}
+.r-footer .btn{flex:1;padding:15px 16px;font-size:14px}
+
+/* 모달 (바텀 시트) */
+.mo-overlay{position:fixed;inset:0;background:rgba(30,28,24,.5);z-index:50;opacity:0;pointer-events:none;transition:opacity .25s ease}
+.mo-overlay.on{opacity:1;pointer-events:auto}
+.mo-card{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-radius:24px 24px 0 0;padding:14px 24px max(28px,env(safe-area-inset-bottom));z-index:51;transform:translateY(100%);opacity:0;pointer-events:none;transition:transform .3s cubic-bezier(.32,.72,0,1),opacity .25s ease;max-height:85vh;overflow-y:auto}
+.mo-card.on{transform:translateY(0);opacity:1;pointer-events:auto}
+.mo-handle{width:40px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 22px}
+.mo-title{font-family:'Noto Serif KR',serif;font-size:20px;font-weight:700;color:var(--text);text-align:center;letter-spacing:.5px}
+.mo-sub{font-size:13px;color:var(--sub);text-align:center;margin-top:8px;margin-bottom:24px;line-height:1.6}
+.mo-label{font-size:11px;font-weight:600;color:var(--sub);letter-spacing:.4px;margin-bottom:6px}
+.mo-form{display:flex;flex-direction:column;gap:14px;margin-bottom:8px}
+.mo-actions{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+.mo-cancel{font-size:13px;color:var(--sub);text-align:center;background:none;border:none;padding:14px;cursor:pointer;font-family:inherit}
+
+/* 6자리 코드 박스 */
+.code-input-wrap{display:flex;gap:8px;justify-content:center;margin:10px 0 6px}
+.code-box{width:44px;height:54px;border:1.5px solid var(--border);border-radius:10px;background:#fdf6e8;font-family:'Noto Serif KR',serif;font-size:22px;font-weight:700;text-align:center;color:var(--text);outline:none;text-transform:uppercase;padding:0;transition:border-color .15s}
+.code-box:focus{border-color:var(--accent)}
+.code-box.filled{border-color:var(--gold);border-width:2px}
+
+/* ═══════════════════════════════════
+   3-A: 캘린더 + 일정
+   ═══════════════════════════════════ */
+.screen.cal{padding:0;justify-content:flex-start;align-items:stretch}
+.cal-header{display:flex;align-items:center;justify-content:space-between;padding:max(16px,env(safe-area-inset-top)) 20px 8px;flex-shrink:0;gap:10px}
+.cal-back{background:none;border:none;cursor:pointer;padding:6px 10px;font-size:24px;color:var(--text);font-family:inherit;line-height:1;font-weight:300}
+.cal-back:active{opacity:.6}
+.cal-room-info{flex:1;display:flex;align-items:center;min-width:0}
+.cal-room-name{font-family:'Noto Serif KR',serif;font-size:20px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.3px;cursor:pointer}
+.cal-room-name:active{opacity:.6}
+.cal-avatar{width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--card);cursor:pointer;border:none;font-family:inherit;flex-shrink:0;transition:opacity .15s;position:relative;z-index:2}
+.cal-actions{display:flex;align-items:center;gap:4px;flex-shrink:0;position:relative;z-index:2}
+.cal-avatar:active{opacity:.7}
+
+/* 월/년 타이틀 */
+.cal-month-row{display:flex;align-items:center;justify-content:center;gap:18px;padding:14px 0 6px}
+.cal-month-arrow{background:none;border:none;cursor:pointer;font-size:22px;color:var(--sub);font-family:inherit;font-weight:300;padding:6px 10px;line-height:1}
+.cal-month-arrow:active{opacity:.5}
+.cal-month-title{display:flex;flex-direction:column;align-items:center;cursor:pointer;min-width:90px}
+.cal-month-year{font-size:11px;color:var(--sub);letter-spacing:1px;margin-bottom:2px}
+.cal-month-name{font-family:'Noto Serif KR',serif;font-size:24px;font-weight:700;color:var(--text);letter-spacing:.5px;line-height:1.1}
+
+/* 요일 헤더 */
+.cal-week-head{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:6px 12px 4px}
+.cal-dow{text-align:center;font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.5px;padding:6px 0}
+.cal-dow.sun{color:var(--sun)}
+.cal-dow.sat{color:var(--sat)}
+
+/* 캘린더 그리드 */
+.cal-grid{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:0 12px;gap:0;overflow:hidden;padding-bottom:90px;transition:opacity .2s ease}
+.cal-grid.fading{opacity:0}
+.cal-cell{min-height:max(72px,calc((100dvh - 280px) / 6));padding:4px 0;display:flex;flex-direction:column;cursor:pointer;border-radius:0;transition:background .12s}
+.cal-cell:active{background:rgba(139,58,42,.06)}
+.cal-cell.other{opacity:.35}
+.cal-day-num{text-align:center;font-size:13px;font-weight:500;color:var(--text);margin:2px 0 4px;line-height:1;font-family:-apple-system,sans-serif}
+.cal-day-lunar{display:inline-block;font-size:8px;color:var(--mute);margin-left:3px;font-weight:400;vertical-align:1px;letter-spacing:0}
+.cal-cell.today .cal-day-lunar{display:none}
+.cal-cell.sun .cal-day-num{color:var(--sun);font-weight:700}
+.cal-cell.sat .cal-day-num{color:var(--sat);font-weight:700}
+.cal-cell.today .cal-day-num{
+  display:inline-flex;width:26px;height:26px;border-radius:50%;
+  border:1.5px solid var(--accent);
+  align-items:center;justify-content:center;
+  margin:0 auto 4px;color:var(--accent);font-weight:700;
+  position:relative;
+}
+.cal-cell.today .cal-day-num::before{
+  content:'';position:absolute;inset:2px;border:1px solid var(--accent);border-radius:50%;pointer-events:none;
+}
+.cal-cell.holiday .cal-day-num{color:var(--sun);font-weight:700}
+.cal-events{display:flex;flex-direction:column;gap:2px;flex:1;overflow:hidden}
+.cal-evbar{font-size:9px;font-weight:600;padding:2px 4px;margin:0 3px;border-radius:3px;color:#fff;line-height:1.3;min-height:16px;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:var(--accent)}
+.cal-evmore{font-size:9px;color:var(--sub);padding-left:3px;font-weight:500}
+
+/* 플로팅 + 추가 버튼 */
+.cal-fab{position:fixed;right:24px;bottom:32px;width:56px;height:56px;border-radius:50%;background:var(--accent);color:var(--card);border:none;font-size:28px;font-weight:300;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;line-height:1;z-index:20;box-shadow:0 6px 20px rgba(139,58,42,.35);transition:transform .12s}
+.cal-fab:active{transform:scale(.92)}
+
+/* 오늘로 가기 플로팅 버튼 (다른 달일 때만 표시) */
+.cal-today-btn{display:none;position:fixed;bottom:56px;left:50%;transform:translateX(-50%);z-index:25;background:var(--aL);color:#fff;border:none;padding:10px 22px;border-radius:99px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;box-shadow:0 4px 20px rgba(30,28,24,.18);letter-spacing:.3px;white-space:nowrap;transition:transform .12s}
+.cal-today-btn.show{display:block}
+.cal-today-btn:active{transform:translateX(-50%) scale(.96)}
+
+/* 날짜 시트 (그날 일정 보기) — 모달 베이스 재사용 */
+.dp-card{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-radius:24px 24px 0 0;padding:14px 24px max(28px,env(safe-area-inset-bottom));z-index:51;transform:translateY(100%);opacity:0;pointer-events:none;transition:transform .3s cubic-bezier(.32,.72,0,1),opacity .25s ease;max-height:80vh;overflow-y:auto}
+.dp-card.on{transform:translateY(0);opacity:1;pointer-events:auto}
+.dp-head{font-family:'Noto Serif KR',serif;font-size:20px;font-weight:700;color:var(--text);text-align:center;margin-top:8px}
+.dp-sub{font-size:12px;color:var(--sub);text-align:center;margin-top:6px;margin-bottom:18px}
+.dp-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;min-height:60px}
+.dp-empty{text-align:center;color:var(--sub);font-size:13px;padding:30px 0}
+.dp-item{display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fdf6e8;border:1px solid var(--borderL);border-radius:12px}
+.dp-bar{width:4px;height:36px;border-radius:2px;background:var(--accent);flex-shrink:0}
+.dp-info{flex:1;min-width:0}
+.dp-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dp-time{font-size:11px;color:var(--sub)}
+.dp-actions{display:flex;gap:6px;flex-shrink:0}
+.dp-btn{background:none;border:none;cursor:pointer;font-size:12px;font-family:inherit;padding:6px 8px;color:var(--sub);border-radius:6px}
+.dp-btn:active{background:rgba(139,58,42,.1)}
+.dp-btn.del{color:var(--accent)}
+.dp-add{width:100%;padding:14px;background:var(--accent);color:var(--card);border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.3px;transition:opacity .15s}
+.dp-add:active{opacity:.85}
+
+/* 일정 추가/수정 폼 */
+.ev-form{display:flex;flex-direction:column;gap:14px;margin-bottom:8px}
+.ev-form-row{display:flex;flex-direction:column;gap:6px}
+.ev-label{font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.4px}
+.ev-time-row{display:flex;gap:8px;align-items:center}
+.ev-time-row .fi{flex:1}
+.ev-time-clear{background:none;border:none;cursor:pointer;font-size:13px;color:var(--sub);font-family:inherit;padding:8px 12px}
+.ev-time-clear:active{color:var(--accent)}
+
+/* 시간 휠 picker (iOS 시스템 picker 대체, 우리 톤) */
+.time-trigger{flex:1;width:100%;padding:15px 16px;border:1px solid var(--border);border-radius:12px;font-family:inherit;font-size:15px;background:var(--card);color:var(--mute);text-align:left;cursor:pointer;transition:border-color .15s ease;letter-spacing:.2px}
+.time-trigger.has-value{color:var(--text);font-weight:600}
+.time-trigger:active{border-color:var(--accent)}
+.time-picker{display:none;flex-direction:column;gap:10px;margin-top:8px;background:var(--bg);border:1px solid var(--borderL);border-radius:12px;padding:12px}
+.time-picker.show{display:flex}
+.tp-cols{display:flex;gap:10px;height:160px;position:relative;justify-content:center;align-items:center}
+.tp-mid{position:absolute;top:60px;left:8px;right:8px;height:40px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);pointer-events:none;background:rgba(176,135,66,.06);border-radius:6px}
+.tp-col{width:64px;height:160px;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none;-ms-overflow-style:none;text-align:center;font-family:-apple-system,sans-serif;-webkit-overflow-scrolling:touch}
+.tp-col::-webkit-scrollbar{display:none;width:0;height:0}
+.tp-pad{height:60px}
+.tp-item{height:40px;line-height:40px;font-size:18px;scroll-snap-align:center;color:var(--mute);transition:color .15s ease,font-weight .15s ease,font-size .15s ease;font-variant-numeric:tabular-nums}
+.tp-item.active{color:var(--accent);font-weight:700;font-size:20px}
+
+/* 날짜로 이동 picker — 휠 컬럼 가로 정렬 */
+.date-picker-card{max-width:340px;margin:0 auto}
+.date-picker-card .tp-cols{gap:20px}
+.date-picker-card .tp-col{width:90px}
+.date-picker-card .tp-item{font-size:17px}
+.date-picker-card .tp-item.active{font-size:20px}
+
+/* 검색 모달 */
+.search-card{max-height:80vh;display:flex;flex-direction:column}
+.search-input-row{display:flex;align-items:center;gap:8px;margin-top:4px}
+.search-input-row .fi{flex:1}
+.search-clear-btn{width:30px;height:30px;border:none;background:rgba(139,58,42,.08);color:var(--sub);border-radius:50%;font-size:18px;line-height:1;cursor:pointer;flex-shrink:0;font-family:inherit;display:flex;align-items:center;justify-content:center;padding:0}
+.search-clear-btn:active{background:rgba(139,58,42,.18)}
+.search-hint{font-size:11px;color:var(--mute);margin-top:12px;letter-spacing:.3px}
+.search-results{flex:1;overflow-y:auto;margin-top:8px;display:flex;flex-direction:column;gap:6px;padding-bottom:8px}
+.search-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.025);cursor:pointer;border:1px solid var(--borderL);transition:background .12s}
+.search-row:active{background:rgba(139,58,42,.08)}
+.search-row-bar{width:3px;align-self:stretch;border-radius:2px;background:var(--accent);flex-shrink:0}
+.search-row-main{flex:1;min-width:0}
+.search-row-title{font-size:14px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.search-row-date{font-size:11px;color:var(--sub);margin-top:2px;font-variant-numeric:tabular-nums}
+.search-row-time{font-size:11px;color:var(--mute);flex-shrink:0;font-variant-numeric:tabular-nums}
+.search-row-tag{font-size:9px;padding:2px 6px;border-radius:6px;background:rgba(176,135,66,.18);color:var(--gold);font-weight:600;flex-shrink:0}
+.search-empty{text-align:center;color:var(--mute);font-size:12px;padding:20px 0}
+.search-suggest-row{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:99px;background:rgba(139,58,42,.06);border:1px solid var(--borderL);cursor:pointer;font-size:12px;color:var(--text);transition:background .12s}
+.search-suggest-row:active{background:rgba(139,58,42,.14)}
+.search-suggest-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.tp-sep{font-size:22px;color:var(--sub);font-weight:700;align-self:center;margin-bottom:4px}
+.tp-actions{display:flex;gap:6px;justify-content:flex-end;padding-top:2px}
+.tp-action-btn{background:none;border:none;cursor:pointer;padding:6px 14px;font-size:13px;color:var(--sub);font-family:inherit;font-weight:600}
+.tp-action-btn.primary{color:var(--accent)}
+.tp-action-btn:active{opacity:.6}
+.ev-color-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:4px}
+.ev-color{width:100%;aspect-ratio:1;border-radius:50%;border:none;cursor:pointer;background:var(--accent);transition:transform .12s;position:relative}
+.ev-color:active{transform:scale(.9)}
+.ev-color.on::after{
+  content:'';position:absolute;inset:-3px;border:2px solid var(--text);border-radius:50%;pointer-events:none;
+}
+
+/* 매년 반복 토글 (생일/기념일 등) */
+.ev-yearly-row{flex-direction:row;align-items:center;justify-content:space-between;margin-top:4px}
+.ev-yearly-toggle{position:relative;width:48px;height:26px;cursor:pointer;flex-shrink:0}
+.ev-yearly-toggle input{position:absolute;opacity:0;width:0;height:0}
+.ev-yearly-slider{position:absolute;inset:0;background:rgba(139,58,42,.18);border-radius:13px;transition:background .2s}
+.ev-yearly-slider::before{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:left .2s;box-shadow:0 1px 2px rgba(60,40,25,.18)}
+.ev-yearly-toggle input:checked+.ev-yearly-slider{background:var(--accent)}
+.ev-yearly-toggle input:checked+.ev-yearly-slider::before{left:25px}
+
+/* 프로필 시트 */
+.pf-section{display:flex;flex-direction:column;align-items:center;gap:12px;padding:8px 0 28px}
+.pf-stamp{
+  width:84px;height:84px;border:3px solid var(--accent);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  position:relative;background:var(--bg);
+}
+.pf-stamp::before{
+  content:'';position:absolute;inset:6px;
+  border:1px solid var(--accent);border-radius:50%;
+}
+.pf-stamp-letter{
+  font-family:'Noto Serif KR',serif;font-weight:700;
+  font-size:36px;color:var(--accent);margin-top:-2px;line-height:1;
+}
+.pf-name{font-family:'Noto Serif KR',serif;font-size:20px;font-weight:700;color:var(--text);text-align:center;letter-spacing:.5px}
+.pf-email{font-size:13px;color:var(--sub);text-align:center}
+.btn-danger{background:var(--accent);color:var(--card)}
+.btn-danger:active{opacity:.85}
+
+/* 3-B: 함께 일정 + 멤버 선택 */
+.ev-target-row{display:flex;gap:6px;margin-top:4px}
+.ev-target-btn{flex:1;padding:10px 8px;background:transparent;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;color:var(--sub);cursor:pointer;transition:all .12s;font-weight:600}
+.ev-target-btn.on{background:var(--accent);color:var(--card);border-color:var(--accent)}
+.ev-members-display{display:none;font-size:11px;color:var(--sub);padding:8px 12px;background:var(--bg);border:1px dashed var(--border);border-radius:6px;cursor:pointer;margin-top:6px;line-height:1.5}
+.ev-members-display.show{display:block}
+.ev-members-display:active{opacity:.7}
+
+/* 멤버 선택 모달 */
+.mp-list{display:flex;flex-direction:column;gap:6px;margin:6px 0 14px;max-height:50vh;overflow-y:auto}
+.mp-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fdf6e8;border:1.5px solid var(--borderL);border-radius:10px;cursor:pointer;transition:all .12s}
+.mp-item.on{background:var(--aP);border-color:var(--accent)}
+.mp-item.me{background:var(--aP);border-color:var(--accent)}
+.mp-item-stamp{width:32px;height:32px;border:1.5px solid var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Noto Serif KR',serif;font-weight:700;font-size:14px;color:var(--accent);background:var(--bg)}
+.mp-item-info{flex:1;min-width:0}
+.mp-item-name{font-size:14px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mp-item-tag{font-size:10px;color:var(--sub);margin-top:2px}
+.mp-item-check{width:22px;height:22px;border:2px solid var(--border);border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--card);background:transparent;transition:all .12s}
+.mp-item.on .mp-item-check{background:var(--accent);border-color:var(--accent)}
+.mp-item.on .mp-item-check::after{content:'✓';color:var(--card);font-size:13px;font-weight:700}
+
+/* 시트의 일정 항목 — 함께 마커 */
+.dp-item.shared .dp-bar{width:5px}
+.dp-shared-tag{display:inline-block;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:var(--gold);color:var(--card);letter-spacing:.3px;margin-left:6px;vertical-align:1px}
+
+/* 캘린더 일정 바 — 함께 표시 (작은 도트) */
+.cal-evbar.shared{position:relative;padding-left:7px;border-left:3px solid var(--gold)}
+
+/* 일정 복사 옵션 (방 만들기/입장 시) */
+.copy-option{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fdf6e8;border:1.5px solid var(--borderL);border-radius:10px;margin:4px 0 10px;cursor:pointer}
+.copy-option-check{width:20px;height:20px;border:2px solid var(--border);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:transparent;transition:all .12s}
+.copy-option.on .copy-option-check{background:var(--accent);border-color:var(--accent)}
+.copy-option.on .copy-option-check::after{content:'✓';color:var(--card);font-size:13px;font-weight:700}
+.copy-option-info{flex:1}
+.copy-option-title{font-size:13px;font-weight:700;color:var(--text)}
+.copy-option-sub{font-size:11px;color:var(--sub);margin-top:2px}
+.copy-source-list{display:flex;flex-direction:column;gap:6px;margin:6px 0 12px;max-height:30vh;overflow-y:auto}
+.copy-source-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fdf6e8;border:1.5px solid var(--borderL);border-radius:8px;cursor:pointer}
+.copy-source-item.on{background:var(--aP);border-color:var(--accent)}
+.copy-source-name{font-size:13px;font-weight:700;color:var(--text);flex:1}
+.copy-source-count{font-size:10px;color:var(--sub)}
+
+/* 3-C: 기간 일정 토글 */
+.ev-mode-row{display:flex;gap:6px;margin-top:4px}
+.ev-mode-btn{flex:1;padding:9px 6px;background:transparent;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:12px;color:var(--sub);cursor:pointer;transition:all .12s;font-weight:600}
+.ev-mode-btn.on{background:var(--accent);color:var(--card);border-color:var(--accent)}
+.ev-range-row{display:none;flex-direction:column;gap:10px;align-items:stretch;margin-top:8px}
+.ev-range-row.show{display:flex}
+.ev-range-pair{display:flex;gap:8px;align-items:center}
+.ev-range-box{flex:1;text-align:center;padding:10px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;color:var(--sub);transition:all .12s}
+.ev-range-box.on{background:var(--aP);border-color:var(--accent);color:var(--text)}
+.ev-range-row .ev-range-arrow{color:var(--sub);font-size:14px}
+.ev-multi-day.range-start{background:var(--accent);color:var(--card);font-weight:700;border-radius:6px 0 0 6px}
+.ev-multi-day.range-end{background:var(--accent);color:var(--card);font-weight:700;border-radius:0 6px 6px 0}
+.ev-multi-day.range-mid{background:var(--aP);color:var(--text);border-radius:0}
+.ev-scope-row{display:none;gap:6px;margin-top:8px}
+.ev-scope-row.show{display:flex}
+
+/* 3-D: 여러 날 모드 (불연속 점선택) */
+.ev-multi-section{display:none;margin-top:10px;flex-direction:column;gap:8px}
+.ev-multi-section.show{display:flex}
+.ev-multi-chips{display:flex;flex-wrap:wrap;gap:6px;min-height:32px;padding:8px;background:var(--bg);border:1px dashed var(--border);border-radius:8px}
+.ev-multi-empty{font-size:12px;color:var(--mute);padding:4px 6px;align-self:center}
+.ev-multi-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;background:var(--accent);color:var(--card);border-radius:14px;font-size:11px;font-weight:600}
+.ev-multi-chip-x{cursor:pointer;font-size:14px;line-height:1;opacity:.85}
+.ev-multi-chip-x:active{opacity:1}
+.ev-multi-cal{background:var(--card);border:1px solid var(--borderL);border-radius:10px;padding:10px}
+.ev-multi-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.ev-multi-nav-btn{background:none;border:none;cursor:pointer;font-family:inherit;font-size:18px;color:var(--sub);font-weight:300;padding:2px 10px;line-height:1}
+.ev-multi-nav-btn:active{opacity:.5}
+.ev-multi-nav-title{font-family:'Noto Serif KR',serif;font-size:14px;font-weight:700;color:var(--text)}
+.ev-multi-dows{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:2px}
+.ev-multi-dow{text-align:center;font-size:9px;font-weight:700;color:var(--sub);padding:2px 0}
+.ev-multi-dow.sun{color:var(--accent)}
+.ev-multi-dow.sat{color:#3a5a8b}
+.ev-multi-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.ev-multi-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:12px;font-family:-apple-system,sans-serif;color:var(--text);border-radius:6px;cursor:pointer;background:transparent;border:1px solid transparent;transition:all .12s}
+.ev-multi-day.other{opacity:.3}
+.ev-multi-day.sun{color:var(--accent)}
+.ev-multi-day.sat{color:#3a5a8b}
+.ev-multi-day.on{background:var(--accent);color:var(--card);font-weight:700}
+.ev-multi-day.today{border-color:var(--accent)}
+.ev-multi-day:active{transform:scale(.92)}
+.ev-multi-count{font-size:11px;color:var(--sub);text-align:center;padding-top:4px}
+
+/* 캘린더 셀 — 기간 일정 바 (시작·중간·끝) */
+.cal-evbar.range-mid{border-radius:0;margin-left:0;margin-right:0}
+.cal-evbar.range-start{border-top-right-radius:0;border-bottom-right-radius:0;margin-right:0}
+.cal-evbar.range-end{border-top-left-radius:0;border-bottom-left-radius:0;margin-left:0}
+
+/* 이모지 반응 */
+.dp-reaction-row{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.dp-reaction-chip{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:4px 9px;background:var(--bg);border:1px solid var(--border);
+  border-radius:14px;font-size:13px;cursor:pointer;
+  transition:all .12s;
+}
+.dp-reaction-chip:active{transform:scale(.94)}
+.dp-reaction-chip.mine{background:var(--aP);border-color:var(--accent)}
+.dp-reaction-chip-add{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:26px;background:transparent;border:1px dashed var(--border);
+  border-radius:14px;cursor:pointer;color:var(--sub);font-size:14px;
+  transition:all .12s;
+}
+.dp-reaction-chip-add:active{background:var(--bg)}
+
+/* 이모지 선택 모달 */
+.emoji-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 12px}
+.emoji-btn{
+  aspect-ratio:1;background:var(--bg);border:1.5px solid var(--border);
+  border-radius:12px;font-size:28px;cursor:pointer;transition:all .12s;
+  display:flex;align-items:center;justify-content:center;
+}
+.emoji-btn:active{transform:scale(.92)}
+.emoji-btn.on{background:var(--aP);border-color:var(--accent)}
+
+/* 방 설정 모달 (테마/방이름/멤버) */
+.rs-section{margin-bottom:18px}
+.rs-section-title{
+  font-size:11px;font-weight:700;color:var(--sub);
+  letter-spacing:.4px;margin-bottom:8px;
+}
+.rs-row{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fdf6e8;border:1px solid var(--borderL);border-radius:10px;margin-bottom:6px}
+.rs-row-info{flex:1}
+.rs-row-label{font-size:13px;font-weight:700;color:var(--text)}
+.rs-row-sub{font-size:11px;color:var(--sub);margin-top:2px}
+
+/* 테마 선택 그리드 */
+.theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:6px}
+.theme-item{cursor:pointer;text-align:center;transition:transform .12s}
+.theme-item:active{transform:scale(.96)}
+.theme-stamp{
+  width:100%;aspect-ratio:1;border-radius:50%;border:2.5px solid;
+  background:var(--card);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:5px;position:relative;
+}
+.theme-stamp::before{
+  content:'';position:absolute;inset:4px;border:1px solid;border-radius:50%;
+}
+.theme-stamp-letter{font-family:'Noto Serif KR',serif;font-weight:700;font-size:13px;line-height:1}
+.theme-name{font-size:10px;font-weight:700;color:var(--text);letter-spacing:.2px}
+.theme-item.on .theme-stamp{outline:3px solid var(--text);outline-offset:2px}
+
+/* 캘린더 헤더 ⋮ 메뉴 */
+.cal-menu-btn{background:none;border:none;cursor:pointer;padding:8px;color:var(--sub);font-size:18px;font-family:inherit;line-height:1}
+.cal-menu-btn:active{opacity:.5}
+
+/* 셀 작은 라벨 (음력/절기/기념일) */
+.cal-cell-label{
+  font-size:8px;color:var(--sub);
+  text-align:center;letter-spacing:0;
+  margin-top:-2px;margin-bottom:2px;
+  line-height:1.1;min-height:9px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  padding:0 2px;
+}
+.cal-cell-label.holiday{color:var(--sun);font-weight:700}
+.cal-cell-label.term{color:var(--gold);font-weight:600}
+
+/* 주간 뷰 토글 */
+.cal-view-toggle{position:absolute;left:14px;top:max(70px,calc(env(safe-area-inset-top) + 70px));display:flex;gap:4px;background:var(--card);border:1px solid var(--borderL);border-radius:14px;padding:3px;font-size:0;z-index:5}
+.cal-view-btn{background:transparent;border:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700;color:var(--sub);padding:5px 11px;border-radius:11px;transition:all .12s}
+.cal-view-btn.on{background:var(--accent);color:var(--card)}
+
+/* 주간 뷰 — 세로 리스트 (V1 스타일) */
+.cal-grid.weekly{
+  display:flex;flex-direction:column;gap:0;
+  padding:0 14px 20px;background:var(--bg);
+  grid-template-columns:none;grid-template-rows:none;
+}
+.weekly-row{
+  display:flex;align-items:stretch;
+  border-bottom:1px solid var(--borderL);
+  padding:14px 0;min-height:60px;gap:14px;
+}
+.weekly-row:last-child{border-bottom:none}
+.weekly-dow{
+  width:30px;flex-shrink:0;
+  display:flex;align-items:flex-start;justify-content:center;
+  font-size:13px;font-weight:700;color:var(--sub);
+  padding-top:6px;
+}
+.weekly-dow.sun{color:var(--sun)}
+.weekly-dow.sat{color:var(--sat)}
+.weekly-dow.today{color:var(--accent);font-size:14px}
+.weekly-events{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
+.weekly-empty{font-size:12px;color:#b5a78f;padding:8px 4px;font-style:normal}
+.weekly-evcard{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 14px;background:var(--card);
+  border:1px solid var(--borderL);border-radius:10px;
+}
+.weekly-evcard.shared{border-left-width:3px;border-left-color:var(--gold)}
+.weekly-evdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.weekly-evtime{font-size:11px;color:var(--sub);font-weight:600;min-width:38px;flex-shrink:0}
+.weekly-evtitle{font-size:13px;font-weight:600;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.weekly-evtag{font-size:9px;color:var(--card);background:var(--gold);padding:2px 5px;border-radius:3px;font-weight:700;flex-shrink:0}
+.weekly-evlabel{font-size:13px;color:var(--accent);font-weight:700}
+
+/* 주간 뷰일 때 cal-week-head 숨김 (자체 헤더 사용) */
+.weekly-mode .cal-week-head{display:none}
+.weekly-headbar{
+  display:none;padding:14px 14px 12px;background:var(--bg);
+  border-bottom:1px solid var(--borderL);
+}
+.weekly-mode .weekly-headbar{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.weekly-headbar-cell{text-align:center}
+.weekly-headbar-dow{font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.5px;margin-bottom:4px}
+.weekly-headbar-dow.sun{color:var(--sun)}
+.weekly-headbar-dow.sat{color:var(--sat)}
+.weekly-headbar-day{
+  font-size:18px;font-weight:700;color:var(--text);
+  width:32px;height:32px;line-height:32px;border-radius:8px;margin:0 auto;
+}
+.weekly-headbar-day.sun{color:var(--sun)}
+.weekly-headbar-day.sat{color:var(--sat)}
+.weekly-headbar-day.today{background:var(--accent);color:var(--card)}
+
+/* 함께 멤버 시트 (시트 안 멤버 라인) */
+.dp-members-section{
+  display:flex;flex-direction:column;gap:6px;
+  margin:14px 0 10px;max-height:138px;overflow-y:auto;
+}
+.dp-member-line{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;
+  background:var(--bg);border:1px solid var(--borderL);border-radius:10px;
+}
+.dp-member-line.me{background:var(--aP);border-color:var(--accent)}
+.dp-member-stamp{
+  width:28px;height:28px;border:1.5px solid var(--accent);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  font-family:'Noto Serif KR',serif;font-weight:700;font-size:12px;
+  color:var(--accent);background:var(--card);
+}
+.dp-member-info{flex:1;min-width:0;display:flex;align-items:center;gap:8px}
+.dp-member-name{font-size:12px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dp-member-emoji{font-size:14px}
+.dp-member-eventcount{font-size:10px;color:var(--sub);margin-left:auto;flex-shrink:0}
+
+/* swipe-down 영역 */
+.dp-card,.mo-card{touch-action:pan-y}
+
+/* 4단계: 멤버 관리, 방 삭제, 프로필 편집 */
+.rs-member-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fdf6e8;border:1px solid var(--borderL);border-radius:10px;margin-bottom:6px}
+.rs-member-row.owner{background:var(--aP);border-color:var(--accent)}
+.rs-member-stamp{width:30px;height:30px;border:1.5px solid var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Noto Serif KR',serif;font-weight:700;font-size:13px;color:var(--accent);background:var(--card)}
+.rs-member-info{flex:1;min-width:0}
+.rs-member-name{font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rs-member-tag{font-size:10px;color:var(--sub);margin-top:1px}
+.rs-kick-btn{background:transparent;border:1px solid var(--accent);color:var(--accent);font-family:inherit;font-size:11px;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer;flex-shrink:0}
+.rs-kick-btn:active{background:var(--aP)}
+
+.btn-danger-full{width:100%;padding:12px;background:#8b1a1a;color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;margin-top:6px}
+.btn-danger-full:active{opacity:.85}
+.btn-share{width:100%;padding:12px;background:#fee500;color:#191919;border:none;border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-share:active{opacity:.85}
+
+/* 프로필 편집 */
+.pf-edit-row{display:flex;flex-direction:column;gap:6px;width:100%;margin-top:14px}
+.pf-name-input-row{display:flex;gap:6px}
+.pf-name-input-row .fi{flex:1}
+.pf-name-save-btn{padding:10px 16px;background:var(--accent);color:var(--card);border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.pf-name-save-btn:active{opacity:.85}
+.pf-photo-upload{display:none}
+.pf-stamp.has-photo{padding:0;border-width:2px;overflow:hidden}
+.pf-stamp.has-photo img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.pf-stamp.has-photo::before{display:none}
+.pf-photo-btn{display:block;font-size:11px;color:var(--sub);background:transparent;border:none;cursor:pointer;margin-top:4px;padding:4px 0;font-family:inherit;text-decoration:underline}
+</style>
+</head>
+<body>
+
+<!-- 초기 로딩 -->
+<div class="loading" id="loading"><div class="spinner"></div></div>
+
+<div class="app">
+
+  <!-- 환영 화면 -->
+  <div class="screen" id="welcomeScreen">
+    <div class="stamp">
+      <div class="stamp-our">OUR</div>
+      <div class="stamp-line"></div>
+      <div class="stamp-cal">CALENDAR</div>
+      <div class="stamp-est">EST · 2026</div>
+    </div>
+    <div class="welcome-name-kr">우리 캘린더</div>
+    <div class="welcome-tagline">오래도록 함께 기록하는 시간</div>
+    <div class="welcome-deco">
+      <div class="welcome-deco-line"></div>
+      <div class="welcome-deco-diamond"></div>
+      <div class="welcome-deco-line"></div>
+    </div>
+    <div class="btn-stack">
+      <button class="btn btn-kakao" onclick="loginKakao()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#191919" aria-hidden="true"><path d="M12 3C6.48 3 2 6.48 2 10.78c0 2.68 1.59 5.04 4.04 6.46l-.94 3.45c-.08.3.25.54.51.37l4.13-2.73c.74.1 1.5.16 2.26.16 5.52 0 10-3.48 10-7.78S17.52 3 12 3z"/></svg>
+        카카오로 시작하기
+      </button>
+      <button class="btn btn-email" onclick="goEmail()">
+        이메일로 시작하기
+      </button>
+    </div>
+    <div class="terms">
+      계속하면 <a href="terms.html">이용약관</a> 및 <a href="privacy.html">개인정보처리방침</a>에<br>동의하는 것으로 간주됩니다
+    </div>
+  </div>
+
+  <!-- 이메일 입력 -->
+  <div class="screen" id="emailScreen">
+    <button class="back" onclick="goBack()">←</button>
+    <div class="title">메일 주소를 알려주세요</div>
+    <div class="sub">접속 링크를 보내드릴게요</div>
+    <div class="email-form">
+      <input class="fi" type="email" id="emailInput" placeholder="name@example.com" autocomplete="email" inputmode="email" autocapitalize="off" autocorrect="off">
+      <button class="btn btn-primary" id="sendBtn" onclick="sendMagicLink()">링크 받기</button>
+    </div>
+  </div>
+
+  <!-- 메일 발송 후 -->
+  <div class="screen" id="sentScreen">
+    <div class="check-wrap">✓</div>
+    <div class="title">메일을 확인해주세요</div>
+    <div class="sub">아래 주소로 접속 링크를 보냈어요</div>
+    <div class="sent-email" id="sentEmail"></div>
+    <div class="hint">메일이 안 보이면 스팸함도 한 번<br>확인해주세요</div>
+    <button class="btn btn-ghost" onclick="resetFlow()" style="margin-top:18px">다른 주소로 다시 시도</button>
+  </div>
+
+  <!-- 방 목록 화면 (2단계) -->
+  <div class="screen rooms" id="roomsScreen">
+    <div class="r-header">
+      <div class="r-logo">
+        <div class="r-logo-mini-stamp">
+          <span class="r-logo-mini-our">OUR</span>
+          <span class="r-logo-mini-line"></span>
+          <span class="r-logo-mini-cal">CAL</span>
+        </div>
+        <span class="r-logo-title">우리 캘린더</span>
+      </div>
+      <button class="r-avatar" id="userAvatar" onclick="openProfile()" title="프로필">—</button>
+    </div>
+
+    <div class="r-content" id="roomsContent">
+      <!-- loadRooms()가 여기 채움 -->
+    </div>
+
+    <div class="r-footer">
+      <button class="btn btn-primary" onclick="openCreateRoom()">+ 새 방 만들기</button>
+      <button class="btn btn-email" onclick="openJoinRoom()">코드로 입장</button>
+    </div>
+  </div>
+
+<!-- 새 방 만들기 모달 -->
+<div class="mo-overlay" id="createOverlay" onclick="closeCreateRoom()"></div>
+<div class="mo-card" id="createCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">새 방 만들기</div>
+  <div class="mo-sub">함께 일정을 공유할 방의<br>이름을 정해주세요</div>
+  <div class="mo-form">
+    <div>
+      <div class="mo-label">방 이름</div>
+      <input class="fi" type="text" id="newRoomName" placeholder="예) 우리집, 회사 동기" maxlength="20" autocomplete="off">
+    </div>
+  </div>
+  <!-- 일정 복사 옵션 (다른 방이 있을 때만 표시) -->
+  <div id="createCopyWrap" style="display:none;margin-top:6px">
+    <div class="copy-option" id="createCopyOption" onclick="toggleCreateCopy()">
+      <div class="copy-option-check"></div>
+      <div class="copy-option-info">
+        <div class="copy-option-title">기존 방 일정 가져오기</div>
+        <div class="copy-option-sub">선택한 방의 내 일정을 새 방으로 복사</div>
+      </div>
+    </div>
+    <div class="copy-source-list" id="createCopySourceList" style="display:none"></div>
+  </div>
+  <div class="mo-actions">
+    <button class="btn btn-primary" id="createBtn" onclick="createRoom()">만들기</button>
+    <button class="mo-cancel" onclick="closeCreateRoom()">취소</button>
+  </div>
+</div>
+
+<!-- 코드 입장 모달 -->
+<div class="mo-overlay" id="joinOverlay" onclick="closeJoinRoom()"></div>
+<div class="mo-card" id="joinCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">방 코드로 입장</div>
+  <div class="mo-sub">받은 6자리 코드를<br>입력해주세요</div>
+  <div class="code-input-wrap" id="codeBoxes">
+    <input class="code-box" type="text" inputmode="text" maxlength="1" autocomplete="off" autocapitalize="characters">
+    <input class="code-box" type="text" inputmode="text" maxlength="1" autocomplete="off" autocapitalize="characters">
+    <input class="code-box" type="text" inputmode="text" maxlength="1" autocomplete="off" autocapitalize="characters">
+    <input class="code-box" type="text" inputmode="text" maxlength="1" autocomplete="off" autocapitalize="characters">
+    <input class="code-box" type="text" inputmode="text" maxlength="1" autocomplete="off" autocapitalize="characters">
+    <input class="code-box" type="text" inputmode="text" maxlength="1" autocomplete="off" autocapitalize="characters">
+  </div>
+  <!-- 일정 복사 옵션 (다른 방이 있을 때만) -->
+  <div id="joinCopyWrap" style="display:none;margin-top:6px">
+    <div class="copy-option" id="joinCopyOption" onclick="toggleJoinCopy()">
+      <div class="copy-option-check"></div>
+      <div class="copy-option-info">
+        <div class="copy-option-title">기존 방 일정 가져오기</div>
+        <div class="copy-option-sub">선택한 방의 내 일정을 함께 입장하면서 복사</div>
+      </div>
+    </div>
+    <div class="copy-source-list" id="joinCopySourceList" style="display:none"></div>
+  </div>
+  <div class="mo-actions">
+    <button class="btn btn-primary" id="joinBtn" onclick="joinRoom()">입장</button>
+    <button class="mo-cancel" onclick="closeJoinRoom()">취소</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     3-A: 캘린더 화면
+     ═══════════════════════════════════ -->
+<div class="screen cal" id="calendarScreen">
+  <div class="cal-header">
+    <button class="cal-back" onclick="exitRoom()" title="방 목록으로">‹</button>
+    <div class="cal-room-info">
+      <div class="cal-room-name" id="calRoomName">방 이름</div>
+    </div>
+    <div class="cal-actions">
+      <button class="cal-avatar" id="calAvatar" onclick="openProfile()" title="프로필">—</button>
+      <button class="cal-menu-btn" onclick="openSearch()" title="검색" aria-label="검색"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.5" y2="16.5"/></svg></button>
+      <button class="cal-menu-btn" onclick="openRoomSettings()" title="방 설정">⋮</button>
+    </div>
+  </div>
+
+  <div class="cal-month-row">
+    <button class="cal-month-arrow" onclick="prevMonth()">‹</button>
+    <div class="cal-month-title" onclick="openDatePicker()">
+      <div class="cal-month-year" id="calYear">2026</div>
+      <div class="cal-month-name" id="calMonthName">5월</div>
+    </div>
+    <button class="cal-month-arrow" onclick="nextMonth()">›</button>
+  </div>
+
+  <div class="cal-week-head">
+    <div class="cal-dow sun">일</div>
+    <div class="cal-dow">월</div>
+    <div class="cal-dow">화</div>
+    <div class="cal-dow">수</div>
+    <div class="cal-dow">목</div>
+    <div class="cal-dow">금</div>
+    <div class="cal-dow sat">토</div>
+  </div>
+
+  <!-- 주간 뷰 전용 헤더 (요일 + 날짜) -->
+  <div class="weekly-headbar" id="weeklyHeadbar"></div>
+
+  <!-- 월/주 뷰 토글 -->
+  <div class="cal-view-toggle">
+    <button class="cal-view-btn on" id="viewBtnMonth" onclick="setCalView('month')">월</button>
+    <button class="cal-view-btn" id="viewBtnWeek" onclick="setCalView('week')">주</button>
+  </div>
+
+  <div class="cal-grid" id="calGrid">
+    <!-- renderMonthly()가 여기 채움 -->
+  </div>
+
+  <button class="cal-today-btn" id="todayBtn" onclick="goToday()">← 오늘로</button>
+</div>
+
+</div><!-- /.app -->
+
+<!-- 날짜로 이동 picker (휠 두 컬럼) -->
+<div class="mo-overlay" id="datePickerOverlay" onclick="closeDatePicker()"></div>
+<div class="mo-card date-picker-card" id="datePickerCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">날짜로 이동</div>
+  <div class="date-picker-cols">
+    <div class="tp-cols">
+      <div class="tp-col" id="dpYearCol"></div>
+      <div class="tp-col" id="dpMonthCol"></div>
+      <div class="tp-mid"></div>
+    </div>
+  </div>
+  <div class="mo-actions">
+    <button class="mo-cancel" onclick="closeDatePicker()">취소</button>
+    <button class="btn btn-primary" onclick="applyDatePicker()">이동</button>
+  </div>
+</div>
+
+<!-- 검색 모달 -->
+<div class="mo-overlay" id="searchOverlay" onclick="closeSearch()"></div>
+<div class="mo-card search-card" id="searchCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">일정 검색</div>
+  <div class="search-input-row">
+    <input class="fi" type="text" id="searchInput" placeholder="제목으로 검색…" maxlength="40" autocomplete="off" oninput="runSearch()">
+    <button class="search-clear-btn" onclick="clearSearchInput()" title="지우기">×</button>
+  </div>
+  <div class="search-hint" id="searchHint">최근 등록한 제목</div>
+  <div class="search-results" id="searchResults"></div>
+</div>
+
+<!-- 날짜 시트 (그 날 일정 보기) -->
+<div class="mo-overlay" id="dpOverlay" onclick="closeDateSheet()"></div>
+<div class="dp-card" id="dpCard">
+  <div class="mo-handle"></div>
+  <div class="dp-head" id="dpHead">5월 7일 목요일</div>
+  <div class="dp-sub" id="dpSub">일정 0개</div>
+  <!-- 함께 멤버 라인 (멤버 2명 이상일 때 표시) -->
+  <div class="dp-members-section" id="dpMembers" style="display:none"></div>
+  <div class="dp-list" id="dpList"></div>
+  <button class="dp-add" onclick="openAddEvent()">+ 새 일정 추가</button>
+</div>
+
+<!-- 일정 추가/수정 모달 -->
+<div class="mo-overlay" id="evOverlay" onclick="closeEventModal()"></div>
+<div class="mo-card" id="evCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title" id="evModalTitle">새 일정 추가</div>
+  <div class="mo-sub" id="evModalDate">5월 7일 목요일</div>
+  <div class="ev-form">
+    <div class="ev-form-row">
+      <div class="ev-label">제목</div>
+      <input class="fi" type="text" id="evTitle" placeholder="예) 회의, 저녁 약속" maxlength="40" autocomplete="off">
+    </div>
+    <div class="ev-form-row">
+      <div class="ev-label">시간 (선택)</div>
+      <div class="ev-time-row">
+        <button type="button" class="time-trigger" id="evTimeBtn" onclick="toggleTimePicker()">시간 선택</button>
+        <input type="hidden" id="evTime">
+        <button class="ev-time-clear" onclick="clearEventTime()">지우기</button>
+      </div>
+      <div class="time-picker" id="timePicker">
+        <div class="tp-cols">
+          <div class="tp-col" id="tpHourCol"></div>
+          <div class="tp-sep">:</div>
+          <div class="tp-col" id="tpMinCol"></div>
+          <div class="tp-mid"></div>
+        </div>
+        <div class="tp-actions">
+          <button type="button" class="tp-action-btn" onclick="closeTimePicker()">취소</button>
+          <button type="button" class="tp-action-btn primary" onclick="applyTimePicker()">적용</button>
+        </div>
+      </div>
+    </div>
+    <!-- 기간/여러 날 모드 토글 -->
+    <div class="ev-form-row" id="evModeRow">
+      <div class="ev-label">기간</div>
+      <div class="ev-mode-row">
+        <button type="button" class="ev-mode-btn on" id="evModeDay" onclick="setEventMode('day')">하루</button>
+        <button type="button" class="ev-mode-btn" id="evModeRange" onclick="setEventMode('range')">기간</button>
+        <button type="button" class="ev-mode-btn" id="evModeMulti" onclick="setEventMode('multi')">여러 날</button>
+      </div>
+      <div class="ev-range-row" id="evRangeRow">
+        <input type="hidden" id="evStartDate">
+        <input type="hidden" id="evEndDate">
+        <div class="ev-range-pair">
+          <div class="ev-range-box" id="evRangeStartBox">시작일</div>
+          <span class="ev-range-arrow">→</span>
+          <div class="ev-range-box" id="evRangeEndBox">종료일</div>
+        </div>
+        <div class="ev-multi-cal">
+          <div class="ev-multi-nav">
+            <button type="button" class="ev-multi-nav-btn" onclick="rangeCalNav(-1)">‹</button>
+            <span class="ev-multi-nav-title" id="evRangeNavTitle">2026년 5월</span>
+            <button type="button" class="ev-multi-nav-btn" onclick="rangeCalNav(1)">›</button>
+          </div>
+          <div class="ev-multi-dows">
+            <div class="ev-multi-dow sun">일</div><div class="ev-multi-dow">월</div><div class="ev-multi-dow">화</div><div class="ev-multi-dow">수</div><div class="ev-multi-dow">목</div><div class="ev-multi-dow">금</div><div class="ev-multi-dow sat">토</div>
+          </div>
+          <div class="ev-multi-grid" id="evRangeMiniGrid"></div>
+          <div class="ev-multi-count" id="evRangeCount">시작일을 탭해주세요</div>
+        </div>
+      </div>
+      <div class="ev-multi-section" id="evMultiSection">
+        <div class="ev-multi-chips" id="evMultiChips"></div>
+        <div class="ev-multi-cal">
+          <div class="ev-multi-nav">
+            <button type="button" class="ev-multi-nav-btn" onclick="multiCalNav(-1)">‹</button>
+            <span class="ev-multi-nav-title" id="evMultiNavTitle">2026년 5월</span>
+            <button type="button" class="ev-multi-nav-btn" onclick="multiCalNav(1)">›</button>
+          </div>
+          <div class="ev-multi-dows">
+            <div class="ev-multi-dow sun">일</div><div class="ev-multi-dow">월</div><div class="ev-multi-dow">화</div><div class="ev-multi-dow">수</div><div class="ev-multi-dow">목</div><div class="ev-multi-dow">금</div><div class="ev-multi-dow sat">토</div>
+          </div>
+          <div class="ev-multi-grid" id="evMultiGrid"></div>
+          <div class="ev-multi-count" id="evMultiCount">선택된 날짜 0개</div>
+        </div>
+      </div>
+    </div>
+    <!-- 수정 범위 (기간 일정 수정 시) -->
+    <div class="ev-form-row ev-scope-row" id="evScopeRow">
+      <div class="ev-label">수정 범위</div>
+      <div class="ev-target-row">
+        <button type="button" class="ev-target-btn on" id="evScopeOne" onclick="setEditScope('one')">이 일정만</button>
+        <button type="button" class="ev-target-btn" id="evScopeAll" onclick="setEditScope('all')">전체 기간 <span id="evScopeCount"></span></button>
+      </div>
+    </div>
+    <!-- 혼자/함께 토글 (멤버 2명 이상일 때만 표시) -->
+    <div class="ev-form-row" id="evTargetRow" style="display:none">
+      <div class="ev-label">대상</div>
+      <div class="ev-target-row">
+        <button type="button" class="ev-target-btn on" id="evTargetSelf" onclick="setEventTarget('self')">혼자</button>
+        <button type="button" class="ev-target-btn" id="evTargetAll" onclick="setEventTarget('all')">함께</button>
+      </div>
+      <div class="ev-members-display" id="evMembersDisplay" onclick="reopenMemberPick()"></div>
+    </div>
+    <div class="ev-form-row">
+      <div class="ev-label">색상</div>
+      <div class="ev-color-grid" id="evColorGrid"></div>
+    </div>
+    <!-- 매년 반복 (생일/기념일 등) -->
+    <div class="ev-form-row ev-yearly-row" id="evYearlyRow">
+      <div class="ev-label">매년 반복</div>
+      <label class="ev-yearly-toggle">
+        <input type="checkbox" id="evYearly">
+        <span class="ev-yearly-slider"></span>
+      </label>
+    </div>
+  </div>
+  <div class="mo-actions">
+    <button class="btn btn-primary" id="evSaveBtn" onclick="saveEvent()">저장</button>
+    <button class="mo-cancel" onclick="closeEventModal()">취소</button>
+  </div>
+</div>
+
+<!-- 프로필 시트 (방 목록·캘린더 우측 상단 아바타 클릭) -->
+<div class="mo-overlay" id="profileOverlay" onclick="closeProfile()"></div>
+<div class="mo-card" id="profileCard">
+  <div class="mo-handle"></div>
+  <div class="pf-section">
+    <div class="pf-stamp" id="profileStamp">
+      <span class="pf-stamp-letter" id="profileLetter">—</span>
+    </div>
+    <button class="pf-photo-btn" onclick="document.getElementById('profilePhotoFile').click()">사진 변경</button>
+    <input type="file" id="profilePhotoFile" class="pf-photo-upload" accept="image/*" onchange="onProfilePhotoSelect(event)">
+    <div class="pf-name" id="profileName">—</div>
+    <div class="pf-email" id="profileEmail">—</div>
+  </div>
+  <div class="pf-edit-row">
+    <div class="ev-label" style="font-size:11px">이름 변경</div>
+    <div class="pf-name-input-row">
+      <input class="fi" type="text" id="profileNameInput" placeholder="이름" maxlength="20" autocomplete="off">
+      <button class="pf-name-save-btn" onclick="saveProfileName()">저장</button>
+    </div>
+  </div>
+  <div class="pf-edit-row">
+    <div class="ev-label" style="font-size:11px">내 생일 <span style="font-weight:400;color:var(--mute);font-size:10px">· 매년 캘린더에 자동 표시</span></div>
+    <div class="pf-name-input-row">
+      <select class="fi" id="profileBdMonth" style="flex:0 0 80px"><option value="">월</option></select>
+      <select class="fi" id="profileBdDay" style="flex:0 0 80px"><option value="">일</option></select>
+      <button class="pf-name-save-btn" onclick="saveProfileBirthday()">저장</button>
+    </div>
+  </div>
+  <div class="mo-actions">
+    <button class="btn btn-danger" onclick="doLogout()">로그아웃</button>
+    <button class="mo-cancel" onclick="closeProfile()">닫기</button>
+  </div>
+</div>
+
+<!-- 멤버 선택 모달 (함께 일정 시) -->
+<div class="mo-overlay" id="memberPickOverlay" onclick="cancelMemberPick()"></div>
+<div class="mo-card" id="memberPickCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">함께할 멤버 선택</div>
+  <div class="mo-sub">선택된 멤버에게 일정이 함께 적용돼요</div>
+  <div class="mp-list" id="memberPickList"></div>
+  <div class="mo-actions">
+    <button class="btn btn-primary" onclick="confirmMemberPick()">확인</button>
+    <button class="mo-cancel" onclick="cancelMemberPick()">취소</button>
+  </div>
+</div>
+
+<!-- 이모지 선택 모달 -->
+<div class="mo-overlay" id="emojiOverlay" onclick="closeEmojiPick()"></div>
+<div class="mo-card" id="emojiCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">이모지로 반응</div>
+  <div class="mo-sub" id="emojiSubject">이 일정에 어떤 기분?</div>
+  <div class="emoji-grid" id="emojiGrid"></div>
+  <div class="mo-actions">
+    <button class="mo-cancel" onclick="removeMyReaction()">반응 제거</button>
+    <button class="mo-cancel" onclick="closeEmojiPick()">닫기</button>
+  </div>
+</div>
+
+<!-- 방 설정 모달 -->
+<div class="mo-overlay" id="roomSetOverlay" onclick="closeRoomSettings()"></div>
+<div class="mo-card" id="roomSetCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">방 설정</div>
+  <div class="mo-sub" id="roomSetName">—</div>
+  
+  <div class="rs-section">
+    <div class="rs-section-title">테마</div>
+    <div class="theme-grid" id="themeGrid"></div>
+  </div>
+  
+  <div class="rs-section">
+    <div class="rs-section-title">방 정보</div>
+    <div class="rs-row" id="roomSetNameRow">
+      <div class="rs-row-info">
+        <div class="rs-row-label">방 이름</div>
+        <div class="rs-row-sub" id="roomSetNameSub">—</div>
+      </div>
+      <button class="dp-btn" id="roomSetNameEditBtn" onclick="openRoomNameEdit()" style="display:none">변경</button>
+    </div>
+    <div class="rs-row" id="roomSetNameEditRow" style="display:none;flex-wrap:wrap;gap:6px">
+      <input class="fi" id="roomSetNameInput" placeholder="새 방 이름" maxlength="40" style="flex:1;min-width:140px">
+      <button class="dp-btn primary" onclick="saveRoomName()">저장</button>
+      <button class="dp-btn" onclick="closeRoomNameEdit()">취소</button>
+    </div>
+    <div class="rs-row">
+      <div class="rs-row-info">
+        <div class="rs-row-label">코드</div>
+        <div class="rs-row-sub" id="roomSetCode">—</div>
+      </div>
+      <button class="dp-btn" onclick="copyRoomCode()">복사</button>
+    </div>
+    <button class="btn-share" onclick="shareKakao()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="#191919"><path d="M12 3C6.48 3 2 6.48 2 10.78c0 2.68 1.59 5.04 4.04 6.46l-.94 3.45c-.08.3.25.54.51.37l4.13-2.73c.74.1 1.5.16 2.26.16 5.52 0 10-3.48 10-7.78S17.52 3 12 3z"/></svg>
+      카카오톡으로 초대
+    </button>
+  </div>
+  
+  <div class="rs-section">
+    <div class="rs-section-title">멤버 (<span id="roomSetMemberCount">—</span>)</div>
+    <div id="roomSetMemberList"></div>
+  </div>
+  
+  <div class="rs-section" id="roomSetOwnerSection" style="display:none">
+    <div class="rs-section-title">방장 메뉴</div>
+    <button class="btn-danger-full" onclick="deleteRoomConfirm()">방 삭제 (영구)</button>
+  </div>
+  <div class="rs-section" id="roomSetLeaveSection" style="display:none">
+    <button class="btn-danger-full" onclick="leaveRoomConfirm()">이 방 나가기</button>
+  </div>
+  
+  <div class="mo-actions">
+    <button class="mo-cancel" onclick="closeRoomSettings()">닫기</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.6.11/lunar.min.js"></script>
+<script>
+/* ═══════════════════════════════════
+   설정 (배포 시 채울 것)
+   ═══════════════════════════════════ */
+const SUPABASE_URL='https://bgqzkkaslqchbovzrkao.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJncXpra2FzbHFjaGJvdnpya2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwMzA5ODMsImV4cCI6MjA5MzYwNjk4M30.UkVo7bugGodTB1hxkQNltFqv1GrMTaNhJ8Lhmo3pIHc';
+
+const supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{
+  auth:{
+    flowType:'implicit',
+    detectSessionInUrl:true,
+    autoRefreshToken:true,
+    persistSession:true
+  }
+});
+
+/* 화면 전환 */
+/* 모든 모달 닫기 (화면 전환 시 / 새 모달 열기 시) */
+function closeAllModals(){
+  document.querySelectorAll('.mo-overlay.on, .mo-card.on, .dp-card.on').forEach(el=>el.classList.remove('on'));
+}
+/* 메인 모달만 닫기 (memberPick, emojiPick는 부모 모달 위에 띄우는 경우라 제외) */
+function closeMainModals(){
+  ['createOverlay','createCard','joinOverlay','joinCard','evOverlay','evCard',
+   'dpOverlay','dpCard','profileOverlay','profileCard','roomSetOverlay','roomSetCard',
+   'datePickerOverlay','datePickerCard','searchOverlay','searchCard']
+    .forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on')});
+}
+
+function showScreen(id){
+  closeAllModals();  // 화면 전환 시 모든 모달 정리
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
+  const el=document.getElementById(id);
+  if(el)el.classList.add('show');
+}
+function goEmail(){showScreen('emailScreen');setTimeout(()=>{const i=document.getElementById('emailInput');if(i)i.focus()},350)}
+function goBack(){showScreen('welcomeScreen')}
+function resetFlow(){const i=document.getElementById('emailInput');if(i)i.value='';showScreen('welcomeScreen')}
+
+/* 토스트 */
+let _tt;
+function toast(msg){
+  const el=document.getElementById('toast');
+  if(!el)return;
+  el.textContent=msg;
+  el.classList.add('on');
+  if(_tt)clearTimeout(_tt);
+  _tt=setTimeout(()=>el.classList.remove('on'),2800);
+}
+
+/* 카카오 로그인 */
+async function loginKakao(){
+  try{
+    const {error}=await supa.auth.signInWithOAuth({
+      provider:'kakao',
+      options:{
+        redirectTo:window.location.origin+window.location.pathname,
+        scopes:'profile_nickname profile_image'
+      }
+    });
+    if(error)toast('로그인 실패: '+error.message.slice(0,40));
+  }catch(e){
+    toast('카카오 로그인 오류');
+  }
+}
+
+/* 매직 링크 */
+async function sendMagicLink(){
+  const email=document.getElementById('emailInput').value.trim();
+  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    toast('이메일 형식이 맞지 않아요');
+    return;
+  }
+  const btn=document.getElementById('sendBtn');
+  btn.disabled=true;
+  btn.textContent='보내는 중...';
+  try{
+    const {error}=await supa.auth.signInWithOtp({
+      email,
+      options:{
+        emailRedirectTo:window.location.origin+window.location.pathname,
+        shouldCreateUser:true
+      }
+    });
+    if(error){
+      toast('전송 실패: '+error.message.slice(0,40));
+      return;
+    }
+    document.getElementById('sentEmail').textContent=email;
+    showScreen('sentScreen');
+  }catch(e){
+    toast('네트워크 오류');
+  }finally{
+    btn.disabled=false;
+    btn.textContent='링크 받기';
+  }
+}
+
+/* 로그아웃 */
+async function logout(){
+  await supa.auth.signOut();
+  showScreen('welcomeScreen');
+  toast('로그아웃 됐어요');
+}
+
+/* 프로필 시트 */
+function openProfile(){
+  if(!_currentUser){toast('사용자 정보를 찾지 못했어요');return}
+  closeMainModals();  // 다른 메인 모달 닫기
+  const meta=_currentUser.user_metadata||{};
+  const name=meta.name||meta.full_name||meta.preferred_username||(_currentUser.email?_currentUser.email.split('@')[0]:'익명');
+  const email=_currentUser.email||'(이메일 없음)';
+  const letter=(name||'?').trim().charAt(0).toUpperCase();
+  const letterEl=document.getElementById('profileLetter');
+  if(letterEl)letterEl.textContent=letter;
+  document.getElementById('profileName').textContent=name;
+  document.getElementById('profileEmail').textContent=email;
+  document.getElementById('profileNameInput').value=name;
+  // 생일 셀렉트 채우기 (월/일)
+  fillBirthdaySelects();
+  // 프로필 사진 표시 (avatar_url이 있으면)
+  loadProfilePhoto();
+  document.getElementById('profileOverlay').classList.add('on');
+  document.getElementById('profileCard').classList.add('on');
+}
+
+function fillBirthdaySelects(){
+  const ms=document.getElementById('profileBdMonth');
+  const ds=document.getElementById('profileBdDay');
+  if(ms.options.length<=1){
+    for(let m=1;m<=12;m++)ms.add(new Option(m+'월',m));
+    for(let d=1;d<=31;d++)ds.add(new Option(d+'일',d));
+  }
+  // 저장된 생일 적용
+  const bd=_currentProfile?.birthday;
+  if(bd&&bd.length>=5){
+    const [m,d]=bd.split('-').map(Number);
+    ms.value=m; ds.value=d;
+  }else{
+    ms.value=''; ds.value='';
+  }
+}
+
+async function saveProfileBirthday(){
+  const m=parseInt(document.getElementById('profileBdMonth').value,10);
+  const d=parseInt(document.getElementById('profileBdDay').value,10);
+  if(!m||!d){toast('월/일을 선택해줘');return}
+  // 간단한 유효성 (윤년 무시, 31일/4월 등 안 묶음)
+  const maxDay=[31,29,31,30,31,30,31,31,30,31,30,31][m-1];
+  if(d>maxDay){toast(`${m}월은 ${maxDay}일까지야`);return}
+  const md=String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+  try{
+    const {error}=await supa.from('profiles').update({birthday:md}).eq('id',_currentUser.id);
+    if(error)throw error;
+    if(!_currentProfile)_currentProfile={};
+    _currentProfile.birthday=md;
+    toast(`생일 저장 완료 (${m}/${d})`);
+    renderMonthly();  // 캘린더 즉시 갱신
+  }catch(e){
+    toast('저장 실패: '+(e.message||e));
+  }
+}
+async function loadProfilePhoto(){
+  if(!_currentUser)return;
+  try{
+    const {data}=await supa.from('profiles').select('avatar_url,name,birthday').eq('id',_currentUser.id).maybeSingle();
+    _currentProfile=data||{};
+    // 생일 셀렉트 다시 동기화 (모달 열려있을 때 반영)
+    if(document.getElementById('profileBdMonth'))fillBirthdaySelects();
+    const stamp=document.getElementById('profileStamp');
+    if(!stamp)return;
+    if(data&&data.avatar_url){
+      stamp.classList.add('has-photo');
+      // letter span은 숨김으로 유지 (id 보존)
+      stamp.innerHTML=`<span class="pf-stamp-letter" id="profileLetter" style="display:none"></span><img src="${escapeHtml(data.avatar_url)}" alt="">`;
+    }else{
+      stamp.classList.remove('has-photo');
+      const letter=(data?.name||_currentUser.email?.split('@')[0]||'?').trim().charAt(0).toUpperCase();
+      stamp.innerHTML=`<span class="pf-stamp-letter" id="profileLetter">${escapeHtml(letter)}</span>`;
+    }
+  }catch(e){console.warn('프로필 사진 로드 실패',e)}
+}
+function closeProfile(){
+  document.getElementById('profileOverlay').classList.remove('on');
+  document.getElementById('profileCard').classList.remove('on');
+}
+function doLogout(){
+  if(!confirm('로그아웃 하시겠어요?'))return;
+  closeProfile();
+  logout();
+}
+
+/* 이름 변경 */
+async function saveProfileName(){
+  if(!_currentUser){toast('로그인이 필요해요');return}
+  const name=document.getElementById('profileNameInput').value.trim();
+  if(!name){toast('이름을 입력해주세요');return}
+  if(name.length>20){toast('이름은 20자 이내로');return}
+  try{
+    const {error}=await supa.from('profiles').upsert({
+      id:_currentUser.id,
+      name,
+      email:_currentUser.email,
+    });
+    if(error)throw error;
+    toast('이름 변경됨');
+    document.getElementById('profileName').textContent=name;
+    // 헤더 아바타도 업데이트
+    const initial=name.trim().charAt(0).toUpperCase();
+    const av=document.getElementById('userAvatar');if(av)av.textContent=initial;
+    const cav=document.getElementById('calAvatar');if(cav)cav.textContent=initial;
+    // 멤버 리스트 다시 로드
+    if(_currentRoom)await loadRoomMembers();
+  }catch(e){
+    toast('실패: '+(e.message||'').slice(0,40));
+  }
+}
+
+/* 프로필 사진 업로드 (Base64) — 작은 사이즈로 압축 */
+function onProfilePhotoSelect(e){
+  const file=e.target.files?.[0];
+  if(!file)return;
+  if(!file.type.startsWith('image/')){toast('이미지 파일만 가능해요');return}
+  if(file.size>5*1024*1024){toast('5MB 이하 이미지만');return}
+  uploadProfilePhoto(file);
+}
+async function uploadProfilePhoto(file){
+  if(!_currentUser){toast('로그인이 필요해요');return}
+  toast('사진 업로드 중...');
+  try{
+    // Canvas로 200x200 압축
+    const dataUrl=await compressImage(file,200,0.85);
+    // profiles.avatar_url 에 Base64 저장
+    const {error}=await supa.from('profiles').upsert({
+      id:_currentUser.id,
+      avatar_url:dataUrl,
+      email:_currentUser.email,
+    });
+    if(error)throw error;
+    toast('사진 변경됨');
+    loadProfilePhoto();
+  }catch(e){
+    toast('실패: '+(e.message||'').slice(0,40));
+  }
+}
+function compressImage(file,maxSize,quality){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=(e)=>{
+      const img=new Image();
+      img.onload=()=>{
+        const canvas=document.createElement('canvas');
+        let w=img.width,h=img.height;
+        if(w>h){if(w>maxSize){h=h*maxSize/w;w=maxSize}}
+        else{if(h>maxSize){w=w*maxSize/h;h=maxSize}}
+        canvas.width=w;canvas.height=h;
+        const ctx=canvas.getContext('2d');
+        ctx.drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL('image/jpeg',quality));
+      };
+      img.onerror=reject;
+      img.src=e.target.result;
+    };
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/* 사용자 정보 표시 (헤더 아바타) */
+let _currentUser=null;
+let _currentProfile=null;  // { birthday: 'MM-DD', ... } — 캘린더에 생일 자동 표시용
+function renderUser(user){
+  if(!user)return;
+  _currentUser=user;
+  const meta=user.user_metadata||{};
+  const name=meta.name||meta.full_name||meta.preferred_username||(user.email?user.email.split('@')[0]:'익명');
+  const initial=(name||'?').trim().charAt(0).toUpperCase();
+  const av=document.getElementById('userAvatar');
+  if(av)av.textContent=initial||'—';
+}
+
+/* ═══════════════════════════════════
+   2단계: 방 목록 / 생성 / 입장
+   ═══════════════════════════════════ */
+
+/* 6자리 방 코드 생성 (영문대문자 + 숫자, 헷갈리는 0/O/I/1 제외) */
+function genRoomCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s='';
+  for(let i=0;i<6;i++)s+=chars.charAt(Math.floor(Math.random()*chars.length));
+  return s;
+}
+
+/* 멤버 색상 풀 (V1 톤 매칭) */
+const MEMBER_COLORS=['#8b3a2a','#a85040','#b08742','#6b4a35','#8a6a4d','#c97862'];
+function pickMemberColor(){return MEMBER_COLORS[Math.floor(Math.random()*MEMBER_COLORS.length)]}
+
+/* 방 목록 로드 + 렌더 */
+async function loadRooms(){
+  if(!_currentUser)return;
+  const content=document.getElementById('roomsContent');
+  content.innerHTML='<div style="padding:60px 0;text-align:center"><div class="spinner" style="margin:0 auto"></div></div>';
+
+  try{
+    // 내가 속한 방들의 room_id 가져오기
+    const {data:myMems,error:e1}=await supa
+      .from('members').select('room_id')
+      .eq('user_id',_currentUser.id);
+    if(e1)throw e1;
+
+    if(!myMems||myMems.length===0){
+      renderEmpty();return;
+    }
+
+    const roomIds=myMems.map(m=>m.room_id);
+
+    // 방 정보 가져오기
+    const {data:rooms,error:e2}=await supa
+      .from('rooms').select('*')
+      .in('id',roomIds)
+      .order('created_at',{ascending:false});
+    if(e2)throw e2;
+
+    // 방별 멤버 수 가져오기
+    const {data:allMems,error:e3}=await supa
+      .from('members').select('room_id')
+      .in('room_id',roomIds);
+    if(e3)throw e3;
+    const countMap={};
+    (allMems||[]).forEach(m=>{countMap[m.room_id]=(countMap[m.room_id]||0)+1});
+
+    renderRooms(rooms||[],countMap);
+    _myRooms=rooms||[];
+  }catch(e){
+    content.innerHTML='<div style="padding:60px 24px;text-align:center;color:var(--sub);font-size:13px">방 목록을 불러오지 못했어요<br>잠시 후 다시 시도해주세요</div>';
+    console.error(e);
+  }
+}
+
+function renderEmpty(){
+  const c=document.getElementById('roomsContent');
+  c.innerHTML=`
+    <div class="r-empty">
+      <div class="r-empty-icon">
+        <div class="r-empty-icon-cross"></div>
+      </div>
+      <div class="r-empty-title">아직 방이 없어요</div>
+      <div class="r-empty-sub">새 방을 만들거나<br>받은 코드로 입장해보세요</div>
+    </div>
+  `;
+}
+
+function renderRooms(rooms,countMap){
+  const c=document.getElementById('roomsContent');
+  if(!rooms.length){renderEmpty();return}
+  let html=`<div class="r-section-row"><span class="r-section-title">내 방</span><span class="r-section-count">· ${rooms.length}</span></div>`;
+  rooms.forEach(r=>{
+    const cnt=countMap[r.id]||1;
+    const safeName=escapeHtml(r.name||'(이름 없음)');
+    const safeCode=escapeHtml(r.code||'------');
+    const firstChar=escapeHtml((r.name||'·').trim().charAt(0));
+    html+=`
+      <div class="r-card" onclick="enterRoom('${r.id}')">
+        <div class="r-card-seal"><span class="r-card-seal-letter">${firstChar}</span></div>
+        <div class="r-card-info">
+          <div class="r-card-name">${safeName}</div>
+          <div class="r-card-meta"><span class="r-card-code">${safeCode}</span><span>·</span><span>멤버 ${cnt}명</span></div>
+        </div>
+        <div class="r-card-arrow">›</div>
+      </div>
+    `;
+  });
+  c.innerHTML=html;
+}
+
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+
+/* 방 입장 → 캘린더 화면 */
+function enterRoom(roomId){
+  const room=_myRooms.find(r=>r.id===roomId);
+  if(!room){toast('방 정보를 찾지 못했어요');return}
+  _currentRoom=room;
+  // 헤더 정보 채우기
+  document.getElementById('calRoomName').textContent=room.name||'(이름 없음)';
+  if(_currentUser){
+    const meta=_currentUser.user_metadata||{};
+    const nm=meta.name||meta.full_name||(_currentUser.email?_currentUser.email.split('@')[0]:'?');
+    document.getElementById('calAvatar').textContent=(nm||'?').trim().charAt(0).toUpperCase();
+  }
+  // 테마 적용
+  applyTheme(room.theme||'vintage');
+  // 오늘 날짜로 초기화
+  const t=new Date();
+  _calYear=t.getFullYear();
+  _calMonth=t.getMonth();
+  showScreen('calendarScreen');
+  loadRoomMembers();  // 방 멤버 로드 (함께 일정용)
+  loadEvents();
+}
+
+function exitRoom(){
+  _currentRoom=null;
+  _events={};
+  applyTheme('vintage');  // 기본으로 복귀
+  showScreen('roomsScreen');
+  loadRooms();
+}
+
+/* ── 새 방 만들기 모달 ── */
+function openCreateRoom(){
+  closeMainModals();
+  const i=document.getElementById('newRoomName');
+  if(i)i.value='';
+  // 일정 복사 옵션: 기존 방이 있을 때만 표시
+  _createCopyOn=false;
+  _createCopySource=null;
+  const wrap=document.getElementById('createCopyWrap');
+  const list=document.getElementById('createCopySourceList');
+  if(_myRooms&&_myRooms.length>0){
+    wrap.style.display='block';
+    document.getElementById('createCopyOption').classList.remove('on');
+    list.style.display='none';
+    list.innerHTML='';
+    _myRooms.forEach(r=>{
+      const div=document.createElement('div');
+      div.className='copy-source-item';
+      div.dataset.id=r.id;
+      div.innerHTML=`<div class="copy-source-name">${escapeHtml(r.name||'(이름 없음)')}</div><div class="copy-source-count">코드 ${escapeHtml(r.code||'')}</div>`;
+      div.onclick=()=>selectCopySource(r.id);
+      list.appendChild(div);
+    });
+  }else{
+    wrap.style.display='none';
+  }
+  document.getElementById('createOverlay').classList.add('on');
+  document.getElementById('createCard').classList.add('on');
+  setTimeout(()=>{const x=document.getElementById('newRoomName');if(x)x.focus()},320);
+}
+function closeCreateRoom(){
+  document.getElementById('createOverlay').classList.remove('on');
+  document.getElementById('createCard').classList.remove('on');
+}
+function toggleCreateCopy(){
+  _createCopyOn=!_createCopyOn;
+  document.getElementById('createCopyOption').classList.toggle('on',_createCopyOn);
+  document.getElementById('createCopySourceList').style.display=_createCopyOn?'flex':'none';
+  if(!_createCopyOn)_createCopySource=null;
+}
+function selectCopySource(roomId){
+  _createCopySource=roomId;
+  document.querySelectorAll('.copy-source-item').forEach(el=>{
+    el.classList.toggle('on',el.dataset.id===roomId);
+  });
+}
+
+async function createRoom(){
+  if(!_currentUser){toast('로그인이 필요해요');return}
+  const name=document.getElementById('newRoomName').value.trim();
+  if(!name){toast('방 이름을 입력해주세요');return}
+  if(name.length>20){toast('방 이름은 20자 이내로');return}
+
+  const btn=document.getElementById('createBtn');
+  btn.disabled=true;btn.textContent='만드는 중...';
+
+  try{
+    // 코드 중복 회피 (최대 5회 시도)
+    let code=null;
+    for(let i=0;i<5;i++){
+      const c=genRoomCode();
+      const {data:exist}=await supa.from('rooms').select('id').eq('code',c).maybeSingle();
+      if(!exist){code=c;break}
+    }
+    if(!code)throw new Error('코드 생성 실패');
+
+    // 방 INSERT
+    const {data:room,error:e1}=await supa.from('rooms').insert({
+      code,name,mode:'shared',theme:'vintage',owner_id:_currentUser.id
+    }).select().single();
+    if(e1)throw e1;
+
+    // 본인을 첫 멤버로
+    const {error:e2}=await supa.from('members').insert({
+      room_id:room.id,user_id:_currentUser.id,color:pickMemberColor()
+    });
+    if(e2)throw e2;
+
+    // 일정 복사 처리
+    let copiedCount=0;
+    if(_createCopyOn&&_createCopySource){
+      try{
+        const {data:srcEvents}=await supa.from('events')
+          .select('date,title,time,color')
+          .eq('room_id',_createCopySource)
+          .eq('user_id',_currentUser.id)
+          .is('shared_id',null);  // 함께 일정은 새 방엔 다른 멤버 없으니 제외, 본인 단독만
+        if(srcEvents&&srcEvents.length){
+          const rows=srcEvents.map(e=>({
+            room_id:room.id,
+            user_id:_currentUser.id,
+            date:e.date,title:e.title,time:e.time,color:e.color,
+          }));
+          const {error:eCopy}=await supa.from('events').insert(rows);
+          if(!eCopy)copiedCount=rows.length;
+        }
+      }catch(eC){console.warn('일정 복사 실패:',eC)}
+    }
+
+    closeCreateRoom();
+    toast(copiedCount>0?`"${name}" 방 생성 (일정 ${copiedCount}개 복사됨)`:`"${name}" 방이 만들어졌어요`);
+    await loadRooms();
+  }catch(e){
+    toast('실패: '+(e.message||'').slice(0,40));
+    console.error(e);
+  }finally{
+    btn.disabled=false;btn.textContent='만들기';
+  }
+}
+
+/* ── 코드 입장 모달 ── */
+function openJoinRoom(){
+  closeMainModals();
+  const boxes=document.querySelectorAll('#codeBoxes .code-box');
+  boxes.forEach(b=>{b.value='';b.classList.remove('filled')});
+  // 일정 복사 옵션 초기화
+  _joinCopyOn=false;
+  _joinCopySource=null;
+  const wrap=document.getElementById('joinCopyWrap');
+  const list=document.getElementById('joinCopySourceList');
+  if(_myRooms&&_myRooms.length>0){
+    wrap.style.display='block';
+    document.getElementById('joinCopyOption').classList.remove('on');
+    list.style.display='none';
+    list.innerHTML='';
+    _myRooms.forEach(r=>{
+      const div=document.createElement('div');
+      div.className='copy-source-item';
+      div.dataset.id=r.id;
+      div.innerHTML=`<div class="copy-source-name">${escapeHtml(r.name||'(이름 없음)')}</div><div class="copy-source-count">코드 ${escapeHtml(r.code||'')}</div>`;
+      div.onclick=()=>selectJoinCopySource(r.id);
+      list.appendChild(div);
+    });
+  }else{
+    wrap.style.display='none';
+  }
+  document.getElementById('joinOverlay').classList.add('on');
+  document.getElementById('joinCard').classList.add('on');
+  setTimeout(()=>{if(boxes[0])boxes[0].focus()},320);
+}
+function closeJoinRoom(){
+  document.getElementById('joinOverlay').classList.remove('on');
+  document.getElementById('joinCard').classList.remove('on');
+}
+function toggleJoinCopy(){
+  _joinCopyOn=!_joinCopyOn;
+  document.getElementById('joinCopyOption').classList.toggle('on',_joinCopyOn);
+  document.getElementById('joinCopySourceList').style.display=_joinCopyOn?'flex':'none';
+  if(!_joinCopyOn)_joinCopySource=null;
+}
+function selectJoinCopySource(roomId){
+  _joinCopySource=roomId;
+  document.querySelectorAll('#joinCopySourceList .copy-source-item').forEach(el=>{
+    el.classList.toggle('on',el.dataset.id===roomId);
+  });
+}
+
+function getJoinCode(){
+  return Array.from(document.querySelectorAll('#codeBoxes .code-box'))
+    .map(b=>b.value.trim().toUpperCase()).join('');
+}
+
+async function joinRoom(){
+  if(!_currentUser){toast('로그인이 필요해요');return}
+  const code=getJoinCode();
+  if(code.length!==6){toast('코드 6자리를 모두 입력해주세요');return}
+
+  const btn=document.getElementById('joinBtn');
+  btn.disabled=true;btn.textContent='확인 중...';
+
+  try{
+    // 방 존재 확인
+    const {data:room,error:e1}=await supa.from('rooms').select('*').eq('code',code).maybeSingle();
+    if(e1)throw e1;
+    if(!room){toast('존재하지 않는 코드예요');return}
+
+    // 이미 멤버인지 확인
+    const {data:exist}=await supa.from('members').select('id').eq('room_id',room.id).eq('user_id',_currentUser.id).maybeSingle();
+    if(exist){
+      closeJoinRoom();
+      toast('이미 들어가있는 방이에요');
+      return;
+    }
+
+    // 멤버로 추가
+    const {error:e2}=await supa.from('members').insert({
+      room_id:room.id,user_id:_currentUser.id,color:pickMemberColor()
+    });
+    if(e2)throw e2;
+
+    // 일정 복사 처리 (옵션 켜져있고 소스 선택됐을 때)
+    let copiedCount=0;
+    if(_joinCopyOn&&_joinCopySource){
+      try{
+        const {data:srcEvents}=await supa.from('events')
+          .select('date,title,time,color')
+          .eq('room_id',_joinCopySource)
+          .eq('user_id',_currentUser.id)
+          .is('shared_id',null);
+        if(srcEvents&&srcEvents.length){
+          const rows=srcEvents.map(e=>({
+            room_id:room.id,user_id:_currentUser.id,
+            date:e.date,title:e.title,time:e.time,color:e.color,
+          }));
+          const {error:eCopy}=await supa.from('events').insert(rows);
+          if(!eCopy)copiedCount=rows.length;
+        }
+      }catch(eC){console.warn('일정 복사 실패:',eC)}
+    }
+
+    closeJoinRoom();
+    toast(copiedCount>0?`"${room.name||'방'}" 입장 (일정 ${copiedCount}개 복사됨)`:`"${room.name||'방'}"에 입장했어요`);
+    await loadRooms();
+  }catch(e){
+    toast('실패: '+(e.message||'').slice(0,40));
+    console.error(e);
+  }finally{
+    btn.disabled=false;btn.textContent='입장';
+  }
+}
+
+/* 코드 박스 자동 이동 */
+document.addEventListener('DOMContentLoaded',()=>{
+  const boxes=document.querySelectorAll('#codeBoxes .code-box');
+  boxes.forEach((b,i)=>{
+    b.addEventListener('input',e=>{
+      const v=e.target.value.toUpperCase();
+      e.target.value=v;
+      if(v){
+        e.target.classList.add('filled');
+        if(i+1 < boxes.length)boxes[i+1].focus();
+        else if(getJoinCode().length===6)joinRoom();
+      }else{
+        e.target.classList.remove('filled');
+      }
+    });
+    b.addEventListener('keydown',e=>{
+      if(e.key==='Backspace'&&!e.target.value&&i>0){
+        boxes[i-1].focus();
+        boxes[i-1].value='';
+        boxes[i-1].classList.remove('filled');
+      }
+      if(e.key==='Enter')joinRoom();
+    });
+    b.addEventListener('paste',e=>{
+      e.preventDefault();
+      const txt=(e.clipboardData||window.clipboardData).getData('text').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+      [...txt].forEach((ch,j)=>{if(boxes[j]){boxes[j].value=ch;boxes[j].classList.add('filled')}});
+      if(boxes[Math.min(txt.length,5)])boxes[Math.min(txt.length,5)].focus();
+    });
+  });
+});
+
+/* 초기화 — 자동 로그인 체크 */
+async function init(){
+  try{
+    // 매직링크/OAuth 토큰이 URL hash에 있으면 SDK 자동 처리 대기
+    if(window.location.hash&&window.location.hash.includes('access_token')){
+      await new Promise(r=>setTimeout(r,400));
+      // URL hash 정리 (이력 깨끗하게)
+      try{window.history.replaceState(null,'',window.location.pathname+window.location.search)}catch{}
+    }
+    const {data:{session}}=await supa.auth.getSession();
+    if(session){
+      renderUser(session.user);
+      showScreen('roomsScreen');
+      loadRooms();
+    }else{
+      showScreen('welcomeScreen');
+    }
+  }catch(e){
+    showScreen('welcomeScreen');
+  }finally{
+    setTimeout(()=>document.getElementById('loading').classList.add('hide'),200);
+  }
+}
+
+/* 인증 상태 변경 (OAuth/매직링크 콜백) */
+supa.auth.onAuthStateChange((event,session)=>{
+  if(event==='SIGNED_IN'&&session){
+    // 이미 같은 사용자가 로그인된 상태면 토큰 갱신만 (화면 유지)
+    if(_currentUser&&_currentUser.id===session.user.id){
+      _currentUser=session.user;
+      return;
+    }
+    renderUser(session.user);
+    showScreen('roomsScreen');
+    loadRooms();
+    document.getElementById('loading').classList.add('hide');
+  }else if(event==='SIGNED_OUT'){
+    _currentUser=null;
+    showScreen('welcomeScreen');
+  }
+});
+
+/* ═══════════════════════════════════
+   3-A: 테마 시스템 + 캘린더 + 일정
+   ═══════════════════════════════════ */
+
+/* 글로벌 상태 */
+let _myRooms=[];          // loadRooms 결과 캐시
+let _currentRoom=null;    // 진입한 방
+let _events={};           // {YYYY-MM-DD: [eventObj, ...]}
+let _yearlyEvents={};     // {MM-DD: [eventObj, ...]} — 매년 반복 일정 (월,일 기준)
+let _calYear=new Date().getFullYear();
+let _calMonth=new Date().getMonth();
+let _selectedDate=null;   // 시트에서 선택한 날 (YYYY-MM-DD)
+let _editingEvent=null;   // 수정 중 일정 (null이면 추가 모드)
+let _selectedColor='c-vintage';
+/* 3-B: 함께 일정 */
+let _myMembers=[];           // 현재 방의 모든 멤버 [{user_id, name, color, ...}]
+let _selectedTarget='self';  // 'self' | 'all'
+let _selectedMembers=[];     // 함께 선택된 user_id 배열 (본인 포함)
+let _editSharedMemberIds=[]; // 수정 시 원래 함께였던 멤버
+let _pickContext='add';      // 'add' | 'edit' (멤버 선택 모달 컨텍스트)
+let _tempPickedMembers=[];   // 모달에서 임시 선택
+let _createCopySource=null;  // 새 방 만들 때 복사할 소스 방 ID
+let _createCopyOn=false;     // 복사 토글
+let _joinCopySource=null;    // 코드 입장 시 복사할 소스 방 ID
+let _joinCopyOn=false;       // 코드 입장 복사 토글
+/* 3-C: 기간 일정 + 이모지 + 테마 */
+let _selectedMode='day';     // 'day' | 'range' | 'multi'
+let _editScope='one';        // 'one' (이 일정만) | 'all' (전체 기간)
+let _editGroup=[];           // 같은 기간 그룹 events
+let _emojiTargetEvent=null;  // 이모지 모달 대상
+const REACTIONS=['❤️','👍','🎉','🔥','😂','😢','✨','✅'];
+/* 3-D: 여러 날 모드 (불연속 점선택) */
+let _multiSelected=new Set();  // 선택된 날짜 키 (YYYY-MM-DD)
+let _multiCalDate=new Date();  // 미니 달력에서 보고 있는 월 (1일)
+/* 3-E: 기간 모드 (range) — V1식 미니 달력 */
+let _rangeStart=null;          // 'YYYY-MM-DD'
+let _rangeEnd=null;            // 'YYYY-MM-DD'
+let _rangeCalDate=new Date();  // 기간 미니 달력의 표시 월
+/* 3-C-2: 주간 뷰 + 스와이프 */
+let _calView='month';        // 'month' | 'week'
+let _calWeekStart=null;      // 주간 뷰 시작 일요일 (Date)
+
+/* 24절기 한자→한글 매핑 (간체+전통 모두 대응) */
+const TERM_KO={
+  '立春':'입춘','雨水':'우수',
+  '驚蟄':'경칩','惊蛰':'경칩',
+  '春分':'춘분','清明':'청명',
+  '穀雨':'곡우','谷雨':'곡우',
+  '立夏':'입하',
+  '小滿':'소만','小满':'소만',
+  '芒種':'망종','芒种':'망종',
+  '夏至':'하지','小暑':'소서','大暑':'대서','立秋':'입추',
+  '處暑':'처서','处暑':'처서',
+  '白露':'백로','秋分':'추분','寒露':'한로','霜降':'상강',
+  '立冬':'입동','小雪':'소설','大雪':'대설','冬至':'동지','小寒':'소한','大寒':'대한'
+};
+/* 양력 매년 기념일 (공휴일 제외) */
+const ANNIVERSARIES={
+  '2-14':'발렌타인','3-3':'삼겹살','3-14':'화이트데이','4-5':'식목일',
+  '5-1':'근로자의날','5-8':'어버이날','5-15':'스승의날','5-21':'부부의날',
+  '6-25':'6·25','7-17':'제헌절','11-11':'빼빼로'
+};
+/* 음력 명절 (공휴일 아닌 것만) */
+const LUNAR_FESTIVALS={
+  '1-15':'정월대보름','3-3':'삼짇날','5-5':'단오','7-7':'칠석','7-15':'백중','9-9':'중양절'
+};
+/* 삼복 (하지/입추 천간 기반) — 캐시 */
+const _bokCache={};
+function getBokDays(year){
+  if(_bokCache[year])return _bokCache[year];
+  const result={chobok:null,jungbok:null,malbok:null};
+  if(typeof window==='undefined'||!window.Solar)return result;
+  try{
+    // 하지 + 입추 일자 찾기
+    let hajiSolar=null,ipchuSolar=null;
+    for(let m=6;m<=8;m++){
+      for(let d=1;d<=31;d++){
+        try{
+          const s=window.Solar.fromYmd(year,m,d);
+          const term=s.getLunar().getJieQi();
+          if(term==='夏至')hajiSolar=s;
+          if(term==='立秋')ipchuSolar=s;
+        }catch{}
+      }
+    }
+    // 하지 후 셋째 경(庚)일 = 초복, 넷째 경일 = 중복
+    // 입추 후 첫째 경일 = 말복
+    function findGeng(startSolar,n){
+      if(!startSolar)return null;
+      let cur=startSolar;
+      let count=0;
+      for(let i=0;i<60;i++){
+        const dayGan=cur.getLunar().getDayGan();
+        if(dayGan==='庚'){
+          count++;
+          if(count===n)return cur;
+        }
+        cur=cur.next(1);
+      }
+      return null;
+    }
+    if(hajiSolar){
+      const cb=findGeng(hajiSolar.next(1),3);
+      const jb=findGeng(hajiSolar.next(1),4);
+      if(cb)result.chobok=`${cb.getYear()}-${pad(cb.getMonth())}-${pad(cb.getDay())}`;
+      if(jb)result.jungbok=`${jb.getYear()}-${pad(jb.getMonth())}-${pad(jb.getDay())}`;
+    }
+    if(ipchuSolar){
+      const mb=findGeng(ipchuSolar,1);
+      if(mb)result.malbok=`${mb.getYear()}-${pad(mb.getMonth())}-${pad(mb.getDay())}`;
+    }
+  }catch(e){console.warn('삼복 계산 실패',e)}
+  _bokCache[year]=result;
+  return result;
+}
+
+/* 날짜 → 라벨 (우선순위: 공휴일 > 절기 > 기념일 > 음력명절 > 음력1일/15일 > 빈) */
+function getDayLabel(year,month,day){
+  const key=dateKey(year,month-1,day);
+  if(HOLIDAYS[key])return {text:HOLIDAYS[key],type:'holiday'};
+  // 24절기
+  if(typeof window!=='undefined'&&window.Solar){
+    try{
+      const s=window.Solar.fromYmd(year,month,day);
+      const lunar=s.getLunar();
+      const termCn=lunar.getJieQi();
+      if(termCn&&TERM_KO[termCn])return {text:TERM_KO[termCn],type:'term'};
+      // 삼복
+      const bok=getBokDays(year);
+      if(key===bok.chobok)return {text:'초복',type:'term'};
+      if(key===bok.jungbok)return {text:'중복',type:'term'};
+      if(key===bok.malbok)return {text:'말복',type:'term'};
+      // 음력 명절 (윤달이 아닐 때만)
+      const lm=Math.abs(lunar.getMonth());
+      const ld=lunar.getDay();
+      const isLeap=lunar.getMonth()<0;
+      const fk=`${lm}-${ld}`;
+      if(LUNAR_FESTIVALS[fk]&&!isLeap)return {text:LUNAR_FESTIVALS[fk],type:'term'};
+      // 양력 매년 기념일
+      const ak=`${month}-${day}`;
+      if(ANNIVERSARIES[ak])return {text:ANNIVERSARIES[ak],type:'term'};
+      // 음력 1일·15일
+      if(ld===1)return {text:`음 ${lm}.1`,type:'lunar'};
+      if(ld===15)return {text:`음 ${lm}.15`,type:'lunar'};
+    }catch{}
+  }else{
+    // 라이브러리 없을 때 양력 기념일만
+    const ak=`${month}-${day}`;
+    if(ANNIVERSARIES[ak])return {text:ANNIVERSARIES[ak],type:'term'};
+  }
+  return {text:'',type:''};
+}
+
+/* 셀 우측 작은 음력 — 매일 표시 (음력 1일이면 "월" 표시) */
+function getCellLunar(year,month,day){
+  if(!(typeof window!=='undefined'&&window.Solar))return '';
+  try{
+    const s=window.Solar.fromYmd(year,month,day);
+    const l=s.getLunar();
+    const lm=Math.abs(l.getMonth());
+    const ld=l.getDay();
+    if(ld===1)return (l.getMonth()<0?'윤':'')+lm+'.1';  // 음력 1일이면 월.1
+    return String(ld);
+  }catch{return ''}
+}
+
+/* 시트 헤더용 풀텍스트 (음력 + 라벨) */
+function getDayHeaderInfo(year,month,day){
+  const labels=[];
+  const main=getDayLabel(year,month,day);
+  // main이 음력 라벨이면 아래에서 별도 추가하니 push 안 함 (중복 방지)
+  if(main.text&&main.type!=='lunar')labels.push(main.text);
+  // 음력 항상 추가
+  if(typeof window!=='undefined'&&window.Solar){
+    try{
+      const s=window.Solar.fromYmd(year,month,day);
+      const l=s.getLunar();
+      const lm=Math.abs(l.getMonth());
+      const isLeap=l.getMonth()<0;
+      labels.push(`${isLeap?'윤':'음'} ${lm}.${l.getDay()}`);
+    }catch{}
+  }
+  return labels.join(' · ');
+}
+
+
+
+/* ── 테마 시스템 (V2 8가지) ── */
+const THEMES={
+  vintage:{bg:'#f3e6cf',card:'#fbf2e0',text:'#3a2418',sub:'#8a6a4d',mute:'#b8a285',accent:'#8b3a2a',aL:'#a85040',aP:'#e8d4be',gold:'#b08742',border:'rgba(139,58,42,.18)',borderL:'rgba(139,58,42,.10)',sun:'#8b3a2a',sat:'#3a5a8b',dotRGB:'139,58,42'},
+  oak:{bg:'#f7f5f2',card:'#ffffff',text:'#1e1c18',sub:'#7a7368',mute:'#b0aaa0',accent:'#9a7240',aL:'#c4975a',aP:'#f0d4a8',gold:'#b08742',border:'rgba(180,170,155,.4)',borderL:'rgba(180,170,155,.22)',sun:'#c04030',sat:'#3a68a0',dotRGB:'154,114,64'},
+  lavender:{bg:'#f5f3fa',card:'#ffffff',text:'#1e1c25',sub:'#7e7090',mute:'#b5acc4',accent:'#9b7fc7',aL:'#b49ad4',aP:'#e8dff8',gold:'#b08742',border:'rgba(200,190,220,.4)',borderL:'rgba(200,190,220,.22)',sun:'#d47090',sat:'#7090d4',dotRGB:'155,127,199'},
+  peach:{bg:'#fdf6f0',card:'#ffffff',text:'#2a1d18',sub:'#8a6850',mute:'#c5a895',accent:'#e0855a',aL:'#e8a880',aP:'#fde8d8',gold:'#b08742',border:'rgba(230,200,180,.4)',borderL:'rgba(230,200,180,.22)',sun:'#d47060',sat:'#6080c8',dotRGB:'224,133,90'},
+  mint:{bg:'#f2f9f7',card:'#ffffff',text:'#162520',sub:'#5e8276',mute:'#a8bdb5',accent:'#4aaa8a',aL:'#7ac0a8',aP:'#d8f0e8',gold:'#b08742',border:'rgba(170,215,200,.4)',borderL:'rgba(170,215,200,.22)',sun:'#c86070',sat:'#5080b8',dotRGB:'74,170,138'},
+  rose:{bg:'#fdf4f6',card:'#ffffff',text:'#2a1820',sub:'#8a5e6c',mute:'#c5a5b0',accent:'#d86880',aL:'#e8a0b0',aP:'#fde0e8',gold:'#b08742',border:'rgba(230,190,200,.4)',borderL:'rgba(230,190,200,.22)',sun:'#d06070',sat:'#6878c0',dotRGB:'216,104,128'},
+  sky:{bg:'#f0f6fd',card:'#ffffff',text:'#142028',sub:'#5e7088',mute:'#a5b5c5',accent:'#4880c0',aL:'#78b0e0',aP:'#d8ecf8',gold:'#b08742',border:'rgba(170,205,240,.4)',borderL:'rgba(170,205,240,.22)',sun:'#c86878',sat:'#4870b8',dotRGB:'72,128,192'},
+  butter:{bg:'#fdfaf0',card:'#ffffff',text:'#2a1f10',sub:'#8a7530',mute:'#c5b48a',accent:'#c89a4a',aL:'#dcb068',aP:'#f8e8c4',gold:'#9a7530',border:'rgba(220,190,140,.4)',borderL:'rgba(220,190,140,.22)',sun:'#c86070',sat:'#5080b8',dotRGB:'200,154,74'}
+};
+
+/* 일정 색상 12가지 (V1 c-* 매핑 → 빈티지 톤도 추가) */
+const EVENT_COLORS=[
+  {key:'c-vintage',hex:'#8b3a2a',name:'테라코타'},
+  {key:'c-bronze',hex:'#b08742',name:'브론즈'},
+  {key:'c-sage',hex:'#5e7d6b',name:'세이지'},
+  {key:'c-stone',hex:'#6b4a35',name:'모카'},
+  {key:'c-honey',hex:'#c89a4a',name:'허니'},
+  {key:'c-sky',hex:'#4880c0',name:'스카이'},
+  {key:'c-rose',hex:'#d86880',name:'로즈'},
+  {key:'c-moss',hex:'#4a7050',name:'모스'},
+  {key:'c-lavender',hex:'#9b7fc7',name:'라벤더'},
+  {key:'c-pink',hex:'#e8a0b0',name:'핑크'},
+  {key:'c-aqua',hex:'#5fa8a0',name:'아쿠아'},
+  {key:'c-peach',hex:'#e0855a',name:'복숭아'}
+];
+function colorHex(key){const c=EVENT_COLORS.find(x=>x.key===key);return c?c.hex:'#8b3a2a'}
+
+function applyTheme(name){
+  const t=THEMES[name]||THEMES.vintage;
+  const r=document.documentElement;
+  Object.keys(t).forEach(k=>{
+    if(k==='dotRGB'){
+      // 도트 패턴 제거 (사용자 요청)
+      document.body.style.backgroundImage='none';
+    }else{
+      r.style.setProperty('--'+k, t[k]);
+    }
+  });
+  // theme-color meta 업데이트
+  const tc=document.querySelector('meta[name="theme-color"]');
+  if(tc) tc.setAttribute('content', t.bg);
+}
+
+/* ── 공휴일 (Nager.Date API + fallback) ── */
+const HOLIDAYS_FALLBACK={
+  '2025-01-01':'신정','2025-01-28':'설날','2025-01-29':'설날','2025-01-30':'설날',
+  '2025-03-01':'삼일절','2025-05-05':'어린이날','2025-05-06':'대체공휴일','2025-05-15':'부처님오신날',
+  '2025-06-06':'현충일','2025-08-15':'광복절','2025-10-03':'개천절','2025-10-05':'추석','2025-10-06':'추석','2025-10-07':'추석','2025-10-08':'대체공휴일','2025-10-09':'한글날','2025-12-25':'성탄절',
+  '2026-01-01':'신정','2026-02-16':'설날','2026-02-17':'설날','2026-02-18':'설날',
+  '2026-03-01':'삼일절','2026-03-02':'대체공휴일','2026-05-05':'어린이날','2026-05-24':'부처님오신날','2026-05-25':'대체공휴일',
+  '2026-06-06':'현충일','2026-08-15':'광복절','2026-08-17':'대체공휴일','2026-09-24':'추석','2026-09-25':'추석','2026-09-26':'추석','2026-10-03':'개천절','2026-10-05':'대체공휴일','2026-10-09':'한글날','2026-12-25':'성탄절',
+  '2027-01-01':'신정','2027-02-06':'설날','2027-02-07':'설날','2027-02-08':'설날','2027-02-09':'대체공휴일',
+  '2027-03-01':'삼일절','2027-05-05':'어린이날','2027-05-13':'부처님오신날',
+  '2027-06-06':'현충일','2027-08-15':'광복절','2027-08-16':'대체공휴일','2027-09-14':'추석','2027-09-15':'추석','2027-09-16':'추석','2027-10-03':'개천절','2027-10-04':'대체공휴일','2027-10-09':'한글날','2027-10-11':'대체공휴일','2027-12-25':'성탄절'
+};
+let HOLIDAYS={...HOLIDAYS_FALLBACK};
+const _loadedYears=new Set();
+
+/* Nager.Date API에서 한국 공휴일 가져오기 (1주일 캐시) */
+async function loadHolidaysForYear(year){
+  if(_loadedYears.has(year))return;
+  _loadedYears.add(year);
+  
+  const cacheKey=`holidays_kr_${year}`;
+  // localStorage 캐시 (1주일)
+  try{
+    const cached=localStorage.getItem(cacheKey);
+    if(cached){
+      const obj=JSON.parse(cached);
+      if(obj.expires>Date.now()&&obj.data){
+        Object.assign(HOLIDAYS,obj.data);
+        return;
+      }
+    }
+  }catch{}
+  
+  // Fetch
+  try{
+    const res=await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`);
+    if(!res.ok)throw new Error('http '+res.status);
+    const arr=await res.json();
+    if(!Array.isArray(arr))throw new Error('bad response');
+    const data={};
+    arr.forEach(h=>{
+      if(!h.date)return;
+      // fallback에 있는 날짜는 한글 정확 데이터 우선, 없으면 API의 localName 사용
+      data[h.date]=HOLIDAYS_FALLBACK[h.date]||h.localName||h.name||'공휴일';
+    });
+    Object.assign(HOLIDAYS,data);
+    // 캐시 저장 (1주일)
+    try{
+      localStorage.setItem(cacheKey,JSON.stringify({
+        data,
+        expires:Date.now()+7*24*60*60*1000
+      }));
+    }catch{}
+  }catch(e){
+    console.warn(`공휴일 API 실패 (${year}), fallback 사용:`,e.message);
+    _loadedYears.delete(year);  // 실패 시 다음 진입에 재시도
+  }
+}
+
+/* ── 날짜 유틸 ── */
+function pad(n){return String(n).padStart(2,'0')}
+function dateKey(y,m,d){return `${y}-${pad(m+1)}-${pad(d)}`}
+function parseDateKey(k){const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)}
+const MONTH_NAMES=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+const DOW_NAMES=['일','월','화','수','목','금','토'];
+function daysInMonth(y,m){return new Date(y,m+1,0).getDate()}
+function firstDow(y,m){return new Date(y,m,1).getDay()}
+
+/* ── 일정 로드 (방의 모든 일정) ── */
+async function loadEvents(){
+  if(!_currentRoom)return;
+  _events={};
+  _yearlyEvents={};
+  renderMonthly();  // 일단 빈 상태로 그려놓고
+  try{
+    const {data,error}=await supa.from('events').select('*').eq('room_id',_currentRoom.id);
+    if(error)throw error;
+    (data||[]).forEach(ev=>{
+      if(!_events[ev.date])_events[ev.date]=[];
+      _events[ev.date].push(ev);
+      // 매년 반복이면 (월,일) 키로도 저장
+      if(ev.recurring_yearly&&ev.date&&ev.date.length>=10){
+        const md=ev.date.slice(5);  // 'MM-DD'
+        if(!_yearlyEvents[md])_yearlyEvents[md]=[];
+        _yearlyEvents[md].push(ev);
+      }
+    });
+    renderMonthly();
+  }catch(e){
+    console.error(e);
+    toast('일정 불러오기 실패');
+  }
+}
+
+/* 방 멤버 로드 (함께 일정용) */
+async function loadRoomMembers(){
+  if(!_currentRoom){_myMembers=[];return}
+  try{
+    const {data:membersRaw,error}=await supa.from('members')
+      .select('user_id,color,joined_at')
+      .eq('room_id',_currentRoom.id);
+    if(error)throw error;
+    if(!membersRaw||!membersRaw.length){_myMembers=[];return}
+    // profiles 한번에 가져오기
+    const userIds=membersRaw.map(m=>m.user_id);
+    const {data:profiles}=await supa.from('profiles').select('id,name,email').in('id',userIds);
+    _myMembers=membersRaw.map(m=>{
+      const p=(profiles||[]).find(pp=>pp.id===m.user_id);
+      const name=(p&&p.name)||(p&&p.email?p.email.split('@')[0]:'익명');
+      return {user_id:m.user_id,color:m.color,name,joined_at:m.joined_at};
+    });
+  }catch(e){
+    console.warn('멤버 로드 실패:',e);
+    _myMembers=[];
+  }
+}
+
+/* 일자별 일정 — 함께 일정은 shared_id로 그룹핑 (한 번만 표시) */
+function getDayEvents(date){
+  const baseEvs=_events[date]||[];
+  // 매년 반복 일정 펼치기 — 이 날짜의 (월,일)에 등록된 반복 일정 중 origin이 아닌 것
+  const md=date.slice(5);  // 'MM-DD'
+  const yearlyOnes=(_yearlyEvents[md]||[]).filter(e=>e.date!==date);
+  // 본인 생일 가상 일정 (프로필의 birthday — DB events에 안 저장, 매년 자동 표시)
+  const virtual=[];
+  if(_currentProfile&&_currentProfile.birthday===md){
+    virtual.push({
+      id:'__my_birthday__',
+      title:'🎂 내 생일',
+      color:'c-rose',
+      time:null,
+      user_id:_currentUser?.id,
+      _isVirtual:true,
+    });
+  }
+  const evs=baseEvs.concat(yearlyOnes.map(e=>({...e,_yearlyDisplay:true}))).concat(virtual);
+  const seen=new Set();
+  const result=[];
+  evs.forEach(ev=>{
+    if(ev.shared_id){
+      if(seen.has(ev.shared_id))return;
+      seen.add(ev.shared_id);
+      // 같은 shared_id의 모든 row 찾기 (멤버 카운트)
+      const sharedRows=evs.filter(e=>e.shared_id===ev.shared_id);
+      const memberIds=[...new Set(sharedRows.map(e=>e.user_id))];
+      // 본인 row 우선 (수정 권한)
+      const myRow=sharedRows.find(e=>e.user_id===_currentUser?.id);
+      const baseRow=myRow||ev;
+      result.push({...baseRow,_isShared:true,_memberIds:memberIds,_memberCount:memberIds.length});
+    }else{
+      result.push({...ev,_isShared:false});
+    }
+  });
+  // 시간 있는 일정 먼저, 없으면 created_at 순
+  result.sort((a,b)=>{
+    if(a.time&&!b.time)return -1;
+    if(!a.time&&b.time)return 1;
+    if(a.time&&b.time)return a.time.localeCompare(b.time);
+    return (a.created_at||'').localeCompare(b.created_at||'');
+  });
+  // 기간(연속 날짜) 그룹 감지 — _rangePos 부여 ('start'|'mid'|'end'|'single')
+  const prevDate=shiftDateKey(date,-1);
+  const nextDate=shiftDateKey(date,1);
+  const prevEvs=_events[prevDate]||[];
+  const nextEvs=_events[nextDate]||[];
+  result.forEach(ev=>{
+    const prevHas=prevEvs.some(e=>isSameRangeGroup(e,ev));
+    const nextHas=nextEvs.some(e=>isSameRangeGroup(e,ev));
+    if(prevHas&&nextHas)ev._rangePos='mid';
+    else if(!prevHas&&nextHas)ev._rangePos='start';
+    else if(prevHas&&!nextHas)ev._rangePos='end';
+    else ev._rangePos='single';
+  });
+  return result;
+}
+function isSameRangeGroup(a,b){
+  // shared_id 있으면 그걸로 매칭, 없으면 user_id+title+time+color
+  if(a.shared_id&&b.shared_id)return a.shared_id===b.shared_id;
+  if(!a.shared_id&&!b.shared_id){
+    return a.user_id===b.user_id
+      &&(a.title||'')===(b.title||'')
+      &&(a.time||'')===(b.time||'')
+      &&(a.color||'')===(b.color||'');
+  }
+  return false;
+}
+function shiftDateKey(key,diff){
+  const d=parseDateKey(key);
+  d.setDate(d.getDate()+diff);
+  return dateKey(d.getFullYear(),d.getMonth(),d.getDate());
+}
+
+/* ── 캘린더 렌더 ── */
+function renderMonthly(){
+  if(_calView==='week')return renderWeekly();
+  document.getElementById('calendarScreen').classList.remove('weekly-mode');
+  document.getElementById('calYear').textContent=_calYear+'년';
+  document.getElementById('calMonthName').textContent=MONTH_NAMES[_calMonth];
+  
+  const grid=document.getElementById('calGrid');
+  grid.classList.remove('weekly');
+  const fdow=firstDow(_calYear,_calMonth);
+  const dim=daysInMonth(_calYear,_calMonth);
+  const prevDim=daysInMonth(_calMonth===0?_calYear-1:_calYear, _calMonth===0?11:_calMonth-1);
+  
+  const todayKey=dateKey(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+  
+  let html='';
+  let cellCount=0;
+  for(let i=fdow-1;i>=0;i--){
+    const d=prevDim-i;
+    html+=cellHtml(_calMonth===0?_calYear-1:_calYear, _calMonth===0?11:_calMonth-1, d, true, todayKey);
+    cellCount++;
+  }
+  for(let d=1;d<=dim;d++){
+    html+=cellHtml(_calYear,_calMonth,d,false,todayKey);
+    cellCount++;
+  }
+  let nextD=1;
+  while(cellCount<42){
+    html+=cellHtml(_calMonth===11?_calYear+1:_calYear, _calMonth===11?0:_calMonth+1, nextD, true, todayKey);
+    nextD++;cellCount++;
+  }
+  grid.innerHTML=html;
+  
+  // 백그라운드: 공휴일 API 로드 후 다시 렌더
+  const yearsToLoad=[_calYear];
+  if(_calMonth===0)yearsToLoad.push(_calYear-1);
+  if(_calMonth===11)yearsToLoad.push(_calYear+1);
+  yearsToLoad.forEach(y=>{
+    if(!_loadedYears.has(y)){
+      loadHolidaysForYear(y).then(()=>renderMonthly());
+    }
+  });
+  updateTodayBtn();
+}
+
+/* 주간 뷰 렌더 — 세로 리스트 (V1 스타일) */
+function renderWeekly(){
+  if(!_calWeekStart){
+    const t=new Date();
+    _calWeekStart=new Date(t.getFullYear(),t.getMonth(),t.getDate()-t.getDay());
+  }
+  const ws=_calWeekStart;
+  document.getElementById('calYear').textContent=ws.getFullYear()+'년';
+  const we=new Date(ws);we.setDate(we.getDate()+6);
+  // 5월 같은 달이면 "5월", 다르면 "5–6월"
+  const sameMonth=ws.getMonth()===we.getMonth();
+  document.getElementById('calMonthName').textContent=sameMonth?
+    MONTH_NAMES[ws.getMonth()]:`${ws.getMonth()+1}–${we.getMonth()+1}월`;
+  
+  const todayKey=dateKey(new Date().getFullYear(),new Date().getMonth(),new Date().getDate());
+  const dows=['일','월','화','수','목','금','토'];
+  const dowsEng=['SU','MO','TU','WE','TH','FR','SA'];
+  
+  // 주간 모드 클래스
+  document.getElementById('calendarScreen').classList.add('weekly-mode');
+  
+  // 자체 헤더 (요일 + 날짜)
+  const head=document.getElementById('weeklyHeadbar');
+  let headHtml='';
+  for(let i=0;i<7;i++){
+    const dt=new Date(ws);dt.setDate(dt.getDate()+i);
+    const k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
+    const isToday=(k===todayKey);
+    const isHoliday=!!HOLIDAYS[k];
+    const dayCls=(i===0||isHoliday)?'sun':(i===6?'sat':'');
+    headHtml+=`<div class="weekly-headbar-cell" onclick="openDateSheet('${k}')">
+      <div class="weekly-headbar-dow ${dayCls}">${dowsEng[i]}</div>
+      <div class="weekly-headbar-day ${dayCls}${isToday?' today':''}">${dt.getDate()}</div>
+    </div>`;
+  }
+  head.innerHTML=headHtml;
+  
+  // 세로 리스트 (요일별 행)
+  const grid=document.getElementById('calGrid');
+  grid.classList.add('weekly');
+  let html='';
+  for(let i=0;i<7;i++){
+    const dt=new Date(ws);dt.setDate(dt.getDate()+i);
+    const k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
+    const isToday=(k===todayKey);
+    const isHoliday=!!HOLIDAYS[k];
+    const dayCls=(i===0||isHoliday)?'sun':(i===6?'sat':'');
+    const evs=getDayEvents(k);
+    
+    // 일정 카드 또는 "일정 없음"
+    let evsHtml='';
+    if(!evs.length){
+      // 라벨이라도 표시 (어린이날 등)
+      const lab=getDayLabel(dt.getFullYear(),dt.getMonth()+1,dt.getDate());
+      if(lab.text){
+        const labCls=lab.type==='holiday'?'weekly-evlabel':'';
+        evsHtml=`<div class="weekly-empty" style="${lab.type==='holiday'?'color:var(--accent);font-weight:700':''}">${escapeHtml(lab.text)}</div>`;
+      }else{
+        evsHtml='<div class="weekly-empty">일정 없음</div>';
+      }
+    }else{
+      // 라벨 (공휴일/절기) 먼저
+      const lab=getDayLabel(dt.getFullYear(),dt.getMonth()+1,dt.getDate());
+      if(lab.text&&lab.type==='holiday'){
+        evsHtml+=`<div class="weekly-evcard" onclick="openDateSheet('${k}')"><div class="weekly-evdot" style="background:var(--accent)"></div><div class="weekly-evtitle" style="color:var(--accent);font-weight:700">${escapeHtml(lab.text)}</div></div>`;
+      }
+      evs.forEach(ev=>{
+        const hex=colorHex(ev.color);
+        const t=escapeHtml(ev.title||'');
+        const tm=ev.time?escapeHtml(ev.time):'';
+        const sharedTag=ev._isShared?`<span class="weekly-evtag">함께 ${ev._memberCount}</span>`:'';
+        const sharedCls=ev._isShared?' shared':'';
+        evsHtml+=`<div class="weekly-evcard${sharedCls}" onclick="openDateSheet('${k}')">
+          <div class="weekly-evdot" style="background:${hex}"></div>
+          ${tm?`<div class="weekly-evtime">${tm}</div>`:''}
+          <div class="weekly-evtitle">${t}</div>
+          ${sharedTag}
+        </div>`;
+      });
+    }
+    
+    html+=`<div class="weekly-row${isToday?' today':''}">
+      <div class="weekly-dow ${dayCls}${isToday?' today':''}">${dows[i]}</div>
+      <div class="weekly-events">${evsHtml}</div>
+    </div>`;
+  }
+  grid.innerHTML=html;
+  updateTodayBtn();
+}
+
+function setCalView(view){
+  _calView=view;
+  document.getElementById('viewBtnMonth').classList.toggle('on',view==='month');
+  document.getElementById('viewBtnWeek').classList.toggle('on',view==='week');
+  if(view==='week'&&!_calWeekStart){
+    const t=new Date();
+    _calWeekStart=new Date(t.getFullYear(),t.getMonth(),t.getDate()-t.getDay());
+  }
+  renderMonthly();
+}
+
+function cellHtml(y,m,d,isOther,todayKey){
+  const key=dateKey(y,m,d);
+  const dow=new Date(y,m,d).getDay();
+  const isToday=(key===todayKey);
+  const isHoliday=!!HOLIDAYS[key];
+  const evs=getDayEvents(key);
+  const cls=['cal-cell'];
+  if(isOther)cls.push('other');
+  if(isToday)cls.push('today');
+  if(dow===0||isHoliday)cls.push('sun');
+  else if(dow===6)cls.push('sat');
+  if(isHoliday&&!isOther)cls.push('holiday');
+  
+  // 작은 라벨 (음력/절기/기념일)
+  const lab=getDayLabel(y,m+1,d);
+  let labelHtml='';
+  if(lab.text){
+    const labelCls='cal-cell-label '+(lab.type||'');
+    labelHtml=`<div class="${labelCls.trim()}">${escapeHtml(lab.text)}</div>`;
+  }else{
+    labelHtml='<div class="cal-cell-label"></div>';  // 높이 유지
+  }
+  
+  let evsHtml='';
+  const maxShow=_calView==='week'?8:3;
+  const shown=evs.slice(0,maxShow);
+  shown.forEach(ev=>{
+    const hex=colorHex(ev.color);
+    const t=escapeHtml(ev.title||'');
+    // 함께 막대는 첫 날(또는 single)에만
+    const sharedCls=(ev._isShared&&(ev._rangePos==='single'||ev._rangePos==='start'))?' shared':'';
+    // 기간 그룹: range-start/mid/end 클래스 + 중간/끝은 텍스트 비우기 (시각적으로 한 줄)
+    let rangeCls='';
+    let displayTitle=t;
+    if(ev._rangePos==='start')rangeCls=' range-start';
+    else if(ev._rangePos==='mid'){rangeCls=' range-mid';displayTitle='';}
+    else if(ev._rangePos==='end'){rangeCls=' range-end';displayTitle='';}
+    evsHtml+=`<div class="cal-evbar${sharedCls}${rangeCls}" style="background:${hex}">${displayTitle}</div>`;
+  });
+  if(evs.length>maxShow){
+    evsHtml+=`<div class="cal-evmore">+${evs.length-maxShow}</div>`;
+  }
+  
+  return `<div class="${cls.join(' ')}" onclick="openDateSheet('${key}')">
+    <span class="cal-day-num">${d}<span class="cal-day-lunar">${getCellLunar(y,m+1,d)}</span></span>
+    ${labelHtml}
+    <div class="cal-events">${evsHtml}</div>
+  </div>`;
+}
+
+function prevMonth(){
+  fadeRender(()=>{
+    if(_calView==='week'){
+      if(!_calWeekStart)_calWeekStart=new Date();
+      _calWeekStart.setDate(_calWeekStart.getDate()-7);
+      _calWeekStart=new Date(_calWeekStart);
+    }else{
+      if(_calMonth===0){_calMonth=11;_calYear--}else{_calMonth--}
+    }
+  });
+}
+function nextMonth(){
+  fadeRender(()=>{
+    if(_calView==='week'){
+      if(!_calWeekStart)_calWeekStart=new Date();
+      _calWeekStart.setDate(_calWeekStart.getDate()+7);
+      _calWeekStart=new Date(_calWeekStart);
+    }else{
+      if(_calMonth===11){_calMonth=0;_calYear++}else{_calMonth++}
+    }
+  });
+}
+function goToday(){
+  fadeRender(()=>{
+    const t=new Date();
+    if(_calView==='week'){
+      _calWeekStart=new Date(t.getFullYear(),t.getMonth(),t.getDate()-t.getDay());
+    }else{
+      _calYear=t.getFullYear();_calMonth=t.getMonth();
+    }
+  });
+}
+/* 페이드 헬퍼 — 캘린더 그리드 부드럽게 전환 */
+function fadeRender(updateState){
+  const grid=document.getElementById('calGrid');
+  if(!grid){updateState();renderMonthly();return}
+  grid.classList.add('fading');
+  setTimeout(()=>{
+    updateState();
+    renderMonthly();
+    requestAnimationFrame(()=>grid.classList.remove('fading'));
+  },180);
+}
+
+/* ─── 날짜로 이동 picker (휠 두 컬럼) ─── */
+const DP_YEAR_START=2010, DP_YEAR_END=2050;
+let _dpYear=null,_dpMonth=null;
+function buildDatePicker(){
+  const yCol=document.getElementById('dpYearCol');
+  const mCol=document.getElementById('dpMonthCol');
+  if(yCol.children.length>0)return;
+  const pad='<div class="tp-pad"></div><div class="tp-pad"></div>';
+  let yh=pad;
+  for(let y=DP_YEAR_START;y<=DP_YEAR_END;y++)yh+=`<div class="tp-item" data-val="${y}">${y}년</div>`;
+  yCol.innerHTML=yh+pad;
+  let mh=pad;
+  for(let m=1;m<=12;m++)mh+=`<div class="tp-item" data-val="${m}">${m}월</div>`;
+  mCol.innerHTML=mh+pad;
+  yCol.addEventListener('scroll',()=>onDpScroll(yCol,'y'),{passive:true});
+  mCol.addEventListener('scroll',()=>onDpScroll(mCol,'m'),{passive:true});
+}
+function onDpScroll(col,kind){
+  clearTimeout(col._dpTimer);
+  col._dpTimer=setTimeout(()=>{
+    let idx=Math.round((col.scrollTop-60)/40);
+    if(idx<0)idx=0;
+    const items=col.querySelectorAll('.tp-item');
+    if(idx>=items.length)idx=items.length-1;
+    items.forEach((el,i)=>el.classList.toggle('active',i===idx));
+    const v=parseInt(items[idx]?.dataset.val??'0',10);
+    if(kind==='y')_dpYear=v;else _dpMonth=v;
+    const target=idx*40+60;
+    if(Math.abs(col.scrollTop-target)>1)col.scrollTop=target;
+  },80);
+}
+function openDatePicker(){
+  closeMainModals();
+  buildDatePicker();
+  // 현재 보고 있는 연/월로 초기 위치
+  let y=_calYear,m=_calMonth+1;
+  if(_calView==='week'&&_calWeekStart){y=_calWeekStart.getFullYear();m=_calWeekStart.getMonth()+1}
+  _dpYear=y;_dpMonth=m;
+  document.getElementById('datePickerOverlay').classList.add('on');
+  document.getElementById('datePickerCard').classList.add('on');
+  setTimeout(()=>{
+    const yCol=document.getElementById('dpYearCol');
+    const mCol=document.getElementById('dpMonthCol');
+    const yIdx=Math.max(0,Math.min(DP_YEAR_END-DP_YEAR_START,y-DP_YEAR_START));
+    // tp-pad(60px) 보정해서 가운데 강조 박스에 선택값 오게
+    yCol.scrollTop=yIdx*40+60;
+    mCol.scrollTop=(m-1)*40+60;
+    setActiveItem(yCol,yIdx);
+    setActiveItem(mCol,m-1);
+  },50);
+}
+function closeDatePicker(){
+  document.getElementById('datePickerOverlay').classList.remove('on');
+  document.getElementById('datePickerCard').classList.remove('on');
+}
+function applyDatePicker(){
+  const y=_dpYear||_calYear,m=(_dpMonth||(_calMonth+1));
+  closeDatePicker();
+  fadeRender(()=>{
+    if(_calView==='week'){
+      // 해당 달 1일 포함 주로
+      const t=new Date(y,m-1,1);
+      _calWeekStart=new Date(t.getFullYear(),t.getMonth(),t.getDate()-t.getDay());
+    }else{
+      _calYear=y;_calMonth=m-1;
+    }
+  });
+}
+
+/* ─── 일정 검색 ─── */
+function openSearch(){
+  closeMainModals();
+  document.getElementById('searchInput').value='';
+  document.getElementById('searchOverlay').classList.add('on');
+  document.getElementById('searchCard').classList.add('on');
+  setTimeout(()=>document.getElementById('searchInput').focus(),100);
+  renderRecentTitles();
+}
+function closeSearch(){
+  document.getElementById('searchOverlay').classList.remove('on');
+  document.getElementById('searchCard').classList.remove('on');
+}
+function clearSearchInput(){
+  document.getElementById('searchInput').value='';
+  runSearch();
+  document.getElementById('searchInput').focus();
+}
+/* 본인이 등록한 모든 일정 (가상/반복 제외, 원본 events에서) */
+function _getMyEvents(){
+  const uid=_currentUser?.id;
+  if(!uid)return [];
+  const out=[];
+  const seenShared=new Set();
+  Object.values(_events).flat().forEach(e=>{
+    if(e.user_id!==uid)return;
+    if(e.shared_id){
+      if(seenShared.has(e.shared_id+'|'+e.date))return;
+      seenShared.add(e.shared_id+'|'+e.date);
+    }
+    out.push(e);
+  });
+  return out;
+}
+function renderRecentTitles(){
+  const list=document.getElementById('searchResults');
+  const hint=document.getElementById('searchHint');
+  hint.textContent='최근 등록한 제목';
+  const mine=_getMyEvents();
+  // 제목별로 그룹 + 최신 created_at 기준
+  const titleMap=new Map();
+  mine.forEach(e=>{
+    const t=(e.title||'').trim();
+    if(!t)return;
+    const prev=titleMap.get(t);
+    if(!prev||(e.created_at||'')>(prev||''))titleMap.set(t,e.created_at||'');
+  });
+  const titles=[...titleMap.entries()].sort((a,b)=>(b[1]||'').localeCompare(a[1]||'')).slice(0,12).map(x=>x[0]);
+  if(titles.length===0){
+    list.innerHTML='<div class="search-empty">등록한 일정이 아직 없어요</div>';
+    return;
+  }
+  list.innerHTML='<div class="search-suggest-grid">'+
+    titles.map(t=>`<button class="search-suggest-row" data-title="${escapeHtml(t)}" onclick="useSuggest(this.dataset.title)">${escapeHtml(t)}</button>`).join('')
+    +'</div>';
+}
+function useSuggest(t){
+  const inp=document.getElementById('searchInput');
+  inp.value=t;runSearch();
+}
+function runSearch(){
+  const q=(document.getElementById('searchInput').value||'').trim().toLowerCase();
+  const list=document.getElementById('searchResults');
+  const hint=document.getElementById('searchHint');
+  if(!q){renderRecentTitles();return}
+  hint.textContent=`"${q}" 검색 결과`;
+  const mine=_getMyEvents();
+  const matches=mine.filter(e=>(e.title||'').toLowerCase().includes(q));
+  if(matches.length===0){
+    list.innerHTML='<div class="search-empty">일치하는 일정이 없어요</div>';
+    return;
+  }
+  // 오늘 기준 가까운 날짜 우선
+  const today=new Date();const todayKey=dateKey(today.getFullYear(),today.getMonth(),today.getDate());
+  matches.sort((a,b)=>{
+    const dA=Math.abs(_dateDiff(a.date,todayKey));
+    const dB=Math.abs(_dateDiff(b.date,todayKey));
+    return dA-dB;
+  });
+  list.innerHTML=matches.slice(0,30).map(e=>{
+    const hex=colorHex(e.color);
+    const dt=parseDateKey(e.date);
+    const dateText=`${dt.getFullYear()}.${String(dt.getMonth()+1).padStart(2,'0')}.${String(dt.getDate()).padStart(2,'0')} (${['일','월','화','수','목','금','토'][dt.getDay()]})`;
+    const sharedTag=e.shared_id?'<span class="search-row-tag">함께</span>':'';
+    const timeText=e.time?`<div class="search-row-time">${escapeHtml(e.time)}</div>`:'';
+    return `<div class="search-row" onclick="jumpToSearch('${e.date}')">
+      <div class="search-row-bar" style="background:${hex}"></div>
+      <div class="search-row-main">
+        <div class="search-row-title">${escapeHtml(e.title||'')}</div>
+        <div class="search-row-date">${dateText}</div>
+      </div>
+      ${timeText}
+      ${sharedTag}
+    </div>`;
+  }).join('');
+}
+function _dateDiff(a,b){
+  const dA=parseDateKey(a),dB=parseDateKey(b);
+  return Math.round((dA-dB)/86400000);
+}
+function jumpToSearch(date){
+  const d=parseDateKey(date);
+  closeSearch();
+  fadeRender(()=>{
+    if(_calView==='week'){
+      _calWeekStart=new Date(d.getFullYear(),d.getMonth(),d.getDate()-d.getDay());
+    }else{
+      _calYear=d.getFullYear();_calMonth=d.getMonth();
+    }
+  });
+  setTimeout(()=>openDateSheet(date),250);
+}
+
+/* 오늘 버튼 — 다른 달/주에 있을 때만 표시 */
+function updateTodayBtn(){
+  const btn=document.getElementById('todayBtn');
+  if(!btn)return;
+  const t=new Date();
+  let isToday;
+  if(_calView==='week'){
+    if(!_calWeekStart){isToday=true;}
+    else{
+      const ws=new Date(_calWeekStart);
+      const we=new Date(ws);we.setDate(ws.getDate()+6);
+      isToday=t>=ws&&t<=we;
+    }
+  }else{
+    isToday=(_calYear===t.getFullYear()&&_calMonth===t.getMonth());
+  }
+  btn.classList.toggle('show',!isToday);
+}
+
+/* ── 날짜 시트 ── */
+function openDateSheet(key){
+  closeMainModals();
+  _selectedDate=key;
+  const dt=parseDateKey(key);
+  const dowName=DOW_NAMES[dt.getDay()];
+  const headInfo=getDayHeaderInfo(dt.getFullYear(),dt.getMonth()+1,dt.getDate());
+  document.getElementById('dpHead').textContent=`${dt.getMonth()+1}월 ${dt.getDate()}일 ${dowName}요일`;
+  // sub에 음력 + 절기 + 일정 수
+  const subEl=document.getElementById('dpSub');
+  if(headInfo){
+    subEl.innerHTML=`${escapeHtml(headInfo)}`;
+  }
+  renderDateSheetMembers();
+  renderDateSheetList();
+  document.getElementById('dpOverlay').classList.add('on');
+  document.getElementById('dpCard').classList.add('on');
+}
+
+/* 함께 멤버 섹션 (멤버 2명 이상일 때 — 각 멤버별 일정 + 이모지 한눈에) */
+function renderDateSheetMembers(){
+  const sec=document.getElementById('dpMembers');
+  if(!sec)return;
+  if(_myMembers.length<2){sec.style.display='none';return}
+  sec.style.display='flex';
+  sec.innerHTML='';
+  const allEvs=_events[_selectedDate]||[];
+  _myMembers.forEach(m=>{
+    const isMe=m.user_id===_currentUser?.id;
+    const myEvs=allEvs.filter(e=>e.user_id===m.user_id);
+    const initial=(m.name||'?').trim().charAt(0).toUpperCase();
+    // 이 멤버의 반응(이모지)들 모음 — 단독+함께 모두
+    const emojis=myEvs.filter(e=>e.reaction).map(e=>e.reaction).slice(0,3).join(' ');
+    const div=document.createElement('div');
+    div.className='dp-member-line'+(isMe?' me':'');
+    div.innerHTML=`
+      <div class="dp-member-stamp">${escapeHtml(initial)}</div>
+      <div class="dp-member-info">
+        <span class="dp-member-name">${escapeHtml(m.name)}${isMe?' (나)':''}</span>
+        ${emojis?`<span class="dp-member-emoji">${emojis}</span>`:''}
+      </div>
+      <span class="dp-member-eventcount">${myEvs.length>0?`${myEvs.length}개`:'없음'}</span>
+    `;
+    sec.appendChild(div);
+  });
+}
+function closeDateSheet(){
+  document.getElementById('dpOverlay').classList.remove('on');
+  document.getElementById('dpCard').classList.remove('on');
+}
+function openDateSheetForToday(){
+  const t=new Date();
+  openDateSheet(dateKey(t.getFullYear(),t.getMonth(),t.getDate()));
+}
+function renderDateSheetList(){
+  const evs=getDayEvents(_selectedDate);
+  // dpSub는 음력/절기 정보 (openDateSheet에서 채움). 여기선 건드리지 않음
+  const list=document.getElementById('dpList');
+  if(!evs.length){
+    list.innerHTML='<div class="dp-empty">아직 일정이 없어요</div>';
+    return;
+  }
+  let html='';
+  evs.forEach((ev,i)=>{
+    const hex=colorHex(ev.color);
+    const isMine=(ev.user_id===_currentUser?.id);
+    const isVirtual=ev._isVirtual;
+    const t=escapeHtml(ev.title||'');
+    const tm=ev.time?escapeHtml(ev.time):'';
+    const sharedTag=ev._isShared?`<span class="dp-shared-tag">함께 ${ev._memberCount}명</span>`:'';
+    const sharedCls=ev._isShared?' shared':'';
+    const virtualTag=isVirtual?`<span class="dp-shared-tag" style="background:rgba(216,104,128,.18);color:#a83855">프로필</span>`:'';
+    const actions=(isMine&&!isVirtual)?`<div class="dp-actions"><button class="dp-btn" onclick="event.stopPropagation();openEditEvent('${ev.id}')">수정</button><button class="dp-btn del" onclick="event.stopPropagation();deleteEvent('${ev.id}')">삭제</button></div>`:'';
+    
+    // 이모지 반응 — 함께 일정이면 모든 멤버 reaction 모음, 단독이면 본인만
+    let reactionHtml='';
+    if(ev._isShared){
+      // 같은 shared_id 모든 row의 reaction 모음
+      const allEvs=Object.values(_events).flat();
+      const sharedRows=allEvs.filter(e=>e.shared_id===ev.shared_id);
+      const reactions=sharedRows.filter(r=>r.reaction).map(r=>{
+        const m=_myMembers.find(mm=>mm.user_id===r.user_id);
+        const isMineR=r.user_id===_currentUser?.id;
+        return `<span class="dp-reaction-chip${isMineR?' mine':''}" ${isMineR?`onclick="event.stopPropagation();openEmojiPick('${ev.id}')"`:''} title="${escapeHtml(m?.name||'')}">${r.reaction}<span style="font-size:10px;opacity:.7">${escapeHtml((m?.name||'?').slice(0,3))}</span></span>`;
+      }).join('');
+      reactionHtml=reactions;
+      if(isMine&&!sharedRows.find(r=>r.user_id===_currentUser?.id&&r.reaction)){
+        reactionHtml+=`<button class="dp-reaction-chip-add" onclick="event.stopPropagation();openEmojiPick('${ev.id}')" title="반응 추가">+</button>`;
+      }
+    }else if(isMine){
+      if(ev.reaction){
+        reactionHtml=`<span class="dp-reaction-chip mine" onclick="event.stopPropagation();openEmojiPick('${ev.id}')">${ev.reaction}</span>`;
+      }else{
+        reactionHtml=`<button class="dp-reaction-chip-add" onclick="event.stopPropagation();openEmojiPick('${ev.id}')" title="반응 추가">+</button>`;
+      }
+    }
+    const reactionRow=reactionHtml?`<div class="dp-reaction-row">${reactionHtml}</div>`:'';
+    
+    html+=`<div class="dp-item${sharedCls}">
+      <div class="dp-bar" style="background:${hex}"></div>
+      <div class="dp-info">
+        <div class="dp-title">${t}${sharedTag}${virtualTag}</div>
+        ${tm?`<div class="dp-time">${tm}</div>`:''}
+        ${reactionRow}
+      </div>
+      ${actions}
+    </div>`;
+  });
+  list.innerHTML=html;
+}
+
+/* ── 일정 추가/수정 모달 ── */
+function renderColorGrid(){
+  const grid=document.getElementById('evColorGrid');
+  let html='';
+  EVENT_COLORS.forEach(c=>{
+    const on=(c.key===_selectedColor)?' on':'';
+    html+=`<button type="button" class="ev-color${on}" data-key="${c.key}" style="background:${c.hex}" onclick="selectColor('${c.key}')" title="${c.name}"></button>`;
+  });
+  grid.innerHTML=html;
+}
+function selectColor(key){
+  _selectedColor=key;
+  renderColorGrid();
+}
+function openAddEvent(){
+  if(!_selectedDate){toast('날짜를 먼저 선택해주세요');return}
+  closeMainModals();
+  _editingEvent=null;
+  _selectedColor='c-vintage';
+  _selectedTarget='self';
+  _selectedMembers=[_currentUser?.id];
+  _selectedMode='day';
+  _editGroup=[];
+  _multiSelected=new Set();
+  document.getElementById('evModalTitle').textContent='새 일정 추가';
+  const dt=parseDateKey(_selectedDate);
+  document.getElementById('evModalDate').textContent=`${dt.getMonth()+1}월 ${dt.getDate()}일 ${DOW_NAMES[dt.getDay()]}요일`;
+  document.getElementById('evTitle').value='';
+  document.getElementById('evTime').value='';
+  syncTimeBtnLabel('');
+  closeTimePicker();
+  document.getElementById('evStartDate').value=_selectedDate;
+  document.getElementById('evEndDate').value=_selectedDate;
+  document.getElementById('evYearly').checked=false;
+  applyModeUI();
+  applyTargetUI();
+  document.getElementById('evScopeRow').classList.remove('show');
+  document.getElementById('evModeRow').style.display='flex';
+  renderColorGrid();
+  closeDateSheet();
+  document.getElementById('evOverlay').classList.add('on');
+  document.getElementById('evCard').classList.add('on');
+  setTimeout(()=>{const i=document.getElementById('evTitle');if(i)i.focus()},320);
+}
+function openEditEvent(eventId){
+  // 가상 일정 (본인 생일) — events 테이블에 없음. 프로필에서 변경 안내.
+  if(eventId==='__my_birthday__'){
+    toast('생일은 프로필에서 변경할 수 있어');
+    return;
+  }
+  const evs=_events[_selectedDate]||[];
+  const ev=evs.find(e=>e.id===eventId);
+  if(!ev){toast('일정 정보를 찾지 못했어요');return}
+  closeMainModals();
+  _editingEvent=ev;
+  _selectedColor=ev.color||'c-vintage';
+  _selectedMode='day';
+  _editScope='one';
+  _editGroup=[];
+  // 함께 일정인지 확인
+  if(ev.shared_id){
+    _selectedTarget='all';
+    const allEvents=Object.values(_events).flat();
+    const sharedRows=allEvents.filter(e=>e.shared_id===ev.shared_id);
+    _selectedMembers=[...new Set(sharedRows.map(e=>e.user_id))];
+    _editSharedMemberIds=[..._selectedMembers];
+  }else{
+    _selectedTarget='self';
+    _selectedMembers=[_currentUser?.id];
+    _editSharedMemberIds=[];
+    // 기간 일정 그룹 감지 (단독 일정만 — 함께 일정은 단일 날짜로 가정)
+    _editGroup=findEventGroup(ev);
+  }
+  document.getElementById('evModalTitle').textContent='일정 수정';
+  const dt=parseDateKey(_selectedDate);
+  document.getElementById('evModalDate').textContent=`${dt.getMonth()+1}월 ${dt.getDate()}일 ${DOW_NAMES[dt.getDay()]}요일`;
+  document.getElementById('evTitle').value=ev.title||'';
+  document.getElementById('evTime').value=ev.time||'';
+  document.getElementById('evYearly').checked=!!ev.recurring_yearly;
+  syncTimeBtnLabel(ev.time||'');
+  closeTimePicker();
+  // 기간 그룹 있으면 수정 범위 토글 표시
+  const scopeRow=document.getElementById('evScopeRow');
+  if(_editGroup.length>1){
+    scopeRow.classList.add('show');
+    document.getElementById('evScopeCount').textContent=`(${_editGroup.length}일)`;
+    document.getElementById('evScopeOne').classList.add('on');
+    document.getElementById('evScopeAll').classList.remove('on');
+  }else{
+    scopeRow.classList.remove('show');
+  }
+  // 기간 모드 토글은 수정 시 숨김 (단순화)
+  document.getElementById('evModeRow').style.display='none';
+  renderColorGrid();
+  applyTargetUI();
+  closeDateSheet();
+  document.getElementById('evOverlay').classList.add('on');
+  document.getElementById('evCard').classList.add('on');
+}
+function closeEventModal(){
+  document.getElementById('evOverlay').classList.remove('on');
+  document.getElementById('evCard').classList.remove('on');
+  _editingEvent=null;
+}
+function clearEventTime(){
+  document.getElementById('evTime').value='';
+  syncTimeBtnLabel('');
+  closeTimePicker();
+}
+
+/* 시간 휠 picker (iOS 시스템 picker 대체) */
+let _tpHour=9,_tpMin=0,_tpScrollT=null;
+
+function buildTimePicker(){
+  const hCol=document.getElementById('tpHourCol');
+  const mCol=document.getElementById('tpMinCol');
+  if(hCol.children.length>0)return; // 이미 만들어짐
+  const pad='<div class="tp-pad"></div><div class="tp-pad"></div>';
+  let h=pad;
+  for(let i=0;i<24;i++)h+=`<div class="tp-item" data-val="${i}">${String(i).padStart(2,'0')}</div>`;
+  hCol.innerHTML=h+pad;
+  let m=pad;
+  for(let i=0;i<60;i++)m+=`<div class="tp-item" data-val="${i}">${String(i).padStart(2,'0')}</div>`;
+  mCol.innerHTML=m+pad;
+  hCol.addEventListener('scroll',()=>onTpScroll(hCol,'h'),{passive:true});
+  mCol.addEventListener('scroll',()=>onTpScroll(mCol,'m'),{passive:true});
+}
+function onTpScroll(col,kind){
+  clearTimeout(col._tpTimer);
+  col._tpTimer=setTimeout(()=>{
+    let idx=Math.round((col.scrollTop-60)/40);
+    if(idx<0)idx=0;
+    const items=col.querySelectorAll('.tp-item');
+    if(idx>=items.length)idx=items.length-1;
+    items.forEach((el,i)=>el.classList.toggle('active',i===idx));
+    const v=parseInt(items[idx]?.dataset.val ?? '0',10);
+    if(kind==='h')_tpHour=v;
+    else _tpMin=v;
+    const target=idx*40+60;
+    if(Math.abs(col.scrollTop-target)>1)col.scrollTop=target;
+  },80);
+}
+function toggleTimePicker(){
+  const p=document.getElementById('timePicker');
+  if(p.classList.contains('show')){closeTimePicker();return}
+  buildTimePicker();
+  // 현재 evTime 값으로 초기 위치
+  const cur=document.getElementById('evTime').value;
+  if(cur&&cur.includes(':')){
+    const [h,m]=cur.split(':').map(Number);
+    _tpHour=h;
+    _tpMin=m;
+  }
+  p.classList.add('show');
+  // 스크롤 위치 설정 (40px * idx)
+  setTimeout(()=>{
+    const hCol=document.getElementById('tpHourCol');
+    const mCol=document.getElementById('tpMinCol');
+    hCol.scrollTop=_tpHour*40+60;
+    mCol.scrollTop=_tpMin*40+60;
+    setActiveItem(hCol,_tpHour);
+    setActiveItem(mCol,_tpMin);
+  },50);
+}
+function setActiveItem(col,idx){
+  col.querySelectorAll('.tp-item').forEach((el,i)=>el.classList.toggle('active',i===idx));
+}
+function closeTimePicker(){
+  document.getElementById('timePicker').classList.remove('show');
+}
+function applyTimePicker(){
+  const v=`${String(_tpHour).padStart(2,'0')}:${String(_tpMin).padStart(2,'0')}`;
+  document.getElementById('evTime').value=v;
+  syncTimeBtnLabel(v);
+  closeTimePicker();
+}
+function syncTimeBtnLabel(v){
+  const btn=document.getElementById('evTimeBtn');
+  if(!btn)return;
+  if(v){btn.textContent=v;btn.classList.add('has-value')}
+  else{btn.textContent='시간 선택';btn.classList.remove('has-value')}
+}
+
+/* 혼자/함께 토글 UI 적용 */
+function applyTargetUI(){
+  const row=document.getElementById('evTargetRow');
+  if(!row)return;
+  // 멤버 2명 이상일 때만 토글 표시
+  if(_myMembers.length<2){
+    row.style.display='none';
+    return;
+  }
+  row.style.display='flex';
+  document.getElementById('evTargetSelf').classList.toggle('on',_selectedTarget==='self');
+  document.getElementById('evTargetAll').classList.toggle('on',_selectedTarget==='all');
+  updateMembersDisplay();
+}
+function setEventTarget(target){
+  if(target==='all'){
+    // 멤버 선택 모달 열기
+    _pickContext='add';
+    openMemberPick(_selectedMembers);
+  }else{
+    _selectedTarget='self';
+    _selectedMembers=[_currentUser?.id];
+    applyTargetUI();
+  }
+}
+function updateMembersDisplay(){
+  const disp=document.getElementById('evMembersDisplay');
+  if(!disp)return;
+  if(_selectedTarget==='all'&&_selectedMembers.length>0){
+    const names=_selectedMembers.map(uid=>{
+      if(uid===_currentUser?.id)return '나';
+      const m=_myMembers.find(mm=>mm.user_id===uid);
+      return m?m.name:'?';
+    });
+    disp.textContent=`함께: ${names.join(', ')} (탭하여 변경)`;
+    disp.classList.add('show');
+  }else{
+    disp.classList.remove('show');
+  }
+}
+
+/* 멤버 선택 모달 */
+function openMemberPick(preselected){
+  _tempPickedMembers=[...(preselected||[_currentUser?.id])];
+  if(!_tempPickedMembers.includes(_currentUser?.id))_tempPickedMembers.unshift(_currentUser.id);
+  renderMemberPickList();
+  document.getElementById('memberPickOverlay').classList.add('on');
+  document.getElementById('memberPickCard').classList.add('on');
+}
+function renderMemberPickList(){
+  const list=document.getElementById('memberPickList');
+  if(!list)return;
+  list.innerHTML='';
+  _myMembers.forEach(m=>{
+    const isMe=m.user_id===_currentUser?.id;
+    const on=_tempPickedMembers.includes(m.user_id);
+    const div=document.createElement('div');
+    div.className=`mp-item${on?' on':''}${isMe?' me':''}`;
+    div.dataset.uid=m.user_id;
+    const initial=(m.name||'?').trim().charAt(0).toUpperCase();
+    div.innerHTML=`
+      <div class="mp-item-stamp">${escapeHtml(initial)}</div>
+      <div class="mp-item-info">
+        <div class="mp-item-name">${escapeHtml(m.name)}${isMe?' <span class="mp-item-tag">(나)</span>':''}</div>
+      </div>
+      <div class="mp-item-check"></div>
+    `;
+    div.onclick=()=>toggleMemberPick(m.user_id);
+    list.appendChild(div);
+  });
+}
+function toggleMemberPick(uid){
+  // 본인은 항상 포함 (해제 불가)
+  if(uid===_currentUser?.id)return;
+  const i=_tempPickedMembers.indexOf(uid);
+  if(i>=0){
+    _tempPickedMembers.splice(i,1);
+  }else{
+    _tempPickedMembers.push(uid);
+  }
+  renderMemberPickList();
+}
+function confirmMemberPick(){
+  if(_tempPickedMembers.length<2){
+    toast('최소 1명 이상 선택해주세요');
+    return;
+  }
+  _selectedTarget='all';
+  _selectedMembers=[..._tempPickedMembers];
+  closeMemberPick();
+  applyTargetUI();
+}
+function cancelMemberPick(){
+  closeMemberPick();
+  // 변경 안 함 — _selectedTarget 그대로
+}
+function closeMemberPick(){
+  document.getElementById('memberPickOverlay').classList.remove('on');
+  document.getElementById('memberPickCard').classList.remove('on');
+}
+function reopenMemberPick(){
+  _pickContext=_editingEvent?'edit':'add';
+  openMemberPick(_selectedMembers);
+}
+
+async function saveEvent(){
+  if(!_currentRoom||!_currentUser){toast('로그인이 필요해요');return}
+  const title=document.getElementById('evTitle').value.trim();
+  if(!title){toast('제목을 입력해주세요');return}
+  if(title.length>40){toast('제목은 40자 이내로');return}
+  const time=document.getElementById('evTime').value||null;
+  const color=_selectedColor||'c-vintage';
+  const recurringYearly=document.getElementById('evYearly').checked;
+  
+  const btn=document.getElementById('evSaveBtn');
+  btn.disabled=true;btn.textContent='저장 중...';
+  
+  try{
+    if(_editingEvent){
+      // 수정 — 4가지 케이스 분기
+      await saveEditedEvent(title,time,color,recurringYearly);
+    }else{
+      // 추가 — 기간/여러 날/함께 모드 처리
+      if(_selectedMode==='multi'){
+        // 여러 날 — 선택된 날짜들 각각에 events 생성 (불연속, 묶음 X)
+        const dates=[..._multiSelected].sort();
+        if(!dates.length){toast('날짜를 하나 이상 선택해주세요');return}
+        if(dates.length>31){toast('한 번에 최대 31일까지');return}
+        // 함께 모드와 결합
+        const targetUsers=(_selectedTarget==='all'&&_selectedMembers.length>=2)?_selectedMembers:[_currentUser.id];
+        const rows=[];
+        dates.forEach(d=>{
+          // 같은 날짜에 함께 일정이면 그 날짜만 sharedId 묶음
+          const sharedId=(_selectedTarget==='all'&&targetUsers.length>1)?genShared():null;
+          targetUsers.forEach(uid=>{
+            rows.push({
+              room_id:_currentRoom.id,user_id:uid,date:d,
+              title,time,color,
+              shared_id:sharedId,
+              recurring_yearly:recurringYearly,
+            });
+          });
+        });
+        const {error}=await supa.from('events').insert(rows);
+        if(error)throw error;
+        toast(`여러 날 일정 추가됨 (${dates.length}일)`);
+      }else if(_selectedMode==='range'){
+        // 기간 일정 — 시작~끝 모든 날짜 events 생성
+        const startStr=document.getElementById('evStartDate').value;
+        const endStr=document.getElementById('evEndDate').value;
+        if(!startStr||!endStr){toast('시작/종료 날짜를 입력해주세요');return}
+        const dates=daysBetween(startStr,endStr);
+        if(dates.length>180){toast('기간이 너무 길어요 (최대 6개월)');return}
+        // 함께 모드와 결합
+        const targetUsers=(_selectedTarget==='all'&&_selectedMembers.length>=2)?_selectedMembers:[_currentUser.id];
+        const sharedId=(_selectedTarget==='all'&&targetUsers.length>1)?genShared():null;
+        const rows=[];
+        dates.forEach(d=>{
+          targetUsers.forEach(uid=>{
+            rows.push({
+              room_id:_currentRoom.id,user_id:uid,date:d,
+              title,time,color,
+              shared_id:sharedId,
+              recurring_yearly:recurringYearly,
+            });
+          });
+        });
+        const {error}=await supa.from('events').insert(rows);
+        if(error)throw error;
+        toast(`기간 일정 추가됨 (${dates.length}일)`);
+      }else if(_selectedTarget==='all'&&_selectedMembers.length>=2){
+        // 함께 일정 (단일 날짜)
+        const sharedId=genShared();
+        const rows=_selectedMembers.map(uid=>({
+          room_id:_currentRoom.id,user_id:uid,date:_selectedDate,
+          title,time,color,shared_id:sharedId,
+          recurring_yearly:recurringYearly,
+        }));
+        const {error}=await supa.from('events').insert(rows);
+        if(error)throw error;
+        toast(`함께 일정 추가됨 (${rows.length}명)`);
+      }else{
+        // 단독 일정 (단일 날짜)
+        const {error}=await supa.from('events').insert({
+          room_id:_currentRoom.id,user_id:_currentUser.id,date:_selectedDate,
+          title,time,color,
+          recurring_yearly:recurringYearly,
+        });
+        if(error)throw error;
+        toast('일정이 추가됐어요');
+      }
+    }
+    closeEventModal();
+    await loadEvents();
+    openDateSheet(_selectedDate);
+  }catch(e){
+    toast('실패: '+(e.message||'').slice(0,40));
+    console.error(e);
+  }finally{
+    btn.disabled=false;btn.textContent='저장';
+  }
+}
+
+/* shared_id 생성 헬퍼 */
+function genShared(){
+  return (typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID():('s_'+Date.now()+Math.random().toString(36).slice(2));
+}
+
+/* 두 날짜 사이의 모든 날짜 (YYYY-MM-DD 배열) */
+function daysBetween(startStr,endStr){
+  const result=[];
+  const s=new Date(startStr+'T00:00:00');
+  const e=new Date(endStr+'T00:00:00');
+  if(s>e)return [startStr];
+  for(let cur=new Date(s);cur<=e;cur.setDate(cur.getDate()+1)){
+    result.push(dateKey(cur.getFullYear(),cur.getMonth(),cur.getDate()));
+  }
+  return result;
+}
+
+/* 기간 일정 그룹 감지 (V1 findEventGroup) — 같은 title+time+color 연속 날짜 */
+function findEventGroup(ev){
+  if(!ev||ev.shared_id)return [ev];  // 함께 일정은 단일 처리
+  const allEvents=Object.values(_events).flat();
+  const sameAttr=allEvents.filter(e=>
+    !e.shared_id
+    && e.user_id===ev.user_id
+    && (e.title||'').trim()===(ev.title||'').trim()
+    && (e.time||'')===(ev.time||'')
+    && e.color===ev.color
+  ).sort((a,b)=>a.date.localeCompare(b.date));
+  if(sameAttr.length<=1)return [ev];
+  // 연속 날짜만 그룹으로 (ev 포함하는 묶음)
+  const targetIdx=sameAttr.findIndex(e=>e.id===ev.id);
+  if(targetIdx<0)return [ev];
+  // 양쪽으로 연속된 날짜 확장
+  const group=[sameAttr[targetIdx]];
+  // 왼쪽
+  for(let i=targetIdx-1;i>=0;i--){
+    const prevDate=parseDateKey(sameAttr[i].date);
+    const curDate=parseDateKey(group[0].date);
+    const diff=(curDate-prevDate)/86400000;
+    if(diff===1){group.unshift(sameAttr[i])}else break;
+  }
+  // 오른쪽
+  for(let i=targetIdx+1;i<sameAttr.length;i++){
+    const nextDate=parseDateKey(sameAttr[i].date);
+    const curDate=parseDateKey(group[group.length-1].date);
+    const diff=(nextDate-curDate)/86400000;
+    if(diff===1){group.push(sameAttr[i])}else break;
+  }
+  return group;
+}
+
+/* 기간 모드 토글 */
+function setEventMode(mode){
+  _selectedMode=mode;
+  if(mode==='multi'){
+    if(_multiSelected.size===0&&_selectedDate){
+      _multiSelected.add(_selectedDate);
+    }
+    if(_selectedDate){_multiCalDate=parseDateKey(_selectedDate);}
+    else{_multiCalDate=new Date();}
+    _multiCalDate.setDate(1);
+    renderMultiCal();
+    renderMultiChips();
+  }else if(mode==='range'){
+    // 진입 시 시작일 = 현재 선택 날짜, 끝일 = null
+    _rangeStart=_selectedDate;
+    _rangeEnd=null;
+    if(_selectedDate){_rangeCalDate=parseDateKey(_selectedDate);}
+    else{_rangeCalDate=new Date();}
+    _rangeCalDate.setDate(1);
+    syncRangeHiddenInputs();
+    renderRangeCal();
+    renderRangeBoxes();
+  }
+  applyModeUI();
+}
+function applyModeUI(){
+  document.getElementById('evModeDay').classList.toggle('on',_selectedMode==='day');
+  document.getElementById('evModeRange').classList.toggle('on',_selectedMode==='range');
+  document.getElementById('evModeMulti').classList.toggle('on',_selectedMode==='multi');
+  document.getElementById('evRangeRow').classList.toggle('show',_selectedMode==='range');
+  document.getElementById('evMultiSection').classList.toggle('show',_selectedMode==='multi');
+}
+
+/* 기간 모드 — V1식 미니 달력 */
+function renderRangeCal(){
+  const grid=document.getElementById('evRangeMiniGrid');
+  const title=document.getElementById('evRangeNavTitle');
+  const y=_rangeCalDate.getFullYear();
+  const m=_rangeCalDate.getMonth();
+  title.textContent=`${y}년 ${m+1}월`;
+  
+  const first=new Date(y,m,1);
+  const last=new Date(y,m+1,0);
+  const startDow=first.getDay();
+  const totalDays=last.getDate();
+  const td=new Date();
+  const todayKey=dateKey(td.getFullYear(),td.getMonth(),td.getDate());
+  
+  let html='';
+  const prevLast=new Date(y,m,0).getDate();
+  for(let i=startDow-1;i>=0;i--){
+    const d=prevLast-i;
+    const dt=new Date(y,m-1,d);
+    const k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
+    html+=`<div class="ev-multi-day other${rangeCellClass(k)}" onclick="onRangeCellClick('${k}')">${d}</div>`;
+  }
+  for(let d=1;d<=totalDays;d++){
+    const k=dateKey(y,m,d);
+    const dow=new Date(y,m,d).getDay();
+    let cls='ev-multi-day';
+    if(dow===0)cls+=' sun';else if(dow===6)cls+=' sat';
+    if(k===todayKey)cls+=' today';
+    cls+=rangeCellClass(k);
+    html+=`<div class="${cls}" onclick="onRangeCellClick('${k}')">${d}</div>`;
+  }
+  const filled=startDow+totalDays;
+  const need=Math.ceil(filled/7)*7;
+  for(let i=1;i<=need-filled;i++){
+    const dt=new Date(y,m+1,i);
+    const k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
+    html+=`<div class="ev-multi-day other${rangeCellClass(k)}" onclick="onRangeCellClick('${k}')">${i}</div>`;
+  }
+  grid.innerHTML=html;
+}
+function rangeCellClass(k){
+  if(_rangeStart&&_rangeEnd){
+    if(k===_rangeStart)return ' range-start';
+    if(k===_rangeEnd)return ' range-end';
+    if(k>_rangeStart&&k<_rangeEnd)return ' range-mid';
+  }else if(_rangeStart&&k===_rangeStart){
+    return ' on';
+  }
+  return '';
+}
+function rangeCalNav(diff){
+  _rangeCalDate.setMonth(_rangeCalDate.getMonth()+diff);
+  renderRangeCal();
+}
+function onRangeCellClick(key){
+  // V1 로직: 첫 탭=시작, 두번째=끝(시작보다 빠르면 swap), 같으면 끝 reset, 끝 있으면 새 시작
+  if(!_rangeStart||_rangeEnd){
+    _rangeStart=key;_rangeEnd=null;
+  }else{
+    if(key<_rangeStart){_rangeEnd=_rangeStart;_rangeStart=key;}
+    else if(key===_rangeStart){_rangeEnd=null;}
+    else{_rangeEnd=key;}
+  }
+  syncRangeHiddenInputs();
+  renderRangeCal();
+  renderRangeBoxes();
+}
+function syncRangeHiddenInputs(){
+  // saveEvent의 기존 코드(evStartDate/evEndDate 읽기)와 호환
+  document.getElementById('evStartDate').value=_rangeStart||'';
+  document.getElementById('evEndDate').value=_rangeEnd||_rangeStart||'';
+}
+function renderRangeBoxes(){
+  const sBox=document.getElementById('evRangeStartBox');
+  const eBox=document.getElementById('evRangeEndBox');
+  const cnt=document.getElementById('evRangeCount');
+  const fmt=k=>{if(!k)return null;const d=parseDateKey(k);return `${d.getMonth()+1}월 ${d.getDate()}일`};
+  sBox.textContent=fmt(_rangeStart)||'시작일';
+  sBox.classList.toggle('on',!!_rangeStart);
+  eBox.textContent=fmt(_rangeEnd)||'종료일';
+  eBox.classList.toggle('on',!!_rangeEnd);
+  if(_rangeStart&&_rangeEnd){
+    const days=daysBetween(_rangeStart,_rangeEnd).length;
+    cnt.textContent=`${days}일 선택됨`;
+  }else if(_rangeStart){
+    cnt.textContent='종료일을 탭해주세요';
+  }else{
+    cnt.textContent='시작일을 탭해주세요';
+  }
+}
+
+/* 여러 날 모드 — 미니 달력 그리기 */
+function renderMultiCal(){
+  const grid=document.getElementById('evMultiGrid');
+  const title=document.getElementById('evMultiNavTitle');
+  const y=_multiCalDate.getFullYear();
+  const m=_multiCalDate.getMonth();
+  title.textContent=`${y}년 ${m+1}월`;
+  
+  const first=new Date(y,m,1);
+  const last=new Date(y,m+1,0);
+  const startDow=first.getDay();
+  const totalDays=last.getDate();
+  const td=new Date();
+  const todayKey=dateKey(td.getFullYear(),td.getMonth(),td.getDate());
+  
+  let html='';
+  // 앞 빈 칸 (이전 달 끝부분)
+  const prevLast=new Date(y,m,0).getDate();
+  for(let i=startDow-1;i>=0;i--){
+    const d=prevLast-i;
+    const dt=new Date(y,m-1,d);
+    const k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
+    html+=`<div class="ev-multi-day other${_multiSelected.has(k)?' on':''}" onclick="toggleMultiDate('${k}')">${d}</div>`;
+  }
+  // 이번 달
+  for(let d=1;d<=totalDays;d++){
+    const dt=new Date(y,m,d);
+    const k=dateKey(y,m,d);
+    const dow=dt.getDay();
+    let cls='ev-multi-day';
+    if(dow===0)cls+=' sun';else if(dow===6)cls+=' sat';
+    if(k===todayKey)cls+=' today';
+    if(_multiSelected.has(k))cls+=' on';
+    html+=`<div class="${cls}" onclick="toggleMultiDate('${k}')">${d}</div>`;
+  }
+  // 뒷 빈 칸 (다음 달 시작)
+  const filled=startDow+totalDays;
+  const need=Math.ceil(filled/7)*7;
+  for(let i=1;i<=need-filled;i++){
+    const dt=new Date(y,m+1,i);
+    const k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
+    html+=`<div class="ev-multi-day other${_multiSelected.has(k)?' on':''}" onclick="toggleMultiDate('${k}')">${i}</div>`;
+  }
+  grid.innerHTML=html;
+}
+function multiCalNav(diff){
+  _multiCalDate.setMonth(_multiCalDate.getMonth()+diff);
+  renderMultiCal();
+}
+function toggleMultiDate(key){
+  if(_multiSelected.has(key))_multiSelected.delete(key);
+  else{
+    if(_multiSelected.size>=31){toast('한 번에 최대 31일까지');return}
+    _multiSelected.add(key);
+  }
+  renderMultiCal();
+  renderMultiChips();
+}
+function renderMultiChips(){
+  const wrap=document.getElementById('evMultiChips');
+  const cnt=document.getElementById('evMultiCount');
+  const sorted=[..._multiSelected].sort();
+  cnt.textContent=`선택된 날짜 ${sorted.length}개`;
+  if(!sorted.length){
+    wrap.innerHTML=`<div class="ev-multi-empty">아래 달력에서 날짜를 탭해주세요</div>`;
+    return;
+  }
+  wrap.innerHTML=sorted.map(k=>{
+    const dt=parseDateKey(k);
+    const label=`${dt.getMonth()+1}/${dt.getDate()}`;
+    return `<span class="ev-multi-chip">${label}<span class="ev-multi-chip-x" onclick="removeMultiDate('${k}')">×</span></span>`;
+  }).join('');
+}
+function removeMultiDate(key){
+  _multiSelected.delete(key);
+  renderMultiCal();
+  renderMultiChips();
+}
+
+/* 수정 범위 (기간 일정) */
+function setEditScope(scope){
+  _editScope=scope;
+  document.getElementById('evScopeOne').classList.toggle('on',scope==='one');
+  document.getElementById('evScopeAll').classList.toggle('on',scope==='all');
+}
+
+/* 일정 수정 — 4가지 케이스 처리 + 기간 그룹 처리 */
+async function saveEditedEvent(title,time,color,recurringYearly){
+  const ev=_editingEvent;
+  const wasShared=!!ev.shared_id;
+  const isNowShared=_selectedTarget==='all'&&_selectedMembers.length>=2;
+  const ry=!!recurringYearly;
+  
+  // 기간 그룹 + 전체 기간 수정
+  if(!wasShared&&!isNowShared&&_editGroup.length>1&&_editScope==='all'){
+    const ids=_editGroup.map(e=>e.id);
+    const {error}=await supa.from('events').update({title,time,color,recurring_yearly:ry}).in('id',ids);
+    if(error)throw error;
+    toast(`전체 기간 수정됨 (${ids.length}일)`);
+    return;
+  }
+  
+  if(!wasShared&&!isNowShared){
+    // Case 4: 혼자 → 혼자 (단순 수정)
+    const {error}=await supa.from('events').update({title,time,color,recurring_yearly:ry}).eq('id',ev.id);
+    if(error)throw error;
+    toast('수정됐어요');
+  }else if(!wasShared&&isNowShared){
+    // Case 3: 혼자 → 함께
+    const sharedId=genShared();
+    const {error:e1}=await supa.from('events').update({title,time,color,shared_id:sharedId,recurring_yearly:ry}).eq('id',ev.id);
+    if(e1)throw e1;
+    const others=_selectedMembers.filter(u=>u!==_currentUser.id);
+    if(others.length){
+      const rows=others.map(uid=>({
+        room_id:_currentRoom.id,user_id:uid,date:_selectedDate,
+        title,time,color,shared_id:sharedId,recurring_yearly:ry,
+      }));
+      const {error:e2}=await supa.from('events').insert(rows);
+      if(e2)throw e2;
+    }
+    toast(`함께 일정으로 변경됨 (${_selectedMembers.length}명)`);
+  }else if(wasShared&&!isNowShared){
+    // Case 2: 함께 → 혼자
+    const {error:e1}=await supa.from('events').delete().eq('shared_id',ev.shared_id);
+    if(e1)throw e1;
+    const {error:e2}=await supa.from('events').insert({
+      room_id:_currentRoom.id,user_id:_currentUser.id,
+      date:_selectedDate,title,time,color,recurring_yearly:ry,
+    });
+    if(e2)throw e2;
+    toast('혼자 일정으로 변경됨');
+  }else{
+    // Case 1: 함께 → 함께 (멤버 변경 가능)
+    const oldIds=_editSharedMemberIds||[];
+    const newIds=_selectedMembers||[];
+    const toKeep=oldIds.filter(u=>newIds.includes(u));
+    const toRemove=oldIds.filter(u=>!newIds.includes(u));
+    const toAdd=newIds.filter(u=>!oldIds.includes(u));
+    
+    if(toKeep.length){
+      const {error}=await supa.from('events').update({title,time,color,recurring_yearly:ry})
+        .eq('shared_id',ev.shared_id).in('user_id',toKeep);
+      if(error)throw error;
+    }
+    if(toRemove.length){
+      const {error}=await supa.from('events').delete()
+        .eq('shared_id',ev.shared_id).in('user_id',toRemove);
+      if(error)throw error;
+    }
+    if(toAdd.length){
+      const rows=toAdd.map(uid=>({
+        room_id:_currentRoom.id,user_id:uid,date:_selectedDate,
+        title,time,color,shared_id:ev.shared_id,recurring_yearly:ry,
+      }));
+      const {error}=await supa.from('events').insert(rows);
+      if(error)throw error;
+    }
+    toast('함께 일정 수정됨');
+  }
+}
+
+async function deleteEvent(eventId){
+  const evs=Object.values(_events).flat();
+  const ev=evs.find(e=>e.id===eventId);
+  if(!ev){toast('일정 정보를 찾지 못했어요');return}
+  
+  // 기간 그룹 감지
+  const group=ev.shared_id?[ev]:findEventGroup(ev);
+  
+  let confirmMsg='이 일정을 삭제할까요?';
+  if(ev.shared_id){
+    confirmMsg='함께 일정을 삭제하면 참여 멤버 모두에게서 사라져요. 계속할까요?';
+  }else if(group.length>1){
+    confirmMsg=`기간 일정 ${group.length}일이 모두 삭제돼요. 계속할까요?`;
+  }
+  if(!confirm(confirmMsg))return;
+  
+  try{
+    if(ev.shared_id){
+      const {error}=await supa.from('events').delete().eq('shared_id',ev.shared_id);
+      if(error)throw error;
+      toast('함께 일정 삭제됨');
+    }else if(group.length>1){
+      const ids=group.map(e=>e.id);
+      const {error}=await supa.from('events').delete().in('id',ids);
+      if(error)throw error;
+      toast(`기간 일정 삭제됨 (${ids.length}일)`);
+    }else{
+      const {error}=await supa.from('events').delete().eq('id',eventId);
+      if(error)throw error;
+      toast('삭제됐어요');
+    }
+    await loadEvents();
+    if(_selectedDate)openDateSheet(_selectedDate);
+  }catch(e){
+    toast('실패: '+(e.message||'').slice(0,40));
+    console.error(e);
+  }
+}
+
+/* ═══════════════════════════════════
+   3-C: 이모지 반응 + 방 설정 (테마 변경)
+   ═══════════════════════════════════ */
+
+/* 이모지 모달 — 본인이 일정에 단 이모지를 선택/변경/제거 */
+function openEmojiPick(eventId){
+  const evs=Object.values(_events).flat();
+  const ev=evs.find(e=>e.id===eventId);
+  if(!ev){toast('일정을 찾지 못했어요');return}
+  // 함께 일정이면 본인 row 찾기 (반응은 본인 row에 저장)
+  let target=ev;
+  if(ev.shared_id){
+    const sharedRows=evs.filter(e=>e.shared_id===ev.shared_id);
+    target=sharedRows.find(e=>e.user_id===_currentUser?.id)||ev;
+  }
+  if(target.user_id!==_currentUser?.id){
+    toast('본인 일정에만 반응할 수 있어요');
+    return;
+  }
+  _emojiTargetEvent=target;
+  document.getElementById('emojiSubject').textContent=`"${(target.title||'').slice(0,20)}" 에 반응`;
+  renderEmojiGrid();
+  document.getElementById('emojiOverlay').classList.add('on');
+  document.getElementById('emojiCard').classList.add('on');
+}
+function renderEmojiGrid(){
+  const grid=document.getElementById('emojiGrid');
+  if(!grid)return;
+  grid.innerHTML='';
+  const cur=_emojiTargetEvent?.reaction;
+  REACTIONS.forEach(em=>{
+    const btn=document.createElement('button');
+    btn.className=`emoji-btn${em===cur?' on':''}`;
+    btn.textContent=em;
+    btn.onclick=()=>setMyReaction(em);
+    grid.appendChild(btn);
+  });
+}
+function closeEmojiPick(){
+  document.getElementById('emojiOverlay').classList.remove('on');
+  document.getElementById('emojiCard').classList.remove('on');
+  _emojiTargetEvent=null;
+}
+async function setMyReaction(emoji){
+  if(!_emojiTargetEvent)return;
+  try{
+    const {error}=await supa.from('events').update({reaction:emoji}).eq('id',_emojiTargetEvent.id);
+    if(error)throw error;
+    toast(`${emoji} 반응 추가됨`);
+    closeEmojiPick();
+    await loadEvents();
+    if(_selectedDate)openDateSheet(_selectedDate);
+  }catch(e){
+    toast('실패: '+(e.message||'').slice(0,40));
+  }
+}
+async function removeMyReaction(){
+  if(!_emojiTargetEvent)return;
+  try{
+    const {error}=await supa.from('events').update({reaction:null}).eq('id',_emojiTargetEvent.id);
+    if(error)throw error;
+    toast('반응 제거됨');
+    closeEmojiPick();
+    await loadEvents();
+    if(_selectedDate)openDateSheet(_selectedDate);
+  }catch(e){
+    toast('실패: '+(e.message||'').slice(0,40));
+  }
+}
+
+/* 방 설정 모달 */
+function openRoomSettings(){
+  if(!_currentRoom)return;
+  closeMainModals();
+  document.getElementById('roomSetName').textContent=_currentRoom.name||'(이름 없음)';
+  document.getElementById('roomSetCode').textContent=_currentRoom.code||'—';
+  document.getElementById('roomSetNameSub').textContent=_currentRoom.name||'—';
+  document.getElementById('roomSetMemberCount').textContent=`${_myMembers.length}명`;
+  renderThemeGrid();
+  renderRoomMemberList();
+  // owner / 멤버 메뉴 분기
+  const isOwner=_currentRoom.owner_id===_currentUser?.id;
+  document.getElementById('roomSetOwnerSection').style.display=isOwner?'block':'none';
+  document.getElementById('roomSetLeaveSection').style.display=isOwner?'none':'block';
+  document.getElementById('roomSetNameEditBtn').style.display=isOwner?'inline-block':'none';
+  // 편집 모드는 항상 닫힌 상태로 시작
+  document.getElementById('roomSetNameRow').style.display='flex';
+  document.getElementById('roomSetNameEditRow').style.display='none';
+  document.getElementById('roomSetOverlay').classList.add('on');
+  document.getElementById('roomSetCard').classList.add('on');
+}
+
+/* 방 이름 변경 (owner만) */
+function openRoomNameEdit(){
+  const input=document.getElementById('roomSetNameInput');
+  input.value=_currentRoom.name||'';
+  document.getElementById('roomSetNameRow').style.display='none';
+  document.getElementById('roomSetNameEditRow').style.display='flex';
+  setTimeout(()=>{input.focus();input.select();},80);
+}
+function closeRoomNameEdit(){
+  document.getElementById('roomSetNameRow').style.display='flex';
+  document.getElementById('roomSetNameEditRow').style.display='none';
+}
+async function saveRoomName(){
+  const newName=document.getElementById('roomSetNameInput').value.trim();
+  if(!newName){toast('방 이름을 입력해주세요');return}
+  if(newName.length>40){toast('40자 이내로');return}
+  if(newName===_currentRoom.name){closeRoomNameEdit();return}
+  try{
+    const {error}=await supa.from('rooms').update({name:newName}).eq('id',_currentRoom.id);
+    if(error)throw error;
+    _currentRoom.name=newName;
+    // 모든 표시 갱신
+    document.getElementById('roomSetName').textContent=newName;
+    document.getElementById('roomSetNameSub').textContent=newName;
+    const calNm=document.getElementById('calRoomName');
+    if(calNm)calNm.textContent=newName;
+    // _myRooms 캐시도 갱신
+    const idx=_myRooms.findIndex(r=>r.id===_currentRoom.id);
+    if(idx>=0)_myRooms[idx].name=newName;
+    toast('방 이름이 변경됐어');
+    closeRoomNameEdit();
+  }catch(e){
+    toast('변경 실패: '+(e.message||e));
+  }
+}
+
+function renderRoomMemberList(){
+  const list=document.getElementById('roomSetMemberList');
+  if(!list)return;
+  list.innerHTML='';
+  const isOwner=_currentRoom?.owner_id===_currentUser?.id;
+  _myMembers.forEach(m=>{
+    const isMe=m.user_id===_currentUser?.id;
+    const isMemberOwner=m.user_id===_currentRoom?.owner_id;
+    const initial=(m.name||'?').trim().charAt(0).toUpperCase();
+    const div=document.createElement('div');
+    div.className='rs-member-row'+(isMemberOwner?' owner':'');
+    let actions='';
+    // 본인이 owner이고, 추방 대상은 본인 제외
+    if(isOwner&&!isMe){
+      actions=`<button class="rs-kick-btn" onclick="kickMember('${m.user_id}','${escapeHtml(m.name).replace(/'/g,"\\'")}')">내보내기</button>`;
+    }
+    div.innerHTML=`
+      <div class="rs-member-stamp">${escapeHtml(initial)}</div>
+      <div class="rs-member-info">
+        <div class="rs-member-name">${escapeHtml(m.name)}${isMe?' (나)':''}</div>
+        <div class="rs-member-tag">${isMemberOwner?'방장':'멤버'}</div>
+      </div>
+      ${actions}
+    `;
+    list.appendChild(div);
+  });
+}
+
+async function kickMember(userId,name){
+  if(!_currentRoom||_currentRoom.owner_id!==_currentUser?.id){toast('권한이 없어요');return}
+  if(!confirm(`"${name}" 님을 방에서 내보낼까요?\n(이 멤버의 일정은 그대로 유지됩니다)`))return;
+  try{
+    const {error}=await supa.from('members').delete()
+      .eq('room_id',_currentRoom.id)
+      .eq('user_id',userId);
+    if(error)throw error;
+    toast('멤버를 내보냈어요');
+    await loadRoomMembers();
+    renderRoomMemberList();
+    document.getElementById('roomSetMemberCount').textContent=`${_myMembers.length}명`;
+  }catch(e){
+    toast('실패: '+(e.message||'').slice(0,40));
+  }
+}
+
+async function deleteRoomConfirm(){
+  if(!_currentRoom||_currentRoom.owner_id!==_currentUser?.id){toast('방장만 삭제할 수 있어요');return}
+  const confirmText=`"${_currentRoom.name}" 방을 영구 삭제할까요?\n방의 모든 일정과 멤버가 사라지며 복구할 수 없습니다.`;
+  if(!confirm(confirmText))return;
+  // 한 번 더 (안전장치)
+  if(!confirm('정말 삭제할까요? 마지막 확인입니다'))return;
+  try{
+    // events 먼저 (CASCADE 없을 수도)
+    await supa.from('events').delete().eq('room_id',_currentRoom.id);
+    await supa.from('members').delete().eq('room_id',_currentRoom.id);
+    const {error}=await supa.from('rooms').delete().eq('id',_currentRoom.id);
+    if(error)throw error;
+    toast('방이 삭제됐어요');
+    closeRoomSettings();
+    exitRoom();
+  }catch(e){
+    toast('실패: '+(e.message||'').slice(0,40));
+  }
+}
+
+async function leaveRoomConfirm(){
+  if(!_currentRoom||!_currentUser)return;
+  if(_currentRoom.owner_id===_currentUser.id){
+    toast('방장은 나갈 수 없어요. 방 삭제를 사용해주세요');
+    return;
+  }
+  if(!confirm(`"${_currentRoom.name}" 방에서 나가시겠어요?\n(본인 일정도 함께 삭제됩니다)`))return;
+  try{
+    // 본인 일정 모두 삭제
+    await supa.from('events').delete()
+      .eq('room_id',_currentRoom.id)
+      .eq('user_id',_currentUser.id);
+    // 멤버에서 나가기
+    const {error}=await supa.from('members').delete()
+      .eq('room_id',_currentRoom.id)
+      .eq('user_id',_currentUser.id);
+    if(error)throw error;
+    toast('방에서 나왔어요');
+    closeRoomSettings();
+    exitRoom();
+  }catch(e){
+    toast('실패: '+(e.message||'').slice(0,40));
+  }
+}
+
+/* 카카오톡으로 방 코드 공유 */
+function shareKakao(){
+  if(!_currentRoom)return;
+  const code=_currentRoom.code;
+  const name=_currentRoom.name;
+  const text=`[우리 캘린더] "${name}" 방에 초대합니다.\n방 코드: ${code}`;
+  // Web Share API (모바일 카카오톡 포함 공유)
+  if(navigator.share){
+    navigator.share({
+      title:'우리 캘린더 방 초대',
+      text:text,
+    }).catch(e=>{
+      // 사용자 취소 또는 실패 — 클립보드 fallback
+      copyShareText(text);
+    });
+  }else{
+    copyShareText(text);
+  }
+}
+function copyShareText(text){
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>{
+      toast('초대 메시지 복사됨 — 카톡에 붙여넣기');
+    }).catch(()=>toast('복사 실패'));
+  }else{
+    toast('초대 코드: '+_currentRoom.code);
+  }
+}
+
+function closeRoomSettings(){
+  document.getElementById('roomSetOverlay').classList.remove('on');
+  document.getElementById('roomSetCard').classList.remove('on');
+}
+function renderThemeGrid(){
+  const grid=document.getElementById('themeGrid');
+  if(!grid)return;
+  grid.innerHTML='';
+  const cur=_currentRoom?.theme||'vintage';
+  Object.keys(THEMES).forEach(key=>{
+    const t=THEMES[key];
+    const div=document.createElement('div');
+    div.className=`theme-item${key===cur?' on':''}`;
+    div.onclick=()=>changeRoomTheme(key);
+    div.innerHTML=`
+      <div class="theme-stamp" style="border-color:${t.accent};background:${t.card};color:${t.accent}">
+        <div class="theme-stamp-letter" style="color:${t.accent}">우</div>
+      </div>
+      <div class="theme-name">${escapeHtml(themeName(key))}</div>
+    `;
+    // ::before 의 inner border 색상도 set (CSS var로 inline 처리 어려움)
+    grid.appendChild(div);
+    // 이중 원 inner 색
+    const stamp=div.querySelector('.theme-stamp');
+    stamp.style.cssText+=`;--th-inner:${t.accent}`;
+  });
+}
+function themeName(k){
+  const names={vintage:'빈티지',oak:'오크',lavender:'라벤더',peach:'피치',mint:'민트',rose:'로즈',sky:'스카이',butter:'버터'};
+  return names[k]||k;
+}
+async function changeRoomTheme(themeKey){
+  if(!_currentRoom||!THEMES[themeKey])return;
+  const old=_currentRoom.theme;
+  // 즉시 적용
+  _currentRoom.theme=themeKey;
+  applyTheme(themeKey);
+  renderThemeGrid();
+  // DB 업데이트
+  try{
+    const {error}=await supa.from('rooms').update({theme:themeKey}).eq('id',_currentRoom.id);
+    if(error)throw error;
+    toast(`테마: ${themeName(themeKey)}`);
+  }catch(e){
+    // 실패 시 롤백
+    _currentRoom.theme=old;
+    applyTheme(old);
+    renderThemeGrid();
+    toast('테마 변경 실패');
+  }
+}
+function copyRoomCode(){
+  const code=_currentRoom?.code;
+  if(!code)return;
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(code).then(()=>toast('코드 복사됨')).catch(()=>toast('복사 실패'));
+  }else{
+    toast('코드: '+code);
+  }
+}
+
+/* ═══════════════════════════════════
+   3-C-2: 스와이프 (월/주 이동) + swipe-down 닫기
+   ═══════════════════════════════════ */
+let _swipeStartX=0,_swipeStartY=0,_swipeEnabled=false;
+
+function setupSwipe(){
+  const grid=document.getElementById('calGrid');
+  if(!grid)return;
+  grid.addEventListener('touchstart',(e)=>{
+    if(e.touches.length!==1)return;
+    _swipeStartX=e.touches[0].clientX;
+    _swipeStartY=e.touches[0].clientY;
+    _swipeEnabled=true;
+  },{passive:true});
+  grid.addEventListener('touchend',(e)=>{
+    if(!_swipeEnabled)return;
+    _swipeEnabled=false;
+    const t=e.changedTouches[0];
+    const dx=t.clientX-_swipeStartX;
+    const dy=t.clientY-_swipeStartY;
+    if(Math.abs(dx)<60||Math.abs(dy)>40)return;  // 가로 스와이프만
+    if(dx<0)nextMonth();else prevMonth();
+  },{passive:true});
+}
+
+/* 시트 swipe-down (handle/card 위쪽 영역에서) */
+function setupSheetSwipe(cardId,closeFn){
+  const card=document.getElementById(cardId);
+  if(!card)return;
+  let startY=0,curY=0,active=false;
+  card.addEventListener('touchstart',(e)=>{
+    if(e.touches.length!==1)return;
+    if(card.scrollTop>0)return;  // 스크롤 위치 위쪽일 때만
+    // form 요소(input, textarea, select, button, label) 위에선 swipe 비활성 (모바일 input 닫힘 방지)
+    const t=e.target;
+    if(t&&t.closest&&t.closest('input,textarea,select,button,label,.ev-multi-day,.ev-color,.code-box,.tp-col,.tp-item,.time-picker'))return;
+    startY=e.touches[0].clientY;
+    active=true;
+  },{passive:true});
+  card.addEventListener('touchmove',(e)=>{
+    if(!active)return;
+    curY=e.touches[0].clientY;
+    const dy=curY-startY;
+    if(dy>0&&card.scrollTop===0){
+      card.style.transform=`translateY(${dy*0.6}px)`;
+    }
+  },{passive:true});
+  card.addEventListener('touchend',()=>{
+    if(!active)return;
+    active=false;
+    const dy=curY-startY;
+    card.style.transform='';
+    if(dy>120)closeFn();
+  },{passive:true});
+}
+
+/* DOM 준비 후 핸들러 + 스와이프 셋업 */
+document.addEventListener('DOMContentLoaded',()=>{
+  const i=document.getElementById('emailInput');
+  if(i)i.addEventListener('keydown',e=>{if(e.key==='Enter')sendMagicLink()});
+  setupSwipe();
+  setupSheetSwipe('dpCard',closeDateSheet);
+  setupSheetSwipe('evCard',closeEventModal);
+  setupSheetSwipe('createCard',closeCreateRoom);
+  setupSheetSwipe('joinCard',closeJoinRoom);
+  setupSheetSwipe('memberPickCard',cancelMemberPick);
+  setupSheetSwipe('emojiCard',closeEmojiPick);
+  setupSheetSwipe('roomSetCard',closeRoomSettings);
+  setupSheetSwipe('profileCard',closeProfile);
+});
+
+init();
+
+/* PWA Service Worker 등록 */
+if('serviceWorker' in navigator&&location.protocol!=='file:'){
+  window.addEventListener('load', async ()=>{
+    /* 일회성: 옛 SW + 옛 캐시 강제 정리 (배포 후 사용자 폰 정상화용) */
+    if(!localStorage.getItem('sw_clean_v3')){
+      try{
+        const regs=await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r=>r.unregister()));
+        if(window.caches){
+          const keys=await caches.keys();
+          await Promise.all(keys.map(k=>caches.delete(k)));
+        }
+        localStorage.setItem('sw_clean_v3','1');
+        location.reload();
+        return;
+      }catch(e){console.warn('SW 정리 실패:',e)}
+    }
+    /* 정상 SW 등록 */
+    navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW 등록 실패:',e));
+  });
+}
+</script>
+</body>
+</html>
