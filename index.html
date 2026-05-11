@@ -2555,12 +2555,14 @@ function buildDatePicker(){
 function onDpScroll(col,kind){
   clearTimeout(col._dpTimer);
   col._dpTimer=setTimeout(()=>{
-    const idx=Math.round(col.scrollTop/40);
+    let idx=Math.round((col.scrollTop-60)/40);
+    if(idx<0)idx=0;
     const items=col.querySelectorAll('.tp-item');
+    if(idx>=items.length)idx=items.length-1;
     items.forEach((el,i)=>el.classList.toggle('active',i===idx));
     const v=parseInt(items[idx]?.dataset.val??'0',10);
     if(kind==='y')_dpYear=v;else _dpMonth=v;
-    const target=idx*40;
+    const target=idx*40+60;
     if(Math.abs(col.scrollTop-target)>1)col.scrollTop=target;
   },80);
 }
@@ -2577,8 +2579,9 @@ function openDatePicker(){
     const yCol=document.getElementById('dpYearCol');
     const mCol=document.getElementById('dpMonthCol');
     const yIdx=Math.max(0,Math.min(DP_YEAR_END-DP_YEAR_START,y-DP_YEAR_START));
-    yCol.scrollTop=yIdx*40;
-    mCol.scrollTop=(m-1)*40;
+    // tp-pad(60px) 보정해서 가운데 강조 박스에 선택값 오게
+    yCol.scrollTop=yIdx*40+60;
+    mCol.scrollTop=(m-1)*40+60;
     setActiveItem(yCol,yIdx);
     setActiveItem(mCol,m-1);
   },50);
@@ -2972,17 +2975,17 @@ function buildTimePicker(){
   mCol.addEventListener('scroll',()=>onTpScroll(mCol,'m'),{passive:true});
 }
 function onTpScroll(col,kind){
-  // 스크롤 끝나면 가장 가까운 셀 활성화 (debounce)
   clearTimeout(col._tpTimer);
   col._tpTimer=setTimeout(()=>{
-    const idx=Math.round(col.scrollTop/40);
+    let idx=Math.round((col.scrollTop-60)/40);
+    if(idx<0)idx=0;
     const items=col.querySelectorAll('.tp-item');
+    if(idx>=items.length)idx=items.length-1;
     items.forEach((el,i)=>el.classList.toggle('active',i===idx));
     const v=parseInt(items[idx]?.dataset.val ?? '0',10);
     if(kind==='h')_tpHour=v;
     else _tpMin=v;
-    // snap (스크롤 위치 정확히 맞추기)
-    const target=idx*40;
+    const target=idx*40+60;
     if(Math.abs(col.scrollTop-target)>1)col.scrollTop=target;
   },80);
 }
@@ -3002,8 +3005,8 @@ function toggleTimePicker(){
   setTimeout(()=>{
     const hCol=document.getElementById('tpHourCol');
     const mCol=document.getElementById('tpMinCol');
-    hCol.scrollTop=_tpHour*40;
-    mCol.scrollTop=_tpMin*40;
+    hCol.scrollTop=_tpHour*40+60;
+    mCol.scrollTop=_tpMin*40+60;
     setActiveItem(hCol,_tpHour);
     setActiveItem(mCol,_tpMin);
   },50);
