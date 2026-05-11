@@ -849,7 +849,7 @@ body{background:var(--bg)}
       <div class="cal-room-name" id="calRoomName">방 이름</div>
     </div>
     <div class="cal-actions">
-      <button class="cal-avatar" id="calAvatar" onclick="toast('1: 클릭됨');try{openProfile();toast('2: 함수실행 OK');}catch(e){toast('ERR: '+e.message);}" title="프로필">—</button>
+      <button class="cal-avatar" id="calAvatar" onclick="openProfile()" title="프로필">—</button>
       <button class="cal-menu-btn" onclick="openSearch()" title="검색" aria-label="검색"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.5" y2="16.5"/></svg></button>
       <button class="cal-menu-btn" onclick="openRoomSettings()" title="방 설정">⋮</button>
     </div>
@@ -1281,7 +1281,8 @@ function openProfile(){
   const name=meta.name||meta.full_name||meta.preferred_username||(_currentUser.email?_currentUser.email.split('@')[0]:'익명');
   const email=_currentUser.email||'(이메일 없음)';
   const letter=(name||'?').trim().charAt(0).toUpperCase();
-  document.getElementById('profileLetter').textContent=letter;
+  const letterEl=document.getElementById('profileLetter');
+  if(letterEl)letterEl.textContent=letter;
   document.getElementById('profileName').textContent=name;
   document.getElementById('profileEmail').textContent=email;
   document.getElementById('profileNameInput').value=name;
@@ -1340,12 +1341,12 @@ async function loadProfilePhoto(){
     if(!stamp)return;
     if(data&&data.avatar_url){
       stamp.classList.add('has-photo');
-      // 기존 letter span 제거하고 img 추가
-      stamp.innerHTML=`<img src="${escapeHtml(data.avatar_url)}" alt="">`;
+      // letter span은 숨김으로 유지 (id 보존)
+      stamp.innerHTML=`<span class="pf-stamp-letter" id="profileLetter" style="display:none"></span><img src="${escapeHtml(data.avatar_url)}" alt="">`;
     }else{
       stamp.classList.remove('has-photo');
       const letter=(data?.name||_currentUser.email?.split('@')[0]||'?').trim().charAt(0).toUpperCase();
-      stamp.innerHTML=`<span class="pf-stamp-letter">${escapeHtml(letter)}</span>`;
+      stamp.innerHTML=`<span class="pf-stamp-letter" id="profileLetter">${escapeHtml(letter)}</span>`;
     }
   }catch(e){console.warn('프로필 사진 로드 실패',e)}
 }
