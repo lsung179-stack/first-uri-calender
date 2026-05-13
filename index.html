@@ -1619,7 +1619,7 @@ function toggleCreateCopy(){
 }
 function selectCopySource(roomId){
   _createCopySource=roomId;
-  document.querySelectorAll('.copy-source-item').forEach(el=>{
+  document.querySelectorAll('#createCopySourceList .copy-source-item').forEach(el=>{
     el.classList.toggle('on',el.dataset.id===roomId);
   });
 }
@@ -1677,7 +1677,8 @@ async function createRoom(){
     }
 
     closeCreateRoom();
-    toast(copiedCount>0?`"${name}" 방 생성 (일정 ${copiedCount}개 복사됨)`:`"${name}" 방이 만들어졌어요`);
+    const srcName=(_createCopyOn&&_createCopySource)?(_myRooms.find(r=>r.id===_createCopySource)?.name||''):'';
+    toast(copiedCount>0?`"${name}" 방 생성 ("${srcName}"에서 ${copiedCount}개 복사됨)`:`"${name}" 방이 만들어졌어요`);
     await loadRooms();
   }catch(e){
     toast('실패: '+(e.message||'').slice(0,40));
@@ -1788,7 +1789,8 @@ async function joinRoom(){
     }
 
     closeJoinRoom();
-    toast(copiedCount>0?`"${room.name||'방'}" 입장 (일정 ${copiedCount}개 복사됨)`:`"${room.name||'방'}"에 입장했어요`);
+    const srcName=(_joinCopyOn&&_joinCopySource)?(_myRooms.find(r=>r.id===_joinCopySource)?.name||''):'';
+    toast(copiedCount>0?`"${room.name||'방'}" 입장 ("${srcName}"에서 ${copiedCount}개 복사됨)`:`"${room.name||'방'}"에 입장했어요`);
     await loadRooms();
   }catch(e){
     toast('실패: '+(e.message||'').slice(0,40));
