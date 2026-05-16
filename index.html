@@ -33,6 +33,7 @@
   --kakao:#FEE500;
   --kakaoText:#191919;
   --shadow:0 1px 2px rgba(60,40,25,.08),0 8px 24px rgba(60,40,25,.05);
+  --vh100:100dvh;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{background:#e5dec7}
@@ -116,7 +117,7 @@ body{background:var(--bg)}
   margin-top:10px;
 }
 .welcome-deco{
-  display:flex;align-items:center;gap:8px;margin:24px 0;
+  display:flex;align-items:center;gap:8px;margin:18px 0;
 }
 .welcome-deco-line{height:1px;width:42px;background:var(--gold)}
 .welcome-deco-diamond{
@@ -125,7 +126,7 @@ body{background:var(--bg)}
 }
 
 /* 환영 화면 */
-.welcome-tagline{font-size:14px;color:var(--sub);margin-top:24px;margin-bottom:64px;letter-spacing:.3px;line-height:1.7;text-align:center}
+.welcome-tagline{font-size:14px;color:var(--sub);margin-top:24px;margin-bottom:36px;letter-spacing:.3px;line-height:1.7;text-align:center}
 .btn-stack{width:100%;max-width:320px;display:flex;flex-direction:column;gap:10px}
 .btn{width:100%;padding:16px 18px;border:none;border-radius:14px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .12s ease,opacity .12s ease;letter-spacing:.2px}
 .btn:active{transform:scale(.98);opacity:.9}
@@ -136,8 +137,8 @@ body{background:var(--bg)}
 .btn-primary:disabled{background:var(--aL)}
 .btn-ghost{background:transparent;color:var(--sub);font-weight:500;font-size:13px;padding:12px}
 
-#welcomeScreen{justify-content:flex-end;padding-top:env(safe-area-inset-top);padding-bottom:180px;padding-bottom:calc(22dvh + env(safe-area-inset-bottom))}
-.terms{position:absolute;bottom:calc(20px + env(safe-area-inset-bottom));left:0;right:0;font-size:11px;color:var(--mute);text-align:center;letter-spacing:.2px;padding:0 28px;line-height:1.6}
+#welcomeScreen{padding-top:calc(env(safe-area-inset-top) + 16px);padding-bottom:calc(env(safe-area-inset-bottom) + 16px)}
+.terms{margin-top:28px;font-size:11px;color:var(--mute);text-align:center;letter-spacing:.2px;line-height:1.6}
 .terms a{color:var(--sub);text-decoration:underline;text-underline-offset:2px}
 
 /* 이메일 입력 화면 */
@@ -304,7 +305,7 @@ body{background:var(--bg)}
 /* 캘린더 그리드 */
 .cal-grid{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:0 12px;gap:0;overflow:hidden;padding-bottom:calc(110px + env(safe-area-inset-bottom));transition:opacity .2s ease}
 .cal-grid.fading{opacity:0}
-.cal-cell{min-height:max(80px,calc((100dvh - 310px) / 6));padding:2px 0;display:flex;flex-direction:column;cursor:pointer;border-radius:0;transition:background .12s}
+.cal-cell{min-height:max(80px,calc((var(--vh100, 100dvh) - 310px) / 6));padding:2px 0;display:flex;flex-direction:column;cursor:pointer;border-radius:0;transition:background .12s}
 .cal-cell:active{background:rgba(139,58,42,.06)}
 .cal-cell.other{opacity:.35}
 .cal-day-num{text-align:center;font-size:13px;font-weight:500;color:var(--text);margin:2px 0 4px;line-height:1;font-family:-apple-system,sans-serif}
@@ -720,6 +721,17 @@ body{background:var(--bg)}
 .pf-stamp.has-photo::before{display:none}
 .pf-photo-btn{display:block;font-size:11px;color:var(--sub);background:transparent;border:none;cursor:pointer;margin-top:4px;padding:4px 0;font-family:inherit;text-decoration:underline}
 </style>
+<script>
+/* viewport 높이 측정 — 갤럭시/아이폰 모두 같은 기준으로 계산 (dvh 의존성 제거) */
+(function(){
+  function setVH(){
+    document.documentElement.style.setProperty('--vh100', window.innerHeight + 'px');
+  }
+  setVH();
+  window.addEventListener('resize', setVH);
+  window.addEventListener('orientationchange', setVH);
+})();
+</script>
 </head>
 <body>
 
