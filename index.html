@@ -304,7 +304,7 @@ body{background:var(--bg)}
 /* 캘린더 그리드 */
 .cal-grid{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:0 12px;gap:0;overflow:hidden;padding-bottom:calc(110px + env(safe-area-inset-bottom));transition:opacity .2s ease}
 .cal-grid.fading{opacity:0}
-.cal-cell{min-height:max(80px,calc((var(--vh100, 100dvh) - 310px) / 6));padding:2px 0;display:flex;flex-direction:column;cursor:pointer;border-radius:0;transition:background .12s}
+.cal-cell{min-height:max(88px,calc((var(--vh100, 100dvh) - 310px) / 6));padding:2px 0;display:flex;flex-direction:column;cursor:pointer;border-radius:0;transition:background .12s}
 .cal-cell:active{background:rgba(139,58,42,.06)}
 .cal-cell.other{opacity:.35}
 .cal-day-num{text-align:center;font-size:13px;font-weight:500;color:var(--text);margin:2px 0 4px;line-height:1;font-family:-apple-system,sans-serif;position:relative}
@@ -318,19 +318,19 @@ body{background:var(--bg)}
 .cal-cell.today .cal-day-num::before{
   content:'';position:absolute;left:50%;top:50%;
   transform:translate(-50%,-50%);
-  width:22px;height:22px;border-radius:50%;
+  width:18px;height:18px;border-radius:50%;
   border:1.5px solid var(--accent);
   pointer-events:none;
 }
 .cal-cell.today .cal-day-num::after{
   content:'';position:absolute;left:50%;top:50%;
   transform:translate(-50%,-50%);
-  width:18px;height:18px;border-radius:50%;
+  width:14px;height:14px;border-radius:50%;
   border:1px solid var(--accent);
   pointer-events:none;
 }
 .cal-cell.holiday .cal-day-num{color:var(--sun);font-weight:700}
-.cal-events{display:flex;flex-direction:column;gap:1px;flex:1;overflow:hidden}
+.cal-events{display:flex;flex-direction:column;gap:1px;flex:1;overflow:hidden;padding-bottom:3px}
 .cal-evbar{font-size:9px;font-weight:600;padding:2px 4px;margin:0 3px;border-radius:3px;color:#fff;line-height:1.3;min-height:15px;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:var(--accent)}
 .cal-evmore{font-size:9px;color:var(--sub);padding-left:3px;font-weight:500}
 
