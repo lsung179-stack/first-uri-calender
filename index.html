@@ -1149,6 +1149,7 @@ body{background:var(--bg)}
   <div class="pf-edit-row">
     <div class="ev-label" style="font-size:11px">알림 받기 <span style="font-weight:400;color:var(--mute);font-size:10px">· 오늘 일정 + 멤버가 새 일정 등록 시</span></div>
     <button class="pf-name-save-btn" id="pushToggleBtn" onclick="togglePushNotification()" style="width:100%">알림 켜기</button>
+    <button class="pf-name-save-btn" id="pushTestBtn" onclick="sendTestPush()" style="width:100%;margin-top:6px;background:var(--card);color:var(--accent);border:1.5px solid var(--accent);display:none">테스트 알림 보내기</button>
   </div>
   <div class="mo-actions">
     <button class="btn btn-danger" onclick="doLogout()">로그아웃</button>
@@ -1371,20 +1372,60 @@ async function togglePushNotification(){
 /* 프로필 열 때 버튼 텍스트 동기화 */
 async function syncPushButton(){
   const btn=document.getElementById('pushToggleBtn');
+  const testBtn=document.getElementById('pushTestBtn');
   if(!btn)return;
   const status=await getPushStatus();
   if(status==='subscribed'){
     btn.textContent='알림 끄기';
     btn.style.background='var(--mute)';
+    if(testBtn)testBtn.style.display='block';  // 알림 켜진 상태에서만 테스트 버튼 표시
   }else if(status==='unsupported'){
     btn.textContent='알림 지원 안 함';
     btn.disabled=true;
+    if(testBtn)testBtn.style.display='none';
   }else if(status==='denied'){
     btn.textContent='브라우저 설정에서 허용 필요';
     btn.disabled=true;
+    if(testBtn)testBtn.style.display='none';
   }else{
     btn.textContent='알림 켜기';
     btn.style.background='';
+    if(testBtn)testBtn.style.display='none';
+  }
+}
+
+/* 테스트 알림 — Edge Function (send-push) 호출 */
+async function sendTestPush(){
+  const btn=document.getElementById('pushTestBtn');
+  if(!btn||!_currentUser)return;
+  btn.disabled=true;
+  const origText=btn.textContent;
+  btn.textContent='보내는 중...';
+  try{
+    const {data,error}=await supa.functions.invoke('send-push',{
+      body:{
+        user_ids:[_currentUser.id],
+        title:'우리 캘린더',
+        body:'테스트 알림이에요. 잘 받았어요?',
+        url:'/'
+      }
+    });
+    if(error)throw error;
+    const sent=data?.sent??0;
+    const total=data?.total??0;
+    if(sent>0){
+      toast(`테스트 알림 보냈어요 (${sent}/${total})`);
+    }else if(total===0){
+      toast('구독된 디바이스가 없어요');
+    }else{
+      toast(`발송 실패 (${sent}/${total})`);
+    }
+  }catch(e){
+    console.error('테스트 알림 에러:',e);
+    toast('알림 발송 실패: '+(e.message||'네트워크 오류').slice(0,40));
+  }finally{
+    btn.disabled=false;
+    btn.textContent=origText;
   }
 }
 
