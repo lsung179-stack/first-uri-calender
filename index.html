@@ -1194,6 +1194,17 @@ body{background:var(--bg)}
       카카오톡으로 초대
     </button>
   </div>
+
+  <div class="rs-section">
+    <div class="rs-section-title">알림</div>
+    <div class="rs-row">
+      <div class="rs-row-info">
+        <div class="rs-row-label">이 방의 알림 받기</div>
+        <div class="rs-row-sub">새 일정 · 매일 오전 8시 · 일정 1시간 전</div>
+      </div>
+      <button class="dp-btn primary" id="roomNotifToggleBtn" onclick="toggleRoomNotification()">—</button>
+    </div>
+  </div>
   
   <div class="rs-section">
     <div class="rs-section-title">멤버 (<span id="roomSetMemberCount">—</span>)</div>
@@ -2502,7 +2513,7 @@ async function loadRoomMembers(){
   if(!_currentRoom){_myMembers=[];return}
   try{
     const {data:membersRaw,error}=await supa.from('members')
-      .select('user_id,color,joined_at')
+      .select('user_id,color,joined_at,notifications_enabled')
       .eq('room_id',_currentRoom.id);
     if(error)throw error;
     if(!membersRaw||!membersRaw.length){_myMembers=[];return}
@@ -2514,7 +2525,9 @@ async function loadRoomMembers(){
       const name=(p&&p.name)||(p&&p.email?p.email.split('@')[0]:'익명');
       const birthday=(p&&p.birthday)||null;
       const avatar_url=(p&&p.avatar_url)||null;
-      return {user_id:m.user_id,color:m.color,name,joined_at:m.joined_at,birthday,avatar_url};
+      // notifications_enabled은 기본 true (컬럼 없으면 true로 간주)
+      const notif=m.notifications_enabled===false?false:true;
+      return {user_id:m.user_id,color:m.color,name,joined_at:m.joined_at,birthday,avatar_url,notifications_enabled:notif};
     });
     // joined_at 순으로 정렬 (본인이 항상 먼저 가입했으므로 첫 번째)
     _myMembers.sort((a,b)=>(a.joined_at||'').localeCompare(b.joined_at||''));
@@ -3623,11 +3636,11 @@ async function saveEvent(){
 /* 일정 생성 시 같은 방 다른 멤버에게 푸시 알림 (fire-and-forget) */
 function notifyEventCreated(title, time){
   try{
-    // 본인 제외 같은 방 멤버 ID
+    // 본인 제외 + 알림 끈 멤버 제외
     const targetIds=(_myMembers||[])
-      .filter(m=>m.user_id&&m.user_id!==_currentUser.id)
+      .filter(m=>m.user_id&&m.user_id!==_currentUser.id&&m.notifications_enabled!==false)
       .map(m=>m.user_id);
-    if(targetIds.length===0)return;  // 혼자만의 방
+    if(targetIds.length===0)return;  // 받을 사람 없음
 
     const senderName=(_currentProfile&&_currentProfile.name)||'멤버';
     const isShared=_selectedTarget==='all'&&_selectedMembers.length>=2;
@@ -4135,6 +4148,43 @@ function openRoomSettings(){
   document.getElementById('roomSetNameEditRow').style.display='none';
   document.getElementById('roomSetOverlay').classList.add('on');
   document.getElementById('roomSetCard').classList.add('on');
+  syncRoomNotifButton();
+}
+
+/* 방 알림 토글 버튼 상태 동기화 */
+function syncRoomNotifButton(){
+  const btn=document.getElementById('roomNotifToggleBtn');
+  if(!btn||!_currentUser)return;
+  const me=(_myMembers||[]).find(m=>m.user_id===_currentUser.id);
+  const on=me?(me.notifications_enabled!==false):true;
+  btn.textContent=on?'끄기':'켜기';
+  btn.classList.toggle('primary',!on);  // 꺼진 상태일 때 primary(강조)로 — 켜기 권유
+}
+
+/* 방 알림 토글 클릭 */
+async function toggleRoomNotification(){
+  if(!_currentRoom||!_currentUser)return;
+  const btn=document.getElementById('roomNotifToggleBtn');
+  const me=(_myMembers||[]).find(m=>m.user_id===_currentUser.id);
+  const current=me?(me.notifications_enabled!==false):true;
+  const next=!current;
+  btn.disabled=true;
+  try{
+    const {error}=await supa.from('members')
+      .update({notifications_enabled:next})
+      .eq('room_id',_currentRoom.id)
+      .eq('user_id',_currentUser.id);
+    if(error)throw error;
+    // 로컬 상태 갱신
+    if(me)me.notifications_enabled=next;
+    syncRoomNotifButton();
+    toast(next?'이 방 알림을 켰어요':'이 방 알림을 껐어요');
+  }catch(e){
+    toast('실패: '+(e.message||'').slice(0,40));
+    console.error(e);
+  }finally{
+    btn.disabled=false;
+  }
 }
 
 /* 방 이름 변경 (owner만) */
