@@ -2699,13 +2699,12 @@ function getDayEvents(date){
     if(a.time&&b.time)return a.time.localeCompare(b.time);
     return (a.created_at||'').localeCompare(b.created_at||'');
   });
-  // 빈 title 일정은 표시 안 함 (잘못된 데이터 방어 — 가상 일정은 제외)
-  result=result.filter(ev=>ev._isVirtual||((ev.title||'').trim().length>0));
-  // 멤버 뷰 필터 — '전체'면 모두, 특정 멤버면 그 멤버 일정 + 함께 일정 + 생일(가상)만
+  // 빈 title 일정 + 멤버 뷰 필터 — 가상 일정(생일)은 항상 통과
+  const isVisible=ev=>ev._isVirtual||((ev.title||'').trim().length>0);
   if(_viewingMember&&_viewingMember!=='all'){
-    return result.filter(ev=>ev._isShared||ev._isVirtual||ev.user_id===_viewingMember);
+    return result.filter(ev=>isVisible(ev)&&(ev._isShared||ev._isVirtual||ev.user_id===_viewingMember));
   }
-  return result;
+  return result.filter(isVisible);
 }
 function isSameRangeGroup(a,b){
   // shared_id 있으면 그걸로 매칭, 없으면 user_id+title+time+color
