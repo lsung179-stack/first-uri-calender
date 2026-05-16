@@ -136,7 +136,8 @@ body{background:var(--bg)}
 .btn-primary:disabled{background:var(--aL)}
 .btn-ghost{background:transparent;color:var(--sub);font-weight:500;font-size:13px;padding:12px}
 
-.terms{position:absolute;bottom:36px;left:0;right:0;font-size:11px;color:var(--mute);text-align:center;letter-spacing:.2px;padding:0 28px;line-height:1.6}
+#welcomeScreen{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+.terms{position:absolute;bottom:calc(20px + env(safe-area-inset-bottom));left:0;right:0;font-size:11px;color:var(--mute);text-align:center;letter-spacing:.2px;padding:0 28px;line-height:1.6}
 .terms a{color:var(--sub);text-decoration:underline;text-underline-offset:2px}
 
 /* 이메일 입력 화면 */
@@ -301,9 +302,9 @@ body{background:var(--bg)}
 .cal-dow.sat{color:var(--sat)}
 
 /* 캘린더 그리드 */
-.cal-grid{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:0 12px;gap:0;overflow:hidden;padding-bottom:90px;transition:opacity .2s ease}
+.cal-grid{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:0 12px;gap:0;overflow:hidden;padding-bottom:calc(110px + env(safe-area-inset-bottom));transition:opacity .2s ease}
 .cal-grid.fading{opacity:0}
-.cal-cell{min-height:max(72px,calc((100dvh - 280px) / 6));padding:4px 0;display:flex;flex-direction:column;cursor:pointer;border-radius:0;transition:background .12s}
+.cal-cell{min-height:max(64px,calc((100dvh - 320px) / 6));padding:4px 0;display:flex;flex-direction:column;cursor:pointer;border-radius:0;transition:background .12s}
 .cal-cell:active{background:rgba(139,58,42,.06)}
 .cal-cell.other{opacity:.35}
 .cal-day-num{text-align:center;font-size:13px;font-weight:500;color:var(--text);margin:2px 0 4px;line-height:1;font-family:-apple-system,sans-serif}
@@ -327,11 +328,11 @@ body{background:var(--bg)}
 .cal-evmore{font-size:9px;color:var(--sub);padding-left:3px;font-weight:500}
 
 /* 플로팅 + 추가 버튼 */
-.cal-fab{position:fixed;right:24px;bottom:32px;width:56px;height:56px;border-radius:50%;background:var(--accent);color:var(--card);border:none;font-size:28px;font-weight:300;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;line-height:1;z-index:20;box-shadow:0 6px 20px rgba(139,58,42,.35);transition:transform .12s}
+.cal-fab{position:fixed;right:24px;bottom:calc(32px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;background:var(--accent);color:var(--card);border:none;font-size:28px;font-weight:300;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;line-height:1;z-index:20;box-shadow:0 6px 20px rgba(139,58,42,.35);transition:transform .12s}
 .cal-fab:active{transform:scale(.92)}
 
 /* 오늘로 가기 플로팅 버튼 (다른 달일 때만 표시) */
-.cal-today-btn{display:none;position:fixed;bottom:56px;left:50%;transform:translateX(-50%);z-index:25;background:var(--aL);color:#fff;border:none;padding:10px 22px;border-radius:99px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;box-shadow:0 4px 20px rgba(30,28,24,.18);letter-spacing:.3px;white-space:nowrap;transition:transform .12s}
+.cal-today-btn{display:none;position:fixed;bottom:calc(56px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:25;background:var(--aL);color:#fff;border:none;padding:10px 22px;border-radius:99px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;box-shadow:0 4px 20px rgba(30,28,24,.18);letter-spacing:.3px;white-space:nowrap;transition:transform .12s}
 .cal-today-btn.show{display:block}
 .cal-today-btn:active{transform:translateX(-50%) scale(.96)}
 
