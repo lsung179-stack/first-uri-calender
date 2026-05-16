@@ -136,7 +136,7 @@ body{background:var(--bg)}
 .btn-primary:disabled{background:var(--aL)}
 .btn-ghost{background:transparent;color:var(--sub);font-weight:500;font-size:13px;padding:12px}
 
-#welcomeScreen{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+#welcomeScreen{justify-content:flex-end;padding-top:env(safe-area-inset-top);padding-bottom:180px;padding-bottom:calc(22dvh + env(safe-area-inset-bottom))}
 .terms{position:absolute;bottom:calc(20px + env(safe-area-inset-bottom));left:0;right:0;font-size:11px;color:var(--mute);text-align:center;letter-spacing:.2px;padding:0 28px;line-height:1.6}
 .terms a{color:var(--sub);text-decoration:underline;text-underline-offset:2px}
 
@@ -288,7 +288,7 @@ body{background:var(--bg)}
 .cal-avatar.has-photo img{width:100%;height:100%;object-fit:cover;display:block}
 
 /* 월/년 타이틀 */
-.cal-month-row{display:flex;align-items:center;justify-content:center;gap:18px;padding:14px 0 6px}
+.cal-month-row{display:flex;align-items:center;justify-content:center;gap:18px;padding:14px 0 6px;position:relative}
 .cal-month-arrow{background:none;border:none;cursor:pointer;font-size:22px;color:var(--sub);font-family:inherit;font-weight:300;padding:6px 10px;line-height:1}
 .cal-month-arrow:active{opacity:.5}
 .cal-month-title{display:flex;flex-direction:column;align-items:center;cursor:pointer;min-width:90px}
@@ -304,7 +304,7 @@ body{background:var(--bg)}
 /* 캘린더 그리드 */
 .cal-grid{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:0 12px;gap:0;overflow:hidden;padding-bottom:calc(110px + env(safe-area-inset-bottom));transition:opacity .2s ease}
 .cal-grid.fading{opacity:0}
-.cal-cell{min-height:max(64px,calc((100dvh - 320px) / 6));padding:4px 0;display:flex;flex-direction:column;cursor:pointer;border-radius:0;transition:background .12s}
+.cal-cell{min-height:max(80px,calc((100dvh - 310px) / 6));padding:2px 0;display:flex;flex-direction:column;cursor:pointer;border-radius:0;transition:background .12s}
 .cal-cell:active{background:rgba(139,58,42,.06)}
 .cal-cell.other{opacity:.35}
 .cal-day-num{text-align:center;font-size:13px;font-weight:500;color:var(--text);margin:2px 0 4px;line-height:1;font-family:-apple-system,sans-serif}
@@ -609,18 +609,17 @@ body{background:var(--bg)}
 .cal-cell-label.holiday{color:var(--sun);font-weight:700}
 .cal-cell-label.term{color:var(--gold);font-weight:600}
 
-/* 주간 뷰 토글 */
-.cal-view-toggle{position:absolute;left:14px;top:max(70px,calc(env(safe-area-inset-top) + 70px));display:flex;gap:4px;background:var(--card);border:1px solid var(--borderL);border-radius:14px;padding:3px;font-size:0;z-index:5}
+/* 주간 뷰 토글 — cal-month-row 안 좌측에 배치 */
+.cal-view-toggle{position:absolute;left:14px;top:50%;transform:translateY(-50%);display:flex;gap:4px;background:var(--card);border:1px solid var(--borderL);border-radius:14px;padding:3px;font-size:0;z-index:5}
 .cal-view-btn{background:transparent;border:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700;color:var(--sub);padding:5px 11px;border-radius:11px;transition:all .12s}
 .cal-view-btn.on{background:var(--accent);color:var(--card)}
-/* 멤버 탭이 보일 때 월/주 토글을 아래로 밀어서 겹침 방지 */
-.cal-member-tabs.show ~ .cal-view-toggle{top:max(150px,calc(env(safe-area-inset-top) + 150px))}
 
 /* 주간 뷰 — 세로 리스트 (V1 스타일) */
 .cal-grid.weekly{
   display:flex;flex-direction:column;gap:0;
-  padding:0 14px 20px;background:var(--bg);
+  padding:0 14px calc(120px + env(safe-area-inset-bottom));background:var(--bg);
   grid-template-columns:none;grid-template-rows:none;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
 }
 .weekly-row{
   display:flex;align-items:stretch;
@@ -883,6 +882,10 @@ body{background:var(--bg)}
   <div class="cal-member-tabs" id="calMemberTabs"></div>
 
   <div class="cal-month-row">
+    <div class="cal-view-toggle">
+      <button class="cal-view-btn on" id="viewBtnMonth" onclick="setCalView('month')">월</button>
+      <button class="cal-view-btn" id="viewBtnWeek" onclick="setCalView('week')">주</button>
+    </div>
     <button class="cal-month-arrow" onclick="prevMonth()">‹</button>
     <div class="cal-month-title" onclick="openDatePicker()">
       <div class="cal-month-year" id="calYear">2026</div>
@@ -903,12 +906,6 @@ body{background:var(--bg)}
 
   <!-- 주간 뷰 전용 헤더 (요일 + 날짜) -->
   <div class="weekly-headbar" id="weeklyHeadbar"></div>
-
-  <!-- 월/주 뷰 토글 -->
-  <div class="cal-view-toggle">
-    <button class="cal-view-btn on" id="viewBtnMonth" onclick="setCalView('month')">월</button>
-    <button class="cal-view-btn" id="viewBtnWeek" onclick="setCalView('week')">주</button>
-  </div>
 
   <div class="cal-grid" id="calGrid">
     <!-- renderMonthly()가 여기 채움 -->
