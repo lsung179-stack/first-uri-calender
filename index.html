@@ -1119,11 +1119,6 @@ body{background:var(--bg)}
       <button class="pf-name-save-btn" onclick="saveProfileBirthday()">저장</button>
     </div>
   </div>
-  <div class="pf-edit-row">
-    <div class="ev-label" style="font-size:11px">알림 받기 <span style="font-weight:400;color:var(--mute);font-size:10px">· 오늘 일정 + 멤버가 새 일정 등록 시</span></div>
-    <button class="pf-name-save-btn" id="pushToggleBtn" onclick="togglePushNotification()" style="width:100%">알림 켜기</button>
-    <button class="pf-name-save-btn" id="pushTestBtn" onclick="sendTestPush()" style="width:100%;margin-top:6px;background:var(--card);color:var(--accent);border:1.5px solid var(--accent);display:none">테스트 알림 보내기</button>
-  </div>
   <div class="mo-actions">
     <button class="btn btn-danger" onclick="doLogout()">로그아웃</button>
     <button class="mo-cancel" onclick="closeProfile()">닫기</button>
@@ -1200,7 +1195,6 @@ body{background:var(--bg)}
     <div class="rs-row">
       <div class="rs-row-info">
         <div class="rs-row-label">이 방의 알림 받기</div>
-        <div class="rs-row-sub">새 일정 · 매일 오전 8시 · 일정 1시간 전</div>
       </div>
       <button class="dp-btn primary" id="roomNotifToggleBtn" onclick="toggleRoomNotification()">—</button>
     </div>
@@ -1273,17 +1267,17 @@ async function getPushStatus(){
   }catch{return 'error'}
 }
 
-/* 푸시 등록 (권한 + 구독 + DB 저장) */
-async function registerPushNotification(){
+/* 푸시 등록 (권한 + 구독 + DB 저장). silent=true면 toast 출력 없음 (자동 호출용) */
+async function registerPushNotification(silent){
   if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)){
-    toast('이 브라우저는 알림 기능을 지원하지 않아요');
+    if(!silent)toast('이 브라우저는 알림 기능을 지원하지 않아요');
     return false;
   }
-  if(!_currentUser){toast('로그인이 필요해요');return false}
+  if(!_currentUser){if(!silent)toast('로그인이 필요해요');return false}
   try{
     const permission=await Notification.requestPermission();
     if(permission!=='granted'){
-      toast('알림 권한이 필요해요');
+      if(!silent)toast('알림 권한이 필요해요');
       return false;
     }
     const reg=await navigator.serviceWorker.ready;
@@ -1305,16 +1299,35 @@ async function registerPushNotification(){
     },{onConflict:'endpoint'});
     if(error){
       console.warn('구독 저장 실패:',error);
-      toast('알림 설정 실패: '+(error.message||error));
+      if(!silent)toast('알림 설정 실패: '+(error.message||error));
       return false;
     }
-    toast('알림이 켜졌어');
+    if(!silent)toast('알림이 켜졌어');
     return true;
   }catch(e){
     console.warn('푸시 등록 실패:',e);
-    toast('알림 설정 실패');
+    if(!silent)toast('알림 설정 실패');
     return false;
   }
+}
+
+/* 자동 푸시 등록 — 방 진입 시 호출. 권한 granted/default면 조용히 구독 시도 */
+async function autoRegisterPush(){
+  if(!_currentUser)return;
+  const status=await getPushStatus();
+  // 이미 구독돼 있으면 끝
+  if(status==='subscribed')return;
+  // 권한 OK인데 구독 없으면 자동 구독 (예: 디바이스 변경)
+  if(status==='granted'){
+    await registerPushNotification(true);
+    return;
+  }
+  // 첫 진입 (아직 권한 안 물음) → 권한 요청 + 구독
+  if(status==='default'){
+    await registerPushNotification(true);
+    return;
+  }
+  // denied / unsupported / error: 아무 것도 안 함
 }
 
 /* 푸시 해제 */
@@ -1861,6 +1874,8 @@ function enterRoom(roomId){
   showScreen('calendarScreen');
   loadRoomMembers();  // 방 멤버 로드 (함께 일정용)
   loadEvents();
+  // 권한이 default(첫 진입)면 자동으로 권한 요청 + 구독. granted면 silent 등록. denied면 무동작.
+  autoRegisterPush();
 }
 
 function exitRoom(){
