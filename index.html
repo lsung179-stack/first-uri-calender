@@ -1763,10 +1763,26 @@ async function loadRooms(){
 
     renderRooms(rooms||[],countMap);
     _myRooms=rooms||[];
+    // 알림 클릭으로 진입할 방이 있으면 자동 진입
+    tryEnterPendingRoom();
   }catch(e){
     content.innerHTML='<div style="padding:60px 24px;text-align:center;color:var(--sub);font-size:13px">방 목록을 불러오지 못했어요<br>잠시 후 다시 시도해주세요</div>';
     console.error(e);
   }
+}
+
+/* 알림 클릭으로 들어온 방이 있으면 자동 진입 */
+function tryEnterPendingRoom(){
+  if(!_pendingRoomId||!_myRooms||!_myRooms.length)return;
+  const roomId=_pendingRoomId;
+  // 이미 그 방에 있으면 클리어만
+  if(_currentRoom&&_currentRoom.id===roomId){_pendingRoomId=null;return}
+  // 내가 속한 방인지 확인
+  if(_myRooms.find(r=>r.id===roomId)){
+    _pendingRoomId=null;
+    enterRoom(roomId);
+  }
+  // 못 찾으면 _pendingRoomId 유지 (다음 loadRooms 후 재시도)
 }
 
 function renderEmpty(){
@@ -2209,6 +2225,18 @@ supa.auth.onAuthStateChange((event,session)=>{
 /* 글로벌 상태 */
 let _myRooms=[];          // loadRooms 결과 캐시
 let _currentRoom=null;    // 진입한 방
+let _pendingRoomId=(()=>{ // 알림 클릭으로 진입할 방 (URL ?room=xxx 또는 SW 메시지)
+  try{
+    const u=new URL(location.href);
+    const r=u.searchParams.get('room');
+    if(r){
+      // URL 정리 (히스토리에 ?room= 안 남기기)
+      history.replaceState({},'',location.pathname);
+      return r;
+    }
+  }catch(e){}
+  return null;
+})();
 let _events={};           // {YYYY-MM-DD: [eventObj, ...]}
 let _yearlyEvents={};     // {MM-DD: [eventObj, ...]} — 매년 반복 일정 (월,일 기준)
 let _calYear=new Date().getFullYear();
@@ -3675,7 +3703,7 @@ function notifyEventCreated(title, time){
         user_ids:targetIds,
         title:`${senderName} · ${title}`,
         body:`${sharedPrefix}${dateLabel}${timeLabel}`,
-        url:'/',
+        url:`/?room=${_currentRoom.id}`,
         tag:`event-${Date.now()}`,
       }
     }).catch(e=>console.warn('알림 발송 실패:',e));
@@ -4467,6 +4495,20 @@ if('serviceWorker' in navigator&&location.protocol!=='file:'){
     }
     /* 정상 SW 등록 */
     navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW 등록 실패:',e));
+
+    /* 알림 클릭 → SW에서 navigate 메시지 받기 */
+    navigator.serviceWorker.addEventListener('message',(e)=>{
+      if(e.data&&e.data.type==='navigate'&&e.data.url){
+        try{
+          const u=new URL(e.data.url,location.origin);
+          const roomId=u.searchParams.get('room');
+          if(roomId){
+            _pendingRoomId=roomId;
+            tryEnterPendingRoom();
+          }
+        }catch(err){console.warn('navigate 메시지 처리 실패:',err)}
+      }
+    });
   });
 }
 </script>

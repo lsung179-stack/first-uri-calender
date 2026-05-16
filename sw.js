@@ -1,5 +1,5 @@
 /* 우리 캘린더 V2 — Service Worker (v3: 푸시 알림 지원) */
-const CACHE_NAME = 'uri-cal-v2-v5';
+const CACHE_NAME = 'uri-cal-v2-v6';
 const PRECACHE_URLS = [
   '/v2.html',
   '/manifest.json',
@@ -72,7 +72,7 @@ self.addEventListener('push', (e) => {
   e.waitUntil(self.registration.showNotification(title, opts));
 });
 
-/* 알림 클릭 시 앱 열기/포커스 */
+/* 알림 클릭 시 앱 열기/포커스 + URL 전달 */
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   const targetUrl = (e.notification.data && e.notification.data.url) || '/';
@@ -80,13 +80,14 @@ self.addEventListener('notificationclick', (e) => {
   
   e.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
-      // 이미 앱 열려있으면 포커스
+      // 이미 앱 열려있으면 포커스 + 메시지로 navigate
       for (const client of list) {
         if ('focus' in client) {
+          client.postMessage({ type: 'navigate', url: targetUrl });
           return client.focus();
         }
       }
-      // 없으면 새 창
+      // 없으면 새 창 (URL에 ?room=xxx 포함)
       if (self.clients.openWindow) {
         return self.clients.openWindow(fullUrl);
       }
