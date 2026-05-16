@@ -1,5 +1,5 @@
 /* 우리 캘린더 V2 — Service Worker (v3: 푸시 알림 지원) */
-const CACHE_NAME = 'uri-cal-v2-v4';
+const CACHE_NAME = 'uri-cal-v2-v5';
 const PRECACHE_URLS = [
   '/v2.html',
   '/manifest.json',
@@ -63,6 +63,8 @@ self.addEventListener('push', (e) => {
     badge: '/icon-192.png',
     tag: data.tag || 'wuri-calendar',
     data: { url: data.url || '/' },
+    vibrate: [200, 100, 200],   // 갤럭시/안드 헤드업 알림 트리거
+    renotify: true,             // 같은 tag로 와도 다시 헤드업 표시
     requireInteraction: false,
     silent: false,
   };
