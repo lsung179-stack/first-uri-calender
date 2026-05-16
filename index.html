@@ -856,20 +856,20 @@ body{background:var(--bg)}
 <div class="mo-card" id="modeSelectCard">
   <div class="mo-handle"></div>
   <div class="mo-title">어떻게 함께 쓸까?</div>
-  <div class="mo-sub">한 번 정하면 나중에 바꿀 수 없어</div>
+  <div class="mo-sub">한 번 정하면 바꿀 수 없어</div>
   <div class="mode-list">
     <div class="mode-card" onclick="pickMode('solo')">
-      <div class="mode-card-icon">🌿</div>
+      <div class="mode-card-icon">🌱</div>
       <div class="mode-card-text">
         <div class="mode-card-title">각자 모드</div>
-        <div class="mode-card-desc">멤버별로 각자 일정 + 함께 일정<br>커플·친구 추천</div>
+        <div class="mode-card-desc">각자의 일정도, 함께 일정도<br>커플·친구에게 잘 어울려</div>
       </div>
     </div>
     <div class="mode-card" onclick="pickMode('shared')">
-      <div class="mode-card-icon">🏡</div>
+      <div class="mode-card-icon">🏠</div>
       <div class="mode-card-text">
         <div class="mode-card-title">통합 모드</div>
-        <div class="mode-card-desc">모두의 일정을 한 캘린더에<br>가족·룸메이트 추천</div>
+        <div class="mode-card-desc">모두의 일정을 한 캘린더에<br>가족·룸메이트에게 잘 어울려</div>
       </div>
     </div>
   </div>
@@ -1894,12 +1894,18 @@ async function createRoom(){
 let _pendingModeCallback=null;
 function openModeSelect(onDone){
   _pendingModeCallback=onDone;
+  // createCard 잠시 숨김 — mo-handle 중복 표시 방지
+  document.getElementById('createOverlay').classList.remove('on');
+  document.getElementById('createCard').classList.remove('on');
   document.getElementById('modeSelectOverlay').classList.add('on');
   document.getElementById('modeSelectCard').classList.add('on');
 }
 function cancelModeSelect(){
   document.getElementById('modeSelectOverlay').classList.remove('on');
   document.getElementById('modeSelectCard').classList.remove('on');
+  // createCard 다시 표시 (입력한 방 이름 유지)
+  document.getElementById('createOverlay').classList.add('on');
+  document.getElementById('createCard').classList.add('on');
   _pendingModeCallback=null;
 }
 function pickMode(mode){
