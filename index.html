@@ -3628,12 +3628,65 @@ async function saveEvent(){
     closeEventModal();
     await loadEvents();
     openDateSheet(_selectedDate);
+
+    // ── 5단계: 같은 방 멤버에게 자동 알림 발송 (편집 시 제외) ──
+    if(!_editingEvent){
+      notifyEventCreated(title, time);
+    }
   }catch(e){
     toast('실패: '+(e.message||'').slice(0,40));
     console.error(e);
   }finally{
     btn.disabled=false;btn.textContent='저장';
   }
+}
+
+/* 일정 생성 시 같은 방 다른 멤버에게 푸시 알림 (fire-and-forget) */
+function notifyEventCreated(title, time){
+  try{
+    // 본인 제외 같은 방 멤버 ID
+    const targetIds=(_myMembers||[])
+      .filter(m=>m.user_id&&m.user_id!==_currentUser.id)
+      .map(m=>m.user_id);
+    if(targetIds.length===0)return;  // 혼자만의 방
+
+    const senderName=(_currentProfile&&_currentProfile.name)||'멤버';
+    const isShared=_selectedTarget==='all'&&_selectedMembers.length>=2;
+    const isMulti=_selectedMode==='multi';
+    const isRange=_selectedMode==='range';
+
+    // 날짜 라벨
+    let dateLabel='';
+    if(isMulti){
+      const cnt=_multiSelected?_multiSelected.size:0;
+      dateLabel=`여러 날 (${cnt}일)`;
+    }else if(isRange){
+      const startStr=document.getElementById('evStartDate')?.value;
+      const endStr=document.getElementById('evEndDate')?.value;
+      dateLabel=`${formatShortDate(startStr)} ~ ${formatShortDate(endStr)}`;
+    }else{
+      dateLabel=formatShortDate(_selectedDate);
+    }
+    const timeLabel=time?` ${time}`:'';
+    const sharedPrefix=isShared?'함께 일정 · ':'';
+
+    supa.functions.invoke('send-push',{
+      body:{
+        user_ids:targetIds,
+        title:`${senderName} · ${title}`,
+        body:`${sharedPrefix}${dateLabel}${timeLabel}`,
+        url:'/',
+        tag:`event-${Date.now()}`,
+      }
+    }).catch(e=>console.warn('알림 발송 실패:',e));
+  }catch(e){console.warn('notifyEventCreated 에러:',e)}
+}
+
+/* 'YYYY-MM-DD' → 'M월 D일' (요일 없이 간결하게) */
+function formatShortDate(s){
+  if(!s)return '';
+  const [y,m,d]=s.split('-');
+  return `${parseInt(m,10)}월 ${parseInt(d,10)}일`;
 }
 
 /* shared_id 생성 헬퍼 */
