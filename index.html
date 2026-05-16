@@ -304,10 +304,10 @@ body{background:var(--bg)}
 /* 캘린더 그리드 */
 .cal-grid{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:0 12px;gap:0;overflow:hidden;padding-bottom:calc(110px + env(safe-area-inset-bottom));transition:opacity .2s ease}
 .cal-grid.fading{opacity:0}
-.cal-cell{min-height:max(88px,calc((var(--vh100, 100dvh) - 310px) / 6));padding:2px 0;display:flex;flex-direction:column;cursor:pointer;border-radius:0;transition:background .12s}
+.cal-cell{min-height:max(90px,calc((var(--vh100, 100dvh) - 310px) / 6));padding:2px 0;display:flex;flex-direction:column;cursor:pointer;border-radius:0;transition:background .12s}
 .cal-cell:active{background:rgba(139,58,42,.06)}
 .cal-cell.other{opacity:.35}
-.cal-day-num{text-align:center;font-size:13px;font-weight:500;color:var(--text);margin:2px 0 4px;line-height:1;font-family:-apple-system,sans-serif;position:relative}
+.cal-day-num{text-align:center;font-size:13px;font-weight:500;color:var(--text);margin:2px 0 3px;line-height:20px;font-family:-apple-system,sans-serif;position:relative}
 .cal-day-lunar{display:inline-block;font-size:8px;color:var(--mute);margin-left:3px;font-weight:400;vertical-align:1px;letter-spacing:0}
 .cal-cell.today .cal-day-lunar{display:none}
 .cal-cell.sun .cal-day-num{color:var(--sun);font-weight:700}
@@ -628,7 +628,6 @@ body{background:var(--bg)}
 }
 .cal-cell-label.holiday{color:var(--sun);font-weight:700}
 .cal-cell-label.term{color:var(--gold);font-weight:600}
-.cal-cell.today .cal-cell-label.lunar{visibility:hidden}
 
 /* 주간 뷰 토글 — cal-month-row 안 좌측에 배치 */
 .cal-view-toggle{position:absolute;left:14px;top:50%;transform:translateY(-50%);display:flex;gap:4px;background:var(--card);border:1px solid var(--borderL);border-radius:14px;padding:3px;font-size:0;z-index:5}
