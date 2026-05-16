@@ -342,10 +342,10 @@ body{background:var(--bg)}
 .cal-today-btn{display:none;position:fixed;bottom:calc(56px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:25;background:var(--aL);color:#fff;border:none;padding:10px 22px;border-radius:99px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;box-shadow:0 4px 20px rgba(30,28,24,.18);letter-spacing:.3px;white-space:nowrap;transition:transform .12s}
 .cal-today-btn.show{display:block}
 .cal-today-btn:active{transform:translateX(-50%) scale(.96)}
-/* 헤더 우측 작은 '오늘' 칩 — 오늘 보고 있을 땐 숨김 */
-.cal-today-chip{display:none;background:var(--accent);color:var(--card);border:none;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;letter-spacing:.3px;transition:transform .12s,opacity .12s;flex-shrink:0}
+/* 헤더 우측 작은 '오늘' 칩 — cal-month-row 우측 끝, 오늘 보고 있을 땐 숨김 */
+.cal-today-chip{display:none;position:absolute;right:14px;top:50%;transform:translateY(-50%);background:var(--accent);color:var(--card);border:none;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;letter-spacing:.3px;transition:transform .12s,opacity .12s;flex-shrink:0;z-index:5}
 .cal-today-chip.show{display:inline-block}
-.cal-today-chip:active{transform:scale(.92);opacity:.85}
+.cal-today-chip:active{transform:translateY(-50%) scale(.92);opacity:.85}
 
 /* 날짜 시트 (그날 일정 보기) — 모달 베이스 재사용 */
 .dp-card{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-radius:24px 24px 0 0;padding:14px 24px max(28px,env(safe-area-inset-bottom));z-index:51;transform:translateY(100%);opacity:0;pointer-events:none;transition:transform .3s cubic-bezier(.32,.72,0,1),opacity .25s ease;max-height:80vh;overflow-y:auto}
@@ -918,8 +918,8 @@ body{background:var(--bg)}
       <div class="cal-month-year" id="calYear">2026</div>
       <div class="cal-month-name" id="calMonthName">5월</div>
     </div>
-    <button class="cal-today-chip" id="todayBtn" onclick="goToday()">오늘</button>
     <button class="cal-month-arrow" onclick="nextMonth()">›</button>
+    <button class="cal-today-chip" id="todayBtn" onclick="goToday()">오늘</button>
   </div>
 
   <div class="cal-week-head">
@@ -2880,10 +2880,10 @@ function cellHtml(y,m,d,isOther,todayKey){
   else if(dow===6)cls.push('sat');
   if(isHoliday&&!isOther)cls.push('holiday');
   
-  // 작은 라벨 (음력/절기/기념일)
+  // 작은 라벨 (공휴일/절기/기념일) — 음력은 캘린더에서 제외, 일자 시트에서만 표시
   const lab=getDayLabel(y,m+1,d);
   let labelHtml='';
-  if(lab.text){
+  if(lab.text&&lab.type!=='lunar'){
     const labelCls='cal-cell-label '+(lab.type||'');
     labelHtml=`<div class="${labelCls.trim()}">${escapeHtml(lab.text)}</div>`;
   }else{
@@ -2911,7 +2911,7 @@ function cellHtml(y,m,d,isOther,todayKey){
   });
   
   return `<div class="${cls.join(' ')}" onclick="openDateSheet('${key}')">
-    <span class="cal-day-num">${d}<span class="cal-day-lunar">${getCellLunar(y,m+1,d)}</span></span>
+    <span class="cal-day-num">${d}</span>
     ${labelHtml}
     <div class="cal-events">${evsHtml}</div>
   </div>`;
