@@ -1,5 +1,5 @@
 /* 우리 캘린더 V2 — Service Worker (v3: 푸시 알림 지원) */
-const CACHE_NAME = 'uri-cal-v2-v3';
+const CACHE_NAME = 'uri-cal-v2-v4';
 const PRECACHE_URLS = [
   '/v2.html',
   '/manifest.json',
