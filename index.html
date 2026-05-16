@@ -902,10 +902,6 @@ body{background:var(--bg)}
   <div class="cal-member-tabs" id="calMemberTabs"></div>
 
   <div class="cal-month-row">
-    <div class="cal-view-toggle">
-      <button class="cal-view-btn on" id="viewBtnMonth" onclick="setCalView('month')">월</button>
-      <button class="cal-view-btn" id="viewBtnWeek" onclick="setCalView('week')">주</button>
-    </div>
     <button class="cal-month-arrow" onclick="prevMonth()">‹</button>
     <div class="cal-month-title" onclick="openDatePicker()">
       <div class="cal-month-year" id="calYear">2026</div>
@@ -923,9 +919,6 @@ body{background:var(--bg)}
     <div class="cal-dow">금</div>
     <div class="cal-dow sat">토</div>
   </div>
-
-  <!-- 주간 뷰 전용 헤더 (요일 + 날짜) -->
-  <div class="weekly-headbar" id="weeklyHeadbar"></div>
 
   <div class="cal-grid" id="calGrid">
     <!-- renderMonthly()가 여기 채움 -->
@@ -2859,13 +2852,8 @@ function renderWeekly(){
 }
 
 function setCalView(view){
-  _calView=view;
-  document.getElementById('viewBtnMonth').classList.toggle('on',view==='month');
-  document.getElementById('viewBtnWeek').classList.toggle('on',view==='week');
-  if(view==='week'&&!_calWeekStart){
-    const t=new Date();
-    _calWeekStart=new Date(t.getFullYear(),t.getMonth(),t.getDate()-t.getDay());
-  }
+  // 주간 뷰 제거됨 — 항상 month. 호출돼도 안전하게 처리
+  _calView='month';
   renderMonthly();
 }
 
