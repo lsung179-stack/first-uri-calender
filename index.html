@@ -3508,8 +3508,10 @@ function renderMemberPickList(){
   });
 }
 function toggleMemberPick(uid){
-  // 본인은 항상 포함 (해제 불가)
-  if(uid===_currentUser?.id)return;
+  // 본인 토글: 새 일정에선 차단, 기존 함께 일정 수정 시에만 허용 (자기 빠지기)
+  if(uid===_currentUser?.id){
+    if(!_editingEvent||!_editingEvent.shared_id)return;
+  }
   const i=_tempPickedMembers.indexOf(uid);
   if(i>=0){
     _tempPickedMembers.splice(i,1);
@@ -3519,6 +3521,16 @@ function toggleMemberPick(uid){
   renderMemberPickList();
 }
 function confirmMemberPick(){
+  const meIncluded=_tempPickedMembers.includes(_currentUser?.id);
+  const otherCount=_tempPickedMembers.filter(u=>u!==_currentUser?.id).length;
+
+  // 본인이 빠지는 케이스 — 본인 row만 삭제 (다른 멤버는 유지)
+  if(!meIncluded){
+    if(otherCount<1){toast('멤버를 선택해주세요');return}
+    leaveSharedEvent();
+    return;
+  }
+
   if(_tempPickedMembers.length<2){
     toast('최소 1명 이상 선택해주세요');
     return;
@@ -3527,6 +3539,32 @@ function confirmMemberPick(){
   _selectedMembers=[..._tempPickedMembers];
   closeMemberPick();
   applyTargetUI();
+}
+
+/* 함께 일정에서 본인만 빠지기 — 본인 row만 삭제, 다른 멤버 row는 그대로 유지 */
+async function leaveSharedEvent(){
+  if(!_editingEvent||!_editingEvent.shared_id||!_currentUser)return;
+  if(!confirm('이 함께 일정에서 빠지시겠어요?\n다른 멤버의 일정은 그대로 남아 있어요.'))return;
+
+  try{
+    const ev=_editingEvent;
+    // 본인 row만 삭제 (RLS가 다른 멤버 row 보호)
+    const {error}=await supa.from('events').delete()
+      .eq('shared_id',ev.shared_id).eq('user_id',_currentUser.id);
+    if(error)throw error;
+
+    // 남은 멤버에게 빠짐 알림 발송
+    notifyEventLeft(ev);
+
+    closeMemberPick();
+    closeEventModal();
+    await loadEvents();
+    if(_selectedDate)openDateSheet(_selectedDate);
+    toast('함께 일정에서 빠졌어요');
+  }catch(e){
+    toast('실패: '+(e.message||'').slice(0,40));
+    console.error(e);
+  }
 }
 function cancelMemberPick(){
   closeMemberPick();
@@ -3632,8 +3670,10 @@ async function saveEvent(){
     await loadEvents();
     openDateSheet(_selectedDate);
 
-    // ── 5단계: 같은 방 멤버에게 자동 알림 발송 (편집 시 제외) ──
-    if(!_editingEvent){
+    // ── 5단계: 같은 방 멤버에게 자동 알림 발송 ──
+    if(_editingEvent){
+      notifyEventUpdated(title, time);
+    }else{
       notifyEventCreated(title, time);
     }
   }catch(e){
@@ -3646,12 +3686,73 @@ async function saveEvent(){
 
 /* 일정 생성 시 같은 방 다른 멤버에게 푸시 알림 (fire-and-forget) */
 function notifyEventCreated(title, time){
+  _notifyEventChange('create', title, time);
+}
+
+/* 일정 수정 알림 */
+function notifyEventUpdated(title, time){
+  _notifyEventChange('update', title, time);
+}
+
+/* 함께 일정에서 본인이 빠진 알림 — 다른 멤버에게 */
+function notifyEventLeft(ev){
   try{
-    // 본인 제외 + 알림 끈 멤버 제외
+    if(!_currentUser||!_currentRoom||!ev)return;
     const targetIds=(_myMembers||[])
       .filter(m=>m.user_id&&m.user_id!==_currentUser.id&&m.notifications_enabled!==false)
       .map(m=>m.user_id);
-    if(targetIds.length===0)return;  // 받을 사람 없음
+    if(targetIds.length===0)return;
+
+    const senderName=(_currentProfile&&_currentProfile.name)||'멤버';
+    const dateLabel=formatShortDate(ev.date);
+    const timeLabel=ev.time?` ${ev.time}`:'';
+
+    supa.functions.invoke('send-push',{
+      body:{
+        user_ids:targetIds,
+        title:`${senderName} · ${ev.title}`,
+        body:`함께 일정에서 빠짐 · ${dateLabel}${timeLabel}`,
+        url:`/?room=${_currentRoom.id}`,
+        tag:`event-leave-${ev.id}-${Date.now()}`,
+      }
+    }).catch(e=>console.warn('빠짐 알림 발송 실패:',e));
+  }catch(e){console.warn('notifyEventLeft 에러:',e)}
+}
+
+/* 일정 삭제 알림 — ev 객체 직접 사용 (evCard 입력 컨텍스트가 없을 수 있음) */
+function notifyEventDeleted(ev, opts){
+  try{
+    if(!_currentUser||!_currentRoom||!ev)return;
+    const targetIds=(_myMembers||[])
+      .filter(m=>m.user_id&&m.user_id!==_currentUser.id&&m.notifications_enabled!==false)
+      .map(m=>m.user_id);
+    if(targetIds.length===0)return;
+
+    const senderName=(_currentProfile&&_currentProfile.name)||'멤버';
+    const dateLabel=formatShortDate(ev.date);
+    const timeLabel=ev.time?` ${ev.time}`:'';
+    // 기간 그룹: opts.rangeDays 있으면 "N일 기간" 표기
+    const rangeSuffix=(opts&&opts.rangeDays&&opts.rangeDays>1)?` 외 ${opts.rangeDays-1}일`:'';
+
+    supa.functions.invoke('send-push',{
+      body:{
+        user_ids:targetIds,
+        title:`${senderName} · ${ev.title}`,
+        body:`취소됨 · ${dateLabel}${timeLabel}${rangeSuffix}`,
+        url:`/?room=${_currentRoom.id}`,
+        tag:`event-del-${ev.id}-${Date.now()}`,
+      }
+    }).catch(e=>console.warn('삭제 알림 발송 실패:',e));
+  }catch(e){console.warn('notifyEventDeleted 에러:',e)}
+}
+
+/* 내부 헬퍼: create/update 공통 처리 (evCard 입력 컨텍스트 사용) */
+function _notifyEventChange(action, title, time){
+  try{
+    const targetIds=(_myMembers||[])
+      .filter(m=>m.user_id&&m.user_id!==_currentUser.id&&m.notifications_enabled!==false)
+      .map(m=>m.user_id);
+    if(targetIds.length===0)return;
 
     const senderName=(_currentProfile&&_currentProfile.name)||'멤버';
     const isShared=_selectedTarget==='all'&&_selectedMembers.length>=2;
@@ -3672,17 +3773,18 @@ function notifyEventCreated(title, time){
     }
     const timeLabel=time?` ${time}`:'';
     const sharedPrefix=isShared?'함께 일정 · ':'';
+    const actionPrefix=action==='update'?'수정됨 · ':'';
 
     supa.functions.invoke('send-push',{
       body:{
         user_ids:targetIds,
         title:`${senderName} · ${title}`,
-        body:`${sharedPrefix}${dateLabel}${timeLabel}`,
+        body:`${actionPrefix}${sharedPrefix}${dateLabel}${timeLabel}`,
         url:`/?room=${_currentRoom.id}`,
-        tag:`event-${Date.now()}`,
+        tag:`event-${action}-${Date.now()}`,
       }
     }).catch(e=>console.warn('알림 발송 실패:',e));
-  }catch(e){console.warn('notifyEventCreated 에러:',e)}
+  }catch(e){console.warn('_notifyEventChange 에러:',e)}
 }
 
 /* 'YYYY-MM-DD' → 'M월 D일' (요일 없이 간결하게) */
@@ -3964,7 +4066,7 @@ async function saveEditedEvent(title,time,color,recurringYearly){
   // 기간 그룹 + 전체 기간 수정
   if(!wasShared&&!isNowShared&&_editGroup.length>1&&_editScope==='all'){
     const ids=_editGroup.map(e=>e.id);
-    const {error}=await supa.from('events').update({title,time,color,recurring_yearly:ry}).in('id',ids);
+    const {error}=await supa.from('events').update({title,time,color,recurring_yearly:ry,reminder_sent_at:null}).in('id',ids);
     if(error)throw error;
     toast(`전체 기간 수정됨 (${ids.length}일)`);
     return;
@@ -3972,13 +4074,13 @@ async function saveEditedEvent(title,time,color,recurringYearly){
   
   if(!wasShared&&!isNowShared){
     // Case 4: 혼자 → 혼자 (단순 수정)
-    const {error}=await supa.from('events').update({title,time,color,recurring_yearly:ry}).eq('id',ev.id);
+    const {error}=await supa.from('events').update({title,time,color,recurring_yearly:ry,reminder_sent_at:null}).eq('id',ev.id);
     if(error)throw error;
     toast('수정됐어요');
   }else if(!wasShared&&isNowShared){
     // Case 3: 혼자 → 함께
     const sharedId=genShared();
-    const {error:e1}=await supa.from('events').update({title,time,color,shared_id:sharedId,recurring_yearly:ry}).eq('id',ev.id);
+    const {error:e1}=await supa.from('events').update({title,time,color,shared_id:sharedId,recurring_yearly:ry,reminder_sent_at:null}).eq('id',ev.id);
     if(e1)throw e1;
     const others=_selectedMembers.filter(u=>u!==_currentUser.id);
     if(others.length){
@@ -4009,7 +4111,7 @@ async function saveEditedEvent(title,time,color,recurringYearly){
     const toAdd=newIds.filter(u=>!oldIds.includes(u));
     
     if(toKeep.length){
-      const {error}=await supa.from('events').update({title,time,color,recurring_yearly:ry})
+      const {error}=await supa.from('events').update({title,time,color,recurring_yearly:ry,reminder_sent_at:null})
         .eq('shared_id',ev.shared_id).in('user_id',toKeep);
       if(error)throw error;
     }
@@ -4051,15 +4153,20 @@ async function deleteEvent(eventId){
       const {error}=await supa.from('events').delete().eq('shared_id',ev.shared_id);
       if(error)throw error;
       toast('함께 일정 삭제됨');
+      notifyEventDeleted(ev);
     }else if(group.length>1){
       const ids=group.map(e=>e.id);
       const {error}=await supa.from('events').delete().in('id',ids);
       if(error)throw error;
       toast(`기간 일정 삭제됨 (${ids.length}일)`);
+      // 기간 그룹: 첫 날짜 기준 + 일수 표기
+      const first=group.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''))[0]||ev;
+      notifyEventDeleted(first,{rangeDays:group.length});
     }else{
       const {error}=await supa.from('events').delete().eq('id',eventId);
       if(error)throw error;
       toast('삭제됐어요');
+      notifyEventDeleted(ev);
     }
     await loadEvents();
     if(_selectedDate)openDateSheet(_selectedDate);
