@@ -272,13 +272,19 @@ body{background:var(--bg)}
 .cal-member-tabs.show{display:flex}
 .cal-member-tab{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;flex-shrink:0;background:none;border:none;padding:3px;font-family:inherit;transition:opacity .15s}
 .cal-member-tab:active{opacity:.6}
-.cal-member-tab-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Noto Serif KR',serif;font-size:18px;font-weight:700;color:var(--card);flex-shrink:0;transition:box-shadow .15s;position:relative}
+.cal-member-tab-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Noto Serif KR',serif;font-size:18px;font-weight:700;color:var(--card);flex-shrink:0;transition:box-shadow .15s;position:relative;overflow:hidden}
+.cal-member-tab-icon.has-photo{padding:0}
+.cal-member-tab-icon.has-photo img{width:100%;height:100%;object-fit:cover;display:block}
 .cal-member-tab.on .cal-member-tab-icon{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--accent)}
 .cal-member-tab-all{background:var(--card);border:1.5px solid var(--border);position:relative}
 .cal-member-tab-all-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:3px;width:18px;height:18px;place-items:center}
 .cal-member-tab-all-grid span{width:6px;height:6px;border-radius:50%;display:block}
 .cal-member-tab-name{font-size:10px;font-weight:600;color:var(--sub);max-width:60px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cal-member-tab.on .cal-member-tab-name{color:var(--text)}
+
+/* cal-avatar(헤더 우측) 사진 지원 */
+.cal-avatar.has-photo{padding:0;overflow:hidden}
+.cal-avatar.has-photo img{width:100%;height:100%;object-fit:cover;display:block}
 
 /* 월/년 타이틀 */
 .cal-month-row{display:flex;align-items:center;justify-content:center;gap:18px;padding:14px 0 6px}
@@ -606,6 +612,8 @@ body{background:var(--bg)}
 .cal-view-toggle{position:absolute;left:14px;top:max(70px,calc(env(safe-area-inset-top) + 70px));display:flex;gap:4px;background:var(--card);border:1px solid var(--borderL);border-radius:14px;padding:3px;font-size:0;z-index:5}
 .cal-view-btn{background:transparent;border:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700;color:var(--sub);padding:5px 11px;border-radius:11px;transition:all .12s}
 .cal-view-btn.on{background:var(--accent);color:var(--card)}
+/* 멤버 탭이 보일 때 월/주 토글을 아래로 밀어서 겹침 방지 */
+.cal-member-tabs.show ~ .cal-view-toggle{top:max(150px,calc(env(safe-area-inset-top) + 150px))}
 
 /* 주간 뷰 — 세로 리스트 (V1 스타일) */
 .cal-grid.weekly{
@@ -1477,6 +1485,11 @@ async function saveProfileBirthday(){
     if(error)throw error;
     if(!_currentProfile)_currentProfile={};
     _currentProfile.birthday=md;
+    // _myMembers의 본인 항목도 즉시 동기화 (다른 멤버 시점 대비)
+    if(_myMembers&&_myMembers.length){
+      const me=_myMembers.find(m=>m.user_id===_currentUser.id);
+      if(me)me.birthday=md;
+    }
     toast(`생일 저장 완료 (${m}/${d})`);
     renderMonthly();  // 캘린더 즉시 갱신
   }catch(e){
@@ -1560,8 +1573,18 @@ async function uploadProfilePhoto(file){
       email:_currentUser.email,
     });
     if(error)throw error;
+    // _currentProfile 즉시 동기화 (헤더·멤버 탭에 즉시 반영)
+    if(!_currentProfile)_currentProfile={};
+    _currentProfile.avatar_url=dataUrl;
+    // _myMembers 내 본인 항목도 동기화
+    if(_myMembers&&_myMembers.length){
+      const me=_myMembers.find(m=>m.user_id===_currentUser.id);
+      if(me)me.avatar_url=dataUrl;
+    }
     toast('사진 변경됨');
     loadProfilePhoto();
+    updateCalAvatar();
+    renderMemberTabs();
   }catch(e){
     toast('실패: '+(e.message||'').slice(0,40));
   }
@@ -1698,6 +1721,34 @@ function renderRooms(rooms,countMap){
 
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 
+/* 본인 프로필 정보를 미리 로드 (생일·사진을 캘린더에 반영하기 위해) */
+async function loadCurrentProfile(){
+  if(!_currentUser)return;
+  try{
+    const {data}=await supa.from('profiles').select('avatar_url,name,birthday').eq('id',_currentUser.id).maybeSingle();
+    _currentProfile=data||{};
+  }catch(e){
+    console.warn('프로필 로드 실패',e);
+    _currentProfile=_currentProfile||{};
+  }
+}
+
+/* 헤더 우측 아바타 갱신 (사진 있으면 사진, 없으면 첫 글자) */
+function updateCalAvatar(){
+  const el=document.getElementById('calAvatar');
+  if(!el||!_currentUser)return;
+  const photo=_currentProfile?.avatar_url;
+  if(photo){
+    el.classList.add('has-photo');
+    el.innerHTML=`<img src="${escapeHtml(photo)}" alt="">`;
+  }else{
+    el.classList.remove('has-photo');
+    const meta=_currentUser.user_metadata||{};
+    const nm=(_currentProfile?.name)||meta.name||meta.full_name||(_currentUser.email?_currentUser.email.split('@')[0]:'?');
+    el.textContent=(nm||'?').trim().charAt(0).toUpperCase();
+  }
+}
+
 /* 방 입장 → 캘린더 화면 */
 function enterRoom(roomId){
   const room=_myRooms.find(r=>r.id===roomId);
@@ -1706,11 +1757,14 @@ function enterRoom(roomId){
   _viewingMember='all';  // 방 진입 시 멤버 뷰 '전체'로 리셋
   // 헤더 정보 채우기
   document.getElementById('calRoomName').textContent=room.name||'(이름 없음)';
-  if(_currentUser){
-    const meta=_currentUser.user_metadata||{};
-    const nm=meta.name||meta.full_name||(_currentUser.email?_currentUser.email.split('@')[0]:'?');
-    document.getElementById('calAvatar').textContent=(nm||'?').trim().charAt(0).toUpperCase();
-  }
+  // 본인 프로필 로드 후 아바타 + 캘린더 갱신
+  loadCurrentProfile().then(()=>{
+    updateCalAvatar();
+    renderMonthly();  // 본인 생일 즉시 반영
+    renderMemberTabs();  // 본인 사진 즉시 반영
+  });
+  // (loadCurrentProfile 끝나기 전이라도) 임시로 텍스트 아바타
+  updateCalAvatar();
   // 테마 적용
   applyTheme(room.theme||'vintage');
   // 오늘 날짜로 초기화
@@ -2364,14 +2418,15 @@ async function loadRoomMembers(){
       .eq('room_id',_currentRoom.id);
     if(error)throw error;
     if(!membersRaw||!membersRaw.length){_myMembers=[];return}
-    // profiles 한번에 가져오기 (birthday 포함)
+    // profiles 한번에 가져오기 (birthday + avatar_url 포함)
     const userIds=membersRaw.map(m=>m.user_id);
-    const {data:profiles}=await supa.from('profiles').select('id,name,email,birthday').in('id',userIds);
+    const {data:profiles}=await supa.from('profiles').select('id,name,email,birthday,avatar_url').in('id',userIds);
     _myMembers=membersRaw.map(m=>{
       const p=(profiles||[]).find(pp=>pp.id===m.user_id);
       const name=(p&&p.name)||(p&&p.email?p.email.split('@')[0]:'익명');
       const birthday=(p&&p.birthday)||null;
-      return {user_id:m.user_id,color:m.color,name,joined_at:m.joined_at,birthday};
+      const avatar_url=(p&&p.avatar_url)||null;
+      return {user_id:m.user_id,color:m.color,name,joined_at:m.joined_at,birthday,avatar_url};
     });
     // joined_at 순으로 정렬 (본인이 항상 먼저 가입했으므로 첫 번째)
     _myMembers.sort((a,b)=>(a.joined_at||'').localeCompare(b.joined_at||''));
@@ -2421,8 +2476,17 @@ function renderMemberTabs(){
     const on=(_viewingMember===m.user_id);
     const initial=(m.name||'?').trim().charAt(0).toUpperCase();
     const bg=colorHex(m.color||'c-vintage');
+    // 본인은 _currentProfile.avatar_url 우선 (실시간 반영), 다른 멤버는 m.avatar_url
+    const isMe=(m.user_id===_currentUser?.id);
+    const photo=isMe?(_currentProfile?.avatar_url||m.avatar_url):m.avatar_url;
+    let iconHtml;
+    if(photo){
+      iconHtml=`<div class="cal-member-tab-icon has-photo" style="background:${bg}"><img src="${escapeHtml(photo)}" alt=""></div>`;
+    }else{
+      iconHtml=`<div class="cal-member-tab-icon" style="background:${bg}">${escapeHtml(initial)}</div>`;
+    }
     html+=`<button class="cal-member-tab${on?' on':''}" onclick="setViewingMember('${m.user_id}')">
-      <div class="cal-member-tab-icon" style="background:${bg}">${escapeHtml(initial)}</div>
+      ${iconHtml}
       <div class="cal-member-tab-name">${escapeHtml(m.name||'')}</div>
     </button>`;
   });
