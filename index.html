@@ -266,6 +266,20 @@ body{background:var(--bg)}
 .cal-actions{display:flex;align-items:center;gap:4px;flex-shrink:0;position:relative;z-index:2}
 .cal-avatar:active{opacity:.7}
 
+/* 멤버 프로필 탭 (전체 + 각 멤버) */
+.cal-member-tabs{display:none;gap:18px;padding:8px 20px 6px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;-webkit-overflow-scrolling:touch}
+.cal-member-tabs::-webkit-scrollbar{display:none}
+.cal-member-tabs.show{display:flex}
+.cal-member-tab{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;flex-shrink:0;background:none;border:none;padding:3px;font-family:inherit;transition:opacity .15s}
+.cal-member-tab:active{opacity:.6}
+.cal-member-tab-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Noto Serif KR',serif;font-size:18px;font-weight:700;color:var(--card);flex-shrink:0;transition:box-shadow .15s;position:relative}
+.cal-member-tab.on .cal-member-tab-icon{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--accent)}
+.cal-member-tab-all{background:var(--card);border:1.5px solid var(--border);position:relative}
+.cal-member-tab-all-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:3px;width:18px;height:18px;place-items:center}
+.cal-member-tab-all-grid span{width:6px;height:6px;border-radius:50%;display:block}
+.cal-member-tab-name{font-size:10px;font-weight:600;color:var(--sub);max-width:60px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-member-tab.on .cal-member-tab-name{color:var(--text)}
+
 /* 월/년 타이틀 */
 .cal-month-row{display:flex;align-items:center;justify-content:center;gap:18px;padding:14px 0 6px}
 .cal-month-arrow{background:none;border:none;cursor:pointer;font-size:22px;color:var(--sub);font-family:inherit;font-weight:300;padding:6px 10px;line-height:1}
@@ -856,6 +870,9 @@ body{background:var(--bg)}
     </div>
   </div>
 
+  <!-- 멤버 프로필 탭 (전체 + 각 멤버) — renderMemberTabs()가 채움 -->
+  <div class="cal-member-tabs" id="calMemberTabs"></div>
+
   <div class="cal-month-row">
     <button class="cal-month-arrow" onclick="prevMonth()">‹</button>
     <div class="cal-month-title" onclick="openDatePicker()">
@@ -1076,6 +1093,10 @@ body{background:var(--bg)}
       <button class="pf-name-save-btn" onclick="saveProfileBirthday()">저장</button>
     </div>
   </div>
+  <div class="pf-edit-row">
+    <div class="ev-label" style="font-size:11px">알림 받기 <span style="font-weight:400;color:var(--mute);font-size:10px">· 오늘 일정 + 멤버가 새 일정 등록 시</span></div>
+    <button class="pf-name-save-btn" id="pushToggleBtn" onclick="togglePushNotification()" style="width:100%">알림 켜기</button>
+  </div>
   <div class="mo-actions">
     <button class="btn btn-danger" onclick="doLogout()">로그아웃</button>
     <button class="mo-cancel" onclick="closeProfile()">닫기</button>
@@ -1185,6 +1206,135 @@ const supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{
   }
 });
 
+/* ═══════════════════════════════════
+   푸시 알림 (Web Push)
+   ═══════════════════════════════════ */
+const VAPID_PUBLIC_KEY='BNu_yIhzJAi8dmOfhAC-dwb_-4ccNl--DZPouK3ybw76K_AD_ZyyyTVaF1zgrI0Nk_DlBxiSO2gMIEhvWenPwlo';
+
+/* base64url → Uint8Array (Web Push 표준 변환) */
+function urlBase64ToUint8Array(base64String){
+  const padding='='.repeat((4-base64String.length%4)%4);
+  const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
+  const rawData=atob(base64);
+  const arr=new Uint8Array(rawData.length);
+  for(let i=0;i<rawData.length;++i)arr[i]=rawData.charCodeAt(i);
+  return arr;
+}
+
+/* 현재 푸시 상태 확인 */
+async function getPushStatus(){
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)){
+    return 'unsupported';
+  }
+  if(Notification.permission==='denied')return 'denied';
+  if(Notification.permission==='default')return 'default';
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const sub=await reg.pushManager.getSubscription();
+    return sub?'subscribed':'granted';
+  }catch{return 'error'}
+}
+
+/* 푸시 등록 (권한 + 구독 + DB 저장) */
+async function registerPushNotification(){
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)){
+    toast('이 브라우저는 알림 기능을 지원하지 않아요');
+    return false;
+  }
+  if(!_currentUser){toast('로그인이 필요해요');return false}
+  try{
+    const permission=await Notification.requestPermission();
+    if(permission!=='granted'){
+      toast('알림 권한이 필요해요');
+      return false;
+    }
+    const reg=await navigator.serviceWorker.ready;
+    let subscription=await reg.pushManager.getSubscription();
+    if(!subscription){
+      subscription=await reg.pushManager.subscribe({
+        userVisibleOnly:true,
+        applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+    }
+    const subJson=subscription.toJSON();
+    const {error}=await supa.from('push_subscriptions').upsert({
+      user_id:_currentUser.id,
+      endpoint:subJson.endpoint,
+      p256dh:subJson.keys.p256dh,
+      auth:subJson.keys.auth,
+      user_agent:navigator.userAgent.slice(0,200),
+      last_used_at:new Date().toISOString(),
+    },{onConflict:'endpoint'});
+    if(error){
+      console.warn('구독 저장 실패:',error);
+      toast('알림 설정 실패: '+(error.message||error));
+      return false;
+    }
+    toast('알림이 켜졌어');
+    return true;
+  }catch(e){
+    console.warn('푸시 등록 실패:',e);
+    toast('알림 설정 실패');
+    return false;
+  }
+}
+
+/* 푸시 해제 */
+async function unregisterPushNotification(){
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const subscription=await reg.pushManager.getSubscription();
+    if(!subscription){toast('이미 꺼져 있어');return}
+    if(_currentUser){
+      await supa.from('push_subscriptions').delete().eq('endpoint',subscription.endpoint);
+    }
+    await subscription.unsubscribe();
+    toast('알림이 꺼졌어');
+  }catch(e){
+    console.warn('푸시 해제 실패:',e);
+    toast('알림 해제 실패');
+  }
+}
+
+/* 알림 켜기/끄기 토글 (프로필 시트 버튼) */
+async function togglePushNotification(){
+  const btn=document.getElementById('pushToggleBtn');
+  if(!btn)return;
+  btn.disabled=true;
+  const status=await getPushStatus();
+  if(status==='unsupported'){
+    toast('이 브라우저는 알림을 지원하지 않아요');
+  }else if(status==='denied'){
+    toast('브라우저 설정에서 알림 권한을 허용해주세요');
+  }else if(status==='subscribed'){
+    await unregisterPushNotification();
+  }else{
+    await registerPushNotification();
+  }
+  await syncPushButton();
+  btn.disabled=false;
+}
+
+/* 프로필 열 때 버튼 텍스트 동기화 */
+async function syncPushButton(){
+  const btn=document.getElementById('pushToggleBtn');
+  if(!btn)return;
+  const status=await getPushStatus();
+  if(status==='subscribed'){
+    btn.textContent='알림 끄기';
+    btn.style.background='var(--mute)';
+  }else if(status==='unsupported'){
+    btn.textContent='알림 지원 안 함';
+    btn.disabled=true;
+  }else if(status==='denied'){
+    btn.textContent='브라우저 설정에서 허용 필요';
+    btn.disabled=true;
+  }else{
+    btn.textContent='알림 켜기';
+    btn.style.background='';
+  }
+}
+
 /* 화면 전환 */
 /* 모든 모달 닫기 (화면 전환 시 / 새 모달 열기 시) */
 function closeAllModals(){
@@ -1291,6 +1441,8 @@ function openProfile(){
   fillBirthdaySelects();
   // 프로필 사진 표시 (avatar_url이 있으면)
   loadProfilePhoto();
+  // 푸시 알림 버튼 상태 동기화
+  syncPushButton();
   document.getElementById('profileOverlay').classList.add('on');
   document.getElementById('profileCard').classList.add('on');
 }
@@ -1551,6 +1703,7 @@ function enterRoom(roomId){
   const room=_myRooms.find(r=>r.id===roomId);
   if(!room){toast('방 정보를 찾지 못했어요');return}
   _currentRoom=room;
+  _viewingMember='all';  // 방 진입 시 멤버 뷰 '전체'로 리셋
   // 헤더 정보 채우기
   document.getElementById('calRoomName').textContent=room.name||'(이름 없음)';
   if(_currentUser){
@@ -1572,6 +1725,7 @@ function enterRoom(roomId){
 function exitRoom(){
   _currentRoom=null;
   _events={};
+  _viewingMember='all';  // 멤버 뷰도 리셋
   applyTheme('vintage');  // 기본으로 복귀
   showScreen('roomsScreen');
   loadRooms();
@@ -1890,6 +2044,7 @@ let _editingEvent=null;   // 수정 중 일정 (null이면 추가 모드)
 let _selectedColor='c-vintage';
 /* 3-B: 함께 일정 */
 let _myMembers=[];           // 현재 방의 모든 멤버 [{user_id, name, color, ...}]
+let _viewingMember='all';    // 현재 보고 있는 멤버: 'all' | user_id (멤버 프로필 탭)
 let _selectedTarget='self';  // 'self' | 'all'
 let _selectedMembers=[];     // 함께 선택된 user_id 배열 (본인 포함)
 let _editSharedMemberIds=[]; // 수정 시 원래 함께였던 멤버
@@ -2209,18 +2364,76 @@ async function loadRoomMembers(){
       .eq('room_id',_currentRoom.id);
     if(error)throw error;
     if(!membersRaw||!membersRaw.length){_myMembers=[];return}
-    // profiles 한번에 가져오기
+    // profiles 한번에 가져오기 (birthday 포함)
     const userIds=membersRaw.map(m=>m.user_id);
-    const {data:profiles}=await supa.from('profiles').select('id,name,email').in('id',userIds);
+    const {data:profiles}=await supa.from('profiles').select('id,name,email,birthday').in('id',userIds);
     _myMembers=membersRaw.map(m=>{
       const p=(profiles||[]).find(pp=>pp.id===m.user_id);
       const name=(p&&p.name)||(p&&p.email?p.email.split('@')[0]:'익명');
-      return {user_id:m.user_id,color:m.color,name,joined_at:m.joined_at};
+      const birthday=(p&&p.birthday)||null;
+      return {user_id:m.user_id,color:m.color,name,joined_at:m.joined_at,birthday};
     });
+    // joined_at 순으로 정렬 (본인이 항상 먼저 가입했으므로 첫 번째)
+    _myMembers.sort((a,b)=>(a.joined_at||'').localeCompare(b.joined_at||''));
+    renderMemberTabs();
   }catch(e){
     console.warn('멤버 로드 실패:',e);
     _myMembers=[];
+    renderMemberTabs();
   }
+}
+
+/* 멤버 프로필 탭 렌더 — 전체 + 각 멤버 */
+function renderMemberTabs(){
+  const wrap=document.getElementById('calMemberTabs');
+  if(!wrap)return;
+  // 멤버 2명 이상일 때만 표시 (혼자면 의미 없음)
+  if(_myMembers.length<2){
+    wrap.classList.remove('show');
+    wrap.innerHTML='';
+    return;
+  }
+  wrap.classList.add('show');
+  // _viewingMember 유효성 검증 (멤버가 나갔을 경우)
+  if(_viewingMember!=='all'&&!_myMembers.find(m=>m.user_id===_viewingMember)){
+    _viewingMember='all';
+  }
+  // 본인을 첫 번째로 정렬
+  const sorted=[..._myMembers].sort((a,b)=>{
+    if(a.user_id===_currentUser?.id)return -1;
+    if(b.user_id===_currentUser?.id)return 1;
+    return 0;
+  });
+  let html='';
+  // 전체 탭
+  const allOn=(_viewingMember==='all');
+  const dotColors=sorted.slice(0,3).map(m=>colorHex(m.color||'c-vintage'));
+  let dotsHtml='';
+  dotColors.forEach(c=>{dotsHtml+=`<span style="background:${c}"></span>`});
+  html+=`<button class="cal-member-tab${allOn?' on':''}" onclick="setViewingMember('all')">
+    <div class="cal-member-tab-icon cal-member-tab-all">
+      <div class="cal-member-tab-all-grid">${dotsHtml}</div>
+    </div>
+    <div class="cal-member-tab-name">전체</div>
+  </button>`;
+  // 각 멤버 탭
+  sorted.forEach(m=>{
+    const on=(_viewingMember===m.user_id);
+    const initial=(m.name||'?').trim().charAt(0).toUpperCase();
+    const bg=colorHex(m.color||'c-vintage');
+    html+=`<button class="cal-member-tab${on?' on':''}" onclick="setViewingMember('${m.user_id}')">
+      <div class="cal-member-tab-icon" style="background:${bg}">${escapeHtml(initial)}</div>
+      <div class="cal-member-tab-name">${escapeHtml(m.name||'')}</div>
+    </button>`;
+  });
+  wrap.innerHTML=html;
+}
+
+/* 멤버 뷰 전환 */
+function setViewingMember(uid){
+  _viewingMember=uid;
+  renderMemberTabs();
+  renderMonthly();
 }
 
 /* 일자별 일정 — 함께 일정은 shared_id로 그룹핑 (한 번만 표시) */
@@ -2239,6 +2452,22 @@ function getDayEvents(date){
       time:null,
       user_id:_currentUser?.id,
       _isVirtual:true,
+    });
+  }
+  // 같은 방 멤버들의 생일도 가상 일정으로 추가 (멤버 색상, 본인 제외)
+  if(_myMembers&&_myMembers.length){
+    _myMembers.forEach(m=>{
+      if(m.user_id===_currentUser?.id)return;  // 본인은 위에서 처리
+      if(m.birthday&&m.birthday===md){
+        virtual.push({
+          id:'__bday_'+m.user_id,
+          title:'🎂 '+(m.name||'멤버')+' 생일',
+          color:m.color||'c-rose',
+          time:null,
+          user_id:m.user_id,
+          _isVirtual:true,
+        });
+      }
     });
   }
   const evs=baseEvs.concat(yearlyOnes.map(e=>({...e,_yearlyDisplay:true}))).concat(virtual);
@@ -2279,6 +2508,10 @@ function getDayEvents(date){
     else if(prevHas&&!nextHas)ev._rangePos='end';
     else ev._rangePos='single';
   });
+  // 멤버 뷰 필터 — '전체'면 모두, 특정 멤버면 그 멤버 일정 + 함께 일정 + 생일(가상)만
+  if(_viewingMember&&_viewingMember!=='all'){
+    return result.filter(ev=>ev._isShared||ev._isVirtual||ev.user_id===_viewingMember);
+  }
   return result;
 }
 function isSameRangeGroup(a,b){
