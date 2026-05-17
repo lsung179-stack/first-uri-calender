@@ -697,64 +697,6 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 
 /* 주간 뷰 토글 — cal-month-row 안 좌측에 배치 */
 .cal-view-toggle{position:absolute;left:14px;top:50%;transform:translateY(-50%);display:flex;gap:4px;background:var(--card);border:1px solid var(--borderL);border-radius:14px;padding:3px;font-size:0;z-index:5}
-.cal-view-btn{background:transparent;border:none;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700;color:var(--sub);padding:5px 11px;border-radius:11px;transition:all .12s}
-.cal-view-btn.on{background:var(--accent);color:var(--card)}
-
-/* 주간 뷰 — 세로 리스트 (V1 스타일) */
-.cal-grid.weekly{
-  display:flex;flex-direction:column;gap:0;
-  padding:0 14px calc(120px + env(safe-area-inset-bottom));background:var(--bg);
-  grid-template-columns:none;grid-template-rows:none;
-  overflow-y:auto;-webkit-overflow-scrolling:touch;
-}
-.weekly-row{
-  display:flex;align-items:stretch;
-  border-bottom:1px solid var(--borderL);
-  padding:14px 0;min-height:60px;gap:14px;
-}
-.weekly-row:last-child{border-bottom:none}
-.weekly-dow{
-  width:30px;flex-shrink:0;
-  display:flex;align-items:flex-start;justify-content:center;
-  font-size:13px;font-weight:700;color:var(--sub);
-  padding-top:6px;
-}
-.weekly-dow.sun{color:var(--sun)}
-.weekly-dow.sat{color:var(--sat)}
-.weekly-dow.today{color:var(--accent);font-size:14px}
-.weekly-events{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
-.weekly-empty{font-size:12px;color:#b5a78f;padding:8px 4px;font-style:normal}
-.weekly-evcard{
-  display:flex;align-items:center;gap:12px;
-  padding:10px 14px;background:var(--card);
-  border:1px solid var(--borderL);border-radius:10px;
-}
-.weekly-evcard.shared{border-left-width:3px;border-left-color:var(--gold)}
-.weekly-evdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
-.weekly-evtime{font-size:11px;color:var(--sub);font-weight:600;min-width:38px;flex-shrink:0}
-.weekly-evtitle{font-size:13px;font-weight:600;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.weekly-evtag{font-size:9px;color:var(--card);background:var(--gold);padding:2px 5px;border-radius:3px;font-weight:700;flex-shrink:0}
-.weekly-evlabel{font-size:13px;color:var(--accent);font-weight:700}
-
-/* 주간 뷰일 때 cal-week-head 숨김 (자체 헤더 사용) */
-.weekly-mode .cal-week-head{display:none}
-.weekly-headbar{
-  display:none;padding:14px 14px 12px;background:var(--bg);
-  border-bottom:1px solid var(--borderL);
-}
-.weekly-mode .weekly-headbar{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.weekly-headbar-cell{text-align:center}
-.weekly-headbar-dow{font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.5px;margin-bottom:4px}
-.weekly-headbar-dow.sun{color:var(--sun)}
-.weekly-headbar-dow.sat{color:var(--sat)}
-.weekly-headbar-day{
-  font-size:18px;font-weight:700;color:var(--text);
-  width:32px;height:32px;line-height:32px;border-radius:8px;margin:0 auto;
-}
-.weekly-headbar-day.sun{color:var(--sun)}
-.weekly-headbar-day.sat{color:var(--sat)}
-.weekly-headbar-day.today{background:var(--accent);color:var(--card)}
-
 /* 함께 멤버 시트 (시트 안 멤버 라인) */
 .dp-members-section{
   display:flex;flex-direction:column;gap:6px;
@@ -1451,84 +1393,8 @@ async function unregisterPushNotification(){
   }
 }
 
-/* 알림 켜기/끄기 토글 (프로필 시트 버튼) */
-async function togglePushNotification(){
-  const btn=document.getElementById('pushToggleBtn');
-  if(!btn)return;
-  btn.disabled=true;
-  const status=await getPushStatus();
-  if(status==='unsupported'){
-    toast('이 브라우저는 알림을 지원하지 않아요');
-  }else if(status==='denied'){
-    toast('브라우저 설정에서 알림 권한을 허용해주세요');
-  }else if(status==='subscribed'){
-    await unregisterPushNotification();
-  }else{
-    await registerPushNotification();
-  }
-  await syncPushButton();
-  btn.disabled=false;
-}
-
-/* 프로필 열 때 버튼 텍스트 동기화 */
-async function syncPushButton(){
-  const btn=document.getElementById('pushToggleBtn');
-  const testBtn=document.getElementById('pushTestBtn');
-  if(!btn)return;
-  const status=await getPushStatus();
-  if(status==='subscribed'){
-    btn.textContent='알림 끄기';
-    btn.style.background='var(--mute)';
-    if(testBtn)testBtn.style.display='block';  // 알림 켜진 상태에서만 테스트 버튼 표시
-  }else if(status==='unsupported'){
-    btn.textContent='알림 지원 안 함';
-    btn.disabled=true;
-    if(testBtn)testBtn.style.display='none';
-  }else if(status==='denied'){
-    btn.textContent='브라우저 설정에서 허용 필요';
-    btn.disabled=true;
-    if(testBtn)testBtn.style.display='none';
-  }else{
-    btn.textContent='알림 켜기';
-    btn.style.background='';
-    if(testBtn)testBtn.style.display='none';
-  }
-}
-
-/* 테스트 알림 — Edge Function (send-push) 호출 */
-async function sendTestPush(){
-  const btn=document.getElementById('pushTestBtn');
-  if(!btn||!_currentUser)return;
-  btn.disabled=true;
-  const origText=btn.textContent;
-  btn.textContent='보내는 중...';
-  try{
-    const {data,error}=await supa.functions.invoke('send-push',{
-      body:{
-        user_ids:[_currentUser.id],
-        title:'우리 캘린더',
-        body:'테스트 알림이에요. 잘 받았어요?',
-        url:'/'
-      }
-    });
-    if(error)throw error;
-    const sent=data?.sent??0;
-    const total=data?.total??0;
-    if(sent>0){
-      toast(`테스트 알림 보냈어요 (${sent}/${total})`);
-    }else if(total===0){
-      toast('구독된 디바이스가 없어요');
-    }else{
-      toast(`발송 실패 (${sent}/${total})`);
-    }
-  }catch(e){
-    console.error('테스트 알림 에러:',e);
-    toast('알림 발송 실패: '+(e.message||'네트워크 오류').slice(0,40));
-  }finally{
-    btn.disabled=false;
-    btn.textContent=origText;
-  }
-}
+/* (V1.2에서 프로필 시트 푸시 토글 UI 제거됨 — 자동 등록 방식으로 전환.
+   togglePushNotification / syncPushButton / sendTestPush 함수는 호출처가 없어 dead code였음. 청소됨) */
 
 /* 화면 전환 */
 /* 모든 모달 닫기 (화면 전환 시 / 새 모달 열기 시) */
@@ -1644,8 +1510,6 @@ function openProfile(){
   fillBirthdaySelects();
   // 프로필 사진 표시 (avatar_url이 있으면)
   loadProfilePhoto();
-  // 푸시 알림 버튼 상태 동기화
-  syncPushButton();
   document.getElementById('profileOverlay').classList.add('on');
   document.getElementById('profileCard').classList.add('on');
 }
@@ -1870,18 +1734,8 @@ async function loadRooms(){
     if(!myMems||myMems.length===0){
       renderEmpty();
       _myRooms=[];
-      // ⭐ 새 사용자도 카톡 초대 코드가 있으면 처리해야 함 (이 호출이 없으면 모달 안 뜸)
+      // 새 사용자도 카톡 초대 코드가 있으면 처리
       tryHandlePendingJoin();
-      // 진단 토스트 (매번)
-      try{
-        const inMem=_pendingJoinCode;
-        const inStor=loadPendingJoinCode();
-        if(inMem||inStor){
-          setTimeout(()=>toast('초대 코드 처리 중... '+(inMem||inStor)),600);
-        }else{
-          setTimeout(()=>toast('[진단] 초대 코드 없음'),600);
-        }
-      }catch(e){}
       return;
     }
 
@@ -1908,19 +1762,6 @@ async function loadRooms(){
     tryEnterPendingRoom();
     // 초대 링크로 들어왔으면 입장 확인
     tryHandlePendingJoin();
-
-    // [임시 진단] 빈 방 목록 + 처리 안 된 초대 코드면 toast 표시 (매번, 원인 파악용)
-    if(!_myRooms.length){
-      try{
-        const inMem=_pendingJoinCode;
-        const inStor=loadPendingJoinCode();
-        if(inMem||inStor){
-          setTimeout(()=>toast('초대 코드 처리 중... '+(inMem||inStor)),600);
-        }else{
-          setTimeout(()=>toast('[진단] 초대 코드 없음'),600);
-        }
-      }catch(e){}
-    }
   }catch(e){
     content.innerHTML='<div style="padding:60px 24px;text-align:center;color:var(--sub);font-size:13px">방 목록을 불러오지 못했어요<br>잠시 후 다시 시도해주세요</div>';
     console.error(e);
@@ -1946,43 +1787,18 @@ async function tryHandlePendingJoin(){
   // 안전망: _pendingJoinCode가 null이면 localStorage에서 한 번 더 복구 시도
   if(!_pendingJoinCode){
     const saved=loadPendingJoinCode();
-    if(saved){
-      _pendingJoinCode=saved;
-      console.log('[pendingJoin] localStorage에서 복구:',saved);
-    }
+    if(saved)_pendingJoinCode=saved;
   }
-  if(!_pendingJoinCode||!_currentUser){
-    if(!_currentUser)console.log('[pendingJoin] 로그인 안 됨');
-    else console.log('[pendingJoin] 코드 없음 (URL/localStorage 둘 다)');
-    return;
-  }
+  if(!_pendingJoinCode||!_currentUser)return;
   const code=_pendingJoinCode;
-  console.log('[pendingJoin] 처리 시작:',code);
   clearPendingJoinCode();
 
-  // 디버그 마커 갱신 헬퍼 — 빈 방 화면에 RPC 결과 즉시 표시
-  const updateMarker=(extra)=>{
-    try{
-      const m=document.getElementById('dbg-marker');
-      if(m)m.textContent='build:rpc-004 · 코드:'+code+' · '+extra;
-    }catch(e){}
-  };
-
   try{
-    // 방 조회 — RPC로 (RLS 우회)
-    updateMarker('RPC 호출 중...');
+    // 방 조회 — RPC로 (RLS 우회, 멤버 아니어도 코드로만 조회 가능)
     const {data:rooms,error}=await supa.rpc('lookup_room_by_code',{invite_code:code});
-    if(error){
-      updateMarker('RPC ERR: '+(error.message||'').slice(0,40));
-      throw error;
-    }
+    if(error)throw error;
     const room=rooms&&rooms.length?rooms[0]:null;
-    if(!room){
-      updateMarker('RPC OK · 빈결과 (코드매칭X)');
-      toast('초대 코드를 찾을 수 없어요');
-      return;
-    }
-    updateMarker('RPC OK · room='+(room.name||'').slice(0,20));
+    if(!room){toast('초대 코드를 찾을 수 없어요');return}
 
     // 이미 멤버면 그냥 그 방으로 진입
     const {data:exist}=await supa.from('members').select('id').eq('room_id',room.id).eq('user_id',_currentUser.id).maybeSingle();
@@ -2012,7 +1828,6 @@ async function tryHandlePendingJoin(){
     _pendingRoomId=room.id;
     await loadRooms();
   }catch(e){
-    try{const m=document.getElementById('dbg-marker');if(m)m.textContent='build:rpc-004 · catch: '+(e.message||'').slice(0,50)}catch(_){}
     toast('초대 처리 실패: '+(e.message||'').slice(0,40));
     console.error(e);
   }
@@ -2052,14 +1867,6 @@ function updateWelcomeInviteBanner(){
 
 function renderEmpty(){
   const c=document.getElementById('roomsContent');
-  // 디버그 마커 — RPC 결과까지 즉시 표시 (rpc-004). tryHandlePendingJoin에서 갱신됨
-  let dbg='';
-  try{
-    const inMem=_pendingJoinCode;
-    const inStor=loadPendingJoinCode();
-    const status=inMem?`코드:${inMem}`:inStor?`저장:${inStor}`:'코드없음';
-    dbg=`<div id="dbg-marker" style="margin-top:36px;font-size:9px;color:#bbb;text-align:center;user-select:none;padding:0 16px;word-break:break-all">build:rpc-004 · ${status}</div>`;
-  }catch(e){}
   c.innerHTML=`
     <div class="r-empty">
       <div class="r-empty-icon">
@@ -2067,7 +1874,6 @@ function renderEmpty(){
       </div>
       <div class="r-empty-title">아직 방이 없어요</div>
       <div class="r-empty-sub">새 방을 만들거나<br>받은 코드로 입장해보세요</div>
-      ${dbg}
     </div>
   `;
 }
@@ -2641,8 +2447,7 @@ let _rangeStart=null;          // 'YYYY-MM-DD'
 let _rangeEnd=null;            // 'YYYY-MM-DD'
 let _rangeCalDate=new Date();  // 기간 미니 달력의 표시 월
 /* 3-C-2: 주간 뷰 + 스와이프 */
-let _calView='month';        // 'month' | 'week'
-let _calWeekStart=null;      // 주간 뷰 시작 일요일 (Date)
+// 주간 뷰 관련 변수는 V1.2에서 제거됨 (월뷰만 사용)
 
 /* 24절기 한자→한글 매핑 (간체+전통 모두 대응) */
 const TERM_KO={
@@ -3138,13 +2943,10 @@ function shiftDateKey(key,diff){
 
 /* ── 캘린더 렌더 ── */
 function renderMonthly(){
-  if(_calView==='week')return renderWeekly();
-  document.getElementById('calendarScreen').classList.remove('weekly-mode');
   document.getElementById('calYear').textContent=_calYear+'년';
   document.getElementById('calMonthName').textContent=MONTH_NAMES[_calMonth];
   
   const grid=document.getElementById('calGrid');
-  grid.classList.remove('weekly');
   const fdow=firstDow(_calYear,_calMonth);
   const dim=daysInMonth(_calYear,_calMonth);
   const prevDim=daysInMonth(_calMonth===0?_calYear-1:_calYear, _calMonth===0?11:_calMonth-1);
@@ -3181,102 +2983,6 @@ function renderMonthly(){
   updateTodayBtn();
 }
 
-/* 주간 뷰 렌더 — 세로 리스트 (V1 스타일) */
-function renderWeekly(){
-  if(!_calWeekStart){
-    const t=new Date();
-    _calWeekStart=new Date(t.getFullYear(),t.getMonth(),t.getDate()-t.getDay());
-  }
-  const ws=_calWeekStart;
-  document.getElementById('calYear').textContent=ws.getFullYear()+'년';
-  const we=new Date(ws);we.setDate(we.getDate()+6);
-  // 5월 같은 달이면 "5월", 다르면 "5–6월"
-  const sameMonth=ws.getMonth()===we.getMonth();
-  document.getElementById('calMonthName').textContent=sameMonth?
-    MONTH_NAMES[ws.getMonth()]:`${ws.getMonth()+1}–${we.getMonth()+1}월`;
-  
-  const todayKey=dateKey(new Date().getFullYear(),new Date().getMonth(),new Date().getDate());
-  const dows=['일','월','화','수','목','금','토'];
-  const dowsEng=['SU','MO','TU','WE','TH','FR','SA'];
-  
-  // 주간 모드 클래스
-  document.getElementById('calendarScreen').classList.add('weekly-mode');
-  
-  // 자체 헤더 (요일 + 날짜)
-  const head=document.getElementById('weeklyHeadbar');
-  let headHtml='';
-  for(let i=0;i<7;i++){
-    const dt=new Date(ws);dt.setDate(dt.getDate()+i);
-    const k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
-    const isToday=(k===todayKey);
-    const isHoliday=!!HOLIDAYS[k];
-    const dayCls=(i===0||isHoliday)?'sun':(i===6?'sat':'');
-    headHtml+=`<div class="weekly-headbar-cell" onclick="openDateSheet('${k}')">
-      <div class="weekly-headbar-dow ${dayCls}">${dowsEng[i]}</div>
-      <div class="weekly-headbar-day ${dayCls}${isToday?' today':''}">${dt.getDate()}</div>
-    </div>`;
-  }
-  head.innerHTML=headHtml;
-  
-  // 세로 리스트 (요일별 행)
-  const grid=document.getElementById('calGrid');
-  grid.classList.add('weekly');
-  let html='';
-  for(let i=0;i<7;i++){
-    const dt=new Date(ws);dt.setDate(dt.getDate()+i);
-    const k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
-    const isToday=(k===todayKey);
-    const isHoliday=!!HOLIDAYS[k];
-    const dayCls=(i===0||isHoliday)?'sun':(i===6?'sat':'');
-    const evs=getDayEvents(k);
-    
-    // 일정 카드 또는 "일정 없음"
-    let evsHtml='';
-    if(!evs.length){
-      // 라벨이라도 표시 (어린이날 등)
-      const lab=getDayLabel(dt.getFullYear(),dt.getMonth()+1,dt.getDate());
-      if(lab.text){
-        const labCls=lab.type==='holiday'?'weekly-evlabel':'';
-        evsHtml=`<div class="weekly-empty" style="${lab.type==='holiday'?'color:var(--accent);font-weight:700':''}">${escapeHtml(lab.text)}</div>`;
-      }else{
-        evsHtml='<div class="weekly-empty">일정 없음</div>';
-      }
-    }else{
-      // 라벨 (공휴일/절기) 먼저
-      const lab=getDayLabel(dt.getFullYear(),dt.getMonth()+1,dt.getDate());
-      if(lab.text&&lab.type==='holiday'){
-        evsHtml+=`<div class="weekly-evcard" onclick="openDateSheet('${k}')"><div class="weekly-evdot" style="background:var(--accent)"></div><div class="weekly-evtitle" style="color:var(--accent);font-weight:700">${escapeHtml(lab.text)}</div></div>`;
-      }
-      evs.forEach(ev=>{
-        const hex=colorHex(ev.color);
-        const t=escapeHtml(ev.title||'');
-        const tm=ev.time?escapeHtml(ev.time):'';
-        const sharedTag=ev._isShared?`<span class="weekly-evtag">함께 ${ev._memberCount}</span>`:'';
-        const sharedCls=ev._isShared?' shared':'';
-        evsHtml+=`<div class="weekly-evcard${sharedCls}" onclick="openDateSheet('${k}')">
-          <div class="weekly-evdot" style="background:${hex}"></div>
-          ${tm?`<div class="weekly-evtime">${tm}</div>`:''}
-          <div class="weekly-evtitle">${t}</div>
-          ${sharedTag}
-        </div>`;
-      });
-    }
-    
-    html+=`<div class="weekly-row${isToday?' today':''}">
-      <div class="weekly-dow ${dayCls}${isToday?' today':''}">${dows[i]}</div>
-      <div class="weekly-events">${evsHtml}</div>
-    </div>`;
-  }
-  grid.innerHTML=html;
-  updateTodayBtn();
-}
-
-function setCalView(view){
-  // 주간 뷰 제거됨 — 항상 month. 호출돼도 안전하게 처리
-  _calView='month';
-  renderMonthly();
-}
-
 function cellHtml(y,m,d,isOther,todayKey){
   const key=dateKey(y,m,d);
   const dow=new Date(y,m,d).getDay();
@@ -3301,7 +3007,7 @@ function cellHtml(y,m,d,isOther,todayKey){
   }
   
   let evsHtml='';
-  const maxShow=_calView==='week'?8:3;
+  const maxShow=3;
   const shown=evs.slice(0,maxShow);
   shown.forEach(ev=>{
     const hex=colorHex(ev.color);
@@ -3329,34 +3035,18 @@ function cellHtml(y,m,d,isOther,todayKey){
 
 function prevMonth(){
   fadeRender(()=>{
-    if(_calView==='week'){
-      if(!_calWeekStart)_calWeekStart=new Date();
-      _calWeekStart.setDate(_calWeekStart.getDate()-7);
-      _calWeekStart=new Date(_calWeekStart);
-    }else{
-      if(_calMonth===0){_calMonth=11;_calYear--}else{_calMonth--}
-    }
+    if(_calMonth===0){_calMonth=11;_calYear--}else{_calMonth--}
   });
 }
 function nextMonth(){
   fadeRender(()=>{
-    if(_calView==='week'){
-      if(!_calWeekStart)_calWeekStart=new Date();
-      _calWeekStart.setDate(_calWeekStart.getDate()+7);
-      _calWeekStart=new Date(_calWeekStart);
-    }else{
-      if(_calMonth===11){_calMonth=0;_calYear++}else{_calMonth++}
-    }
+    if(_calMonth===11){_calMonth=0;_calYear++}else{_calMonth++}
   });
 }
 function goToday(){
   fadeRender(()=>{
     const t=new Date();
-    if(_calView==='week'){
-      _calWeekStart=new Date(t.getFullYear(),t.getMonth(),t.getDate()-t.getDay());
-    }else{
-      _calYear=t.getFullYear();_calMonth=t.getMonth();
-    }
+    _calYear=t.getFullYear();_calMonth=t.getMonth();
   });
 }
 /* 페이드 헬퍼 — 캘린더 그리드 부드럽게 전환 */
@@ -3407,7 +3097,6 @@ function openDatePicker(){
   buildDatePicker();
   // 현재 보고 있는 연/월로 초기 위치
   let y=_calYear,m=_calMonth+1;
-  if(_calView==='week'&&_calWeekStart){y=_calWeekStart.getFullYear();m=_calWeekStart.getMonth()+1}
   _dpYear=y;_dpMonth=m;
   document.getElementById('datePickerOverlay').classList.add('on');
   document.getElementById('datePickerCard').classList.add('on');
@@ -3430,13 +3119,7 @@ function applyDatePicker(){
   const y=_dpYear||_calYear,m=(_dpMonth||(_calMonth+1));
   closeDatePicker();
   fadeRender(()=>{
-    if(_calView==='week'){
-      // 해당 달 1일 포함 주로
-      const t=new Date(y,m-1,1);
-      _calWeekStart=new Date(t.getFullYear(),t.getMonth(),t.getDate()-t.getDay());
-    }else{
-      _calYear=y;_calMonth=m-1;
-    }
+    _calYear=y;_calMonth=m-1;
   });
 }
 
@@ -3544,31 +3227,17 @@ function jumpToSearch(date){
   const d=parseDateKey(date);
   closeSearch();
   fadeRender(()=>{
-    if(_calView==='week'){
-      _calWeekStart=new Date(d.getFullYear(),d.getMonth(),d.getDate()-d.getDay());
-    }else{
-      _calYear=d.getFullYear();_calMonth=d.getMonth();
-    }
+    _calYear=d.getFullYear();_calMonth=d.getMonth();
   });
   setTimeout(()=>openDateSheet(date),250);
 }
 
-/* 오늘 버튼 — 다른 달/주에 있을 때만 표시 */
+/* 오늘 버튼 — 다른 달에 있을 때만 표시 */
 function updateTodayBtn(){
   const btn=document.getElementById('todayBtn');
   if(!btn)return;
   const t=new Date();
-  let isToday;
-  if(_calView==='week'){
-    if(!_calWeekStart){isToday=true;}
-    else{
-      const ws=new Date(_calWeekStart);
-      const we=new Date(ws);we.setDate(ws.getDate()+6);
-      isToday=t>=ws&&t<=we;
-    }
-  }else{
-    isToday=(_calYear===t.getFullYear()&&_calMonth===t.getMonth());
-  }
+  const isToday=(_calYear===t.getFullYear()&&_calMonth===t.getMonth());
   btn.classList.toggle('show',!isToday);
 }
 
