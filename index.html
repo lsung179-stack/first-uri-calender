@@ -12,9 +12,8 @@
 /* 다크 모드 깜빡임 방지: head에서 즉시 body 클래스 + meta 처리 */
 (function(){
   try{
-    var pref=localStorage.getItem('uricalv2.darkMode')||'auto';
-    var dark=(pref==='dark')||(pref==='auto'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);
-    if(dark){
+    var pref=localStorage.getItem('uricalv2.darkMode');
+    if(pref==='dark'){
       document.documentElement.classList.add('is-dark-pre');
       var m=document.getElementById('metaColorScheme');
       if(m) m.setAttribute('content','dark');
@@ -1153,9 +1152,8 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
     </div>
   </div>
   <div class="pf-edit-row">
-    <div class="ev-label" style="font-size:11px">표시 모드 <span style="font-weight:400;color:var(--mute);font-size:10px">· 자동은 시스템 설정을 따라가요</span></div>
+    <div class="ev-label" style="font-size:11px">표시 모드</div>
     <div class="dm-row" id="darkModeRow">
-      <button class="dm-btn" data-dm="auto" onclick="onDarkModeSelect('auto')">자동</button>
       <button class="dm-btn" data-dm="light" onclick="onDarkModeSelect('light')">라이트</button>
       <button class="dm-btn" data-dm="dark" onclick="onDarkModeSelect('dark')">다크</button>
     </div>
@@ -1570,7 +1568,7 @@ function syncDarkModeButtons(){
   });
 }
 function onDarkModeSelect(value){
-  if(value!=='auto'&&value!=='light'&&value!=='dark')return;
+  if(value!=='light'&&value!=='dark')return;
   setDarkModePref(value);
   syncDarkModeButtons();
 }
@@ -2280,20 +2278,6 @@ document.addEventListener('DOMContentLoaded',()=>{
     applyTheme('vintage');
     document.documentElement.classList.remove('is-dark-pre');
   }catch(e){}
-  // 시스템 prefers-color-scheme 변경 시 auto 모드면 즉시 반영
-  try{
-    if(window.matchMedia){
-      const mq=window.matchMedia('(prefers-color-scheme: dark)');
-      const onChange=()=>{
-        if(getDarkModePref()==='auto'){
-          const cur=(_currentRoom&&_currentRoom.theme)||'vintage';
-          applyTheme(cur);
-        }
-      };
-      if(mq.addEventListener)mq.addEventListener('change',onChange);
-      else if(mq.addListener)mq.addListener(onChange);
-    }
-  }catch(e){}
   const boxes=document.querySelectorAll('#codeBoxes .code-box');
   boxes.forEach((b,i)=>{
     b.addEventListener('input',e=>{
@@ -2733,20 +2717,19 @@ const EVENT_COLORS=[
 function colorHex(key){const c=EVENT_COLORS.find(x=>x.key===key);return c?c.hex:'#8b3a2a'}
 
 /* ── 다크 모드 ── */
-/* 사용자 선호: 'auto' | 'light' | 'dark' (localStorage) */
+/* 사용자 선호: 'light' | 'dark' (localStorage). 기본은 라이트. */
 function getDarkModePref(){
-  try{ return localStorage.getItem('uricalv2.darkMode') || 'auto'; }
-  catch(e){ return 'auto'; }
+  try{
+    const v=localStorage.getItem('uricalv2.darkMode');
+    return v==='dark'?'dark':'light';
+  }catch(e){ return 'light'; }
 }
 function isDarkMode(){
-  const pref=getDarkModePref();
-  if(pref==='dark')return true;
-  if(pref==='light')return false;
-  // auto: 시스템 설정 따라
-  return window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
+  return getDarkModePref()==='dark';
 }
 function setDarkModePref(value){
-  try{ localStorage.setItem('uricalv2.darkMode', value); }catch(e){}
+  const v=(value==='dark')?'dark':'light';
+  try{ localStorage.setItem('uricalv2.darkMode', v); }catch(e){}
   // 현재 적용된 룸 테마로 다시 그림
   const cur=(_currentRoom&&_currentRoom.theme)||'vintage';
   applyTheme(cur);
