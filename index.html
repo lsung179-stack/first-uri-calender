@@ -169,6 +169,32 @@ body{background:var(--bg)}
   background:var(--accent);vertical-align:2px;margin:0 6px;opacity:.55;
 }
 
+/* 카톡·네이버 in-app browser 감지 배너 (상단 고정) */
+.in-app-banner{
+  position:fixed;top:0;left:0;right:0;z-index:9999;
+  background:var(--accent);color:var(--card);
+  padding:max(10px,env(safe-area-inset-top)) 14px 10px;
+  font-size:13px;text-align:center;
+  display:none;align-items:center;justify-content:center;gap:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,.18);
+  letter-spacing:.2px;
+}
+.in-app-banner.on{display:flex}
+.in-app-banner-text{flex:1;text-align:left;line-height:1.4}
+.in-app-banner-btn{
+  background:var(--card);color:var(--accent);
+  border:none;padding:6px 12px;border-radius:8px;
+  font-size:12px;font-weight:700;font-family:inherit;
+  cursor:pointer;white-space:nowrap;flex-shrink:0;
+}
+.in-app-banner-btn:active{opacity:.85}
+.in-app-banner-close{
+  background:none;border:none;color:var(--card);
+  font-size:18px;line-height:1;padding:4px 8px;
+  cursor:pointer;opacity:.7;
+}
+.in-app-banner-close:active{opacity:1}
+
 /* 이메일 입력 화면 */
 .back{position:absolute;top:max(20px,env(safe-area-inset-top));left:18px;background:transparent;border:none;color:var(--text);font-size:22px;cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:300}
 .title{font-family:'Noto Serif KR',serif;font-size:22px;font-weight:700;color:var(--text);text-align:center;letter-spacing:.5px;line-height:1.4}
@@ -791,6 +817,13 @@ body{background:var(--bg)}
 </script>
 </head>
 <body>
+
+<!-- 카톡·메일 등 in-app browser 안내 배너 -->
+<div class="in-app-banner" id="inAppBanner">
+  <span class="in-app-banner-text" id="inAppBannerText"></span>
+  <button class="in-app-banner-btn" id="inAppBannerBtn" onclick="openInExternalBrowser()">열기</button>
+  <button class="in-app-banner-close" onclick="dismissInAppBanner()" aria-label="닫기">×</button>
+</div>
 
 <!-- 초기 로딩 -->
 <div class="loading" id="loading"><div class="spinner"></div></div>
@@ -1862,7 +1895,7 @@ function tryEnterPendingRoom(){
 async function tryHandlePendingJoin(){
   if(!_pendingJoinCode||!_currentUser)return;
   const code=_pendingJoinCode;
-  _pendingJoinCode=null; // 한 번만 시도 (재호출 방지)
+  clearPendingJoinCode(); // 한 번만 시도 (재호출 + redirect 방지)
 
   try{
     // 방 조회
@@ -2320,7 +2353,66 @@ async function init(){
     showScreen('welcomeScreen');
   }finally{
     setTimeout(()=>document.getElementById('loading').classList.add('hide'),200);
+    // in-app browser(카톡·네이버·페이스북 등)에서 열렸을 때 한 줄 안내
+    setTimeout(maybeShowInAppBrowserHint,800);
   }
+}
+
+/* 카톡/네이버/페이스북 in-app browser 감지 → 외부 브라우저로 열기 안내 */
+function isInAppBrowser(){
+  const ua=(navigator.userAgent||'').toLowerCase();
+  return /kakaotalk|naver\(inapp|fb_iab|fban|fbav|instagram|line\//.test(ua);
+}
+let _inAppHintShown=false;
+function maybeShowInAppBrowserHint(){
+  if(_inAppHintShown)return;
+  if(!isInAppBrowser())return;
+  _inAppHintShown=true;
+
+  const banner=document.getElementById('inAppBanner');
+  const text=document.getElementById('inAppBannerText');
+  const btn=document.getElementById('inAppBannerBtn');
+  if(!banner||!text||!btn)return;
+
+  const ua=navigator.userAgent||'';
+  const isAndroid=/Android/i.test(ua);
+  const isIOS=/iPhone|iPad|iPod/i.test(ua);
+
+  if(isAndroid){
+    text.textContent='Chrome에서 열어야 앱이 정상 작동해요';
+    btn.textContent='Chrome으로 열기';
+    btn.style.display='inline-block';
+  }else if(isIOS){
+    text.innerHTML='우측 아래 <b style="font-weight:700">⤴</b> → Safari에서 열기';
+    btn.style.display='none';
+  }else{
+    text.textContent='외부 브라우저에서 열면 더 편해요';
+    btn.style.display='none';
+  }
+  banner.classList.add('on');
+}
+
+/* Android: Chrome 강제 호출 (intent scheme) */
+function openInExternalBrowser(){
+  const ua=navigator.userAgent||'';
+  if(!/Android/i.test(ua))return;
+  // 현재 URL 기준 (이미 history.replaceState로 ?join 제거되었을 수 있어 _pendingJoinCode로 재구성)
+  const origin=location.origin;
+  let path=location.pathname;
+  const params=new URLSearchParams();
+  if(_pendingJoinCode)params.set('join',_pendingJoinCode);
+  if(_pendingRoomId)params.set('room',_pendingRoomId);
+  const qs=params.toString();
+  const full=origin+path+(qs?('?'+qs):'');
+  // intent://...#Intent;scheme=https;package=com.android.chrome;end
+  const stripped=full.replace(/^https?:\/\//,'');
+  const intentUrl=`intent://${stripped}#Intent;scheme=https;package=com.android.chrome;end`;
+  location.href=intentUrl;
+}
+
+function dismissInAppBanner(){
+  const banner=document.getElementById('inAppBanner');
+  if(banner)banner.classList.remove('on');
 }
 
 /* 인증 상태 변경 (OAuth/매직링크 콜백) */
@@ -2350,14 +2442,69 @@ let _myRooms=[];          // loadRooms 결과 캐시
 let _currentRoom=null;    // 진입한 방
 let _pendingRoomId=null;  // 알림 클릭으로 진입할 방 (URL ?room=xxx 또는 SW 메시지)
 let _pendingJoinCode=null;// 초대 링크로 입장할 방 코드 (URL ?join=XXXXXX)
+
+/* 저장/복구 헬퍼 — localStorage 사용 (OAuth redirect + 카톡↔카카오 앱 전환에도 보존) */
+const PENDING_JOIN_KEY='uricalv2.pendingJoin';
+const PENDING_JOIN_TTL_MS=60*60*1000; // 1시간 만료 (오래된 코드가 남아 다음 진입 시 잘못 뜨는 일 방지)
+function savePendingJoinCode(code){
+  try{localStorage.setItem(PENDING_JOIN_KEY,JSON.stringify({code,ts:Date.now()}))}catch(e){}
+}
+function loadPendingJoinCode(){
+  try{
+    const raw=localStorage.getItem(PENDING_JOIN_KEY);
+    if(!raw)return null;
+    const obj=JSON.parse(raw);
+    if(!obj||!obj.code)return null;
+    if(Date.now()-(obj.ts||0)>PENDING_JOIN_TTL_MS){
+      localStorage.removeItem(PENDING_JOIN_KEY);
+      return null;
+    }
+    return obj.code;
+  }catch(e){return null}
+}
+function clearPendingJoinCode(){
+  _pendingJoinCode=null;
+  try{localStorage.removeItem(PENDING_JOIN_KEY)}catch(e){}
+}
+
 (()=>{                    // URL에서 ?room= 과 ?join= 동시 파싱 후 정리
   try{
     const u=new URL(location.href);
     const r=u.searchParams.get('room');
     const j=u.searchParams.get('join');
     if(r)_pendingRoomId=r;
-    if(j)_pendingJoinCode=j.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+    if(j){
+      _pendingJoinCode=j.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+      savePendingJoinCode(_pendingJoinCode);
+    }else{
+      // URL에 ?join이 없어도 redirect 직후일 수 있으니 localStorage에서 복구
+      const saved=loadPendingJoinCode();
+      if(saved)_pendingJoinCode=saved;
+    }
     if(r||j)history.replaceState({},'',location.pathname);
+  }catch(e){}
+})();
+
+/* 카톡·네이버·인스타 등 in-app browser + Android + 초대 코드 → 즉시 TWA로 빠져나가기
+   (시그널·텔레그램이 쓰는 패턴. 페이지 진입 직후 intent로 자동 redirect) */
+(()=>{
+  try{
+    if(!_pendingJoinCode)return;
+    const ua=(navigator.userAgent||'').toLowerCase();
+    const isAndroid=/android/.test(ua);
+    if(!isAndroid)return;
+    const isInApp=/kakaotalk|naver\(inapp|fb_iab|fban|fbav|instagram|line\//.test(ua);
+    if(!isInApp)return;
+    // 한 세션에 한 번만 시도 (redirect 무한 루프 방지)
+    if(sessionStorage.getItem('uricalv2.autoOpenTried'))return;
+    sessionStorage.setItem('uricalv2.autoOpenTried','1');
+    // intent URL: TWA 자동 호출 + 실패 시 in-app browser에서 그대로 표시
+    const host='first-uri-calender.vercel.app';
+    const path=`/?join=${_pendingJoinCode}`;
+    const fallback=encodeURIComponent(`https://${host}${path}`);
+    const intentUrl=`intent://${host}${path}#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;S.browser_fallback_url=${fallback};end`;
+    // 약간의 지연 후 redirect (페이지가 한 번 렌더되는 시점 확보)
+    setTimeout(()=>{try{location.href=intentUrl}catch(e){}},150);
   }catch(e){}
 })();
 let _events={};           // {YYYY-MM-DD: [eventObj, ...]}
