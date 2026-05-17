@@ -14,6 +14,20 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="우리 캘린더">
+<meta name="description" content="함께 일정을 나누는 공간 · 우리 캘린더">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="우리 캘린더">
+<meta property="og:title" content="우리 캘린더 · 함께 일정을 나누는 공간">
+<meta property="og:description" content="가족과 함께, 연인과 함께. 빈티지 톤의 공유 캘린더.">
+<meta property="og:image" content="https://first-uri-calender.vercel.app/icon-512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:url" content="https://first-uri-calender.vercel.app/">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="우리 캘린더 · 함께 일정을 나누는 공간">
+<meta name="twitter:description" content="가족과 함께, 연인과 함께. 빈티지 톤의 공유 캘린더.">
+<meta name="twitter:image" content="https://first-uri-calender.vercel.app/icon-512.png">
 <title>우리 캘린더</title>
 <style>
 :root{
@@ -139,6 +153,21 @@ body{background:var(--bg)}
 
 .terms{position:absolute;bottom:36px;left:0;right:0;font-size:11px;color:var(--mute);text-align:center;letter-spacing:.2px;padding:0 28px;line-height:1.6}
 .terms a{color:var(--sub);text-decoration:underline;text-underline-offset:2px}
+
+/* 초대 링크로 들어왔을 때 환영 화면 상단 한 줄 안내 */
+.welcome-invite-banner{
+  position:absolute;top:max(20px,env(safe-area-inset-top));left:0;right:0;
+  text-align:center;font-size:11px;color:var(--sub);letter-spacing:.4px;
+  padding:10px 24px;
+}
+.welcome-invite-banner::after{
+  content:'';display:block;width:36px;height:0.5px;background:var(--border);
+  margin:8px auto 0;
+}
+.welcome-invite-banner .wib-dot{
+  display:inline-block;width:3px;height:3px;border-radius:50%;
+  background:var(--accent);vertical-align:2px;margin:0 6px;opacity:.55;
+}
 
 /* 이메일 입력 화면 */
 .back{position:absolute;top:max(20px,env(safe-area-inset-top));left:18px;background:transparent;border:none;color:var(--text);font-size:22px;cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:300}
@@ -770,6 +799,9 @@ body{background:var(--bg)}
 
   <!-- 환영 화면 -->
   <div class="screen" id="welcomeScreen">
+    <div class="welcome-invite-banner" id="welcomeInviteBanner" style="display:none">
+      초대받은 방이 있어요<span class="wib-dot"></span>로그인 후 자동 입장
+    </div>
     <div class="stamp">
       <div class="stamp-our">OUR</div>
       <div class="stamp-line"></div>
@@ -1161,6 +1193,18 @@ body{background:var(--bg)}
   </div>
 </div>
 
+<!-- 초대 링크 입장 확인 모달 -->
+<div class="mo-overlay" id="inviteConfirmOverlay" onclick="cancelInviteConfirm()"></div>
+<div class="mo-card" id="inviteConfirmCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">방 입장</div>
+  <div class="mo-sub"><span id="inviteConfirmRoomName">—</span>에<br>입장하시겠어요?</div>
+  <div class="mo-actions">
+    <button class="btn btn-primary" onclick="confirmInviteJoin()">입장</button>
+    <button class="mo-cancel" onclick="cancelInviteConfirm()">취소</button>
+  </div>
+</div>
+
 <!-- 방 설정 모달 -->
 <div class="mo-overlay" id="roomSetOverlay" onclick="closeRoomSettings()"></div>
 <div class="mo-card" id="roomSetCard">
@@ -1454,6 +1498,8 @@ function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
   const el=document.getElementById(id);
   if(el)el.classList.add('show');
+  // 환영 화면에 보여줄 때 초대 안내 배너 갱신
+  if(id==='welcomeScreen'&&typeof updateWelcomeInviteBanner==='function')updateWelcomeInviteBanner();
 }
 function goEmail(){showScreen('emailScreen');setTimeout(()=>{const i=document.getElementById('emailInput');if(i)i.focus()},350)}
 function goBack(){showScreen('welcomeScreen')}
@@ -1837,8 +1883,8 @@ async function tryHandlePendingJoin(){
       return;
     }
 
-    // 새 방 — 입장 확인
-    const ok=confirm(`"${room.name||'(이름 없음)'}" 방에 입장하시겠어요?`);
+    // 새 방 — 빈티지 톤 모달로 입장 확인
+    const ok=await showInviteConfirm(room.name||'(이름 없음)');
     if(!ok)return;
 
     // 멤버로 추가
@@ -1855,6 +1901,40 @@ async function tryHandlePendingJoin(){
     toast('초대 처리 실패: '+(e.message||'').slice(0,40));
     console.error(e);
   }
+}
+
+/* 빈티지 톤 초대 확인 모달 — Promise로 결과 반환 */
+let _inviteConfirmResolver=null;
+function showInviteConfirm(roomName){
+  return new Promise(resolve=>{
+    document.getElementById('inviteConfirmRoomName').textContent=`'${roomName}'`;
+    document.getElementById('inviteConfirmOverlay').classList.add('on');
+    document.getElementById('inviteConfirmCard').classList.add('on');
+    _inviteConfirmResolver=resolve;
+  });
+}
+function confirmInviteJoin(){
+  closeInviteConfirm();
+  if(_inviteConfirmResolver){
+    const r=_inviteConfirmResolver;_inviteConfirmResolver=null;r(true);
+  }
+}
+function cancelInviteConfirm(){
+  closeInviteConfirm();
+  if(_inviteConfirmResolver){
+    const r=_inviteConfirmResolver;_inviteConfirmResolver=null;r(false);
+  }
+}
+function closeInviteConfirm(){
+  document.getElementById('inviteConfirmOverlay').classList.remove('on');
+  document.getElementById('inviteConfirmCard').classList.remove('on');
+}
+
+/* 환영 화면 상단 초대 안내선 토글 */
+function updateWelcomeInviteBanner(){
+  const el=document.getElementById('welcomeInviteBanner');
+  if(!el)return;
+  el.style.display=_pendingJoinCode?'block':'none';
 }
 
 function renderEmpty(){
