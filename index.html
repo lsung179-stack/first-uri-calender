@@ -1930,7 +1930,6 @@ function tryEnterPendingRoom(){
 /* 카톡 초대 링크로 들어왔을 때 — 확인 모달 후 자동 입장 */
 async function tryHandlePendingJoin(){
   // 안전망: _pendingJoinCode가 null이면 localStorage에서 한 번 더 복구 시도
-  // (OAuth redirect 후 IIFE 타이밍·query strip 등으로 메모리 변수가 비어있을 수 있음)
   if(!_pendingJoinCode){
     const saved=loadPendingJoinCode();
     if(saved){
@@ -1945,14 +1944,31 @@ async function tryHandlePendingJoin(){
   }
   const code=_pendingJoinCode;
   console.log('[pendingJoin] 처리 시작:',code);
-  clearPendingJoinCode(); // 한 번만 시도 (재호출 + redirect 방지)
+  clearPendingJoinCode();
+
+  // 디버그 마커 갱신 헬퍼 — 빈 방 화면에 RPC 결과 즉시 표시
+  const updateMarker=(extra)=>{
+    try{
+      const m=document.getElementById('dbg-marker');
+      if(m)m.textContent='build:rpc-004 · 코드:'+code+' · '+extra;
+    }catch(e){}
+  };
 
   try{
-    // 방 조회 — RPC로 (RLS 우회, 멤버 아니어도 코드로만 조회 가능)
+    // 방 조회 — RPC로 (RLS 우회)
+    updateMarker('RPC 호출 중...');
     const {data:rooms,error}=await supa.rpc('lookup_room_by_code',{invite_code:code});
-    if(error)throw error;
+    if(error){
+      updateMarker('RPC ERR: '+(error.message||'').slice(0,40));
+      throw error;
+    }
     const room=rooms&&rooms.length?rooms[0]:null;
-    if(!room){toast('초대 코드를 찾을 수 없어요');return}
+    if(!room){
+      updateMarker('RPC OK · 빈결과 (코드매칭X)');
+      toast('초대 코드를 찾을 수 없어요');
+      return;
+    }
+    updateMarker('RPC OK · room='+(room.name||'').slice(0,20));
 
     // 이미 멤버면 그냥 그 방으로 진입
     const {data:exist}=await supa.from('members').select('id').eq('room_id',room.id).eq('user_id',_currentUser.id).maybeSingle();
@@ -1982,12 +1998,11 @@ async function tryHandlePendingJoin(){
     _pendingRoomId=room.id;
     await loadRooms();
   }catch(e){
+    try{const m=document.getElementById('dbg-marker');if(m)m.textContent='build:rpc-004 · catch: '+(e.message||'').slice(0,50)}catch(_){}
     toast('초대 처리 실패: '+(e.message||'').slice(0,40));
     console.error(e);
   }
 }
-
-/* 빈티지 톤 초대 확인 모달 — Promise로 결과 반환 */
 let _inviteConfirmResolver=null;
 function showInviteConfirm(roomName){
   return new Promise(resolve=>{
@@ -2023,13 +2038,13 @@ function updateWelcomeInviteBanner(){
 
 function renderEmpty(){
   const c=document.getElementById('roomsContent');
-  // 디버그 마커 — 새 코드 적용 확인용 (rpc-003). pendingJoin 상태도 같이 표시
+  // 디버그 마커 — RPC 결과까지 즉시 표시 (rpc-004). tryHandlePendingJoin에서 갱신됨
   let dbg='';
   try{
     const inMem=_pendingJoinCode;
     const inStor=loadPendingJoinCode();
     const status=inMem?`코드:${inMem}`:inStor?`저장:${inStor}`:'코드없음';
-    dbg=`<div style="margin-top:36px;font-size:9px;color:#bbb;text-align:center;user-select:none">build:rpc-003 · ${status}</div>`;
+    dbg=`<div id="dbg-marker" style="margin-top:36px;font-size:9px;color:#bbb;text-align:center;user-select:none;padding:0 16px;word-break:break-all">build:rpc-004 · ${status}</div>`;
   }catch(e){}
   c.innerHTML=`
     <div class="r-empty">
