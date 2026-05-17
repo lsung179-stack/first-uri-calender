@@ -4901,8 +4901,8 @@ init();
 /* PWA Service Worker 등록 + 자동 업데이트 (사용자 개입 없이 새 버전 자동 적용) */
 if('serviceWorker' in navigator&&location.protocol!=='file:'){
   window.addEventListener('load', async ()=>{
-    /* 일회성: 옛 SW + 옛 캐시 강제 정리 (배포 후 사용자 폰 정상화용) — bump해서 한 번 더 정리 */
-    if(!localStorage.getItem('sw_clean_v4')){
+    /* 일회성: 옛 SW + 옛 캐시 강제 정리 (배포 후 사용자 폰 정상화용) — sw.js v7 전환에 맞춰 bump */
+    if(!localStorage.getItem('sw_clean_v5')){
       try{
         const regs=await navigator.serviceWorker.getRegistrations();
         await Promise.all(regs.map(r=>r.unregister()));
@@ -4910,7 +4910,7 @@ if('serviceWorker' in navigator&&location.protocol!=='file:'){
           const keys=await caches.keys();
           await Promise.all(keys.map(k=>caches.delete(k)));
         }
-        localStorage.setItem('sw_clean_v4','1');
+        localStorage.setItem('sw_clean_v5','1');
         location.reload();
         return;
       }catch(e){console.warn('SW 정리 실패:',e)}
