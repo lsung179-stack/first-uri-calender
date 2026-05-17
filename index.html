@@ -3038,7 +3038,12 @@ function getDayEvents(date){
   });
   // 기간(연속 날짜) 그룹 감지 먼저 — _rangePos 부여 ('start'|'mid'|'end'|'single')
   // 정렬보다 앞에 둬야 기간 일정을 우선 정렬할 수 있음
-  // 추가: 토(주 끝) → end로, 일(주 시작) → start로 시각 재분류해서 줄 경계 셀 모양 통일
+  // _isRangeEvent: 정렬 기준 (시각이 single로 표시돼도 기간 그룹이면 true)
+  // 주 경계(토/일) 처리:
+  //   mid + 토 → end (그 주의 시각적 끝)
+  //   mid + 일 → start (그 주의 시각적 시작)
+  //   start + 토 → single (시작이 줄 끝 셀이라 끊김. 다음 셀은 다음 줄)
+  //   end + 일 → single (끝이 줄 시작 셀이라 끊김. 이전 셀은 이전 줄)
   const prevDate=shiftDateKey(date,-1);
   const nextDate=shiftDateKey(date,1);
   const prevEvs=_events[prevDate]||[];
@@ -3047,22 +3052,27 @@ function getDayEvents(date){
   result.forEach(ev=>{
     const prevHas=prevEvs.some(e=>isSameRangeGroup(e,ev));
     const nextHas=nextEvs.some(e=>isSameRangeGroup(e,ev));
+    ev._isRangeEvent=(prevHas||nextHas);
+    let pos;
     if(prevHas&&nextHas){
-      // mid지만 주 경계에선 시각적으로 분리되어 보이도록 재분류
-      if(dow===6)ev._rangePos='end';        // 토요일: 그 주의 마지막 → 우측 둥글게
-      else if(dow===0)ev._rangePos='start'; // 일요일: 그 주의 시작 → 좌측 둥글게
-      else ev._rangePos='mid';
+      if(dow===6)pos='end';
+      else if(dow===0)pos='start';
+      else pos='mid';
+    }else if(!prevHas&&nextHas){
+      pos=(dow===6)?'single':'start';  // 토요일 시작 = 줄 끝에서 끊김
+    }else if(prevHas&&!nextHas){
+      pos=(dow===0)?'single':'end';    // 일요일 끝 = 줄 시작에서 끊김
+    }else{
+      pos='single';
     }
-    else if(!prevHas&&nextHas)ev._rangePos='start';
-    else if(prevHas&&!nextHas)ev._rangePos='end';
-    else ev._rangePos='single';
+    ev._rangePos=pos;
   });
-  // 정렬: 기간 일정(start/mid/end) 항상 위 → 모든 셀에서 같은 슬롯에 위치하여 시각적으로 연결됨
+  // 정렬: 기간 그룹은 항상 위 → 모든 셀에서 같은 슬롯에 위치하여 시각적으로 연결됨
+  // (시각이 single로 재분류돼도 _isRangeEvent로 그룹 판정 — 끊긴 셀에서도 위치 유지)
   // 그 다음 사용자 지정 순서(order_index) → 시간 → 생성순
-  // 단일 일정은 기간 일정 위로 절대 못 올라감 (1차 정렬이 막아줌)
   result.sort((a,b)=>{
-    const aRange=(a._rangePos&&a._rangePos!=='single')?0:1;
-    const bRange=(b._rangePos&&b._rangePos!=='single')?0:1;
+    const aRange=a._isRangeEvent?0:1;
+    const bRange=b._isRangeEvent?0:1;
     if(aRange!==bRange)return aRange-bRange;
     if(aRange===0){
       // 둘 다 기간이면 시작일 빠른 순 (이전 셀에서도 같은 순서 유지)
@@ -3095,13 +3105,14 @@ function getDayEvents(date){
   return result.filter(isVisible);
 }
 function isSameRangeGroup(a,b){
-  // shared_id 있으면 그걸로 매칭, 없으면 user_id+title+time+color
+  // shared_id 있으면 그걸로 매칭, 없으면 user_id+title+time+color (+ recurring_yearly 플래그)
   if(a.shared_id&&b.shared_id)return a.shared_id===b.shared_id;
   if(!a.shared_id&&!b.shared_id){
     return a.user_id===b.user_id
       &&(a.title||'')===(b.title||'')
       &&(a.time||'')===(b.time||'')
-      &&(a.color||'')===(b.color||'');
+      &&(a.color||'')===(b.color||'')
+      &&(!!a.recurring_yearly)===(!!b.recurring_yearly);
   }
   return false;
 }
@@ -3182,8 +3193,9 @@ function cellHtml(y,m,d,isOther,todayKey){
   shown.forEach(ev=>{
     const hex=colorHex(ev.color);
     const t=escapeHtml(ev.title||'');
-    // 함께 막대는 첫 날(또는 single)에만
-    const sharedCls=(ev._isShared&&(ev._rangePos==='single'||ev._rangePos==='start'))?' shared':'';
+    // 함께 막대는 첫 날(또는 single)에만 — 단, 매년 반복 펼침/가상 일정은 마커 안 붙임 (모양 통일)
+    const showSharedMarker=ev._isShared&&(ev._rangePos==='single'||ev._rangePos==='start')&&!ev._yearlyDisplay&&!ev._isVirtual;
+    const sharedCls=showSharedMarker?' shared':'';
     // 기간 그룹: range-start/mid/end 클래스 + 중간/끝은 텍스트 비우기 (시각적으로 한 줄)
     let rangeCls='';
     let displayTitle=t;
@@ -3191,8 +3203,7 @@ function cellHtml(y,m,d,isOther,todayKey){
     else if(ev._rangePos==='mid'){rangeCls=' range-mid';displayTitle='';}
     else if(ev._rangePos==='end'){rangeCls=' range-end';displayTitle='';}
     // 함께 막대 + 첫날: 좌측에 짧은 cream 마커 (미니멀)
-    const sharedMarker=(ev._isShared&&(ev._rangePos==='single'||ev._rangePos==='start'))
-      ?`<span class="cal-evbar-marker"></span>`:'';
+    const sharedMarker=showSharedMarker?`<span class="cal-evbar-marker"></span>`:'';
     evsHtml+=`<div class="cal-evbar${sharedCls}${rangeCls}" style="background:${hex}">${sharedMarker}${displayTitle}</div>`;
   });
   
@@ -3474,8 +3485,8 @@ function renderDateSheetList(){
     let orderHtml='';
     if(!isVirtual){
       const aboveEv=(i>0)?evs[i-1]:null;
-      const aboveIsRange=aboveEv&&aboveEv._rangePos&&aboveEv._rangePos!=='single';
-      const thisIsRange=ev._rangePos&&ev._rangePos!=='single';
+      const aboveIsRange=aboveEv&&aboveEv._isRangeEvent;
+      const thisIsRange=ev._isRangeEvent;
       // ▲ 가능 조건: i>0, 위가 가상이 아님, (이게 기간 OR 위가 기간이 아님)
       const canUp=(i>0)&&aboveEv&&!aboveEv._isVirtual&&(thisIsRange||!aboveIsRange);
       // ▼ 가능 조건: i<lastNormalIdx (다음 일반 일정이 있음)
@@ -3534,8 +3545,8 @@ async function moveEventInList(eventId, direction){
   const a=evs[idx], b=evs[swapIdx];
   if(a._isVirtual||b._isVirtual){toast('이 일정은 순서 변경이 안 돼요');return}
   // 단일이 기간 위로 못 감 (위로 이동 시 위가 기간이면 차단)
-  const aIsRange=a._rangePos&&a._rangePos!=='single';
-  const bIsRange=b._rangePos&&b._rangePos!=='single';
+  const aIsRange=a._isRangeEvent;
+  const bIsRange=b._isRangeEvent;
   if(direction===-1&&!aIsRange&&bIsRange){
     toast('단일 일정은 기간 일정 위로 갈 수 없어요');return;
   }
