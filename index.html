@@ -4495,8 +4495,8 @@ async function saveEditedEvent(title,time,color,recurringYearly){
     }
     toast(`함께 일정으로 변경됨 (${_selectedMembers.length}명)`);
   }else if(wasShared&&!isNowShared){
-    // Case 2: 함께 → 혼자
-    const {error:e1}=await supa.from('events').delete().eq('shared_id',ev.shared_id);
+    // Case 2: 함께 → 혼자 — RPC로 전체 shared row 삭제 (RLS 우회)
+    const {error:e1}=await supa.rpc('delete_shared_event_rows',{p_shared_id:ev.shared_id});
     if(e1)throw e1;
     const {error:e2}=await supa.from('events').insert({
       room_id:_currentRoom.id,user_id:_currentUser.id,
@@ -4518,8 +4518,11 @@ async function saveEditedEvent(title,time,color,recurringYearly){
       if(error)throw error;
     }
     if(toRemove.length){
-      const {error}=await supa.from('events').delete()
-        .eq('shared_id',ev.shared_id).in('user_id',toRemove);
+      // RLS 우회 RPC — 다른 멤버 row 삭제 가능
+      const {error}=await supa.rpc('delete_shared_event_rows',{
+        p_shared_id:ev.shared_id,
+        p_user_ids:toRemove
+      });
       if(error)throw error;
     }
     if(toAdd.length){
