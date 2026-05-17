@@ -1868,7 +1868,21 @@ async function loadRooms(){
     if(e1)throw e1;
 
     if(!myMems||myMems.length===0){
-      renderEmpty();return;
+      renderEmpty();
+      _myRooms=[];
+      // ⭐ 새 사용자도 카톡 초대 코드가 있으면 처리해야 함 (이 호출이 없으면 모달 안 뜸)
+      tryHandlePendingJoin();
+      // 진단 토스트 (매번)
+      try{
+        const inMem=_pendingJoinCode;
+        const inStor=loadPendingJoinCode();
+        if(inMem||inStor){
+          setTimeout(()=>toast('초대 코드 처리 중... '+(inMem||inStor)),600);
+        }else{
+          setTimeout(()=>toast('[진단] 초대 코드 없음'),600);
+        }
+      }catch(e){}
+      return;
     }
 
     const roomIds=myMems.map(m=>m.room_id);
