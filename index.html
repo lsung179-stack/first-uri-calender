@@ -3444,8 +3444,20 @@ function openEditEvent(eventId){
   syncTimeBtnLabel(ev.time||'');
   closeTimePicker();
   // 기간 일정 그룹은 _editGroup으로 관리 — 모드 토글에서 'range'로 전환할 때 시작/끝 자동 채움
-  // 모드 토글 표시 — 수정 시에도 day/range/multi 변경 가능 (함께 일정은 day 고정)
-  document.getElementById('evModeRow').style.display=ev.shared_id?'none':'';
+  // 모드 토글 표시 — 단독/함께 모두 표시 (단, 함께는 multi 버튼 비활성)
+  document.getElementById('evModeRow').style.display='';
+  const multiBtn=document.getElementById('evModeMulti');
+  if(multiBtn){
+    if(ev.shared_id){
+      multiBtn.style.opacity='0.35';
+      multiBtn.style.pointerEvents='none';
+      multiBtn.title='함께 일정은 여러 날로 만들 수 없어요';
+    }else{
+      multiBtn.style.opacity='';
+      multiBtn.style.pointerEvents='';
+      multiBtn.title='';
+    }
+  }
   // 모드 초기값 — 단일 일정이든 기간 일정이든 진입 시 'day' (이 날짜만 수정). 사용자가 range/multi 변경 가능.
   _selectedMode='day';
   applyModeUI();
@@ -3955,6 +3967,11 @@ function findEventGroup(ev){
 
 /* 기간 모드 토글 */
 function setEventMode(mode){
+  // 함께 일정은 multi 모드 금지 (안전판 — UI 버튼 비활성이지만 직접 호출 보호)
+  if(mode==='multi'&&_editingEvent&&_editingEvent.shared_id){
+    toast('함께 일정은 여러 날로 만들 수 없어요');
+    return;
+  }
   _selectedMode=mode;
   if(mode==='multi'){
     if(_multiSelected.size===0&&_selectedDate){
@@ -3966,12 +3983,25 @@ function setEventMode(mode){
     renderMultiCal();
     renderMultiChips();
   }else if(mode==='range'){
-    // 수정 모드 + 기간 일정 그룹 있으면 그 기간으로 초기화 (사용자가 그대로 두면 같은 기간, 변경 가능)
+    // 수정 모드 + 단독 기간 일정이면 그룹 범위로 초기화
     if(_editingEvent&&_editGroup&&_editGroup.length>1){
       const sortedDates=_editGroup.map(e=>e.date).sort();
       _rangeStart=sortedDates[0];
       _rangeEnd=sortedDates[sortedDates.length-1];
       _rangeCalDate=parseDateKey(_rangeStart);
+    }else if(_editingEvent&&_editingEvent.shared_id){
+      // 함께 일정 — 같은 shared_id 그룹의 모든 dates 모음 (중복 제거)
+      const allEvs=Object.values(_events).flat();
+      const sharedRows=allEvs.filter(e=>e.shared_id===_editingEvent.shared_id);
+      const sortedDates=[...new Set(sharedRows.map(e=>e.date))].sort();
+      if(sortedDates.length){
+        _rangeStart=sortedDates[0];
+        _rangeEnd=sortedDates[sortedDates.length-1];
+        _rangeCalDate=parseDateKey(_rangeStart);
+      }else{
+        _rangeStart=_selectedDate;_rangeEnd=null;
+        _rangeCalDate=_selectedDate?parseDateKey(_selectedDate):new Date();
+      }
     }else{
       // 진입 시 시작일 = 현재 선택 날짜, 끝일 = null
       _rangeStart=_selectedDate;
@@ -4172,8 +4202,47 @@ async function saveEditedEvent(title,time,color,recurringYearly){
   const isNowShared=_selectedTarget==='all'&&_selectedMembers.length>=2;
   const ry=!!recurringYearly;
 
+  // 함께 일정에는 multi 모드 금지 (안전판)
+  if((wasShared||isNowShared)&&_selectedMode==='multi'){
+    toast('함께 일정은 여러 날로 만들 수 없어요');
+    return;
+  }
+
+  // 함께 일정 + range 모드 — 그룹 전체 삭제 후 새 기간으로 재생성 (멤버 그대로 유지, shared_id 유지)
+  if(wasShared&&isNowShared&&_selectedMode==='range'){
+    const memberIds=(_selectedMembers&&_selectedMembers.length>=2)
+      ?_selectedMembers
+      :(_editSharedMemberIds||[]);
+    if(memberIds.length<2){toast('함께 일정은 최소 2명이 필요해요');return}
+
+    const startStr=document.getElementById('evStartDate').value;
+    const endStr=document.getElementById('evEndDate').value;
+    if(!startStr||!endStr){toast('시작/종료 날짜를 입력해주세요');return}
+    const dates=daysBetween(startStr,endStr);
+    if(dates.length>90){toast('함께 기간 일정은 최대 90일까지');return}
+
+    // 기존 그룹 삭제 (RLS: 같은 방 멤버라면 모두 삭제 가능)
+    const {error:eDel}=await supa.from('events').delete().eq('shared_id',ev.shared_id);
+    if(eDel)throw eDel;
+
+    // 새 row INSERT — 각 날짜 × 각 멤버 (shared_id 유지하면 reactions도 그대로 연결됨)
+    const rows=[];
+    dates.forEach(d=>{
+      memberIds.forEach(uid=>{
+        rows.push({
+          room_id:_currentRoom.id,user_id:uid,date:d,
+          title,time,color,shared_id:ev.shared_id,recurring_yearly:ry,
+        });
+      });
+    });
+    const {error:eIns}=await supa.from('events').insert(rows);
+    if(eIns)throw eIns;
+    toast(`함께 기간 일정으로 변경됨 (${dates.length}일 × ${memberIds.length}명)`);
+    return;
+  }
+
   // 단독 일정 + 모드가 range/multi로 변경된 경우 — 기존 그룹 모두 삭제 + 새 모드대로 INSERT
-  // (단독 일정만 처리; 함께 일정은 day 모드 강제)
+  // (단독 일정만 처리; 함께 일정의 range는 위에서 별도 처리)
   if(!wasShared&&!isNowShared&&(_selectedMode==='range'||_selectedMode==='multi')){
     // 기존 row들 삭제 — 단일이면 자기 자신, 기간이면 그룹 전체
     const oldIds=(_editGroup&&_editGroup.length>1)?_editGroup.map(e=>e.id):[ev.id];
