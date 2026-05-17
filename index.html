@@ -1948,9 +1948,10 @@ async function tryHandlePendingJoin(){
   clearPendingJoinCode(); // 한 번만 시도 (재호출 + redirect 방지)
 
   try{
-    // 방 조회
-    const {data:room,error}=await supa.from('rooms').select('*').eq('code',code).maybeSingle();
+    // 방 조회 — RPC로 (RLS 우회, 멤버 아니어도 코드로만 조회 가능)
+    const {data:rooms,error}=await supa.rpc('lookup_room_by_code',{invite_code:code});
     if(error)throw error;
+    const room=rooms&&rooms.length?rooms[0]:null;
     if(!room){toast('초대 코드를 찾을 수 없어요');return}
 
     // 이미 멤버면 그냥 그 방으로 진입
@@ -2022,13 +2023,13 @@ function updateWelcomeInviteBanner(){
 
 function renderEmpty(){
   const c=document.getElementById('roomsContent');
-  // 디버그 마커 — 새 코드 적용 확인용 (build:diag-002). pendingJoin 상태도 같이 표시
+  // 디버그 마커 — 새 코드 적용 확인용 (rpc-003). pendingJoin 상태도 같이 표시
   let dbg='';
   try{
     const inMem=_pendingJoinCode;
     const inStor=loadPendingJoinCode();
     const status=inMem?`코드:${inMem}`:inStor?`저장:${inStor}`:'코드없음';
-    dbg=`<div style="margin-top:36px;font-size:9px;color:#bbb;text-align:center;user-select:none">build:diag-002 · ${status}</div>`;
+    dbg=`<div style="margin-top:36px;font-size:9px;color:#bbb;text-align:center;user-select:none">build:rpc-003 · ${status}</div>`;
   }catch(e){}
   c.innerHTML=`
     <div class="r-empty">
@@ -2193,12 +2194,12 @@ async function createRoom(){
   btn.disabled=true;btn.textContent='만드는 중...';
 
   try{
-    // 코드 중복 회피 (최대 5회 시도)
+    // 코드 중복 회피 (최대 5회 시도) — RPC로 (RLS 우회)
     let code=null;
     for(let i=0;i<5;i++){
       const c=genRoomCode();
-      const {data:exist}=await supa.from('rooms').select('id').eq('code',c).maybeSingle();
-      if(!exist){code=c;break}
+      const {data:exist}=await supa.rpc('lookup_room_by_code',{invite_code:c});
+      if(!exist||!exist.length){code=c;break}
     }
     if(!code)throw new Error('코드 생성 실패');
 
@@ -2308,9 +2309,10 @@ async function joinRoom(){
   btn.disabled=true;btn.textContent='확인 중...';
 
   try{
-    // 방 존재 확인
-    const {data:room,error:e1}=await supa.from('rooms').select('*').eq('code',code).maybeSingle();
+    // 방 존재 확인 — RPC로 (RLS 우회)
+    const {data:rooms,error:e1}=await supa.rpc('lookup_room_by_code',{invite_code:code});
     if(e1)throw e1;
+    const room=rooms&&rooms.length?rooms[0]:null;
     if(!room){toast('존재하지 않는 코드예요');return}
 
     // 이미 멤버인지 확인
