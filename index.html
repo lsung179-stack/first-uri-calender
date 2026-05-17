@@ -642,6 +642,10 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 
 /* 이모지 반응 */
 .dp-reaction-row{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.dp-order{display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center;flex-shrink:0;padding-left:6px}
+.dp-arrow{width:26px;height:20px;background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--sub);font-size:9px;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;line-height:1}
+.dp-arrow:active{background:var(--bg);transform:scale(.94)}
+.dp-arrow:disabled{opacity:.22;cursor:not-allowed}
 .dp-reaction-chip{
   display:inline-flex;align-items:center;gap:4px;
   padding:4px 9px;background:var(--bg);border:1px solid var(--border);
@@ -2690,29 +2694,29 @@ function getDayHeaderInfo(year,month,day){
 /* ── 테마 시스템 (V2 8가지) ── */
 const THEMES={
   vintage:{bg:'#f3e6cf',card:'#fbf2e0',text:'#3a2418',sub:'#8a6a4d',mute:'#b8a285',accent:'#8b3a2a',aL:'#a85040',aP:'#e8d4be',gold:'#b08742',border:'rgba(139,58,42,.18)',borderL:'rgba(139,58,42,.10)',sun:'#8b3a2a',sat:'#3a5a8b',dotRGB:'139,58,42'},
-  oak:{bg:'#f7f5f2',card:'#ffffff',text:'#1e1c18',sub:'#7a7368',mute:'#b0aaa0',accent:'#9a7240',aL:'#c4975a',aP:'#f0d4a8',gold:'#b08742',border:'rgba(180,170,155,.4)',borderL:'rgba(180,170,155,.22)',sun:'#c04030',sat:'#3a68a0',dotRGB:'154,114,64'},
   lavender:{bg:'#f5f3fa',card:'#ffffff',text:'#1e1c25',sub:'#7e7090',mute:'#b5acc4',accent:'#9b7fc7',aL:'#b49ad4',aP:'#e8dff8',gold:'#b08742',border:'rgba(200,190,220,.4)',borderL:'rgba(200,190,220,.22)',sun:'#d47090',sat:'#7090d4',dotRGB:'155,127,199'},
   peach:{bg:'#fdf6f0',card:'#ffffff',text:'#2a1d18',sub:'#8a6850',mute:'#c5a895',accent:'#e0855a',aL:'#e8a880',aP:'#fde8d8',gold:'#b08742',border:'rgba(230,200,180,.4)',borderL:'rgba(230,200,180,.22)',sun:'#d47060',sat:'#6080c8',dotRGB:'224,133,90'},
   mint:{bg:'#f2f9f7',card:'#ffffff',text:'#162520',sub:'#5e8276',mute:'#a8bdb5',accent:'#4aaa8a',aL:'#7ac0a8',aP:'#d8f0e8',gold:'#b08742',border:'rgba(170,215,200,.4)',borderL:'rgba(170,215,200,.22)',sun:'#c86070',sat:'#5080b8',dotRGB:'74,170,138'},
   rose:{bg:'#fdf4f6',card:'#ffffff',text:'#2a1820',sub:'#8a5e6c',mute:'#c5a5b0',accent:'#d86880',aL:'#e8a0b0',aP:'#fde0e8',gold:'#b08742',border:'rgba(230,190,200,.4)',borderL:'rgba(230,190,200,.22)',sun:'#d06070',sat:'#6878c0',dotRGB:'216,104,128'},
-  sky:{bg:'#f0f6fd',card:'#ffffff',text:'#142028',sub:'#5e7088',mute:'#a5b5c5',accent:'#4880c0',aL:'#78b0e0',aP:'#d8ecf8',gold:'#b08742',border:'rgba(170,205,240,.4)',borderL:'rgba(170,205,240,.22)',sun:'#c86878',sat:'#4870b8',dotRGB:'72,128,192'},
-  butter:{bg:'#fdfaf0',card:'#ffffff',text:'#2a1f10',sub:'#8a7530',mute:'#c5b48a',accent:'#c89a4a',aL:'#dcb068',aP:'#f8e8c4',gold:'#9a7530',border:'rgba(220,190,140,.4)',borderL:'rgba(220,190,140,.22)',sun:'#c86070',sat:'#5080b8',dotRGB:'200,154,74'}
+  sky:{bg:'#f0f6fd',card:'#ffffff',text:'#142028',sub:'#5e7088',mute:'#a5b5c5',accent:'#4880c0',aL:'#78b0e0',aP:'#d8ecf8',gold:'#b08742',border:'rgba(170,205,240,.4)',borderL:'rgba(170,205,240,.22)',sun:'#c86878',sat:'#4870b8',dotRGB:'72,128,192'}
 };
 
-/* 일정 색상 12가지 (V1 c-* 매핑 → 빈티지 톤도 추가) */
+/* 일정 색상 12가지 — 6 원색(선명) + 6 파스텔(부드러움). key는 호환성을 위해 유지 */
 const EVENT_COLORS=[
-  {key:'c-vintage',hex:'#8b3a2a',name:'테라코타'},
-  {key:'c-bronze',hex:'#b08742',name:'브론즈'},
-  {key:'c-sage',hex:'#5e7d6b',name:'세이지'},
-  {key:'c-stone',hex:'#6b4a35',name:'모카'},
-  {key:'c-honey',hex:'#c89a4a',name:'허니'},
-  {key:'c-sky',hex:'#4880c0',name:'스카이'},
-  {key:'c-rose',hex:'#d86880',name:'로즈'},
-  {key:'c-moss',hex:'#4a7050',name:'모스'},
-  {key:'c-lavender',hex:'#9b7fc7',name:'라벤더'},
-  {key:'c-pink',hex:'#e8a0b0',name:'핑크'},
-  {key:'c-aqua',hex:'#5fa8a0',name:'아쿠아'},
-  {key:'c-peach',hex:'#e0855a',name:'복숭아'}
+  // ── 원색 6개 ──
+  {key:'c-vintage', hex:'#ea4d4d', name:'레드'},
+  {key:'c-bronze',  hex:'#ee9447', name:'오렌지'},
+  {key:'c-sage',    hex:'#f5d028', name:'옐로우'},
+  {key:'c-stone',   hex:'#4ea454', name:'포레스트'},
+  {key:'c-honey',   hex:'#3d85d4', name:'블루'},
+  {key:'c-sky',     hex:'#9462c0', name:'퍼플'},
+  // ── 파스텔 6개 ──
+  {key:'c-rose',    hex:'#f5b596', name:'피치'},
+  {key:'c-moss',    hex:'#f5c2d0', name:'블러시'},
+  {key:'c-lavender',hex:'#d5c5e8', name:'라일락'},
+  {key:'c-pink',    hex:'#b5dcc4', name:'민트'},
+  {key:'c-aqua',    hex:'#b5cce8', name:'스카이'},
+  {key:'c-peach',   hex:'#ffe87a', name:'버터'}
 ];
 function colorHex(key){const c=EVENT_COLORS.find(x=>x.key===key);return c?c.hex:'#8b3a2a'}
 
@@ -2771,14 +2775,14 @@ function applyTheme(name){
 /* ── 공휴일 (Nager.Date API + fallback) ── */
 const HOLIDAYS_FALLBACK={
   '2025-01-01':'신정','2025-01-28':'설날','2025-01-29':'설날','2025-01-30':'설날',
-  '2025-03-01':'삼일절','2025-05-05':'어린이날','2025-05-06':'대체공휴일','2025-05-15':'부처님오신날',
+  '2025-03-01':'삼일절','2025-05-05':'어린이날·부처님오신날','2025-05-06':'대체공휴일','2025-06-03':'제21대 대통령선거',
   '2025-06-06':'현충일','2025-08-15':'광복절','2025-10-03':'개천절','2025-10-05':'추석','2025-10-06':'추석','2025-10-07':'추석','2025-10-08':'대체공휴일','2025-10-09':'한글날','2025-12-25':'성탄절',
   '2026-01-01':'신정','2026-02-16':'설날','2026-02-17':'설날','2026-02-18':'설날',
-  '2026-03-01':'삼일절','2026-03-02':'대체공휴일','2026-05-05':'어린이날','2026-05-24':'부처님오신날','2026-05-25':'대체공휴일',
-  '2026-06-06':'현충일','2026-08-15':'광복절','2026-08-17':'대체공휴일','2026-09-24':'추석','2026-09-25':'추석','2026-09-26':'추석','2026-10-03':'개천절','2026-10-05':'대체공휴일','2026-10-09':'한글날','2026-12-25':'성탄절',
+  '2026-03-01':'삼일절','2026-03-02':'대체공휴일','2026-05-01':'근로자의날','2026-05-05':'어린이날','2026-05-24':'부처님오신날','2026-05-25':'대체공휴일',
+  '2026-06-03':'지방선거','2026-06-06':'현충일','2026-07-17':'제헌절','2026-08-15':'광복절','2026-08-17':'대체공휴일','2026-09-24':'추석','2026-09-25':'추석','2026-09-26':'추석','2026-10-03':'개천절','2026-10-05':'대체공휴일','2026-10-09':'한글날','2026-12-25':'성탄절',
   '2027-01-01':'신정','2027-02-06':'설날','2027-02-07':'설날','2027-02-08':'설날','2027-02-09':'대체공휴일',
-  '2027-03-01':'삼일절','2027-05-05':'어린이날','2027-05-13':'부처님오신날',
-  '2027-06-06':'현충일','2027-08-15':'광복절','2027-08-16':'대체공휴일','2027-09-14':'추석','2027-09-15':'추석','2027-09-16':'추석','2027-10-03':'개천절','2027-10-04':'대체공휴일','2027-10-09':'한글날','2027-10-11':'대체공휴일','2027-12-25':'성탄절'
+  '2027-03-01':'삼일절','2027-05-01':'근로자의날','2027-05-05':'어린이날','2027-05-13':'부처님오신날','2027-06-06':'현충일','2027-07-17':'제헌절',
+  '2027-08-15':'광복절','2027-08-16':'대체공휴일','2027-09-14':'추석','2027-09-15':'추석','2027-09-16':'추석','2027-10-03':'개천절','2027-10-04':'대체공휴일','2027-10-09':'한글날','2027-10-11':'대체공휴일','2027-12-25':'성탄절'
 };
 let HOLIDAYS={...HOLIDAYS_FALLBACK};
 const _loadedYears=new Set();
@@ -3034,20 +3038,28 @@ function getDayEvents(date){
   });
   // 기간(연속 날짜) 그룹 감지 먼저 — _rangePos 부여 ('start'|'mid'|'end'|'single')
   // 정렬보다 앞에 둬야 기간 일정을 우선 정렬할 수 있음
+  // 추가: 토(주 끝) → end로, 일(주 시작) → start로 시각 재분류해서 줄 경계 셀 모양 통일
   const prevDate=shiftDateKey(date,-1);
   const nextDate=shiftDateKey(date,1);
   const prevEvs=_events[prevDate]||[];
   const nextEvs=_events[nextDate]||[];
+  const dow=parseDateKey(date).getDay();  // 0=일, 6=토
   result.forEach(ev=>{
     const prevHas=prevEvs.some(e=>isSameRangeGroup(e,ev));
     const nextHas=nextEvs.some(e=>isSameRangeGroup(e,ev));
-    if(prevHas&&nextHas)ev._rangePos='mid';
+    if(prevHas&&nextHas){
+      // mid지만 주 경계에선 시각적으로 분리되어 보이도록 재분류
+      if(dow===6)ev._rangePos='end';        // 토요일: 그 주의 마지막 → 우측 둥글게
+      else if(dow===0)ev._rangePos='start'; // 일요일: 그 주의 시작 → 좌측 둥글게
+      else ev._rangePos='mid';
+    }
     else if(!prevHas&&nextHas)ev._rangePos='start';
     else if(prevHas&&!nextHas)ev._rangePos='end';
     else ev._rangePos='single';
   });
   // 정렬: 기간 일정(start/mid/end) 항상 위 → 모든 셀에서 같은 슬롯에 위치하여 시각적으로 연결됨
-  // 같은 기간끼리는 시작일 빠른 순. 그 외는 시간 있는 일정 먼저, 그다음 생성순
+  // 그 다음 사용자 지정 순서(order_index) → 시간 → 생성순
+  // 단일 일정은 기간 일정 위로 절대 못 올라감 (1차 정렬이 막아줌)
   result.sort((a,b)=>{
     const aRange=(a._rangePos&&a._rangePos!=='single')?0:1;
     const bRange=(b._rangePos&&b._rangePos!=='single')?0:1;
@@ -3058,6 +3070,10 @@ function getDayEvents(date){
       const bS=b.start_date||b.date||'';
       if(aS!==bS)return aS.localeCompare(bS);
     }
+    // 사용자 지정 순서 (작은 값이 위)
+    const aO=(typeof a.order_index==='number')?a.order_index:0;
+    const bO=(typeof b.order_index==='number')?b.order_index:0;
+    if(aO!==bO)return aO-bO;
     if(a.time&&!b.time)return -1;
     if(!a.time&&b.time)return 1;
     if(a.time&&b.time)return a.time.localeCompare(b.time);
@@ -3437,6 +3453,10 @@ function renderDateSheetList(){
     return;
   }
   let html='';
+  // 화살표 활성 가능 여부를 미리 계산 (단일은 기간 위로 못 감 + 가상은 화살표 없음)
+  // 가상 일정(생일)은 항상 마지막. 일반 일정 인덱스 범위 = [0, firstVirtualIdx-1]
+  const firstVirtualIdx=evs.findIndex(e=>e._isVirtual);
+  const lastNormalIdx=(firstVirtualIdx>=0?firstVirtualIdx:evs.length)-1;
   evs.forEach((ev,i)=>{
     const hex=colorHex(ev.color);
     const isMine=(ev.user_id===_currentUser?.id);
@@ -3449,7 +3469,22 @@ function renderDateSheetList(){
     // 수정/삭제 버튼 — 단독은 본인만, 함께는 같은 방 누구나
     const canEdit=!isVirtual&&(isMine||ev._isShared);
     const actions=canEdit?`<div class="dp-actions"><button class="dp-btn" onclick="event.stopPropagation();openEditEvent('${ev.id}')">수정</button><button class="dp-btn del" onclick="event.stopPropagation();deleteEvent('${ev.id}')">삭제</button></div>`:'';
-    
+
+    // 순서 변경 화살표 — 가상 일정엔 없음. 단일은 위 일정이 기간이면 ▲ 비활성.
+    let orderHtml='';
+    if(!isVirtual){
+      const aboveEv=(i>0)?evs[i-1]:null;
+      const aboveIsRange=aboveEv&&aboveEv._rangePos&&aboveEv._rangePos!=='single';
+      const thisIsRange=ev._rangePos&&ev._rangePos!=='single';
+      // ▲ 가능 조건: i>0, 위가 가상이 아님, (이게 기간 OR 위가 기간이 아님)
+      const canUp=(i>0)&&aboveEv&&!aboveEv._isVirtual&&(thisIsRange||!aboveIsRange);
+      // ▼ 가능 조건: i<lastNormalIdx (다음 일반 일정이 있음)
+      const canDown=(i<lastNormalIdx);
+      orderHtml=`<div class="dp-order">
+        <button class="dp-arrow" ${canUp?'':'disabled'} onclick="event.stopPropagation();moveEventInList('${ev.id}',-1)" aria-label="위로">▲</button>
+        <button class="dp-arrow" ${canDown?'':'disabled'} onclick="event.stopPropagation();moveEventInList('${ev.id}',1)" aria-label="아래로">▼</button>
+      </div>`;
+    }
     // 이모지 반응 — 같은 방 멤버 누구나 반응 가능. 모든 멤버 반응 표시.
     let reactionHtml='';
     if(!isVirtual){
@@ -3477,13 +3512,67 @@ function renderDateSheetList(){
         ${tm?`<div class="dp-time">${tm}</div>`:''}
         ${reactionRow}
       </div>
+      ${orderHtml}
       ${actions}
     </div>`;
   });
   list.innerHTML=html;
 }
 
-/* ── 일정 추가/수정 모달 ── */
+/* 일정 순서 변경 (▲▼) — 같은 날짜 안에서 위/아래로 한 칸 이동
+   direction: -1 위로, +1 아래로
+   - 가상 일정(생일)은 건드리지 않음
+   - 단일 일정은 기간 일정 위로 못 올라감 (정렬 로직이 막아주지만 안전장치)
+   - 함께 일정은 그룹 단위로 이동 (같은 shared_id의 모든 row가 같은 order_index 가짐) */
+async function moveEventInList(eventId, direction){
+  if(!_selectedDate||!_currentRoom){return}
+  const evs=getDayEvents(_selectedDate);
+  const idx=evs.findIndex(e=>e.id===eventId);
+  if(idx<0)return;
+  const swapIdx=idx+direction;
+  if(swapIdx<0||swapIdx>=evs.length)return;
+  const a=evs[idx], b=evs[swapIdx];
+  if(a._isVirtual||b._isVirtual){toast('이 일정은 순서 변경이 안 돼요');return}
+  // 단일이 기간 위로 못 감 (위로 이동 시 위가 기간이면 차단)
+  const aIsRange=a._rangePos&&a._rangePos!=='single';
+  const bIsRange=b._rangePos&&b._rangePos!=='single';
+  if(direction===-1&&!aIsRange&&bIsRange){
+    toast('단일 일정은 기간 일정 위로 갈 수 없어요');return;
+  }
+  // 두 그룹의 order_index 교환 (같으면 +/-1로 차이 만들기)
+  const aOrder=(typeof a.order_index==='number')?a.order_index:0;
+  const bOrder=(typeof b.order_index==='number')?b.order_index:0;
+  let newAOrder=bOrder, newBOrder=aOrder;
+  if(aOrder===bOrder){
+    // 같은 값일 때: a는 b 자리(위/아래)로 가야 하므로 direction 적용
+    newAOrder=aOrder+direction;
+    newBOrder=aOrder;
+  }
+  try{
+    // a 업데이트 (함께면 그룹 전체, 단독이면 단일)
+    if(a.shared_id){
+      const {error:eA}=await supa.from('events').update({order_index:newAOrder}).eq('shared_id',a.shared_id);
+      if(eA)throw eA;
+    }else{
+      const {error:eA}=await supa.from('events').update({order_index:newAOrder}).eq('id',a.id);
+      if(eA)throw eA;
+    }
+    // b 업데이트
+    if(b.shared_id){
+      const {error:eB}=await supa.from('events').update({order_index:newBOrder}).eq('shared_id',b.shared_id);
+      if(eB)throw eB;
+    }else{
+      const {error:eB}=await supa.from('events').update({order_index:newBOrder}).eq('id',b.id);
+      if(eB)throw eB;
+    }
+    await loadEvents();
+    renderDateSheetList();
+  }catch(e){
+    console.warn('순서 변경 실패:',e);
+    toast('순서 변경 실패');
+  }
+}
+
 function renderColorGrid(){
   const grid=document.getElementById('evColorGrid');
   let html='';
@@ -3907,7 +3996,8 @@ async function saveEvent(){
     }
     closeEventModal();
     await loadEvents();
-    openDateSheet(_selectedDate);
+    // 신규 추가 후엔 캘린더 화면으로, 수정 후엔 일자 시트로 (변경 결과 확인용)
+    if(_editingEvent) openDateSheet(_selectedDate);
 
     // ── 5단계: 같은 방 멤버에게 자동 알림 발송 ──
     if(_editingEvent){
@@ -4834,7 +4924,7 @@ function renderThemeGrid(){
   });
 }
 function themeName(k){
-  const names={vintage:'빈티지',oak:'오크',lavender:'라벤더',peach:'피치',mint:'민트',rose:'로즈',sky:'스카이',butter:'버터'};
+  const names={vintage:'빈티지',lavender:'라벤더',peach:'피치',mint:'민트',rose:'로즈',sky:'스카이'};
   return names[k]||k;
 }
 async function changeRoomTheme(themeKey){
