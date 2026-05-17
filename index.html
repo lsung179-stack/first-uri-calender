@@ -1262,6 +1262,8 @@ const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
     }
     const r=u.searchParams.get('room');
     if(r) sessionStorage.setItem('uricalv2.pendingRoom',r);
+    const d=u.searchParams.get('date');
+    if(d) sessionStorage.setItem('uricalv2.pendingDate',d);
   }catch(e){}
 })();
 
@@ -1967,7 +1969,23 @@ function enterRoom(roomId){
   _calMonth=t.getMonth();
   showScreen('calendarScreen');
   loadRoomMembers();  // 방 멤버 로드 (함께 일정용)
-  loadEvents();
+  // 알림 클릭으로 점프할 날짜가 있으면 로드 끝나고 그 달로 이동 + 일자 시트 오픈
+  const jumpDate=_pendingJumpDate;
+  _pendingJumpDate=null;
+  loadEvents().then(()=>{
+    if(jumpDate&&/^\d{4}-\d{2}-\d{2}$/.test(jumpDate)){
+      try{
+        const dt=parseDateKey(jumpDate);
+        const sameMonth=(_calYear===dt.getFullYear()&&_calMonth===dt.getMonth());
+        if(!sameMonth){
+          _calYear=dt.getFullYear();
+          _calMonth=dt.getMonth();
+          renderMonthly();
+        }
+        setTimeout(()=>openDateSheet(jumpDate),120);
+      }catch(e){console.warn('점프 실패:',e)}
+    }
+  });
   // 권한이 default(첫 진입)면 자동으로 권한 요청 + 구독. granted면 silent 등록. denied면 무동작.
   autoRegisterPush();
 }
@@ -2346,6 +2364,7 @@ let _myRooms=[];          // loadRooms 결과 캐시
 let _currentRoom=null;    // 진입한 방
 let _pendingRoomId=null;  // 알림 클릭으로 진입할 방 (URL ?room=xxx 또는 SW 메시지)
 let _pendingJoinCode=null;// 초대 링크로 입장할 방 코드 (URL ?join=XXXXXX)
+let _pendingJumpDate=null;// 알림 클릭으로 점프할 날짜 (URL ?date=YYYY-MM-DD 또는 SW 메시지)
 
 /* 저장/복구 헬퍼 — localStorage 사용 (OAuth redirect + 카톡↔카카오 앱 전환에도 보존) */
 const PENDING_JOIN_KEY='uricalv2.pendingJoin';
@@ -2376,7 +2395,9 @@ function clearPendingJoinCode(){
     const u=new URL(location.href);
     const r=u.searchParams.get('room');
     const j=u.searchParams.get('join');
+    const d=u.searchParams.get('date');
     if(r)_pendingRoomId=r;
+    if(d&&/^\d{4}-\d{2}-\d{2}$/.test(d))_pendingJumpDate=d;
     if(j){
       _pendingJoinCode=j.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
       savePendingJoinCode(_pendingJoinCode);
@@ -2395,7 +2416,17 @@ function clearPendingJoinCode(){
         }
       }catch(e){}
     }
-    if(r||j)history.replaceState({},'',location.pathname);
+    // 점프 날짜도 동일하게 sessionStorage에서 복구
+    if(!_pendingJumpDate){
+      try{
+        const savedDate=sessionStorage.getItem('uricalv2.pendingDate');
+        if(savedDate&&/^\d{4}-\d{2}-\d{2}$/.test(savedDate)){
+          _pendingJumpDate=savedDate;
+          sessionStorage.removeItem('uricalv2.pendingDate');
+        }
+      }catch(e){}
+    }
+    if(r||j||d)history.replaceState({},'',location.pathname);
   }catch(e){}
 })();
 
@@ -3831,8 +3862,8 @@ function notifyEventLeft(ev){
         user_ids:targetIds,
         title:`${senderName} · ${ev.title}`,
         body:`함께 일정에서 빠짐 · ${dateLabel}${timeLabel}`,
-        url:`/?room=${_currentRoom.id}`,
-        tag:`event-leave-${ev.id}-${Date.now()}`,
+        url:`/?room=${_currentRoom.id}&date=${ev.date}`,
+        tag:`event-${ev.date}-${ev.title||''}`,
       }
     }).catch(e=>console.warn('빠짐 알림 발송 실패:',e));
   }catch(e){console.warn('notifyEventLeft 에러:',e)}
@@ -3858,8 +3889,8 @@ function notifyEventDeleted(ev, opts){
         user_ids:targetIds,
         title:`${senderName} · ${ev.title}`,
         body:`취소됨 · ${dateLabel}${timeLabel}${rangeSuffix}`,
-        url:`/?room=${_currentRoom.id}`,
-        tag:`event-del-${ev.id}-${Date.now()}`,
+        url:`/?room=${_currentRoom.id}&date=${ev.date}`,
+        tag:`event-${ev.date}-${ev.title||''}`,
       }
     }).catch(e=>console.warn('삭제 알림 발송 실패:',e));
   }catch(e){console.warn('notifyEventDeleted 에러:',e)}
@@ -3878,15 +3909,22 @@ function _notifyEventChange(action, title, time){
     const isMulti=_selectedMode==='multi';
     const isRange=_selectedMode==='range';
 
-    // 날짜 라벨
+    // 날짜 라벨 + 점프할 대표 날짜
     let dateLabel='';
+    let jumpDate=_selectedDate;
     if(isMulti){
       const cnt=_multiSelected?_multiSelected.size:0;
       dateLabel=`여러 날 (${cnt}일)`;
+      // multi는 선택된 첫 날짜로 점프
+      if(_multiSelected&&_multiSelected.size){
+        const sorted=[..._multiSelected].sort();
+        jumpDate=sorted[0]||_selectedDate;
+      }
     }else if(isRange){
       const startStr=document.getElementById('evStartDate')?.value;
       const endStr=document.getElementById('evEndDate')?.value;
       dateLabel=`${formatShortDate(startStr)} ~ ${formatShortDate(endStr)}`;
+      if(startStr)jumpDate=startStr;
     }else{
       dateLabel=formatShortDate(_selectedDate);
     }
@@ -3899,8 +3937,8 @@ function _notifyEventChange(action, title, time){
         user_ids:targetIds,
         title:`${senderName} · ${title}`,
         body:`${actionPrefix}${sharedPrefix}${dateLabel}${timeLabel}`,
-        url:`/?room=${_currentRoom.id}`,
-        tag:`event-${action}-${Date.now()}`,
+        url:`/?room=${_currentRoom.id}&date=${jumpDate}`,
+        tag:`event-${jumpDate}-${title}`,
       }
     }).catch(e=>console.warn('알림 발송 실패:',e));
   }catch(e){console.warn('_notifyEventChange 에러:',e)}
@@ -4870,9 +4908,24 @@ if('serviceWorker' in navigator&&location.protocol!=='file:'){
         try{
           const u=new URL(e.data.url,location.origin);
           const roomId=u.searchParams.get('room');
+          const date=u.searchParams.get('date');
+          if(date&&/^\d{4}-\d{2}-\d{2}$/.test(date))_pendingJumpDate=date;
           if(roomId){
-            _pendingRoomId=roomId;
-            tryEnterPendingRoom();
+            // 이미 그 방에 있으면 즉시 점프, 아니면 enterRoom 거치며 자동 점프
+            if(_currentRoom&&_currentRoom.id===roomId){
+              if(_pendingJumpDate){
+                const d=_pendingJumpDate;_pendingJumpDate=null;
+                try{
+                  const dt=parseDateKey(d);
+                  const sameMonth=(_calYear===dt.getFullYear()&&_calMonth===dt.getMonth());
+                  if(!sameMonth){_calYear=dt.getFullYear();_calMonth=dt.getMonth();renderMonthly();}
+                  setTimeout(()=>openDateSheet(d),120);
+                }catch(err){console.warn('즉시 점프 실패:',err)}
+              }
+            }else{
+              _pendingRoomId=roomId;
+              tryEnterPendingRoom();
+            }
           }
         }catch(err){console.warn('navigate 메시지 처리 실패:',err)}
       }
