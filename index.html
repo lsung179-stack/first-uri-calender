@@ -1347,9 +1347,28 @@ async function registerPushNotification(silent){
   }
 }
 
-/* 자동 푸시 등록 — 방 진입 시 호출. 권한 granted/default면 조용히 구독 시도 */
+/* 자동 푸시 등록 — 방 진입 시 호출. 권한 granted/default면 조용히 구독 시도.
+   같은 user_id의 옛 endpoint(다른 브라우저/PWA)는 자동 정리해서 알림 중복 발송 방지. */
 async function autoRegisterPush(){
   if(!_currentUser)return;
+
+  // 같은 user_id의 다른 endpoint를 정리 — 현재 브라우저 endpoint만 남기기
+  // (한 폰에서 여러 브라우저로 사이트 방문해 endpoint가 누적되는 케이스 방지)
+  try{
+    if('serviceWorker' in navigator&&'PushManager' in window){
+      const reg=await navigator.serviceWorker.ready;
+      const currentSub=await reg.pushManager.getSubscription();
+      if(currentSub&&currentSub.endpoint){
+        await supa.from('push_subscriptions')
+          .delete()
+          .eq('user_id',_currentUser.id)
+          .neq('endpoint',currentSub.endpoint);
+      }
+    }
+  }catch(e){
+    console.warn('endpoint cleanup 실패(무시):',e);
+  }
+
   const status=await getPushStatus();
   // 이미 구독돼 있으면 끝
   if(status==='subscribed')return;
@@ -3308,7 +3327,9 @@ function renderDateSheetList(){
     const sharedTag=ev._isShared?`<span class="dp-shared-tag">함께 ${ev._memberCount}명</span>`:'';
     const sharedCls=ev._isShared?' shared':'';
     const virtualTag=isVirtual?`<span class="dp-shared-tag" style="background:rgba(216,104,128,.18);color:#a83855">프로필</span>`:'';
-    const actions=(isMine&&!isVirtual)?`<div class="dp-actions"><button class="dp-btn" onclick="event.stopPropagation();openEditEvent('${ev.id}')">수정</button><button class="dp-btn del" onclick="event.stopPropagation();deleteEvent('${ev.id}')">삭제</button></div>`:'';
+    // 수정/삭제 버튼 — 단독은 본인만, 함께는 같은 방 누구나
+    const canEdit=!isVirtual&&(isMine||ev._isShared);
+    const actions=canEdit?`<div class="dp-actions"><button class="dp-btn" onclick="event.stopPropagation();openEditEvent('${ev.id}')">수정</button><button class="dp-btn del" onclick="event.stopPropagation();deleteEvent('${ev.id}')">삭제</button></div>`:'';
     
     // 이모지 반응 — 같은 방 멤버 누구나 반응 가능. 모든 멤버 반응 표시.
     let reactionHtml='';
@@ -3605,16 +3626,21 @@ function toggleMemberPick(uid){
 function confirmMemberPick(){
   const meIncluded=_tempPickedMembers.includes(_currentUser?.id);
   const otherCount=_tempPickedMembers.filter(u=>u!==_currentUser?.id).length;
+  const wasInGroup=(_editSharedMemberIds||[]).includes(_currentUser?.id);
 
-  // 본인이 빠지는 케이스 — 본인 row만 삭제 (다른 멤버는 유지)
+  // 본인이 새 selection에 없는 케이스 분기
   if(!meIncluded){
     if(otherCount<1){toast('멤버를 선택해주세요');return}
-    leaveSharedEvent();
-    return;
+    // 본인이 원래 멤버였는데 빠진 경우만 본인 row 삭제 흐름
+    if(wasInGroup){
+      leaveSharedEvent();
+      return;
+    }
+    // 본인이 원래 멤버 아니었음 — 단순히 다른 멤버 구성만 바꾸는 경우 (Case 1로 진행)
   }
 
   if(_tempPickedMembers.length<2){
-    toast('최소 1명 이상 선택해주세요');
+    toast('함께 일정은 최소 2명이 필요해요');
     return;
   }
   _selectedTarget='all';
