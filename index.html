@@ -2406,6 +2406,7 @@ function clearPendingJoinCode(){
 })();
 let _events={};           // {YYYY-MM-DD: [eventObj, ...]}
 let _yearlyEvents={};     // {MM-DD: [eventObj, ...]} — 매년 반복 일정 (월,일 기준)
+let _reactions={};        // {target_id: [{user_id, emoji}]} — target_id는 단독=events.id, 함께=events.shared_id
 let _calYear=new Date().getFullYear();
 let _calMonth=new Date().getMonth();
 let _selectedDate=null;   // 시트에서 선택한 날 (YYYY-MM-DD)
@@ -2715,10 +2716,35 @@ async function loadEvents(){
         _yearlyEvents[md].push(ev);
       }
     });
+    // 이모지 반응도 같이 로드
+    await loadReactions();
     renderMonthly();
   }catch(e){
     console.error(e);
     toast('일정 불러오기 실패');
+  }
+}
+
+/* 이모지 반응 로드 — 현재 방의 모든 일정에 대한 멤버별 반응 */
+async function loadReactions(){
+  _reactions={};
+  if(!_currentRoom)return;
+  const allEvs=Object.values(_events).flat();
+  if(!allEvs.length)return;
+  // target_id 목록: 단독은 ev.id, 함께는 ev.shared_id (중복 제거)
+  const targetIds=[...new Set(allEvs.map(e=>e.shared_id||e.id))];
+  try{
+    const {data,error}=await supa.from('event_reactions')
+      .select('target_id,user_id,emoji')
+      .in('target_id',targetIds);
+    if(error)throw error;
+    (data||[]).forEach(r=>{
+      if(!_reactions[r.target_id])_reactions[r.target_id]=[];
+      _reactions[r.target_id].push({user_id:r.user_id,emoji:r.emoji});
+    });
+  }catch(e){
+    console.warn('반응 로드 실패:',e);
+    _reactions={};
   }
 }
 
@@ -3284,26 +3310,22 @@ function renderDateSheetList(){
     const virtualTag=isVirtual?`<span class="dp-shared-tag" style="background:rgba(216,104,128,.18);color:#a83855">프로필</span>`:'';
     const actions=(isMine&&!isVirtual)?`<div class="dp-actions"><button class="dp-btn" onclick="event.stopPropagation();openEditEvent('${ev.id}')">수정</button><button class="dp-btn del" onclick="event.stopPropagation();deleteEvent('${ev.id}')">삭제</button></div>`:'';
     
-    // 이모지 반응 — 함께 일정이면 모든 멤버 reaction 모음, 단독이면 본인만
+    // 이모지 반응 — 같은 방 멤버 누구나 반응 가능. 모든 멤버 반응 표시.
     let reactionHtml='';
-    if(ev._isShared){
-      // 같은 shared_id 모든 row의 reaction 모음
-      const allEvs=Object.values(_events).flat();
-      const sharedRows=allEvs.filter(e=>e.shared_id===ev.shared_id);
-      const reactions=sharedRows.filter(r=>r.reaction).map(r=>{
+    if(!isVirtual){
+      const reactionTargetId=ev.shared_id||ev.id;
+      const reactions=_reactions[reactionTargetId]||[];
+      const myReaction=reactions.find(r=>r.user_id===_currentUser?.id);
+      // 모든 반응 표시 (본인은 강조)
+      reactions.forEach(r=>{
         const m=_myMembers.find(mm=>mm.user_id===r.user_id);
         const isMineR=r.user_id===_currentUser?.id;
-        return `<span class="dp-reaction-chip${isMineR?' mine':''}" ${isMineR?`onclick="event.stopPropagation();openEmojiPick('${ev.id}')"`:''} title="${escapeHtml(m?.name||'')}">${r.reaction}<span style="font-size:10px;opacity:.7">${escapeHtml((m?.name||'?').slice(0,3))}</span></span>`;
-      }).join('');
-      reactionHtml=reactions;
-      if(isMine&&!sharedRows.find(r=>r.user_id===_currentUser?.id&&r.reaction)){
+        const clickHandler=isMineR?`onclick="event.stopPropagation();openEmojiPick('${ev.id}')"`:'';
+        reactionHtml+=`<span class="dp-reaction-chip${isMineR?' mine':''}" ${clickHandler} title="${escapeHtml(m?.name||'')}">${r.emoji}<span style="font-size:10px;opacity:.7">${escapeHtml((m?.name||'?').slice(0,3))}</span></span>`;
+      });
+      // 본인이 아직 반응 안 달았으면 + 버튼 (누구의 일정이든)
+      if(!myReaction){
         reactionHtml+=`<button class="dp-reaction-chip-add" onclick="event.stopPropagation();openEmojiPick('${ev.id}')" title="반응 추가">+</button>`;
-      }
-    }else if(isMine){
-      if(ev.reaction){
-        reactionHtml=`<span class="dp-reaction-chip mine" onclick="event.stopPropagation();openEmojiPick('${ev.id}')">${ev.reaction}</span>`;
-      }else{
-        reactionHtml=`<button class="dp-reaction-chip-add" onclick="event.stopPropagation();openEmojiPick('${ev.id}')" title="반응 추가">+</button>`;
       }
     }
     const reactionRow=reactionHtml?`<div class="dp-reaction-row">${reactionHtml}</div>`:'';
@@ -4277,23 +4299,18 @@ async function deleteEvent(eventId){
    3-C: 이모지 반응 + 방 설정 (테마 변경)
    ═══════════════════════════════════ */
 
-/* 이모지 모달 — 본인이 일정에 단 이모지를 선택/변경/제거 */
+/* 이모지 모달 — 같은 방 멤버 누구나 어떤 일정에든 자기 반응을 달 수 있음 */
 function openEmojiPick(eventId){
   const evs=Object.values(_events).flat();
   const ev=evs.find(e=>e.id===eventId);
   if(!ev){toast('일정을 찾지 못했어요');return}
-  // 함께 일정이면 본인 row 찾기 (반응은 본인 row에 저장)
-  let target=ev;
-  if(ev.shared_id){
-    const sharedRows=evs.filter(e=>e.shared_id===ev.shared_id);
-    target=sharedRows.find(e=>e.user_id===_currentUser?.id)||ev;
-  }
-  if(target.user_id!==_currentUser?.id){
-    toast('본인 일정에만 반응할 수 있어요');
-    return;
-  }
-  _emojiTargetEvent=target;
-  document.getElementById('emojiSubject').textContent=`"${(target.title||'').slice(0,20)}" 에 반응`;
+  if(!_currentUser){toast('로그인이 필요해요');return}
+  _emojiTargetEvent=ev;
+  // 본인의 기존 반응 찾기 (있으면 모달에 강조 표시)
+  const targetId=ev.shared_id||ev.id;
+  const myR=(_reactions[targetId]||[]).find(r=>r.user_id===_currentUser.id);
+  _emojiTargetEvent._currentReaction=myR?myR.emoji:null;
+  document.getElementById('emojiSubject').textContent=`"${(ev.title||'').slice(0,20)}" 에 반응`;
   renderEmojiGrid();
   document.getElementById('emojiOverlay').classList.add('on');
   document.getElementById('emojiCard').classList.add('on');
@@ -4302,7 +4319,7 @@ function renderEmojiGrid(){
   const grid=document.getElementById('emojiGrid');
   if(!grid)return;
   grid.innerHTML='';
-  const cur=_emojiTargetEvent?.reaction;
+  const cur=_emojiTargetEvent?._currentReaction;
   REACTIONS.forEach(em=>{
     const btn=document.createElement('button');
     btn.className=`emoji-btn${em===cur?' on':''}`;
@@ -4317,11 +4334,17 @@ function closeEmojiPick(){
   _emojiTargetEvent=null;
 }
 async function setMyReaction(emoji){
-  if(!_emojiTargetEvent)return;
+  if(!_emojiTargetEvent||!_currentUser)return;
+  const targetId=_emojiTargetEvent.shared_id||_emojiTargetEvent.id;
   try{
-    const {error}=await supa.from('events').update({reaction:emoji}).eq('id',_emojiTargetEvent.id);
+    const {error}=await supa.from('event_reactions').upsert({
+      target_id:targetId,
+      user_id:_currentUser.id,
+      emoji:emoji,
+      updated_at:new Date().toISOString(),
+    },{onConflict:'target_id,user_id'});
     if(error)throw error;
-    toast(`${emoji} 반응 추가됨`);
+    toast(`${emoji} 반응을 남겼어요`);
     closeEmojiPick();
     await loadEvents();
     if(_selectedDate)openDateSheet(_selectedDate);
@@ -4330,11 +4353,14 @@ async function setMyReaction(emoji){
   }
 }
 async function removeMyReaction(){
-  if(!_emojiTargetEvent)return;
+  if(!_emojiTargetEvent||!_currentUser)return;
+  const targetId=_emojiTargetEvent.shared_id||_emojiTargetEvent.id;
   try{
-    const {error}=await supa.from('events').update({reaction:null}).eq('id',_emojiTargetEvent.id);
+    const {error}=await supa.from('event_reactions').delete()
+      .eq('target_id',targetId)
+      .eq('user_id',_currentUser.id);
     if(error)throw error;
-    toast('반응 제거됨');
+    toast('반응이 제거됐어요');
     closeEmojiPick();
     await loadEvents();
     if(_selectedDate)openDateSheet(_selectedDate);
