@@ -1316,6 +1316,21 @@ body{background:var(--bg)}
 const SUPABASE_URL='https://bgqzkkaslqchbovzrkao.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJncXpra2FzbHFjaGJvdnpya2FvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwMzA5ODMsImV4cCI6MjA5MzYwNjk4M30.UkVo7bugGodTB1hxkQNltFqv1GrMTaNhJ8Lhmo3pIHc';
 
+/* URL의 ?join=/?room= 미리 백업 — Supabase createClient가 detectSessionInUrl로 URL 정리하기 전에 캡쳐.
+   OAuth redirect 후 돌아오면 Supabase가 hash·query를 함께 정리하는 경우가 있어 보존 필요. */
+(()=>{
+  try{
+    const u=new URL(location.href);
+    const j=u.searchParams.get('join');
+    if(j){
+      const code=j.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+      if(code) localStorage.setItem('uricalv2.pendingJoin',JSON.stringify({code,ts:Date.now()}));
+    }
+    const r=u.searchParams.get('room');
+    if(r) sessionStorage.setItem('uricalv2.pendingRoom',r);
+  }catch(e){}
+})();
+
 const supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{
   auth:{
     flowType:'implicit',
@@ -1549,13 +1564,22 @@ function toast(msg){
   _tt=setTimeout(()=>el.classList.remove('on'),2800);
 }
 
+/* OAuth/매직링크용 redirect URL — pendingJoin이 있으면 query에 보존 (TWA + OAuth에서 localStorage 손실 대비) */
+function buildAuthRedirect(){
+  let url=window.location.origin+window.location.pathname;
+  if(_pendingJoinCode){
+    url+='?join='+encodeURIComponent(_pendingJoinCode);
+  }
+  return url;
+}
+
 /* 카카오 로그인 */
 async function loginKakao(){
   try{
     const {error}=await supa.auth.signInWithOAuth({
       provider:'kakao',
       options:{
-        redirectTo:window.location.origin+window.location.pathname,
+        redirectTo:buildAuthRedirect(),
         scopes:'profile_nickname profile_image'
       }
     });
@@ -1579,7 +1603,7 @@ async function sendMagicLink(){
     const {error}=await supa.auth.signInWithOtp({
       email,
       options:{
-        emailRedirectTo:window.location.origin+window.location.pathname,
+        emailRedirectTo:buildAuthRedirect(),
         shouldCreateUser:true
       }
     });
@@ -2479,6 +2503,16 @@ function clearPendingJoinCode(){
       // URL에 ?join이 없어도 redirect 직후일 수 있으니 localStorage에서 복구
       const saved=loadPendingJoinCode();
       if(saved)_pendingJoinCode=saved;
+    }
+    // URL에 ?room이 없어도 redirect 직후일 수 있으니 sessionStorage에서 복구
+    if(!_pendingRoomId){
+      try{
+        const savedRoom=sessionStorage.getItem('uricalv2.pendingRoom');
+        if(savedRoom){
+          _pendingRoomId=savedRoom;
+          sessionStorage.removeItem('uricalv2.pendingRoom');
+        }
+      }catch(e){}
     }
     if(r||j)history.replaceState({},'',location.pathname);
   }catch(e){}
