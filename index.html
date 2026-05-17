@@ -51,8 +51,10 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{background:#e5dec7}
-html,body{margin:0;padding:0;height:100%;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Pretendard","Apple SD Gothic Neo","Noto Sans KR",sans-serif;-webkit-font-smoothing:antialiased;color-scheme:light only;overflow:hidden}
+html,body{margin:0;padding:0;height:100%;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Pretendard","Apple SD Gothic Neo","Noto Sans KR",sans-serif;-webkit-font-smoothing:antialiased;color-scheme:light only;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 body{background:var(--bg)}
+/* 사용자가 실제로 선택·복사·입력해야 하는 영역만 선택 허용 */
+input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-title-input,.j-input{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 
 .app{position:fixed;inset:0;overflow:hidden}
 
@@ -1893,16 +1895,14 @@ async function loadRooms(){
     // 초대 링크로 들어왔으면 입장 확인
     tryHandlePendingJoin();
 
-    // [임시 진단] 빈 방 목록 + 처리 안 된 초대 코드면 한 번만 toast 표시 (원인 파악용)
-    if(!_myRooms.length&&!sessionStorage.getItem('uricalv2.diagShown')){
+    // [임시 진단] 빈 방 목록 + 처리 안 된 초대 코드면 toast 표시 (매번, 원인 파악용)
+    if(!_myRooms.length){
       try{
         const inMem=_pendingJoinCode;
         const inStor=loadPendingJoinCode();
         if(inMem||inStor){
-          sessionStorage.setItem('uricalv2.diagShown','1');
           setTimeout(()=>toast('초대 코드 처리 중... '+(inMem||inStor)),600);
         }else{
-          sessionStorage.setItem('uricalv2.diagShown','1');
           setTimeout(()=>toast('[진단] 초대 코드 없음'),600);
         }
       }catch(e){}
@@ -2022,6 +2022,14 @@ function updateWelcomeInviteBanner(){
 
 function renderEmpty(){
   const c=document.getElementById('roomsContent');
+  // 디버그 마커 — 새 코드 적용 확인용 (build:diag-002). pendingJoin 상태도 같이 표시
+  let dbg='';
+  try{
+    const inMem=_pendingJoinCode;
+    const inStor=loadPendingJoinCode();
+    const status=inMem?`코드:${inMem}`:inStor?`저장:${inStor}`:'코드없음';
+    dbg=`<div style="margin-top:36px;font-size:9px;color:#bbb;text-align:center;user-select:none">build:diag-002 · ${status}</div>`;
+  }catch(e){}
   c.innerHTML=`
     <div class="r-empty">
       <div class="r-empty-icon">
@@ -2029,6 +2037,7 @@ function renderEmpty(){
       </div>
       <div class="r-empty-title">아직 방이 없어요</div>
       <div class="r-empty-sub">새 방을 만들거나<br>받은 코드로 입장해보세요</div>
+      ${dbg}
     </div>
   `;
 }
