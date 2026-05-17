@@ -1790,6 +1790,8 @@ async function loadRooms(){
     _myRooms=rooms||[];
     // 알림 클릭으로 진입할 방이 있으면 자동 진입
     tryEnterPendingRoom();
+    // 초대 링크로 들어왔으면 입장 확인
+    tryHandlePendingJoin();
   }catch(e){
     content.innerHTML='<div style="padding:60px 24px;text-align:center;color:var(--sub);font-size:13px">방 목록을 불러오지 못했어요<br>잠시 후 다시 시도해주세요</div>';
     console.error(e);
@@ -1808,6 +1810,51 @@ function tryEnterPendingRoom(){
     enterRoom(roomId);
   }
   // 못 찾으면 _pendingRoomId 유지 (다음 loadRooms 후 재시도)
+}
+
+/* 카톡 초대 링크로 들어왔을 때 — 확인 모달 후 자동 입장 */
+async function tryHandlePendingJoin(){
+  if(!_pendingJoinCode||!_currentUser)return;
+  const code=_pendingJoinCode;
+  _pendingJoinCode=null; // 한 번만 시도 (재호출 방지)
+
+  try{
+    // 방 조회
+    const {data:room,error}=await supa.from('rooms').select('*').eq('code',code).maybeSingle();
+    if(error)throw error;
+    if(!room){toast('초대 코드를 찾을 수 없어요');return}
+
+    // 이미 멤버면 그냥 그 방으로 진입
+    const {data:exist}=await supa.from('members').select('id').eq('room_id',room.id).eq('user_id',_currentUser.id).maybeSingle();
+    if(exist){
+      // _myRooms 갱신 후 진입
+      const inCache=_myRooms.find(r=>r.id===room.id);
+      if(inCache){enterRoom(room.id)}
+      else{
+        _pendingRoomId=room.id;
+        await loadRooms(); // 끝에서 tryEnterPendingRoom 자동 호출
+      }
+      return;
+    }
+
+    // 새 방 — 입장 확인
+    const ok=confirm(`"${room.name||'(이름 없음)'}" 방에 입장하시겠어요?`);
+    if(!ok)return;
+
+    // 멤버로 추가
+    const {error:e2}=await supa.from('members').insert({
+      room_id:room.id,user_id:_currentUser.id,color:pickMemberColor()
+    });
+    if(e2)throw e2;
+
+    toast(`"${room.name||'방'}"에 입장했어요`);
+    // 입장 후 자동으로 방 진입
+    _pendingRoomId=room.id;
+    await loadRooms();
+  }catch(e){
+    toast('초대 처리 실패: '+(e.message||'').slice(0,40));
+    console.error(e);
+  }
 }
 
 function renderEmpty(){
@@ -1989,9 +2036,9 @@ async function createRoom(){
     }).select().single();
     if(e1)throw e1;
 
-    // 본인을 첫 멤버로
+    // 본인을 첫 멤버로 (owner role 명시 — RLS에서 방 이름·삭제 등 owner 권한 필요)
     const {error:e2}=await supa.from('members').insert({
-      room_id:room.id,user_id:_currentUser.id,color:pickMemberColor()
+      room_id:room.id,user_id:_currentUser.id,color:pickMemberColor(),role:'owner'
     });
     if(e2)throw e2;
 
@@ -2221,17 +2268,17 @@ supa.auth.onAuthStateChange((event,session)=>{
 /* 글로벌 상태 */
 let _myRooms=[];          // loadRooms 결과 캐시
 let _currentRoom=null;    // 진입한 방
-let _pendingRoomId=(()=>{ // 알림 클릭으로 진입할 방 (URL ?room=xxx 또는 SW 메시지)
+let _pendingRoomId=null;  // 알림 클릭으로 진입할 방 (URL ?room=xxx 또는 SW 메시지)
+let _pendingJoinCode=null;// 초대 링크로 입장할 방 코드 (URL ?join=XXXXXX)
+(()=>{                    // URL에서 ?room= 과 ?join= 동시 파싱 후 정리
   try{
     const u=new URL(location.href);
     const r=u.searchParams.get('room');
-    if(r){
-      // URL 정리 (히스토리에 ?room= 안 남기기)
-      history.replaceState({},'',location.pathname);
-      return r;
-    }
+    const j=u.searchParams.get('join');
+    if(r)_pendingRoomId=r;
+    if(j)_pendingJoinCode=j.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+    if(r||j)history.replaceState({},'',location.pathname);
   }catch(e){}
-  return null;
 })();
 let _events={};           // {YYYY-MM-DD: [eventObj, ...]}
 let _yearlyEvents={};     // {MM-DD: [eventObj, ...]} — 매년 반복 일정 (월,일 기준)
@@ -4462,8 +4509,9 @@ async function leaveRoomConfirm(){
 function shareKakao(){
   if(!_currentRoom)return;
   const code=_currentRoom.code;
-  const name=_currentRoom.name;
-  const text=`[우리 캘린더] "${name}" 방에 초대합니다.\n방 코드: ${code}`;
+  const name=_currentRoom.name||'(이름 없음)';
+  const url=`${location.origin}/?join=${encodeURIComponent(code)}`;
+  const text=`[우리 캘린더] '${name}'에 초대해요\n\n함께 일정을 나누는 공간이에요.\n아래 링크로 입장하실 수 있어요.\n\n${url}\n방 코드 · ${code}`;
   // Web Share API (모바일 카카오톡 포함 공유)
   if(navigator.share){
     navigator.share({
