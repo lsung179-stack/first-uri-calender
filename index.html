@@ -980,7 +980,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
     <input class="fi" type="text" id="searchInput" placeholder="제목으로 검색…" maxlength="40" autocomplete="off" oninput="runSearch()">
     <button class="search-clear-btn" onclick="clearSearchInput()" title="지우기">×</button>
   </div>
-  <div class="search-hint" id="searchHint">최근 등록한 제목</div>
+  <div class="search-hint" id="searchHint">최근 일정 제목</div>
   <div class="search-results" id="searchResults"></div>
 </div>
 
@@ -3175,17 +3175,16 @@ function clearSearchInput(){
   runSearch();
   document.getElementById('searchInput').focus();
 }
-/* 본인이 등록한 모든 일정 (가상/반복 제외, 원본 events에서) */
-function _getMyEvents(){
-  const uid=_currentUser?.id;
-  if(!uid)return [];
+/* 같은 방의 검색 가능한 모든 일정 (가상/반복 제외, 함께 일정은 shared_id+date로 중복 제거) */
+function _getSearchableEvents(){
+  if(!_currentUser?.id)return [];
   const out=[];
   const seenShared=new Set();
   Object.values(_events).flat().forEach(e=>{
-    if(e.user_id!==uid)return;
     if(e.shared_id){
-      if(seenShared.has(e.shared_id+'|'+e.date))return;
-      seenShared.add(e.shared_id+'|'+e.date);
+      const key=e.shared_id+'|'+e.date;
+      if(seenShared.has(key))return;
+      seenShared.add(key);
     }
     out.push(e);
   });
@@ -3194,8 +3193,8 @@ function _getMyEvents(){
 function renderRecentTitles(){
   const list=document.getElementById('searchResults');
   const hint=document.getElementById('searchHint');
-  hint.textContent='최근 등록한 제목';
-  const mine=_getMyEvents();
+  hint.textContent='최근 일정 제목';
+  const mine=_getSearchableEvents();
   // 제목별로 그룹 + 최신 created_at 기준
   const titleMap=new Map();
   mine.forEach(e=>{
@@ -3206,7 +3205,7 @@ function renderRecentTitles(){
   });
   const titles=[...titleMap.entries()].sort((a,b)=>(b[1]||'').localeCompare(a[1]||'')).slice(0,12).map(x=>x[0]);
   if(titles.length===0){
-    list.innerHTML='<div class="search-empty">등록한 일정이 아직 없어요</div>';
+    list.innerHTML='<div class="search-empty">이 방에 일정이 아직 없어요</div>';
     return;
   }
   list.innerHTML='<div class="search-suggest-grid">'+
@@ -3223,7 +3222,7 @@ function runSearch(){
   const hint=document.getElementById('searchHint');
   if(!q){renderRecentTitles();return}
   hint.textContent=`"${q}" 검색 결과`;
-  const mine=_getMyEvents();
+  const mine=_getSearchableEvents();
   const matches=mine.filter(e=>(e.title||'').toLowerCase().includes(q));
   if(matches.length===0){
     list.innerHTML='<div class="search-empty">일치하는 일정이 없어요</div>';
