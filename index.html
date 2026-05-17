@@ -3053,6 +3053,7 @@ function getDayEvents(date){
     const prevHas=prevEvs.some(e=>isSameRangeGroup(e,ev));
     const nextHas=nextEvs.some(e=>isSameRangeGroup(e,ev));
     ev._isRangeEvent=(prevHas||nextHas);
+    ev._isFirstSegment=!prevHas;  // prev에 같은 일정 없으면 진짜 시작 셀 (함께 마커 부착 기준)
     let pos;
     if(prevHas&&nextHas){
       if(dow===6)pos='end';
@@ -3193,8 +3194,9 @@ function cellHtml(y,m,d,isOther,todayKey){
   shown.forEach(ev=>{
     const hex=colorHex(ev.color);
     const t=escapeHtml(ev.title||'');
-    // 함께 막대는 첫 날(또는 single)에만 — 단, 매년 반복 펼침/가상 일정은 마커 안 붙임 (모양 통일)
-    const showSharedMarker=ev._isShared&&(ev._rangePos==='single'||ev._rangePos==='start')&&!ev._yearlyDisplay&&!ev._isVirtual;
+    // 함께 막대는 첫 셀(진짜 시작 또는 single + prev에 같은 일정 없음)에만 — wrap된 셀엔 마커 X
+    // 매년 반복 펼침/가상 일정은 항상 마커 X (모양 통일)
+    const showSharedMarker=ev._isShared&&(ev._rangePos==='single'||ev._rangePos==='start')&&ev._isFirstSegment&&!ev._yearlyDisplay&&!ev._isVirtual;
     const sharedCls=showSharedMarker?' shared':'';
     // 기간 그룹: range-start/mid/end 클래스 + 중간/끝은 텍스트 비우기 (시각적으로 한 줄)
     let rangeCls='';
