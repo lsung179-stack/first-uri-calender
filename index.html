@@ -4898,11 +4898,11 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 init();
 
-/* PWA Service Worker 등록 */
+/* PWA Service Worker 등록 + 자동 업데이트 (사용자 개입 없이 새 버전 자동 적용) */
 if('serviceWorker' in navigator&&location.protocol!=='file:'){
   window.addEventListener('load', async ()=>{
-    /* 일회성: 옛 SW + 옛 캐시 강제 정리 (배포 후 사용자 폰 정상화용) */
-    if(!localStorage.getItem('sw_clean_v3')){
+    /* 일회성: 옛 SW + 옛 캐시 강제 정리 (배포 후 사용자 폰 정상화용) — bump해서 한 번 더 정리 */
+    if(!localStorage.getItem('sw_clean_v4')){
       try{
         const regs=await navigator.serviceWorker.getRegistrations();
         await Promise.all(regs.map(r=>r.unregister()));
@@ -4910,13 +4910,44 @@ if('serviceWorker' in navigator&&location.protocol!=='file:'){
           const keys=await caches.keys();
           await Promise.all(keys.map(k=>caches.delete(k)));
         }
-        localStorage.setItem('sw_clean_v3','1');
+        localStorage.setItem('sw_clean_v4','1');
         location.reload();
         return;
       }catch(e){console.warn('SW 정리 실패:',e)}
     }
-    /* 정상 SW 등록 */
-    navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW 등록 실패:',e));
+
+    /* SW 등록 — updateViaCache: 'none'으로 sw.js 자체는 HTTP 캐시 안 거치고 항상 fresh */
+    let reg;
+    try{
+      reg=await navigator.serviceWorker.register('sw.js',{updateViaCache:'none'});
+    }catch(e){
+      console.warn('SW 등록 실패:',e);
+      return;
+    }
+
+    /* 페이지 로드 시 즉시 새 sw.js 체크 + 1시간마다 재체크 (앱 켜둔 채로도 새 버전 받기) */
+    reg.update().catch(()=>{});
+    setInterval(()=>{try{reg.update()}catch(e){}},60*60*1000);
+
+    /* 새 SW 발견 → 즉시 활성화 명령 */
+    reg.addEventListener('updatefound',()=>{
+      const nw=reg.installing;
+      if(!nw)return;
+      nw.addEventListener('statechange',()=>{
+        if(nw.state==='installed'&&navigator.serviceWorker.controller){
+          // 기존 컨트롤러가 있다 = 업데이트 케이스. waiting SW에게 즉시 활성화 명령
+          nw.postMessage({type:'SKIP_WAITING'});
+        }
+      });
+    });
+
+    /* 새 SW 활성화 완료 → 페이지 자동 새로고침 (한 번만) */
+    let _refreshing=false;
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{
+      if(_refreshing)return;
+      _refreshing=true;
+      location.reload();
+    });
 
     /* 알림 클릭 → SW에서 navigate 메시지 받기 */
     navigator.serviceWorker.addEventListener('message',(e)=>{
