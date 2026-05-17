@@ -4738,7 +4738,8 @@ function shareKakao(){
   if(!_currentRoom)return;
   const code=_currentRoom.code;
   const name=_currentRoom.name||'(이름 없음)';
-  const url=`${location.origin}/?join=${encodeURIComponent(code)}`;
+  // 카톡 in-app browser 탈출용 redirect 전용 페이지 URL 사용
+  const url=`${location.origin}/r.html?join=${encodeURIComponent(code)}`;
   const text=`[우리 캘린더] '${name}'에 초대해요\n\n함께 일정을 나누는 공간이에요.\n아래 링크로 입장하실 수 있어요.\n\n${url}\n방 코드 · ${code}`;
   // Web Share API (모바일 카카오톡 포함 공유)
   if(navigator.share){
