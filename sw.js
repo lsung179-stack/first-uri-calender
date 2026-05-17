@@ -1,10 +1,7 @@
-/* 우리 캘린더 V2 — Service Worker (v7: 무한로딩 방지 + 자동 업데이트) */
+/* 우리 캘린더 V2 — Service Worker (v3: 푸시 알림 지원) */
 const CACHE_NAME = 'uri-cal-v2-v7';
-const HTML_TIMEOUT_MS = 3000;
 const PRECACHE_URLS = [
-  '/',
-  '/index.html',
-  '/r.html',
+  '/v2.html',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
@@ -16,43 +13,19 @@ const PRECACHE_URLS = [
 self.addEventListener('install', (e) => {
   self.skipWaiting();
   e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) =>
-      Promise.all(PRECACHE_URLS.map(url =>
-        cache.add(url).catch(err => console.warn('Pre-cache 스킵:', url, err.message))
-      ))
+    caches.open(CACHE_NAME).then((cache) => 
+      cache.addAll(PRECACHE_URLS).catch((err) => console.warn('Pre-cache 실패:', err))
     )
   );
 });
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((names) =>
+    caches.keys().then((names) => 
       Promise.all(names.filter(n => n !== CACHE_NAME).map(n => caches.delete(n)))
     ).then(() => self.clients.claim())
   );
 });
-
-/* 메인 앱이 새 SW 즉시 활성화 요청 시 (자동 업데이트 메커니즘) */
-self.addEventListener('message', (e) => {
-  if (e.data && e.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-});
-
-/* HTML 요청 판별 헬퍼 */
-function isHtmlRequest(req) {
-  return req.mode === 'navigate' ||
-    (req.destination === 'document') ||
-    (req.headers.get('accept') || '').includes('text/html');
-}
-
-/* 캐시 가능한 도메인 화이트리스트 */
-function isCacheable(url) {
-  return url.includes(self.location.origin) ||
-    url.includes('cdn.jsdelivr.net') ||
-    url.includes('fonts.googleapis.com') ||
-    url.includes('fonts.gstatic.com');
-}
 
 self.addEventListener('fetch', (e) => {
   const req = e.request;
@@ -60,46 +33,10 @@ self.addEventListener('fetch', (e) => {
   if (!req.url.startsWith('http')) return;
   if (req.url.includes('supabase.co')) return;
   if (req.url.includes('kakao')) return;
-
-  /* HTML 요청 — network-first with timeout (무한 로딩 방지 핵심) */
-  if (isHtmlRequest(req)) {
-    e.respondWith((async () => {
-      try {
-        const res = await Promise.race([
-          fetch(req).then((r) => {
-            if (r.ok) {
-              const clone = r.clone();
-              caches.open(CACHE_NAME).then((c) => c.put(req, clone)).catch(() => {});
-            }
-            return r;
-          }),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('html fetch timeout')), HTML_TIMEOUT_MS)
-          ),
-        ]);
-        return res;
-      } catch (err) {
-        /* 네트워크 실패 또는 timeout — 캐시에서 응답 (없으면 offline 메시지) */
-        const cached =
-          (await caches.match(req)) ||
-          (await caches.match('/index.html')) ||
-          (await caches.match('/'));
-        if (cached) return cached;
-        return new Response(
-          '<!doctype html><meta charset="utf-8"><title>오프라인</title>' +
-          '<div style="font-family:sans-serif;padding:40px;text-align:center;color:#8b3a2a">' +
-          '연결이 불안정해요.<br>네트워크 확인 후 다시 시도해주세요.</div>',
-          { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
-        );
-      }
-    })());
-    return;
-  }
-
-  /* 기타 자원 — network-first with cache fallback */
+  
   e.respondWith(
     fetch(req).then((res) => {
-      if (res.ok && isCacheable(req.url)) {
+      if (res.ok && (req.url.includes(self.location.origin) || req.url.includes('cdn.jsdelivr.net') || req.url.includes('fonts.googleapis.com') || req.url.includes('fonts.gstatic.com'))) {
         const clone = res.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(req, clone)).catch(() => {});
       }
@@ -118,7 +55,7 @@ self.addEventListener('push', (e) => {
   } catch {
     data = { title: '우리 캘린더', body: e.data ? e.data.text() : '새 알림' };
   }
-
+  
   const title = data.title || '우리 캘린더';
   const opts = {
     body: data.body || '',
@@ -126,12 +63,12 @@ self.addEventListener('push', (e) => {
     badge: '/icon-192.png',
     tag: data.tag || 'wuri-calendar',
     data: { url: data.url || '/' },
-    vibrate: [200, 100, 200],
-    renotify: true,
+    vibrate: [200, 100, 200],   // 갤럭시/안드 헤드업 알림 트리거
+    renotify: true,             // 같은 tag로 와도 다시 헤드업 표시
     requireInteraction: false,
     silent: false,
   };
-
+  
   e.waitUntil(self.registration.showNotification(title, opts));
 });
 
@@ -140,15 +77,17 @@ self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   const targetUrl = (e.notification.data && e.notification.data.url) || '/';
   const fullUrl = new URL(targetUrl, self.location.origin).href;
-
+  
   e.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      // 이미 앱 열려있으면 포커스 + 메시지로 navigate
       for (const client of list) {
         if ('focus' in client) {
           client.postMessage({ type: 'navigate', url: targetUrl });
           return client.focus();
         }
       }
+      // 없으면 새 창 (URL에 ?room=xxx 포함)
       if (self.clients.openWindow) {
         return self.clients.openWindow(fullUrl);
       }
