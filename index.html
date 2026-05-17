@@ -1564,13 +1564,10 @@ function toast(msg){
   _tt=setTimeout(()=>el.classList.remove('on'),2800);
 }
 
-/* OAuth/매직링크용 redirect URL — pendingJoin이 있으면 query에 보존 (TWA + OAuth에서 localStorage 손실 대비) */
+/* OAuth/매직링크용 redirect URL — Supabase Dashboard의 redirect URL 화이트리스트와 정확히 매칭되도록 query 없이.
+   join 코드는 supabase 초기화 전 IIFE에서 localStorage에 백업되어 OAuth 후 복구됨. */
 function buildAuthRedirect(){
-  let url=window.location.origin+window.location.pathname;
-  if(_pendingJoinCode){
-    url+='?join='+encodeURIComponent(_pendingJoinCode);
-  }
-  return url;
+  return window.location.origin+window.location.pathname;
 }
 
 /* 카카오 로그인 */
@@ -1895,6 +1892,21 @@ async function loadRooms(){
     tryEnterPendingRoom();
     // 초대 링크로 들어왔으면 입장 확인
     tryHandlePendingJoin();
+
+    // [임시 진단] 빈 방 목록 + 처리 안 된 초대 코드면 한 번만 toast 표시 (원인 파악용)
+    if(!_myRooms.length&&!sessionStorage.getItem('uricalv2.diagShown')){
+      try{
+        const inMem=_pendingJoinCode;
+        const inStor=loadPendingJoinCode();
+        if(inMem||inStor){
+          sessionStorage.setItem('uricalv2.diagShown','1');
+          setTimeout(()=>toast('초대 코드 처리 중... '+(inMem||inStor)),600);
+        }else{
+          sessionStorage.setItem('uricalv2.diagShown','1');
+          setTimeout(()=>toast('[진단] 초대 코드 없음'),600);
+        }
+      }catch(e){}
+    }
   }catch(e){
     content.innerHTML='<div style="padding:60px 24px;text-align:center;color:var(--sub);font-size:13px">방 목록을 불러오지 못했어요<br>잠시 후 다시 시도해주세요</div>';
     console.error(e);
@@ -1917,8 +1929,22 @@ function tryEnterPendingRoom(){
 
 /* 카톡 초대 링크로 들어왔을 때 — 확인 모달 후 자동 입장 */
 async function tryHandlePendingJoin(){
-  if(!_pendingJoinCode||!_currentUser)return;
+  // 안전망: _pendingJoinCode가 null이면 localStorage에서 한 번 더 복구 시도
+  // (OAuth redirect 후 IIFE 타이밍·query strip 등으로 메모리 변수가 비어있을 수 있음)
+  if(!_pendingJoinCode){
+    const saved=loadPendingJoinCode();
+    if(saved){
+      _pendingJoinCode=saved;
+      console.log('[pendingJoin] localStorage에서 복구:',saved);
+    }
+  }
+  if(!_pendingJoinCode||!_currentUser){
+    if(!_currentUser)console.log('[pendingJoin] 로그인 안 됨');
+    else console.log('[pendingJoin] 코드 없음 (URL/localStorage 둘 다)');
+    return;
+  }
   const code=_pendingJoinCode;
+  console.log('[pendingJoin] 처리 시작:',code);
   clearPendingJoinCode(); // 한 번만 시도 (재호출 + redirect 방지)
 
   try{
