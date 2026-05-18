@@ -68,6 +68,16 @@
 html.is-dark-pre{background:#1a1410;color:#f0e4d0}
 html.is-dark-pre body{background:#1a1410}
 body.is-dark{color-scheme:dark}
+/* 다크 모드: 하드코딩 베이지 카드 배경 오버라이드 */
+body.is-dark .rs-row,
+body.is-dark .rs-member-row,
+body.is-dark .dp-item,
+body.is-dark .mp-item,
+body.is-dark .copy-option,
+body.is-dark .copy-source-item,
+body.is-dark .code-box{background:var(--aP)!important}
+/* owner 멤버 행은 다크에서도 강조 유지 */
+body.is-dark .rs-member-row.owner{background:rgba(194,160,107,.12)!important;border-color:var(--accent)!important}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{background:#e5dec7}
 html,body{margin:0;padding:0;height:100%;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Pretendard","Apple SD Gothic Neo","Noto Sans KR",sans-serif;-webkit-font-smoothing:antialiased;color-scheme:light only;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
