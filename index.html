@@ -1120,6 +1120,16 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
         <span class="ev-yearly-slider"></span>
       </label>
     </div>
+    <!-- 다른 방에도 추가 (참여 방 ≥ 2 + 단독 일정 + 신규일 때만 표시) -->
+    <div class="ev-form-row ev-yearly-row" id="evMultiRoomRow" style="display:none">
+      <div class="ev-label">다른 방에도 추가
+        <span id="evMultiRoomCount" style="font-size:11px;color:var(--sub);margin-left:6px"></span>
+      </div>
+      <label class="ev-yearly-toggle">
+        <input type="checkbox" id="evMultiRoom" onchange="onMultiRoomToggle(this.checked)">
+        <span class="ev-yearly-slider"></span>
+      </label>
+    </div>
   </div>
   <div class="mo-actions">
     <button class="btn btn-primary" id="evSaveBtn" onclick="saveEvent()">저장</button>
@@ -1178,6 +1188,19 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
   <div class="mo-actions">
     <button class="btn btn-primary" onclick="confirmMemberPick()">확인</button>
     <button class="mo-cancel" onclick="cancelMemberPick()">취소</button>
+  </div>
+</div>
+
+<!-- 방 선택 모달 (다른 방에도 일정 추가) -->
+<div class="mo-overlay" id="roomPickOverlay" onclick="cancelRoomPick()"></div>
+<div class="mo-card" id="roomPickCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">추가할 방 선택</div>
+  <div class="mo-sub">선택한 방에 같은 일정이 함께 등록돼요</div>
+  <div class="mp-list" id="roomPickList"></div>
+  <div class="mo-actions">
+    <button class="btn btn-primary" onclick="confirmRoomPick()">확인</button>
+    <button class="mo-cancel" onclick="cancelRoomPick()">취소</button>
   </div>
 </div>
 
@@ -2527,6 +2550,7 @@ let _selectedMembers=[];     // 함께 선택된 user_id 배열 (본인 포함)
 let _editSharedMemberIds=[]; // 수정 시 원래 함께였던 멤버
 let _pickContext='add';      // 'add' | 'edit' (멤버 선택 모달 컨텍스트)
 let _tempPickedMembers=[];   // 모달에서 임시 선택
+let _selectedExtraRooms=[];  // 다른 방에도 추가 — 선택된 방 ID 배열 (현재 방 제외)
 let _createCopySource=null;  // 새 방 만들 때 복사할 소스 방 ID
 let _createCopyOn=false;     // 복사 토글
 let _joinCopySource=null;    // 코드 입장 시 복사할 소스 방 ID
@@ -3619,6 +3643,12 @@ function openAddEvent(){
   document.getElementById('evStartDate').value=_selectedDate;
   document.getElementById('evEndDate').value=_selectedDate;
   document.getElementById('evYearly').checked=false;
+  // 다중 방 상태 초기화 + 표시 조건 적용
+  _selectedExtraRooms=[];
+  const mrCb=document.getElementById('evMultiRoom');
+  if(mrCb)mrCb.checked=false;
+  updateMultiRoomCountLabel();
+  updateMultiRoomVisibility();
   applyModeUI();
   applyTargetUI();
   document.getElementById('evModeRow').style.display='flex';
@@ -3684,6 +3714,12 @@ function openEditEvent(eventId){
   applyModeUI();
   renderColorGrid();
   applyTargetUI();
+  // 수정 시 다중 방 행 숨김
+  _selectedExtraRooms=[];
+  const mrCb2=document.getElementById('evMultiRoom');
+  if(mrCb2)mrCb2.checked=false;
+  updateMultiRoomCountLabel();
+  updateMultiRoomVisibility();
   closeDateSheet();
   document.getElementById('evOverlay').classList.add('on');
   document.getElementById('evCard').classList.add('on');
@@ -3785,6 +3821,7 @@ function applyTargetUI(){
   document.getElementById('evTargetSelf').classList.toggle('on',_selectedTarget==='self');
   document.getElementById('evTargetAll').classList.toggle('on',_selectedTarget==='all');
   updateMembersDisplay();
+  updateMultiRoomVisibility();  // 함께 모드 ↔ 단독 모드 전환 시 다중 방 토글 표시 갱신
 }
 function setEventTarget(target){
   if(target==='all'){
@@ -3880,6 +3917,7 @@ function confirmMemberPick(){
   _selectedMembers=[..._tempPickedMembers];
   closeMemberPick();
   applyTargetUI();
+  updateMultiRoomVisibility();
 }
 
 /* 함께 일정에서 본인만 빠지기 — 본인 row만 삭제, 다른 멤버 row는 그대로 유지 */
@@ -3920,6 +3958,85 @@ function reopenMemberPick(){
   openMemberPick(_selectedMembers);
 }
 
+/* ── 다른 방에도 추가 (방 picker) ── */
+/* 표시 조건: 신규 일정 + 단독 (함께 X) + 참여 방 ≥ 2 */
+function updateMultiRoomVisibility(){
+  const row=document.getElementById('evMultiRoomRow');
+  if(!row)return;
+  const isEditing=!!_editingEvent;
+  const isCoEvent=(_selectedTarget==='all'&&_selectedMembers&&_selectedMembers.length>=2);
+  const others=(_myRooms||[]).filter(r=>r.id!==_currentRoom?.id);
+  const show=!isEditing&&!isCoEvent&&others.length>=1;
+  if(show){
+    row.style.display='';
+  }else{
+    row.style.display='none';
+    // 숨김 시 상태 리셋
+    const cb=document.getElementById('evMultiRoom');
+    if(cb)cb.checked=false;
+    _selectedExtraRooms=[];
+    updateMultiRoomCountLabel();
+  }
+}
+function updateMultiRoomCountLabel(){
+  const lab=document.getElementById('evMultiRoomCount');
+  if(!lab)return;
+  lab.textContent=_selectedExtraRooms.length>0?`(${_selectedExtraRooms.length}개 방)`:'';
+}
+function onMultiRoomToggle(checked){
+  if(checked){
+    openRoomPick();
+  }else{
+    _selectedExtraRooms=[];
+    updateMultiRoomCountLabel();
+  }
+}
+function openRoomPick(){
+  document.getElementById('roomPickOverlay').classList.add('on');
+  document.getElementById('roomPickCard').classList.add('on');
+  const list=document.getElementById('roomPickList');
+  list.innerHTML='';
+  const others=(_myRooms||[]).filter(r=>r.id!==_currentRoom?.id);
+  if(others.length===0){
+    list.innerHTML='<div style="padding:14px;color:var(--sub);font-size:13px;text-align:center">추가할 다른 방이 없어요</div>';
+    return;
+  }
+  others.forEach(r=>{
+    const checked=_selectedExtraRooms.includes(r.id);
+    const row=document.createElement('label');
+    row.className='mp-item';
+    row.style.cssText='display:flex;align-items:center;gap:10px;padding:12px 10px;cursor:pointer';
+    row.innerHTML=`
+      <input type="checkbox" value="${r.id}" ${checked?'checked':''} style="width:18px;height:18px;flex-shrink:0">
+      <span style="flex:1;font-size:14px;color:var(--text)">${escapeHtml(r.name||'방')}</span>
+    `;
+    list.appendChild(row);
+  });
+}
+function confirmRoomPick(){
+  const checks=document.querySelectorAll('#roomPickList input[type="checkbox"]:checked');
+  _selectedExtraRooms=Array.from(checks).map(c=>c.value);
+  if(_selectedExtraRooms.length===0){
+    // 하나도 선택 안 했으면 토글 해제
+    const cb=document.getElementById('evMultiRoom');
+    if(cb)cb.checked=false;
+  }
+  updateMultiRoomCountLabel();
+  closeRoomPick();
+}
+function cancelRoomPick(){
+  // 취소 — 변경 없음. 단, 아직 선택된 방이 없으면 토글 해제
+  if(_selectedExtraRooms.length===0){
+    const cb=document.getElementById('evMultiRoom');
+    if(cb)cb.checked=false;
+  }
+  closeRoomPick();
+}
+function closeRoomPick(){
+  document.getElementById('roomPickOverlay').classList.remove('on');
+  document.getElementById('roomPickCard').classList.remove('on');
+}
+
 async function saveEvent(){
   if(!_currentRoom||!_currentUser){toast('로그인이 필요해요');return}
   const title=document.getElementById('evTitle').value.trim();
@@ -3938,6 +4055,10 @@ async function saveEvent(){
       await saveEditedEvent(title,time,color,recurringYearly);
     }else{
       // 추가 — 기간/여러 날/함께 모드 처리
+      // 다른 방에도 추가할지: 단독 일정만 (함께는 제외). 본인 row만 복사
+      const extraRoomIds=(_selectedExtraRooms&&_selectedExtraRooms.length>0)?_selectedExtraRooms.slice():[];
+      const isCoEvent=(_selectedTarget==='all'&&_selectedMembers.length>=2);
+      const applyExtra=extraRoomIds.length>0&&!isCoEvent;
       if(_selectedMode==='multi'){
         // 여러 날 — 선택된 날짜들 각각에 events 생성 (불연속, 묶음 X)
         const dates=[..._multiSelected].sort();
@@ -3960,6 +4081,23 @@ async function saveEvent(){
         });
         const {error}=await supa.from('events').insert(rows);
         if(error)throw error;
+        // 다른 방에도 동일 일정 추가 (단독만, 본인 row 기준)
+        if(applyExtra){
+          const extraRows=[];
+          extraRoomIds.forEach(rid=>{
+            dates.forEach(d=>{
+              extraRows.push({
+                room_id:rid,user_id:_currentUser.id,date:d,
+                title,time,color,
+                recurring_yearly:recurringYearly,
+              });
+            });
+          });
+          if(extraRows.length){
+            const {error:eX}=await supa.from('events').insert(extraRows);
+            if(eX)console.warn('다른 방 일정 추가 일부 실패:',eX);
+          }
+        }
         toast(`여러 날 일정 추가됨 (${dates.length}일)`);
       }else if(_selectedMode==='range'){
         // 기간 일정 — 시작~끝 모든 날짜 events 생성
@@ -3984,6 +4122,23 @@ async function saveEvent(){
         });
         const {error}=await supa.from('events').insert(rows);
         if(error)throw error;
+        // 다른 방에도
+        if(applyExtra){
+          const extraRows=[];
+          extraRoomIds.forEach(rid=>{
+            dates.forEach(d=>{
+              extraRows.push({
+                room_id:rid,user_id:_currentUser.id,date:d,
+                title,time,color,
+                recurring_yearly:recurringYearly,
+              });
+            });
+          });
+          if(extraRows.length){
+            const {error:eX}=await supa.from('events').insert(extraRows);
+            if(eX)console.warn('다른 방 일정 추가 일부 실패:',eX);
+          }
+        }
         toast(`기간 일정 추가됨 (${dates.length}일)`);
       }else if(_selectedTarget==='all'&&_selectedMembers.length>=2){
         // 함께 일정 (단일 날짜)
@@ -4004,7 +4159,17 @@ async function saveEvent(){
           recurring_yearly:recurringYearly,
         });
         if(error)throw error;
-        toast('일정이 추가됐어요');
+        // 다른 방에도
+        if(applyExtra){
+          const extraRows=extraRoomIds.map(rid=>({
+            room_id:rid,user_id:_currentUser.id,date:_selectedDate,
+            title,time,color,
+            recurring_yearly:recurringYearly,
+          }));
+          const {error:eX}=await supa.from('events').insert(extraRows);
+          if(eX)console.warn('다른 방 일정 추가 일부 실패:',eX);
+        }
+        toast(`일정이 추가됐어요`);
       }
     }
     closeEventModal();
