@@ -265,6 +265,12 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .r-avatar:active{opacity:.7}
 .r-avatar.has-photo{padding:0}
 .r-avatar.has-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.r-header-actions{display:flex;align-items:center;gap:10px}
+.r-bell{width:36px;height:36px;border-radius:50%;background:transparent;border:none;display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;position:relative;padding:0;transition:opacity .15s,background .15s}
+.r-bell:active{opacity:.6}
+.r-bell:hover{background:rgba(139,58,42,.06)}
+.r-bell-badge{position:absolute;top:2px;right:2px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#e34a3a;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;border:1.5px solid var(--bg);box-sizing:border-box}
+.r-bell-badge[hidden]{display:none}
 .r-content{flex:1;overflow-y:auto;padding:8px 24px 120px;-webkit-overflow-scrolling:touch}
 .r-section-row{display:flex;align-items:center;gap:8px;margin:14px 0 14px}
 .r-section-title{font-family:'Noto Serif KR',serif;font-size:14px;font-weight:700;color:var(--text);letter-spacing:.5px}
@@ -501,6 +507,22 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .search-suggest-row{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:99px;background:rgba(139,58,42,.06);border:1px solid var(--borderL);cursor:pointer;font-size:12px;color:var(--text);transition:background .12s}
 .search-suggest-row:active{background:rgba(139,58,42,.14)}
 .search-suggest-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+/* 알림 시트 */
+.notif-card{max-height:80vh;display:flex;flex-direction:column}
+.notif-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.notif-clear-btn{background:transparent;border:none;color:var(--sub);font-size:12px;font-family:inherit;cursor:pointer;padding:4px 8px;border-radius:6px;transition:background .12s}
+.notif-clear-btn:active{background:rgba(139,58,42,.1)}
+.notif-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding-bottom:8px;margin-top:4px}
+.notif-row{display:flex;align-items:flex-start;gap:10px;padding:12px 12px 12px 14px;border-radius:12px;background:rgba(0,0,0,.025);cursor:pointer;border:1px solid var(--borderL);transition:background .12s;position:relative}
+.notif-row:active{background:rgba(139,58,42,.08)}
+.notif-row.unread{background:rgba(139,58,42,.06)}
+.notif-row.unread::before{content:'';position:absolute;left:6px;top:50%;transform:translateY(-50%);width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.notif-row-main{flex:1;min-width:0}
+.notif-row-title{font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.2px}
+.notif-row-body{font-size:12px;color:var(--sub);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.notif-row-time{font-size:10px;color:var(--mute);margin-top:4px;font-variant-numeric:tabular-nums}
+.notif-row-room{font-size:9px;padding:2px 7px;border-radius:6px;background:rgba(176,135,66,.18);color:var(--gold);font-weight:600;flex-shrink:0;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;align-self:flex-start;margin-top:2px}
+.notif-empty{text-align:center;color:var(--mute);font-size:13px;padding:40px 0;line-height:1.6}
 .tp-sep{font-size:22px;color:var(--sub);font-weight:700;align-self:center;margin-bottom:4px}
 .tp-actions{display:flex;gap:6px;justify-content:flex-end;padding-top:2px}
 .tp-action-btn{background:none;border:none;cursor:pointer;padding:6px 14px;font-size:13px;color:var(--sub);font-family:inherit;font-weight:600}
@@ -861,7 +883,16 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
         </div>
         <span class="r-logo-title">우리 캘린더</span>
       </div>
-      <button class="r-avatar" id="userAvatar" onclick="openProfile()" title="프로필">—</button>
+      <div class="r-header-actions">
+        <button class="r-bell" id="notifBell" onclick="openNotifs()" title="알림" aria-label="알림">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+          </svg>
+          <span class="r-bell-badge" id="notifBadge" hidden>0</span>
+        </button>
+        <button class="r-avatar" id="userAvatar" onclick="openProfile()" title="프로필">—</button>
+      </div>
     </div>
 
     <div class="r-content" id="roomsContent">
@@ -1009,6 +1040,19 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
   </div>
   <div class="search-hint" id="searchHint">최근 일정 제목</div>
   <div class="search-results" id="searchResults"></div>
+</div>
+
+<!-- 알림 시트 -->
+<div class="mo-overlay" id="notifOverlay" onclick="closeNotifs()"></div>
+<div class="mo-card notif-card" id="notifCard">
+  <div class="mo-handle"></div>
+  <div class="notif-head">
+    <div class="mo-title" style="margin:0">알림</div>
+    <button class="notif-clear-btn" id="notifClearBtn" onclick="clearAllNotifs()" hidden>전체 삭제</button>
+  </div>
+  <div class="notif-list" id="notifList">
+    <div class="notif-empty">알림을 불러오고 있어요…</div>
+  </div>
 </div>
 
 <!-- 날짜 시트 (그 날 일정 보기) -->
@@ -1848,6 +1892,8 @@ async function loadRooms(){
     tryEnterPendingRoom();
     // 초대 링크로 들어왔으면 입장 확인
     tryHandlePendingJoin();
+    // 안 읽은 알림 배지 갱신 (fire-and-forget)
+    refreshNotifBadge();
   }catch(e){
     content.innerHTML='<div style="padding:60px 24px;text-align:center;color:var(--sub);font-size:13px">방 목록을 불러오지 못했어요<br>잠시 후 다시 시도해주세요</div>';
     console.error(e);
@@ -4201,6 +4247,24 @@ function notifyEventUpdated(title, time){
   _notifyEventChange('update', title, time);
 }
 
+/* ── DB notifications 테이블에 INSERT (인앱 알림 목록용) ── */
+async function _insertNotificationRows(targetIds, roomId, eventDate, title, body, type){
+  try{
+    if(!_currentUser||!targetIds||!targetIds.length||!roomId)return;
+    const rows=targetIds.map(uid=>({
+      user_id:uid,
+      room_id:roomId,
+      event_date:eventDate||null,
+      title:title||'',
+      body:body||'',
+      type:type||'event',
+      actor_user_id:_currentUser.id,
+      read:false,
+    }));
+    await supa.from('notifications').insert(rows);
+  }catch(e){console.warn('notifications insert 실패(무시):',e)}
+}
+
 /* 함께 일정에서 본인이 빠진 알림 — 다른 멤버에게 */
 function notifyEventLeft(ev){
   try{
@@ -4213,16 +4277,20 @@ function notifyEventLeft(ev){
     const senderName=(_currentProfile&&_currentProfile.name)||'멤버';
     const dateLabel=formatShortDate(ev.date);
     const timeLabel=ev.time?` ${ev.time}`:'';
+    const title=`${senderName} · ${ev.title}`;
+    const body=`함께 일정에서 빠짐 · ${dateLabel}${timeLabel}`;
 
     supa.functions.invoke('send-push',{
       body:{
         user_ids:targetIds,
-        title:`${senderName} · ${ev.title}`,
-        body:`함께 일정에서 빠짐 · ${dateLabel}${timeLabel}`,
+        title:title,
+        body:body,
         url:`/?room=${_currentRoom.id}&date=${ev.date}`,
         tag:`event-${ev.date}-${ev.title||''}`,
       }
     }).catch(e=>console.warn('빠짐 알림 발송 실패:',e));
+
+    _insertNotificationRows(targetIds, _currentRoom.id, ev.date, title, body, 'event_left');
   }catch(e){console.warn('notifyEventLeft 에러:',e)}
 }
 
@@ -4238,18 +4306,21 @@ function notifyEventDeleted(ev, opts){
     const senderName=(_currentProfile&&_currentProfile.name)||'멤버';
     const dateLabel=formatShortDate(ev.date);
     const timeLabel=ev.time?` ${ev.time}`:'';
-    // 기간 그룹: opts.rangeDays 있으면 "N일 기간" 표기
     const rangeSuffix=(opts&&opts.rangeDays&&opts.rangeDays>1)?` 외 ${opts.rangeDays-1}일`:'';
+    const title=`${senderName} · ${ev.title}`;
+    const body=`취소됨 · ${dateLabel}${timeLabel}${rangeSuffix}`;
 
     supa.functions.invoke('send-push',{
       body:{
         user_ids:targetIds,
-        title:`${senderName} · ${ev.title}`,
-        body:`취소됨 · ${dateLabel}${timeLabel}${rangeSuffix}`,
+        title:title,
+        body:body,
         url:`/?room=${_currentRoom.id}&date=${ev.date}`,
         tag:`event-${ev.date}-${ev.title||''}`,
       }
     }).catch(e=>console.warn('삭제 알림 발송 실패:',e));
+
+    _insertNotificationRows(targetIds, _currentRoom.id, ev.date, title, body, 'event_deleted');
   }catch(e){console.warn('notifyEventDeleted 에러:',e)}
 }
 
@@ -4298,6 +4369,15 @@ function _notifyEventChange(action, title, time){
         tag:`event-${jumpDate}-${title}`,
       }
     }).catch(e=>console.warn('알림 발송 실패:',e));
+
+    _insertNotificationRows(
+      targetIds,
+      _currentRoom.id,
+      jumpDate,
+      `${senderName} · ${title}`,
+      `${actionPrefix}${sharedPrefix}${dateLabel}${timeLabel}`,
+      action==='update'?'event_updated':'event_created'
+    );
   }catch(e){console.warn('_notifyEventChange 에러:',e)}
 }
 
@@ -4306,6 +4386,186 @@ function formatShortDate(s){
   if(!s)return '';
   const [y,m,d]=s.split('-');
   return `${parseInt(m,10)}월 ${parseInt(d,10)}일`;
+}
+
+/* ─────────────────────────────────────
+ * 알림 시트 (인앱 알림 목록)
+ * ───────────────────────────────────── */
+let _notifs=[];  // 현재 로드된 알림 목록
+
+/* 안 읽은 알림 개수 갱신 → 종 배지 표시 */
+async function refreshNotifBadge(){
+  try{
+    if(!_currentUser)return;
+    const {count,error}=await supa
+      .from('notifications')
+      .select('id',{count:'exact',head:true})
+      .eq('user_id',_currentUser.id)
+      .eq('read',false);
+    if(error){console.warn('badge fetch:',error);return}
+    const badge=document.getElementById('notifBadge');
+    if(!badge)return;
+    const n=count||0;
+    if(n>0){
+      badge.textContent=n>99?'99+':String(n);
+      badge.hidden=false;
+    }else{
+      badge.hidden=true;
+    }
+  }catch(e){console.warn('refreshNotifBadge:',e)}
+}
+
+/* 알림 시트 열기 */
+async function openNotifs(){
+  if(!_currentUser){toast('로그인이 필요해요');return}
+  document.getElementById('notifOverlay')?.classList.add('on');
+  document.getElementById('notifCard')?.classList.add('on');
+  await loadNotifs();
+  // 시트 열면 안 읽은 거 일괄 read 처리
+  markAllNotifsRead();
+}
+
+function closeNotifs(){
+  document.getElementById('notifOverlay')?.classList.remove('on');
+  document.getElementById('notifCard')?.classList.remove('on');
+}
+
+/* 알림 목록 fetch + 렌더 */
+async function loadNotifs(){
+  const listEl=document.getElementById('notifList');
+  if(!listEl)return;
+  listEl.innerHTML='<div class="notif-empty">알림을 불러오고 있어요…</div>';
+  try{
+    const {data,error}=await supa
+      .from('notifications')
+      .select('id, title, body, room_id, event_date, read, type, created_at')
+      .eq('user_id',_currentUser.id)
+      .order('created_at',{ascending:false})
+      .limit(100);
+    if(error)throw error;
+    _notifs=data||[];
+    renderNotifs();
+  }catch(e){
+    console.warn('loadNotifs:',e);
+    listEl.innerHTML='<div class="notif-empty">알림을 불러오지 못했어요.<br>잠시 후 다시 시도해주세요.</div>';
+  }
+}
+
+/* 알림 목록 렌더 */
+function renderNotifs(){
+  const listEl=document.getElementById('notifList');
+  const clearBtn=document.getElementById('notifClearBtn');
+  if(!listEl)return;
+  if(!_notifs.length){
+    listEl.innerHTML='<div class="notif-empty">아직 받은 알림이 없어요.</div>';
+    if(clearBtn)clearBtn.hidden=true;
+    return;
+  }
+  if(clearBtn)clearBtn.hidden=false;
+
+  // 방 이름 매핑
+  const roomMap={};
+  (_myRooms||[]).forEach(r=>{roomMap[r.id]=r.name});
+
+  const html=_notifs.map(n=>{
+    const roomName=roomMap[n.room_id]||'';
+    const ts=formatNotifTime(n.created_at);
+    const cls=['notif-row'];
+    if(!n.read)cls.push('unread');
+    const safeTitle=_escHtml(n.title||'');
+    const safeBody=_escHtml(n.body||'');
+    const roomBadge=roomName?`<span class="notif-row-room">${_escHtml(roomName)}</span>`:'';
+    return `<div class="${cls.join(' ')}" onclick="onNotifClick('${n.id}')">
+      <div class="notif-row-main">
+        <div class="notif-row-title">${safeTitle}</div>
+        ${safeBody?`<div class="notif-row-body">${safeBody}</div>`:''}
+        <div class="notif-row-time">${ts}</div>
+      </div>
+      ${roomBadge}
+    </div>`;
+  }).join('');
+  listEl.innerHTML=html;
+}
+
+function _escHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* 상대 시간 (방금, N분 전, N시간 전, M월 D일) */
+function formatNotifTime(iso){
+  if(!iso)return '';
+  const d=new Date(iso);
+  if(isNaN(d.getTime()))return '';
+  const diffSec=Math.floor((Date.now()-d.getTime())/1000);
+  if(diffSec<60)return '방금';
+  if(diffSec<3600)return `${Math.floor(diffSec/60)}분 전`;
+  if(diffSec<86400)return `${Math.floor(diffSec/3600)}시간 전`;
+  if(diffSec<7*86400)return `${Math.floor(diffSec/86400)}일 전`;
+  return `${d.getMonth()+1}월 ${d.getDate()}일`;
+}
+
+/* 알림 클릭 → 해당 방+날짜로 deeplink */
+async function onNotifClick(notifId){
+  const n=_notifs.find(x=>x.id===notifId);
+  if(!n)return;
+  closeNotifs();
+  // 안 읽었으면 read 처리 (백그라운드)
+  if(!n.read){
+    n.read=true;
+    supa.from('notifications').update({read:true}).eq('id',notifId).then(()=>{
+      refreshNotifBadge();
+    }).catch(e=>console.warn(e));
+  }
+  // 같은 방 안이면 바로 dateSheet
+  if(_currentRoom&&_currentRoom.id===n.room_id){
+    if(n.event_date){
+      setTimeout(()=>openDateSheet(n.event_date),200);
+    }
+    return;
+  }
+  // 다른 방이면 enterRoom + pendingDate 처리
+  if(n.event_date){
+    try{sessionStorage.setItem('uricalv2.pendingDate',n.event_date)}catch(e){}
+  }
+  // 내 방 목록에 있으면 진입
+  if(_myRooms&&_myRooms.find(r=>r.id===n.room_id)){
+    enterRoom(n.room_id);
+  }else{
+    toast('해당 방에 더 이상 속해있지 않아요');
+  }
+}
+
+/* 시트 열 때 안 읽은 알림 일괄 read */
+async function markAllNotifsRead(){
+  try{
+    if(!_currentUser)return;
+    const {error}=await supa
+      .from('notifications')
+      .update({read:true})
+      .eq('user_id',_currentUser.id)
+      .eq('read',false);
+    if(!error){
+      // 로컬 상태도 갱신
+      _notifs.forEach(n=>{n.read=true});
+      // 약간 딜레이 두고 시각 갱신 (사용자가 unread 마크 본 후)
+      setTimeout(()=>{renderNotifs();refreshNotifBadge();},800);
+    }
+  }catch(e){console.warn('markAllNotifsRead:',e)}
+}
+
+/* 전체 삭제 */
+async function clearAllNotifs(){
+  if(!confirm('모든 알림을 삭제하시겠어요?'))return;
+  try{
+    await supa.from('notifications').delete().eq('user_id',_currentUser.id);
+    _notifs=[];
+    renderNotifs();
+    refreshNotifBadge();
+    toast('알림을 모두 삭제했어요');
+  }catch(e){
+    console.warn('clearAllNotifs:',e);
+    toast('삭제에 실패했어요');
+  }
 }
 
 /* shared_id 생성 헬퍼 */
