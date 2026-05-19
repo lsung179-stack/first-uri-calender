@@ -717,6 +717,65 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 }
 .dp-reaction-chip-add:active{background:var(--bg)}
 
+/* 일정 메모 + 사진 (evCard 입력 + dpCard 표시) */
+.ev-memo{
+  width:100%;min-height:64px;max-height:140px;resize:vertical;
+  padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;
+  background:var(--bg);color:var(--text);font-family:inherit;font-size:13px;
+  line-height:1.5;letter-spacing:.2px;box-sizing:border-box;
+  transition:border-color .15s;
+}
+.ev-memo:focus{outline:none;border-color:var(--accent)}
+.ev-memo::placeholder{color:var(--mute)}
+.ev-photo-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ev-photo-pick-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:9px 14px;background:var(--bg);border:1.5px dashed var(--border);
+  border-radius:10px;color:var(--sub);font-family:inherit;font-size:13px;
+  font-weight:600;cursor:pointer;transition:all .12s;
+}
+.ev-photo-pick-btn:active{transform:scale(.97);background:var(--card)}
+.ev-photo-preview{position:relative;width:88px;height:88px;border-radius:12px;overflow:hidden;border:1.5px solid var(--border);background:var(--bg)}
+.ev-photo-preview img{width:100%;height:100%;object-fit:cover;display:block}
+.ev-photo-remove{
+  position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;
+  background:rgba(0,0,0,.62);color:#fff;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:14px;
+  line-height:1;font-family:inherit;
+}
+.ev-photo-remove:active{opacity:.7}
+.ev-photo-hint{font-size:11px;color:var(--mute);width:100%;margin-top:2px;line-height:1.4}
+
+/* 일자 시트 안 메모/사진 표시 */
+.dp-memo{
+  font-size:12px;color:var(--sub);margin-top:6px;line-height:1.5;letter-spacing:.2px;
+  background:rgba(139,58,42,.04);padding:7px 10px;border-radius:8px;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
+  overflow:hidden;text-overflow:ellipsis;word-break:break-word;white-space:pre-wrap;
+}
+.dp-photo-thumb{
+  margin-top:7px;width:84px;height:84px;border-radius:10px;overflow:hidden;
+  cursor:zoom-in;border:1px solid var(--borderL);background:var(--bg);
+  display:inline-block;transition:transform .12s;
+}
+.dp-photo-thumb:active{transform:scale(.96)}
+.dp-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* 사진 큰 보기 모달 */
+.photoview-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:1500;
+  display:none;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;
+}
+.photoview-overlay.on{display:flex}
+.photoview-img{max-width:94vw;max-height:88vh;object-fit:contain;border-radius:6px}
+.photoview-close{
+  position:absolute;top:18px;right:18px;width:40px;height:40px;border-radius:50%;
+  background:rgba(255,255,255,.16);color:#fff;border:none;font-size:22px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-family:inherit;line-height:1;
+}
+
 /* 이모지 선택 모달 */
 .emoji-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 12px}
 .emoji-btn{
@@ -1211,11 +1270,35 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
         <span class="ev-yearly-slider"></span>
       </label>
     </div>
+    <!-- 메모 -->
+    <div class="ev-form-row">
+      <div class="ev-label">메모 (선택)</div>
+      <textarea class="ev-memo" id="evMemo" placeholder="간단한 메모를 적어주세요" maxlength="500"></textarea>
+    </div>
+    <!-- 사진 -->
+    <div class="ev-form-row">
+      <div class="ev-label">사진 (선택)</div>
+      <div class="ev-photo-row" id="evPhotoRow">
+        <button type="button" class="ev-photo-pick-btn" id="evPhotoPickBtn" onclick="pickEventPhoto()">📷 사진 선택</button>
+        <div class="ev-photo-preview" id="evPhotoPreview" style="display:none">
+          <img id="evPhotoPreviewImg" alt="첨부 사진">
+          <button type="button" class="ev-photo-remove" onclick="removeEventPhoto()" aria-label="사진 제거">×</button>
+        </div>
+        <input type="file" id="evPhotoFile" accept="image/*" hidden onchange="onEventPhotoSelected(event)">
+        <div class="ev-photo-hint">JPG / PNG / WEBP · 자동으로 최적화되어 업로드됩니다</div>
+      </div>
+    </div>
   </div>
   <div class="mo-actions">
     <button class="btn btn-primary" id="evSaveBtn" onclick="saveEvent()">저장</button>
     <button class="mo-cancel" onclick="closeEventModal()">취소</button>
   </div>
+</div>
+
+<!-- 사진 큰 보기 모달 -->
+<div class="photoview-overlay" id="photoViewOverlay" onclick="closePhotoView()">
+  <button class="photoview-close" onclick="event.stopPropagation();closePhotoView()" aria-label="닫기">✕</button>
+  <img class="photoview-img" id="photoViewImg" alt="">
 </div>
 
 <!-- 프로필 시트 (방 목록·캘린더 우측 상단 아바타 클릭) -->
@@ -2671,6 +2754,11 @@ let _calMonth=new Date().getMonth();
 let _selectedDate=null;   // 시트에서 선택한 날 (YYYY-MM-DD)
 let _editingEvent=null;   // 수정 중 일정 (null이면 추가 모드)
 let _selectedColor='c-vintage';
+/* 일정 메모/사진 — evCard 입력 중인 사진 상태 */
+let _evPhotoBlob=null;        // 이번에 새로 선택한 사진 (리사이즈 완료된 Blob)
+let _evPhotoPreviewUrl=null;  // 미리보기용 ObjectURL
+let _evExistingPhotoUrl=null; // 수정 시 기존 사진 URL (그대로 유지할 때)
+let _evPhotoRemoved=false;    // 수정 시 기존 사진을 사용자가 명시적으로 지웠는지
 /* 3-B: 함께 일정 */
 let _myMembers=[];           // 현재 방의 모든 멤버 [{user_id, name, color, ...}]
 let _viewingMember='all';    // 현재 보고 있는 멤버: 'all' | user_id (멤버 프로필 탭)
@@ -3693,12 +3781,21 @@ function renderDateSheetList(){
     
     const metaRow=tm?`<div class="dp-meta">${tm}</div>`:'';
 
+    // 메모 미리보기 (3줄 ellipsis)
+    const memoHtml=(!isVirtual&&ev.memo)?`<div class="dp-memo">${escapeHtml(ev.memo)}</div>`:'';
+    // 사진 썸네일 (클릭 시 큰 보기)
+    const photoHtml=(!isVirtual&&ev.photo_url)
+      ? `<div class="dp-photo-thumb" onclick="event.stopPropagation();openPhotoView('${escapeHtml(ev.photo_url)}')"><img src="${escapeHtml(ev.photo_url)}" alt="첨부 사진" loading="lazy"></div>`
+      : '';
+
     html+=`<div class="dp-item${sharedCls}">
       <div class="dp-bar" style="background:${hex}"></div>
       <div class="dp-info">
         <div class="dp-title">${t}${virtualTag}</div>
         ${metaRow}
         ${memberChipsHtml}
+        ${memoHtml}
+        ${photoHtml}
         ${reactionRow}
       </div>
       ${orderHtml}
@@ -3805,6 +3902,10 @@ function openAddEvent(){
   document.getElementById('evStartDate').value=_selectedDate;
   document.getElementById('evEndDate').value=_selectedDate;
   document.getElementById('evYearly').checked=false;
+  // 메모/사진 초기화
+  const memoEl=document.getElementById('evMemo');
+  if(memoEl)memoEl.value='';
+  resetEventPhotoState();
   // 다중 방 상태 초기화 + 표시 조건 적용
   _selectedExtraRooms=[];
   const mrCb=document.getElementById('evMultiRoom');
@@ -3854,6 +3955,11 @@ function openEditEvent(eventId){
   document.getElementById('evTitle').value=ev.title||'';
   document.getElementById('evTime').value=ev.time||'';
   document.getElementById('evYearly').checked=!!ev.recurring_yearly;
+  // 메모/사진 — 기존 값 로드
+  const memoEl=document.getElementById('evMemo');
+  if(memoEl)memoEl.value=ev.memo||'';
+  resetEventPhotoState();
+  if(ev.photo_url)showExistingEventPhoto(ev.photo_url);
   syncTimeBtnLabel(ev.time||'');
   closeTimePicker();
   // 기간 일정 그룹은 _editGroup으로 관리 — 모드 토글에서 'range'로 전환할 때 시작/끝 자동 채움
@@ -4229,14 +4335,31 @@ async function saveEvent(){
   const time=document.getElementById('evTime').value||null;
   const color=_selectedColor||'c-vintage';
   const recurringYearly=document.getElementById('evYearly').checked;
+  // 메모 (최대 500자 — input maxlength로 1차 보호되지만 trim 후 길이 재확인)
+  const memoRaw=(document.getElementById('evMemo')?.value||'').trim();
+  if(memoRaw.length>500){toast('메모는 500자 이내로');return}
+  const memo=memoRaw||null;
   
   const btn=document.getElementById('evSaveBtn');
   btn.disabled=true;btn.textContent='저장 중...';
   
+  // 사진 업로드 (있을 때) — 실패 시 토스트 후 종료
+  let photoUrl=null;
+  try{
+    btn.textContent='사진 업로드 중...';
+    photoUrl=await uploadEventPhotoIfNeeded();
+  }catch(e){
+    console.error(e);
+    toast('사진 업로드 실패: '+(e.message||'').slice(0,40));
+    btn.disabled=false;btn.textContent='저장';
+    return;
+  }
+  btn.textContent='저장 중...';
+  
   try{
     if(_editingEvent){
-      // 수정 — 4가지 케이스 분기
-      await saveEditedEvent(title,time,color,recurringYearly);
+      // 수정 — 6가지 케이스 분기
+      await saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl);
     }else{
       // 추가 — 기간/여러 날/함께 모드 처리
       // 다른 방에도 추가할지: 단독 일정만 (함께는 제외). 본인 row만 복사
@@ -4260,6 +4383,7 @@ async function saveEvent(){
               title,time,color,
               shared_id:sharedId,
               recurring_yearly:recurringYearly,
+              memo,photo_url:photoUrl,
             });
           });
         });
@@ -4274,6 +4398,7 @@ async function saveEvent(){
                 room_id:rid,user_id:_currentUser.id,date:d,
                 title,time,color,
                 recurring_yearly:recurringYearly,
+                memo,photo_url:photoUrl,
               });
             });
           });
@@ -4301,6 +4426,7 @@ async function saveEvent(){
               title,time,color,
               shared_id:sharedId,
               recurring_yearly:recurringYearly,
+              memo,photo_url:photoUrl,
             });
           });
         });
@@ -4315,6 +4441,7 @@ async function saveEvent(){
                 room_id:rid,user_id:_currentUser.id,date:d,
                 title,time,color,
                 recurring_yearly:recurringYearly,
+                memo,photo_url:photoUrl,
               });
             });
           });
@@ -4331,6 +4458,7 @@ async function saveEvent(){
           room_id:_currentRoom.id,user_id:uid,date:_selectedDate,
           title,time,color,shared_id:sharedId,
           recurring_yearly:recurringYearly,
+          memo,photo_url:photoUrl,
         }));
         const {error}=await supa.from('events').insert(rows);
         if(error)throw error;
@@ -4341,6 +4469,7 @@ async function saveEvent(){
           room_id:_currentRoom.id,user_id:_currentUser.id,date:_selectedDate,
           title,time,color,
           recurring_yearly:recurringYearly,
+          memo,photo_url:photoUrl,
         });
         if(error)throw error;
         // 다른 방에도
@@ -4349,6 +4478,7 @@ async function saveEvent(){
             room_id:rid,user_id:_currentUser.id,date:_selectedDate,
             title,time,color,
             recurring_yearly:recurringYearly,
+            memo,photo_url:photoUrl,
           }));
           const {error:eX}=await supa.from('events').insert(extraRows);
           if(eX)console.warn('다른 방 일정 추가 일부 실패:',eX);
@@ -4373,6 +4503,155 @@ async function saveEvent(){
   }finally{
     btn.disabled=false;btn.textContent='저장';
   }
+}
+
+/* ═══════════════════════════════════
+   메모/사진 헬퍼 함수들
+   ═══════════════════════════════════ */
+
+/* evCard 안 사진 상태 초기화 (신규/수정 진입 시 호출) */
+function resetEventPhotoState(){
+  if(_evPhotoPreviewUrl){
+    try{URL.revokeObjectURL(_evPhotoPreviewUrl)}catch(_){}
+  }
+  _evPhotoBlob=null;
+  _evPhotoPreviewUrl=null;
+  _evExistingPhotoUrl=null;
+  _evPhotoRemoved=false;
+  const prev=document.getElementById('evPhotoPreview');
+  const previewImg=document.getElementById('evPhotoPreviewImg');
+  const pickBtn=document.getElementById('evPhotoPickBtn');
+  const fileInput=document.getElementById('evPhotoFile');
+  if(prev)prev.style.display='none';
+  if(previewImg)previewImg.removeAttribute('src');
+  if(pickBtn)pickBtn.style.display='';
+  if(fileInput)fileInput.value='';
+}
+
+/* 수정 시 기존 사진 URL을 미리보기에 띄움 */
+function showExistingEventPhoto(url){
+  if(!url)return;
+  _evExistingPhotoUrl=url;
+  const prev=document.getElementById('evPhotoPreview');
+  const previewImg=document.getElementById('evPhotoPreviewImg');
+  const pickBtn=document.getElementById('evPhotoPickBtn');
+  if(previewImg)previewImg.src=url;
+  if(prev)prev.style.display='';
+  if(pickBtn)pickBtn.style.display='none';
+}
+
+/* 사진 선택 트리거 (버튼 onclick) */
+function pickEventPhoto(){
+  const f=document.getElementById('evPhotoFile');
+  if(f)f.click();
+}
+
+/* 파일 선택됨 → 리사이즈 → 미리보기 */
+async function onEventPhotoSelected(e){
+  const file=e?.target?.files?.[0];
+  if(!file)return;
+  if(!/^image\//.test(file.type)){toast('이미지 파일만 가능해요');return}
+  try{
+    const blob=await resizeEventImage(file, 1600, 0.82);
+    // 기존 미리보기 정리
+    if(_evPhotoPreviewUrl){try{URL.revokeObjectURL(_evPhotoPreviewUrl)}catch(_){}}
+    _evPhotoBlob=blob;
+    _evPhotoPreviewUrl=URL.createObjectURL(blob);
+    _evPhotoRemoved=false;
+    // 기존 사진 URL은 무시 (새 사진으로 대체)
+    _evExistingPhotoUrl=null;
+    const prev=document.getElementById('evPhotoPreview');
+    const previewImg=document.getElementById('evPhotoPreviewImg');
+    const pickBtn=document.getElementById('evPhotoPickBtn');
+    if(previewImg)previewImg.src=_evPhotoPreviewUrl;
+    if(prev)prev.style.display='';
+    if(pickBtn)pickBtn.style.display='none';
+  }catch(err){
+    console.error(err);
+    toast('사진 처리에 실패했어요');
+  }finally{
+    // 같은 파일 다시 선택 가능하도록 input 비움
+    if(e?.target)e.target.value='';
+  }
+}
+
+/* 사진 제거 (미리보기 X 버튼) */
+function removeEventPhoto(){
+  if(_evPhotoPreviewUrl){try{URL.revokeObjectURL(_evPhotoPreviewUrl)}catch(_){}}
+  _evPhotoBlob=null;
+  _evPhotoPreviewUrl=null;
+  // 기존 사진이 있던 경우 — 사용자가 명시적으로 지움 표시
+  if(_evExistingPhotoUrl)_evPhotoRemoved=true;
+  _evExistingPhotoUrl=null;
+  const prev=document.getElementById('evPhotoPreview');
+  const previewImg=document.getElementById('evPhotoPreviewImg');
+  const pickBtn=document.getElementById('evPhotoPickBtn');
+  const fileInput=document.getElementById('evPhotoFile');
+  if(prev)prev.style.display='none';
+  if(previewImg)previewImg.removeAttribute('src');
+  if(pickBtn)pickBtn.style.display='';
+  if(fileInput)fileInput.value='';
+}
+
+/* 클라이언트 측 이미지 리사이즈 — Canvas로 JPEG 변환 */
+function resizeEventImage(file, maxSide, quality){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>{
+      try{
+        let w=img.naturalWidth, h=img.naturalHeight;
+        if(!w||!h){reject(new Error('이미지 크기 인식 실패'));return}
+        const scale=Math.min(1, maxSide/Math.max(w,h));
+        const tw=Math.round(w*scale), th=Math.round(h*scale);
+        const cv=document.createElement('canvas');
+        cv.width=tw; cv.height=th;
+        const cx=cv.getContext('2d');
+        cx.fillStyle='#ffffff';
+        cx.fillRect(0,0,tw,th);
+        cx.drawImage(img,0,0,tw,th);
+        cv.toBlob(b=>{
+          if(b)resolve(b);
+          else reject(new Error('blob 생성 실패'));
+        },'image/jpeg', quality);
+      }catch(err){reject(err)}
+    };
+    img.onerror=()=>reject(new Error('이미지 로드 실패'));
+    img.src=URL.createObjectURL(file);
+  });
+}
+
+/* Storage에 사진 업로드 + 공개 URL 반환 (없으면 null 반환) */
+async function uploadEventPhotoIfNeeded(){
+  // 새 사진이 있으면 업로드, 없고 기존 유지면 기존 URL, 명시 삭제면 null
+  if(_evPhotoBlob){
+    const ext='jpg';
+    const uid=_currentUser?.id||'anon';
+    const rand=Math.random().toString(36).slice(2,10);
+    const path=`${_currentRoom.id}/${uid}_${Date.now()}_${rand}.${ext}`;
+    const {data:up,error}=await supa.storage.from('event-photos')
+      .upload(path,_evPhotoBlob,{contentType:'image/jpeg',upsert:false});
+    if(error)throw error;
+    const {data:pub}=supa.storage.from('event-photos').getPublicUrl(up.path);
+    return pub?.publicUrl||null;
+  }
+  if(_evPhotoRemoved)return null;       // 사용자가 명시적으로 지움
+  if(_evExistingPhotoUrl)return _evExistingPhotoUrl;
+  return null;
+}
+
+/* 사진 큰 보기 모달 */
+function openPhotoView(url){
+  if(!url)return;
+  const img=document.getElementById('photoViewImg');
+  const ov=document.getElementById('photoViewOverlay');
+  if(img)img.src=url;
+  if(ov)ov.classList.add('on');
+}
+function closePhotoView(){
+  const ov=document.getElementById('photoViewOverlay');
+  const img=document.getElementById('photoViewImg');
+  if(ov)ov.classList.remove('on');
+  if(img)img.removeAttribute('src');
 }
 
 /* 일정 생성 시 같은 방 다른 멤버에게 푸시 알림 (fire-and-forget) */
@@ -5060,7 +5339,7 @@ function removeMultiDate(key){
 }
 
 /* 일정 수정 — 모드별 분기 처리 */
-async function saveEditedEvent(title,time,color,recurringYearly){
+async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
   const ev=_editingEvent;
   const wasShared=!!ev.shared_id;
   const isNowShared=_selectedTarget==='all'&&_selectedMembers.length>=2;
@@ -5096,6 +5375,7 @@ async function saveEditedEvent(title,time,color,recurringYearly){
         rows.push({
           room_id:_currentRoom.id,user_id:uid,date:d,
           title,time,color,shared_id:ev.shared_id,recurring_yearly:ry,
+          memo,photo_url:photoUrl,
         });
       });
     });
@@ -5122,6 +5402,7 @@ async function saveEditedEvent(title,time,color,recurringYearly){
       const rows=dates.map(d=>({
         room_id:_currentRoom.id,user_id:_currentUser.id,date:d,
         title,time,color,recurring_yearly:ry,
+        memo,photo_url:photoUrl,
       }));
       const {error}=await supa.from('events').insert(rows);
       if(error)throw error;
@@ -5134,6 +5415,7 @@ async function saveEditedEvent(title,time,color,recurringYearly){
       const rows=dates.map(d=>({
         room_id:_currentRoom.id,user_id:_currentUser.id,date:d,
         title,time,color,recurring_yearly:ry,
+        memo,photo_url:photoUrl,
       }));
       const {error}=await supa.from('events').insert(rows);
       if(error)throw error;
@@ -5149,19 +5431,20 @@ async function saveEditedEvent(title,time,color,recurringYearly){
 
   if(!wasShared&&!isNowShared){
     // Case 4: 혼자 → 혼자 (이 row만 단순 수정)
-    const {error}=await supa.from('events').update({title,time,color,recurring_yearly:ry,reminder_sent_at:null}).eq('id',ev.id);
+    const {error}=await supa.from('events').update({title,time,color,recurring_yearly:ry,reminder_sent_at:null,memo,photo_url:photoUrl}).eq('id',ev.id);
     if(error)throw error;
     toast('수정됐어요');
   }else if(!wasShared&&isNowShared){
     // Case 3: 혼자 → 함께
     const sharedId=genShared();
-    const {error:e1}=await supa.from('events').update({title,time,color,shared_id:sharedId,recurring_yearly:ry,reminder_sent_at:null}).eq('id',ev.id);
+    const {error:e1}=await supa.from('events').update({title,time,color,shared_id:sharedId,recurring_yearly:ry,reminder_sent_at:null,memo,photo_url:photoUrl}).eq('id',ev.id);
     if(e1)throw e1;
     const others=_selectedMembers.filter(u=>u!==_currentUser.id);
     if(others.length){
       const rows=others.map(uid=>({
         room_id:_currentRoom.id,user_id:uid,date:_selectedDate,
         title,time,color,shared_id:sharedId,recurring_yearly:ry,
+        memo,photo_url:photoUrl,
       }));
       const {error:e2}=await supa.from('events').insert(rows);
       if(e2)throw e2;
@@ -5174,6 +5457,7 @@ async function saveEditedEvent(title,time,color,recurringYearly){
     const {error:e2}=await supa.from('events').insert({
       room_id:_currentRoom.id,user_id:_currentUser.id,
       date:_selectedDate,title,time,color,recurring_yearly:ry,
+      memo,photo_url:photoUrl,
     });
     if(e2)throw e2;
     toast('혼자 일정으로 변경됨');
@@ -5186,7 +5470,7 @@ async function saveEditedEvent(title,time,color,recurringYearly){
     const toAdd=newIds.filter(u=>!oldIds.includes(u));
     
     if(toKeep.length){
-      const {error}=await supa.from('events').update({title,time,color,recurring_yearly:ry,reminder_sent_at:null})
+      const {error}=await supa.from('events').update({title,time,color,recurring_yearly:ry,reminder_sent_at:null,memo,photo_url:photoUrl})
         .eq('shared_id',ev.shared_id).in('user_id',toKeep);
       if(error)throw error;
     }
@@ -5202,6 +5486,7 @@ async function saveEditedEvent(title,time,color,recurringYearly){
       const rows=toAdd.map(uid=>({
         room_id:_currentRoom.id,user_id:uid,date:_selectedDate,
         title,time,color,shared_id:ev.shared_id,recurring_yearly:ry,
+        memo,photo_url:photoUrl,
       }));
       const {error}=await supa.from('events').insert(rows);
       if(error)throw error;
