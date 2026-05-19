@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<title>우리 캘린더 — 마케팅 데모</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;font-family:'Noto Sans KR',sans-serif;-webkit-font-smoothing:antialiased;background:var(--bg);color:var(--text);overflow-x:hidden}
+
+:root{
+  --bg:#f3e6cf;--card:#fbf2e0;--accent:#8b3a2a;--text:#2a1c0f;--sub:#8a6c52;
+  --mute:#c8b599;--gold:#c2a06b;--sunday:#c44a4a;--saturday:#4a6da8;
+  --aP:#fdf6e8;--border:rgba(42,28,15,.12);--borderL:rgba(42,28,15,.06);
+}
+body.is-dark{
+  --bg:#1a1410;--card:#2a1f17;--accent:#c2a06b;--text:#f0e4d0;--sub:#b09578;
+  --mute:#5a4838;--gold:#c2a06b;--sunday:#e6716b;--saturday:#7891c4;
+  --aP:#3a2d22;--border:rgba(240,228,208,.15);--borderL:rgba(240,228,208,.08);
+  color-scheme:dark;
+}
+
+/* 화면 컨테이너 */
+.screen{display:none;min-height:100vh;padding:14px 16px 80px}
+.screen.show{display:block}
+
+/* 캘린더 헤더 */
+.cal-header{display:flex;align-items:center;justify-content:space-between;padding:6px 2px 10px;gap:10px}
+.cal-back{background:transparent;border:none;color:var(--text);font-size:22px;cursor:pointer;padding:6px 10px;border-radius:8px;font-family:inherit}
+.cal-back:active{background:rgba(139,58,42,.08)}
+.cal-room-name{font-family:'Noto Serif KR',serif;font-size:18px;font-weight:600;color:var(--text);flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-actions{display:flex;align-items:center;gap:8px}
+.icon-btn{width:36px;height:36px;border-radius:50%;background:transparent;border:none;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:background .15s}
+.icon-btn:active{background:rgba(139,58,42,.1)}
+.icon-btn:hover{background:rgba(139,58,42,.06)}
+
+/* 멤버 탭 */
+.cal-member-tabs{display:flex;align-items:center;gap:14px;padding:6px 4px 14px;overflow-x:auto;scrollbar-width:none}
+.cal-member-tabs::-webkit-scrollbar{display:none}
+.mt-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;flex-shrink:0;min-width:60px}
+.mt-avatar{width:46px;height:46px;border-radius:50%;background:var(--card);border:2px solid transparent;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;color:var(--text);overflow:hidden;transition:border-color .15s,transform .15s;font-family:inherit}
+.mt-avatar img{width:100%;height:100%;object-fit:cover}
+.mt-item.on .mt-avatar{border-color:var(--accent)}
+.mt-name{font-size:11px;color:var(--sub);font-weight:500;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mt-item.on .mt-name{color:var(--text);font-weight:600}
+
+/* 월 표시 */
+.cal-month-row{position:relative;display:flex;align-items:center;justify-content:center;gap:14px;padding:8px 0 4px;margin-top:4px}
+.cal-year{font-size:11px;color:var(--sub);position:absolute;top:-4px;left:50%;transform:translateX(-50%)}
+.cal-month-name{font-family:'Noto Serif KR',serif;font-size:28px;font-weight:700;color:var(--text);margin:8px 14px 0}
+.cal-nav{background:transparent;border:none;color:var(--sub);font-size:18px;cursor:pointer;padding:8px 6px;border-radius:8px;margin-top:8px}
+.cal-nav:active{background:rgba(139,58,42,.08)}
+.today-chip{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:var(--accent);color:var(--card);font-size:10px;font-weight:600;padding:5px 10px;border-radius:10px;border:none;cursor:pointer;display:none}
+.today-chip.show{display:block}
+
+/* 캘린더 그리드 */
+.cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:0;font-size:11px;font-weight:600;color:var(--sub);text-align:center;padding:14px 0 6px;letter-spacing:.5px}
+.wd-sun{color:var(--sunday)}.wd-sat{color:var(--saturday)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:0}
+.cal-cell{min-height:90px;border-top:1px solid var(--borderL);padding:2px 2px 3px;display:flex;flex-direction:column;cursor:pointer;position:relative;overflow:hidden;transition:background .12s}
+.cal-cell:active{background:rgba(139,58,42,.04)}
+.cal-day-num{font-family:'Noto Serif KR',serif;font-size:14px;font-weight:600;color:var(--text);line-height:20px;text-align:center;position:relative;margin-bottom:3px}
+.cal-day-num.sun{color:var(--sunday)}.cal-day-num.sat{color:var(--saturday)}
+.cal-cell.other-month .cal-day-num{opacity:.3}
+.cal-day-num.today{color:var(--card)!important;position:relative;z-index:1}
+.cal-day-num.today::before{content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:50%;background:var(--accent);z-index:-1}
+.cal-cell-label{font-size:9px;color:var(--sunday);text-align:center;font-weight:500;line-height:1.1;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px}
+.cal-events{display:flex;flex-direction:column;gap:2px;margin-top:auto}
+.evbar{height:14px;line-height:14px;border-radius:3px;padding:0 4px;font-size:9px;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 0 1px rgba(0,0,0,.2)}
+.evbar.range-start{border-radius:3px 0 0 3px;margin-right:-2px}
+.evbar.range-mid{border-radius:0;margin-right:-2px}
+.evbar.range-end{border-radius:0 3px 3px 0}
+
+/* 모달/시트 공통 */
+.mo-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;opacity:0;pointer-events:none;transition:opacity .25s}
+.mo-overlay.on{opacity:1;pointer-events:auto}
+.mo-card{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-radius:18px 18px 0 0;padding:14px 20px 24px;z-index:101;transform:translateY(100%);transition:transform .28s cubic-bezier(.2,.9,.3,1);max-height:90vh;overflow-y:auto}
+.mo-card.on{transform:translateY(0)}
+.mo-handle{width:42px;height:4px;background:var(--mute);border-radius:2px;margin:0 auto 12px;opacity:.6}
+.mo-title{font-family:'Noto Serif KR',serif;font-size:18px;font-weight:600;color:var(--text);margin-bottom:14px;text-align:center}
+.mo-sub{font-size:12px;color:var(--sub);text-align:center;margin-bottom:14px}
+.mo-row{margin-bottom:14px}
+.mo-label{font-size:12px;color:var(--sub);font-weight:600;margin-bottom:6px;letter-spacing:.3px}
+.fi{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--aP);color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border-color .15s}
+.fi:focus{border-color:var(--accent)}
+.fi::placeholder{color:var(--mute)}
+.fi-row{display:flex;gap:8px}
+.fi-row .fi{flex:1}
+
+/* 버튼 */
+.btn{padding:13px 16px;border-radius:12px;border:none;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s,background .15s}
+.btn:active{opacity:.7}
+.btn-pr{background:var(--accent);color:var(--card)}
+.btn-sc{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.btn-gh{background:rgba(139,58,42,.08);color:var(--text)}
+.btn-dn{background:#c44a4a;color:#fff}
+.btn-row{display:flex;gap:8px;margin-top:14px}
+.btn-row .btn{flex:1}
+
+/* 모드 토글 */
+.mode-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px}
+.mode-btn{padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--aP);color:var(--sub);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.mode-btn.on{background:var(--accent);color:var(--card);border-color:var(--accent)}
+.mode-btn:disabled{opacity:.35;pointer-events:none}
+
+/* 색상 picker */
+.color-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:8px}
+.color-cell{aspect-ratio:1;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:transform .15s,border-color .15s;display:flex;align-items:center;justify-content:center}
+.color-cell.on{border-color:var(--text);transform:scale(1.1)}
+.color-cell.on::after{content:'✓';color:#fff;font-size:14px;font-weight:bold;text-shadow:0 0 2px rgba(0,0,0,.4)}
+
+/* 일자 시트 일정 */
+.dp-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.dp-item{display:flex;align-items:flex-start;gap:8px;padding:12px 14px;border-radius:12px;background:var(--aP);border:1px solid var(--borderL);cursor:pointer;position:relative}
+.dp-item:active{background:rgba(139,58,42,.08)}
+.dp-bar{width:4px;border-radius:2px;align-self:stretch;flex-shrink:0;margin-top:2px;margin-bottom:2px}
+.dp-info{flex:1;min-width:0}
+.dp-title{font-size:14px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dp-meta{font-size:11px;color:var(--sub);margin-top:3px}
+.dp-mem{font-size:9px;padding:2px 7px;border-radius:6px;color:#fff;font-weight:600;align-self:flex-start;margin-top:2px;flex-shrink:0;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dp-empty{text-align:center;color:var(--mute);font-size:13px;padding:40px 0}
+
+/* 멤버 관리 */
+.member-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.mb-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--aP);border:1px solid var(--borderL)}
+.mb-avatar{width:40px;height:40px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;overflow:hidden;cursor:pointer;font-size:14px}
+.mb-avatar img{width:100%;height:100%;object-fit:cover}
+.mb-info{flex:1;min-width:0}
+.mb-name{font-size:14px;font-weight:600;color:var(--text)}
+.mb-role{font-size:11px;color:var(--sub);margin-top:2px}
+.mb-actions{display:flex;gap:6px}
+.mb-act{background:transparent;border:none;color:var(--sub);cursor:pointer;padding:6px 8px;border-radius:6px;font-size:12px;font-family:inherit}
+.mb-act:active{background:rgba(139,58,42,.08)}
+.mb-act.del{color:#c44a4a}
+
+/* 멤버 picker (함께 일정용) */
+.mp-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;max-height:240px;overflow-y:auto}
+.mp-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--aP);border:1px solid var(--borderL);cursor:pointer;transition:background .12s}
+.mp-item.on{border-color:var(--accent);background:rgba(139,58,42,.08)}
+.mp-item:active{background:rgba(139,58,42,.12)}
+.mp-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;overflow:hidden;font-size:14px}
+.mp-avatar img{width:100%;height:100%;object-fit:cover}
+.mp-name{flex:1;font-size:14px;color:var(--text);font-weight:500}
+.mp-check{font-size:18px;color:var(--accent);opacity:0;transition:opacity .15s}
+.mp-item.on .mp-check{opacity:1}
+
+/* 멤버 색상 선택 */
+.member-color-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px}
+
+/* 아바타 업로더 */
+.avatar-uploader{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:14px}
+.av-preview{width:90px;height:90px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:var(--card);font-size:32px;font-weight:600;overflow:hidden;cursor:pointer;border:3px solid var(--border)}
+.av-preview img{width:100%;height:100%;object-fit:cover}
+.av-hint{font-size:11px;color:var(--sub)}
+
+/* 토스트 */
+.toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 18px;border-radius:20px;font-size:13px;font-weight:500;z-index:200;opacity:0;pointer-events:none;transition:opacity .25s}
+.toast.on{opacity:1}
+
+/* 데모 배너 */
+.demo-banner{position:fixed;top:0;left:0;right:0;background:var(--accent);color:var(--card);text-align:center;font-size:11px;font-weight:600;padding:4px 12px;z-index:50;letter-spacing:.3px}
+.demo-banner-spacer{height:24px}
+
+/* 일자 시트 헤더 */
+.dp-head{text-align:center;margin-bottom:8px}
+.dp-date{font-family:'Noto Serif KR',serif;font-size:22px;font-weight:600;color:var(--text)}
+.dp-sub{font-size:11px;color:var(--sub);margin-top:4px}
+
+/* Add 버튼 */
+.add-fab{position:fixed;right:18px;bottom:24px;width:54px;height:54px;border-radius:50%;background:var(--accent);color:var(--card);border:none;font-size:26px;font-weight:300;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;z-index:30}
+.add-fab:active{transform:scale(.95)}
+
+/* 관리자 메뉴 시트 */
+.admin-menu{padding:10px}
+.admin-menu-item{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;font-family:inherit;font-size:14px;color:var(--text);font-weight:500;transition:background .12s}
+.admin-menu-item:active{background:rgba(139,58,42,.08)}
+.admin-menu-item.dn{color:#c44a4a}
+
+.section-title{font-size:11px;color:var(--sub);font-weight:700;letter-spacing:1px;margin:14px 4px 6px}
+</style>
+</head>
+<body>
+
+<div class="demo-banner">⚙️ 마케팅 데모 모드 · 데이터는 이 폰에만 저장됨</div>
+<div class="demo-banner-spacer"></div>
+
+<!-- 캘린더 화면 -->
+<div class="screen show" id="calendarScreen">
+  <div class="cal-header">
+    <button class="cal-back" onclick="openAdminMenu()" title="설정">≡</button>
+    <div class="cal-room-name" id="calRoomName">우리 가족</div>
+    <div class="cal-actions">
+      <button class="icon-btn" onclick="toggleTheme()" title="테마">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+      <button class="icon-btn" id="userAvatarBtn" onclick="openMyProfile()" title="내 프로필">나</button>
+    </div>
+  </div>
+
+  <div class="cal-member-tabs" id="calMemberTabs"></div>
+
+  <div class="cal-month-row">
+    <span class="cal-year" id="calYearLabel"></span>
+    <button class="cal-nav" onclick="prevMonth()">‹</button>
+    <div class="cal-month-name" id="calMonthName"></div>
+    <button class="cal-nav" onclick="nextMonth()">›</button>
+    <button class="today-chip" id="todayChip" onclick="goToday()">오늘로</button>
+  </div>
+
+  <div class="cal-weekdays">
+    <div class="wd-sun">일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div class="wd-sat">토</div>
+  </div>
+  <div class="cal-grid" id="calGrid"></div>
+
+  <button class="add-fab" onclick="openEventNew()" title="새 일정">+</button>
+</div>
+
+<!-- 일자 시트 -->
+<div class="mo-overlay" id="dpOverlay" onclick="closeDp()"></div>
+<div class="mo-card" id="dpCard">
+  <div class="mo-handle"></div>
+  <div class="dp-head">
+    <div class="dp-date" id="dpDate"></div>
+    <div class="dp-sub" id="dpSub"></div>
+  </div>
+  <div class="dp-list" id="dpList"></div>
+  <button class="btn btn-pr" style="width:100%;margin-top:14px" onclick="openEventNewForSelected()">+ 새 일정 추가</button>
+</div>
+
+<!-- 일정 추가/수정 모달 -->
+<div class="mo-overlay" id="evOverlay" onclick="closeEvCard()"></div>
+<div class="mo-card" id="evCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title" id="evTitle">새 일정</div>
+  <div class="mo-row">
+    <div class="mo-label">제목</div>
+    <input class="fi" type="text" id="evTitleInput" placeholder="일정 제목" maxlength="40">
+  </div>
+  <div class="mode-row" id="evModeRow">
+    <button class="mode-btn on" data-mode="day" onclick="setEventMode('day')">하루</button>
+    <button class="mode-btn" data-mode="range" onclick="setEventMode('range')">기간</button>
+    <button class="mode-btn" data-mode="multi" id="multiBtn" onclick="setEventMode('multi')">선택</button>
+  </div>
+  <div class="mo-row" id="dateSingleRow">
+    <div class="mo-label">날짜</div>
+    <input class="fi" type="date" id="evDate">
+  </div>
+  <div class="mo-row" id="dateRangeRow" style="display:none">
+    <div class="mo-label">기간</div>
+    <div class="fi-row">
+      <input class="fi" type="date" id="evStartDate">
+      <input class="fi" type="date" id="evEndDate">
+    </div>
+  </div>
+  <div class="mo-row">
+    <div class="mo-label">시간 (선택)</div>
+    <input class="fi" type="time" id="evTime">
+  </div>
+  <div class="mo-row">
+    <div class="mo-label">색상</div>
+    <div class="color-grid" id="evColorGrid"></div>
+  </div>
+  <div class="mo-row">
+    <div class="mo-label">참여 멤버</div>
+    <button class="btn btn-gh" style="width:100%" onclick="openMemberPicker()">멤버 선택 (<span id="evMemberCount">1</span>명)</button>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-gh" onclick="closeEvCard()">취소</button>
+    <button class="btn btn-dn" id="evDelBtn" onclick="deleteEvent()" style="display:none">삭제</button>
+    <button class="btn btn-pr" onclick="saveEvent()">저장</button>
+  </div>
+</div>
+
+<!-- 멤버 picker -->
+<div class="mo-overlay" id="mpOverlay" onclick="closeMemberPicker()"></div>
+<div class="mo-card" id="mpCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">참여 멤버 선택</div>
+  <div class="mp-list" id="mpList"></div>
+  <div class="btn-row">
+    <button class="btn btn-gh" onclick="closeMemberPicker()">취소</button>
+    <button class="btn btn-pr" onclick="confirmMemberPicker()">완료</button>
+  </div>
+</div>
+
+<!-- 관리자 메뉴 시트 -->
+<div class="mo-overlay" id="adminOverlay" onclick="closeAdminMenu()"></div>
+<div class="mo-card" id="adminCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">데모 관리자</div>
+  <div class="section-title">데이터</div>
+  <div class="admin-menu">
+    <button class="admin-menu-item" onclick="openMemberManager()">👥 멤버 관리</button>
+    <button class="admin-menu-item" onclick="openRoomNameEditor()">🏠 방 이름 변경</button>
+  </div>
+  <div class="section-title">초기화</div>
+  <div class="admin-menu">
+    <button class="admin-menu-item" onclick="seedSampleData(true)">🌱 샘플 데이터로 리셋</button>
+    <button class="admin-menu-item dn" onclick="wipeAllData()">🗑️ 모든 데이터 삭제 (빈 상태)</button>
+  </div>
+</div>
+
+<!-- 멤버 관리 시트 -->
+<div class="mo-overlay" id="mmOverlay" onclick="closeMemberManager()"></div>
+<div class="mo-card" id="mmCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">멤버 관리</div>
+  <div class="member-list" id="mmList"></div>
+  <button class="btn btn-pr" style="width:100%;margin-top:14px" onclick="openMemberEdit(null)">+ 새 멤버 추가</button>
+</div>
+
+<!-- 멤버 편집 모달 -->
+<div class="mo-overlay" id="meOverlay" onclick="closeMemberEdit()"></div>
+<div class="mo-card" id="meCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title" id="meTitle">멤버 편집</div>
+  <div class="avatar-uploader">
+    <div class="av-preview" id="meAvatarPreview" onclick="document.getElementById('meAvatarFile').click()">?</div>
+    <input type="file" id="meAvatarFile" accept="image/*" style="display:none" onchange="onMeAvatarFile(event)">
+    <div class="av-hint">사진을 탭해서 변경</div>
+  </div>
+  <div class="mo-row">
+    <div class="mo-label">이름</div>
+    <input class="fi" type="text" id="meName" placeholder="이름" maxlength="12">
+  </div>
+  <div class="mo-row">
+    <div class="mo-label">색상</div>
+    <div class="member-color-grid" id="meColorGrid"></div>
+  </div>
+  <div class="mo-row" id="meRoleRow">
+    <div class="mo-label">역할</div>
+    <div style="display:flex;gap:8px">
+      <button class="mode-btn" data-role="me" onclick="setMeRole('me')">나 (방장)</button>
+      <button class="mode-btn" data-role="member" onclick="setMeRole('member')">멤버</button>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-gh" onclick="closeMemberEdit()">취소</button>
+    <button class="btn btn-dn" id="meDelBtn" onclick="deleteMember()" style="display:none">삭제</button>
+    <button class="btn btn-pr" onclick="saveMember()">저장</button>
+  </div>
+</div>
+
+<!-- 방 이름 편집 모달 -->
+<div class="mo-overlay" id="rnOverlay" onclick="closeRoomNameEditor()"></div>
+<div class="mo-card" id="rnCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">방 이름 변경</div>
+  <div class="mo-row">
+    <input class="fi" type="text" id="rnInput" placeholder="방 이름" maxlength="20">
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-gh" onclick="closeRoomNameEditor()">취소</button>
+    <button class="btn btn-pr" onclick="saveRoomName()">저장</button>
+  </div>
+</div>
+
+<!-- 내 프로필 모달 -->
+<div class="mo-overlay" id="mpfOverlay" onclick="closeMyProfile()"></div>
+<div class="mo-card" id="mpfCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">내 프로필</div>
+  <div class="avatar-uploader">
+    <div class="av-preview" id="mpfAvatarPreview" onclick="document.getElementById('mpfAvatarFile').click()">나</div>
+    <input type="file" id="mpfAvatarFile" accept="image/*" style="display:none" onchange="onMpfAvatarFile(event)">
+    <div class="av-hint">사진을 탭해서 변경</div>
+  </div>
+  <div class="mo-row">
+    <div class="mo-label">이름</div>
+    <input class="fi" type="text" id="mpfName" placeholder="이름" maxlength="12">
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-gh" onclick="closeMyProfile()">취소</button>
+    <button class="btn btn-pr" onclick="saveMyProfile()">저장</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ───────────────────────────────────────
+ * 우리 캘린더 — 인스타 마케팅 데모 페이지
+ * 데이터: localStorage만 사용 (서버 없음)
+ * ─────────────────────────────────────── */
+
+const EVENT_COLORS=[
+  {key:'red',    hex:'#ea4d4d', name:'레드'},
+  {key:'orange', hex:'#ee9447', name:'오렌지'},
+  {key:'yellow', hex:'#f5d028', name:'옐로우'},
+  {key:'forest', hex:'#4ea454', name:'포레스트'},
+  {key:'blue',   hex:'#3d85d4', name:'블루'},
+  {key:'purple', hex:'#9462c0', name:'퍼플'},
+  {key:'peach',  hex:'#f5b596', name:'피치'},
+  {key:'blush',  hex:'#f5c2d0', name:'블러시'},
+  {key:'lilac',  hex:'#d5c5e8', name:'라일락'},
+  {key:'mint',   hex:'#b5dcc4', name:'민트'},
+  {key:'sky',    hex:'#b5cce8', name:'스카이'},
+  {key:'butter', hex:'#ffe87a', name:'버터'},
+];
+const MEMBER_COLORS=[
+  {hex:'#8b5a3c',name:'브라운'},{hex:'#6b7d3a',name:'올리브'},
+  {hex:'#7a8c5a',name:'세이지'},{hex:'#c4a04a',name:'머스타드'},
+  {hex:'#a64a3a',name:'테라코타'},{hex:'#7a4a6a',name:'플럼'},
+  {hex:'#3a4a7a',name:'네이비'},{hex:'#3a6a4a',name:'포레스트'},
+];
+
+const KOR_HOLIDAYS={
+  2025:{'01-01':'신정','03-01':'삼일절','05-05':'어린이날·부처님오신날','05-06':'대체공휴일','06-03':'대선','06-06':'현충일','08-15':'광복절','10-03':'개천절','10-05':'추석','10-06':'추석','10-07':'추석','10-09':'한글날','12-25':'성탄절'},
+  2026:{'01-01':'신정','02-16':'설날','02-17':'설날','02-18':'설날','03-01':'삼일절','03-02':'대체공휴일','05-01':'근로자의날','05-05':'어린이날','05-24':'부처님오신날','05-25':'대체공휴일','06-03':'지방선거','06-06':'현충일','07-17':'제헌절','08-15':'광복절','09-24':'추석','09-25':'추석','09-26':'추석','10-03':'개천절','10-09':'한글날','12-25':'성탄절'},
+  2027:{'01-01':'신정','02-06':'설날','02-07':'설날','02-08':'설날','03-01':'삼일절','05-01':'근로자의날','05-05':'어린이날','05-13':'부처님오신날','06-06':'현충일','06-07':'대체공휴일','07-17':'제헌절','08-15':'광복절','08-16':'대체공휴일','09-14':'추석','09-15':'추석','09-16':'추석','10-03':'개천절','10-04':'대체공휴일','10-09':'한글날','12-25':'성탄절'},
+};
+
+/* ────── 상태 ────── */
+let _data={
+  roomName:'우리 가족',
+  members:[],  // [{id, name, color, avatar, isMe, joined_at}]
+  events:[],   // [{id, title, date, time, color, members:[memberId,...], shared_id}]
+};
+let _calYear=new Date().getFullYear();
+let _calMonth=new Date().getMonth();
+let _viewingMember='all';   // 'all' or memberId
+let _selectedDate=null;     // 'YYYY-MM-DD'
+let _editingEvent=null;
+let _selectedMode='day';
+let _selectedColor='blue';
+let _selectedMembers=[];
+let _rangeStart=null;
+let _rangeEnd=null;
+let _editingMember=null;
+let _meRole='member';
+
+/* ────── 저장/로드 ────── */
+function saveData(){
+  try{localStorage.setItem('admin.data', JSON.stringify(_data))}catch(e){console.warn(e)}
+}
+function loadData(){
+  try{
+    const raw=localStorage.getItem('admin.data');
+    if(raw){_data=JSON.parse(raw);return true}
+  }catch(e){console.warn(e)}
+  return false;
+}
+
+/* ────── 토스트 ────── */
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.classList.add('on');
+  clearTimeout(toast._t);
+  toast._t=setTimeout(()=>el.classList.remove('on'),1800);
+}
+
+/* ────── 헬퍼 ────── */
+function uid(){return 'id_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+function pad(n){return String(n).padStart(2,'0')}
+function dateKey(y,m,d){return `${y}-${pad(m+1)}-${pad(d)}`}
+function parseDateKey(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
+function colorHex(key){const c=EVENT_COLORS.find(x=>x.key===key);return c?c.hex:'#8b3a2a'}
+function memberOf(id){return _data.members.find(m=>m.id===id)}
+function myMember(){return _data.members.find(m=>m.isMe)}
+function daysBetween(start,end){
+  const out=[];const cur=parseDateKey(start);const last=parseDateKey(end);
+  while(cur<=last){out.push(dateKey(cur.getFullYear(),cur.getMonth(),cur.getDate()));cur.setDate(cur.getDate()+1)}
+  return out;
+}
+function isLight(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return (r*299+g*587+b*114)/1000>165;
+}
+
+/* ────── 테마 ────── */
+function applyTheme(){
+  const dark=localStorage.getItem('admin.dark')==='1';
+  document.body.classList.toggle('is-dark',dark);
+}
+function toggleTheme(){
+  const cur=localStorage.getItem('admin.dark')==='1';
+  localStorage.setItem('admin.dark',cur?'0':'1');
+  applyTheme();
+}
+
+/* 더미 sleep */
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  applyTheme();
+  if(!loadData()){
+    seedSampleData(false);
+  }
+  initApp();
+});
+
+function initApp(){
+  document.getElementById('calRoomName').textContent=_data.roomName;
+  renderMemberTabs();
+  renderMonthly();
+  updateMyAvatar();
+}
+
+/* ────── 샘플 데이터 ────── */
+function seedSampleData(force){
+  if(force && !confirm('현재 데이터를 모두 지우고 샘플로 리셋할까요?'))return;
+  const today=new Date();
+  const y=today.getFullYear(),m=today.getMonth();
+  const me={id:uid(),name:'이원석',color:'#3a4a7a',avatar:null,isMe:true,joined_at:Date.now()};
+  const m1={id:uid(),name:'정선주',color:'#a64a3a',avatar:null,isMe:false,joined_at:Date.now()+1};
+  const m2={id:uid(),name:'아들',color:'#6b7d3a',avatar:null,isMe:false,joined_at:Date.now()+2};
+  _data={
+    roomName:'우리 가족',
+    members:[me,m1,m2],
+    events:[
+      {id:uid(),title:'가족식사',date:dateKey(y,m,5),time:'19:00',color:'red',members:[me.id,m1.id,m2.id],shared_id:'s1'},
+      {id:uid(),title:'요가',date:dateKey(y,m,7),time:'07:00',color:'sky',members:[m1.id]},
+      {id:uid(),title:'한강 데이트',date:dateKey(y,m,8),time:null,color:'mint',members:[me.id,m1.id],shared_id:'s2'},
+      {id:uid(),title:'점심 회식',date:dateKey(y,m,10),time:'12:00',color:'orange',members:[me.id]},
+      {id:uid(),title:'마라탕',date:dateKey(y,m,10),time:'19:00',color:'forest',members:[me.id,m1.id],shared_id:'s3'},
+      {id:uid(),title:'오후 반차',date:dateKey(y,m,10),time:null,color:'sky',members:[me.id]},
+      {id:uid(),title:'헬스',date:dateKey(y,m,12),time:'20:00',color:'orange',members:[m1.id]},
+      {id:uid(),title:'생일 🎂',date:dateKey(y,m,13),time:null,color:'sky',members:[me.id,m1.id,m2.id],shared_id:'s4'},
+      {id:uid(),title:'영화보기',date:dateKey(y,m,18),time:'20:00',color:'mint',members:[me.id,m1.id],shared_id:'s5'},
+      {id:uid(),title:'피부과',date:dateKey(y,m,20),time:'14:00',color:'sky',members:[m1.id]},
+      {id:uid(),title:'캠핑',date:dateKey(y,m,23),time:null,color:'forest',members:[me.id,m1.id,m2.id],shared_id:'s6'},
+      {id:uid(),title:'이사 준비',date:dateKey(y,m,28),time:null,color:'orange',members:[me.id,m1.id],shared_id:'s7'},
+    ],
+  };
+  saveData();
+  if(force){
+    initApp();
+    closeAdminMenu();
+    toast('샘플 데이터로 리셋했어요');
+  }
+}
+
+function wipeAllData(){
+  if(!confirm('정말 모든 데이터를 삭제할까요?'))return;
+  _data={roomName:'우리 가족',members:[{id:uid(),name:'나',color:'#3a4a7a',avatar:null,isMe:true,joined_at:Date.now()}],events:[]};
+  saveData();
+  initApp();
+  closeAdminMenu();
+  toast('모든 데이터를 삭제했어요');
+}
+
+/* ────── 멤버 탭 렌더 ────── */
+function renderMemberTabs(){
+  const wrap=document.getElementById('calMemberTabs');
+  if(_data.members.length<2){wrap.innerHTML='';return}
+  const sorted=[..._data.members].sort((a,b)=>{
+    if(a.isMe)return -1;if(b.isMe)return 1;
+    return (a.joined_at||0)-(b.joined_at||0);
+  });
+  const items=[];
+  // 전체 탭
+  items.push(`<div class="mt-item ${_viewingMember==='all'?'on':''}" onclick="setViewingMember('all')">
+    <div class="mt-avatar" style="background:var(--card);color:var(--accent);font-size:20px">⋯</div>
+    <div class="mt-name">전체</div>
+  </div>`);
+  sorted.forEach(m=>{
+    const cls=_viewingMember===m.id?'mt-item on':'mt-item';
+    const inner=m.avatar?`<img src="${m.avatar}">`:_escHtml((m.name||'').slice(0,1));
+    items.push(`<div class="${cls}" onclick="setViewingMember('${m.id}')">
+      <div class="mt-avatar" style="background:${m.color};color:#fff">${inner}</div>
+      <div class="mt-name">${_escHtml(m.name||'')}${m.isMe?' (나)':''}</div>
+    </div>`);
+  });
+  wrap.innerHTML=items.join('');
+}
+
+function setViewingMember(id){
+  _viewingMember=id;
+  renderMemberTabs();
+  renderMonthly();
+}
+
+/* ────── 월 캘린더 렌더 ────── */
+function renderMonthly(){
+  document.getElementById('calYearLabel').textContent=`${_calYear}년`;
+  document.getElementById('calMonthName').textContent=`${_calMonth+1}월`;
+
+  const today=new Date();
+  const todayKey=dateKey(today.getFullYear(),today.getMonth(),today.getDate());
+  const sameMonth=(_calYear===today.getFullYear()&&_calMonth===today.getMonth());
+  const todayChip=document.getElementById('todayChip');
+  if(!sameMonth)todayChip.classList.add('show');else todayChip.classList.remove('show');
+
+  // 일정 그룹 만들기 (날짜별)
+  const byDate={};
+  // 필터링: viewingMember
+  let evs=_data.events.filter(e=>e.title);
+  if(_viewingMember!=='all'){
+    evs=evs.filter(e=>(e.members||[]).includes(_viewingMember));
+  }
+
+  // shared_id별로 그룹화 + range 처리
+  const grouped={};
+  evs.forEach(e=>{
+    const k=e.shared_id||e.id;
+    if(!grouped[k])grouped[k]=[];
+    grouped[k].push(e);
+  });
+  // 같은 shared_id 같은 title은 range로 처리, 단일은 그냥 single
+  Object.values(grouped).forEach(group=>{
+    if(group.length===1){
+      const e=group[0];
+      e._rangePos='single';
+      addToDate(byDate,e.date,e);
+      return;
+    }
+    // 같은 shared_id 그룹 — 같은 멤버한테 같은 일정. 멤버 수만큼 같은 날짜에 row 있을 수 있음
+    // 날짜별로 dedupe
+    const byD={};
+    group.forEach(e=>{byD[e.date]=e});
+    const dates=Object.keys(byD).sort();
+    dates.forEach((d,i)=>{
+      const e=byD[d];
+      if(dates.length===1)e._rangePos='single';
+      else if(i===0)e._rangePos='start';
+      else if(i===dates.length-1)e._rangePos='end';
+      else e._rangePos='mid';
+      // 토요일 end → single
+      const dt=parseDateKey(d);
+      const dow=dt.getDay();
+      if(e._rangePos==='mid'){
+        if(dow===6)e._rangePos='end';
+        else if(dow===0)e._rangePos='start';
+      }
+      addToDate(byDate,d,e);
+    });
+  });
+
+  // 그리드 빌드
+  const first=new Date(_calYear,_calMonth,1);
+  const startDow=first.getDay();
+  const lastDay=new Date(_calYear,_calMonth+1,0).getDate();
+  const prevLastDay=new Date(_calYear,_calMonth,0).getDate();
+  const cells=[];
+  for(let i=0;i<42;i++){
+    const dayNum=i-startDow+1;
+    let y=_calYear,mo=_calMonth,d=dayNum,other=false;
+    if(dayNum<1){y=_calMonth===0?_calYear-1:_calYear;mo=_calMonth===0?11:_calMonth-1;d=prevLastDay+dayNum;other=true}
+    else if(dayNum>lastDay){y=_calMonth===11?_calYear+1:_calYear;mo=_calMonth===11?0:_calMonth+1;d=dayNum-lastDay;other=true}
+    const key=dateKey(y,mo,d);
+    const dow=i%7;
+    const cls=['cal-cell'];
+    if(other)cls.push('other-month');
+    const dCls=['cal-day-num'];
+    if(dow===0)dCls.push('sun');
+    if(dow===6)dCls.push('sat');
+    if(key===todayKey)dCls.push('today');
+    // 공휴일
+    const mdKey=`${pad(mo+1)}-${pad(d)}`;
+    const holiday=KOR_HOLIDAYS[y]?.[mdKey];
+    if(holiday)dCls.push('sun');
+    // 이벤트
+    const dayEvs=(byDate[key]||[]).slice(0,3);
+    const evHtml=dayEvs.map(e=>{
+      const hex=colorHex(e.color);
+      const rangeCls=e._rangePos==='single'?'':e._rangePos==='start'?'range-start':e._rangePos==='mid'?'range-mid':'range-end';
+      const txt=e._rangePos==='mid'||e._rangePos==='end'?'':_escHtml(e.title);
+      return `<div class="evbar ${rangeCls}" style="background:${hex};color:${isLight(hex)?'#2a1c0f':'#fff'}">${txt}</div>`;
+    }).join('');
+    cells.push(`<div class="${cls.join(' ')}" onclick="openDateSheet('${key}')">
+      <div class="${dCls.join(' ')}">${d}</div>
+      ${holiday?`<div class="cal-cell-label">${_escHtml(holiday)}</div>`:''}
+      <div class="cal-events">${evHtml}</div>
+    </div>`);
+  }
+  document.getElementById('calGrid').innerHTML=cells.join('');
+}
+
+function addToDate(byDate,d,e){
+  if(!byDate[d])byDate[d]=[];
+  byDate[d].push(e);
+}
+
+function prevMonth(){if(--_calMonth<0){_calMonth=11;_calYear--}renderMonthly()}
+function nextMonth(){if(++_calMonth>11){_calMonth=0;_calYear++}renderMonthly()}
+function goToday(){const t=new Date();_calYear=t.getFullYear();_calMonth=t.getMonth();renderMonthly()}
+
+/* ────── 일자 시트 ────── */
+function openDateSheet(key){
+  _selectedDate=key;
+  const dt=parseDateKey(key);
+  const dows=['일','월','화','수','목','금','토'];
+  document.getElementById('dpDate').textContent=`${dt.getMonth()+1}월 ${dt.getDate()}일`;
+  document.getElementById('dpSub').textContent=`${dows[dt.getDay()]}요일`;
+  renderDp();
+  document.getElementById('dpOverlay').classList.add('on');
+  document.getElementById('dpCard').classList.add('on');
+}
+function closeDp(){
+  document.getElementById('dpOverlay').classList.remove('on');
+  document.getElementById('dpCard').classList.remove('on');
+}
+function renderDp(){
+  let evs=_data.events.filter(e=>e.title&&e.date===_selectedDate);
+  if(_viewingMember!=='all'){
+    evs=evs.filter(e=>(e.members||[]).includes(_viewingMember));
+  }
+  // shared_id로 dedupe (같은 함께 일정 하나로만 표시)
+  const seen={};
+  const visible=[];
+  evs.forEach(e=>{
+    const k=e.shared_id||e.id;
+    if(!seen[k]){seen[k]=true;visible.push(e)}
+  });
+  visible.sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  const list=document.getElementById('dpList');
+  if(!visible.length){list.innerHTML='<div class="dp-empty">아직 등록된 일정이 없어요</div>';return}
+  list.innerHTML=visible.map(e=>{
+    const hex=colorHex(e.color);
+    const memberIds=e.members||[];
+    const isShared=memberIds.length>1;
+    const firstM=memberOf(memberIds[0]);
+    const memLabel=isShared?`함께 ${memberIds.length}명`:(firstM?firstM.name:'');
+    const timeLabel=e.time||'종일';
+    return `<div class="dp-item" onclick="openEventEdit('${e.id}')">
+      <div class="dp-bar" style="background:${hex}"></div>
+      <div class="dp-info">
+        <div class="dp-title">${_escHtml(e.title)}</div>
+        <div class="dp-meta">${timeLabel} · ${_escHtml(memLabel)}</div>
+      </div>
+      ${firstM?`<div class="dp-mem" style="background:${firstM.color}">${_escHtml(memLabel)}</div>`:''}
+    </div>`;
+  }).join('');
+}
+function openEventNewForSelected(){
+  closeDp();
+  setTimeout(()=>openEventNew(_selectedDate),120);
+}
+
+/* ────── 일정 모달 ────── */
+function openEventNew(forDate){
+  _editingEvent=null;
+  document.getElementById('evTitle').textContent='새 일정';
+  document.getElementById('evTitleInput').value='';
+  document.getElementById('evTime').value='';
+  document.getElementById('evDelBtn').style.display='none';
+  _selectedMode='day';
+  _selectedColor='blue';
+  const me=myMember();
+  _selectedMembers=me?[me.id]:[];
+  const today=forDate||dateKey(new Date().getFullYear(),new Date().getMonth(),new Date().getDate());
+  document.getElementById('evDate').value=today;
+  document.getElementById('evStartDate').value=today;
+  document.getElementById('evEndDate').value=today;
+  _rangeStart=today;_rangeEnd=today;
+  renderColorGrid('evColorGrid', _selectedColor, k=>{_selectedColor=k;renderColorGrid('evColorGrid',_selectedColor,arguments.callee)});
+  setEventMode('day');
+  updateMemberCount();
+  document.getElementById('multiBtn').disabled=false;
+  document.getElementById('evOverlay').classList.add('on');
+  document.getElementById('evCard').classList.add('on');
+}
+
+function openEventEdit(id){
+  const e=_data.events.find(x=>x.id===id);
+  if(!e)return;
+  _editingEvent=e;
+  document.getElementById('evTitle').textContent='일정 수정';
+  document.getElementById('evTitleInput').value=e.title;
+  document.getElementById('evTime').value=e.time||'';
+  document.getElementById('evDelBtn').style.display='block';
+  _selectedColor=e.color||'blue';
+  _selectedMembers=[...(e.members||[])];
+  // 같은 shared_id 다른 row 있는지 확인 → range 일정인지 판단
+  let mode='day';
+  if(e.shared_id){
+    const group=_data.events.filter(x=>x.shared_id===e.shared_id);
+    const dates=[...new Set(group.map(x=>x.date))].sort();
+    if(dates.length>1){mode='range';_rangeStart=dates[0];_rangeEnd=dates[dates.length-1]}
+    else{_rangeStart=e.date;_rangeEnd=e.date}
+  }else{
+    _rangeStart=e.date;_rangeEnd=e.date;
+  }
+  _selectedMode=mode;
+  document.getElementById('evDate').value=e.date;
+  document.getElementById('evStartDate').value=_rangeStart;
+  document.getElementById('evEndDate').value=_rangeEnd;
+  renderColorGrid('evColorGrid',_selectedColor,k=>{_selectedColor=k;renderColorGrid('evColorGrid',_selectedColor,arguments.callee)});
+  setEventMode(mode);
+  updateMemberCount();
+  // 함께 일정은 multi 모드 금지
+  document.getElementById('multiBtn').disabled=(_selectedMembers.length>=2);
+  closeDp();
+  setTimeout(()=>{
+    document.getElementById('evOverlay').classList.add('on');
+    document.getElementById('evCard').classList.add('on');
+  },100);
+}
+
+function closeEvCard(){
+  document.getElementById('evOverlay').classList.remove('on');
+  document.getElementById('evCard').classList.remove('on');
+}
+
+function setEventMode(mode){
+  _selectedMode=mode;
+  document.querySelectorAll('#evModeRow .mode-btn').forEach(b=>{
+    b.classList.toggle('on',b.dataset.mode===mode);
+  });
+  document.getElementById('dateSingleRow').style.display=mode==='range'?'none':'block';
+  document.getElementById('dateRangeRow').style.display=mode==='range'?'block':'none';
+}
+
+function saveEvent(){
+  const title=document.getElementById('evTitleInput').value.trim();
+  if(!title){toast('제목을 입력해주세요');return}
+  if(!_selectedMembers.length){toast('참여 멤버를 선택해주세요');return}
+  const time=document.getElementById('evTime').value||null;
+  const color=_selectedColor;
+  const members=[..._selectedMembers];
+  const isShared=members.length>=2;
+  let dates=[];
+  if(_selectedMode==='range'){
+    const s=document.getElementById('evStartDate').value;
+    const e=document.getElementById('evEndDate').value;
+    if(!s||!e){toast('기간을 입력해주세요');return}
+    if(s>e){toast('시작이 종료보다 늦어요');return}
+    dates=daysBetween(s,e);
+    if(dates.length>180){toast('최대 180일');return}
+  }else{
+    const d=document.getElementById('evDate').value;
+    if(!d){toast('날짜를 입력해주세요');return}
+    dates=[d];
+  }
+
+  // 기존 일정 삭제 (수정 시)
+  if(_editingEvent){
+    if(_editingEvent.shared_id){
+      _data.events=_data.events.filter(e=>e.shared_id!==_editingEvent.shared_id);
+    }else{
+      _data.events=_data.events.filter(e=>e.id!==_editingEvent.id);
+    }
+  }
+
+  // 새 row INSERT (날짜 × 멤버)
+  const sharedId=isShared?uid():null;
+  dates.forEach(d=>{
+    if(isShared){
+      // 한 일정에 멤버 여러 명 — shared_id 묶기
+      const ev={id:uid(),title,date:d,time,color,members:[...members],shared_id:sharedId};
+      _data.events.push(ev);
+    }else{
+      const ev={id:uid(),title,date:d,time,color,members:[...members]};
+      _data.events.push(ev);
+    }
+  });
+  saveData();
+  closeEvCard();
+  renderMonthly();
+  if(_selectedDate)renderDp();
+  toast(_editingEvent?'일정을 수정했어요':'일정을 추가했어요');
+}
+
+function deleteEvent(){
+  if(!_editingEvent)return;
+  if(!confirm('이 일정을 삭제할까요?'))return;
+  if(_editingEvent.shared_id){
+    _data.events=_data.events.filter(e=>e.shared_id!==_editingEvent.shared_id);
+  }else{
+    _data.events=_data.events.filter(e=>e.id!==_editingEvent.id);
+  }
+  saveData();
+  closeEvCard();
+  renderMonthly();
+  if(_selectedDate)renderDp();
+  toast('일정을 삭제했어요');
+}
+
+/* ────── 색상 grid ────── */
+function renderColorGrid(elId, selectedKey, onPick){
+  const wrap=document.getElementById(elId);
+  wrap.innerHTML=EVENT_COLORS.map(c=>{
+    const cls=c.key===selectedKey?'color-cell on':'color-cell';
+    return `<div class="${cls}" style="background:${c.hex}" data-key="${c.key}" title="${c.name}"></div>`;
+  }).join('');
+  wrap.querySelectorAll('.color-cell').forEach(el=>{
+    el.onclick=()=>onPick(el.dataset.key);
+  });
+}
+
+/* ────── 멤버 picker ────── */
+function openMemberPicker(){
+  const list=document.getElementById('mpList');
+  list.innerHTML=_data.members.map(m=>{
+    const on=_selectedMembers.includes(m.id);
+    const inner=m.avatar?`<img src="${m.avatar}">`:_escHtml((m.name||'').slice(0,1));
+    return `<div class="mp-item ${on?'on':''}" data-id="${m.id}" onclick="togglePickMember('${m.id}')">
+      <div class="mp-avatar" style="background:${m.color}">${inner}</div>
+      <div class="mp-name">${_escHtml(m.name||'')}${m.isMe?' (나)':''}</div>
+      <div class="mp-check">✓</div>
+    </div>`;
+  }).join('');
+  document.getElementById('mpOverlay').classList.add('on');
+  document.getElementById('mpCard').classList.add('on');
+}
+function togglePickMember(id){
+  const i=_selectedMembers.indexOf(id);
+  if(i>=0)_selectedMembers.splice(i,1);
+  else _selectedMembers.push(id);
+  const el=document.querySelector(`.mp-item[data-id="${id}"]`);
+  if(el)el.classList.toggle('on');
+}
+function confirmMemberPicker(){
+  if(_selectedMembers.length===0){toast('최소 1명은 선택해주세요');return}
+  closeMemberPicker();
+  updateMemberCount();
+  // 함께 일정이 되면 multi 모드 금지
+  document.getElementById('multiBtn').disabled=(_selectedMembers.length>=2);
+  if(_selectedMembers.length>=2 && _selectedMode==='multi')setEventMode('day');
+}
+function closeMemberPicker(){
+  document.getElementById('mpOverlay').classList.remove('on');
+  document.getElementById('mpCard').classList.remove('on');
+}
+function updateMemberCount(){
+  document.getElementById('evMemberCount').textContent=_selectedMembers.length;
+}
+
+/* ────── 관리자 메뉴 ────── */
+function openAdminMenu(){
+  document.getElementById('adminOverlay').classList.add('on');
+  document.getElementById('adminCard').classList.add('on');
+}
+function closeAdminMenu(){
+  document.getElementById('adminOverlay').classList.remove('on');
+  document.getElementById('adminCard').classList.remove('on');
+}
+
+/* ────── 멤버 관리 ────── */
+function openMemberManager(){
+  closeAdminMenu();
+  setTimeout(()=>{
+    renderMemberList();
+    document.getElementById('mmOverlay').classList.add('on');
+    document.getElementById('mmCard').classList.add('on');
+  },150);
+}
+function closeMemberManager(){
+  document.getElementById('mmOverlay').classList.remove('on');
+  document.getElementById('mmCard').classList.remove('on');
+}
+function renderMemberList(){
+  const list=document.getElementById('mmList');
+  const sorted=[..._data.members].sort((a,b)=>{
+    if(a.isMe)return -1;if(b.isMe)return 1;
+    return (a.joined_at||0)-(b.joined_at||0);
+  });
+  list.innerHTML=sorted.map(m=>{
+    const inner=m.avatar?`<img src="${m.avatar}">`:_escHtml((m.name||'').slice(0,1));
+    return `<div class="mb-row">
+      <div class="mb-avatar" style="background:${m.color}">${inner}</div>
+      <div class="mb-info">
+        <div class="mb-name">${_escHtml(m.name||'')}${m.isMe?' <span style="font-size:10px;color:var(--accent)">방장</span>':''}</div>
+        <div class="mb-role">${m.isMe?'나':'멤버'}</div>
+      </div>
+      <div class="mb-actions">
+        <button class="mb-act" onclick="openMemberEdit('${m.id}')">수정</button>
+        ${m.isMe?'':`<button class="mb-act del" onclick="quickDeleteMember('${m.id}')">삭제</button>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function quickDeleteMember(id){
+  const m=memberOf(id);if(!m)return;
+  if(!confirm(`${m.name} 멤버를 삭제할까요? (이 멤버의 일정도 함께 삭제됩니다)`))return;
+  _data.members=_data.members.filter(x=>x.id!==id);
+  // 일정에서 이 멤버 제거 + 멤버 없으면 일정도 삭제
+  _data.events=_data.events.map(e=>{
+    e.members=(e.members||[]).filter(mid=>mid!==id);
+    return e;
+  }).filter(e=>e.members.length>0);
+  saveData();
+  renderMemberList();
+  renderMemberTabs();
+  renderMonthly();
+  toast('멤버를 삭제했어요');
+}
+
+function openMemberEdit(id){
+  _editingMember=id?memberOf(id):null;
+  const m=_editingMember;
+  document.getElementById('meTitle').textContent=m?'멤버 편집':'새 멤버 추가';
+  document.getElementById('meName').value=m?.name||'';
+  document.getElementById('meDelBtn').style.display=(m&&!m.isMe)?'block':'none';
+  const selColor=m?.color||MEMBER_COLORS[0].hex;
+  _meRole=m?.isMe?'me':'member';
+  setMeRole(_meRole);
+  document.getElementById('meRoleRow').style.display=(m&&m.isMe)?'block':((!m||!_data.members.some(x=>x.isMe))?'block':'block');
+  renderMemberColorGrid(selColor);
+  // 아바타 미리보기
+  const av=document.getElementById('meAvatarPreview');
+  if(m?.avatar){av.innerHTML=`<img src="${m.avatar}">`;av.style.background=m.color}
+  else{av.textContent=m?(m.name||'').slice(0,1):'+';av.style.background=selColor}
+  // 임시 변수
+  _meAvatarData=m?.avatar||null;
+  _meColorPick=selColor;
+  closeMemberManager();
+  setTimeout(()=>{
+    document.getElementById('meOverlay').classList.add('on');
+    document.getElementById('meCard').classList.add('on');
+  },120);
+}
+function closeMemberEdit(){
+  document.getElementById('meOverlay').classList.remove('on');
+  document.getElementById('meCard').classList.remove('on');
+  setTimeout(()=>openMemberManager(),200);
+}
+let _meAvatarData=null;
+let _meColorPick=MEMBER_COLORS[0].hex;
+function setMeRole(role){
+  _meRole=role;
+  document.querySelectorAll('#meRoleRow .mode-btn').forEach(b=>{
+    b.classList.toggle('on',b.dataset.role===role);
+  });
+}
+function renderMemberColorGrid(selectedHex){
+  const wrap=document.getElementById('meColorGrid');
+  wrap.innerHTML=MEMBER_COLORS.map(c=>{
+    const cls=c.hex===selectedHex?'color-cell on':'color-cell';
+    return `<div class="${cls}" style="background:${c.hex}" data-hex="${c.hex}"></div>`;
+  }).join('');
+  wrap.querySelectorAll('.color-cell').forEach(el=>{
+    el.onclick=()=>{
+      _meColorPick=el.dataset.hex;
+      renderMemberColorGrid(_meColorPick);
+      const av=document.getElementById('meAvatarPreview');
+      if(!_meAvatarData)av.style.background=_meColorPick;
+    };
+  });
+}
+function onMeAvatarFile(ev){
+  const file=ev.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    _meAvatarData=reader.result;
+    const av=document.getElementById('meAvatarPreview');
+    av.innerHTML=`<img src="${_meAvatarData}">`;
+  };
+  reader.readAsDataURL(file);
+}
+function saveMember(){
+  const name=document.getElementById('meName').value.trim();
+  if(!name){toast('이름을 입력해주세요');return}
+  if(_editingMember){
+    _editingMember.name=name;
+    _editingMember.color=_meColorPick;
+    _editingMember.avatar=_meAvatarData;
+    // 역할 변경
+    if(_meRole==='me'){
+      _data.members.forEach(m=>m.isMe=false);
+      _editingMember.isMe=true;
+    }else if(!_data.members.some(m=>m.isMe)){
+      // 아무도 isMe 없으면 일단 그대로 두고 다른 사람에게 옮길 방법은 없음
+    }
+  }else{
+    const m={
+      id:uid(),
+      name,
+      color:_meColorPick,
+      avatar:_meAvatarData,
+      isMe:_meRole==='me'&&!_data.members.some(m=>m.isMe),
+      joined_at:Date.now(),
+    };
+    if(_meRole==='me'){
+      _data.members.forEach(x=>x.isMe=false);
+      m.isMe=true;
+    }
+    _data.members.push(m);
+  }
+  saveData();
+  closeMemberEdit();
+  renderMemberTabs();
+  renderMonthly();
+  updateMyAvatar();
+  toast(_editingMember?'멤버를 수정했어요':'멤버를 추가했어요');
+}
+function deleteMember(){
+  if(!_editingMember||_editingMember.isMe)return;
+  if(!confirm(`${_editingMember.name} 멤버를 삭제할까요?`))return;
+  const id=_editingMember.id;
+  _data.members=_data.members.filter(x=>x.id!==id);
+  _data.events=_data.events.map(e=>{
+    e.members=(e.members||[]).filter(mid=>mid!==id);
+    return e;
+  }).filter(e=>e.members.length>0);
+  saveData();
+  closeMemberEdit();
+  renderMemberTabs();
+  renderMonthly();
+  toast('멤버를 삭제했어요');
+}
+
+/* ────── 방 이름 ────── */
+function openRoomNameEditor(){
+  closeAdminMenu();
+  setTimeout(()=>{
+    document.getElementById('rnInput').value=_data.roomName;
+    document.getElementById('rnOverlay').classList.add('on');
+    document.getElementById('rnCard').classList.add('on');
+  },120);
+}
+function closeRoomNameEditor(){
+  document.getElementById('rnOverlay').classList.remove('on');
+  document.getElementById('rnCard').classList.remove('on');
+}
+function saveRoomName(){
+  const v=document.getElementById('rnInput').value.trim();
+  if(!v){toast('방 이름을 입력해주세요');return}
+  _data.roomName=v;
+  saveData();
+  document.getElementById('calRoomName').textContent=v;
+  closeRoomNameEditor();
+  toast('방 이름을 변경했어요');
+}
+
+/* ────── 내 프로필 ────── */
+let _mpfAvatarData=null;
+function openMyProfile(){
+  const me=myMember();
+  if(!me){toast('내가 멤버에 없어요');return}
+  _mpfAvatarData=me.avatar;
+  document.getElementById('mpfName').value=me.name||'';
+  const av=document.getElementById('mpfAvatarPreview');
+  if(me.avatar){av.innerHTML=`<img src="${me.avatar}">`;av.style.background=me.color}
+  else{av.textContent=(me.name||'나').slice(0,1);av.style.background=me.color}
+  document.getElementById('mpfOverlay').classList.add('on');
+  document.getElementById('mpfCard').classList.add('on');
+}
+function closeMyProfile(){
+  document.getElementById('mpfOverlay').classList.remove('on');
+  document.getElementById('mpfCard').classList.remove('on');
+}
+function onMpfAvatarFile(ev){
+  const file=ev.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    _mpfAvatarData=reader.result;
+    const av=document.getElementById('mpfAvatarPreview');
+    av.innerHTML=`<img src="${_mpfAvatarData}">`;
+  };
+  reader.readAsDataURL(file);
+}
+function saveMyProfile(){
+  const me=myMember();
+  if(!me)return;
+  const name=document.getElementById('mpfName').value.trim();
+  if(!name){toast('이름을 입력해주세요');return}
+  me.name=name;
+  me.avatar=_mpfAvatarData;
+  saveData();
+  closeMyProfile();
+  renderMemberTabs();
+  renderMonthly();
+  updateMyAvatar();
+  toast('프로필을 변경했어요');
+}
+
+function updateMyAvatar(){
+  const btn=document.getElementById('userAvatarBtn');
+  const me=myMember();
+  if(!me){btn.textContent='나';return}
+  if(me.avatar){
+    btn.innerHTML=`<img src="${me.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;
+    btn.style.background='transparent';
+  }else{
+    btn.innerHTML=(me.name||'나').slice(0,1);
+    btn.style.background=me.color;
+    btn.style.color='#fff';
+  }
+}
+
+/* ────── 유틸 ────── */
+function _escHtml(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+</script>
+</body>
+</html>
