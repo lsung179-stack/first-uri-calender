@@ -2081,8 +2081,13 @@ function enterRoom(roomId){
   const room=_myRooms.find(r=>r.id===roomId);
   if(!room){toast('방 정보를 찾지 못했어요');return}
   _currentRoom=room;
-  // 방 진입 시 기본은 항상 본인 (멤버 탭 '전체' 누르면 통합 모드처럼 보임)
-  _viewingMember=_currentUser ? _currentUser.id : 'all';
+  // 알림 클릭으로 진입한 경우 그 멤버 탭 (보통 'all'), 그 외엔 본인 탭 디폴트
+  if(_pendingViewingMember){
+    _viewingMember=_pendingViewingMember;
+    _pendingViewingMember=null;
+  }else{
+    _viewingMember=_currentUser ? _currentUser.id : 'all';
+  }
   // 헤더 정보 채우기
   document.getElementById('calRoomName').textContent=room.name||'(이름 없음)';
   // 본인 프로필 로드 후 아바타 + 캘린더 갱신
@@ -2502,6 +2507,7 @@ let _currentRoom=null;    // 진입한 방
 let _pendingRoomId=null;  // 알림 클릭으로 진입할 방 (URL ?room=xxx 또는 SW 메시지)
 let _pendingJoinCode=null;// 초대 링크로 입장할 방 코드 (URL ?join=XXXXXX)
 let _pendingJumpDate=null;// 알림 클릭으로 점프할 날짜 (URL ?date=YYYY-MM-DD 또는 SW 메시지)
+let _pendingViewingMember=null;// 알림 클릭으로 점프할 멤버 탭 ('all' 또는 user_id)
 
 /* 저장/복구 헬퍼 — localStorage 사용 (OAuth redirect + 카톡↔카카오 앱 전환에도 보존) */
 const PENDING_JOIN_KEY='uricalv2.pendingJoin';
@@ -4526,23 +4532,29 @@ async function onNotifClick(notifId){
       refreshNotifBadge();
     }).catch(e=>console.warn(e));
   }
-  // 같은 방 안이면 바로 dateSheet
+  // 같은 방 안이면 바로 dateSheet (전체 탭으로 전환해서 누구 일정이든 보이게)
   if(_currentRoom&&_currentRoom.id===n.room_id){
+    if(_viewingMember!=='all'){
+      _viewingMember='all';
+      try{renderMemberTabs();renderMonthly();}catch(e){}
+    }
     if(n.event_date){
       setTimeout(()=>openDateSheet(n.event_date),200);
     }
     return;
   }
-  // 다른 방이면 _pendingJumpDate 설정 후 enterRoom (enterRoom 내부에서 자동 처리)
+  // 다른 방이면 _pendingJumpDate + _pendingViewingMember 설정 후 enterRoom
   if(n.event_date&&/^\d{4}-\d{2}-\d{2}$/.test(n.event_date)){
     _pendingJumpDate=n.event_date;
   }
+  _pendingViewingMember='all';  // 전체 탭으로 진입 → 누구 일정이든 보임
   // 내 방 목록에 있으면 진입
   if(_myRooms&&_myRooms.find(r=>r.id===n.room_id)){
     enterRoom(n.room_id);
   }else{
     toast('해당 방에 더 이상 속해있지 않아요');
     _pendingJumpDate=null;
+    _pendingViewingMember=null;
   }
 }
 
