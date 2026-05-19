@@ -4359,7 +4359,13 @@ async function saveEvent(){
   try{
     if(_editingEvent){
       // 수정 — 6가지 케이스 분기
+      const oldPhotoUrl=_editingEvent.photo_url||null;
       await saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl);
+      // 옛 사진 정리 — photo_url이 바뀌었으면 Storage에서 옛 파일 삭제
+      // (fire-and-forget. 실패해도 UX 영향 없음)
+      if(oldPhotoUrl && oldPhotoUrl!==photoUrl){
+        deletePhotoFromStorage(oldPhotoUrl);
+      }
     }else{
       // 추가 — 기간/여러 날/함께 모드 처리
       // 다른 방에도 추가할지: 단독 일정만 (함께는 제외). 본인 row만 복사
@@ -4546,12 +4552,30 @@ function pickEventPhoto(){
   if(f)f.click();
 }
 
-/* 파일 선택됨 → 리사이즈 → 미리보기 */
+/* 파일 선택됨 → (HEIC면 변환) → 리사이즈 → 미리보기 */
 async function onEventPhotoSelected(e){
-  const file=e?.target?.files?.[0];
+  let file=e?.target?.files?.[0];
   if(!file)return;
-  if(!/^image\//.test(file.type)){toast('이미지 파일만 가능해요');return}
+  const isHeic=/^image\/hei[cf]/i.test(file.type) || /\.heic$/i.test(file.name) || /\.heif$/i.test(file.name);
+  if(!/^image\//.test(file.type) && !isHeic){toast('이미지 파일만 가능해요');return}
+  const btn=document.getElementById('evPhotoPickBtn');
+  const origBtnText=btn?.textContent;
   try{
+    // HEIC/HEIF — 안드로이드 등에서 Image() 디코딩 불가. 라이브러리로 JPEG 변환
+    if(isHeic){
+      if(btn){btn.textContent='HEIC 변환 중...';btn.disabled=true}
+      try{
+        const heic2any=await loadHeic2Any();
+        const converted=await heic2any({blob:file, toType:'image/jpeg', quality:0.92});
+        const cBlob=Array.isArray(converted)?converted[0]:converted;
+        const newName=(file.name||'photo').replace(/\.hei[cf]$/i,'.jpg');
+        file=new File([cBlob], newName, {type:'image/jpeg'});
+      }catch(err){
+        console.error('HEIC 변환 실패:',err);
+        toast('HEIC 사진 변환에 실패했어요. 다른 사진을 선택해주세요');
+        return;
+      }
+    }
     const blob=await resizeEventImage(file, 1600, 0.82);
     // 기존 미리보기 정리
     if(_evPhotoPreviewUrl){try{URL.revokeObjectURL(_evPhotoPreviewUrl)}catch(_){}}
@@ -4570,6 +4594,7 @@ async function onEventPhotoSelected(e){
     console.error(err);
     toast('사진 처리에 실패했어요');
   }finally{
+    if(btn){btn.textContent=origBtnText||'📷 사진 선택';btn.disabled=false}
     // 같은 파일 다시 선택 가능하도록 input 비움
     if(e?.target)e.target.value='';
   }
@@ -4637,6 +4662,41 @@ async function uploadEventPhotoIfNeeded(){
   if(_evPhotoRemoved)return null;       // 사용자가 명시적으로 지움
   if(_evExistingPhotoUrl)return _evExistingPhotoUrl;
   return null;
+}
+
+/* Storage에서 사진 파일 삭제 — public URL에서 path 추출
+   실패해도 throw 안 함 (orphan 1건 남는 것보다 사용자 동작 깨지는 게 더 큰 문제) */
+async function deletePhotoFromStorage(url){
+  if(!url) return;
+  try{
+    // URL 형식: https://{project}.supabase.co/storage/v1/object/public/event-photos/{path}
+    const m = url.match(/\/event-photos\/(.+?)(\?|$)/);
+    if(!m) return;
+    const path = decodeURIComponent(m[1]);
+    await supa.storage.from('event-photos').remove([path]);
+  }catch(e){
+    console.warn('사진 Storage 삭제 실패 (무시):', e);
+  }
+}
+
+/* HEIC/HEIF 변환 라이브러리 동적 로드 — 안드로이드에서 iPhone 사진 호환용
+   필요할 때만 로드 (약 130KB) */
+let _heic2anyPromise=null;
+function loadHeic2Any(){
+  if(window.heic2any)return Promise.resolve(window.heic2any);
+  if(_heic2anyPromise)return _heic2anyPromise;
+  _heic2anyPromise=new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+    s.async=true;
+    s.onload=()=>{
+      if(window.heic2any)resolve(window.heic2any);
+      else reject(new Error('HEIC 변환 라이브러리 초기화 실패'));
+    };
+    s.onerror=()=>{_heic2anyPromise=null; reject(new Error('HEIC 변환 라이브러리 로드 실패'))};
+    document.head.appendChild(s);
+  });
+  return _heic2anyPromise;
 }
 
 /* 사진 큰 보기 모달 */
@@ -5512,6 +5572,8 @@ async function deleteEvent(eventId){
   if(!confirm(confirmMsg))return;
   
   try{
+    // 삭제 전에 사진 URL 캐싱 (함께/기간 그룹은 모두 같은 URL이라 한 번만 삭제하면 됨)
+    const photoUrlToCleanup=ev.photo_url||null;
     if(ev.shared_id){
       const {error}=await supa.from('events').delete().eq('shared_id',ev.shared_id);
       if(error)throw error;
@@ -5531,6 +5593,8 @@ async function deleteEvent(eventId){
       toast('삭제됐어요');
       notifyEventDeleted(ev);
     }
+    // 사진 cleanup — fire-and-forget
+    if(photoUrlToCleanup)deletePhotoFromStorage(photoUrlToCleanup);
     await loadEvents();
     if(_selectedDate)openDateSheet(_selectedDate);
   }catch(e){
