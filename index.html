@@ -2081,6 +2081,7 @@ function enterRoom(roomId){
   const room=_myRooms.find(r=>r.id===roomId);
   if(!room){toast('방 정보를 찾지 못했어요');return}
   _currentRoom=room;
+  _myMembers=[];  // 이전 방 데이터 초기화 — renderMemberTabs가 _viewingMember를 잘못된 멤버로 보고 'all'로 강제 변경하는 버그 방지
   // 알림 클릭으로 진입한 경우 그 멤버 탭 (보통 'all'), 그 외엔 본인 탭 디폴트
   if(_pendingViewingMember){
     _viewingMember=_pendingViewingMember;
