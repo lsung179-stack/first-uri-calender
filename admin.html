@@ -220,9 +220,6 @@ body{background:var(--bg)}
     </div>
     <div class="cal-actions">
       <button class="cal-avatar" id="userAvatarBtn" onclick="openMyProfile()" title="내 프로필">나</button>
-      <button class="icon-btn" onclick="toggleTheme()" title="테마">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-      </button>
     </div>
   </div>
 
@@ -242,8 +239,6 @@ body{background:var(--bg)}
     <div class="cal-dow sun">일</div><div class="cal-dow">월</div><div class="cal-dow">화</div><div class="cal-dow">수</div><div class="cal-dow">목</div><div class="cal-dow">금</div><div class="cal-dow sat">토</div>
   </div>
   <div class="cal-grid" id="calGrid"></div>
-
-  <button class="cal-fab" onclick="openEventNew()" title="새 일정">+</button>
 </div>
 
 <!-- 일자 시트 -->
@@ -417,12 +412,12 @@ body{background:var(--bg)}
  * ─────────────────────────────────────── */
 
 const EVENT_COLORS=[
-  {key:'red',    hex:'#ea4d4d'},{key:'orange', hex:'#ee9447'},
-  {key:'yellow', hex:'#f5d028'},{key:'forest', hex:'#4ea454'},
-  {key:'blue',   hex:'#3d85d4'},{key:'purple', hex:'#9462c0'},
-  {key:'peach',  hex:'#f5b596'},{key:'blush',  hex:'#f5c2d0'},
-  {key:'lilac',  hex:'#d5c5e8'},{key:'mint',   hex:'#b5dcc4'},
-  {key:'sky',    hex:'#b5cce8'},{key:'butter', hex:'#ffe87a'},
+  {key:'peach',  hex:'#f5b596'},
+  {key:'blush',  hex:'#f5c2d0'},
+  {key:'lilac',  hex:'#d5c5e8'},
+  {key:'mint',   hex:'#b5dcc4'},
+  {key:'sky',    hex:'#b5cce8'},
+  {key:'butter', hex:'#ffe87a'},
 ];
 const MEMBER_COLORS=[
   {hex:'#8b5a3c'},{hex:'#6b7d3a'},{hex:'#7a8c5a'},{hex:'#c4a04a'},
@@ -487,25 +482,42 @@ function initApp(){
 function seedSampleData(force){
   if(force&&!confirm('현재 데이터를 모두 지우고 샘플로 리셋할까요?'))return;
   const t=new Date(),y=t.getFullYear(),m=t.getMonth();
-  const me={id:uid(),name:'이원석',color:'#3a4a7a',avatar:null,isMe:true,joined_at:Date.now()};
+  const me={id:uid(),name:'이원석',color:'#3a4a7a',avatar:null,isMe:true, joined_at:Date.now()};
   const m1={id:uid(),name:'정선주',color:'#a64a3a',avatar:null,isMe:false,joined_at:Date.now()+1};
-  const m2={id:uid(),name:'아들',color:'#6b7d3a',avatar:null,isMe:false,joined_at:Date.now()+2};
+  const m2={id:uid(),name:'아들',  color:'#6b7d3a',avatar:null,isMe:false,joined_at:Date.now()+2};
+  const m3={id:uid(),name:'딸',    color:'#c4a04a',avatar:null,isMe:false,joined_at:Date.now()+3};
   _data={
     roomName:'우리 가족',
-    members:[me,m1,m2],
+    members:[me,m1,m2,m3],
     events:[
-      {id:uid(),title:'가족식사',date:dateKey(y,m,5),time:'19:00',color:'red',members:[me.id,m1.id,m2.id],shared_id:'s1'},
-      {id:uid(),title:'요가',date:dateKey(y,m,7),time:'07:00',color:'sky',members:[m1.id]},
-      {id:uid(),title:'한강 데이트',date:dateKey(y,m,8),time:null,color:'mint',members:[me.id,m1.id],shared_id:'s2'},
-      {id:uid(),title:'점심 회식',date:dateKey(y,m,10),time:'12:00',color:'orange',members:[me.id]},
-      {id:uid(),title:'마라탕',date:dateKey(y,m,10),time:'19:00',color:'forest',members:[me.id,m1.id],shared_id:'s3'},
-      {id:uid(),title:'오후 반차',date:dateKey(y,m,10),time:null,color:'sky',members:[me.id]},
-      {id:uid(),title:'헬스',date:dateKey(y,m,12),time:'20:00',color:'orange',members:[m1.id]},
-      {id:uid(),title:'생일 🎂',date:dateKey(y,m,13),time:null,color:'sky',members:[me.id,m1.id,m2.id],shared_id:'s4'},
-      {id:uid(),title:'영화보기',date:dateKey(y,m,18),time:'20:00',color:'mint',members:[me.id,m1.id],shared_id:'s5'},
-      {id:uid(),title:'피부과',date:dateKey(y,m,20),time:'14:00',color:'sky',members:[m1.id]},
-      {id:uid(),title:'캠핑',date:dateKey(y,m,23),time:null,color:'forest',members:[me.id,m1.id,m2.id],shared_id:'s6'},
-      {id:uid(),title:'이사 준비',date:dateKey(y,m,28),time:null,color:'orange',members:[me.id,m1.id],shared_id:'s7'},
+      // 가족 함께 (4명 모두)
+      {id:uid(),title:'가족식사',     date:dateKey(y,m,5),  time:'19:00',color:'blush', members:[me.id,m1.id,m2.id,m3.id],shared_id:'s1'},
+      {id:uid(),title:'캠핑',         date:dateKey(y,m,23), time:null,   color:'mint',  members:[me.id,m1.id,m2.id,m3.id],shared_id:'s2'},
+      {id:uid(),title:'한강 산책',    date:dateKey(y,m,11), time:'17:00',color:'sky',   members:[me.id,m1.id,m2.id,m3.id],shared_id:'s3'},
+      // 부부 함께
+      {id:uid(),title:'한강 데이트',  date:dateKey(y,m,8),  time:null,   color:'lilac', members:[me.id,m1.id],shared_id:'s4'},
+      {id:uid(),title:'마라탕',       date:dateKey(y,m,10), time:'19:00',color:'peach', members:[me.id,m1.id],shared_id:'s5'},
+      {id:uid(),title:'영화보기',     date:dateKey(y,m,18), time:'20:00',color:'lilac', members:[me.id,m1.id],shared_id:'s6'},
+      {id:uid(),title:'이사 준비',    date:dateKey(y,m,28), time:null,   color:'butter',members:[me.id,m1.id],shared_id:'s7'},
+      // 이원석
+      {id:uid(),title:'점심 회식',    date:dateKey(y,m,10), time:'12:00',color:'sky',   members:[me.id]},
+      {id:uid(),title:'오후 반차',    date:dateKey(y,m,10), time:null,   color:'butter',members:[me.id]},
+      {id:uid(),title:'출장',         date:dateKey(y,m,16), time:'09:00',color:'sky',   members:[me.id]},
+      {id:uid(),title:'동창 모임',    date:dateKey(y,m,22), time:'19:00',color:'sky',   members:[me.id]},
+      // 정선주
+      {id:uid(),title:'요가',         date:dateKey(y,m,7),  time:'07:00',color:'peach', members:[m1.id]},
+      {id:uid(),title:'헬스',         date:dateKey(y,m,12), time:'20:00',color:'peach', members:[m1.id]},
+      {id:uid(),title:'피부과',       date:dateKey(y,m,20), time:'14:00',color:'blush', members:[m1.id]},
+      {id:uid(),title:'미용실',       date:dateKey(y,m,26), time:'15:00',color:'peach', members:[m1.id]},
+      // 아들
+      {id:uid(),title:'학원',         date:dateKey(y,m,6),  time:'17:00',color:'mint',  members:[m2.id]},
+      {id:uid(),title:'친구 약속',    date:dateKey(y,m,15), time:'14:00',color:'butter',members:[m2.id]},
+      {id:uid(),title:'축구',         date:dateKey(y,m,19), time:'16:00',color:'mint',  members:[m2.id]},
+      // 딸
+      {id:uid(),title:'발레',         date:dateKey(y,m,4),  time:'17:00',color:'blush', members:[m3.id]},
+      {id:uid(),title:'친구 생일 🎂', date:dateKey(y,m,13), time:'13:00',color:'butter',members:[m3.id]},
+      {id:uid(),title:'도서관',       date:dateKey(y,m,21), time:'15:00',color:'lilac', members:[m3.id]},
+      {id:uid(),title:'피아노',       date:dateKey(y,m,27), time:'16:30',color:'blush', members:[m3.id]},
     ],
   };
   saveData();
