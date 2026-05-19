@@ -367,10 +367,9 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .cal-room-name::after{content:' ▾';font-size:15px;opacity:.55;margin-left:4px;vertical-align:1px;font-family:-apple-system,system-ui,sans-serif;font-weight:600}
 
 /* 방 전환 드롭다운 */
-.cal-room-info{position:relative}
 .rs-dropdown-overlay{position:fixed;inset:0;z-index:80;display:none}
 .rs-dropdown-overlay.on{display:block}
-.rs-dropdown{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:8px;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.15);min-width:180px;max-width:260px;padding:6px;display:none;z-index:90;max-height:60vh;overflow-y:auto}
+.rs-dropdown{position:fixed;top:0;left:0;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.15);min-width:180px;max-width:260px;padding:6px;display:none;z-index:90;max-height:60vh;overflow-y:auto}
 .rs-dropdown.on{display:block}
 .rs-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:background .12s}
 .rs-row:active{background:var(--bg)}
@@ -1007,7 +1006,6 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
     <button class="cal-back" onclick="exitRoom()" title="방 목록으로">‹</button>
     <div class="cal-room-info">
       <div class="cal-room-name" id="calRoomName" onclick="openRoomSwitcher()">방 이름</div>
-      <div class="rs-dropdown" id="roomSwitcherDropdown"></div>
     </div>
     <div class="cal-actions">
       <button class="cal-avatar" id="calAvatar" onclick="openProfile()" title="프로필">—</button>
@@ -1092,6 +1090,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 
 <!-- 방 전환 드롭다운 overlay (외부 클릭 닫기용) -->
 <div class="rs-dropdown-overlay" id="roomSwitcherOverlay" onclick="closeRoomSwitcher()"></div>
+<div class="rs-dropdown" id="roomSwitcherDropdown"></div>
 
 <!-- 날짜 시트 (그 날 일정 보기) -->
 <div class="mo-overlay" id="dpOverlay" onclick="closeDateSheet()"></div>
@@ -4572,8 +4571,31 @@ function closeNotifs(){
 function openRoomSwitcher(){
   if(!_myRooms||!_myRooms.length){toast('가입된 방이 없어요');return}
   renderRoomSwitcherList();
-  document.getElementById('roomSwitcherOverlay')?.classList.add('on');
-  document.getElementById('roomSwitcherDropdown')?.classList.add('on');
+  const overlay=document.getElementById('roomSwitcherOverlay');
+  const dropdown=document.getElementById('roomSwitcherDropdown');
+  const nameEl=document.getElementById('calRoomName');
+  if(!overlay||!dropdown||!nameEl)return;
+  // 방 이름 라벨 viewport 좌표 기준으로 바로 아래 배치
+  const rect=nameEl.getBoundingClientRect();
+  const centerX=rect.left+rect.width/2;
+  dropdown.style.top=(rect.bottom+8)+'px';
+  dropdown.style.left=centerX+'px';
+  dropdown.style.transform='translateX(-50%)';
+  // 화면 좌우 끝 클램프 (8px 여백)
+  overlay.classList.add('on');
+  dropdown.classList.add('on');
+  // 클램프는 표시 후 측정해야 정확
+  requestAnimationFrame(()=>{
+    const dRect=dropdown.getBoundingClientRect();
+    const pad=8;
+    if(dRect.left<pad){
+      dropdown.style.left=pad+'px';
+      dropdown.style.transform='none';
+    }else if(dRect.right>window.innerWidth-pad){
+      dropdown.style.left=(window.innerWidth-pad-dRect.width)+'px';
+      dropdown.style.transform='none';
+    }
+  });
 }
 function closeRoomSwitcher(){
   document.getElementById('roomSwitcherOverlay')?.classList.remove('on');
