@@ -364,16 +364,20 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .cal-room-info{flex:1;display:flex;align-items:center;min-width:0}
 .cal-room-name{font-family:'Noto Serif KR',serif;font-size:20px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.3px;cursor:pointer}
 .cal-room-name:active{opacity:.6}
-.cal-room-name::after{content:' ▾';font-size:11px;opacity:.45;margin-left:2px;vertical-align:2px;font-family:-apple-system,system-ui,sans-serif;font-weight:400}
+.cal-room-name::after{content:' ▾';font-size:15px;opacity:.55;margin-left:4px;vertical-align:1px;font-family:-apple-system,system-ui,sans-serif;font-weight:600}
 
-/* 방 전환 시트 */
-.rs-list{padding:4px 0 12px}
-.rs-row{display:flex;align-items:center;gap:12px;padding:12px 18px;background:var(--card);cursor:pointer;transition:background .12s}
+/* 방 전환 드롭다운 */
+.cal-room-info{position:relative}
+.rs-dropdown-overlay{position:fixed;inset:0;z-index:80;display:none}
+.rs-dropdown-overlay.on{display:block}
+.rs-dropdown{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:8px;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.15);min-width:180px;max-width:260px;padding:6px;display:none;z-index:90;max-height:60vh;overflow-y:auto}
+.rs-dropdown.on{display:block}
+.rs-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:background .12s}
 .rs-row:active{background:var(--bg)}
 .rs-row.current{background:var(--aP)}
-.rs-row-name{flex:1;font-size:15px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rs-row-check{color:var(--accent);font-size:14px;font-weight:700}
-.rs-empty{padding:30px 20px;text-align:center;color:var(--sub);font-size:13px}
+.rs-row-name{flex:1;font-size:14px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rs-row-check{color:var(--accent);font-size:13px;font-weight:700;flex-shrink:0}
+.rs-empty{padding:20px 12px;text-align:center;color:var(--sub);font-size:12px}
 .cal-avatar{width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--card);cursor:pointer;border:none;font-family:inherit;flex-shrink:0;transition:opacity .15s;position:relative;z-index:2}
 .cal-actions{display:flex;align-items:center;gap:4px;flex-shrink:0;position:relative;z-index:2}
 .cal-avatar:active{opacity:.7}
@@ -1003,6 +1007,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
     <button class="cal-back" onclick="exitRoom()" title="방 목록으로">‹</button>
     <div class="cal-room-info">
       <div class="cal-room-name" id="calRoomName" onclick="openRoomSwitcher()">방 이름</div>
+      <div class="rs-dropdown" id="roomSwitcherDropdown"></div>
     </div>
     <div class="cal-actions">
       <button class="cal-avatar" id="calAvatar" onclick="openProfile()" title="프로필">—</button>
@@ -1085,13 +1090,8 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
   </div>
 </div>
 
-<!-- 방 전환 시트 -->
-<div class="mo-overlay" id="roomSwitcherOverlay" onclick="closeRoomSwitcher()"></div>
-<div class="mo-card" id="roomSwitcherCard">
-  <div class="mo-handle"></div>
-  <div class="mo-title" style="margin-bottom:8px">방 이동</div>
-  <div class="rs-list" id="roomSwitcherList"></div>
-</div>
+<!-- 방 전환 드롭다운 overlay (외부 클릭 닫기용) -->
+<div class="rs-dropdown-overlay" id="roomSwitcherOverlay" onclick="closeRoomSwitcher()"></div>
 
 <!-- 날짜 시트 (그 날 일정 보기) -->
 <div class="mo-overlay" id="dpOverlay" onclick="closeDateSheet()"></div>
@@ -1930,9 +1930,10 @@ async function loadRooms(){
     tryEnterPendingRoom();
     // 초대 링크로 들어왔으면 입장 확인
     tryHandlePendingJoin();
-    // 마지막 진입 방 자동 복원 — pending(알림/초대코드)이 없을 때만
+    // 마지막 진입 방 자동 복원 — 세션당 1회, pending(알림/초대코드)이 없을 때만
     try{
-      if(!_currentRoom && !_pendingRoomId && !_pendingJoinCode){
+      if(!_autoEnteredOnce && !_currentRoom && !_pendingRoomId && !_pendingJoinCode){
+        _autoEnteredOnce=true;
         const lastRoomId=localStorage.getItem('lastRoomId');
         if(lastRoomId && (rooms||[]).some(r=>r.id===lastRoomId)){
           enterRoom(lastRoomId);
@@ -2554,6 +2555,7 @@ supa.auth.onAuthStateChange((event,session)=>{
 
 /* 글로벌 상태 */
 let _myRooms=[];          // loadRooms 결과 캐시
+let _autoEnteredOnce=false; // 세션당 1회만 lastRoomId 자동 진입
 let _currentRoom=null;    // 진입한 방
 let _pendingRoomId=null;  // 알림 클릭으로 진입할 방 (URL ?room=xxx 또는 SW 메시지)
 let _pendingJoinCode=null;// 초대 링크로 입장할 방 코드 (URL ?join=XXXXXX)
@@ -4552,19 +4554,19 @@ function closeNotifs(){
   document.getElementById('notifCard')?.classList.remove('on');
 }
 
-/* 방 전환 시트 */
+/* 방 전환 드롭다운 */
 function openRoomSwitcher(){
   if(!_myRooms||!_myRooms.length){toast('가입된 방이 없어요');return}
   renderRoomSwitcherList();
   document.getElementById('roomSwitcherOverlay')?.classList.add('on');
-  document.getElementById('roomSwitcherCard')?.classList.add('on');
+  document.getElementById('roomSwitcherDropdown')?.classList.add('on');
 }
 function closeRoomSwitcher(){
   document.getElementById('roomSwitcherOverlay')?.classList.remove('on');
-  document.getElementById('roomSwitcherCard')?.classList.remove('on');
+  document.getElementById('roomSwitcherDropdown')?.classList.remove('on');
 }
 function renderRoomSwitcherList(){
-  const listEl=document.getElementById('roomSwitcherList');
+  const listEl=document.getElementById('roomSwitcherDropdown');
   if(!listEl)return;
   const cur=_currentRoom?_currentRoom.id:null;
   const rooms=_myRooms||[];
@@ -4585,7 +4587,7 @@ function renderRoomSwitcherList(){
 }
 function switchToRoom(roomId){
   closeRoomSwitcher();
-  if(_currentRoom&&_currentRoom.id===roomId)return; // 같은 방이면 무시
+  if(_currentRoom&&_currentRoom.id===roomId)return;
   enterRoom(roomId);
 }
 
