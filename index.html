@@ -523,12 +523,13 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .notif-clear-btn{background:transparent;border:none;color:var(--sub);font-size:12px;font-family:inherit;cursor:pointer;padding:4px 8px;border-radius:6px;transition:background .12s}
 .notif-clear-btn:active{background:rgba(139,58,42,.1)}
 .notif-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding-bottom:8px;margin-top:4px}
-.notif-row{display:flex;align-items:flex-start;gap:10px;padding:12px 12px 12px 14px;border-radius:12px;background:rgba(0,0,0,.025);cursor:pointer;border:1px solid var(--borderL);transition:background .12s;position:relative}
+.notif-row{display:flex;align-items:flex-start;gap:10px;padding:12px 12px 12px 14px;border-radius:12px;background:rgba(0,0,0,.025);cursor:pointer;border:1px solid var(--borderL);transition:background .12s,opacity .15s;position:relative;opacity:.55}
 .notif-row:active{background:rgba(139,58,42,.08)}
-.notif-row.unread{background:rgba(139,58,42,.06)}
+.notif-row.unread{background:rgba(139,58,42,.07);opacity:1;border-color:rgba(139,58,42,.18)}
 .notif-row.unread::before{content:'';position:absolute;left:6px;top:50%;transform:translateY(-50%);width:6px;height:6px;border-radius:50%;background:var(--accent)}
 .notif-row-main{flex:1;min-width:0}
 .notif-row-title{font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.2px}
+.notif-row.unread .notif-row-title{font-weight:700}
 .notif-row-body{font-size:12px;color:var(--sub);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .notif-row-time{font-size:10px;color:var(--mute);margin-top:4px;font-variant-numeric:tabular-nums}
 .notif-row-room{font-size:9px;padding:2px 7px;border-radius:6px;background:rgba(176,135,66,.18);color:var(--gold);font-weight:600;flex-shrink:0;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;align-self:flex-start;margin-top:2px}
@@ -4431,8 +4432,7 @@ async function openNotifs(){
   document.getElementById('notifOverlay')?.classList.add('on');
   document.getElementById('notifCard')?.classList.add('on');
   await loadNotifs();
-  // 시트 열면 안 읽은 거 일괄 read 처리
-  markAllNotifsRead();
+  // 자동 일괄 read 제거 — 클릭한 알림만 read 처리됨
 }
 
 function closeNotifs(){
@@ -4533,15 +4533,16 @@ async function onNotifClick(notifId){
     }
     return;
   }
-  // 다른 방이면 enterRoom + pendingDate 처리
-  if(n.event_date){
-    try{sessionStorage.setItem('uricalv2.pendingDate',n.event_date)}catch(e){}
+  // 다른 방이면 _pendingJumpDate 설정 후 enterRoom (enterRoom 내부에서 자동 처리)
+  if(n.event_date&&/^\d{4}-\d{2}-\d{2}$/.test(n.event_date)){
+    _pendingJumpDate=n.event_date;
   }
   // 내 방 목록에 있으면 진입
   if(_myRooms&&_myRooms.find(r=>r.id===n.room_id)){
     enterRoom(n.room_id);
   }else{
     toast('해당 방에 더 이상 속해있지 않아요');
+    _pendingJumpDate=null;
   }
 }
 
