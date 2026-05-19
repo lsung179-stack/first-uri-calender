@@ -688,7 +688,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .dp-arrow:disabled{opacity:.22;cursor:not-allowed}
 .dp-reaction-chip{
   display:inline-flex;align-items:center;gap:3px;
-  padding:2px 3px 2px 7px;background:var(--bg);border:1px solid var(--border);
+  padding:2px 7px 2px 3px;background:var(--bg);border:1px solid var(--border);
   border-radius:14px;font-size:12px;cursor:pointer;line-height:1;
   transition:all .12s;
 }
@@ -3638,7 +3638,7 @@ function renderDateSheetList(){
         const clickHandler=isMineR?`onclick="event.stopPropagation();openEmojiPick('${ev.id}')"`:'';
         const avInnerR=m&&m.avatar_url?`<img src="${escapeHtml(m.avatar_url)}" alt="">`:escapeHtml((m?.name||'·').slice(0,1));
         const avBgR=escapeHtml(m?.color||'#8b3a2a');
-        reactionHtml+=`<span class="dp-reaction-chip${isMineR?' mine':''}" ${clickHandler} title="${escapeHtml(m?.name||'')}">${r.emoji}<span class="dp-reaction-chip-av" style="background:${avBgR}">${avInnerR}</span></span>`;
+        reactionHtml+=`<span class="dp-reaction-chip${isMineR?' mine':''}" ${clickHandler} title="${escapeHtml(m?.name||'')}"><span class="dp-reaction-chip-av" style="background:${avBgR}">${avInnerR}</span>${r.emoji}</span>`;
       });
       // 본인이 아직 반응 안 달았으면 + 버튼 (누구의 일정이든)
       if(!myReaction){
