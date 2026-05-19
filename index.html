@@ -4532,10 +4532,16 @@ async function onNotifClick(notifId){
       refreshNotifBadge();
     }).catch(e=>console.warn(e));
   }
-  // 같은 방 안이면 바로 dateSheet (전체 탭으로 전환해서 누구 일정이든 보이게)
+  // 알림 발송자 멤버 탭으로 진입 (없으면 'all' fallback)
+  const targetMember=n.actor_user_id||'all';
+
+  // 같은 방 안이면 바로 dateSheet
   if(_currentRoom&&_currentRoom.id===n.room_id){
-    if(_viewingMember!=='all'){
-      _viewingMember='all';
+    // actor가 현재 방 멤버에 있는지 확인
+    const actorExists=(_myMembers||[]).some(m=>m.user_id===targetMember);
+    const newView=(targetMember==='all'||actorExists)?targetMember:'all';
+    if(_viewingMember!==newView){
+      _viewingMember=newView;
       try{renderMemberTabs();renderMonthly();}catch(e){}
     }
     if(n.event_date){
@@ -4547,7 +4553,7 @@ async function onNotifClick(notifId){
   if(n.event_date&&/^\d{4}-\d{2}-\d{2}$/.test(n.event_date)){
     _pendingJumpDate=n.event_date;
   }
-  _pendingViewingMember='all';  // 전체 탭으로 진입 → 누구 일정이든 보임
+  _pendingViewingMember=targetMember;  // actor 멤버 탭 (없으면 enterRoom 내부에서 'all'로 fallback)
   // 내 방 목록에 있으면 진입
   if(_myRooms&&_myRooms.find(r=>r.id===n.room_id)){
     enterRoom(n.room_id);
