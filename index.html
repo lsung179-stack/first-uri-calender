@@ -458,7 +458,14 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .dp-item{display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fdf6e8;border:1px solid var(--borderL);border-radius:12px}
 .dp-bar{width:4px;height:36px;border-radius:2px;background:var(--accent);flex-shrink:0}
 .dp-info{flex:1;min-width:0}
-.dp-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dp-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px;line-height:1.35;word-break:break-word}
+.dp-meta{font-size:11px;color:var(--sub);margin-top:4px;line-height:1.4;letter-spacing:.2px}
+.dp-members-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.dp-member-chip{display:inline-flex;align-items:center;gap:5px;background:rgba(139,58,42,.06);padding:3px 9px 3px 3px;border-radius:12px;font-size:11px;color:var(--text);font-weight:500;line-height:1;max-width:140px}
+.dp-member-chip-av{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:700;overflow:hidden;flex-shrink:0;font-family:'Noto Serif KR',serif}
+.dp-member-chip-av img{width:100%;height:100%;object-fit:cover;display:block}
+.dp-member-chip-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dp-member-chip-more{padding:3px 9px;background:rgba(139,58,42,.04);color:var(--sub);font-weight:600}
 .dp-time{font-size:11px;color:var(--sub)}
 .dp-actions{display:flex;gap:6px;flex-shrink:0}
 .dp-btn{background:none;border:none;cursor:pointer;font-size:12px;font-family:inherit;padding:6px 8px;color:var(--sub);border-radius:6px}
@@ -3576,17 +3583,23 @@ function renderDateSheetList(){
     const isVirtual=ev._isVirtual;
     const t=escapeHtml(ev.title||'');
     const tm=ev.time?escapeHtml(ev.time):'';
-    let sharedTag='';
+    let memberChipsHtml='';
     if(ev._isShared){
       const ids=ev._memberIds||[];
-      const names=ids.map(uid=>{
+      const maxShow=4;
+      const shown=ids.slice(0,maxShow);
+      const remaining=ids.length-shown.length;
+      const chipParts=shown.map(uid=>{
         const m=(_myMembers||[]).find(mm=>mm.user_id===uid);
-        return m?(m.name||'').trim():'';
-      }).filter(n=>n);
-      if(names.length<=3){
-        sharedTag=`<span class="dp-shared-tag">함께 · ${escapeHtml(names.join(', '))}</span>`;
-      }else{
-        sharedTag=`<span class="dp-shared-tag">함께 · ${escapeHtml(names.slice(0,2).join(', '))} 외 ${names.length-2}명</span>`;
+        if(!m)return '';
+        const name=(m.name||'').trim();
+        const initial=escapeHtml(name.slice(0,1)||'·');
+        const avInner=m.avatar_url?`<img src="${escapeHtml(m.avatar_url)}" alt="">`:initial;
+        return `<span class="dp-member-chip"><span class="dp-member-chip-av" style="background:${escapeHtml(m.color||'#8b3a2a')}">${avInner}</span><span class="dp-member-chip-name">${escapeHtml(name)}</span></span>`;
+      }).join('');
+      const moreChip=remaining>0?`<span class="dp-member-chip dp-member-chip-more">+${remaining}명</span>`:'';
+      if(chipParts||moreChip){
+        memberChipsHtml=`<div class="dp-members-chips">${chipParts}${moreChip}</div>`;
       }
     }
     const sharedCls=ev._isShared?' shared':'';
@@ -3630,11 +3643,14 @@ function renderDateSheetList(){
     }
     const reactionRow=reactionHtml?`<div class="dp-reaction-row">${reactionHtml}</div>`:'';
     
+    const metaRow=tm?`<div class="dp-meta">${tm}</div>`:'';
+
     html+=`<div class="dp-item${sharedCls}">
       <div class="dp-bar" style="background:${hex}"></div>
       <div class="dp-info">
-        <div class="dp-title">${t}${sharedTag}${virtualTag}</div>
-        ${tm?`<div class="dp-time">${tm}</div>`:''}
+        <div class="dp-title">${t}${virtualTag}</div>
+        ${metaRow}
+        ${memberChipsHtml}
         ${reactionRow}
       </div>
       ${orderHtml}
@@ -3721,6 +3737,16 @@ function openAddEvent(){
   _selectedMode='day';
   _editGroup=[];
   _multiSelected=new Set();
+  // 모드 버튼 표시 reset — 직전 수정에서 숨겨졌을 수 있음
+  const dayBtnN=document.getElementById('evModeDay');
+  const multiBtnN=document.getElementById('evModeMulti');
+  if(dayBtnN)dayBtnN.style.display='';
+  if(multiBtnN){
+    multiBtnN.style.display='';
+    multiBtnN.style.opacity='';
+    multiBtnN.style.pointerEvents='';
+    multiBtnN.title='';
+  }
   document.getElementById('evModalTitle').textContent='새 일정 추가';
   const dt=parseDateKey(_selectedDate);
   document.getElementById('evModalDate').textContent=`${dt.getMonth()+1}월 ${dt.getDate()}일 ${DOW_NAMES[dt.getDay()]}요일`;
