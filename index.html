@@ -364,6 +364,16 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .cal-room-info{flex:1;display:flex;align-items:center;min-width:0}
 .cal-room-name{font-family:'Noto Serif KR',serif;font-size:20px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.3px;cursor:pointer}
 .cal-room-name:active{opacity:.6}
+.cal-room-name::after{content:' ▾';font-size:11px;opacity:.45;margin-left:2px;vertical-align:2px;font-family:-apple-system,system-ui,sans-serif;font-weight:400}
+
+/* 방 전환 시트 */
+.rs-list{padding:4px 0 12px}
+.rs-row{display:flex;align-items:center;gap:12px;padding:12px 18px;background:var(--card);cursor:pointer;transition:background .12s}
+.rs-row:active{background:var(--bg)}
+.rs-row.current{background:var(--aP)}
+.rs-row-name{flex:1;font-size:15px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rs-row-check{color:var(--accent);font-size:14px;font-weight:700}
+.rs-empty{padding:30px 20px;text-align:center;color:var(--sub);font-size:13px}
 .cal-avatar{width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--card);cursor:pointer;border:none;font-family:inherit;flex-shrink:0;transition:opacity .15s;position:relative;z-index:2}
 .cal-actions{display:flex;align-items:center;gap:4px;flex-shrink:0;position:relative;z-index:2}
 .cal-avatar:active{opacity:.7}
@@ -992,7 +1002,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
   <div class="cal-header">
     <button class="cal-back" onclick="exitRoom()" title="방 목록으로">‹</button>
     <div class="cal-room-info">
-      <div class="cal-room-name" id="calRoomName">방 이름</div>
+      <div class="cal-room-name" id="calRoomName" onclick="openRoomSwitcher()">방 이름</div>
     </div>
     <div class="cal-actions">
       <button class="cal-avatar" id="calAvatar" onclick="openProfile()" title="프로필">—</button>
@@ -1073,6 +1083,14 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
   <div class="notif-list" id="notifList">
     <div class="notif-empty">알림을 불러오고 있어요…</div>
   </div>
+</div>
+
+<!-- 방 전환 시트 -->
+<div class="mo-overlay" id="roomSwitcherOverlay" onclick="closeRoomSwitcher()"></div>
+<div class="mo-card" id="roomSwitcherCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title" style="margin-bottom:8px">방 이동</div>
+  <div class="rs-list" id="roomSwitcherList"></div>
 </div>
 
 <!-- 날짜 시트 (그 날 일정 보기) -->
@@ -1912,6 +1930,15 @@ async function loadRooms(){
     tryEnterPendingRoom();
     // 초대 링크로 들어왔으면 입장 확인
     tryHandlePendingJoin();
+    // 마지막 진입 방 자동 복원 — pending(알림/초대코드)이 없을 때만
+    try{
+      if(!_currentRoom && !_pendingRoomId && !_pendingJoinCode){
+        const lastRoomId=localStorage.getItem('lastRoomId');
+        if(lastRoomId && (rooms||[]).some(r=>r.id===lastRoomId)){
+          enterRoom(lastRoomId);
+        }
+      }
+    }catch(_){}
     // 안 읽은 알림 배지 갱신 (fire-and-forget)
     refreshNotifBadge();
   }catch(e){
@@ -2091,6 +2118,8 @@ function enterRoom(roomId){
   if(!room){toast('방 정보를 찾지 못했어요');return}
   _currentRoom=room;
   _myMembers=[];  // 이전 방 데이터 초기화
+  // 마지막 진입 방 ID 저장 — 앱 재시작 시 자동 진입용
+  try{localStorage.setItem('lastRoomId',roomId)}catch(_){}
 
   // 알림 클릭으로 진입할 때 가고 싶은 멤버 탭 — 멤버 로드 후 강제 재설정용으로 변수 따로 저장
   const wantedMember=_pendingViewingMember;
@@ -4521,6 +4550,43 @@ async function openNotifs(){
 function closeNotifs(){
   document.getElementById('notifOverlay')?.classList.remove('on');
   document.getElementById('notifCard')?.classList.remove('on');
+}
+
+/* 방 전환 시트 */
+function openRoomSwitcher(){
+  if(!_myRooms||!_myRooms.length){toast('가입된 방이 없어요');return}
+  renderRoomSwitcherList();
+  document.getElementById('roomSwitcherOverlay')?.classList.add('on');
+  document.getElementById('roomSwitcherCard')?.classList.add('on');
+}
+function closeRoomSwitcher(){
+  document.getElementById('roomSwitcherOverlay')?.classList.remove('on');
+  document.getElementById('roomSwitcherCard')?.classList.remove('on');
+}
+function renderRoomSwitcherList(){
+  const listEl=document.getElementById('roomSwitcherList');
+  if(!listEl)return;
+  const cur=_currentRoom?_currentRoom.id:null;
+  const rooms=_myRooms||[];
+  if(!rooms.length){
+    listEl.innerHTML='<div class="rs-empty">가입된 방이 없어요</div>';
+    return;
+  }
+  let html='';
+  rooms.forEach(r=>{
+    const isCur=r.id===cur;
+    const name=escapeHtml(r.name||'(이름 없음)');
+    html+=`<div class="rs-row${isCur?' current':''}" onclick="switchToRoom('${r.id}')">
+      <div class="rs-row-name">${name}</div>
+      ${isCur?'<div class="rs-row-check">✓</div>':''}
+    </div>`;
+  });
+  listEl.innerHTML=html;
+}
+function switchToRoom(roomId){
+  closeRoomSwitcher();
+  if(_currentRoom&&_currentRoom.id===roomId)return; // 같은 방이면 무시
+  enterRoom(roomId);
 }
 
 /* 알림 목록 fetch + 렌더 */
