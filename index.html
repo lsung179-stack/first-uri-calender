@@ -1935,8 +1935,15 @@ async function loadRooms(){
       if(!_autoEnteredOnce && !_currentRoom && !_pendingRoomId && !_pendingJoinCode){
         _autoEnteredOnce=true;
         const lastRoomId=localStorage.getItem('lastRoomId');
-        if(lastRoomId && (rooms||[]).some(r=>r.id===lastRoomId)){
+        const found=lastRoomId && (rooms||[]).some(r=>r.id===lastRoomId);
+        if(found){
           enterRoom(lastRoomId);
+        }else if(lastRoomId){
+          // 미리 캘린더 화면으로 갔는데 방을 못 찾았으면 방 목록으로 fallback
+          localStorage.removeItem('lastRoomId');
+          if(document.getElementById('calendarScreen')?.classList.contains('on')){
+            showScreen('roomsScreen');
+          }
         }
       }
     }catch(_){}
@@ -2540,7 +2547,14 @@ supa.auth.onAuthStateChange((event,session)=>{
       return;
     }
     renderUser(session.user);
-    showScreen('roomsScreen');
+    // 마지막 방 ID가 있으면 방 목록 깜빡임 없이 바로 캘린더 화면으로 (loadRooms 후 enterRoom이 데이터 채움)
+    let hasLastRoom=false;
+    try{hasLastRoom=!!localStorage.getItem('lastRoomId')}catch(_){}
+    if(hasLastRoom && !_pendingRoomId && !_pendingJoinCode){
+      showScreen('calendarScreen');
+    }else{
+      showScreen('roomsScreen');
+    }
     loadRooms();
     document.getElementById('loading').classList.add('hide');
   }else if(event==='SIGNED_OUT'){
