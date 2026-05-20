@@ -945,11 +945,13 @@ body.ff-pen .dp-memo{font-size:13px}
 
 /* 이모지 팩 미리보기 — 4개 그리드 (2×2) */
 .emoji-pack-preview{background:#fbf2e0;padding:8px}
-.emoji-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;width:100%;max-width:80px}
-.emoji-cell{
+.emoji-pack-preview .emoji-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;width:100%;max-width:80px}
+.emoji-pack-preview .emoji-cell{
   aspect-ratio:1;background:#fff;border-radius:10px;
   display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1;
+  overflow:hidden;
 }
+.emoji-pack-preview .emoji-cell svg{width:100%;height:100%;display:block}
 
 /* ═════════════════ 폰트 크기 조절 ═════════════════ */
 /* body.fs-small / body.fs-large 가 붙으면 일자 시트 + 캘린더 셀의 텍스트가 살짝 작/크게.
@@ -6930,14 +6932,35 @@ const STORE_COLORS=[
    colors:['#7b2d26','#a52a2a','#c44536','#e07a5f','#d4a373','#b58863','#886a3a','#5e3a1d']},
 ];
 
-/* 이모지 팩 — 일정 반응용 (전부 곧 출시. 실제 출시 시 커스텀 일러스트로 대체) */
+/* 캐릭터 이모지 SVG 데이터 — 모찌, 곰돌, 달콩 */
+const CHAR_SVG={
+  // ── 모찌 ──
+  'mochi:base':'<svg viewBox="0 0 200 200"><path d="M95 25 Q86 22 86 36 Q94 41 100 33 Z" fill="#7ba055" stroke="#5e3a1d" stroke-width="3"/><path d="M105 25 Q114 22 114 36 Q106 41 100 33 Z" fill="#7ba055" stroke="#5e3a1d" stroke-width="3"/><ellipse cx="100" cy="115" rx="74" ry="65" fill="#fdf6e8" stroke="#5e3a1d" stroke-width="4"/><ellipse cx="50" cy="128" rx="14" ry="11" fill="#ff9eb8" opacity="0.85"/><ellipse cx="150" cy="128" rx="14" ry="11" fill="#ff9eb8" opacity="0.85"/><ellipse cx="78" cy="108" rx="10" ry="13" fill="#5e3a1d"/><ellipse cx="122" cy="108" rx="10" ry="13" fill="#5e3a1d"/><circle cx="81" cy="103" r="4" fill="#fdf6e8"/><circle cx="125" cy="103" r="4" fill="#fdf6e8"/><path d="M93 138 Q100 144 107 138" stroke="#5e3a1d" stroke-width="3.5" stroke-linecap="round" fill="none"/></svg>',
+  'mochi:happy':'<svg viewBox="0 0 200 200"><path d="M95 25 Q86 22 86 36 Q94 41 100 33 Z" fill="#7ba055" stroke="#5e3a1d" stroke-width="3"/><path d="M105 25 Q114 22 114 36 Q106 41 100 33 Z" fill="#7ba055" stroke="#5e3a1d" stroke-width="3"/><ellipse cx="100" cy="115" rx="74" ry="65" fill="#fdf6e8" stroke="#5e3a1d" stroke-width="4"/><ellipse cx="50" cy="128" rx="17" ry="13" fill="#ff9eb8" opacity="0.95"/><ellipse cx="150" cy="128" rx="17" ry="13" fill="#ff9eb8" opacity="0.95"/><path d="M68 108 Q78 100 88 108" stroke="#5e3a1d" stroke-width="4.5" stroke-linecap="round" fill="none"/><path d="M112 108 Q122 100 132 108" stroke="#5e3a1d" stroke-width="4.5" stroke-linecap="round" fill="none"/><path d="M88 140 Q100 152 112 140" stroke="#5e3a1d" stroke-width="3.5" stroke-linecap="round" fill="none"/></svg>',
+  'mochi:love':'<svg viewBox="0 0 200 200"><path d="M95 25 Q86 22 86 36 Q94 41 100 33 Z" fill="#7ba055" stroke="#5e3a1d" stroke-width="3"/><path d="M105 25 Q114 22 114 36 Q106 41 100 33 Z" fill="#7ba055" stroke="#5e3a1d" stroke-width="3"/><ellipse cx="100" cy="115" rx="74" ry="65" fill="#fdf6e8" stroke="#5e3a1d" stroke-width="4"/><ellipse cx="50" cy="128" rx="14" ry="11" fill="#ff9eb8" opacity="0.85"/><ellipse cx="150" cy="128" rx="14" ry="11" fill="#ff9eb8" opacity="0.85"/><path d="M68 105 C68 99 78 97 78 105 C78 97 88 99 88 105 C88 113 78 122 78 122 C78 122 68 113 68 105Z" fill="#c44536" stroke="#5e3a1d" stroke-width="2.5"/><path d="M112 105 C112 99 122 97 122 105 C122 97 132 99 132 105 C132 113 122 122 122 122 C122 122 112 113 112 105Z" fill="#c44536" stroke="#5e3a1d" stroke-width="2.5"/><path d="M93 140 Q100 146 107 140" stroke="#5e3a1d" stroke-width="3.5" stroke-linecap="round" fill="none"/></svg>',
+  'mochi:sleep':'<svg viewBox="0 0 200 200"><path d="M95 25 Q86 22 86 36 Q94 41 100 33 Z" fill="#7ba055" stroke="#5e3a1d" stroke-width="3"/><path d="M105 25 Q114 22 114 36 Q106 41 100 33 Z" fill="#7ba055" stroke="#5e3a1d" stroke-width="3"/><ellipse cx="100" cy="115" rx="74" ry="65" fill="#fdf6e8" stroke="#5e3a1d" stroke-width="4"/><ellipse cx="50" cy="128" rx="14" ry="11" fill="#ff9eb8" opacity="0.85"/><ellipse cx="150" cy="128" rx="14" ry="11" fill="#ff9eb8" opacity="0.85"/><path d="M68 108 Q78 113 88 108" stroke="#5e3a1d" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M112 108 Q122 113 132 108" stroke="#5e3a1d" stroke-width="4" stroke-linecap="round" fill="none"/><ellipse cx="100" cy="143" rx="6" ry="4" fill="#5e3a1d"/></svg>',
+
+  // ── 곰돌 ──
+  'gomdol:base':'<svg viewBox="0 0 200 200"><circle cx="55" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="145" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="55" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="145" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="100" cy="115" r="62" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><ellipse cx="100" cy="132" rx="32" ry="25" fill="#fdf6e8" stroke="#5e3a1d" stroke-width="3.5"/><ellipse cx="50" cy="128" rx="11" ry="9" fill="#ff9eb8" opacity="0.85"/><ellipse cx="150" cy="128" rx="11" ry="9" fill="#ff9eb8" opacity="0.85"/><ellipse cx="78" cy="108" rx="9" ry="12" fill="#5e3a1d"/><ellipse cx="122" cy="108" rx="9" ry="12" fill="#5e3a1d"/><circle cx="80" cy="104" r="3.5" fill="#fdf6e8"/><circle cx="124" cy="104" r="3.5" fill="#fdf6e8"/><ellipse cx="100" cy="124" rx="6" ry="4.5" fill="#5e3a1d"/><line x1="100" y1="128" x2="100" y2="134" stroke="#5e3a1d" stroke-width="3"/></svg>',
+  'gomdol:happy':'<svg viewBox="0 0 200 200"><circle cx="55" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="145" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="55" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="145" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="100" cy="115" r="62" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><ellipse cx="100" cy="132" rx="32" ry="25" fill="#fdf6e8" stroke="#5e3a1d" stroke-width="3.5"/><ellipse cx="50" cy="128" rx="14" ry="11" fill="#ff9eb8" opacity="0.95"/><ellipse cx="150" cy="128" rx="14" ry="11" fill="#ff9eb8" opacity="0.95"/><path d="M68 108 Q78 100 88 108" stroke="#5e3a1d" stroke-width="4.5" stroke-linecap="round" fill="none"/><path d="M112 108 Q122 100 132 108" stroke="#5e3a1d" stroke-width="4.5" stroke-linecap="round" fill="none"/><ellipse cx="100" cy="124" rx="6" ry="4.5" fill="#5e3a1d"/><path d="M88 140 Q100 152 112 140" stroke="#5e3a1d" stroke-width="3.5" stroke-linecap="round" fill="none"/></svg>',
+  'gomdol:love':'<svg viewBox="0 0 200 200"><circle cx="55" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="145" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="55" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="145" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="100" cy="115" r="62" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><ellipse cx="100" cy="132" rx="32" ry="25" fill="#fdf6e8" stroke="#5e3a1d" stroke-width="3.5"/><ellipse cx="50" cy="128" rx="11" ry="9" fill="#ff9eb8" opacity="0.85"/><ellipse cx="150" cy="128" rx="11" ry="9" fill="#ff9eb8" opacity="0.85"/><path d="M68 103 C68 97 78 95 78 103 C78 95 88 97 88 103 C88 111 78 121 78 121 C78 121 68 111 68 103Z" fill="#c44536" stroke="#5e3a1d" stroke-width="2.5"/><path d="M112 103 C112 97 122 95 122 103 C122 95 132 97 132 103 C132 111 122 121 122 121 C122 121 112 111 112 103Z" fill="#c44536" stroke="#5e3a1d" stroke-width="2.5"/><ellipse cx="100" cy="124" rx="6" ry="4.5" fill="#5e3a1d"/><path d="M93 140 Q100 144 107 140" stroke="#5e3a1d" stroke-width="3" stroke-linecap="round" fill="none"/></svg>',
+  'gomdol:sleep':'<svg viewBox="0 0 200 200"><circle cx="55" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="145" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="55" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="145" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="100" cy="115" r="62" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><ellipse cx="100" cy="132" rx="32" ry="25" fill="#fdf6e8" stroke="#5e3a1d" stroke-width="3.5"/><ellipse cx="50" cy="128" rx="11" ry="9" fill="#ff9eb8" opacity="0.85"/><ellipse cx="150" cy="128" rx="11" ry="9" fill="#ff9eb8" opacity="0.85"/><path d="M68 108 Q78 113 88 108" stroke="#5e3a1d" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M112 108 Q122 113 132 108" stroke="#5e3a1d" stroke-width="4" stroke-linecap="round" fill="none"/><ellipse cx="100" cy="124" rx="6" ry="4.5" fill="#5e3a1d"/><ellipse cx="100" cy="142" rx="7" ry="5" fill="#5e3a1d"/></svg>',
+
+  // ── 달콩 ──
+  'dalkong:base':'<svg viewBox="0 0 200 200"><circle cx="100" cy="110" r="65" fill="#ffe9a8" stroke="#5e3a1d" stroke-width="3.5"/><circle cx="55" cy="75" r="9" fill="#f5d27a" opacity=".6"/><circle cx="155" cy="135" r="7" fill="#f5d27a" opacity=".6"/><circle cx="160" cy="80" r="5" fill="#f5d27a" opacity=".6"/><ellipse cx="55" cy="125" rx="9" ry="7" fill="#f5b8b8" opacity=".75"/><ellipse cx="145" cy="125" rx="9" ry="7" fill="#f5b8b8" opacity=".75"/><path d="M75 108 Q83 113 91 108" stroke="#5e3a1d" stroke-width="3.5" stroke-linecap="round" fill="none"/><path d="M109 108 Q117 113 125 108" stroke="#5e3a1d" stroke-width="3.5" stroke-linecap="round" fill="none"/><path d="M88 128 Q100 138 112 128" stroke="#5e3a1d" stroke-width="3.5" stroke-linecap="round" fill="none"/></svg>',
+  'dalkong:happy':'<svg viewBox="0 0 200 200"><path d="M170 35 L173 43 L181 44 L175 49 L177 57 L170 53 L163 57 L165 49 L159 44 L167 43 Z" fill="#ffd23f" stroke="#5e3a1d" stroke-width="2"/><circle cx="100" cy="110" r="65" fill="#ffe9a8" stroke="#5e3a1d" stroke-width="3.5"/><circle cx="55" cy="75" r="9" fill="#f5d27a" opacity=".6"/><ellipse cx="55" cy="125" rx="12" ry="9" fill="#f5b8b8" opacity=".9"/><ellipse cx="145" cy="125" rx="12" ry="9" fill="#f5b8b8" opacity=".9"/><ellipse cx="83" cy="108" rx="5" ry="6" fill="#5e3a1d"/><ellipse cx="117" cy="108" rx="5" ry="6" fill="#5e3a1d"/><circle cx="85" cy="105" r="1.5" fill="#ffe9a8"/><circle cx="119" cy="105" r="1.5" fill="#ffe9a8"/><path d="M82 130 Q100 150 118 130 Q100 142 82 130Z" fill="#c44536" stroke="#5e3a1d" stroke-width="2.5"/></svg>',
+  'dalkong:love':'<svg viewBox="0 0 200 200"><circle cx="100" cy="110" r="65" fill="#ffe9a8" stroke="#5e3a1d" stroke-width="3.5"/><ellipse cx="55" cy="125" rx="9" ry="7" fill="#f5b8b8" opacity=".75"/><ellipse cx="145" cy="125" rx="9" ry="7" fill="#f5b8b8" opacity=".75"/><path d="M73 100 C73 95 79 94 79 100 C79 94 85 95 85 100 C85 106 79 113 79 113 C79 113 73 106 73 100Z" fill="#c44536" stroke="#5e3a1d" stroke-width="2"/><path d="M115 100 C115 95 121 94 121 100 C121 94 127 95 127 100 C127 106 121 113 121 113 C121 113 115 106 115 100Z" fill="#c44536" stroke="#5e3a1d" stroke-width="2"/><path d="M88 128 Q100 138 112 128" stroke="#5e3a1d" stroke-width="3.5" stroke-linecap="round" fill="none"/></svg>',
+  'dalkong:sleep':'<svg viewBox="0 0 200 200"><circle cx="100" cy="110" r="65" fill="#ffe9a8" stroke="#5e3a1d" stroke-width="3.5"/><circle cx="55" cy="75" r="9" fill="#f5d27a" opacity=".6"/><ellipse cx="55" cy="125" rx="9" ry="7" fill="#f5b8b8" opacity=".75"/><ellipse cx="145" cy="125" rx="9" ry="7" fill="#f5b8b8" opacity=".75"/><path d="M75 108 Q83 113 91 108" stroke="#5e3a1d" stroke-width="3.5" stroke-linecap="round" fill="none"/><path d="M109 108 Q117 113 125 108" stroke="#5e3a1d" stroke-width="3.5" stroke-linecap="round" fill="none"/><ellipse cx="100" cy="138" rx="8" ry="5" fill="#5e3a1d"/><text x="148" y="55" font-family="sans-serif" font-size="22" fill="#5e3a1d" font-weight="700">Z</text></svg>',
+};
+
+/* SVG 이모지 헬퍼 — preview 키('mochi:base')로 SVG 문자열 반환 */
+function svgEmoji(key){ return CHAR_SVG[key]||''; }
+
+/* 이모지 팩 — 모찌 / 곰돌 / 달콩 캐릭터 팩 */
 const STORE_EMOJI=[
-  {key:'animals',  name:'동물 친구들', preview:['🐶','🐱','🐰','🐻']},
-  {key:'food',     name:'맛있는 음식', preview:['🍕','🍔','🍰','🍦']},
-  {key:'emotion',  name:'감정 표현',   preview:['😊','😍','🥳','😎']},
-  {key:'activity', name:'활동/취미',   preview:['⚽','🎮','🎨','📚']},
-  {key:'weather',  name:'날씨/계절',   preview:['☀️','🌧️','🌸','🌈']},
-  {key:'travel',   name:'여행',       preview:['✈️','🏖️','🗻','🎡']},
+  {key:'mochi',   name:'모찌',  desc:'떡 캐릭터',     preview:['mochi:base','mochi:happy','mochi:love','mochi:sleep']},
+  {key:'gomdol',  name:'곰돌',  desc:'곰 캐릭터',     preview:['gomdol:base','gomdol:happy','gomdol:love','gomdol:sleep']},
+  {key:'dalkong', name:'달콩',  desc:'달 캐릭터',     preview:['dalkong:base','dalkong:happy','dalkong:love','dalkong:sleep']},
 ];
 
 let _storeCurrentTab='theme';
@@ -7072,17 +7095,16 @@ function renderStoreColors(){
   body.innerHTML=html;
 }
 
-/* ── 이모지 팩 (곧 출시) ── */
+/* ── 이모지 팩 (캐릭터 미리보기 — 곧 일정 반응에 적용) ── */
 function renderStoreEmoji(){
   const body=document.getElementById('storeBody');
   if(!body)return;
-  let html='<div class="store-section-title">곧 출시 예정 <small>COMING SOON</small></div>';
+  let html='<div class="store-section-title">캐릭터 이모지 <small>CHARACTER PACK</small></div>';
   html+=`<div class="theme-grid-store">`;
   STORE_EMOJI.forEach(item=>{
-    const cells=item.preview.map(e=>`<span class="emoji-cell">${e}</span>`).join('');
+    const cells=item.preview.map(k=>`<span class="emoji-cell">${svgEmoji(k)}</span>`).join('');
     html+=`
-      <div class="theme-card locked" onclick="onLockedEmojiTap('${escapeHtml(item.name)}')">
-        <div class="theme-card-lock">🔒</div>
+      <div class="theme-card" onclick="onCharacterPackTap('${escapeHtml(item.name)}')">
         <div class="theme-preview emoji-pack-preview">
           <div class="emoji-grid">${cells}</div>
         </div>
@@ -7111,6 +7133,9 @@ function onLockedColorTap(name){
 }
 function onLockedEmojiTap(name){
   toast(`"${name}" 이모지 팩은 곧 출시 예정이에요`);
+}
+function onCharacterPackTap(name){
+  toast(`"${name}" 캐릭터 팩 — 곧 일정 반응에 사용할 수 있어요`);
 }
 
 /* ═══════════════════════════════════
