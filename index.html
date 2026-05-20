@@ -6665,6 +6665,9 @@ async function saveAnnouncement(){
   if(!title){ toast('제목을 입력해주세요'); return; }
   if(title.length>60){ toast('제목은 60자 이내로 입력해주세요'); return; }
   if(body.length>2000){ toast('본문은 2000자 이내로 입력해주세요'); return; }
+  
+  const wasNew=!_annEditId;  // 새 글 여부 기억 (저장 후 분기용)
+  
   try{
     if(_annEditId){
       const { error }=await supa
@@ -6678,12 +6681,19 @@ async function saveAnnouncement(){
         .from('announcements')
         .insert({ title, body, show_on_open });
       if(error){ console.error(error); toast('저장에 실패했어요'); return; }
-      toast('공지가 등록되었습니다');
+      toast(show_on_open?'등록 완료 — 이용자에겐 이렇게 보여요':'공지가 등록되었습니다');
     }
     closeAnnouncementCompose();
     await loadAnnouncements();
-    if(_annEditId)openAnnouncementDetail(_annEditId);
-    else renderAnnouncementList();
+    
+    // 새 공지 + show_on_open ON이면 → 자동 모달 효과 시뮬레이션 (시트 닫고 다시 슬라이드업)
+    if(wasNew&&show_on_open){
+      closeAnnouncements();
+      setTimeout(()=>openAnnouncements(), 500);
+    }else{
+      if(_annEditId)openAnnouncementDetail(_annEditId);
+      else renderAnnouncementList();
+    }
     syncAnnouncementBadge();
   }catch(e){ console.error(e); toast('오류가 발생했어요'); }
 }
