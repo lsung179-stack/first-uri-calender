@@ -3939,13 +3939,27 @@ async function loadEvents(){
 /* 캘린더 진입 시 이모지 반응 말풍선 통통튀기 애니메이션 (3~4초) */
 function showReactionAnimation(){
   if(!_events||!_reactions)return;
-  // 날짜별 반응 이모지 수집 (기간 일정은 첫날만)
+
+  // target_id별 가장 빠른 날짜 = 그 일정의 "첫날"
+  // (함께 기간: 같은 shared_id의 여러 날짜 중 가장 빠른 날)
+  // (단독 기간: 각 row가 별도 id라 자연스럽게 row별로 매핑)
+  const firstDateByTarget={};
+  Object.entries(_events).forEach(([date,evs])=>{
+    evs.forEach(ev=>{
+      const tid=ev.shared_id||ev.id;
+      if(!firstDateByTarget[tid]||date<firstDateByTarget[tid]){
+        firstDateByTarget[tid]=date;
+      }
+    });
+  });
+
+  // 첫날에만 반응 이모지 수집
   const byDate={};
   Object.entries(_events).forEach(([date,evs])=>{
     evs.forEach(ev=>{
-      // 기간 일정의 중간/마지막 날은 skip (start/single만 표시 = 첫날만)
-      if(ev._rangePos==='mid'||ev._rangePos==='end')return;
       const tid=ev.shared_id||ev.id;
+      // 이 일정의 첫날이 아니면 skip (기간 일정 중간/마지막 날)
+      if(firstDateByTarget[tid]!==date)return;
       const rs=_reactions[tid];
       if(!rs||!rs.length)return;
       if(!byDate[date])byDate[date]=new Set();
