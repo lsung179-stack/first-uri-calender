@@ -7,7 +7,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&family=Jua&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
-<meta name="color-scheme" content="light only" id="metaColorScheme">
+<meta name="color-scheme" content="only light" id="metaColorScheme">
+<meta name="supported-color-schemes" content="light">
 <meta name="theme-color" content="#f3e6cf">
 <script>
 /* 폰트 크기 즉시 적용: body 생성 후 가능한 빠른 시점에 클래스 부착 */
@@ -87,7 +88,8 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{background:#e5dec7}
-html,body{margin:0;padding:0;height:100%;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Pretendard","Apple SD Gothic Neo","Noto Sans KR",sans-serif;-webkit-font-smoothing:antialiased;color-scheme:light only;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Pretendard","Apple SD Gothic Neo","Noto Sans KR",sans-serif;-webkit-font-smoothing:antialiased;color-scheme:only light !important;forced-color-adjust:none !important;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+*{forced-color-adjust:none}
 body{background:var(--bg)}
 /* 사용자가 실제로 선택·복사·입력해야 하는 영역만 선택 허용 */
 input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-title-input,.j-input{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
@@ -1180,6 +1182,26 @@ body.align-right .cal-evbar{text-align:right}
   background:var(--accent);width:20px;border-radius:3px;
 }
 
+/* 캐릭터 상세 모달 — 8개 표정 그리드 */
+.char-expr-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
+  margin:8px 0 12px;
+}
+.char-expr-tile{
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:14px;padding:10px 4px 8px;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  aspect-ratio:1;
+}
+.char-expr-svg{
+  width:74%;flex:1;display:flex;align-items:center;justify-content:center;
+}
+.char-expr-svg svg{width:100%;height:100%;max-width:60px;max-height:60px;display:block}
+.char-expr-label{
+  font-size:10.5px;color:var(--text);font-weight:700;
+  line-height:1.2;text-align:center;
+}
+
 /* 방 설정 모달 (테마/방이름/멤버) */
 .rs-section{margin-bottom:18px}
 .rs-section-title{
@@ -1771,6 +1793,18 @@ body.align-right .cal-evbar{text-align:right}
   <div class="mo-actions">
     <button class="mo-cancel" onclick="removeMyReaction()">반응 제거</button>
     <button class="mo-cancel" onclick="closeEmojiPick()">닫기</button>
+  </div>
+</div>
+
+<!-- 캐릭터 상세 모달 (스토어에서 카드 클릭 시) -->
+<div class="mo-overlay" id="charDetailOverlay" onclick="closeCharDetail()"></div>
+<div class="mo-card" id="charDetailCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title" id="charDetailTitle">캐릭터</div>
+  <div class="mo-sub" id="charDetailSub">설명</div>
+  <div class="char-expr-grid" id="charDetailGrid"></div>
+  <div class="mo-actions">
+    <button class="mo-cancel" onclick="closeCharDetail()">닫기</button>
   </div>
 </div>
 
@@ -6338,7 +6372,7 @@ function renderEmojiPager(){
     /* ┌─ 추후 결제 시스템 도입 시 활성화 ─────────────────────────────
        │ user_unlocks에서 해제된 캐릭터 팩을 unlocked_at DESC 순으로 조회 후 추가
        │ const unlocked = await getUnlockedCharPacks(); // ['mochi','gomdol',...] 최근 구매 순
-       │ unlocked.forEach(ch => pages.push({key:ch, name:CHAR_NAMES[ch], emojis:charEmojiKeys(ch)}));
+       │ unlocked.forEach(ch => pages.push({key:ch, name:CHAR_META[ch].name, emojis:charEmojiKeys(ch)}));
        └────────────────────────────────────────────────────────────── */
   ];
   
@@ -7200,7 +7234,7 @@ function renderStoreEmoji(){
   STORE_EMOJI.forEach(item=>{
     const cells=item.preview.map(k=>`<span class="emoji-cell">${svgEmoji(k)}</span>`).join('');
     html+=`
-      <div class="theme-card" onclick="onCharacterPackTap('${escapeHtml(item.name)}')">
+      <div class="theme-card" onclick="openCharDetail('${escapeHtml(item.key)}')">
         <div class="theme-preview emoji-pack-preview">
           <div class="emoji-grid">${cells}</div>
         </div>
@@ -7231,7 +7265,35 @@ function onLockedEmojiTap(name){
   toast(`"${name}" 이모지 팩은 곧 출시 예정이에요`);
 }
 function onCharacterPackTap(name){
+  // 호환: 외부 호출이 있을 수 있어 유지. 상세 모달은 openCharDetail 사용.
   toast(`"${name}" 캐릭터 팩 — 곧 일정 반응에 사용할 수 있어요`);
+}
+
+/* ── 캐릭터 상세 모달 ── */
+const CHAR_META={
+  mochi:  {name:'모찌', identity:'떡의 정체성', desc:'말랑·콩고물·잎사귀·김', labels:{basic:'평온',warm:'모락모락',bounce:'통통튕김',dusty:'콩고물',chew:'우물우물',puff:'배부름',twins:'친구랑',shy:'부끄럼'}},
+  gomdol: {name:'곰돌', identity:'학자 곰의 일상', desc:'안경·책·꿀단지·머플러·카페', labels:{basic:'차분',honey:'꿀단지',reading:'독서중',ponder:'사색',scarf:'머플러',eureka:'아하!',drowsy:'책 위 졸음',flush:'안경김'}},
+  dalkong:{name:'달콩', identity:'달의 위상과 밤하늘', desc:'초승·반달·보름·별·광선', labels:{basic:'평온',crescent:'초승달',half:'반달',full:'보름달',stars:'별무리',shine:'빛나기',cloud:'구름가림',wish:'별똥별'}},
+};
+
+function openCharDetail(charKey){
+  const meta=CHAR_META[charKey];
+  if(!meta){toast('캐릭터를 찾지 못했어요');return}
+  const keys=charEmojiKeys(charKey);
+  const cells=keys.map(k=>{
+    const exprKey=k.split(':')[1];
+    const label=meta.labels[exprKey]||exprKey;
+    return `<div class="char-expr-tile"><div class="char-expr-svg">${svgEmoji(k)}</div><div class="char-expr-label">${escapeHtml(label)}</div></div>`;
+  }).join('');
+  document.getElementById('charDetailTitle').textContent=meta.name;
+  document.getElementById('charDetailSub').textContent=`${meta.identity} · ${meta.desc}`;
+  document.getElementById('charDetailGrid').innerHTML=cells;
+  document.getElementById('charDetailOverlay').classList.add('on');
+  document.getElementById('charDetailCard').classList.add('on');
+}
+function closeCharDetail(){
+  document.getElementById('charDetailOverlay').classList.remove('on');
+  document.getElementById('charDetailCard').classList.remove('on');
 }
 
 /* ═══════════════════════════════════

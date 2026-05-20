@@ -1,11 +1,12 @@
-/* 우리 캘린더 V2 — Service Worker (v3: 푸시 알림 지원) */
-const CACHE_NAME = 'uri-cal-v2-v7';
+/* 우리 캘린더 V2 — Service Worker (v4: monochrome badge + heads-up 강화) */
+const CACHE_NAME = 'uri-cal-v2-v8';
 const PRECACHE_URLS = [
   '/v2.html',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
   '/icon-180.png',
+  '/icon-monochrome.png',
   '/terms.html',
   '/privacy.html',
 ];
@@ -59,14 +60,17 @@ self.addEventListener('push', (e) => {
   const title = data.title || '우리 캘린더';
   const opts = {
     body: data.body || '',
-    icon: data.icon || '/icon-192.png',
-    badge: '/icon-192.png',
+    icon: data.icon || '/icon-192.png',          // 컬러 large icon (알림 본문 옆)
+    badge: '/icon-monochrome.png',                // monochrome small icon (상태바) ← v4 fix
     tag: data.tag || 'wuri-calendar',
     data: { url: data.url || '/' },
-    vibrate: [200, 100, 200],   // 갤럭시/안드 헤드업 알림 트리거
-    renotify: true,             // 같은 tag로 와도 다시 헤드업 표시
-    requireInteraction: false,
-    silent: false,
+    vibrate: [300, 200, 300, 200, 300],           // 더 강한 진동 → heads-up 트리거 유도
+    renotify: true,                               // 같은 tag로 와도 다시 알림
+    requireInteraction: true,                     // 자동 dismiss 막기 ← v4 추가
+    silent: false,                                // 소리 ON
+    actions: [                                    // expanded notification (heads-up 유도) ← v4 추가
+      { action: 'open', title: '열기' }
+    ],
   };
   
   e.waitUntil(self.registration.showNotification(title, opts));
