@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&family=Jua&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <meta name="color-scheme" content="light only" id="metaColorScheme">
 <meta name="theme-color" content="#f3e6cf">
 <script>
@@ -15,6 +16,17 @@
     var fs=localStorage.getItem('uricalv2.fontSize');
     if(fs==='small'||fs==='large'){
       var apply=function(){if(document.body)document.body.classList.add('fs-'+fs)};
+      if(document.body)apply();
+      else document.addEventListener('DOMContentLoaded',apply,{once:true});
+    }
+  }catch(e){}
+})();
+/* 글꼴 즉시 적용: 일정 텍스트용 폰트 클래스 부착 */
+(function(){
+  try{
+    var ff=localStorage.getItem('uricalv2.fontFamily');
+    if(ff==='pretendard'||ff==='jua'||ff==='pen'){
+      var apply=function(){if(document.body)document.body.classList.add('ff-'+ff)};
       if(document.body)apply();
       else document.addEventListener('DOMContentLoaded',apply,{once:true});
     }
@@ -786,9 +798,52 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 
 /* 다크모드 row (이미 있을 수도 있지만 안전하게 정의) */
 .dm-row{display:flex;gap:6px;margin-top:2px}
+.dm-row.dm-row-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
 .dm-btn{flex:1;padding:9px 0;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--sub);cursor:pointer;transition:all .12s}
 .dm-btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .dm-btn:active{transform:scale(.96)}
+/* 글꼴 버튼은 각 버튼이 해당 폰트로 표시되어 미리보기 역할 */
+.dm-btn.ff-pretendard{font-family:"Pretendard Variable","Pretendard",-apple-system,sans-serif}
+.dm-btn.ff-jua{font-family:"Jua",sans-serif}
+.dm-btn.ff-pen{font-family:"Nanum Pen Script",cursive;font-size:15px;letter-spacing:.5px}
+
+/* ═════════════════ 글꼴 적용 (일정 텍스트만) ═════════════════ */
+/* 일정바, 일자 시트의 일정 제목·메모·시간, 일정 입력 폼만 영향. 헤더·메뉴는 기본 */
+body.ff-pretendard .cal-evbar,
+body.ff-pretendard .dp-title,
+body.ff-pretendard .dp-meta,
+body.ff-pretendard .dp-memo,
+body.ff-pretendard .ev-title-input,
+body.ff-pretendard .ev-time-input,
+body.ff-pretendard .dpc-evbar{
+  font-family:"Pretendard Variable","Pretendard",-apple-system,"SF Pro Display","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+}
+body.ff-jua .cal-evbar,
+body.ff-jua .dp-title,
+body.ff-jua .dp-meta,
+body.ff-jua .dp-memo,
+body.ff-jua .ev-title-input,
+body.ff-jua .ev-time-input,
+body.ff-jua .dpc-evbar{
+  font-family:"Jua","Apple SD Gothic Neo",sans-serif;
+  letter-spacing:-.2px;
+}
+body.ff-pen .cal-evbar,
+body.ff-pen .dp-title,
+body.ff-pen .dp-meta,
+body.ff-pen .dp-memo,
+body.ff-pen .ev-title-input,
+body.ff-pen .ev-time-input,
+body.ff-pen .dpc-evbar{
+  font-family:"Nanum Pen Script",cursive;
+  letter-spacing:.5px;
+  font-weight:400;
+}
+/* 손글씨는 작은 글자가 흐릿하므로 살짝 키움 */
+body.ff-pen .cal-evbar{font-size:11.5px}
+body.ff-pen .dp-title{font-size:16.5px}
+body.ff-pen .dp-meta{font-size:12.5px}
+body.ff-pen .dp-memo{font-size:13px}
 
 /* ═════════════════ 스토어 ═════════════════ */
 .store-card{
@@ -863,6 +918,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
   border:2px solid;font-weight:700;
 }
 .theme-preview-letter{font-size:18px;font-weight:800;font-family:'Noto Serif KR',serif}
+.theme-preview-logo{width:30px;height:30px;display:block}
 .theme-card-info{padding:10px 12px 12px}
 .theme-card-name{font-size:13px;font-weight:700;color:var(--text);line-height:1.2;margin-bottom:3px}
 .theme-card-meta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--sub)}
@@ -882,6 +938,11 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
   letter-spacing:.3px;
 }
 .store-empty{text-align:center;padding:30px 20px;color:var(--mute);font-size:12px}
+
+/* 컬러 팩 미리보기 — 8색 그리드 (2×4) */
+.color-pack-preview{background:#fbf2e0;padding:10px}
+.color-swatch-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%;max-width:120px}
+.color-swatch{width:100%;aspect-ratio:1;border-radius:50%;display:block;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
 
 /* ═════════════════ 폰트 크기 조절 ═════════════════ */
 /* body.fs-small / body.fs-large 가 붙으면 일자 시트 + 캘린더 셀의 텍스트가 살짝 작/크게.
@@ -1791,9 +1852,7 @@ body.align-right .cal-evbar{text-align:right}
   </div>
   <div class="store-tabs" id="storeTabs">
     <button class="store-tab on" data-tab="theme" onclick="setStoreTab('theme')">테마</button>
-    <button class="store-tab disabled" data-tab="color" title="곧 출시">컬러</button>
-    <button class="store-tab disabled" data-tab="sticker" title="곧 출시">스티커</button>
-    <button class="store-tab disabled" data-tab="font" title="곧 출시">폰트</button>
+    <button class="store-tab" data-tab="color" onclick="setStoreTab('color')">컬러</button>
   </div>
   <div class="store-body" id="storeBody"></div>
 </div>
@@ -1824,6 +1883,17 @@ body.align-right .cal-evbar{text-align:right}
         <button class="dm-btn" data-fs="small" onclick="onFontSizeSelect('small')">작게</button>
         <button class="dm-btn" data-fs="normal" onclick="onFontSizeSelect('normal')">보통</button>
         <button class="dm-btn" data-fs="large" onclick="onFontSizeSelect('large')">크게</button>
+      </div>
+    </div>
+
+    <div class="rs-section">
+      <div class="rs-section-title">글꼴 변경</div>
+      <div style="font-size:11px;color:var(--sub);margin-bottom:8px">일정 텍스트에만 적용돼요</div>
+      <div class="dm-row dm-row-grid" id="fontFamilyRow">
+        <button class="dm-btn ff-default" data-ff="default" onclick="onFontFamilySelect('default')">기본</button>
+        <button class="dm-btn ff-pretendard" data-ff="pretendard" onclick="onFontFamilySelect('pretendard')">프리텐다드</button>
+        <button class="dm-btn ff-jua" data-ff="jua" onclick="onFontFamilySelect('jua')">주아체</button>
+        <button class="dm-btn ff-pen" data-ff="pen" onclick="onFontFamilySelect('pen')">나눔펜</button>
       </div>
     </div>
 
@@ -2966,6 +3036,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   }catch(e){}
   // 폰트 크기 초기 적용 (head 인라인 스크립트가 못 잡은 케이스 안전망)
   try{ applyFontSize(getFontSizePref()); }catch(e){}
+  // 글꼴 초기 적용 (head 인라인 스크립트가 못 잡은 케이스 안전망)
+  try{ applyFontFamily(getFontFamilyPref()); }catch(e){}
   // 일정 텍스트 정렬 초기 적용
   try{ applyAlign(getAlignPref()); }catch(e){}
   // 주 시작 요일 헤더 초기 렌더
@@ -3533,6 +3605,41 @@ function syncAlignButtons(){
   if(!row)return;
   row.querySelectorAll('.dm-btn').forEach(b=>{
     if(b.dataset.align===pref)b.classList.add('on');
+    else b.classList.remove('on');
+  });
+}
+
+/* ── 글꼴 (기본 / Pretendard / Jua / Nanum Pen Script) ── */
+function getFontFamilyPref(){
+  try{
+    const v=localStorage.getItem('uricalv2.fontFamily');
+    if(v==='pretendard'||v==='jua'||v==='pen')return v;
+    return 'default';
+  }catch(e){ return 'default'; }
+}
+function setFontFamilyPref(value){
+  const v=(value==='pretendard'||value==='jua'||value==='pen')?value:'default';
+  try{ localStorage.setItem('uricalv2.fontFamily', v); }catch(e){}
+  applyFontFamily(v);
+}
+function applyFontFamily(v){
+  if(!document.body)return;
+  document.body.classList.remove('ff-pretendard','ff-jua','ff-pen');
+  if(v==='pretendard')document.body.classList.add('ff-pretendard');
+  else if(v==='jua')document.body.classList.add('ff-jua');
+  else if(v==='pen')document.body.classList.add('ff-pen');
+}
+function onFontFamilySelect(value){
+  if(!['default','pretendard','jua','pen'].includes(value))return;
+  setFontFamilyPref(value);
+  syncFontFamilyButtons();
+}
+function syncFontFamilyButtons(){
+  const pref=getFontFamilyPref();
+  const row=document.getElementById('fontFamilyRow');
+  if(!row)return;
+  row.querySelectorAll('.dm-btn').forEach(b=>{
+    if(b.dataset.ff===pref)b.classList.add('on');
     else b.classList.remove('on');
   });
 }
@@ -6760,6 +6867,7 @@ function openAdvSettings(){
   try{ syncFontSizeButtons(); }catch(_){}
   try{ syncWeekStartButtons(); }catch(_){}
   try{ syncAlignButtons(); }catch(_){}
+  try{ syncFontFamilyButtons(); }catch(_){}
 }
 function closeAdvSettings(){
   document.getElementById('advCard').classList.remove('on');
@@ -6790,6 +6898,30 @@ const STORE_COMING_SOON=[
    preview:{bg:'#f0f5ee',accent:'#5a7d3a',card:'#ffffff'}},
 ];
 
+/* 컬러 팩 — 일정바 색상 묶음 (전부 곧 출시, 총 10개) */
+const STORE_COLORS=[
+  {key:'vivid',   name:'비비드',    price:'₩2,900',
+   colors:['#ff4d4d','#ff8033','#ffcc33','#33cc66','#3399ff','#9966cc','#ff66aa','#666666']},
+  {key:'jelly',   name:'젤리 팩',   price:'₩2,900',
+   colors:['#ffaaaa','#ffcc99','#ffeeaa','#bfeec5','#aaddff','#d4bce8','#ffc2dd','#e0d0c0']},
+  {key:'mono',    name:'모노톤',    price:'₩1,900',
+   colors:['#2a2a2a','#454545','#666666','#888888','#a8a8a8','#c0c0c0','#d4d4d4','#e8e8e8']},
+  {key:'neon',    name:'네온',      price:'₩3,900',
+   colors:['#ff006e','#fb5607','#ffbe0b','#06ffa5','#3a86ff','#8338ec','#ff4081','#00d9ff']},
+  {key:'earth',   name:'어스 톤',   price:'₩2,900',
+   colors:['#7d5a3c','#8b6f47','#a8825c','#b89968','#c4a87a','#9c8866','#75614a','#5e4830']},
+  {key:'macaron', name:'마카롱',    price:'₩2,900',
+   colors:['#f8c8d8','#f8d8b8','#f8e8c8','#d8f8c8','#c8e8f8','#d8c8f8','#f8c8e8','#e8d8c8']},
+  {key:'sunset',  name:'노을',      price:'₩2,900',
+   colors:['#ff6b6b','#ff8a4c','#ffb84c','#ffd23f','#ff9ec7','#c468d0','#6b5b95','#2a4858']},
+  {key:'ocean',   name:'바다',      price:'₩2,900',
+   colors:['#003459','#00507f','#0077b6','#00b4d8','#48cae4','#90e0ef','#ade8f4','#caf0f8']},
+  {key:'forest',  name:'숲',        price:'₩2,900',
+   colors:['#1b4332','#2d6a4f','#40916c','#52b788','#74c69d','#95d5b2','#b7e4c7','#d8f3dc']},
+  {key:'autumn',  name:'가을',      price:'₩2,900',
+   colors:['#7b2d26','#a52a2a','#c44536','#e07a5f','#d4a373','#b58863','#886a3a','#5e3a1d']},
+];
+
 let _storeCurrentTab='theme';
 
 function openStore(){
@@ -6806,7 +6938,10 @@ function setStoreTab(tab){
   tabs.forEach(b=>b.classList.toggle('on', b.dataset.tab===tab));
   _storeCurrentTab=tab;
   if(tab==='theme')renderStoreThemes();
-  else renderStoreComingSoon();
+  else if(tab==='color')renderStoreColors();
+  // 컨텐츠 영역을 맨 위로 스크롤
+  const body=document.getElementById('storeBody');
+  if(body)body.scrollTop=0;
 }
 function renderStoreThemes(){
   const body=document.getElementById('storeBody');
@@ -6841,7 +6976,12 @@ function renderStoreThemes(){
         ${applied?'<div class="theme-card-applied-tag">사용 중</div>':''}
         <div class="theme-preview" style="background:${t.bg}">
           <div class="theme-preview-circle" style="border-color:${t.accent};background:${t.card}">
-            <span class="theme-preview-letter" style="color:${t.accent}">우</span>
+            <svg class="theme-preview-logo" viewBox="0 0 24 24" fill="none" stroke="${t.accent}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="5" width="18" height="16" rx="2"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+              <line x1="8" y1="3" x2="8" y2="7"/>
+              <line x1="16" y1="3" x2="16" y2="7"/>
+            </svg>
           </div>
         </div>
         <div class="theme-card-info">
@@ -6866,7 +7006,12 @@ function renderStoreThemes(){
         <div class="theme-card-lock">🔒</div>
         <div class="theme-preview" style="background:${p.bg}">
           <div class="theme-preview-circle" style="border-color:${p.accent};background:${p.card}">
-            <span class="theme-preview-letter" style="color:${p.accent}">우</span>
+            <svg class="theme-preview-logo" viewBox="0 0 24 24" fill="none" stroke="${p.accent}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="5" width="18" height="16" rx="2"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+              <line x1="8" y1="3" x2="8" y2="7"/>
+              <line x1="16" y1="3" x2="16" y2="7"/>
+            </svg>
           </div>
         </div>
         <div class="theme-card-info">
@@ -6883,17 +7028,43 @@ function renderStoreThemes(){
   
   body.innerHTML=html;
 }
-function renderStoreComingSoon(){
+/* ── 컬러 팩 (곧 출시) ── */
+function renderStoreColors(){
   const body=document.getElementById('storeBody');
   if(!body)return;
-  body.innerHTML=`<div class="store-empty">곧 출시 예정이에요. 조금만 기다려주세요 ✨</div>`;
+  let html='<div class="store-section-title">곧 출시 예정 <small>COMING SOON</small></div>';
+  html+=`<div class="theme-grid-store">`;
+  STORE_COLORS.forEach(item=>{
+    const swatches=item.colors.map(c=>`<span class="color-swatch" style="background:${c}"></span>`).join('');
+    html+=`
+      <div class="theme-card locked" onclick="onLockedColorTap('${escapeHtml(item.name)}')">
+        <div class="theme-card-lock">🔒</div>
+        <div class="theme-preview color-pack-preview">
+          <div class="color-swatch-grid">${swatches}</div>
+        </div>
+        <div class="theme-card-info">
+          <div class="theme-card-name">${escapeHtml(item.name)}</div>
+          <div class="theme-card-meta">
+            <span class="theme-card-rating" style="opacity:.4">★ —</span>
+            <span class="theme-card-price">${escapeHtml(item.price)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  html+=`</div>`;
+  body.innerHTML=html;
 }
+
 async function applyStoreTheme(themeKey){
   await changeRoomTheme(themeKey);
   renderStoreThemes();  // "사용 중" 태그 갱신
 }
 function onLockedThemeTap(name){
   toast(`"${name}"은(는) 곧 출시 예정이에요`);
+}
+function onLockedColorTap(name){
+  toast(`"${name}" 컬러 팩은 곧 출시 예정이에요`);
 }
 
 /* ═══════════════════════════════════
