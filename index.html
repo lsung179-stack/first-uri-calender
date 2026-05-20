@@ -599,24 +599,39 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 }
 .ev-color-dot.on{background:var(--accent);width:16px;border-radius:3px}
 
-/* 스토어 무료 체험 배너 */
+/* 스토어 무료 체험 안내문 (짧은 라인) */
 .store-trial-banner{padding:14px 20px 0}
-.store-trial-banner-card{
-  display:flex;align-items:center;gap:14px;
-  width:100%;padding:14px 16px;
-  background:linear-gradient(135deg,#fff4dc 0%,#ffe6c0 100%);
-  border:2px solid var(--accent);border-radius:14px;
-  cursor:pointer;text-align:left;font-family:inherit;
-  transition:transform .12s;
+.store-trial-notice{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;background:#fff4dc;
+  border-radius:10px;font-size:12.5px;color:var(--sub);
+  border:1px solid rgba(139,58,42,.12);
 }
-.store-trial-banner-card:not(.active):active{transform:scale(.98)}
-.store-trial-banner-card.active{cursor:default;background:linear-gradient(135deg,#e8f5d8 0%,#d0e8b8 100%);border-color:#5e8a3a}
-.trial-icon{font-size:28px;flex-shrink:0}
-.trial-body{flex:1;min-width:0}
-.trial-title{font-size:14px;font-weight:800;color:var(--text);margin-bottom:2px}
-.trial-sub{font-size:11.5px;color:var(--sub);line-height:1.4}
+.store-trial-notice .trial-icon{font-size:16px;flex-shrink:0}
+.store-trial-notice .trial-text{flex:1;line-height:1.4;font-weight:500;color:var(--text)}
 
-/* 스토어 카드 "사용 중" 배지 */
+/* 팩 카드 내부 체험/사용중 버튼 */
+.theme-card-action{margin-top:8px;display:flex;justify-content:flex-end}
+.pack-btn{
+  font-size:11px;font-weight:700;padding:5px 13px;
+  border-radius:99px;border:1.5px solid var(--accent);
+  background:transparent;color:var(--accent);
+  cursor:pointer;font-family:inherit;
+  transition:transform .12s,opacity .12s;letter-spacing:.2px;
+}
+.pack-btn:active{transform:scale(.94)}
+.pack-btn-try{}
+.pack-btn-using{
+  background:#5e8a3a;border-color:#5e8a3a;color:#fff;
+}
+.pack-btn-lg{padding:11px 28px;font-size:13px;min-width:140px}
+.theme-card.unlocked{border:1.5px solid #5e8a3a}
+.theme-card.unlocked .theme-card-name{color:var(--text)}
+
+/* 캐릭터 상세 모달 체험 버튼 영역 */
+.char-detail-action{margin:4px 0 8px;text-align:center;display:flex;justify-content:center}
+
+/* 스토어 카드 "사용 중" 배지 (기존 — 호환성 유지, 새 UI에서는 미사용) */
 .theme-card-using{
   font-size:10px;font-weight:800;color:#fff;
   background:#5e8a3a;padding:2px 7px;border-radius:99px;letter-spacing:.3px;
@@ -1888,6 +1903,7 @@ body.align-right .cal-evbar{text-align:right}
   <div class="mo-title" id="charDetailTitle">캐릭터</div>
   <div class="mo-sub" id="charDetailSub">설명</div>
   <div class="char-expr-grid" id="charDetailGrid"></div>
+  <div class="char-detail-action" id="charDetailUnlockBtn"></div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeCharDetail()">닫기</button>
   </div>
@@ -7307,50 +7323,82 @@ const STORE_EMOJI=[
 ];
 
 /* ═══════════════════════════════════
-   무료 체험 시스템
+   무료 체험 / 팩 unlock 시스템
    ──────────────────────────────────
-   현재: 테스트 기간 동안 컬러+이모지 무료 사용
-   추후 유료화 전환 시:
+   각 컬러 팩 / 캐릭터 팩을 개별 unlock 가능.
+   현재(FREE_TRIAL_MODE=true): 누구나 무료로 체험 버튼 눌러 unlock 가능
+   추후 유료화:
      1. FREE_TRIAL_MODE = false 로 변경
-     2. hasColorPack / hasCharPack 내부의 주석 부분(checkUserUnlock) 활성화
-     3. user_unlocks 테이블 조회 함수 연결
+     2. unlockColorPack/unlockCharPack 안의 결제 검증 추가
+     3. hasColorPack/hasCharPack 의 checkUserUnlock 활성화 (DB 조회)
    ═══════════════════════════════════ */
 const FREE_TRIAL_MODE=true; // ← 유료화 시 false 로 변경
 
-function isFreeTrialActive(){
+/* 기존 전역 freeTrial 사용자 → 모든 팩 unlock 으로 마이그레이션 (1회) */
+(function _migrateFreeTrial(){
+  try{
+    if(localStorage.getItem('uricalv2.freeTrial')==='1'&&!localStorage.getItem('uricalv2.unlocks')){
+      const u={color:STORE_COLORS.map(c=>c.key),char:STORE_EMOJI.map(c=>c.key)};
+      localStorage.setItem('uricalv2.unlocks',JSON.stringify(u));
+      localStorage.removeItem('uricalv2.freeTrial');
+    }
+  }catch{}
+})();
+
+function _getUnlocks(){
+  try{
+    const raw=localStorage.getItem('uricalv2.unlocks');
+    if(raw){
+      const u=JSON.parse(raw);
+      return {color:u.color||[],char:u.char||[]};
+    }
+  }catch{}
+  return {color:[],char:[]};
+}
+function _saveUnlocks(u){
+  try{localStorage.setItem('uricalv2.unlocks',JSON.stringify(u))}catch{}
+}
+/* 특정 팩 unlock */
+function unlockColorPack(key){
+  if(!FREE_TRIAL_MODE)return false; // 추후 결제: validatePayment 후 unlock
+  const u=_getUnlocks();
+  if(!u.color.includes(key)){u.color.push(key);_saveUnlocks(u)}
+  return true;
+}
+function unlockCharPack(key){
   if(!FREE_TRIAL_MODE)return false;
-  try{return localStorage.getItem('uricalv2.freeTrial')==='1'}catch{return false}
+  const u=_getUnlocks();
+  if(!u.char.includes(key)){u.char.push(key);_saveUnlocks(u)}
+  return true;
 }
-function activateFreeTrial(){
-  try{localStorage.setItem('uricalv2.freeTrial','1')}catch{}
+/* 해제(원복) */
+function lockColorPack(key){
+  const u=_getUnlocks();u.color=u.color.filter(k=>k!==key);_saveUnlocks(u);
 }
-function deactivateFreeTrial(){
-  try{localStorage.removeItem('uricalv2.freeTrial')}catch{}
+function lockCharPack(key){
+  const u=_getUnlocks();u.char=u.char.filter(k=>k!==key);_saveUnlocks(u);
 }
-/* 특정 컬러 팩 해제 여부 */
-function hasColorPack(packKey){
-  if(isFreeTrialActive())return true;
-  // 추후 유료화: return checkUserUnlock('color', packKey);
-  return false;
+/* 사용 가능 여부 */
+function hasColorPack(key){
+  if(!FREE_TRIAL_MODE)return false; // 추후: return checkUserUnlock('color', key);
+  return _getUnlocks().color.includes(key);
 }
-/* 특정 캐릭터 팩 해제 여부 */
-function hasCharPack(charKey){
-  if(isFreeTrialActive())return true;
-  // 추후 유료화: return checkUserUnlock('char', charKey);
-  return false;
+function hasCharPack(key){
+  if(!FREE_TRIAL_MODE)return false; // 추후: return checkUserUnlock('char', key);
+  return _getUnlocks().char.includes(key);
 }
-/* 해제된 컬러 팩 키 배열 (구매 순) */
 function getUnlockedColorPacks(){
-  if(isFreeTrialActive())return STORE_COLORS.map(c=>c.key);
-  // 추후 유료화: return await fetchUserColorUnlocks();
-  return [];
+  if(!FREE_TRIAL_MODE)return [];
+  return _getUnlocks().color;
 }
-/* 해제된 캐릭터 팩 키 배열 (구매 순) */
 function getUnlockedCharPacks(){
-  if(isFreeTrialActive())return STORE_EMOJI.map(c=>c.key);
-  // 추후 유료화: return await fetchUserCharUnlocks();
-  return [];
+  if(!FREE_TRIAL_MODE)return [];
+  return _getUnlocks().char;
 }
+/* 호환성 — 일부 함수가 isFreeTrialActive 참조할 수 있음 */
+function isFreeTrialActive(){return FREE_TRIAL_MODE}
+function activateFreeTrial(){/* deprecated — use unlockColorPack/CharPack */}
+function deactivateFreeTrial(){/* deprecated */}
 
 let _storeCurrentTab='theme';
 
@@ -7376,38 +7424,19 @@ function setStoreTab(tab){
   if(body)body.scrollTop=0;
 }
 
-/* 무료 체험 배너 렌더링 (스토어 헤더) */
+/* 무료 체험 배너 — 짧은 안내문 (개별 unlock 시스템) */
 function renderTrialBanner(){
   const banner=document.getElementById('storeTrialBanner');
   if(!banner)return;
-  if(!FREE_TRIAL_MODE){banner.innerHTML='';return} // 유료화 시 배너 숨김
-  if(isFreeTrialActive()){
-    banner.innerHTML=`
-      <div class="store-trial-banner-card active">
-        <div class="trial-icon">✨</div>
-        <div class="trial-body">
-          <div class="trial-title">무료 체험 중</div>
-          <div class="trial-sub">모든 컬러·이모지를 자유롭게 사용하고 계세요</div>
-        </div>
-      </div>`;
-  }else{
-    banner.innerHTML=`
-      <button class="store-trial-banner-card" type="button" onclick="onActivateTrialClick()">
-        <div class="trial-icon">🎁</div>
-        <div class="trial-body">
-          <div class="trial-title">테스트 기간 무료 체험하기</div>
-          <div class="trial-sub">모든 컬러·이모지를 무료로 사용해보세요</div>
-        </div>
-      </button>`;
-  }
+  if(!FREE_TRIAL_MODE){banner.innerHTML='';return}
+  banner.innerHTML=`
+    <div class="store-trial-notice">
+      <span class="trial-icon">💡</span>
+      <span class="trial-text">테스트 기간 — 마음에 드는 팩만 골라 사용해보세요</span>
+    </div>`;
 }
-/* 무료 체험 활성화 버튼 클릭 */
-function onActivateTrialClick(){
-  activateFreeTrial();
-  toast('무료 체험이 활성화되었어요');
-  renderTrialBanner();
-  setStoreTab(_storeCurrentTab); // 현재 탭 다시 렌더링 (잠금 해제 반영)
-}
+/* (구) onActivateTrialClick — 호환성 위해 남겨둠 (이제 호출되지 않음) */
+function onActivateTrialClick(){/* deprecated */}
 function renderStoreThemes(){
   const body=document.getElementById('storeBody');
   if(!body)return;
@@ -7495,34 +7524,22 @@ function renderStoreThemes(){
 function renderStoreColors(){
   const body=document.getElementById('storeBody');
   if(!body)return;
-  const free=isFreeTrialActive();
-  let html='';
-  if(free){
-    html+='<div class="store-section-title">컬러 팩 <small>UNLOCKED</small></div>';
-  }else{
-    html+='<div class="store-section-title">곧 출시 예정 <small>COMING SOON</small></div>';
-  }
+  let html='<div class="store-section-title">컬러 팩 <small>COLOR PACK</small></div>';
   html+=`<div class="theme-grid-store">`;
   STORE_COLORS.forEach(item=>{
     const unlocked=hasColorPack(item.key);
     const swatches=item.colors.map(c=>`<span class="color-swatch" style="background:${c}"></span>`).join('');
-    const cls=unlocked?'theme-card':'theme-card locked';
-    const onclick=unlocked
-      ? `onColorPackTap('${escapeHtml(item.name)}')`
-      : `onLockedColorTap('${escapeHtml(item.name)}')`;
-    const badge=unlocked
-      ? '<span class="theme-card-using">사용 가능</span>'
-      : '<span class="theme-card-soon">곧 출시</span>';
-    const lock=unlocked?'':'<div class="theme-card-lock">🔒</div>';
+    const btn=unlocked
+      ? `<button class="pack-btn pack-btn-using" onclick="onLockColorClick('${escapeHtml(item.key)}')">사용 중</button>`
+      : `<button class="pack-btn pack-btn-try" onclick="onUnlockColorClick('${escapeHtml(item.key)}')">체험하기</button>`;
     html+=`
-      <div class="${cls}" onclick="${onclick}">
-        ${lock}
+      <div class="theme-card${unlocked?' unlocked':''}">
         <div class="theme-preview color-pack-preview">
           <div class="color-swatch-grid">${swatches}</div>
         </div>
         <div class="theme-card-info">
           <div class="theme-card-name">${escapeHtml(item.name)}</div>
-          <div class="theme-card-meta">${badge}</div>
+          <div class="theme-card-action">${btn}</div>
         </div>
       </div>
     `;
@@ -7530,9 +7547,24 @@ function renderStoreColors(){
   html+=`</div>`;
   body.innerHTML=html;
 }
-function onColorPackTap(name){
-  toast(`"${name}" 컬러는 일정 추가 시 사용할 수 있어요`);
+function onUnlockColorClick(key){
+  const pack=STORE_COLORS.find(p=>p.key===key);
+  if(!pack)return;
+  unlockColorPack(key);
+  toast(`"${pack.name}" 컬러 팩이 추가되었어요`);
+  renderStoreColors();
 }
+function onLockColorClick(key){
+  const pack=STORE_COLORS.find(p=>p.key===key);
+  if(!pack)return;
+  if(!confirm(`"${pack.name}" 컬러 팩 사용을 중단할까요?`))return;
+  lockColorPack(key);
+  toast(`"${pack.name}" 컬러 팩 사용을 중단했어요`);
+  renderStoreColors();
+}
+/* (구) — 호환성 위해 남김 (이제 호출 안 됨) */
+function onLockedColorTap(name){toast(`"${name}"`)}
+function onColorPackTap(name){toast(`"${name}"`)}
 
 /* ── 이모지 팩 (캐릭터 미리보기 — 곧 일정 반응에 적용) ── */
 function renderStoreEmoji(){
@@ -7543,17 +7575,17 @@ function renderStoreEmoji(){
   STORE_EMOJI.forEach(item=>{
     const unlocked=hasCharPack(item.key);
     const cells=item.preview.map(k=>`<span class="emoji-cell">${svgEmoji(k)}</span>`).join('');
-    const badge=unlocked
-      ? '<span class="theme-card-using">사용 가능</span>'
-      : '<span class="theme-card-soon">곧 출시</span>';
+    const btn=unlocked
+      ? `<button class="pack-btn pack-btn-using" onclick="event.stopPropagation();onLockCharClick('${escapeHtml(item.key)}')">사용 중</button>`
+      : `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();onUnlockCharClick('${escapeHtml(item.key)}')">체험하기</button>`;
     html+=`
-      <div class="theme-card" onclick="openCharDetail('${escapeHtml(item.key)}')">
+      <div class="theme-card${unlocked?' unlocked':''}" onclick="openCharDetail('${escapeHtml(item.key)}')">
         <div class="theme-preview emoji-pack-preview">
           <div class="emoji-grid">${cells}</div>
         </div>
         <div class="theme-card-info">
           <div class="theme-card-name">${escapeHtml(item.name)}</div>
-          <div class="theme-card-meta">${badge}</div>
+          <div class="theme-card-action">${btn}</div>
         </div>
       </div>
     `;
@@ -7561,6 +7593,24 @@ function renderStoreEmoji(){
   html+=`</div>`;
   body.innerHTML=html;
 }
+function onUnlockCharClick(key){
+  const pack=STORE_EMOJI.find(p=>p.key===key);
+  if(!pack)return;
+  unlockCharPack(key);
+  toast(`"${pack.name}" 캐릭터 팩이 추가되었어요`);
+  renderStoreEmoji();
+}
+function onLockCharClick(key){
+  const pack=STORE_EMOJI.find(p=>p.key===key);
+  if(!pack)return;
+  if(!confirm(`"${pack.name}" 캐릭터 팩 사용을 중단할까요?`))return;
+  lockCharPack(key);
+  toast(`"${pack.name}" 캐릭터 팩 사용을 중단했어요`);
+  renderStoreEmoji();
+}
+/* (구) — 호환성 위해 남김 */
+function onLockedEmojiTap(name){toast(`"${name}"`)}
+function onCharacterPackTap(name){toast(`"${name}"`)}
 
 async function applyStoreTheme(themeKey){
   await changeRoomTheme(themeKey);
@@ -7599,12 +7649,37 @@ function openCharDetail(charKey){
   document.getElementById('charDetailTitle').textContent=meta.name;
   document.getElementById('charDetailSub').textContent=`${meta.identity} · ${meta.desc}`;
   document.getElementById('charDetailGrid').innerHTML=cells;
+  // 체험 버튼 동적 렌더링
+  const btnEl=document.getElementById('charDetailUnlockBtn');
+  if(btnEl){
+    const unlocked=hasCharPack(charKey);
+    btnEl.innerHTML=unlocked
+      ? `<button class="pack-btn pack-btn-using pack-btn-lg" onclick="onLockCharFromDetail('${escapeHtml(charKey)}')">사용 중</button>`
+      : `<button class="pack-btn pack-btn-try pack-btn-lg" onclick="onUnlockCharFromDetail('${escapeHtml(charKey)}')">체험하기</button>`;
+  }
   document.getElementById('charDetailOverlay').classList.add('on');
   document.getElementById('charDetailCard').classList.add('on');
 }
 function closeCharDetail(){
   document.getElementById('charDetailOverlay').classList.remove('on');
   document.getElementById('charDetailCard').classList.remove('on');
+}
+function onUnlockCharFromDetail(key){
+  const pack=STORE_EMOJI.find(p=>p.key===key);
+  if(!pack)return;
+  unlockCharPack(key);
+  toast(`"${pack.name}" 캐릭터 팩이 추가되었어요`);
+  closeCharDetail();
+  if(_storeCurrentTab==='emoji')renderStoreEmoji();
+}
+function onLockCharFromDetail(key){
+  const pack=STORE_EMOJI.find(p=>p.key===key);
+  if(!pack)return;
+  if(!confirm(`"${pack.name}" 캐릭터 팩 사용을 중단할까요?`))return;
+  lockCharPack(key);
+  toast(`"${pack.name}" 캐릭터 팩 사용을 중단했어요`);
+  closeCharDetail();
+  if(_storeCurrentTab==='emoji')renderStoreEmoji();
 }
 
 /* ═══════════════════════════════════
