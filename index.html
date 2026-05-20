@@ -569,6 +569,58 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .tp-action-btn.primary{color:var(--accent)}
 .tp-action-btn:active{opacity:.6}
 .ev-color-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:4px}
+
+/* 컬러 페이저 (이모지처럼 가로 스와이프) */
+.ev-color-pager-wrap{margin-top:4px}
+.ev-color-pager{
+  display:flex;overflow-x:auto;scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;
+  gap:0;border-radius:14px;
+}
+.ev-color-pager::-webkit-scrollbar{display:none}
+.ev-color-page{
+  flex:0 0 100%;scroll-snap-align:center;scroll-snap-stop:always;
+  padding:8px 2px;box-sizing:border-box;
+}
+.ev-color-page-grid{
+  display:grid;grid-template-columns:repeat(6,1fr);gap:8px;
+}
+.ev-color-pager-foot{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:10px;padding:0 4px;
+}
+.ev-color-page-label{
+  font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.4px;
+}
+.ev-color-dots{display:flex;gap:5px}
+.ev-color-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--border);
+  transition:all .2s ease;
+}
+.ev-color-dot.on{background:var(--accent);width:16px;border-radius:3px}
+
+/* 스토어 무료 체험 배너 */
+.store-trial-banner{padding:14px 20px 0}
+.store-trial-banner-card{
+  display:flex;align-items:center;gap:14px;
+  width:100%;padding:14px 16px;
+  background:linear-gradient(135deg,#fff4dc 0%,#ffe6c0 100%);
+  border:2px solid var(--accent);border-radius:14px;
+  cursor:pointer;text-align:left;font-family:inherit;
+  transition:transform .12s;
+}
+.store-trial-banner-card:not(.active):active{transform:scale(.98)}
+.store-trial-banner-card.active{cursor:default;background:linear-gradient(135deg,#e8f5d8 0%,#d0e8b8 100%);border-color:#5e8a3a}
+.trial-icon{font-size:28px;flex-shrink:0}
+.trial-body{flex:1;min-width:0}
+.trial-title{font-size:14px;font-weight:800;color:var(--text);margin-bottom:2px}
+.trial-sub{font-size:11.5px;color:var(--sub);line-height:1.4}
+
+/* 스토어 카드 "사용 중" 배지 */
+.theme-card-using{
+  font-size:10px;font-weight:800;color:#fff;
+  background:#5e8a3a;padding:2px 7px;border-radius:99px;letter-spacing:.3px;
+}
 .ev-color{width:100%;aspect-ratio:1;border-radius:50%;border:none;cursor:pointer;background:var(--accent);transition:transform .12s;position:relative}
 .ev-color:active{transform:scale(.9)}
 .ev-color.on::after{
@@ -1671,7 +1723,13 @@ body.align-right .cal-evbar{text-align:right}
     </div>
     <div class="ev-form-row">
       <div class="ev-label">색상</div>
-      <div class="ev-color-grid" id="evColorGrid"></div>
+      <div class="ev-color-pager-wrap">
+        <div class="ev-color-pager" id="evColorPager"></div>
+        <div class="ev-color-pager-foot">
+          <div class="ev-color-page-label" id="evColorPageLabel">기본</div>
+          <div class="ev-color-dots" id="evColorDots"></div>
+        </div>
+      </div>
     </div>
     <!-- 매년 반복 (생일/기념일 등) -->
     <div class="ev-form-row ev-yearly-row" id="evYearlyRow">
@@ -1931,6 +1989,7 @@ body.align-right .cal-evbar{text-align:right}
     <div class="store-title">스토어</div>
     <button class="store-close" onclick="closeStore()" aria-label="닫기">✕</button>
   </div>
+  <div class="store-trial-banner" id="storeTrialBanner"></div>
   <div class="store-tabs" id="storeTabs">
     <button class="store-tab on" data-tab="theme" onclick="setStoreTab('theme')">테마</button>
     <button class="store-tab" data-tab="color" onclick="setStoreTab('color')">컬러</button>
@@ -3575,7 +3634,13 @@ const EVENT_COLORS=[
   {key:'c-aqua',    hex:'#b5cce8', name:'스카이'},
   {key:'c-peach',   hex:'#ffe87a', name:'버터'}
 ];
-function colorHex(key){const c=EVENT_COLORS.find(x=>x.key===key);return c?c.hex:'#8b3a2a'}
+function colorHex(key){
+  if(!key)return'#8b3a2a';
+  // hex 직접 입력(#로 시작) 그대로 반환 — 컬러 팩에서 사용
+  if(typeof key==='string'&&key.startsWith('#'))return key;
+  const c=EVENT_COLORS.find(x=>x.key===key);
+  return c?c.hex:'#8b3a2a';
+}
 
 /* ── 다크 모드 ── */
 /* 사용자 선호: 'light' | 'dark' (localStorage). 기본은 라이트. */
@@ -4597,17 +4662,78 @@ async function moveEventInList(eventId, direction){
 }
 
 function renderColorGrid(){
-  const grid=document.getElementById('evColorGrid');
-  let html='';
-  EVENT_COLORS.forEach(c=>{
-    const on=(c.key===_selectedColor)?' on':'';
-    html+=`<button type="button" class="ev-color${on}" data-key="${c.key}" style="background:${c.hex}" onclick="selectColor('${c.key}')" title="${c.name}"></button>`;
+  // 페이저 버전으로 위임 (호환성 유지)
+  renderColorPager();
+}
+
+function renderColorPager(){
+  const pager=document.getElementById('evColorPager');
+  if(!pager)return;
+
+  // 페이지 구성: 기본 + 해제된 컬러 팩들
+  const pages=[{key:'default',name:'기본',colors:EVENT_COLORS.map(c=>({key:c.key,hex:c.hex,name:c.name}))}];
+  const unlockedPacks=getUnlockedColorPacks();
+  unlockedPacks.forEach(packKey=>{
+    const pack=STORE_COLORS.find(p=>p.key===packKey);
+    if(!pack)return;
+    pages.push({
+      key:packKey,
+      name:pack.name,
+      colors:pack.colors.map(hex=>({key:hex,hex,name:''})) // hex 자체를 key로 사용
+    });
   });
-  grid.innerHTML=html;
+
+  // 현재 선택 컬러가 어느 페이지에 있는지 찾기
+  let activePageIdx=0;
+  for(let i=0;i<pages.length;i++){
+    if(pages[i].colors.some(c=>c.key===_selectedColor)){activePageIdx=i;break}
+  }
+
+  // 페이지 렌더링
+  pager.innerHTML=pages.map(p=>{
+    const cells=p.colors.map(c=>{
+      const on=(c.key===_selectedColor)?' on':'';
+      return `<button type="button" class="ev-color${on}" data-key="${escapeHtml(c.key)}" style="background:${c.hex}" onclick="selectColor('${escapeHtml(c.key)}')" title="${escapeHtml(c.name||'')}"></button>`;
+    }).join('');
+    return `<div class="ev-color-page" data-key="${escapeHtml(p.key)}" data-name="${escapeHtml(p.name)}"><div class="ev-color-page-grid">${cells}</div></div>`;
+  }).join('');
+
+  // dots + 라벨
+  const dots=document.getElementById('evColorDots');
+  if(dots){
+    dots.innerHTML=pages.map((p,i)=>`<span class="ev-color-dot${i===activePageIdx?' on':''}"></span>`).join('');
+  }
+  const label=document.getElementById('evColorPageLabel');
+  if(label)label.textContent=pages[activePageIdx]?.name||'기본';
+
+  // 활성 페이지로 스크롤 + 페이지 변경 리스너
+  requestAnimationFrame(()=>{
+    pager.scrollLeft=activePageIdx*pager.clientWidth;
+    pager._pages=pages;
+    if(!pager._listenerAdded){
+      pager._listenerAdded=true;
+      let scrollTimeout;
+      pager.addEventListener('scroll',()=>{
+        clearTimeout(scrollTimeout);
+        scrollTimeout=setTimeout(()=>{
+          const idx=Math.round(pager.scrollLeft/pager.clientWidth);
+          const pgs=pager._pages||[];
+          const dotsEl=document.getElementById('evColorDots');
+          const lblEl=document.getElementById('evColorPageLabel');
+          if(dotsEl){
+            dotsEl.querySelectorAll('.ev-color-dot').forEach((d,i)=>{
+              d.classList.toggle('on',i===idx);
+            });
+          }
+          if(lblEl&&pgs[idx])lblEl.textContent=pgs[idx].name;
+        },80);
+      });
+    }
+  });
 }
 function selectColor(key){
   _selectedColor=key;
-  renderColorGrid();
+  renderColorPager();
 }
 function openAddEvent(){
   if(!_selectedDate){toast('날짜를 먼저 선택해주세요');return}
@@ -6369,15 +6495,17 @@ function renderEmojiPager(){
   if(!pager||!label||!dots)return;
   const cur=_emojiTargetEvent?._currentReaction;
   
-  // 페이지 정의 — 현재는 기본만 표시
+  // 페이지 정의 — 기본 + 해제된 캐릭터 팩
   const pages=[
     {key:'default',name:'기본',emojis:REACTIONS},
-    /* ┌─ 추후 결제 시스템 도입 시 활성화 ─────────────────────────────
-       │ user_unlocks에서 해제된 캐릭터 팩을 unlocked_at DESC 순으로 조회 후 추가
-       │ const unlocked = await getUnlockedCharPacks(); // ['mochi','gomdol',...] 최근 구매 순
-       │ unlocked.forEach(ch => pages.push({key:ch, name:CHAR_META[ch].name, emojis:charEmojiKeys(ch)}));
-       └────────────────────────────────────────────────────────────── */
   ];
+  // 해제된 캐릭터 팩 자동 추가 (무료 체험 / 추후 유료 구매)
+  const unlocked=getUnlockedCharPacks();
+  unlocked.forEach(ch=>{
+    if(CHAR_META[ch]){
+      pages.push({key:ch,name:CHAR_META[ch].name,emojis:charEmojiKeys(ch)});
+    }
+  });
   
   // 페이지 렌더링
   pager.innerHTML=pages.map(p=>{
@@ -7096,11 +7224,58 @@ const STORE_EMOJI=[
   {key:'dalkong', name:'달콩',  desc:'달 캐릭터',     preview:['dalkong:basic','dalkong:crescent','dalkong:half','dalkong:full']},
 ];
 
+/* ═══════════════════════════════════
+   무료 체험 시스템
+   ──────────────────────────────────
+   현재: 테스트 기간 동안 컬러+이모지 무료 사용
+   추후 유료화 전환 시:
+     1. FREE_TRIAL_MODE = false 로 변경
+     2. hasColorPack / hasCharPack 내부의 주석 부분(checkUserUnlock) 활성화
+     3. user_unlocks 테이블 조회 함수 연결
+   ═══════════════════════════════════ */
+const FREE_TRIAL_MODE=true; // ← 유료화 시 false 로 변경
+
+function isFreeTrialActive(){
+  if(!FREE_TRIAL_MODE)return false;
+  try{return localStorage.getItem('uricalv2.freeTrial')==='1'}catch{return false}
+}
+function activateFreeTrial(){
+  try{localStorage.setItem('uricalv2.freeTrial','1')}catch{}
+}
+function deactivateFreeTrial(){
+  try{localStorage.removeItem('uricalv2.freeTrial')}catch{}
+}
+/* 특정 컬러 팩 해제 여부 */
+function hasColorPack(packKey){
+  if(isFreeTrialActive())return true;
+  // 추후 유료화: return checkUserUnlock('color', packKey);
+  return false;
+}
+/* 특정 캐릭터 팩 해제 여부 */
+function hasCharPack(charKey){
+  if(isFreeTrialActive())return true;
+  // 추후 유료화: return checkUserUnlock('char', charKey);
+  return false;
+}
+/* 해제된 컬러 팩 키 배열 (구매 순) */
+function getUnlockedColorPacks(){
+  if(isFreeTrialActive())return STORE_COLORS.map(c=>c.key);
+  // 추후 유료화: return await fetchUserColorUnlocks();
+  return [];
+}
+/* 해제된 캐릭터 팩 키 배열 (구매 순) */
+function getUnlockedCharPacks(){
+  if(isFreeTrialActive())return STORE_EMOJI.map(c=>c.key);
+  // 추후 유료화: return await fetchUserCharUnlocks();
+  return [];
+}
+
 let _storeCurrentTab='theme';
 
 function openStore(){
   closeMainModals();
   _storeCurrentTab='theme';
+  renderTrialBanner();
   setStoreTab('theme');
   document.getElementById('storeCard').classList.add('on');
 }
@@ -7117,6 +7292,39 @@ function setStoreTab(tab){
   // 컨텐츠 영역을 맨 위로 스크롤
   const body=document.getElementById('storeBody');
   if(body)body.scrollTop=0;
+}
+
+/* 무료 체험 배너 렌더링 (스토어 헤더) */
+function renderTrialBanner(){
+  const banner=document.getElementById('storeTrialBanner');
+  if(!banner)return;
+  if(!FREE_TRIAL_MODE){banner.innerHTML='';return} // 유료화 시 배너 숨김
+  if(isFreeTrialActive()){
+    banner.innerHTML=`
+      <div class="store-trial-banner-card active">
+        <div class="trial-icon">✨</div>
+        <div class="trial-body">
+          <div class="trial-title">무료 체험 중</div>
+          <div class="trial-sub">모든 컬러·이모지를 자유롭게 사용하고 계세요</div>
+        </div>
+      </div>`;
+  }else{
+    banner.innerHTML=`
+      <button class="store-trial-banner-card" type="button" onclick="onActivateTrialClick()">
+        <div class="trial-icon">🎁</div>
+        <div class="trial-body">
+          <div class="trial-title">테스트 기간 무료 체험하기</div>
+          <div class="trial-sub">모든 컬러·이모지를 무료로 사용해보세요</div>
+        </div>
+      </button>`;
+  }
+}
+/* 무료 체험 활성화 버튼 클릭 */
+function onActivateTrialClick(){
+  activateFreeTrial();
+  toast('무료 체험이 활성화되었어요');
+  renderTrialBanner();
+  setStoreTab(_storeCurrentTab); // 현재 탭 다시 렌더링 (잠금 해제 반영)
 }
 function renderStoreThemes(){
   const body=document.getElementById('storeBody');
@@ -7205,27 +7413,43 @@ function renderStoreThemes(){
 function renderStoreColors(){
   const body=document.getElementById('storeBody');
   if(!body)return;
-  let html='<div class="store-section-title">곧 출시 예정 <small>COMING SOON</small></div>';
+  const free=isFreeTrialActive();
+  let html='';
+  if(free){
+    html+='<div class="store-section-title">컬러 팩 <small>UNLOCKED</small></div>';
+  }else{
+    html+='<div class="store-section-title">곧 출시 예정 <small>COMING SOON</small></div>';
+  }
   html+=`<div class="theme-grid-store">`;
   STORE_COLORS.forEach(item=>{
+    const unlocked=hasColorPack(item.key);
     const swatches=item.colors.map(c=>`<span class="color-swatch" style="background:${c}"></span>`).join('');
+    const cls=unlocked?'theme-card':'theme-card locked';
+    const onclick=unlocked
+      ? `onColorPackTap('${escapeHtml(item.name)}')`
+      : `onLockedColorTap('${escapeHtml(item.name)}')`;
+    const badge=unlocked
+      ? '<span class="theme-card-using">사용 가능</span>'
+      : '<span class="theme-card-soon">곧 출시</span>';
+    const lock=unlocked?'':'<div class="theme-card-lock">🔒</div>';
     html+=`
-      <div class="theme-card locked" onclick="onLockedColorTap('${escapeHtml(item.name)}')">
-        <div class="theme-card-lock">🔒</div>
+      <div class="${cls}" onclick="${onclick}">
+        ${lock}
         <div class="theme-preview color-pack-preview">
           <div class="color-swatch-grid">${swatches}</div>
         </div>
         <div class="theme-card-info">
           <div class="theme-card-name">${escapeHtml(item.name)}</div>
-          <div class="theme-card-meta">
-            <span class="theme-card-soon">곧 출시</span>
-          </div>
+          <div class="theme-card-meta">${badge}</div>
         </div>
       </div>
     `;
   });
   html+=`</div>`;
   body.innerHTML=html;
+}
+function onColorPackTap(name){
+  toast(`"${name}" 컬러는 일정 추가 시 사용할 수 있어요`);
 }
 
 /* ── 이모지 팩 (캐릭터 미리보기 — 곧 일정 반응에 적용) ── */
@@ -7235,7 +7459,11 @@ function renderStoreEmoji(){
   let html='<div class="store-section-title">캐릭터 이모지 <small>CHARACTER PACK</small></div>';
   html+=`<div class="theme-grid-store">`;
   STORE_EMOJI.forEach(item=>{
+    const unlocked=hasCharPack(item.key);
     const cells=item.preview.map(k=>`<span class="emoji-cell">${svgEmoji(k)}</span>`).join('');
+    const badge=unlocked
+      ? '<span class="theme-card-using">사용 가능</span>'
+      : '<span class="theme-card-soon">곧 출시</span>';
     html+=`
       <div class="theme-card" onclick="openCharDetail('${escapeHtml(item.key)}')">
         <div class="theme-preview emoji-pack-preview">
@@ -7243,9 +7471,7 @@ function renderStoreEmoji(){
         </div>
         <div class="theme-card-info">
           <div class="theme-card-name">${escapeHtml(item.name)}</div>
-          <div class="theme-card-meta">
-            <span class="theme-card-soon">곧 출시</span>
-          </div>
+          <div class="theme-card-meta">${badge}</div>
         </div>
       </div>
     `;
