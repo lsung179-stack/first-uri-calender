@@ -1506,14 +1506,6 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
   <div class="mo-sub" id="roomSetName">—</div>
   
   <div class="rs-section">
-    <div class="rs-section-title">표시 모드</div>
-    <div class="dm-row" id="darkModeRow">
-      <button class="dm-btn" data-dm="light" onclick="onDarkModeSelect('light')">라이트</button>
-      <button class="dm-btn" data-dm="dark" onclick="onDarkModeSelect('dark')">다크</button>
-    </div>
-  </div>
-
-  <div class="rs-section">
     <div class="rs-section-title">꾸미기</div>
     <div class="rs-nav-row" onclick="openStore()">
       <div class="rs-nav-row-icon">🛍️</div>
@@ -1565,6 +1557,14 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
   <div class="rs-section">
     <div class="rs-section-title">멤버 (<span id="roomSetMemberCount">—</span>)</div>
     <div id="roomSetMemberList"></div>
+  </div>
+
+  <div class="rs-section">
+    <div class="rs-section-title">다크모드</div>
+    <div class="dm-row" id="darkModeRow">
+      <button class="dm-btn" data-dm="light" onclick="onDarkModeSelect('light')">라이트</button>
+      <button class="dm-btn" data-dm="dark" onclick="onDarkModeSelect('dark')">다크</button>
+    </div>
   </div>
 
   <div class="rs-section">
@@ -1890,7 +1890,7 @@ function openProfile(){
   fillBirthdaySelects();
   // 프로필 사진 표시 (avatar_url이 있으면)
   loadProfilePhoto();
-  // 표시 모드 active 칩 표시
+  // 다크모드 active 칩 표시
   syncDarkModeButtons();
   document.getElementById('profileOverlay').classList.add('on');
   document.getElementById('profileCard').classList.add('on');
