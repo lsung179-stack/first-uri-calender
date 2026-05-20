@@ -1179,7 +1179,9 @@ body.align-right .cal-evbar{text-align:right}
 /* 4단계: 멤버 관리, 방 삭제, 프로필 편집 */
 .rs-member-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fdf6e8;border:1px solid var(--borderL);border-radius:10px;margin-bottom:6px}
 .rs-member-row.owner{background:var(--aP);border-color:var(--accent)}
-.rs-member-stamp{width:30px;height:30px;border:1.5px solid var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Noto Serif KR',serif;font-weight:700;font-size:13px;color:var(--accent);background:var(--card)}
+.rs-member-stamp{width:30px;height:30px;border:1.5px solid var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Noto Serif KR',serif;font-weight:700;font-size:13px;color:var(--accent);background:var(--card);overflow:hidden}
+.rs-member-stamp.has-photo{padding:0;background:transparent}
+.rs-member-stamp.has-photo img{width:100%;height:100%;object-fit:cover;display:block;border-radius:50%}
 .rs-member-info{flex:1;min-width:0}
 .rs-member-name{font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rs-member-tag{font-size:10px;color:var(--sub);margin-top:1px}
@@ -6418,8 +6420,12 @@ function renderRoomMemberList(){
     if(isOwner&&!isMe){
       actions=`<button class="rs-kick-btn" onclick="kickMember('${m.user_id}','${escapeHtml(m.name).replace(/'/g,"\\'")}')">내보내기</button>`;
     }
+    // 아바타: 사진 있으면 사진, 없으면 첫 글자
+    const stamp=m.avatar_url
+      ? `<div class="rs-member-stamp has-photo"><img src="${escapeHtml(m.avatar_url)}" alt=""></div>`
+      : `<div class="rs-member-stamp">${escapeHtml(initial)}</div>`;
     div.innerHTML=`
-      <div class="rs-member-stamp">${escapeHtml(initial)}</div>
+      ${stamp}
       <div class="rs-member-info">
         <div class="rs-member-name">${escapeHtml(m.name)}${isMe?' (나)':''}</div>
         <div class="rs-member-tag">${isMemberOwner?'방장':'멤버'}</div>
