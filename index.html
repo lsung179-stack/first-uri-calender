@@ -716,6 +716,8 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .dp-reaction-chip.mine{background:var(--aP);border-color:var(--accent)}
 .dp-reaction-chip-av{width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:8px;font-weight:700;overflow:hidden;flex-shrink:0;font-family:'Noto Serif KR',serif;line-height:1}
 .dp-reaction-chip-av img{width:100%;height:100%;object-fit:cover;display:block}
+.dp-reaction-chip-emoji{display:inline-flex;align-items:center;line-height:1}
+.dp-reaction-chip-emoji svg{width:18px;height:18px;display:block;vertical-align:middle}
 .dp-reaction-chip-add{
   display:inline-flex;align-items:center;justify-content:center;
   width:26px;height:22px;background:transparent;border:1px dashed var(--border);
@@ -1139,15 +1141,44 @@ body.align-right .cal-evbar{text-align:right}
   margin-right:6px;
 }
 
-/* 이모지 선택 모달 */
-.emoji-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 12px}
+/* 이모지 선택 모달 — 가로 스와이프 페이저 */
+.emoji-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0}
 .emoji-btn{
   aspect-ratio:1;background:var(--bg);border:1.5px solid var(--border);
   border-radius:12px;font-size:28px;cursor:pointer;transition:all .12s;
   display:flex;align-items:center;justify-content:center;
+  overflow:hidden;padding:4px;
 }
 .emoji-btn:active{transform:scale(.92)}
 .emoji-btn.on{background:var(--aP);border-color:var(--accent)}
+.emoji-btn svg{width:100%;height:100%;display:block}
+
+/* 가로 스와이프 페이저 */
+.emoji-pager-wrap{position:relative;margin:8px 0 6px}
+.emoji-pager{
+  display:flex;overflow-x:auto;scroll-snap-type:x mandatory;
+  scrollbar-width:none;-ms-overflow-style:none;scroll-behavior:smooth;
+  -webkit-overflow-scrolling:touch;
+}
+.emoji-pager::-webkit-scrollbar{display:none}
+.emoji-page{
+  flex:0 0 100%;scroll-snap-align:start;
+  min-width:0;
+}
+.emoji-page-label{
+  text-align:center;font-size:11px;color:var(--sub);
+  margin-top:10px;letter-spacing:.4px;font-weight:600;
+}
+.emoji-dots{
+  display:flex;justify-content:center;gap:6px;margin-top:8px;
+}
+.emoji-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--mute);
+  transition:all .2s;
+}
+.emoji-dot.on{
+  background:var(--accent);width:20px;border-radius:3px;
+}
 
 /* 방 설정 모달 (테마/방이름/멤버) */
 .rs-section{margin-bottom:18px}
@@ -1732,7 +1763,11 @@ body.align-right .cal-evbar{text-align:right}
   <div class="mo-handle"></div>
   <div class="mo-title">이모지로 반응</div>
   <div class="mo-sub" id="emojiSubject">이 일정에 어떤 기분?</div>
-  <div class="emoji-grid" id="emojiGrid"></div>
+  <div class="emoji-pager-wrap">
+    <div class="emoji-pager" id="emojiPager"></div>
+    <div class="emoji-page-label" id="emojiPageLabel">기본</div>
+    <div class="emoji-dots" id="emojiDots"></div>
+  </div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="removeMyReaction()">반응 제거</button>
     <button class="mo-cancel" onclick="closeEmojiPick()">닫기</button>
@@ -4434,7 +4469,8 @@ function renderDateSheetList(){
         const clickHandler=isMineR?`onclick="event.stopPropagation();openEmojiPick('${ev.id}')"`:'';
         const avInnerR=m&&m.avatar_url?`<img src="${escapeHtml(m.avatar_url)}" alt="">`:escapeHtml((m?.name||'·').slice(0,1));
         const avBgR=escapeHtml(m?.color||'#8b3a2a');
-        reactionHtml+=`<span class="dp-reaction-chip${isMineR?' mine':''}" ${clickHandler} title="${escapeHtml(m?.name||'')}"><span class="dp-reaction-chip-av" style="background:${avBgR}">${avInnerR}</span>${r.emoji}</span>`;
+        const emojiContent=(r.emoji&&r.emoji.includes(':'))?svgEmoji(r.emoji):r.emoji;
+        reactionHtml+=`<span class="dp-reaction-chip${isMineR?' mine':''}" ${clickHandler} title="${escapeHtml(m?.name||'')}"><span class="dp-reaction-chip-av" style="background:${avBgR}">${avInnerR}</span><span class="dp-reaction-chip-emoji">${emojiContent}</span></span>`;
       });
       // 본인이 아직 반응 안 달았으면 + 버튼 (누구의 일정이든)
       if(!myReaction){
@@ -6283,22 +6319,61 @@ function openEmojiPick(eventId){
   const myR=(_reactions[targetId]||[]).find(r=>r.user_id===_currentUser.id);
   _emojiTargetEvent._currentReaction=myR?myR.emoji:null;
   document.getElementById('emojiSubject').textContent=`"${(ev.title||'').slice(0,20)}" 에 반응`;
-  renderEmojiGrid();
+  renderEmojiPager();
   document.getElementById('emojiOverlay').classList.add('on');
   document.getElementById('emojiCard').classList.add('on');
 }
-function renderEmojiGrid(){
-  const grid=document.getElementById('emojiGrid');
-  if(!grid)return;
-  grid.innerHTML='';
+
+/* 이모지 페이저 — 가로 스와이프 페이지 */
+function renderEmojiPager(){
+  const pager=document.getElementById('emojiPager');
+  const label=document.getElementById('emojiPageLabel');
+  const dots=document.getElementById('emojiDots');
+  if(!pager||!label||!dots)return;
   const cur=_emojiTargetEvent?._currentReaction;
-  REACTIONS.forEach(em=>{
-    const btn=document.createElement('button');
-    btn.className=`emoji-btn${em===cur?' on':''}`;
-    btn.textContent=em;
-    btn.onclick=()=>setMyReaction(em);
-    grid.appendChild(btn);
-  });
+  
+  // 페이지 정의 — 현재는 기본만 표시
+  const pages=[
+    {key:'default',name:'기본',emojis:REACTIONS},
+    /* ┌─ 추후 결제 시스템 도입 시 활성화 ─────────────────────────────
+       │ user_unlocks에서 해제된 캐릭터 팩을 unlocked_at DESC 순으로 조회 후 추가
+       │ const unlocked = await getUnlockedCharPacks(); // ['mochi','gomdol',...] 최근 구매 순
+       │ unlocked.forEach(ch => pages.push({key:ch, name:CHAR_NAMES[ch], emojis:charEmojiKeys(ch)}));
+       └────────────────────────────────────────────────────────────── */
+  ];
+  
+  // 페이지 렌더링
+  pager.innerHTML=pages.map(p=>{
+    const cells=p.emojis.map(em=>{
+      const isOn=em===cur;
+      const isCharEmoji=em.includes(':');
+      const content=isCharEmoji?svgEmoji(em):em;
+      return `<button class="emoji-btn${isOn?' on':''}" onclick="setMyReaction('${em}')">${content}</button>`;
+    }).join('');
+    return `<div class="emoji-page" data-page-key="${p.key}"><div class="emoji-grid">${cells}</div></div>`;
+  }).join('');
+  
+  // 1페이지면 라벨/dots 숨김 (단순 그리드처럼 보이게)
+  const multi=pages.length>1;
+  label.style.display=multi?'block':'none';
+  dots.style.display=multi?'flex':'none';
+  
+  if(multi){
+    dots.innerHTML=pages.map((p,i)=>`<div class="emoji-dot${i===0?' on':''}" data-idx="${i}"></div>`).join('');
+    label.textContent=pages[0].name;
+    pager.onscroll=()=>{
+      const pageWidth=pager.clientWidth;
+      if(pageWidth<=0)return;
+      const idx=Math.round(pager.scrollLeft/pageWidth);
+      document.querySelectorAll('#emojiDots .emoji-dot').forEach((d,i)=>d.classList.toggle('on',i===idx));
+      if(pages[idx])label.textContent=pages[idx].name;
+    };
+  }else{
+    pager.onscroll=null;
+  }
+  
+  // 첫 페이지로 리셋
+  pager.scrollLeft=0;
 }
 function closeEmojiPick(){
   document.getElementById('emojiOverlay').classList.remove('on');
@@ -6939,24 +7014,40 @@ const CHAR_SVG={
   'mochi:happy':'<svg viewBox="0 0 200 200"><path d="M95 25 Q86 22 86 36 Q94 41 100 33 Z" fill="#7ba055" stroke="#5e3a1d" stroke-width="3"/><path d="M105 25 Q114 22 114 36 Q106 41 100 33 Z" fill="#7ba055" stroke="#5e3a1d" stroke-width="3"/><ellipse cx="100" cy="115" rx="74" ry="65" fill="#fdf6e8" stroke="#5e3a1d" stroke-width="4"/><ellipse cx="50" cy="128" rx="17" ry="13" fill="#ff9eb8" opacity="0.95"/><ellipse cx="150" cy="128" rx="17" ry="13" fill="#ff9eb8" opacity="0.95"/><path d="M68 108 Q78 100 88 108" stroke="#5e3a1d" stroke-width="4.5" stroke-linecap="round" fill="none"/><path d="M112 108 Q122 100 132 108" stroke="#5e3a1d" stroke-width="4.5" stroke-linecap="round" fill="none"/><path d="M88 140 Q100 152 112 140" stroke="#5e3a1d" stroke-width="3.5" stroke-linecap="round" fill="none"/></svg>',
   'mochi:love':'<svg viewBox="0 0 200 200"><path d="M95 25 Q86 22 86 36 Q94 41 100 33 Z" fill="#7ba055" stroke="#5e3a1d" stroke-width="3"/><path d="M105 25 Q114 22 114 36 Q106 41 100 33 Z" fill="#7ba055" stroke="#5e3a1d" stroke-width="3"/><ellipse cx="100" cy="115" rx="74" ry="65" fill="#fdf6e8" stroke="#5e3a1d" stroke-width="4"/><ellipse cx="50" cy="128" rx="14" ry="11" fill="#ff9eb8" opacity="0.85"/><ellipse cx="150" cy="128" rx="14" ry="11" fill="#ff9eb8" opacity="0.85"/><path d="M68 105 C68 99 78 97 78 105 C78 97 88 99 88 105 C88 113 78 122 78 122 C78 122 68 113 68 105Z" fill="#c44536" stroke="#5e3a1d" stroke-width="2.5"/><path d="M112 105 C112 99 122 97 122 105 C122 97 132 99 132 105 C132 113 122 122 122 122 C122 122 112 113 112 105Z" fill="#c44536" stroke="#5e3a1d" stroke-width="2.5"/><path d="M93 140 Q100 146 107 140" stroke="#5e3a1d" stroke-width="3.5" stroke-linecap="round" fill="none"/></svg>',
   'mochi:sleep':'<svg viewBox="0 0 200 200"><path d="M95 25 Q86 22 86 36 Q94 41 100 33 Z" fill="#7ba055" stroke="#5e3a1d" stroke-width="3"/><path d="M105 25 Q114 22 114 36 Q106 41 100 33 Z" fill="#7ba055" stroke="#5e3a1d" stroke-width="3"/><ellipse cx="100" cy="115" rx="74" ry="65" fill="#fdf6e8" stroke="#5e3a1d" stroke-width="4"/><ellipse cx="50" cy="128" rx="14" ry="11" fill="#ff9eb8" opacity="0.85"/><ellipse cx="150" cy="128" rx="14" ry="11" fill="#ff9eb8" opacity="0.85"/><path d="M68 108 Q78 113 88 108" stroke="#5e3a1d" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M112 108 Q122 113 132 108" stroke="#5e3a1d" stroke-width="4" stroke-linecap="round" fill="none"/><ellipse cx="100" cy="143" rx="6" ry="4" fill="#5e3a1d"/></svg>',
+  'mochi:surprise':'<svg viewBox="0 0 200 200"><path d="M95 25 Q86 22 86 36 Q94 41 100 33 Z" fill="#7ba055" stroke="#5e3a1d" stroke-width="3"/><path d="M105 25 Q114 22 114 36 Q106 41 100 33 Z" fill="#7ba055" stroke="#5e3a1d" stroke-width="3"/><ellipse cx="100" cy="115" rx="74" ry="65" fill="#fdf6e8" stroke="#5e3a1d" stroke-width="4"/><ellipse cx="50" cy="128" rx="14" ry="11" fill="#ff9eb8" opacity="0.85"/><ellipse cx="150" cy="128" rx="14" ry="11" fill="#ff9eb8" opacity="0.85"/><ellipse cx="78" cy="108" rx="12" ry="15" fill="#5e3a1d"/><ellipse cx="122" cy="108" rx="12" ry="15" fill="#5e3a1d"/><circle cx="82" cy="102" r="5" fill="#fdf6e8"/><circle cx="126" cy="102" r="5" fill="#fdf6e8"/><circle cx="100" cy="143" r="5" fill="#5e3a1d"/></svg>',
+  'mochi:wink':'<svg viewBox="0 0 200 200"><path d="M95 25 Q86 22 86 36 Q94 41 100 33 Z" fill="#7ba055" stroke="#5e3a1d" stroke-width="3"/><path d="M105 25 Q114 22 114 36 Q106 41 100 33 Z" fill="#7ba055" stroke="#5e3a1d" stroke-width="3"/><ellipse cx="100" cy="115" rx="74" ry="65" fill="#fdf6e8" stroke="#5e3a1d" stroke-width="4"/><ellipse cx="50" cy="128" rx="14" ry="11" fill="#ff9eb8" opacity="0.85"/><ellipse cx="150" cy="128" rx="14" ry="11" fill="#ff9eb8" opacity="0.85"/><ellipse cx="78" cy="108" rx="10" ry="13" fill="#5e3a1d"/><circle cx="81" cy="103" r="4" fill="#fdf6e8"/><path d="M112 108 Q122 100 132 108" stroke="#5e3a1d" stroke-width="4.5" stroke-linecap="round" fill="none"/><path d="M88 138 Q100 150 112 138 Q100 145 88 138Z" fill="#c44536" stroke="#5e3a1d" stroke-width="2.5"/></svg>',
+  'mochi:sad':'<svg viewBox="0 0 200 200"><path d="M93 30 Q83 30 84 40 Q92 43 98 35 Z" fill="#5e7d3a" stroke="#5e3a1d" stroke-width="3"/><path d="M107 30 Q117 30 116 40 Q108 43 102 35 Z" fill="#5e7d3a" stroke="#5e3a1d" stroke-width="3"/><ellipse cx="100" cy="115" rx="74" ry="65" fill="#fdf6e8" stroke="#5e3a1d" stroke-width="4"/><ellipse cx="50" cy="130" rx="14" ry="11" fill="#ff9eb8" opacity="0.85"/><ellipse cx="150" cy="130" rx="14" ry="11" fill="#ff9eb8" opacity="0.85"/><path d="M68 115 Q78 110 88 115" stroke="#5e3a1d" stroke-width="4.5" stroke-linecap="round" fill="none"/><path d="M112 115 Q122 110 132 115" stroke="#5e3a1d" stroke-width="4.5" stroke-linecap="round" fill="none"/><path d="M78 122 Q76 132 78 138 Q80 132 78 122" fill="#aaddff" stroke="#5e3a1d" stroke-width="1.5"/><path d="M93 148 Q100 142 107 148" stroke="#5e3a1d" stroke-width="3" stroke-linecap="round" fill="none"/></svg>',
+  'mochi:cool':'<svg viewBox="0 0 200 200"><path d="M95 25 Q86 22 86 36 Q94 41 100 33 Z" fill="#7ba055" stroke="#5e3a1d" stroke-width="3"/><path d="M105 25 Q114 22 114 36 Q106 41 100 33 Z" fill="#7ba055" stroke="#5e3a1d" stroke-width="3"/><ellipse cx="100" cy="115" rx="74" ry="65" fill="#fdf6e8" stroke="#5e3a1d" stroke-width="4"/><ellipse cx="50" cy="128" rx="14" ry="11" fill="#ff9eb8" opacity="0.85"/><ellipse cx="150" cy="128" rx="14" ry="11" fill="#ff9eb8" opacity="0.85"/><ellipse cx="78" cy="108" rx="14" ry="10" fill="#2a1c0f"/><ellipse cx="122" cy="108" rx="14" ry="10" fill="#2a1c0f"/><line x1="92" y1="108" x2="108" y2="108" stroke="#2a1c0f" stroke-width="3"/><circle cx="74" cy="105" r="2" fill="#fff" opacity=".8"/><circle cx="118" cy="105" r="2" fill="#fff" opacity=".8"/><path d="M93 140 Q100 144 107 140" stroke="#5e3a1d" stroke-width="3" stroke-linecap="round" fill="none"/></svg>',
 
   // ── 곰돌 ──
   'gomdol:base':'<svg viewBox="0 0 200 200"><circle cx="55" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="145" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="55" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="145" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="100" cy="115" r="62" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><ellipse cx="100" cy="132" rx="32" ry="25" fill="#fdf6e8" stroke="#5e3a1d" stroke-width="3.5"/><ellipse cx="50" cy="128" rx="11" ry="9" fill="#ff9eb8" opacity="0.85"/><ellipse cx="150" cy="128" rx="11" ry="9" fill="#ff9eb8" opacity="0.85"/><ellipse cx="78" cy="108" rx="9" ry="12" fill="#5e3a1d"/><ellipse cx="122" cy="108" rx="9" ry="12" fill="#5e3a1d"/><circle cx="80" cy="104" r="3.5" fill="#fdf6e8"/><circle cx="124" cy="104" r="3.5" fill="#fdf6e8"/><ellipse cx="100" cy="124" rx="6" ry="4.5" fill="#5e3a1d"/><line x1="100" y1="128" x2="100" y2="134" stroke="#5e3a1d" stroke-width="3"/></svg>',
   'gomdol:happy':'<svg viewBox="0 0 200 200"><circle cx="55" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="145" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="55" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="145" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="100" cy="115" r="62" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><ellipse cx="100" cy="132" rx="32" ry="25" fill="#fdf6e8" stroke="#5e3a1d" stroke-width="3.5"/><ellipse cx="50" cy="128" rx="14" ry="11" fill="#ff9eb8" opacity="0.95"/><ellipse cx="150" cy="128" rx="14" ry="11" fill="#ff9eb8" opacity="0.95"/><path d="M68 108 Q78 100 88 108" stroke="#5e3a1d" stroke-width="4.5" stroke-linecap="round" fill="none"/><path d="M112 108 Q122 100 132 108" stroke="#5e3a1d" stroke-width="4.5" stroke-linecap="round" fill="none"/><ellipse cx="100" cy="124" rx="6" ry="4.5" fill="#5e3a1d"/><path d="M88 140 Q100 152 112 140" stroke="#5e3a1d" stroke-width="3.5" stroke-linecap="round" fill="none"/></svg>',
   'gomdol:love':'<svg viewBox="0 0 200 200"><circle cx="55" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="145" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="55" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="145" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="100" cy="115" r="62" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><ellipse cx="100" cy="132" rx="32" ry="25" fill="#fdf6e8" stroke="#5e3a1d" stroke-width="3.5"/><ellipse cx="50" cy="128" rx="11" ry="9" fill="#ff9eb8" opacity="0.85"/><ellipse cx="150" cy="128" rx="11" ry="9" fill="#ff9eb8" opacity="0.85"/><path d="M68 103 C68 97 78 95 78 103 C78 95 88 97 88 103 C88 111 78 121 78 121 C78 121 68 111 68 103Z" fill="#c44536" stroke="#5e3a1d" stroke-width="2.5"/><path d="M112 103 C112 97 122 95 122 103 C122 95 132 97 132 103 C132 111 122 121 122 121 C122 121 112 111 112 103Z" fill="#c44536" stroke="#5e3a1d" stroke-width="2.5"/><ellipse cx="100" cy="124" rx="6" ry="4.5" fill="#5e3a1d"/><path d="M93 140 Q100 144 107 140" stroke="#5e3a1d" stroke-width="3" stroke-linecap="round" fill="none"/></svg>',
   'gomdol:sleep':'<svg viewBox="0 0 200 200"><circle cx="55" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="145" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="55" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="145" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="100" cy="115" r="62" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><ellipse cx="100" cy="132" rx="32" ry="25" fill="#fdf6e8" stroke="#5e3a1d" stroke-width="3.5"/><ellipse cx="50" cy="128" rx="11" ry="9" fill="#ff9eb8" opacity="0.85"/><ellipse cx="150" cy="128" rx="11" ry="9" fill="#ff9eb8" opacity="0.85"/><path d="M68 108 Q78 113 88 108" stroke="#5e3a1d" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M112 108 Q122 113 132 108" stroke="#5e3a1d" stroke-width="4" stroke-linecap="round" fill="none"/><ellipse cx="100" cy="124" rx="6" ry="4.5" fill="#5e3a1d"/><ellipse cx="100" cy="142" rx="7" ry="5" fill="#5e3a1d"/></svg>',
+  'gomdol:surprise':'<svg viewBox="0 0 200 200"><circle cx="55" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="145" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="55" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="145" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="100" cy="115" r="62" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><ellipse cx="100" cy="132" rx="32" ry="25" fill="#fdf6e8" stroke="#5e3a1d" stroke-width="3.5"/><ellipse cx="50" cy="128" rx="11" ry="9" fill="#ff9eb8" opacity="0.85"/><ellipse cx="150" cy="128" rx="11" ry="9" fill="#ff9eb8" opacity="0.85"/><ellipse cx="78" cy="108" rx="11" ry="14" fill="#5e3a1d"/><ellipse cx="122" cy="108" rx="11" ry="14" fill="#5e3a1d"/><circle cx="82" cy="103" r="4.5" fill="#fdf6e8"/><circle cx="126" cy="103" r="4.5" fill="#fdf6e8"/><ellipse cx="100" cy="124" rx="6" ry="4.5" fill="#5e3a1d"/><circle cx="100" cy="142" r="5" fill="#5e3a1d"/></svg>',
+  'gomdol:wink':'<svg viewBox="0 0 200 200"><circle cx="55" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="145" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="55" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="145" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="100" cy="115" r="62" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><ellipse cx="100" cy="132" rx="32" ry="25" fill="#fdf6e8" stroke="#5e3a1d" stroke-width="3.5"/><ellipse cx="50" cy="128" rx="11" ry="9" fill="#ff9eb8" opacity="0.85"/><ellipse cx="150" cy="128" rx="11" ry="9" fill="#ff9eb8" opacity="0.85"/><ellipse cx="78" cy="108" rx="9" ry="12" fill="#5e3a1d"/><circle cx="80" cy="104" r="3.5" fill="#fdf6e8"/><path d="M112 108 Q122 100 132 108" stroke="#5e3a1d" stroke-width="4.5" stroke-linecap="round" fill="none"/><ellipse cx="100" cy="124" rx="6" ry="4.5" fill="#5e3a1d"/><path d="M88 140 Q100 148 112 140 Q100 145 88 140Z" fill="#c44536" stroke="#5e3a1d" stroke-width="2.5"/></svg>',
+  'gomdol:sad':'<svg viewBox="0 0 200 200"><circle cx="55" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="145" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="55" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="145" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="100" cy="115" r="62" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><ellipse cx="100" cy="132" rx="32" ry="25" fill="#fdf6e8" stroke="#5e3a1d" stroke-width="3.5"/><ellipse cx="50" cy="130" rx="13" ry="11" fill="#ff9eb8" opacity="0.9"/><ellipse cx="150" cy="130" rx="13" ry="11" fill="#ff9eb8" opacity="0.9"/><path d="M68 113 Q78 108 88 113" stroke="#5e3a1d" stroke-width="4.5" stroke-linecap="round" fill="none"/><path d="M112 113 Q122 108 132 113" stroke="#5e3a1d" stroke-width="4.5" stroke-linecap="round" fill="none"/><path d="M78 120 Q76 130 78 136 Q80 130 78 120" fill="#aaddff" stroke="#5e3a1d" stroke-width="1.5"/><ellipse cx="100" cy="124" rx="6" ry="4.5" fill="#5e3a1d"/><path d="M93 145 Q100 140 107 145" stroke="#5e3a1d" stroke-width="3" stroke-linecap="round" fill="none"/></svg>',
+  'gomdol:cool':'<svg viewBox="0 0 200 200"><circle cx="55" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="145" cy="58" r="20" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><circle cx="55" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="145" cy="58" r="11" fill="#ff9eb8" opacity="0.9"/><circle cx="100" cy="115" r="62" fill="#d4a373" stroke="#5e3a1d" stroke-width="4"/><ellipse cx="100" cy="132" rx="32" ry="25" fill="#fdf6e8" stroke="#5e3a1d" stroke-width="3.5"/><ellipse cx="50" cy="128" rx="11" ry="9" fill="#ff9eb8" opacity="0.85"/><ellipse cx="150" cy="128" rx="11" ry="9" fill="#ff9eb8" opacity="0.85"/><ellipse cx="78" cy="108" rx="14" ry="10" fill="#2a1c0f"/><ellipse cx="122" cy="108" rx="14" ry="10" fill="#2a1c0f"/><line x1="92" y1="108" x2="108" y2="108" stroke="#2a1c0f" stroke-width="3"/><circle cx="74" cy="105" r="2" fill="#fff" opacity=".8"/><circle cx="118" cy="105" r="2" fill="#fff" opacity=".8"/><ellipse cx="100" cy="124" rx="6" ry="4.5" fill="#5e3a1d"/><path d="M93 140 Q100 144 107 140" stroke="#5e3a1d" stroke-width="3" stroke-linecap="round" fill="none"/></svg>',
 
   // ── 달콩 ──
   'dalkong:base':'<svg viewBox="0 0 200 200"><circle cx="100" cy="110" r="65" fill="#ffe9a8" stroke="#5e3a1d" stroke-width="3.5"/><circle cx="55" cy="75" r="9" fill="#f5d27a" opacity=".6"/><circle cx="155" cy="135" r="7" fill="#f5d27a" opacity=".6"/><circle cx="160" cy="80" r="5" fill="#f5d27a" opacity=".6"/><ellipse cx="55" cy="125" rx="9" ry="7" fill="#f5b8b8" opacity=".75"/><ellipse cx="145" cy="125" rx="9" ry="7" fill="#f5b8b8" opacity=".75"/><path d="M75 108 Q83 113 91 108" stroke="#5e3a1d" stroke-width="3.5" stroke-linecap="round" fill="none"/><path d="M109 108 Q117 113 125 108" stroke="#5e3a1d" stroke-width="3.5" stroke-linecap="round" fill="none"/><path d="M88 128 Q100 138 112 128" stroke="#5e3a1d" stroke-width="3.5" stroke-linecap="round" fill="none"/></svg>',
   'dalkong:happy':'<svg viewBox="0 0 200 200"><path d="M170 35 L173 43 L181 44 L175 49 L177 57 L170 53 L163 57 L165 49 L159 44 L167 43 Z" fill="#ffd23f" stroke="#5e3a1d" stroke-width="2"/><circle cx="100" cy="110" r="65" fill="#ffe9a8" stroke="#5e3a1d" stroke-width="3.5"/><circle cx="55" cy="75" r="9" fill="#f5d27a" opacity=".6"/><ellipse cx="55" cy="125" rx="12" ry="9" fill="#f5b8b8" opacity=".9"/><ellipse cx="145" cy="125" rx="12" ry="9" fill="#f5b8b8" opacity=".9"/><ellipse cx="83" cy="108" rx="5" ry="6" fill="#5e3a1d"/><ellipse cx="117" cy="108" rx="5" ry="6" fill="#5e3a1d"/><circle cx="85" cy="105" r="1.5" fill="#ffe9a8"/><circle cx="119" cy="105" r="1.5" fill="#ffe9a8"/><path d="M82 130 Q100 150 118 130 Q100 142 82 130Z" fill="#c44536" stroke="#5e3a1d" stroke-width="2.5"/></svg>',
   'dalkong:love':'<svg viewBox="0 0 200 200"><circle cx="100" cy="110" r="65" fill="#ffe9a8" stroke="#5e3a1d" stroke-width="3.5"/><ellipse cx="55" cy="125" rx="9" ry="7" fill="#f5b8b8" opacity=".75"/><ellipse cx="145" cy="125" rx="9" ry="7" fill="#f5b8b8" opacity=".75"/><path d="M73 100 C73 95 79 94 79 100 C79 94 85 95 85 100 C85 106 79 113 79 113 C79 113 73 106 73 100Z" fill="#c44536" stroke="#5e3a1d" stroke-width="2"/><path d="M115 100 C115 95 121 94 121 100 C121 94 127 95 127 100 C127 106 121 113 121 113 C121 113 115 106 115 100Z" fill="#c44536" stroke="#5e3a1d" stroke-width="2"/><path d="M88 128 Q100 138 112 128" stroke="#5e3a1d" stroke-width="3.5" stroke-linecap="round" fill="none"/></svg>',
   'dalkong:sleep':'<svg viewBox="0 0 200 200"><circle cx="100" cy="110" r="65" fill="#ffe9a8" stroke="#5e3a1d" stroke-width="3.5"/><circle cx="55" cy="75" r="9" fill="#f5d27a" opacity=".6"/><ellipse cx="55" cy="125" rx="9" ry="7" fill="#f5b8b8" opacity=".75"/><ellipse cx="145" cy="125" rx="9" ry="7" fill="#f5b8b8" opacity=".75"/><path d="M75 108 Q83 113 91 108" stroke="#5e3a1d" stroke-width="3.5" stroke-linecap="round" fill="none"/><path d="M109 108 Q117 113 125 108" stroke="#5e3a1d" stroke-width="3.5" stroke-linecap="round" fill="none"/><ellipse cx="100" cy="138" rx="8" ry="5" fill="#5e3a1d"/><text x="148" y="55" font-family="sans-serif" font-size="22" fill="#5e3a1d" font-weight="700">Z</text></svg>',
+  'dalkong:surprise':'<svg viewBox="0 0 200 200"><circle cx="100" cy="110" r="65" fill="#ffe9a8" stroke="#5e3a1d" stroke-width="3.5"/><circle cx="55" cy="75" r="9" fill="#f5d27a" opacity=".6"/><ellipse cx="55" cy="125" rx="9" ry="7" fill="#f5b8b8" opacity=".75"/><ellipse cx="145" cy="125" rx="9" ry="7" fill="#f5b8b8" opacity=".75"/><ellipse cx="83" cy="108" rx="9" ry="12" fill="#5e3a1d"/><ellipse cx="117" cy="108" rx="9" ry="12" fill="#5e3a1d"/><circle cx="85" cy="103" r="3.5" fill="#ffe9a8"/><circle cx="119" cy="103" r="3.5" fill="#ffe9a8"/><circle cx="100" cy="138" r="5" fill="#5e3a1d"/></svg>',
+  'dalkong:wink':'<svg viewBox="0 0 200 200"><circle cx="100" cy="110" r="65" fill="#ffe9a8" stroke="#5e3a1d" stroke-width="3.5"/><circle cx="55" cy="75" r="9" fill="#f5d27a" opacity=".6"/><ellipse cx="55" cy="125" rx="9" ry="7" fill="#f5b8b8" opacity=".75"/><ellipse cx="145" cy="125" rx="9" ry="7" fill="#f5b8b8" opacity=".75"/><ellipse cx="83" cy="108" rx="5" ry="6" fill="#5e3a1d"/><path d="M109 108 Q117 100 125 108" stroke="#5e3a1d" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M85 130 Q100 145 115 130 Q100 138 85 130Z" fill="#c44536" stroke="#5e3a1d" stroke-width="2.5"/></svg>',
+  'dalkong:sad':'<svg viewBox="0 0 200 200"><circle cx="100" cy="110" r="65" fill="#ffe9a8" stroke="#5e3a1d" stroke-width="3.5"/><circle cx="55" cy="75" r="9" fill="#f5d27a" opacity=".6"/><ellipse cx="55" cy="128" rx="11" ry="9" fill="#f5b8b8" opacity=".85"/><ellipse cx="145" cy="128" rx="11" ry="9" fill="#f5b8b8" opacity=".85"/><path d="M73 115 Q83 110 93 115" stroke="#5e3a1d" stroke-width="3.5" stroke-linecap="round" fill="none"/><path d="M107 115 Q117 110 127 115" stroke="#5e3a1d" stroke-width="3.5" stroke-linecap="round" fill="none"/><path d="M83 122 Q81 132 83 138 Q85 132 83 122" fill="#aaddff" stroke="#5e3a1d" stroke-width="1.5"/><path d="M90 138 Q100 132 110 138" stroke="#5e3a1d" stroke-width="3" stroke-linecap="round" fill="none"/></svg>',
+  'dalkong:cool':'<svg viewBox="0 0 200 200"><circle cx="100" cy="110" r="65" fill="#ffe9a8" stroke="#5e3a1d" stroke-width="3.5"/><circle cx="55" cy="75" r="9" fill="#f5d27a" opacity=".6"/><ellipse cx="55" cy="128" rx="9" ry="7" fill="#f5b8b8" opacity=".75"/><ellipse cx="145" cy="128" rx="9" ry="7" fill="#f5b8b8" opacity=".75"/><ellipse cx="83" cy="108" rx="14" ry="10" fill="#2a1c0f"/><ellipse cx="117" cy="108" rx="14" ry="10" fill="#2a1c0f"/><line x1="97" y1="108" x2="103" y2="108" stroke="#2a1c0f" stroke-width="3"/><circle cx="79" cy="105" r="2" fill="#fff" opacity=".8"/><circle cx="113" cy="105" r="2" fill="#fff" opacity=".8"/><path d="M90 135 Q100 140 110 135" stroke="#5e3a1d" stroke-width="3" stroke-linecap="round" fill="none"/></svg>',
 };
 
 /* SVG 이모지 헬퍼 — preview 키('mochi:base')로 SVG 문자열 반환 */
 function svgEmoji(key){ return CHAR_SVG[key]||''; }
+/* 캐릭터 키('mochi','gomdol','dalkong')의 전체 8개 표정 키 배열 반환 */
+function charEmojiKeys(charKey){
+  return ['base','happy','love','sleep','surprise','wink','sad','cool'].map(e=>`${charKey}:${e}`);
+}
 
-/* 이모지 팩 — 모찌 / 곰돌 / 달콩 캐릭터 팩 */
+/* 이모지 팩 — 모찌 / 곰돌 / 달콩 캐릭터 팩 (각 팩 8개 표정) */
 const STORE_EMOJI=[
   {key:'mochi',   name:'모찌',  desc:'떡 캐릭터',     preview:['mochi:base','mochi:happy','mochi:love','mochi:sleep']},
   {key:'gomdol',  name:'곰돌',  desc:'곰 캐릭터',     preview:['gomdol:base','gomdol:happy','gomdol:love','gomdol:sleep']},
