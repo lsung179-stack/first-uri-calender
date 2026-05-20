@@ -637,29 +637,68 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
   background:#5e8a3a;padding:2px 7px;border-radius:99px;letter-spacing:.3px;
 }
 
-/* 캘린더 진입 시 반응 이모지 통통튀기 말풍선 (3~4초) */
+/* 캘린더 진입 시 반응 이모지 통통튀기 말풍선 (1 이모지 = 1 말풍선)
+   셀 안/밖 자유롭게 배치, 4종 burst 변종으로 대각 + 회전 임팩트 */
 .cal-reaction-bubble{
-  position:absolute;top:-6px;left:50%;
-  transform:translateX(-50%) scale(0);
-  display:inline-flex;align-items:center;gap:3px;
-  padding:4px 8px;
+  position:absolute;
+  /* left, top 은 JS에서 동적 설정 */
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:3px 9px;
   background:var(--card);
   border:1.5px solid var(--accent);
-  border-radius:14px;
-  box-shadow:0 3px 10px rgba(0,0,0,.18);
+  border-radius:99px;
+  box-shadow:0 4px 10px rgba(0,0,0,.22);
   z-index:15;pointer-events:none;white-space:nowrap;
-  animation:reaction-bubble-pop 3.6s cubic-bezier(.34,1.56,.64,1) both;
+  opacity:0;
+  transform:translate(-50%,-50%) scale(0);
 }
 .cal-reaction-bubble span{font-size:13px;line-height:1}
 .cal-reaction-bubble svg{width:16px;height:16px;display:block}
-@keyframes reaction-bubble-pop{
-  0%{transform:translateX(-50%) scale(0) translateY(6px);opacity:0}
-  10%{transform:translateX(-50%) scale(1.18) translateY(-3px);opacity:1}
-  18%{transform:translateX(-50%) scale(.94) translateY(0);opacity:1}
-  25%{transform:translateX(-50%) scale(1) translateY(0);opacity:1}
-  82%{transform:translateX(-50%) scale(1) translateY(0);opacity:1}
-  100%{transform:translateX(-50%) scale(.6) translateY(4px);opacity:0}
+
+/* 변종 A: 좌상 → 우하 회전 */
+@keyframes burst-a{
+  0%   {transform:translate(-50%,-50%) translate(-28px,16px) scale(0) rotate(-45deg);opacity:0}
+  10%  {transform:translate(-50%,-50%) translate(-6px,3px)   scale(1.45) rotate(18deg);opacity:1}
+  20%  {transform:translate(-50%,-50%) translate(0,0)         scale(.82) rotate(-6deg);opacity:1}
+  30%  {transform:translate(-50%,-50%) translate(0,0)         scale(1.08) rotate(3deg);opacity:1}
+  42%  {transform:translate(-50%,-50%) translate(0,0)         scale(1) rotate(0);opacity:1}
+  78%  {transform:translate(-50%,-50%) translate(0,0)         scale(1) rotate(0);opacity:1}
+  100% {transform:translate(-50%,-50%) translate(14px,-12px) scale(.4) rotate(28deg);opacity:0}
 }
+/* 변종 B: 우상 → 좌하 반대 회전 */
+@keyframes burst-b{
+  0%   {transform:translate(-50%,-50%) translate(28px,16px) scale(0) rotate(50deg);opacity:0}
+  10%  {transform:translate(-50%,-50%) translate(6px,3px)    scale(1.48) rotate(-22deg);opacity:1}
+  20%  {transform:translate(-50%,-50%) translate(0,0)        scale(.88) rotate(9deg);opacity:1}
+  30%  {transform:translate(-50%,-50%) translate(0,0)        scale(1.1) rotate(-3deg);opacity:1}
+  42%  {transform:translate(-50%,-50%) translate(0,0)        scale(1) rotate(0);opacity:1}
+  78%  {transform:translate(-50%,-50%) translate(0,0)        scale(1) rotate(0);opacity:1}
+  100% {transform:translate(-50%,-50%) translate(-13px,-10px) scale(.4) rotate(-32deg);opacity:0}
+}
+/* 변종 C: 아래 → 위 큰 폭 회전 */
+@keyframes burst-c{
+  0%   {transform:translate(-50%,-50%) translate(2px,32px) scale(0) rotate(-65deg);opacity:0}
+  10%  {transform:translate(-50%,-50%) translate(0,8px)    scale(1.55) rotate(28deg);opacity:1}
+  20%  {transform:translate(-50%,-50%) translate(0,0)      scale(.82) rotate(-12deg);opacity:1}
+  30%  {transform:translate(-50%,-50%) translate(0,0)      scale(1.12) rotate(5deg);opacity:1}
+  42%  {transform:translate(-50%,-50%) translate(0,0)      scale(1) rotate(0);opacity:1}
+  78%  {transform:translate(-50%,-50%) translate(0,0)      scale(1) rotate(0);opacity:1}
+  100% {transform:translate(-50%,-50%) translate(9px,20px) scale(.42) rotate(42deg);opacity:0}
+}
+/* 변종 D: 위 → 아래 가벼운 회전 */
+@keyframes burst-d{
+  0%   {transform:translate(-50%,-50%) translate(-3px,-26px) scale(0) rotate(70deg);opacity:0}
+  10%  {transform:translate(-50%,-50%) translate(0,-7px)     scale(1.4) rotate(-28deg);opacity:1}
+  20%  {transform:translate(-50%,-50%) translate(0,0)        scale(.9) rotate(11deg);opacity:1}
+  30%  {transform:translate(-50%,-50%) translate(0,0)        scale(1.08) rotate(-2deg);opacity:1}
+  42%  {transform:translate(-50%,-50%) translate(0,0)        scale(1) rotate(0);opacity:1}
+  78%  {transform:translate(-50%,-50%) translate(0,0)        scale(1) rotate(0);opacity:1}
+  100% {transform:translate(-50%,-50%) translate(-11px,18px) scale(.45) rotate(-40deg);opacity:0}
+}
+.cal-reaction-bubble.burst-a{animation:burst-a 3.4s cubic-bezier(.34,1.56,.64,1) both}
+.cal-reaction-bubble.burst-b{animation:burst-b 3.4s cubic-bezier(.34,1.56,.64,1) both}
+.cal-reaction-bubble.burst-c{animation:burst-c 3.4s cubic-bezier(.34,1.56,.64,1) both}
+.cal-reaction-bubble.burst-d{animation:burst-d 3.4s cubic-bezier(.34,1.56,.64,1) both}
 .ev-color{width:100%;aspect-ratio:1;border-radius:50%;border:none;cursor:pointer;background:var(--accent);transition:transform .12s;position:relative}
 .ev-color:active{transform:scale(.9)}
 .ev-color.on::after{
@@ -1150,6 +1189,20 @@ body.align-right .cal-evbar{text-align:right}
   font-size:14px;color:var(--text);line-height:1.7;white-space:pre-wrap;
   word-break:break-word;
 }
+/* 공지사항 상세 사진 */
+.ann-detail-photo{
+  margin:0 0 18px;border-radius:14px;overflow:hidden;
+  background:var(--bg);cursor:pointer;
+  border:1px solid var(--border);
+}
+.ann-detail-photo img{width:100%;display:block;max-height:480px;object-fit:cover}
+/* 공지사항 팝업 사진 */
+.ann-popup-photo{
+  margin:10px 18px 0;border-radius:12px;overflow:hidden;
+  background:var(--bg);cursor:pointer;
+  border:1px solid var(--border);
+}
+.ann-popup-photo img{width:100%;display:block;max-height:200px;object-fit:cover}
 
 /* 작성/수정 모달 (mo-card 위에 띄움 — z-index 더 높게) */
 #annComposeOverlay,#annMenuOverlay{z-index:1400}
@@ -2133,6 +2186,18 @@ body.align-right .cal-evbar{text-align:right}
   </div>
   
   <div class="ann-compose-field">
+    <div class="ann-compose-label">사진 (선택)</div>
+    <div class="ev-photo-row" id="annPhotoRow">
+      <button type="button" class="ev-photo-pick-btn" id="annPhotoPickBtn" onclick="pickAnnPhoto()">📷 사진 선택</button>
+      <div class="ev-photo-preview" id="annPhotoPreview" style="display:none">
+        <img id="annPhotoPreviewImg" alt="첨부 사진">
+        <button type="button" class="ev-photo-remove-btn" onclick="removeAnnPhoto()" aria-label="사진 제거">✕</button>
+      </div>
+      <input type="file" id="annPhotoFile" accept="image/*" hidden onchange="onAnnPhotoSelected(event)">
+    </div>
+  </div>
+  
+  <div class="ann-compose-field">
     <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;user-select:none">
       <input type="checkbox" id="annComposeShowOnOpen" style="width:18px;height:18px;cursor:pointer;accent-color:var(--accent);flex-shrink:0">
       <span style="font-size:13px;color:var(--text);line-height:1.4">등록 후 사용자들 첫 진입 시 자동으로 표시</span>
@@ -2163,6 +2228,7 @@ body.align-right .cal-evbar{text-align:right}
   <div class="ann-popup-icon">📢</div>
   <div class="ann-popup-title" id="annPopupTitle"></div>
   <div class="ann-popup-date" id="annPopupDate"></div>
+  <div class="ann-popup-photo" id="annPopupPhoto" style="display:none"><img id="annPopupPhotoImg" alt="공지 사진" loading="lazy"></div>
   <div class="ann-popup-body" id="annPopupBody"></div>
   <div class="ann-popup-actions">
     <button class="ann-popup-btn" onclick="annPopupSeeAll()">전체 보기</button>
@@ -3952,13 +4018,12 @@ async function loadEvents(){
   }
 }
 
-/* 캘린더 진입 시 이모지 반응 말풍선 통통튀기 애니메이션 (3~4초) */
+/* 캘린더 진입 시 이모지 반응 말풍선 통통튀기 애니메이션 (3~4초)
+   1 이모지 = 1 말풍선 — 여러 사람이 반응했으면 그 수만큼 말풍선 등장 */
 function showReactionAnimation(){
   if(!_events||!_reactions)return;
 
   // target_id별 가장 빠른 날짜 = 그 일정의 "첫날"
-  // (함께 기간: 같은 shared_id의 여러 날짜 중 가장 빠른 날)
-  // (단독 기간: 각 row가 별도 id라 자연스럽게 row별로 매핑)
   const firstDateByTarget={};
   Object.entries(_events).forEach(([date,evs])=>{
     evs.forEach(ev=>{
@@ -3969,37 +4034,64 @@ function showReactionAnimation(){
     });
   });
 
-  // 첫날에만 반응 이모지 수집
+  // 날짜별 반응 이모지 배열 (사용자별 반응 그대로 — 중복 OK)
   const byDate={};
   Object.entries(_events).forEach(([date,evs])=>{
     evs.forEach(ev=>{
       const tid=ev.shared_id||ev.id;
-      // 이 일정의 첫날이 아니면 skip (기간 일정 중간/마지막 날)
       if(firstDateByTarget[tid]!==date)return;
       const rs=_reactions[tid];
       if(!rs||!rs.length)return;
-      if(!byDate[date])byDate[date]=new Set();
-      rs.forEach(r=>byDate[date].add(r.emoji));
+      if(!byDate[date])byDate[date]=[];
+      rs.forEach(r=>byDate[date].push(r.emoji));
     });
   });
-  // 각 날짜 셀에 말풍선 (살짝 stagger)
-  Object.entries(byDate).forEach(([date,emojiSet],idx)=>{
+
+  // 각 이모지마다 별도 말풍선 생성 (대각·랜덤 위치 + 다양한 회전)
+  // 셀 안/밖 자유롭게 분산 - 일정 라벨과 겹쳐도 OK
+  const POSITIONS=[
+    {top:'-12%',left:'22%'},  // 좌상 (셀 위로 살짝)
+    {top:'18%', left:'78%'},  // 우상
+    {top:'55%', left:'15%'},  // 좌하
+    {top:'68%', left:'72%'},  // 우하
+    {top:'92%', left:'48%'},  // 아래 가운데
+    {top:'-8%', left:'55%'},  // 상단 가운데
+  ];
+  // 4종 burst 키프레임 (각자 다른 회전·시작방향)
+  const VARIANTS=['burst-a','burst-b','burst-c','burst-d'];
+
+  let globalIdx=0;
+  Object.entries(byDate).forEach(([date,emojis])=>{
     const cell=document.querySelector(`.cal-cell[data-date="${date}"]`);
     if(!cell)return;
-    // 셀에 relative 보장 (CSS에 있지만 안전망)
     if(getComputedStyle(cell).position==='static')cell.style.position='relative';
-    const emojis=Array.from(emojiSet).slice(0,3); // 최대 3개
-    const bubble=document.createElement('div');
-    bubble.className='cal-reaction-bubble';
-    bubble.innerHTML=emojis.map(em=>{
-      if(typeof em==='string'&&em.includes(':'))return svgEmoji(em);
-      return `<span>${em}</span>`;
-    }).join('');
-    bubble.style.animationDelay=(idx*0.07)+'s';
-    cell.appendChild(bubble);
-    setTimeout(()=>{
-      if(bubble.parentNode)bubble.parentNode.removeChild(bubble);
-    },3700+idx*70);
+
+    // 최대 6개까지 (그 이상은 어수선)
+    const list=emojis.slice(0,6);
+
+    list.forEach((em,ei)=>{
+      const bubble=document.createElement('div');
+      bubble.className='cal-reaction-bubble '+VARIANTS[(globalIdx*3+ei)%VARIANTS.length];
+
+      // 위치 — 셀 안/밖 분산
+      const pos=POSITIONS[(globalIdx+ei)%POSITIONS.length];
+      bubble.style.left=pos.left;
+      bubble.style.top=pos.top;
+
+      // 본문 (1 이모지)
+      bubble.innerHTML=(typeof em==='string'&&em.includes(':'))
+        ? svgEmoji(em)
+        : `<span>${em}</span>`;
+
+      // stagger — 차례로 튀어오름
+      bubble.style.animationDelay=(globalIdx*0.10)+'s';
+
+      cell.appendChild(bubble);
+      setTimeout(()=>{
+        if(bubble.parentNode)bubble.parentNode.removeChild(bubble);
+      },3700+globalIdx*100);
+      globalIdx++;
+    });
   });
 }
 
@@ -7029,6 +7121,7 @@ function openAnnouncementDetail(id){
       <div class="ann-detail-title">${escapeHtml(ann.title)}</div>
       <div class="ann-detail-date">${dateStr}</div>
       <div class="ann-detail-divider"></div>
+      ${ann.image_url?`<div class="ann-detail-photo" onclick="openPhotoView('${escapeHtml(ann.image_url)}')"><img src="${escapeHtml(ann.image_url)}" alt="공지 사진" loading="lazy"></div>`:''}
       <div class="ann-detail-body">${escapeHtml(ann.body||'')}</div>
     </div>
   `;
@@ -7057,9 +7150,131 @@ function formatAnnDateLong(iso){
 
 /* ── 작성 / 수정 모달 ── */
 let _annEditId=null;  // 수정 모드면 ID, 새 글이면 null
+
+/* 공지사항 사진 첨부 상태 */
+let _annPhotoBlob=null;
+let _annPhotoPreviewUrl=null;
+let _annExistingPhotoUrl=null;
+let _annPhotoRemoved=false;
+
+function _resetAnnPhotoState(){
+  if(_annPhotoPreviewUrl){try{URL.revokeObjectURL(_annPhotoPreviewUrl)}catch(_){}}
+  _annPhotoBlob=null;
+  _annPhotoPreviewUrl=null;
+  _annExistingPhotoUrl=null;
+  _annPhotoRemoved=false;
+  const pickBtn=document.getElementById('annPhotoPickBtn');
+  const prev=document.getElementById('annPhotoPreview');
+  const previewImg=document.getElementById('annPhotoPreviewImg');
+  if(pickBtn)pickBtn.style.display='';
+  if(prev)prev.style.display='none';
+  if(previewImg)previewImg.src='';
+}
+function _showAnnExistingPhoto(url){
+  _annExistingPhotoUrl=url;
+  const pickBtn=document.getElementById('annPhotoPickBtn');
+  const prev=document.getElementById('annPhotoPreview');
+  const previewImg=document.getElementById('annPhotoPreviewImg');
+  if(previewImg)previewImg.src=url;
+  if(prev)prev.style.display='';
+  if(pickBtn)pickBtn.style.display='none';
+}
+
+/* 파일 선택 트리거 */
+function pickAnnPhoto(){
+  const f=document.getElementById('annPhotoFile');
+  if(f)f.click();
+}
+/* 사진 선택됨 → 리사이즈 → 미리보기 */
+async function onAnnPhotoSelected(e){
+  let file=e?.target?.files?.[0];
+  if(!file)return;
+  const isHeic=/^image\/hei[cf]/i.test(file.type) || /\.heic$/i.test(file.name) || /\.heif$/i.test(file.name);
+  if(!/^image\//.test(file.type) && !isHeic){toast('이미지 파일만 가능해요');return}
+  const btn=document.getElementById('annPhotoPickBtn');
+  const origBtnText=btn?.textContent;
+  try{
+    if(isHeic){
+      if(btn){btn.textContent='HEIC 변환 중...';btn.disabled=true}
+      try{
+        const heic2any=await loadHeic2Any();
+        const converted=await heic2any({blob:file, toType:'image/jpeg', quality:0.92});
+        const cBlob=Array.isArray(converted)?converted[0]:converted;
+        const newName=(file.name||'photo').replace(/\.hei[cf]$/i,'.jpg');
+        file=new File([cBlob], newName, {type:'image/jpeg'});
+      }catch(err){
+        console.error('HEIC 변환 실패:',err);
+        toast('HEIC 사진 변환에 실패했어요. 다른 사진을 선택해주세요');
+        return;
+      }
+    }
+    const blob=await resizeEventImage(file, 1600, 0.82);
+    if(_annPhotoPreviewUrl){try{URL.revokeObjectURL(_annPhotoPreviewUrl)}catch(_){}}
+    _annPhotoBlob=blob;
+    _annPhotoPreviewUrl=URL.createObjectURL(blob);
+    _annPhotoRemoved=false;
+    _annExistingPhotoUrl=null;
+    const prev=document.getElementById('annPhotoPreview');
+    const previewImg=document.getElementById('annPhotoPreviewImg');
+    const pickBtn=document.getElementById('annPhotoPickBtn');
+    if(previewImg)previewImg.src=_annPhotoPreviewUrl;
+    if(prev)prev.style.display='';
+    if(pickBtn)pickBtn.style.display='none';
+  }catch(err){
+    console.error(err);
+    toast('사진 처리에 실패했어요');
+  }finally{
+    if(btn){btn.textContent=origBtnText||'📷 사진 선택';btn.disabled=false}
+    if(e?.target)e.target.value='';
+  }
+}
+function removeAnnPhoto(){
+  if(_annPhotoPreviewUrl){try{URL.revokeObjectURL(_annPhotoPreviewUrl)}catch(_){}}
+  _annPhotoBlob=null;
+  _annPhotoPreviewUrl=null;
+  _annExistingPhotoUrl=null;
+  _annPhotoRemoved=true;
+  const pickBtn=document.getElementById('annPhotoPickBtn');
+  const prev=document.getElementById('annPhotoPreview');
+  const previewImg=document.getElementById('annPhotoPreviewImg');
+  if(pickBtn)pickBtn.style.display='';
+  if(prev)prev.style.display='none';
+  if(previewImg)previewImg.src='';
+}
+/* Storage에 사진 업로드 (event-photos bucket의 announcements/ 경로 공유) */
+async function uploadAnnPhotoIfNeeded(){
+  if(_annPhotoBlob){
+    const ext='jpg';
+    const uid=_currentUser?.id||'anon';
+    const rand=Math.random().toString(36).slice(2,10);
+    const path=`announcements/${uid}_${Date.now()}_${rand}.${ext}`;
+    const {data:up,error}=await supa.storage.from('event-photos')
+      .upload(path,_annPhotoBlob,{contentType:'image/jpeg',upsert:false});
+    if(error)throw error;
+    const {data:pub}=supa.storage.from('event-photos').getPublicUrl(up.path);
+    return pub?.publicUrl||null;
+  }
+  if(_annPhotoRemoved)return null;
+  if(_annExistingPhotoUrl)return _annExistingPhotoUrl;
+  return null;
+}
+/* 공지사항 옛 사진 Storage 정리 */
+async function deleteAnnPhotoFromStorage(url){
+  if(!url)return;
+  try{
+    const m=url.match(/\/event-photos\/(.+?)(\?|$)/);
+    if(!m)return;
+    const path=decodeURIComponent(m[1]);
+    await supa.storage.from('event-photos').remove([path]);
+  }catch(e){
+    console.warn('공지 사진 Storage 삭제 실패 (무시):',e);
+  }
+}
+
 function openAnnouncementCompose(){
   if(!isAdmin()){ toast('권한이 없어요'); return; }
   _annEditId=null;
+  _resetAnnPhotoState();
   document.getElementById('annComposeTitle').textContent='새 공지사항';
   document.getElementById('annComposeTitleInput').value='';
   document.getElementById('annComposeBodyInput').value='';
@@ -7074,10 +7289,13 @@ function openAnnouncementEditCurrent(){
   const ann=_announcements.find(a=>a.id===_annCurrentId);
   if(!ann)return;
   _annEditId=_annCurrentId;
+  _resetAnnPhotoState();
   document.getElementById('annComposeTitle').textContent='공지사항 수정';
   document.getElementById('annComposeTitleInput').value=ann.title||'';
   document.getElementById('annComposeBodyInput').value=ann.body||'';
   document.getElementById('annComposeShowOnOpen').checked=!!ann.show_on_open;
+  // 기존 사진 있으면 미리보기
+  if(ann.image_url)_showAnnExistingPhoto(ann.image_url);
   updateAnnComposeCounters();
   document.getElementById('annComposeOverlay').classList.add('on');
   document.getElementById('annComposeCard').classList.add('on');
@@ -7086,6 +7304,7 @@ function closeAnnouncementCompose(){
   document.getElementById('annComposeOverlay').classList.remove('on');
   document.getElementById('annComposeCard').classList.remove('on');
   _annEditId=null;
+  _resetAnnPhotoState();
 }
 function updateAnnComposeCounters(){
   const t=document.getElementById('annComposeTitleInput').value.length;
@@ -7104,20 +7323,37 @@ async function saveAnnouncement(){
   if(title.length>60){ toast('제목은 60자 이내로 입력해주세요'); return; }
   if(body.length>2000){ toast('본문은 2000자 이내로 입력해주세요'); return; }
   
-  const wasNew=!_annEditId;  // 새 글 여부 기억 (저장 후 분기용)
+  const wasNew=!_annEditId;
   
   try{
+    // 사진 업로드 (있으면)
+    let image_url=null;
+    try{
+      image_url=await uploadAnnPhotoIfNeeded();
+    }catch(uploadErr){
+      console.error('사진 업로드 실패:',uploadErr);
+      toast('사진 업로드에 실패했어요. 사진 없이 저장하시려면 사진을 제거해주세요');
+      return;
+    }
+    
     if(_annEditId){
+      // 옛 사진 정리: 사진이 바뀌었거나 명시 삭제됐으면
+      const old=_announcements.find(a=>a.id===_annEditId);
+      const oldUrl=old?.image_url||null;
       const { error }=await supa
         .from('announcements')
-        .update({ title, body, show_on_open })
+        .update({ title, body, show_on_open, image_url })
         .eq('id', _annEditId);
       if(error){ console.error(error); toast('수정에 실패했어요'); return; }
+      // 옛 사진과 새 사진이 다르면 옛 사진 Storage에서 삭제
+      if(oldUrl&&oldUrl!==image_url){
+        await deleteAnnPhotoFromStorage(oldUrl);
+      }
       toast('수정되었습니다');
     }else{
       const { error }=await supa
         .from('announcements')
-        .insert({ title, body, show_on_open });
+        .insert({ title, body, show_on_open, image_url });
       if(error){ console.error(error); toast('저장에 실패했어요'); return; }
       toast(show_on_open?'등록 완료 — 이용자에겐 이렇게 보여요':'공지가 등록되었습니다');
     }
@@ -7165,7 +7401,17 @@ function showAnnouncementPopup(ann){
   document.getElementById('annPopupTitle').textContent=ann.title||'';
   document.getElementById('annPopupDate').textContent=formatAnnDateLong(ann.created_at);
   document.getElementById('annPopupBody').textContent=ann.body||'';
-  // 팝업 뜨는 순간 그 공지는 본 걸로 처리 (배지 동기화 포함)
+  // 사진
+  const photoEl=document.getElementById('annPopupPhoto');
+  const photoImg=document.getElementById('annPopupPhotoImg');
+  if(ann.image_url){
+    if(photoImg)photoImg.src=ann.image_url;
+    if(photoEl){photoEl.style.display='';photoEl.onclick=()=>openPhotoView(ann.image_url)}
+  }else{
+    if(photoEl)photoEl.style.display='none';
+    if(photoImg)photoImg.src='';
+  }
+  // 팝업 뜨는 순간 그 공지는 본 걸로 처리
   markAnnouncementRead(ann.id);
   document.getElementById('annPopupOverlay').classList.add('on');
   document.getElementById('annPopup').classList.add('on');
@@ -7183,11 +7429,16 @@ async function deleteAnnouncementCurrent(){
   if(!isAdmin()||!_annCurrentId)return;
   if(!confirm('이 공지를 삭제하시겠어요?'))return;
   try{
+    // 삭제 전 사진 URL 캐싱
+    const oldAnn=_announcements.find(a=>a.id===_annCurrentId);
+    const photoUrlToCleanup=oldAnn?.image_url||null;
     const { error }=await supa
       .from('announcements')
       .delete()
       .eq('id', _annCurrentId);
     if(error){ console.error(error); toast('삭제에 실패했어요'); return; }
+    // Storage 정리
+    if(photoUrlToCleanup)await deleteAnnPhotoFromStorage(photoUrlToCleanup);
     toast('삭제되었습니다');
     _annCurrentId=null;
     await loadAnnouncements();
