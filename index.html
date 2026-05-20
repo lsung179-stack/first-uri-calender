@@ -1183,9 +1183,12 @@ body.align-right .cal-evbar{text-align:right}
 }
 
 /* 캐릭터 상세 모달 — 8개 표정 그리드 */
+#charDetailOverlay{z-index:1400}
+#charDetailCard{z-index:1401;left:50%;right:auto;width:100%;max-width:430px;transform:translateX(-50%) translateY(100%)}
+#charDetailCard.on{transform:translateX(-50%) translateY(0)}
 .char-expr-grid{
   display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
-  margin:8px 0 12px;
+  margin:8px auto 12px;justify-content:center;width:100%;
 }
 .char-expr-tile{
   background:var(--bg);border:1px solid var(--border);
