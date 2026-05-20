@@ -934,6 +934,120 @@ body.fs-large .cal-day-num{font-size:14.5px}
 body.align-center .cal-evbar{text-align:center}
 body.align-right .cal-evbar{text-align:right}
 
+/* ═════════════════ 공지사항 ═════════════════ */
+/* 시트 (스토어와 같은 풀스크린 패턴) */
+.ann-card{
+  position:fixed;left:0;right:0;bottom:0;top:0;background:var(--bg);
+  z-index:1300;display:none;flex-direction:column;overflow:hidden;
+  -webkit-tap-highlight-color:transparent;
+}
+.ann-card.on{display:flex;animation:slide-up .28s ease-out}
+.ann-head{
+  display:flex;align-items:center;gap:8px;padding:14px 14px 12px;
+  border-bottom:1px solid var(--borderL);background:var(--bg);
+  flex-shrink:0;
+}
+.ann-back{
+  background:none;border:none;width:36px;height:36px;cursor:pointer;
+  font-size:24px;color:var(--text);font-family:inherit;line-height:1;font-weight:300;
+}
+.ann-back:active{opacity:.5}
+.ann-title{flex:1;font-size:20px;font-weight:800;color:var(--text);font-family:'Noto Serif KR',serif;letter-spacing:.5px}
+.ann-head-btn{
+  background:none;border:none;width:36px;height:36px;cursor:pointer;
+  font-size:22px;color:var(--sub);font-family:inherit;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+}
+.ann-head-btn:active{opacity:.5}
+.ann-head-btn.primary{color:var(--accent);font-weight:700;font-size:24px}
+.ann-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+/* 목록 화면 */
+.ann-list{padding:0}
+.ann-list-empty{
+  text-align:center;padding:60px 30px;color:var(--mute);font-size:13px;line-height:1.6;
+}
+.ann-list-item{
+  display:flex;align-items:center;gap:10px;padding:14px 16px;
+  border-bottom:1px solid var(--borderL);cursor:pointer;
+  transition:background .15s;
+}
+.ann-list-item:active{background:var(--card)}
+.ann-list-num{
+  font-size:11px;font-weight:700;color:var(--mute);min-width:24px;
+  letter-spacing:.5px;
+}
+.ann-list-info{flex:1;min-width:0}
+.ann-list-title{
+  font-size:14px;font-weight:700;color:var(--text);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  line-height:1.3;
+}
+.ann-list-date{
+  font-size:11px;color:var(--sub);margin-top:3px;letter-spacing:.3px;
+}
+.ann-list-dot{
+  width:8px;height:8px;border-radius:50%;background:#e54848;flex-shrink:0;
+}
+.ann-list-arrow{color:var(--mute);font-size:18px;line-height:1;flex-shrink:0}
+
+/* 상세 화면 */
+.ann-detail{padding:24px 22px 40px}
+.ann-detail-num{
+  font-size:13px;font-weight:700;color:var(--mute);letter-spacing:1px;
+  margin-bottom:10px;
+}
+.ann-detail-title{
+  font-size:22px;font-weight:800;color:var(--text);
+  font-family:'Noto Serif KR',serif;line-height:1.35;
+  margin-bottom:10px;word-break:keep-all;
+}
+.ann-detail-date{
+  font-size:12px;color:var(--sub);margin-bottom:18px;letter-spacing:.3px;
+}
+.ann-detail-divider{
+  height:1px;background:var(--borderL);margin-bottom:20px;
+}
+.ann-detail-body{
+  font-size:14px;color:var(--text);line-height:1.7;white-space:pre-wrap;
+  word-break:break-word;
+}
+
+/* 작성/수정 모달 (mo-card 위에 띄움 — z-index 더 높게) */
+#annComposeOverlay{z-index:1400}
+#annComposeCard{z-index:1401}
+.ann-compose-field{margin-bottom:14px}
+.ann-compose-label{
+  font-size:11px;font-weight:700;color:var(--sub);
+  margin-bottom:5px;letter-spacing:.3px;
+}
+.ann-compose-input{
+  width:100%;padding:11px 12px;background:var(--bg);
+  border:1.5px solid var(--border);border-radius:8px;
+  font-family:inherit;font-size:14px;color:var(--text);
+  outline:none;transition:border-color .15s;
+  -webkit-appearance:none;
+}
+.ann-compose-input:focus{border-color:var(--accent)}
+.ann-compose-textarea{
+  width:100%;padding:11px 12px;background:var(--bg);
+  border:1.5px solid var(--border);border-radius:8px;
+  font-family:inherit;font-size:14px;color:var(--text);
+  outline:none;transition:border-color .15s;
+  resize:vertical;min-height:160px;line-height:1.6;
+  -webkit-appearance:none;
+}
+.ann-compose-textarea:focus{border-color:var(--accent)}
+.ann-compose-counter{
+  text-align:right;font-size:10px;color:var(--mute);margin-top:3px;
+}
+
+/* 설정 시트의 공지사항 행 배지 */
+.rs-nav-row-badge{
+  width:8px;height:8px;border-radius:50%;background:#e54848;flex-shrink:0;
+  margin-right:6px;
+}
+
 /* 이모지 선택 모달 */
 .emoji-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 12px}
 .emoji-btn{
@@ -1647,6 +1761,15 @@ body.align-right .cal-evbar{text-align:right}
   <!-- 8. 지원 -->
   <div class="rs-section">
     <div class="rs-section-title">지원</div>
+    <div class="rs-nav-row" onclick="openAnnouncements()">
+      <div class="rs-nav-row-icon">📢</div>
+      <div class="rs-nav-row-info">
+        <div class="rs-nav-row-label">공지사항</div>
+        <div class="rs-nav-row-sub">새로운 기능과 변경사항</div>
+      </div>
+      <div class="rs-nav-row-badge" id="annNavBadge" style="display:none"></div>
+      <div class="rs-nav-row-arrow">›</div>
+    </div>
     <div class="rs-nav-row" onclick="openCustomerSupport()">
       <div class="rs-nav-row-icon">💬</div>
       <div class="rs-nav-row-info">
@@ -1683,6 +1806,47 @@ body.align-right .cal-evbar{text-align:right}
     <button class="store-tab disabled" data-tab="font" title="곧 출시">폰트</button>
   </div>
   <div class="store-body" id="storeBody"></div>
+</div>
+
+<!-- 공지사항 -->
+<!-- 공지사항 시트 (목록 ↔ 상세 토글) -->
+<div class="ann-card" id="annCard">
+  <div class="ann-head" id="annHeadList">
+    <div class="ann-title">공지사항</div>
+    <button class="ann-head-btn primary" id="annAddBtn" onclick="openAnnouncementCompose()" style="display:none" aria-label="새 공지">＋</button>
+    <button class="ann-head-btn" onclick="closeAnnouncements()" aria-label="닫기">✕</button>
+  </div>
+  <div class="ann-head" id="annHeadDetail" style="display:none">
+    <button class="ann-back" onclick="backToAnnouncementList()" aria-label="뒤로">‹</button>
+    <div class="ann-title">공지사항</div>
+    <button class="ann-head-btn" id="annDetailMenuBtn" onclick="openAnnouncementMenu()" style="display:none" aria-label="메뉴">⋮</button>
+    <button class="ann-head-btn" onclick="closeAnnouncements()" aria-label="닫기">✕</button>
+  </div>
+  <div class="ann-body" id="annBody"></div>
+</div>
+
+<!-- 공지 작성/수정 모달 -->
+<div class="mo-overlay" id="annComposeOverlay" onclick="closeAnnouncementCompose()"></div>
+<div class="mo-card" id="annComposeCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title" id="annComposeTitle">새 공지사항</div>
+  
+  <div class="ann-compose-field">
+    <div class="ann-compose-label">제목</div>
+    <input class="ann-compose-input" id="annComposeTitleInput" placeholder="제목을 입력하세요" maxlength="60">
+    <div class="ann-compose-counter"><span id="annComposeTitleCount">0</span>/60</div>
+  </div>
+  
+  <div class="ann-compose-field">
+    <div class="ann-compose-label">본문</div>
+    <textarea class="ann-compose-textarea" id="annComposeBodyInput" placeholder="공지사항 내용을 입력하세요" maxlength="2000"></textarea>
+    <div class="ann-compose-counter"><span id="annComposeBodyCount">0</span>/2000</div>
+  </div>
+  
+  <div class="mo-actions">
+    <button class="btn btn-primary" onclick="saveAnnouncement()">저장</button>
+    <button class="mo-cancel" onclick="closeAnnouncementCompose()">취소</button>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1862,7 +2026,7 @@ function closeAllModals(){
 function closeMainModals(){
   ['createOverlay','createCard','joinOverlay','joinCard','evOverlay','evCard',
    'dpOverlay','dpCard','profileOverlay','profileCard','roomSetOverlay','roomSetCard',
-   'storeCard',
+   'storeCard','annCard','annComposeOverlay','annComposeCard',
    'datePickerOverlay','datePickerCard','searchOverlay','searchCard']
     .forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on')});
 }
@@ -2492,6 +2656,18 @@ function enterRoom(roomId){
     }
   });
   autoRegisterPush();
+  // 공지사항: 로드 → 배지 동기화 → 안 읽음 있으면 자동으로 시트 열기 (한 호흡 뒤)
+  loadAnnouncements().then(()=>{
+    syncAnnouncementBadge();
+    const unread=getUnreadAnnouncementCount();
+    if(unread>0){
+      setTimeout(()=>{
+        // 다른 모달이 떠있지 않을 때만
+        const hasOpenModal=document.querySelector('.mo-card.on, .dp-card.on, .store-card.on, .ann-card.on');
+        if(!hasOpenModal)openAnnouncements();
+      }, 900);
+    }
+  });
 }
 
 function exitRoom(){
@@ -6036,6 +6212,7 @@ function openRoomSettings(){
   syncFontSizeButtons();
   syncWeekStartButtons();
   syncAlignButtons();
+  syncAnnouncementBadge();
   renderRoomMemberList();
   // owner / 멤버 메뉴 분기
   const isOwner=_currentRoom.owner_id===_currentUser?.id;
@@ -6247,6 +6424,259 @@ function closeRoomSettings(){
   document.getElementById('roomSetOverlay').classList.remove('on');
   document.getElementById('roomSetCard').classList.remove('on');
 }
+/* ═══════════════════════════════════
+   공지사항 (DB 기반)
+   - announcements 테이블 사용
+   - INSERT/UPDATE/DELETE는 본인(ADMIN)만 (DB RLS로 이중 보호)
+   - 읽음 여부는 각 사용자 폰의 localStorage에 ID 배열로 저장
+   ═══════════════════════════════════ */
+const ANN_ADMIN_USER_ID='3bc13a8b-618d-4d47-abea-1eec4d682ec0';
+let _announcements=[];      // DB에서 가져온 공지 배열 (created_at 오름차순)
+let _annCurrentId=null;     // 상세 화면에서 보고 있는 공지 ID
+
+function isAdmin(){
+  return _currentUser?.id===ANN_ADMIN_USER_ID;
+}
+
+/* ── localStorage 읽음 관리 ── */
+function getReadAnnouncementIds(){
+  try{
+    const v=localStorage.getItem('uricalv2.readAnnouncements');
+    if(!v)return [];
+    const arr=JSON.parse(v);
+    return Array.isArray(arr)?arr:[];
+  }catch(_){ return []; }
+}
+function markAnnouncementRead(id){
+  try{
+    const ids=getReadAnnouncementIds();
+    if(!ids.includes(id)){
+      ids.push(id);
+      localStorage.setItem('uricalv2.readAnnouncements', JSON.stringify(ids));
+    }
+  }catch(_){}
+}
+function getUnreadAnnouncementCount(){
+  const read=getReadAnnouncementIds();
+  return _announcements.filter(a=>!read.includes(a.id)).length;
+}
+function syncAnnouncementBadge(){
+  const badge=document.getElementById('annNavBadge');
+  if(!badge)return;
+  const count=getUnreadAnnouncementCount();
+  badge.style.display=count>0?'block':'none';
+}
+
+/* ── DB CRUD ── */
+async function loadAnnouncements(){
+  try{
+    const { data, error }=await supa
+      .from('announcements')
+      .select('*')
+      .order('created_at', { ascending: true });  // 오래된 순 → #1, #2, ...
+    if(error){ console.error('loadAnnouncements', error); _announcements=[]; return; }
+    _announcements=data||[];
+  }catch(e){ console.error(e); _announcements=[]; }
+}
+
+/* ── 화면 ── */
+async function openAnnouncements(){
+  closeMainModals();
+  await loadAnnouncements();
+  renderAnnouncementList();
+  document.getElementById('annCard').classList.add('on');
+  syncAnnouncementBadge();
+}
+function closeAnnouncements(){
+  document.getElementById('annCard').classList.remove('on');
+  _annCurrentId=null;
+  // 다음 진입 시 목록으로 시작하도록 헤더 초기화
+  document.getElementById('annHeadList').style.display='';
+  document.getElementById('annHeadDetail').style.display='none';
+}
+function renderAnnouncementList(){
+  // 헤더 모드 전환
+  document.getElementById('annHeadList').style.display='';
+  document.getElementById('annHeadDetail').style.display='none';
+  // 본인이면 + 버튼 노출
+  document.getElementById('annAddBtn').style.display=isAdmin()?'flex':'none';
+  
+  const body=document.getElementById('annBody');
+  if(!_announcements.length){
+    body.innerHTML='<div class="ann-list-empty">아직 등록된 공지사항이 없어요</div>';
+    return;
+  }
+  const read=getReadAnnouncementIds();
+  // 표시는 최신이 위 (#N부터 #1)
+  const items=[..._announcements].reverse();
+  let html='<div class="ann-list">';
+  items.forEach((a,idx)=>{
+    const num=_announcements.length-idx;  // 최신=N, 가장 오래된=1
+    const isUnread=!read.includes(a.id);
+    const dateStr=formatAnnDate(a.created_at);
+    html+=`
+      <div class="ann-list-item" onclick="openAnnouncementDetail('${a.id}')">
+        <div class="ann-list-num">#${num}</div>
+        <div class="ann-list-info">
+          <div class="ann-list-title">${escapeHtml(a.title)}</div>
+          <div class="ann-list-date">${dateStr}</div>
+        </div>
+        ${isUnread?'<div class="ann-list-dot"></div>':''}
+        <div class="ann-list-arrow">›</div>
+      </div>
+    `;
+  });
+  html+='</div>';
+  body.innerHTML=html;
+}
+function openAnnouncementDetail(id){
+  const ann=_announcements.find(a=>a.id===id);
+  if(!ann)return;
+  _annCurrentId=id;
+  // 읽음 처리 + 배지 갱신
+  markAnnouncementRead(id);
+  syncAnnouncementBadge();
+  // 헤더 전환
+  document.getElementById('annHeadList').style.display='none';
+  document.getElementById('annHeadDetail').style.display='';
+  document.getElementById('annDetailMenuBtn').style.display=isAdmin()?'flex':'none';
+  
+  const idx=_announcements.findIndex(a=>a.id===id);
+  const num=idx+1;  // 오래된 순 정렬이므로 #1, #2, ...
+  const dateStr=formatAnnDateLong(ann.created_at);
+  
+  document.getElementById('annBody').innerHTML=`
+    <div class="ann-detail">
+      <div class="ann-detail-num">#${num}</div>
+      <div class="ann-detail-title">${escapeHtml(ann.title)}</div>
+      <div class="ann-detail-date">${dateStr}</div>
+      <div class="ann-detail-divider"></div>
+      <div class="ann-detail-body">${escapeHtml(ann.body||'')}</div>
+    </div>
+  `;
+}
+function backToAnnouncementList(){
+  _annCurrentId=null;
+  renderAnnouncementList();
+}
+
+/* ── 날짜 포맷 ── */
+function formatAnnDate(iso){
+  try{
+    const d=new Date(iso);
+    const y=d.getFullYear();
+    const m=String(d.getMonth()+1).padStart(2,'0');
+    const day=String(d.getDate()).padStart(2,'0');
+    return `${y}.${m}.${day}`;
+  }catch(_){ return iso; }
+}
+function formatAnnDateLong(iso){
+  try{
+    const d=new Date(iso);
+    return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`;
+  }catch(_){ return iso; }
+}
+
+/* ── 작성 / 수정 모달 ── */
+let _annEditId=null;  // 수정 모드면 ID, 새 글이면 null
+function openAnnouncementCompose(){
+  if(!isAdmin()){ toast('권한이 없어요'); return; }
+  _annEditId=null;
+  document.getElementById('annComposeTitle').textContent='새 공지사항';
+  document.getElementById('annComposeTitleInput').value='';
+  document.getElementById('annComposeBodyInput').value='';
+  updateAnnComposeCounters();
+  document.getElementById('annComposeOverlay').classList.add('on');
+  document.getElementById('annComposeCard').classList.add('on');
+  setTimeout(()=>{document.getElementById('annComposeTitleInput').focus()},250);
+}
+function openAnnouncementEditCurrent(){
+  if(!isAdmin()||!_annCurrentId){ return; }
+  const ann=_announcements.find(a=>a.id===_annCurrentId);
+  if(!ann)return;
+  _annEditId=_annCurrentId;
+  document.getElementById('annComposeTitle').textContent='공지사항 수정';
+  document.getElementById('annComposeTitleInput').value=ann.title||'';
+  document.getElementById('annComposeBodyInput').value=ann.body||'';
+  updateAnnComposeCounters();
+  document.getElementById('annComposeOverlay').classList.add('on');
+  document.getElementById('annComposeCard').classList.add('on');
+}
+function closeAnnouncementCompose(){
+  document.getElementById('annComposeOverlay').classList.remove('on');
+  document.getElementById('annComposeCard').classList.remove('on');
+  _annEditId=null;
+}
+function updateAnnComposeCounters(){
+  const t=document.getElementById('annComposeTitleInput').value.length;
+  const b=document.getElementById('annComposeBodyInput').value.length;
+  const tc=document.getElementById('annComposeTitleCount');
+  const bc=document.getElementById('annComposeBodyCount');
+  if(tc)tc.textContent=t;
+  if(bc)bc.textContent=b;
+}
+async function saveAnnouncement(){
+  if(!isAdmin()){ toast('권한이 없어요'); return; }
+  const title=(document.getElementById('annComposeTitleInput').value||'').trim();
+  const body=(document.getElementById('annComposeBodyInput').value||'').trim();
+  if(!title){ toast('제목을 입력해주세요'); return; }
+  if(title.length>60){ toast('제목은 60자 이내로 입력해주세요'); return; }
+  if(body.length>2000){ toast('본문은 2000자 이내로 입력해주세요'); return; }
+  try{
+    if(_annEditId){
+      const { error }=await supa
+        .from('announcements')
+        .update({ title, body })
+        .eq('id', _annEditId);
+      if(error){ console.error(error); toast('수정에 실패했어요'); return; }
+      toast('수정되었습니다');
+    }else{
+      const { error }=await supa
+        .from('announcements')
+        .insert({ title, body });
+      if(error){ console.error(error); toast('저장에 실패했어요'); return; }
+      toast('공지가 등록되었습니다');
+    }
+    closeAnnouncementCompose();
+    await loadAnnouncements();
+    if(_annEditId)openAnnouncementDetail(_annEditId);
+    else renderAnnouncementList();
+    syncAnnouncementBadge();
+  }catch(e){ console.error(e); toast('오류가 발생했어요'); }
+}
+
+/* ── 메뉴 (수정/삭제) ── */
+function openAnnouncementMenu(){
+  if(!isAdmin()||!_annCurrentId)return;
+  const choice=window.prompt('수정하시려면 "수정", 삭제하시려면 "삭제"를 입력해주세요','수정');
+  if(choice==='수정')openAnnouncementEditCurrent();
+  else if(choice==='삭제')deleteAnnouncementCurrent();
+}
+async function deleteAnnouncementCurrent(){
+  if(!isAdmin()||!_annCurrentId)return;
+  if(!confirm('이 공지를 삭제하시겠어요?'))return;
+  try{
+    const { error }=await supa
+      .from('announcements')
+      .delete()
+      .eq('id', _annCurrentId);
+    if(error){ console.error(error); toast('삭제에 실패했어요'); return; }
+    toast('삭제되었습니다');
+    _annCurrentId=null;
+    await loadAnnouncements();
+    renderAnnouncementList();
+    syncAnnouncementBadge();
+  }catch(e){ console.error(e); toast('오류가 발생했어요'); }
+}
+
+/* 작성 모달 인풋 카운터 자동 갱신 (DOM 로드 후 바인딩) */
+document.addEventListener('DOMContentLoaded',()=>{
+  const ti=document.getElementById('annComposeTitleInput');
+  const bi=document.getElementById('annComposeBodyInput');
+  if(ti)ti.addEventListener('input',updateAnnComposeCounters);
+  if(bi)bi.addEventListener('input',updateAnnComposeCounters);
+});
+
 /* ═══════════════════════════════════
    스토어 (테마 등 꾸미기 아이템)
    ═══════════════════════════════════ */
