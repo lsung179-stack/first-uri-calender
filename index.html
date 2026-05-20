@@ -1014,8 +1014,8 @@ body.align-right .cal-evbar{text-align:right}
 }
 
 /* 작성/수정 모달 (mo-card 위에 띄움 — z-index 더 높게) */
-#annComposeOverlay{z-index:1400}
-#annComposeCard{z-index:1401}
+#annComposeOverlay,#annMenuOverlay{z-index:1400}
+#annComposeCard,#annMenuCard{z-index:1401}
 .ann-compose-field{margin-bottom:14px}
 .ann-compose-label{
   font-size:11px;font-weight:700;color:var(--sub);
@@ -1880,6 +1880,18 @@ body.align-right .cal-evbar{text-align:right}
   </div>
 </div>
 
+<!-- 공지사항 메뉴 (수정/삭제 액션시트) -->
+<div class="mo-overlay" id="annMenuOverlay" onclick="closeAnnouncementMenu()"></div>
+<div class="mo-card" id="annMenuCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">공지사항 관리</div>
+  <div class="mo-actions">
+    <button class="btn btn-primary" onclick="onAnnouncementMenuEdit()">✏️ 수정</button>
+    <button class="btn btn-danger" onclick="onAnnouncementMenuDelete()">🗑 삭제</button>
+    <button class="mo-cancel" onclick="closeAnnouncementMenu()">취소</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -2058,6 +2070,7 @@ function closeMainModals(){
   ['createOverlay','createCard','joinOverlay','joinCard','evOverlay','evCard',
    'dpOverlay','dpCard','profileOverlay','profileCard','roomSetOverlay','roomSetCard',
    'storeCard','advCard','annCard','annComposeOverlay','annComposeCard',
+   'annMenuOverlay','annMenuCard',
    'datePickerOverlay','datePickerCard','searchOverlay','searchCard']
     .forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on')});
 }
@@ -6675,12 +6688,24 @@ async function saveAnnouncement(){
   }catch(e){ console.error(e); toast('오류가 발생했어요'); }
 }
 
-/* ── 메뉴 (수정/삭제) ── */
+/* ── 메뉴 (수정/삭제) — 액션시트 ── */
 function openAnnouncementMenu(){
   if(!isAdmin()||!_annCurrentId)return;
-  const choice=window.prompt('수정하시려면 "수정", 삭제하시려면 "삭제"를 입력해주세요','수정');
-  if(choice==='수정')openAnnouncementEditCurrent();
-  else if(choice==='삭제')deleteAnnouncementCurrent();
+  document.getElementById('annMenuOverlay').classList.add('on');
+  document.getElementById('annMenuCard').classList.add('on');
+}
+function closeAnnouncementMenu(){
+  document.getElementById('annMenuOverlay').classList.remove('on');
+  document.getElementById('annMenuCard').classList.remove('on');
+}
+function onAnnouncementMenuEdit(){
+  closeAnnouncementMenu();
+  openAnnouncementEditCurrent();
+}
+function onAnnouncementMenuDelete(){
+  closeAnnouncementMenu();
+  // 짧은 호흡 뒤 confirm — 모달 사라진 다음
+  setTimeout(()=>deleteAnnouncementCurrent(), 200);
 }
 async function deleteAnnouncementCurrent(){
   if(!isAdmin()||!_annCurrentId)return;
