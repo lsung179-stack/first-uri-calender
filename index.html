@@ -22,6 +22,17 @@
     }
   }catch(e){}
 })();
+/* 폰트 크기 즉시 적용: body 생성 후 가능한 빠른 시점에 클래스 부착 */
+(function(){
+  try{
+    var fs=localStorage.getItem('uricalv2.fontSize');
+    if(fs==='small'||fs==='large'){
+      var apply=function(){if(document.body)document.body.classList.add('fs-'+fs)};
+      if(document.body)apply();
+      else document.addEventListener('DOMContentLoaded',apply,{once:true});
+    }
+  }catch(e){}
+})();
 </script>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -888,6 +899,25 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 }
 .store-empty{text-align:center;padding:30px 20px;color:var(--mute);font-size:12px}
 
+/* ═════════════════ 폰트 크기 조절 ═════════════════ */
+/* body.fs-small / body.fs-large 가 붙으면 일자 시트 + 캘린더 셀의 텍스트가 살짝 작/크게.
+   기본(보통)은 클래스 없음. 레이아웃 영향 최소화를 위해 ±1~2px만 조절. */
+body.fs-small .dp-title{font-size:13.5px}
+body.fs-small .dp-meta{font-size:10px}
+body.fs-small .dp-member-chip{font-size:10px}
+body.fs-small .dp-memo{font-size:11.5px}
+body.fs-small .dp-reaction-chip{font-size:11px}
+body.fs-small .cal-evbar{font-size:8.5px}
+body.fs-small .cal-day-num{font-size:12px}
+
+body.fs-large .dp-title{font-size:17px}
+body.fs-large .dp-meta{font-size:12.5px}
+body.fs-large .dp-member-chip{font-size:12.5px}
+body.fs-large .dp-memo{font-size:14px}
+body.fs-large .dp-reaction-chip{font-size:13px}
+body.fs-large .cal-evbar{font-size:10.5px}
+body.fs-large .cal-day-num{font-size:14.5px}
+
 /* 이모지 선택 모달 */
 .emoji-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 12px}
 .emoji-btn{
@@ -1505,18 +1535,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
   <div class="mo-title">설정</div>
   <div class="mo-sub" id="roomSetName">—</div>
   
-  <div class="rs-section">
-    <div class="rs-section-title">꾸미기</div>
-    <div class="rs-nav-row" onclick="openStore()">
-      <div class="rs-nav-row-icon">🛍️</div>
-      <div class="rs-nav-row-info">
-        <div class="rs-nav-row-label">스토어</div>
-        <div class="rs-nav-row-sub">테마를 다운로드해 캘린더를 꾸며보세요</div>
-      </div>
-      <div class="rs-nav-row-arrow">›</div>
-    </div>
-  </div>
-
+  <!-- 1. 방 정보 -->
   <div class="rs-section">
     <div class="rs-section-title">방 정보</div>
     <div class="rs-row" id="roomSetNameRow">
@@ -1544,6 +1563,26 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
     </button>
   </div>
 
+  <!-- 2. 멤버 -->
+  <div class="rs-section">
+    <div class="rs-section-title">멤버 (<span id="roomSetMemberCount">—</span>)</div>
+    <div id="roomSetMemberList"></div>
+  </div>
+
+  <!-- 3. 꾸미기 -->
+  <div class="rs-section">
+    <div class="rs-section-title">꾸미기</div>
+    <div class="rs-nav-row" onclick="openStore()">
+      <div class="rs-nav-row-icon">🛍️</div>
+      <div class="rs-nav-row-info">
+        <div class="rs-nav-row-label">스토어</div>
+        <div class="rs-nav-row-sub">테마를 다운로드해 캘린더를 꾸며보세요</div>
+      </div>
+      <div class="rs-nav-row-arrow">›</div>
+    </div>
+  </div>
+
+  <!-- 4. 알림 -->
   <div class="rs-section">
     <div class="rs-section-title">알림</div>
     <div class="rs-row">
@@ -1553,12 +1592,8 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
       <button class="dp-btn primary" id="roomNotifToggleBtn" onclick="toggleRoomNotification()">—</button>
     </div>
   </div>
-  
-  <div class="rs-section">
-    <div class="rs-section-title">멤버 (<span id="roomSetMemberCount">—</span>)</div>
-    <div id="roomSetMemberList"></div>
-  </div>
 
+  <!-- 5. 다크모드 -->
   <div class="rs-section">
     <div class="rs-section-title">다크모드</div>
     <div class="dm-row" id="darkModeRow">
@@ -1567,6 +1602,17 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
     </div>
   </div>
 
+  <!-- 6. 폰트 크기 -->
+  <div class="rs-section">
+    <div class="rs-section-title">폰트 크기</div>
+    <div class="dm-row" id="fontSizeRow">
+      <button class="dm-btn" data-fs="small" onclick="onFontSizeSelect('small')">작게</button>
+      <button class="dm-btn" data-fs="normal" onclick="onFontSizeSelect('normal')">보통</button>
+      <button class="dm-btn" data-fs="large" onclick="onFontSizeSelect('large')">크게</button>
+    </div>
+  </div>
+
+  <!-- 7. 지원 -->
   <div class="rs-section">
     <div class="rs-section-title">지원</div>
     <div class="rs-nav-row" onclick="openCustomerSupport()">
@@ -2656,6 +2702,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     applyTheme('vintage');
     document.documentElement.classList.remove('is-dark-pre');
   }catch(e){}
+  // 폰트 크기 초기 적용 (head 인라인 스크립트가 못 잡은 케이스 안전망)
+  try{ applyFontSize(getFontSizePref()); }catch(e){}
   const boxes=document.querySelectorAll('#codeBoxes .code-box');
   boxes.forEach((b,i)=>{
     b.addEventListener('input',e=>{
@@ -3126,6 +3174,40 @@ function setDarkModePref(value){
   // 현재 적용된 룸 테마로 다시 그림
   const cur=(_currentRoom&&_currentRoom.theme)||'vintage';
   applyTheme(cur);
+}
+
+/* ── 폰트 크기 (작게 / 보통 / 크게) ── */
+function getFontSizePref(){
+  try{
+    const v=localStorage.getItem('uricalv2.fontSize');
+    if(v==='small'||v==='large')return v;
+    return 'normal';
+  }catch(e){ return 'normal'; }
+}
+function setFontSizePref(value){
+  const v=(value==='small'||value==='large')?value:'normal';
+  try{ localStorage.setItem('uricalv2.fontSize', v); }catch(e){}
+  applyFontSize(v);
+}
+function applyFontSize(v){
+  if(!document.body)return;
+  document.body.classList.remove('fs-small','fs-large');
+  if(v==='small')document.body.classList.add('fs-small');
+  else if(v==='large')document.body.classList.add('fs-large');
+}
+function onFontSizeSelect(value){
+  if(!['small','normal','large'].includes(value))return;
+  setFontSizePref(value);
+  syncFontSizeButtons();
+}
+function syncFontSizeButtons(){
+  const pref=getFontSizePref();
+  const row=document.getElementById('fontSizeRow');
+  if(!row)return;
+  row.querySelectorAll('.dm-btn').forEach(b=>{
+    if(b.dataset.fs===pref)b.classList.add('on');
+    else b.classList.remove('on');
+  });
 }
 /* 다크 모드 팔레트 (빈티지 톤 유지하며 어둡게). accent는 룸 테마 그대로 사용. */
 const DARK_OVERRIDE={
@@ -5834,6 +5916,7 @@ function openRoomSettings(){
   document.getElementById('roomSetNameSub').textContent=_currentRoom.name||'—';
   document.getElementById('roomSetMemberCount').textContent=`${_myMembers.length}명`;
   syncDarkModeButtons();
+  syncFontSizeButtons();
   renderRoomMemberList();
   // owner / 멤버 메뉴 분기
   const isOwner=_currentRoom.owner_id===_currentUser?.id;
