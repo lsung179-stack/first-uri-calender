@@ -9,19 +9,6 @@
 <meta name="color-scheme" content="light only" id="metaColorScheme">
 <meta name="theme-color" content="#f3e6cf">
 <script>
-/* 다크 모드 깜빡임 방지: head에서 즉시 body 클래스 + meta 처리 */
-(function(){
-  try{
-    var pref=localStorage.getItem('uricalv2.darkMode');
-    if(pref==='dark'){
-      document.documentElement.classList.add('is-dark-pre');
-      var m=document.getElementById('metaColorScheme');
-      if(m) m.setAttribute('content','dark');
-      var tc=document.querySelector('meta[name="theme-color"]');
-      if(tc) tc.setAttribute('content','#1a1410');
-    }
-  }catch(e){}
-})();
 /* 폰트 크기 즉시 적용: body 생성 후 가능한 빠른 시점에 클래스 부착 */
 (function(){
   try{
@@ -86,20 +73,6 @@
   --shadow:0 1px 2px rgba(60,40,25,.08),0 8px 24px rgba(60,40,25,.05);
   --vh100:100dvh;
 }
-/* 깜빡임 방지: applyTheme 호출 전 초기 다크 배경 */
-html.is-dark-pre{background:#1a1410;color:#f0e4d0}
-html.is-dark-pre body{background:#1a1410}
-body.is-dark{color-scheme:dark}
-/* 다크 모드: 하드코딩 베이지 카드 배경 오버라이드 */
-body.is-dark .rs-row,
-body.is-dark .rs-member-row,
-body.is-dark .dp-item,
-body.is-dark .mp-item,
-body.is-dark .copy-option,
-body.is-dark .copy-source-item,
-body.is-dark .code-box{background:var(--aP)!important}
-/* owner 멤버 행은 다크에서도 강조 유지 */
-body.is-dark .rs-member-row.owner{background:rgba(194,160,107,.12)!important;border-color:var(--accent)!important}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{background:#e5dec7}
 html,body{margin:0;padding:0;height:100%;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Pretendard","Apple SD Gothic Neo","Noto Sans KR",sans-serif;-webkit-font-smoothing:antialiased;color-scheme:light only;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
@@ -1762,16 +1735,7 @@ body.align-right .cal-evbar{text-align:right}
     </div>
   </div>
 
-  <!-- 4. 다크모드 -->
-  <div class="rs-section">
-    <div class="rs-section-title">다크모드</div>
-    <div class="dm-row" id="darkModeRow">
-      <button class="dm-btn" data-dm="light" onclick="onDarkModeSelect('light')">라이트</button>
-      <button class="dm-btn" data-dm="dark" onclick="onDarkModeSelect('dark')">다크</button>
-    </div>
-  </div>
-
-  <!-- 5. 고급 설정 (진입 행 - 별도 시트 열림) -->
+  <!-- 4. 고급 설정 (진입 행 - 별도 시트 열림) -->
   <div class="rs-section">
     <div class="rs-section-title">기타</div>
     <div class="rs-nav-row" onclick="openAdvSettings()">
@@ -2239,26 +2203,8 @@ function openProfile(){
   fillBirthdaySelects();
   // 프로필 사진 표시 (avatar_url이 있으면)
   loadProfilePhoto();
-  // 다크모드 active 칩 표시
-  syncDarkModeButtons();
   document.getElementById('profileOverlay').classList.add('on');
   document.getElementById('profileCard').classList.add('on');
-}
-
-/* ── 다크 모드 토글 ── */
-function syncDarkModeButtons(){
-  const pref=getDarkModePref();
-  const row=document.getElementById('darkModeRow');
-  if(!row)return;
-  row.querySelectorAll('.dm-btn').forEach(b=>{
-    if(b.dataset.dm===pref)b.classList.add('on');
-    else b.classList.remove('on');
-  });
-}
-function onDarkModeSelect(value){
-  if(value!=='light'&&value!=='dark')return;
-  setDarkModePref(value);
-  syncDarkModeButtons();
 }
 
 function fillBirthdaySelects(){
@@ -3014,10 +2960,9 @@ async function joinRoom(){
 
 /* 코드 박스 자동 이동 */
 document.addEventListener('DOMContentLoaded',()=>{
-  // 다크 모드 초기 적용 (CSS 변수 채우기 + is-dark-pre 임시 클래스 제거)
+  // 룸 테마 초기 적용 (라이트 강제)
   try{
     applyTheme('vintage');
-    document.documentElement.classList.remove('is-dark-pre');
   }catch(e){}
   // 폰트 크기 초기 적용 (head 인라인 스크립트가 못 잡은 케이스 안전망)
   try{ applyFontSize(getFontSizePref()); }catch(e){}
@@ -3480,22 +3425,7 @@ function colorHex(key){const c=EVENT_COLORS.find(x=>x.key===key);return c?c.hex:
 
 /* ── 다크 모드 ── */
 /* 사용자 선호: 'light' | 'dark' (localStorage). 기본은 라이트. */
-function getDarkModePref(){
-  try{
-    const v=localStorage.getItem('uricalv2.darkMode');
-    return v==='dark'?'dark':'light';
-  }catch(e){ return 'light'; }
-}
-function isDarkMode(){
-  return getDarkModePref()==='dark';
-}
-function setDarkModePref(value){
-  const v=(value==='dark')?'dark':'light';
-  try{ localStorage.setItem('uricalv2.darkMode', v); }catch(e){}
-  // 현재 적용된 룸 테마로 다시 그림
-  const cur=(_currentRoom&&_currentRoom.theme)||'vintage';
-  applyTheme(cur);
-}
+
 
 /* ── 폰트 크기 (작게 / 보통 / 크게) ── */
 function getFontSizePref(){
@@ -3606,38 +3536,23 @@ function syncAlignButtons(){
     else b.classList.remove('on');
   });
 }
-/* 다크 모드 팔레트 (빈티지 톤 유지하며 어둡게). accent는 룸 테마 그대로 사용. */
-const DARK_OVERRIDE={
-  bg:'#1a1410',
-  card:'#261d15',
-  text:'#f0e4d0',
-  sub:'#b09578',
-  mute:'#5a4838',
-  border:'rgba(240,228,208,.15)',
-  borderL:'rgba(240,228,208,.08)',
-  aP:'#3a2d22',
-};
-
 function applyTheme(name){
   const t=THEMES[name]||THEMES.vintage;
   const r=document.documentElement;
-  const dark=isDarkMode();
-  // 다크 모드일 땐 bg/card/text/sub/mute/border/borderL/aP만 오버라이드, accent 등 강조색은 룸 테마 유지
-  const palette=dark?{...t, ...DARK_OVERRIDE}:t;
-  Object.keys(palette).forEach(k=>{
+  // 라이트 모드 강제 — 시스템 다크모드와 무관
+  Object.keys(t).forEach(k=>{
     if(k==='dotRGB'){
       // 도트 패턴 제거 (사용자 요청)
       document.body.style.backgroundImage='none';
     }else{
-      r.style.setProperty('--'+k, palette[k]);
+      r.style.setProperty('--'+k, t[k]);
     }
   });
   // theme-color meta 업데이트 (상태바 색)
   const tc=document.querySelector('meta[name="theme-color"]');
-  if(tc) tc.setAttribute('content', palette.bg);
-  // body에 dark 클래스 토글 (CSS 보조 셀렉터용)
-  if(dark) document.body.classList.add('is-dark');
-  else document.body.classList.remove('is-dark');
+  if(tc) tc.setAttribute('content', t.bg);
+  // is-dark 클래스 안전망 제거 (혹시 남아있을 경우)
+  if(document.body)document.body.classList.remove('is-dark');
 }
 
 /* ── 공휴일 (Nager.Date API + fallback) ── */
@@ -6317,7 +6232,6 @@ function openRoomSettings(){
   document.getElementById('roomSetCode').textContent=_currentRoom.code||'—';
   document.getElementById('roomSetNameSub').textContent=_currentRoom.name||'—';
   document.getElementById('roomSetMemberCount').textContent=`${_myMembers.length}명`;
-  syncDarkModeButtons();
   syncAnnouncementBadge();
   renderRoomMemberList();
   // owner / 멤버 메뉴 분기
