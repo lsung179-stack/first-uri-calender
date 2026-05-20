@@ -1016,6 +1016,54 @@ body.align-right .cal-evbar{text-align:right}
 /* 작성/수정 모달 (mo-card 위에 띄움 — z-index 더 높게) */
 #annComposeOverlay,#annMenuOverlay{z-index:1400}
 #annComposeCard,#annMenuCard{z-index:1401}
+
+/* 자동 표시 팝업 (캘린더 위에 가볍게 띄우는 작은 모달) */
+.ann-popup-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);
+  z-index:1450;display:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.ann-popup-overlay.on{display:block;animation:fade-in .2s ease-out}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+.ann-popup{
+  position:fixed;left:50%;top:50%;
+  width:88%;max-width:360px;max-height:72vh;
+  background:var(--card);border-radius:18px;
+  box-shadow:0 14px 40px rgba(0,0,0,.3);
+  z-index:1451;display:none;flex-direction:column;overflow:hidden;
+  transform:translate(-50%,-50%) scale(.9);opacity:0;
+  transition:transform .25s cubic-bezier(.32,.72,0,1),opacity .2s;
+}
+.ann-popup.on{display:flex;transform:translate(-50%,-50%) scale(1);opacity:1}
+.ann-popup-icon{text-align:center;font-size:30px;padding:22px 20px 0;line-height:1}
+.ann-popup-title{
+  font-family:'Noto Serif KR',serif;font-size:17px;font-weight:800;
+  color:var(--text);text-align:center;padding:12px 22px 0;line-height:1.35;
+  word-break:keep-all;
+}
+.ann-popup-date{
+  font-size:11px;color:var(--sub);text-align:center;
+  padding:6px 22px 0;letter-spacing:.3px;
+}
+.ann-popup-body{
+  flex:1;padding:14px 22px 18px;overflow-y:auto;
+  font-size:13px;line-height:1.7;color:var(--text);
+  white-space:pre-wrap;word-break:break-word;
+  -webkit-overflow-scrolling:touch;
+}
+.ann-popup-actions{
+  display:flex;gap:8px;padding:0 14px 14px;flex-shrink:0;
+}
+.ann-popup-btn{
+  flex:1;padding:11px 0;background:var(--bg);
+  border:1.5px solid var(--border);border-radius:10px;
+  font-family:inherit;font-size:13px;font-weight:700;color:var(--sub);
+  cursor:pointer;transition:all .12s;
+}
+.ann-popup-btn:active{transform:scale(.96)}
+.ann-popup-btn.primary{
+  background:var(--accent);border-color:var(--accent);color:#fff;
+}
 .ann-compose-field{margin-bottom:14px}
 .ann-compose-label{
   font-size:11px;font-weight:700;color:var(--sub);
@@ -1892,6 +1940,19 @@ body.align-right .cal-evbar{text-align:right}
   </div>
 </div>
 
+<!-- 공지사항 자동 팝업 (캘린더 위 가벼운 모달) -->
+<div class="ann-popup-overlay" id="annPopupOverlay" onclick="closeAnnouncementPopup()"></div>
+<div class="ann-popup" id="annPopup">
+  <div class="ann-popup-icon">📢</div>
+  <div class="ann-popup-title" id="annPopupTitle"></div>
+  <div class="ann-popup-date" id="annPopupDate"></div>
+  <div class="ann-popup-body" id="annPopupBody"></div>
+  <div class="ann-popup-actions">
+    <button class="ann-popup-btn" onclick="annPopupSeeAll()">전체 보기</button>
+    <button class="ann-popup-btn primary" onclick="closeAnnouncementPopup()">확인</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -2070,7 +2131,7 @@ function closeMainModals(){
   ['createOverlay','createCard','joinOverlay','joinCard','evOverlay','evCard',
    'dpOverlay','dpCard','profileOverlay','profileCard','roomSetOverlay','roomSetCard',
    'storeCard','advCard','annCard','annComposeOverlay','annComposeCard',
-   'annMenuOverlay','annMenuCard',
+   'annMenuOverlay','annMenuCard','annPopupOverlay','annPopup',
    'datePickerOverlay','datePickerCard','searchOverlay','searchCard']
     .forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on')});
 }
@@ -2700,16 +2761,18 @@ function enterRoom(roomId){
     }
   });
   autoRegisterPush();
-  // 공지사항: 로드 → 배지 동기화 → show_on_open=true 인 안 읽음 있을 때만 자동 시트 열기
+  // 공지사항: 로드 → 배지 → show_on_open=true 안 읽음이 있으면 가벼운 팝업 띄움
   loadAnnouncements().then(()=>{
     syncAnnouncementBadge();
     const read=getReadAnnouncementIds();
     const autoShow=_announcements.filter(a=>a.show_on_open&&!read.includes(a.id));
     if(autoShow.length>0){
+      // _announcements는 created_at asc 정렬 → 마지막이 가장 최신
+      const latest=autoShow[autoShow.length-1];
       setTimeout(()=>{
-        const hasOpenModal=document.querySelector('.mo-card.on, .dp-card.on, .store-card.on, .ann-card.on');
-        if(!hasOpenModal)openAnnouncements();
-      }, 900);
+        const hasOpenModal=document.querySelector('.mo-card.on, .dp-card.on, .store-card.on, .ann-card.on, .ann-popup.on');
+        if(!hasOpenModal)showAnnouncementPopup(latest);
+      }, 800);
     }
   });
 }
@@ -6686,10 +6749,14 @@ async function saveAnnouncement(){
     closeAnnouncementCompose();
     await loadAnnouncements();
     
-    // 새 공지 + show_on_open ON이면 → 자동 모달 효과 시뮬레이션 (시트 닫고 다시 슬라이드업)
+    // 새 공지 + show_on_open ON이면 → 자동 팝업으로 미리보기 (이용자 화면과 동일)
     if(wasNew&&show_on_open){
       closeAnnouncements();
-      setTimeout(()=>openAnnouncements(), 500);
+      setTimeout(()=>{
+        // 방금 저장한 공지 = _announcements 마지막 (asc 정렬)
+        const just=_announcements[_announcements.length-1];
+        if(just)showAnnouncementPopup(just);
+      }, 400);
     }else{
       if(_annEditId)openAnnouncementDetail(_annEditId);
       else renderAnnouncementList();
@@ -6714,8 +6781,28 @@ function onAnnouncementMenuEdit(){
 }
 function onAnnouncementMenuDelete(){
   closeAnnouncementMenu();
-  // 짧은 호흡 뒤 confirm — 모달 사라진 다음
   setTimeout(()=>deleteAnnouncementCurrent(), 200);
+}
+
+/* ── 자동 표시 팝업 (캘린더 위 가벼운 모달) ── */
+function showAnnouncementPopup(ann){
+  if(!ann)return;
+  document.getElementById('annPopupTitle').textContent=ann.title||'';
+  document.getElementById('annPopupDate').textContent=formatAnnDateLong(ann.created_at);
+  document.getElementById('annPopupBody').textContent=ann.body||'';
+  // 팝업 뜨는 순간 그 공지는 본 걸로 처리 (배지 동기화 포함)
+  markAnnouncementRead(ann.id);
+  document.getElementById('annPopupOverlay').classList.add('on');
+  document.getElementById('annPopup').classList.add('on');
+}
+function closeAnnouncementPopup(){
+  document.getElementById('annPopupOverlay').classList.remove('on');
+  document.getElementById('annPopup').classList.remove('on');
+  syncAnnouncementBadge();
+}
+function annPopupSeeAll(){
+  closeAnnouncementPopup();
+  setTimeout(()=>openAnnouncements(), 220);
 }
 async function deleteAnnouncementCurrent(){
   if(!isAdmin()||!_annCurrentId)return;
