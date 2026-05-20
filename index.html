@@ -3939,10 +3939,12 @@ async function loadEvents(){
 /* 캘린더 진입 시 이모지 반응 말풍선 통통튀기 애니메이션 (3~4초) */
 function showReactionAnimation(){
   if(!_events||!_reactions)return;
-  // 날짜별 반응 이모지 수집 (중복 제거)
+  // 날짜별 반응 이모지 수집 (기간 일정은 첫날만)
   const byDate={};
   Object.entries(_events).forEach(([date,evs])=>{
     evs.forEach(ev=>{
+      // 기간 일정의 중간/마지막 날은 skip (start/single만 표시 = 첫날만)
+      if(ev._rangePos==='mid'||ev._rangePos==='end')return;
       const tid=ev.shared_id||ev.id;
       const rs=_reactions[tid];
       if(!rs||!rs.length)return;
