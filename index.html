@@ -33,6 +33,17 @@
     }
   }catch(e){}
 })();
+/* 일정 텍스트 정렬 즉시 적용 */
+(function(){
+  try{
+    var al=localStorage.getItem('uricalv2.align');
+    if(al==='center'||al==='right'){
+      var apply=function(){if(document.body)document.body.classList.add('align-'+al)};
+      if(document.body)apply();
+      else document.addEventListener('DOMContentLoaded',apply,{once:true});
+    }
+  }catch(e){}
+})();
 </script>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -918,6 +929,11 @@ body.fs-large .dp-reaction-chip{font-size:13px}
 body.fs-large .cal-evbar{font-size:10.5px}
 body.fs-large .cal-day-num{font-size:14.5px}
 
+/* ═════════════════ 블럭 내 텍스트 정렬 ═════════════════ */
+/* 기본: left (현재 cal-evbar 스타일). center/right는 body 클래스로 토글. */
+body.align-center .cal-evbar{text-align:center}
+body.align-right .cal-evbar{text-align:right}
+
 /* 이모지 선택 모달 */
 .emoji-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 12px}
 .emoji-btn{
@@ -1228,7 +1244,7 @@ body.fs-large .cal-day-num{font-size:14.5px}
     <button class="cal-today-chip" id="todayBtn" onclick="goToday()">오늘</button>
   </div>
 
-  <div class="cal-week-head">
+  <div class="cal-week-head" id="calWeekHead">
     <div class="cal-dow sun">일</div>
     <div class="cal-dow">월</div>
     <div class="cal-dow">화</div>
@@ -1612,7 +1628,23 @@ body.fs-large .cal-day-num{font-size:14.5px}
     </div>
   </div>
 
-  <!-- 7. 지원 -->
+  <!-- 7. 캘린더 -->
+  <div class="rs-section">
+    <div class="rs-section-title">캘린더</div>
+    <div style="font-size:11px;color:var(--sub);margin-bottom:6px">주 시작 요일</div>
+    <div class="dm-row" id="weekStartRow" style="margin-bottom:10px">
+      <button class="dm-btn" data-ws="0" onclick="onWeekStartSelect(0)">일요일</button>
+      <button class="dm-btn" data-ws="1" onclick="onWeekStartSelect(1)">월요일</button>
+    </div>
+    <div style="font-size:11px;color:var(--sub);margin-bottom:6px">일정 텍스트 정렬</div>
+    <div class="dm-row" id="alignRow">
+      <button class="dm-btn" data-align="left" onclick="onAlignSelect('left')">왼쪽</button>
+      <button class="dm-btn" data-align="center" onclick="onAlignSelect('center')">가운데</button>
+      <button class="dm-btn" data-align="right" onclick="onAlignSelect('right')">오른쪽</button>
+    </div>
+  </div>
+
+  <!-- 8. 지원 -->
   <div class="rs-section">
     <div class="rs-section-title">지원</div>
     <div class="rs-nav-row" onclick="openCustomerSupport()">
@@ -2704,6 +2736,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   }catch(e){}
   // 폰트 크기 초기 적용 (head 인라인 스크립트가 못 잡은 케이스 안전망)
   try{ applyFontSize(getFontSizePref()); }catch(e){}
+  // 일정 텍스트 정렬 초기 적용
+  try{ applyAlign(getAlignPref()); }catch(e){}
+  // 주 시작 요일 헤더 초기 렌더
+  try{ renderWeekHead(); }catch(e){}
   const boxes=document.querySelectorAll('#codeBoxes .code-box');
   boxes.forEach((b,i)=>{
     b.addEventListener('input',e=>{
@@ -3209,6 +3245,82 @@ function syncFontSizeButtons(){
     else b.classList.remove('on');
   });
 }
+
+/* ── 주 시작 요일 (0=일, 1=월) ── */
+const WEEKDAY_NAMES_FULL=['일','월','화','수','목','금','토'];
+function getWeekStartPref(){
+  try{
+    const v=parseInt(localStorage.getItem('uricalv2.weekStart')||'0',10);
+    return v===1?1:0;
+  }catch(e){ return 0; }
+}
+function setWeekStartPref(value){
+  const n=value===1?1:0;
+  try{ localStorage.setItem('uricalv2.weekStart', String(n)); }catch(e){}
+  renderWeekHead();
+  if(typeof renderMonthly==='function')renderMonthly();
+}
+function renderWeekHead(){
+  const head=document.getElementById('calWeekHead');
+  if(!head)return;
+  const ws=getWeekStartPref();
+  let html='';
+  for(let i=0;i<7;i++){
+    const dow=(ws+i)%7;
+    let cls='cal-dow';
+    if(dow===0)cls+=' sun';
+    else if(dow===6)cls+=' sat';
+    html+=`<div class="${cls}">${WEEKDAY_NAMES_FULL[dow]}</div>`;
+  }
+  head.innerHTML=html;
+}
+function onWeekStartSelect(value){
+  setWeekStartPref(value);
+  syncWeekStartButtons();
+}
+function syncWeekStartButtons(){
+  const pref=String(getWeekStartPref());
+  const row=document.getElementById('weekStartRow');
+  if(!row)return;
+  row.querySelectorAll('.dm-btn').forEach(b=>{
+    if(b.dataset.ws===pref)b.classList.add('on');
+    else b.classList.remove('on');
+  });
+}
+
+/* ── 일정 텍스트 정렬 (left / center / right) ── */
+function getAlignPref(){
+  try{
+    const v=localStorage.getItem('uricalv2.align');
+    if(v==='center'||v==='right')return v;
+    return 'left';
+  }catch(e){ return 'left'; }
+}
+function setAlignPref(value){
+  const v=(value==='center'||value==='right')?value:'left';
+  try{ localStorage.setItem('uricalv2.align', v); }catch(e){}
+  applyAlign(v);
+}
+function applyAlign(v){
+  if(!document.body)return;
+  document.body.classList.remove('align-center','align-right');
+  if(v==='center')document.body.classList.add('align-center');
+  else if(v==='right')document.body.classList.add('align-right');
+}
+function onAlignSelect(value){
+  if(!['left','center','right'].includes(value))return;
+  setAlignPref(value);
+  syncAlignButtons();
+}
+function syncAlignButtons(){
+  const pref=getAlignPref();
+  const row=document.getElementById('alignRow');
+  if(!row)return;
+  row.querySelectorAll('.dm-btn').forEach(b=>{
+    if(b.dataset.align===pref)b.classList.add('on');
+    else b.classList.remove('on');
+  });
+}
 /* 다크 모드 팔레트 (빈티지 톤 유지하며 어둡게). accent는 룸 테마 그대로 사용. */
 const DARK_OVERRIDE={
   bg:'#1a1410',
@@ -3600,7 +3712,10 @@ function renderMonthly(){
   document.getElementById('calMonthName').textContent=MONTH_NAMES[_calMonth];
   
   const grid=document.getElementById('calGrid');
-  const fdow=firstDow(_calYear,_calMonth);
+  const fdow=firstDow(_calYear,_calMonth);  // 이달 1일의 요일 (0=일, 6=토)
+  const ws=getWeekStartPref();              // 주 시작 (0=일, 1=월)
+  // 그리드 첫 셀 앞에 들어갈 이전 달 셀 개수
+  const offset=(fdow-ws+7)%7;
   const dim=daysInMonth(_calYear,_calMonth);
   const prevDim=daysInMonth(_calMonth===0?_calYear-1:_calYear, _calMonth===0?11:_calMonth-1);
   
@@ -3608,7 +3723,7 @@ function renderMonthly(){
   
   let html='';
   let cellCount=0;
-  for(let i=fdow-1;i>=0;i--){
+  for(let i=offset-1;i>=0;i--){
     const d=prevDim-i;
     html+=cellHtml(_calMonth===0?_calYear-1:_calYear, _calMonth===0?11:_calMonth-1, d, true, todayKey);
     cellCount++;
@@ -5917,6 +6032,8 @@ function openRoomSettings(){
   document.getElementById('roomSetMemberCount').textContent=`${_myMembers.length}명`;
   syncDarkModeButtons();
   syncFontSizeButtons();
+  syncWeekStartButtons();
+  syncAlignButtons();
   renderRoomMemberList();
   // owner / 멤버 메뉴 분기
   const isOwner=_currentRoom.owner_id===_currentUser?.id;
