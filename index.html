@@ -923,8 +923,7 @@ body.ff-pen .dp-memo{font-size:13px}
 .theme-card-name{font-size:13px;font-weight:700;color:var(--text);line-height:1.2;margin-bottom:3px}
 .theme-card-meta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--sub)}
 .theme-card-rating{display:inline-flex;align-items:center;gap:2px;color:#c2a06b;font-weight:700}
-.theme-card-price{margin-left:auto;font-size:11px;font-weight:700;color:var(--accent)}
-.theme-card-price.free{color:#4ea454}
+.theme-card-soon{font-size:11px;font-weight:600;color:var(--sub);letter-spacing:-.2px}
 .theme-card-lock{
   position:absolute;top:8px;right:8px;background:rgba(0,0,0,.55);
   color:#fff;width:26px;height:26px;border-radius:50%;
@@ -943,6 +942,14 @@ body.ff-pen .dp-memo{font-size:13px}
 .color-pack-preview{background:#fbf2e0;padding:10px}
 .color-swatch-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%;max-width:120px}
 .color-swatch{width:100%;aspect-ratio:1;border-radius:50%;display:block;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
+
+/* 이모지 팩 미리보기 — 4개 그리드 (2×2) */
+.emoji-pack-preview{background:#fbf2e0;padding:8px}
+.emoji-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;width:100%;max-width:80px}
+.emoji-cell{
+  aspect-ratio:1;background:#fff;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1;
+}
 
 /* ═════════════════ 폰트 크기 조절 ═════════════════ */
 /* body.fs-small / body.fs-large 가 붙으면 일자 시트 + 캘린더 셀의 텍스트가 살짝 작/크게.
@@ -1853,6 +1860,7 @@ body.align-right .cal-evbar{text-align:right}
   <div class="store-tabs" id="storeTabs">
     <button class="store-tab on" data-tab="theme" onclick="setStoreTab('theme')">테마</button>
     <button class="store-tab" data-tab="color" onclick="setStoreTab('color')">컬러</button>
+    <button class="store-tab" data-tab="emoji" onclick="setStoreTab('emoji')">이모지</button>
   </div>
   <div class="store-body" id="storeBody"></div>
 </div>
@@ -6922,6 +6930,16 @@ const STORE_COLORS=[
    colors:['#7b2d26','#a52a2a','#c44536','#e07a5f','#d4a373','#b58863','#886a3a','#5e3a1d']},
 ];
 
+/* 이모지 팩 — 일정 반응용 (전부 곧 출시. 실제 출시 시 커스텀 일러스트로 대체) */
+const STORE_EMOJI=[
+  {key:'animals',  name:'동물 친구들', preview:['🐶','🐱','🐰','🐻']},
+  {key:'food',     name:'맛있는 음식', preview:['🍕','🍔','🍰','🍦']},
+  {key:'emotion',  name:'감정 표현',   preview:['😊','😍','🥳','😎']},
+  {key:'activity', name:'활동/취미',   preview:['⚽','🎮','🎨','📚']},
+  {key:'weather',  name:'날씨/계절',   preview:['☀️','🌧️','🌸','🌈']},
+  {key:'travel',   name:'여행',       preview:['✈️','🏖️','🗻','🎡']},
+];
+
 let _storeCurrentTab='theme';
 
 function openStore(){
@@ -6939,6 +6957,7 @@ function setStoreTab(tab){
   _storeCurrentTab=tab;
   if(tab==='theme')renderStoreThemes();
   else if(tab==='color')renderStoreColors();
+  else if(tab==='emoji')renderStoreEmoji();
   // 컨텐츠 영역을 맨 위로 스크롤
   const body=document.getElementById('storeBody');
   if(body)body.scrollTop=0;
@@ -6988,7 +7007,6 @@ function renderStoreThemes(){
           <div class="theme-card-name">${escapeHtml(item.name)}</div>
           <div class="theme-card-meta">
             <span class="theme-card-rating">★ ${item.rating.toFixed(1)}</span>
-            <span class="theme-card-price free">${item.price}</span>
           </div>
         </div>
       </div>
@@ -7017,8 +7035,7 @@ function renderStoreThemes(){
         <div class="theme-card-info">
           <div class="theme-card-name">${escapeHtml(item.name)}</div>
           <div class="theme-card-meta">
-            <span class="theme-card-rating" style="opacity:.4">★ —</span>
-            <span class="theme-card-price">${escapeHtml(item.price)}</span>
+            <span class="theme-card-soon">곧 출시</span>
           </div>
         </div>
       </div>
@@ -7045,8 +7062,34 @@ function renderStoreColors(){
         <div class="theme-card-info">
           <div class="theme-card-name">${escapeHtml(item.name)}</div>
           <div class="theme-card-meta">
-            <span class="theme-card-rating" style="opacity:.4">★ —</span>
-            <span class="theme-card-price">${escapeHtml(item.price)}</span>
+            <span class="theme-card-soon">곧 출시</span>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  html+=`</div>`;
+  body.innerHTML=html;
+}
+
+/* ── 이모지 팩 (곧 출시) ── */
+function renderStoreEmoji(){
+  const body=document.getElementById('storeBody');
+  if(!body)return;
+  let html='<div class="store-section-title">곧 출시 예정 <small>COMING SOON</small></div>';
+  html+=`<div class="theme-grid-store">`;
+  STORE_EMOJI.forEach(item=>{
+    const cells=item.preview.map(e=>`<span class="emoji-cell">${e}</span>`).join('');
+    html+=`
+      <div class="theme-card locked" onclick="onLockedEmojiTap('${escapeHtml(item.name)}')">
+        <div class="theme-card-lock">🔒</div>
+        <div class="theme-preview emoji-pack-preview">
+          <div class="emoji-grid">${cells}</div>
+        </div>
+        <div class="theme-card-info">
+          <div class="theme-card-name">${escapeHtml(item.name)}</div>
+          <div class="theme-card-meta">
+            <span class="theme-card-soon">곧 출시</span>
           </div>
         </div>
       </div>
@@ -7065,6 +7108,9 @@ function onLockedThemeTap(name){
 }
 function onLockedColorTap(name){
   toast(`"${name}" 컬러 팩은 곧 출시 예정이에요`);
+}
+function onLockedEmojiTap(name){
+  toast(`"${name}" 이모지 팩은 곧 출시 예정이에요`);
 }
 
 /* ═══════════════════════════════════
