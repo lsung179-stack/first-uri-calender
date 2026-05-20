@@ -490,7 +490,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .dp-sub{font-size:12px;color:var(--sub);text-align:center;margin-top:6px;margin-bottom:18px}
 .dp-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;min-height:60px}
 .dp-empty{text-align:center;color:var(--sub);font-size:13px;padding:30px 0}
-.dp-item{display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fdf6e8;border:1px solid var(--borderL);border-radius:12px}
+.dp-item{display:flex;align-items:center;gap:8px;padding:14px 12px;background:#fdf6e8;border:1px solid var(--borderL);border-radius:12px}
 .dp-bar{width:4px;height:36px;border-radius:2px;background:var(--accent);flex-shrink:0}
 .dp-info{flex:1;min-width:0}
 .dp-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px;line-height:1.35;word-break:break-word}
@@ -502,8 +502,8 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .dp-member-chip-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dp-member-chip-more{padding:3px 9px;background:rgba(139,58,42,.04);color:var(--sub);font-weight:600}
 .dp-time{font-size:11px;color:var(--sub)}
-.dp-actions{display:flex;gap:6px;flex-shrink:0}
-.dp-btn{background:none;border:none;cursor:pointer;font-size:12px;font-family:inherit;padding:6px 8px;color:var(--sub);border-radius:6px}
+.dp-actions{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
+.dp-btn{background:none;border:none;cursor:pointer;font-size:11px;font-family:inherit;padding:3px 6px;color:var(--sub);border-radius:5px;line-height:1.3;white-space:nowrap}
 .dp-btn:active{background:rgba(139,58,42,.1)}
 .dp-btn.del{color:var(--accent)}
 .dp-add{width:100%;padding:14px;background:var(--accent);color:var(--card);border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.3px;transition:opacity .15s}
@@ -717,8 +717,8 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 
 /* 이모지 반응 */
 .dp-reaction-row{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
-.dp-order{display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center;flex-shrink:0;padding-left:6px}
-.dp-arrow{width:26px;height:20px;background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--sub);font-size:9px;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;line-height:1}
+.dp-order{display:flex;flex-direction:column;gap:2px;align-items:center;justify-content:center;flex-shrink:0;padding-left:0}
+.dp-arrow{width:22px;height:18px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--sub);font-size:8px;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;line-height:1}
 .dp-arrow:active{background:var(--bg);transform:scale(.94)}
 .dp-arrow:disabled{opacity:.22;cursor:not-allowed}
 .dp-reaction-chip{
@@ -1712,18 +1712,7 @@ body.align-right .cal-evbar{text-align:right}
     </div>
   </div>
 
-  <!-- 4. 알림 -->
-  <div class="rs-section">
-    <div class="rs-section-title">알림</div>
-    <div class="rs-row">
-      <div class="rs-row-info">
-        <div class="rs-row-label">이 방의 알림 받기</div>
-      </div>
-      <button class="dp-btn primary" id="roomNotifToggleBtn" onclick="toggleRoomNotification()">—</button>
-    </div>
-  </div>
-
-  <!-- 5. 다크모드 -->
+  <!-- 4. 다크모드 -->
   <div class="rs-section">
     <div class="rs-section-title">다크모드</div>
     <div class="dm-row" id="darkModeRow">
@@ -1732,33 +1721,20 @@ body.align-right .cal-evbar{text-align:right}
     </div>
   </div>
 
-  <!-- 6. 폰트 크기 -->
+  <!-- 5. 고급 설정 (진입 행 - 별도 시트 열림) -->
   <div class="rs-section">
-    <div class="rs-section-title">폰트 크기</div>
-    <div class="dm-row" id="fontSizeRow">
-      <button class="dm-btn" data-fs="small" onclick="onFontSizeSelect('small')">작게</button>
-      <button class="dm-btn" data-fs="normal" onclick="onFontSizeSelect('normal')">보통</button>
-      <button class="dm-btn" data-fs="large" onclick="onFontSizeSelect('large')">크게</button>
+    <div class="rs-section-title">기타</div>
+    <div class="rs-nav-row" onclick="openAdvSettings()">
+      <div class="rs-nav-row-icon">⚙️</div>
+      <div class="rs-nav-row-info">
+        <div class="rs-nav-row-label">고급 설정</div>
+        <div class="rs-nav-row-sub">알림, 폰트 크기, 주 시작 요일, 일정 정렬</div>
+      </div>
+      <div class="rs-nav-row-arrow">›</div>
     </div>
   </div>
 
-  <!-- 7. 캘린더 -->
-  <div class="rs-section">
-    <div class="rs-section-title">캘린더</div>
-    <div style="font-size:11px;color:var(--sub);margin-bottom:6px">주 시작 요일</div>
-    <div class="dm-row" id="weekStartRow" style="margin-bottom:10px">
-      <button class="dm-btn" data-ws="0" onclick="onWeekStartSelect(0)">일요일</button>
-      <button class="dm-btn" data-ws="1" onclick="onWeekStartSelect(1)">월요일</button>
-    </div>
-    <div style="font-size:11px;color:var(--sub);margin-bottom:6px">일정 텍스트 정렬</div>
-    <div class="dm-row" id="alignRow">
-      <button class="dm-btn" data-align="left" onclick="onAlignSelect('left')">왼쪽</button>
-      <button class="dm-btn" data-align="center" onclick="onAlignSelect('center')">가운데</button>
-      <button class="dm-btn" data-align="right" onclick="onAlignSelect('right')">오른쪽</button>
-    </div>
-  </div>
-
-  <!-- 8. 지원 -->
+  <!-- 6. 지원 -->
   <div class="rs-section">
     <div class="rs-section-title">지원</div>
     <div class="rs-nav-row" onclick="openAnnouncements()">
@@ -1809,6 +1785,54 @@ body.align-right .cal-evbar{text-align:right}
 </div>
 
 <!-- 공지사항 -->
+<!-- 고급 설정 시트 (알림, 폰트 크기, 주 시작 요일, 일정 정렬) -->
+<div class="ann-card" id="advCard">
+  <div class="ann-head">
+    <button class="ann-back" onclick="closeAdvSettings()" aria-label="뒤로">‹</button>
+    <div class="ann-title">고급 설정</div>
+    <button class="ann-head-btn" onclick="closeAdvSettings()" aria-label="닫기">✕</button>
+  </div>
+  <div class="ann-body" style="padding:20px">
+
+    <div class="rs-section">
+      <div class="rs-section-title">알림</div>
+      <div class="rs-row">
+        <div class="rs-row-info">
+          <div class="rs-row-label">이 방의 알림 받기</div>
+        </div>
+        <button class="dp-btn primary" id="roomNotifToggleBtn" onclick="toggleRoomNotification()">—</button>
+      </div>
+    </div>
+
+    <div class="rs-section">
+      <div class="rs-section-title">폰트 크기</div>
+      <div class="dm-row" id="fontSizeRow">
+        <button class="dm-btn" data-fs="small" onclick="onFontSizeSelect('small')">작게</button>
+        <button class="dm-btn" data-fs="normal" onclick="onFontSizeSelect('normal')">보통</button>
+        <button class="dm-btn" data-fs="large" onclick="onFontSizeSelect('large')">크게</button>
+      </div>
+    </div>
+
+    <div class="rs-section">
+      <div class="rs-section-title">주 시작 요일</div>
+      <div class="dm-row" id="weekStartRow">
+        <button class="dm-btn" data-ws="0" onclick="onWeekStartSelect(0)">일요일</button>
+        <button class="dm-btn" data-ws="1" onclick="onWeekStartSelect(1)">월요일</button>
+      </div>
+    </div>
+
+    <div class="rs-section">
+      <div class="rs-section-title">일정 텍스트 정렬</div>
+      <div class="dm-row" id="alignRow">
+        <button class="dm-btn" data-align="left" onclick="onAlignSelect('left')">왼쪽</button>
+        <button class="dm-btn" data-align="center" onclick="onAlignSelect('center')">가운데</button>
+        <button class="dm-btn" data-align="right" onclick="onAlignSelect('right')">오른쪽</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- 공지사항 시트 (목록 ↔ 상세 토글) -->
 <div class="ann-card" id="annCard">
   <div class="ann-head" id="annHeadList">
@@ -1841,6 +1865,13 @@ body.align-right .cal-evbar{text-align:right}
     <div class="ann-compose-label">본문</div>
     <textarea class="ann-compose-textarea" id="annComposeBodyInput" placeholder="공지사항 내용을 입력하세요" maxlength="2000"></textarea>
     <div class="ann-compose-counter"><span id="annComposeBodyCount">0</span>/2000</div>
+  </div>
+  
+  <div class="ann-compose-field">
+    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;user-select:none">
+      <input type="checkbox" id="annComposeShowOnOpen" style="width:18px;height:18px;cursor:pointer;accent-color:var(--accent);flex-shrink:0">
+      <span style="font-size:13px;color:var(--text);line-height:1.4">등록 후 사용자들 첫 진입 시 자동으로 표시</span>
+    </label>
   </div>
   
   <div class="mo-actions">
@@ -2026,7 +2057,7 @@ function closeAllModals(){
 function closeMainModals(){
   ['createOverlay','createCard','joinOverlay','joinCard','evOverlay','evCard',
    'dpOverlay','dpCard','profileOverlay','profileCard','roomSetOverlay','roomSetCard',
-   'storeCard','annCard','annComposeOverlay','annComposeCard',
+   'storeCard','advCard','annCard','annComposeOverlay','annComposeCard',
    'datePickerOverlay','datePickerCard','searchOverlay','searchCard']
     .forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on')});
 }
@@ -2656,13 +2687,13 @@ function enterRoom(roomId){
     }
   });
   autoRegisterPush();
-  // 공지사항: 로드 → 배지 동기화 → 안 읽음 있으면 자동으로 시트 열기 (한 호흡 뒤)
+  // 공지사항: 로드 → 배지 동기화 → show_on_open=true 인 안 읽음 있을 때만 자동 시트 열기
   loadAnnouncements().then(()=>{
     syncAnnouncementBadge();
-    const unread=getUnreadAnnouncementCount();
-    if(unread>0){
+    const read=getReadAnnouncementIds();
+    const autoShow=_announcements.filter(a=>a.show_on_open&&!read.includes(a.id));
+    if(autoShow.length>0){
       setTimeout(()=>{
-        // 다른 모달이 떠있지 않을 때만
         const hasOpenModal=document.querySelector('.mo-card.on, .dp-card.on, .store-card.on, .ann-card.on');
         if(!hasOpenModal)openAnnouncements();
       }, 900);
@@ -6209,9 +6240,6 @@ function openRoomSettings(){
   document.getElementById('roomSetNameSub').textContent=_currentRoom.name||'—';
   document.getElementById('roomSetMemberCount').textContent=`${_myMembers.length}명`;
   syncDarkModeButtons();
-  syncFontSizeButtons();
-  syncWeekStartButtons();
-  syncAlignButtons();
   syncAnnouncementBadge();
   renderRoomMemberList();
   // owner / 멤버 메뉴 분기
@@ -6224,7 +6252,6 @@ function openRoomSettings(){
   document.getElementById('roomSetNameEditRow').style.display='none';
   document.getElementById('roomSetOverlay').classList.add('on');
   document.getElementById('roomSetCard').classList.add('on');
-  syncRoomNotifButton();
 }
 
 /* 방 알림 토글 버튼 상태 동기화 */
@@ -6516,7 +6543,7 @@ function renderAnnouncementList(){
     const dateStr=formatAnnDate(a.created_at);
     html+=`
       <div class="ann-list-item" onclick="openAnnouncementDetail('${a.id}')">
-        <div class="ann-list-num">#${num}</div>
+        <div class="ann-list-num">${num}</div>
         <div class="ann-list-info">
           <div class="ann-list-title">${escapeHtml(a.title)}</div>
           <div class="ann-list-date">${dateStr}</div>
@@ -6547,7 +6574,7 @@ function openAnnouncementDetail(id){
   
   document.getElementById('annBody').innerHTML=`
     <div class="ann-detail">
-      <div class="ann-detail-num">#${num}</div>
+      <div class="ann-detail-num">${num}</div>
       <div class="ann-detail-title">${escapeHtml(ann.title)}</div>
       <div class="ann-detail-date">${dateStr}</div>
       <div class="ann-detail-divider"></div>
@@ -6585,6 +6612,7 @@ function openAnnouncementCompose(){
   document.getElementById('annComposeTitle').textContent='새 공지사항';
   document.getElementById('annComposeTitleInput').value='';
   document.getElementById('annComposeBodyInput').value='';
+  document.getElementById('annComposeShowOnOpen').checked=false;
   updateAnnComposeCounters();
   document.getElementById('annComposeOverlay').classList.add('on');
   document.getElementById('annComposeCard').classList.add('on');
@@ -6598,6 +6626,7 @@ function openAnnouncementEditCurrent(){
   document.getElementById('annComposeTitle').textContent='공지사항 수정';
   document.getElementById('annComposeTitleInput').value=ann.title||'';
   document.getElementById('annComposeBodyInput').value=ann.body||'';
+  document.getElementById('annComposeShowOnOpen').checked=!!ann.show_on_open;
   updateAnnComposeCounters();
   document.getElementById('annComposeOverlay').classList.add('on');
   document.getElementById('annComposeCard').classList.add('on');
@@ -6619,6 +6648,7 @@ async function saveAnnouncement(){
   if(!isAdmin()){ toast('권한이 없어요'); return; }
   const title=(document.getElementById('annComposeTitleInput').value||'').trim();
   const body=(document.getElementById('annComposeBodyInput').value||'').trim();
+  const show_on_open=!!document.getElementById('annComposeShowOnOpen').checked;
   if(!title){ toast('제목을 입력해주세요'); return; }
   if(title.length>60){ toast('제목은 60자 이내로 입력해주세요'); return; }
   if(body.length>2000){ toast('본문은 2000자 이내로 입력해주세요'); return; }
@@ -6626,14 +6656,14 @@ async function saveAnnouncement(){
     if(_annEditId){
       const { error }=await supa
         .from('announcements')
-        .update({ title, body })
+        .update({ title, body, show_on_open })
         .eq('id', _annEditId);
       if(error){ console.error(error); toast('수정에 실패했어요'); return; }
       toast('수정되었습니다');
     }else{
       const { error }=await supa
         .from('announcements')
-        .insert({ title, body });
+        .insert({ title, body, show_on_open });
       if(error){ console.error(error); toast('저장에 실패했어요'); return; }
       toast('공지가 등록되었습니다');
     }
@@ -6676,6 +6706,22 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(ti)ti.addEventListener('input',updateAnnComposeCounters);
   if(bi)bi.addEventListener('input',updateAnnComposeCounters);
 });
+
+/* ═══════════════════════════════════
+   고급 설정 시트 (알림, 폰트 크기, 주 시작 요일, 일정 정렬)
+   ═══════════════════════════════════ */
+function openAdvSettings(){
+  closeMainModals();
+  document.getElementById('advCard').classList.add('on');
+  // 토글 상태 동기화 (시트 안에 있는 모든 컨트롤)
+  try{ syncRoomNotifButton(); }catch(_){}
+  try{ syncFontSizeButtons(); }catch(_){}
+  try{ syncWeekStartButtons(); }catch(_){}
+  try{ syncAlignButtons(); }catch(_){}
+}
+function closeAdvSettings(){
+  document.getElementById('advCard').classList.remove('on');
+}
 
 /* ═══════════════════════════════════
    스토어 (테마 등 꾸미기 아이템)
