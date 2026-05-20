@@ -3622,16 +3622,18 @@ function getDayEvents(date){
   // 기간(연속 날짜) 그룹 감지 먼저 — _rangePos 부여 ('start'|'mid'|'end'|'single')
   // 정렬보다 앞에 둬야 기간 일정을 우선 정렬할 수 있음
   // _isRangeEvent: 정렬 기준 (시각이 single로 표시돼도 기간 그룹이면 true)
-  // 주 경계(토/일) 처리:
-  //   mid + 토 → end (그 주의 시각적 끝)
-  //   mid + 일 → start (그 주의 시각적 시작)
-  //   start + 토 → single (시작이 줄 끝 셀이라 끊김. 다음 셀은 다음 줄)
-  //   end + 일 → single (끝이 줄 시작 셀이라 끊김. 이전 셀은 이전 줄)
+  // 주 경계 처리 (weekStart 따라 동적):
+  //   mid + 주 끝요일 → end (그 주의 시각적 끝 — 다음 줄로 wrap)
+  //   mid + 주 시작요일 → start (그 주의 시각적 시작 — 이전 줄에서 wrap되어 옴)
+  //   주 경계에서 시작/끝나도 항상 start/end (single 분리하지 않음 — 자연 wrap 보장)
   const prevDate=shiftDateKey(date,-1);
   const nextDate=shiftDateKey(date,1);
   const prevEvs=_events[prevDate]||[];
   const nextEvs=_events[nextDate]||[];
   const dow=parseDateKey(date).getDay();  // 0=일, 6=토
+  const ws=(typeof getWeekStartPref==='function')?getWeekStartPref():0;  // 0=일, 1=월
+  const weekStartDow=ws;
+  const weekEndDow=(ws+6)%7;
   result.forEach(ev=>{
     const prevHas=prevEvs.some(e=>isSameRangeGroup(e,ev));
     const nextHas=nextEvs.some(e=>isSameRangeGroup(e,ev));
@@ -3639,13 +3641,13 @@ function getDayEvents(date){
     ev._isFirstSegment=!prevHas;  // prev에 같은 일정 없으면 진짜 시작 셀 (함께 마커 부착 기준)
     let pos;
     if(prevHas&&nextHas){
-      if(dow===6)pos='end';
-      else if(dow===0)pos='start';
+      if(dow===weekEndDow)pos='end';
+      else if(dow===weekStartDow)pos='start';
       else pos='mid';
     }else if(!prevHas&&nextHas){
-      pos=(dow===6)?'single':'start';  // 토요일 시작 = 줄 끝에서 끊김
+      pos='start';  // 어디서 시작하든 start (주 끝 셀에서 시작해도 다음 줄로 자연 wrap)
     }else if(prevHas&&!nextHas){
-      pos=(dow===0)?'single':'end';    // 일요일 끝 = 줄 시작에서 끊김
+      pos='end';    // 어디서 끝나든 end (주 시작 셀에서 끝나도 이전 줄에서 wrap되어 옴)
     }else{
       pos='single';
     }
