@@ -3673,8 +3673,8 @@ function cellHtml(y,m,d,isOther,todayKey){
     let rangeCls='';
     let displayTitle=t;
     if(ev._rangePos==='start')rangeCls=' range-start';
-    else if(ev._rangePos==='mid'){rangeCls=' range-mid';displayTitle='';}
-    else if(ev._rangePos==='end'){rangeCls=' range-end';displayTitle='';}
+    else if(ev._rangePos==='mid'){rangeCls=' range-mid';displayTitle='\u00A0';}
+    else if(ev._rangePos==='end'){rangeCls=' range-end';displayTitle='\u00A0';}
     // 함께 막대 + 첫날: 좌측에 짧은 cream 마커 (미니멀)
     const sharedMarker=showSharedMarker?`<span class="cal-evbar-marker"></span>`:'';
     evsHtml+=`<div class="cal-evbar${sharedCls}${rangeCls}" style="background:${hex}">${sharedMarker}${displayTitle}</div>`;
