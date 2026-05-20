@@ -4317,7 +4317,7 @@ function cellHtml(y,m,d,isOther,todayKey){
     evsHtml+=`<div class="cal-evbar${sharedCls}${rangeCls}" style="background:${hex}">${sharedMarker}${displayTitle}</div>`;
   });
   
-  return `<div class="${cls.join(' ')}" onclick="openDateSheet('${key}')">
+  return `<div class="${cls.join(' ')}" data-date="${key}" onclick="openDateSheet('${key}')">
     <span class="cal-day-num">${d}</span>
     ${labelHtml}
     <div class="cal-events">${evsHtml}</div>
@@ -7214,28 +7214,28 @@ const STORE_COMING_SOON=[
    preview:{bg:'#f0f5ee',accent:'#5a7d3a',card:'#ffffff'}},
 ];
 
-/* 컬러 팩 — 일정바 색상 묶음 (각 팩 12개 색상, EVENT_COLORS와 동일 개수) */
+/* 컬러 팩 — 각 팩 12색, 컨셉 유지하되 다양한 hue 분포 */
 const STORE_COLORS=[
   {key:'vivid',   name:'비비드',    price:'₩2,900',
    colors:['#ff4d4d','#ff7a33','#ffaa33','#ffd633','#aacc33','#33cc55','#33b3a8','#3399ff','#5566cc','#9966cc','#cc66cc','#ff66aa']},
   {key:'jelly',   name:'젤리 팩',   price:'₩2,900',
    colors:['#ffb3b3','#ffd1a3','#ffe699','#daea99','#aae8aa','#a8e8d4','#a8d8f0','#b8c8f0','#c8b8e8','#e0b8e8','#f0b8d4','#f0d4b8']},
   {key:'mono',    name:'모노톤',    price:'₩1,900',
-   colors:['#1a1a1a','#2a2a2a','#3a3a3a','#4a4a4a','#5e5e5e','#727272','#888888','#9c9c9c','#b0b0b0','#c0c0c0','#d4d4d4','#e8e8e8']},
+   colors:['#1a1a1a','#3a3a3a','#5e5e5e','#888888','#b0b0b0','#d4d4d4','#3d352e','#705d4a','#a89878','#352e3d','#5e5470','#9890b0']},
   {key:'neon',    name:'네온',      price:'₩3,900',
    colors:['#ff006e','#ff0a4c','#fb5607','#ffbe0b','#ffff00','#39ff14','#06ffa5','#00d9ff','#3a86ff','#8338ec','#bf00ff','#ff4081']},
   {key:'earth',   name:'어스 톤',   price:'₩2,900',
-   colors:['#2d1f12','#3d2e1f','#4a3825','#5e4830','#6b5040','#7d5a3c','#8b6f47','#a8825c','#b89968','#c4a87a','#d4b896','#e8d4b8']},
+   colors:['#3d2e1f','#5e4830','#7d5a3c','#8b6f47','#a8825c','#c4a87a','#d4cab0','#a8b88a','#7a8c5a','#5a6d3a','#b89968','#d4b896']},
   {key:'macaron', name:'마카롱',    price:'₩2,900',
-   colors:['#f8c8d8','#f8d8c8','#f8d8b8','#f8e8c8','#f0f0c8','#d8f8c8','#c8f8e0','#c8e8f8','#d4d4f8','#d8c8f8','#e8c8f0','#f8c8e8']},
+   colors:['#f8c8d8','#f8a8c0','#f8d8b8','#f8e8c8','#f0e8a8','#d8f8c8','#c8f8e0','#a8e0d8','#c8e8f8','#d8c8f8','#e8b8d4','#f8c8a8']},
   {key:'sunset',  name:'노을',      price:'₩2,900',
-   colors:['#3d2952','#5f3a8c','#8b5cd9','#c468d0','#ff7eb3','#ff9ec7','#ff8a4c','#ffa502','#ffb84c','#ffd23f','#ff6b6b','#ff4757']},
+   colors:['#3d2952','#5f3a8c','#8b5cd9','#c468d0','#ff7eb3','#ff5577','#ff6b35','#ffa502','#ffd23f','#ff8a4c','#d4623c','#5e3a8c']},
   {key:'ocean',   name:'바다',      price:'₩2,900',
-   colors:['#001a33','#003459','#003d5c','#00507f','#0077b6','#0085c7','#00b4d8','#48cae4','#7ed4e8','#90e0ef','#ade8f4','#caf0f8']},
+   colors:['#001a33','#003459','#0077b6','#00b4d8','#48cae4','#90e0ef','#caf0f8','#1d7874','#3aafa9','#76b39d','#ffa372','#ffc0a8']},
   {key:'forest',  name:'숲',        price:'₩2,900',
-   colors:['#0d2e21','#1b4332','#225a3f','#2d6a4f','#37855e','#40916c','#52b788','#67c294','#74c69d','#95d5b2','#b7e4c7','#d8f3dc']},
+   colors:['#0d2e21','#1b4332','#2d6a4f','#40916c','#52b788','#74c69d','#95d5b2','#b7e4c7','#5e4830','#8b6f47','#a8825c','#d4cab0']},
   {key:'autumn',  name:'가을',      price:'₩2,900',
-   colors:['#3d1f1a','#5c1f1a','#7b2d26','#a52a2a','#c44536','#d4623c','#e07a5f','#d4a373','#b58863','#a06a45','#886a3a','#5e3a1d']},
+   colors:['#5c1f1a','#7b2d26','#a52a2a','#c44536','#d4623c','#e07a5f','#d4a373','#e8d4a0','#a06a45','#886a3a','#5e3a1d','#d4b896']},
 ];
 
 /* 캐릭터 이모지 SVG 데이터 — 모찌, 곰돌, 달콩 (각 8개 고유 표정) */
