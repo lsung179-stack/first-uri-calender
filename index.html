@@ -4748,6 +4748,17 @@ function showReactionAnimation(){
       const tid=ev.shared_id||ev.id;
       if(processedTids.has(tid))return;
       if(firstDateByTarget[tid]!==date)return;
+      // 멤버 탭 필터: 'all'이면 전부 표시. 멤버 탭이면 그 멤버 일정만
+      // (단독 본인 일정 + 함께 일정 참여만 통과. 다른 사람 단독 일정은 skip)
+      if(_viewingMember&&_viewingMember!=='all'){
+        if(_viewingMember.startsWith('v-')){
+          // 가상 멤버 탭: virtual_member_id 매칭
+          if(ev.virtual_member_id!==_viewingMember.slice(2))return;
+        }else{
+          // 일반 멤버 탭: user_id 매칭 + 가상 명의 일정 제외
+          if(ev.user_id!==_viewingMember||ev.virtual_member_id)return;
+        }
+      }
       processedTids.add(tid);
       const rs=_reactions[tid];
       if(!rs||!rs.length)return;
@@ -6155,6 +6166,7 @@ function closeRoomPick(){
 
 async function saveEvent(){
   if(!_currentRoom||!_currentUser){toast('로그인이 필요해요');return}
+  if(!_throttleAction('saveEvent',800)){toast('잠시 후 다시 시도해주세요');return}
   const title=document.getElementById('evTitle').value.trim();
   if(!title){toast('제목을 입력해주세요');return}
   if(title.length>40){toast('제목은 40자 이내로');return}
@@ -7399,6 +7411,7 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
 }
 
 async function deleteEvent(eventId){
+  if(!_throttleAction('deleteEvent:'+eventId,800)){toast('잠시 후 다시 시도해주세요');return}
   const evs=Object.values(_events).flat();
   const ev=evs.find(e=>e.id===eventId);
   if(!ev){toast('일정 정보를 찾지 못했어요');return}
@@ -7896,6 +7909,94 @@ async function _audit(actionType, opts={}){
   }catch(e){
     console.warn('audit_log 실패(무시):',e);
   }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   에러 모니터링 — window.onerror + unhandledrejection 자동 캐치
+   ───────────────────────────────────────────────────────────
+   같은 에러 1분 내 중복 차단 (스팸 방지).
+   ═══════════════════════════════════════════════════════════ */
+const _errorReportThrottle={};
+async function _reportError(opts){
+  try{
+    if(!_currentUser)return;
+    const key=(opts.message||'').slice(0,80);
+    const now=Date.now();
+    if(_errorReportThrottle[key] && now-_errorReportThrottle[key]<60000)return;
+    _errorReportThrottle[key]=now;
+    await supa.from('errors').insert({
+      user_id:_currentUser.id,
+      message:(opts.message||'').slice(0,500),
+      stack:(opts.stack||'').slice(0,2000),
+      url:(location.href||'').slice(0,300),
+      user_agent:(navigator.userAgent||'').slice(0,300),
+      meta:opts.meta||{},
+    });
+  }catch(e){
+    console.warn('error report 실패(무시):',e);
+  }
+}
+window.addEventListener('error',(e)=>{
+  _reportError({
+    message:e.message||'',
+    stack:e.error?.stack||'',
+    meta:{filename:e.filename||'',lineno:e.lineno||0,colno:e.colno||0,type:'window.error'}
+  });
+});
+window.addEventListener('unhandledrejection',(e)=>{
+  _reportError({
+    message:'Unhandled Promise: '+(e.reason?.message||String(e.reason||'')).slice(0,400),
+    stack:e.reason?.stack||'',
+    meta:{type:'promise'}
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════
+   세션 체크 — 백그라운드 5분+ 후 복귀 시 자동 새로고침
+   ───────────────────────────────────────────────────────────
+   슬립/멀티태스킹 후 돌아왔을 때 세션 만료 감지 + 데이터 최신화.
+   ═══════════════════════════════════════════════════════════ */
+let _lastVisibleAt=Date.now();
+document.addEventListener('visibilitychange',async()=>{
+  if(document.visibilityState==='visible'){
+    const awayMs=Date.now()-_lastVisibleAt;
+    _lastVisibleAt=Date.now();
+    if(awayMs>30*60*1000){
+      try{
+        const {data:{session}}=await supa.auth.getSession();
+        if(!session){
+          // 세션 만료 — 로그인 화면으로
+          _currentUser=null;
+          _currentRoom=null;
+          showScreen('welcomeScreen');
+          toast('세션이 만료되었어요. 다시 로그인해주세요');
+          return;
+        }
+        // 세션 유효 — 현재 방에 있으면 데이터 새로고침
+        if(_currentRoom&&typeof loadEvents==='function'){
+          await loadEvents();
+          if(typeof renderMonthly==='function')renderMonthly();
+        }
+      }catch(e){
+        console.warn('세션 체크 실패:',e);
+      }
+    }
+  }else{
+    _lastVisibleAt=Date.now();
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════
+   액션 throttle — 빠른 반복 클릭/스팸 방지
+   ───────────────────────────────────────────────────────────
+   같은 액션 key가 intervalMs 이내에 호출되면 false 반환 (차단).
+   ═══════════════════════════════════════════════════════════ */
+const _actionThrottle={};
+function _throttleAction(key,intervalMs){
+  const now=Date.now();
+  if(_actionThrottle[key] && now-_actionThrottle[key]<intervalMs)return false;
+  _actionThrottle[key]=now;
+  return true;
 }
 
 /* ═══════════════════════════════════════════════════════════
