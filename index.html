@@ -643,7 +643,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
   position:absolute;
   /* left, top 은 JS에서 동적 설정 */
   display:inline-flex;align-items:center;justify-content:center;
-  padding:3px 9px;
+  padding:5px 11px 7px;
   background:var(--card);
   border:1.5px solid var(--accent);
   border-radius:99px;
@@ -653,8 +653,8 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
   transform:translate(-50%,-50%) scale(0);
   animation:bubble-pop 3.4s cubic-bezier(.34,1.56,.64,1) both;
 }
-.cal-reaction-bubble span{font-size:13px;line-height:1}
-.cal-reaction-bubble svg{width:16px;height:16px;display:block}
+.cal-reaction-bubble span{font-size:15px;line-height:1.3;display:inline-block}
+.cal-reaction-bubble svg{width:17px;height:17px;display:block}
 
 /* 통통튀기 (회전 없음) */
 @keyframes bubble-pop{
