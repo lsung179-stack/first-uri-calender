@@ -755,6 +755,9 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .cs-delete-btn .cs-btn-title{color:var(--sunday)}
 .cs-delete-btn .cs-btn-sub{color:var(--sub)}
 .cs-divider{height:1px;background:var(--border);margin:4px 0;opacity:.6}
+/* 약관/처리방침/회원탈퇴는 고객센터(50/51) 위에 떠야 함 */
+#termsOverlay,#privacyOverlay,#leaveAccountOverlay{z-index:64}
+#termsCard,#privacyCard,#leaveAccountCard{z-index:65}
 /* 고객센터 링크 버튼 (약관/처리방침) */
 .cs-link-btn{display:flex;align-items:center;gap:14px;width:100%;padding:12px 16px;border-radius:10px;border:none;background:transparent;cursor:pointer;font-family:inherit;text-align:left;transition:background .12s}
 .cs-link-btn:active{background:var(--bg)}
@@ -1672,7 +1675,7 @@ body.align-right .cal-evbar{text-align:right}
       </button>
     </div>
     <div class="terms">
-      계속하면 <a href="terms.html">이용약관</a> 및 <a href="privacy.html">개인정보처리방침</a>에<br>동의하는 것으로 간주됩니다
+      계속하면 <a href="javascript:void(0)" onclick="openTerms()">이용약관</a> 및 <a href="javascript:void(0)" onclick="openPrivacy()">개인정보처리방침</a>에<br>동의하는 것으로 간주됩니다
     </div>
   </div>
 
