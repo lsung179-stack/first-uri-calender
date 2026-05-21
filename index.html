@@ -2196,6 +2196,7 @@ body.align-right .cal-evbar{text-align:right}
 <!-- 스토어 (테마 등 꾸미기) -->
 <div class="store-card" id="storeCard">
   <div class="store-head">
+    <button class="store-close" onclick="backFromStore()" aria-label="뒤로" style="font-size:28px;font-weight:300">‹</button>
     <div class="store-title">스토어</div>
     <button class="store-close" onclick="closeStore()" aria-label="닫기">✕</button>
   </div>
@@ -2212,7 +2213,7 @@ body.align-right .cal-evbar{text-align:right}
 <!-- 고급 설정 시트 (알림, 폰트 크기, 주 시작 요일, 일정 정렬) -->
 <div class="ann-card" id="advCard">
   <div class="ann-head">
-    <button class="ann-back" onclick="closeAdvSettings()" aria-label="뒤로">‹</button>
+    <button class="ann-back" onclick="backFromAdvSettings()" aria-label="뒤로">‹</button>
     <div class="ann-title">고급 설정</div>
     <button class="ann-head-btn" onclick="closeAdvSettings()" aria-label="닫기">✕</button>
   </div>
@@ -2271,6 +2272,7 @@ body.align-right .cal-evbar{text-align:right}
 <!-- 공지사항 시트 (목록 ↔ 상세 토글) -->
 <div class="ann-card" id="annCard">
   <div class="ann-head" id="annHeadList">
+    <button class="ann-back" onclick="backFromAnnouncements()" aria-label="뒤로">‹</button>
     <div class="ann-title">공지사항</div>
     <button class="ann-head-btn primary" id="annAddBtn" onclick="openAnnouncementCompose()" style="display:none" aria-label="새 공지">＋</button>
     <button class="ann-head-btn" onclick="closeAnnouncements()" aria-label="닫기">✕</button>
@@ -7718,6 +7720,21 @@ function openAdvSettings(){
 }
 function closeAdvSettings(){
   document.getElementById('advCard').classList.remove('on');
+}
+
+/* ── 뒤로가기: 스토어/고급설정/공지사항 → 룸 정보 시트로 복귀 ──
+   X(닫기)는 closeXxx() 그대로 사용 (캘린더로 바로 감) */
+function backFromAdvSettings(){
+  closeAdvSettings();
+  openRoomSettings();
+}
+function backFromStore(){
+  closeStore();
+  openRoomSettings();
+}
+function backFromAnnouncements(){
+  closeAnnouncements();
+  openRoomSettings();
 }
 
 /* ═══════════════════════════════════
