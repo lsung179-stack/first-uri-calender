@@ -1433,6 +1433,70 @@ body.align-right .cal-evbar{text-align:right}
   text-align:left;
   font-size:13px;
 }
+
+/* ═══════════════════════════════════
+   admin UI — 이용자 무료 부여
+   ═══════════════════════════════════ */
+.pf-admin-btn{
+  width:100%;padding:11px 14px;
+  background:linear-gradient(135deg,#fff4dc,#f3e6cf);
+  color:var(--accent);border:1.5px solid var(--accent);
+  border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;
+  cursor:pointer;transition:transform .12s;
+}
+.pf-admin-btn:active{transform:scale(.97)}
+
+#adminGrantCard{max-height:88vh}
+.ag-results{max-height:50vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;-webkit-overflow-scrolling:touch}
+.ag-empty{padding:30px 12px;text-align:center;color:var(--sub);font-size:13px}
+.ag-user-card{
+  display:flex;align-items:center;gap:12px;padding:10px 12px;
+  background:var(--bg);border:1px solid var(--border);border-radius:12px;
+  cursor:pointer;transition:all .12s;
+}
+.ag-user-card:active{transform:scale(.98);background:var(--card)}
+.ag-user-avatar{
+  width:40px;height:40px;border-radius:50%;
+  background:var(--accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:700;flex-shrink:0;overflow:hidden;
+}
+.ag-user-avatar.has-photo{background:none}
+.ag-user-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.ag-user-meta{flex:1;min-width:0}
+.ag-user-name{font-size:14px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ag-user-email{font-size:11px;color:var(--sub);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.ag-back-btn{
+  background:none;border:none;color:var(--accent);font-family:inherit;
+  font-size:13px;font-weight:600;cursor:pointer;padding:6px 0;margin-bottom:8px;
+}
+.ag-user-info{
+  display:flex;align-items:center;gap:12px;padding:12px;
+  background:var(--bg);border-radius:12px;margin-bottom:14px;
+  border:1px solid var(--border);
+}
+.ag-section-title{
+  font-size:12px;font-weight:700;color:var(--sub);
+  margin:14px 0 8px;letter-spacing:.3px;
+}
+.ag-pack-list{display:flex;flex-direction:column;gap:6px;max-height:30vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.ag-pack-row{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;
+  background:var(--bg);border:1px solid var(--border);border-radius:10px;
+}
+.ag-pack-row.granted{background:rgba(139,58,42,.06);border-color:rgba(139,58,42,.3)}
+.ag-pack-info{flex:1;min-width:0}
+.ag-pack-name{font-size:13px;font-weight:700;color:var(--text)}
+.ag-pack-desc{font-size:10px;color:var(--sub);margin-top:1px}
+.ag-grant-btn,.ag-revoke-btn{
+  flex-shrink:0;padding:6px 14px;border-radius:8px;
+  font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;
+  transition:transform .12s;
+}
+.ag-grant-btn{background:var(--accent);color:#fff;border:none}
+.ag-revoke-btn{background:var(--card);color:var(--sub);border:1px solid var(--border)}
+.ag-grant-btn:active,.ag-revoke-btn:active{transform:scale(.95)}
 .rs-member-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:3px}
 .rs-bd-badge{
   display:inline-flex;align-items:center;gap:3px;
@@ -1932,9 +1996,43 @@ body.align-right .cal-evbar{text-align:right}
       <button class="pf-name-save-btn" onclick="saveProfileBirthday()">저장</button>
     </div>
   </div>
+  <!-- admin 전용: 이용자 무료 부여 -->
+  <div class="pf-edit-row" id="profileAdminRow" style="display:none">
+    <button class="pf-admin-btn" onclick="openAdminGrant()">🎁 이용자 무료 부여 (관리자)</button>
+  </div>
   <div class="mo-actions">
     <button class="btn btn-danger" onclick="doLogout()">로그아웃</button>
     <button class="mo-cancel" onclick="closeProfile()">닫기</button>
+  </div>
+</div>
+
+<!-- admin: 이용자 무료 부여 모달 -->
+<div class="mo-overlay" id="adminGrantOverlay" onclick="closeAdminGrant()"></div>
+<div class="mo-card" id="adminGrantCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">이용자 무료 부여</div>
+  <div class="mo-sub" id="adminGrantSub">이름 또는 이메일로 검색</div>
+  
+  <!-- 검색 화면 -->
+  <div id="adminGrantSearchView">
+    <div style="margin:14px 0 10px">
+      <input class="fi" id="adminGrantSearchInput" placeholder="이름 또는 이메일 (2글자 이상)" oninput="onAdminGrantInput()" autocomplete="off">
+    </div>
+    <div id="adminGrantResults" class="ag-results"></div>
+  </div>
+  
+  <!-- 사용자 선택 후 화면 -->
+  <div id="adminGrantUserView" style="display:none">
+    <button class="ag-back-btn" onclick="backToAdminGrantSearch()">← 다른 사용자 선택</button>
+    <div class="ag-user-info" id="adminGrantUserInfo"></div>
+    <div class="ag-section-title">🎨 컬러 팩</div>
+    <div id="adminGrantColorList" class="ag-pack-list"></div>
+    <div class="ag-section-title">😊 이모지 팩</div>
+    <div id="adminGrantCharList" class="ag-pack-list"></div>
+  </div>
+  
+  <div class="mo-actions">
+    <button class="mo-cancel" onclick="closeAdminGrant()">닫기</button>
   </div>
 </div>
 
@@ -2552,6 +2650,9 @@ function openProfile(){
   fillBirthdaySelects();
   // 프로필 사진 표시 (avatar_url이 있으면)
   loadProfilePhoto();
+  // admin 전용 버튼 노출
+  const adminRow=document.getElementById('profileAdminRow');
+  if(adminRow)adminRow.style.display=isAdmin()?'':'none';
   document.getElementById('profileOverlay').classList.add('on');
   document.getElementById('profileCard').classList.add('on');
 }
@@ -3056,6 +3157,8 @@ async function loadCurrentProfile(){
     console.warn('프로필 로드 실패',e);
     _currentProfile=_currentProfile||{};
   }
+  // admin이 부여한 DB unlocks도 캐시에 로드
+  await loadMyDbUnlocks();
   // 방 목록 화면 아바타도 같이 갱신
   updateUserAvatar();
 }
@@ -7771,6 +7874,29 @@ const FREE_TRIAL_MODE=true; // ← 유료화 시 false 로 변경
   }catch{}
 })();
 
+/* DB 기반 unlocks (admin이 부여한 무료 unlock) — 본인 것만 캐시 */
+let _dbUnlocks={color:[], char:[]};
+
+async function loadMyDbUnlocks(){
+  if(!_currentUser)return;
+  try{
+    const {data,error}=await supa.from('user_unlocks')
+      .select('pack_type, pack_key')
+      .eq('user_id', _currentUser.id);
+    if(error){
+      // 테이블이 없거나 권한 문제 — 조용히 무시
+      console.warn('user_unlocks 로드 실패 (테이블 없을 수도):',error.message);
+      return;
+    }
+    _dbUnlocks={
+      color:(data||[]).filter(r=>r.pack_type==='color').map(r=>r.pack_key),
+      char: (data||[]).filter(r=>r.pack_type==='char').map(r=>r.pack_key),
+    };
+  }catch(e){
+    console.warn('user_unlocks 로드 에러 (무시):',e);
+  }
+}
+
 function _getUnlocks(){
   try{
     const raw=localStorage.getItem('uricalv2.unlocks');
@@ -7784,9 +7910,9 @@ function _getUnlocks(){
 function _saveUnlocks(u){
   try{localStorage.setItem('uricalv2.unlocks',JSON.stringify(u))}catch{}
 }
-/* 특정 팩 unlock */
+/* 특정 팩 unlock (체험 버튼 — 사용자 본인 액션) */
 function unlockColorPack(key){
-  if(!FREE_TRIAL_MODE)return false; // 추후 결제: validatePayment 후 unlock
+  if(!FREE_TRIAL_MODE)return false;
   const u=_getUnlocks();
   if(!u.color.includes(key)){u.color.push(key);_saveUnlocks(u)}
   return true;
@@ -7804,27 +7930,194 @@ function lockColorPack(key){
 function lockCharPack(key){
   const u=_getUnlocks();u.char=u.char.filter(k=>k!==key);_saveUnlocks(u);
 }
-/* 사용 가능 여부 */
+/* 사용 가능 여부 — 무료 체험(localStorage) + admin 부여(DB) 둘 다 확인 */
 function hasColorPack(key){
-  if(!FREE_TRIAL_MODE)return false; // 추후: return checkUserUnlock('color', key);
-  return _getUnlocks().color.includes(key);
+  if(FREE_TRIAL_MODE && _getUnlocks().color.includes(key))return true;
+  if(_dbUnlocks.color.includes(key))return true;
+  return false;
 }
 function hasCharPack(key){
-  if(!FREE_TRIAL_MODE)return false; // 추후: return checkUserUnlock('char', key);
-  return _getUnlocks().char.includes(key);
+  if(FREE_TRIAL_MODE && _getUnlocks().char.includes(key))return true;
+  if(_dbUnlocks.char.includes(key))return true;
+  return false;
 }
 function getUnlockedColorPacks(){
-  if(!FREE_TRIAL_MODE)return [];
-  return _getUnlocks().color;
+  const set=new Set();
+  if(FREE_TRIAL_MODE)_getUnlocks().color.forEach(k=>set.add(k));
+  _dbUnlocks.color.forEach(k=>set.add(k));
+  return [...set];
 }
 function getUnlockedCharPacks(){
-  if(!FREE_TRIAL_MODE)return [];
-  return _getUnlocks().char;
+  const set=new Set();
+  if(FREE_TRIAL_MODE)_getUnlocks().char.forEach(k=>set.add(k));
+  _dbUnlocks.char.forEach(k=>set.add(k));
+  return [...set];
 }
-/* 호환성 — 일부 함수가 isFreeTrialActive 참조할 수 있음 */
+/* 호환성 */
 function isFreeTrialActive(){return FREE_TRIAL_MODE}
-function activateFreeTrial(){/* deprecated — use unlockColorPack/CharPack */}
-function deactivateFreeTrial(){/* deprecated */}
+function activateFreeTrial(){}
+function deactivateFreeTrial(){}
+
+/* ═══════════════════════════════════
+   admin 전용 — 이용자 무료 부여 (검색 + 토글)
+   ═══════════════════════════════════ */
+let _adminGrantSelected=null;
+let _adminGrantTargetUnlocks={color:[], char:[]};
+let _adminGrantSearchTimer=null;
+
+function openAdminGrant(){
+  if(!isAdmin()){toast('권한이 없어요');return}
+  document.getElementById('adminGrantSearchView').style.display='';
+  document.getElementById('adminGrantUserView').style.display='none';
+  document.getElementById('adminGrantSearchInput').value='';
+  document.getElementById('adminGrantResults').innerHTML='<div class="ag-empty">이름 또는 이메일로 검색해주세요</div>';
+  document.getElementById('adminGrantOverlay').classList.add('on');
+  document.getElementById('adminGrantCard').classList.add('on');
+}
+function closeAdminGrant(){
+  document.getElementById('adminGrantOverlay').classList.remove('on');
+  document.getElementById('adminGrantCard').classList.remove('on');
+  _adminGrantSelected=null;
+}
+function onAdminGrantInput(){
+  if(_adminGrantSearchTimer)clearTimeout(_adminGrantSearchTimer);
+  _adminGrantSearchTimer=setTimeout(doAdminGrantSearch,300);
+}
+async function doAdminGrantSearch(){
+  const q=(document.getElementById('adminGrantSearchInput').value||'').trim();
+  const el=document.getElementById('adminGrantResults');
+  if(q.length<2){el.innerHTML='<div class="ag-empty">2글자 이상 입력해주세요</div>';return}
+  el.innerHTML='<div class="ag-empty">검색 중...</div>';
+  try{
+    // name 또는 email로 LIKE 검색
+    const {data,error}=await supa.from('profiles')
+      .select('id, name, email, avatar_url')
+      .or(`name.ilike.%${q}%,email.ilike.%${q}%`)
+      .limit(20);
+    if(error)throw error;
+    if(!data||!data.length){
+      el.innerHTML='<div class="ag-empty">검색 결과가 없어요</div>';
+      return;
+    }
+    el.innerHTML=data.map(u=>{
+      const avatar=u.avatar_url
+        ? `<div class="ag-user-avatar has-photo"><img src="${escapeHtml(u.avatar_url)}" alt=""></div>`
+        : `<div class="ag-user-avatar">${escapeHtml((u.name||'?').charAt(0))}</div>`;
+      const safeMeta=JSON.stringify({name:u.name||'',email:u.email||'',avatar_url:u.avatar_url||''}).replace(/"/g,'&quot;');
+      return `
+        <div class="ag-user-card" onclick='selectAdminGrantUser("${u.id}", ${safeMeta})'>
+          ${avatar}
+          <div class="ag-user-meta">
+            <div class="ag-user-name">${escapeHtml(u.name||'(이름 없음)')}</div>
+            <div class="ag-user-email">${escapeHtml(u.email||'')}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }catch(e){
+    console.error(e);
+    el.innerHTML=`<div class="ag-empty">검색 실패: ${escapeHtml((e.message||'').slice(0,50))}</div>`;
+  }
+}
+async function selectAdminGrantUser(userId, meta){
+  _adminGrantSelected={id:userId,...meta};
+  document.getElementById('adminGrantSearchView').style.display='none';
+  document.getElementById('adminGrantUserView').style.display='';
+  const info=document.getElementById('adminGrantUserInfo');
+  const avatar=meta.avatar_url
+    ? `<div class="ag-user-avatar has-photo"><img src="${escapeHtml(meta.avatar_url)}" alt=""></div>`
+    : `<div class="ag-user-avatar">${escapeHtml((meta.name||'?').charAt(0))}</div>`;
+  info.innerHTML=`
+    ${avatar}
+    <div class="ag-user-meta">
+      <div class="ag-user-name">${escapeHtml(meta.name||'(이름 없음)')}</div>
+      <div class="ag-user-email">${escapeHtml(meta.email||'')}</div>
+    </div>
+  `;
+  // 해당 사용자의 현재 unlocks 로드
+  try{
+    const {data}=await supa.from('user_unlocks')
+      .select('pack_type, pack_key')
+      .eq('user_id', userId);
+    _adminGrantTargetUnlocks={
+      color:(data||[]).filter(r=>r.pack_type==='color').map(r=>r.pack_key),
+      char: (data||[]).filter(r=>r.pack_type==='char').map(r=>r.pack_key),
+    };
+  }catch(e){
+    _adminGrantTargetUnlocks={color:[], char:[]};
+  }
+  renderAdminGrantPacks();
+}
+function renderAdminGrantPacks(){
+  const colorEl=document.getElementById('adminGrantColorList');
+  const charEl=document.getElementById('adminGrantCharList');
+  colorEl.innerHTML=STORE_COLORS.map(p=>{
+    const granted=_adminGrantTargetUnlocks.color.includes(p.key);
+    return `
+      <div class="ag-pack-row ${granted?'granted':''}">
+        <div class="ag-pack-info">
+          <div class="ag-pack-name">${escapeHtml(p.name)}</div>
+          <div class="ag-pack-desc">${escapeHtml(p.desc||'')}</div>
+        </div>
+        ${granted
+          ? `<button class="ag-revoke-btn" onclick="revokePackForUser('color','${p.key}')">회수</button>`
+          : `<button class="ag-grant-btn" onclick="grantPackForUser('color','${p.key}')">부여</button>`}
+      </div>
+    `;
+  }).join('');
+  charEl.innerHTML=STORE_EMOJI.map(p=>{
+    const granted=_adminGrantTargetUnlocks.char.includes(p.key);
+    return `
+      <div class="ag-pack-row ${granted?'granted':''}">
+        <div class="ag-pack-info">
+          <div class="ag-pack-name">${escapeHtml(p.name)}</div>
+          <div class="ag-pack-desc">${escapeHtml(p.desc||'')}</div>
+        </div>
+        ${granted
+          ? `<button class="ag-revoke-btn" onclick="revokePackForUser('char','${p.key}')">회수</button>`
+          : `<button class="ag-grant-btn" onclick="grantPackForUser('char','${p.key}')">부여</button>`}
+      </div>
+    `;
+  }).join('');
+}
+async function grantPackForUser(packType, packKey){
+  if(!isAdmin()||!_adminGrantSelected)return;
+  try{
+    const {error}=await supa.from('user_unlocks').insert({
+      user_id:_adminGrantSelected.id,
+      pack_type:packType,
+      pack_key:packKey,
+      granted_by:_currentUser.id,
+    });
+    if(error)throw error;
+    _adminGrantTargetUnlocks[packType].push(packKey);
+    renderAdminGrantPacks();
+    toast('부여되었습니다');
+  }catch(e){
+    toast('부여 실패: '+((e.message||'').slice(0,50)));
+  }
+}
+async function revokePackForUser(packType, packKey){
+  if(!isAdmin()||!_adminGrantSelected)return;
+  if(!confirm('이 팩을 회수하시겠어요?'))return;
+  try{
+    const {error}=await supa.from('user_unlocks').delete()
+      .eq('user_id', _adminGrantSelected.id)
+      .eq('pack_type', packType)
+      .eq('pack_key', packKey);
+    if(error)throw error;
+    _adminGrantTargetUnlocks[packType]=_adminGrantTargetUnlocks[packType].filter(k=>k!==packKey);
+    renderAdminGrantPacks();
+    toast('회수되었습니다');
+  }catch(e){
+    toast('회수 실패: '+((e.message||'').slice(0,50)));
+  }
+}
+function backToAdminGrantSearch(){
+  document.getElementById('adminGrantSearchView').style.display='';
+  document.getElementById('adminGrantUserView').style.display='none';
+  _adminGrantSelected=null;
+}
 
 let _storeCurrentTab='theme';
 
