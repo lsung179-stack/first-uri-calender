@@ -740,6 +740,9 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 }
 .pf-name{font-family:var(--ff-serif);font-size:20px;font-weight:700;color:var(--text);text-align:center;letter-spacing:.5px}
 .pf-email{font-size:13px;color:var(--sub);text-align:center}
+.pf-danger-zone{margin-top:24px;padding-top:12px;border-top:1px dashed var(--border);text-align:center}
+.pf-delete-account-btn{display:inline-block;padding:4px 10px;font-size:10px;color:var(--mute);background:transparent;border:none;cursor:pointer;font-family:inherit;text-decoration:underline;letter-spacing:.2px;opacity:.7;transition:opacity .12s}
+.pf-delete-account-btn:hover,.pf-delete-account-btn:active{opacity:1;color:var(--sunday)}
 .pf-restore-btn{display:block;margin:6px auto 0;padding:3px 12px;font-size:10px;color:var(--sub);background:transparent;border:1px solid var(--border);border-radius:99px;cursor:pointer;font-family:inherit;letter-spacing:.2px;transition:all .12s}
 .pf-restore-btn:active{transform:scale(.95);background:var(--bg)}
 .btn-danger{background:var(--accent);color:var(--card)}
@@ -2048,6 +2051,9 @@ body.align-right .cal-evbar{text-align:right}
   <div class="mo-actions">
     <button class="btn btn-danger" onclick="doLogout()">로그아웃</button>
     <button class="mo-cancel" onclick="closeProfile()">닫기</button>
+  </div>
+  <div class="pf-danger-zone">
+    <button class="pf-delete-account-btn" onclick="deleteMyAccount()">회원탈퇴</button>
   </div>
 </div>
 
@@ -3558,6 +3564,7 @@ async function createRoom(){
     closeCreateRoom();
     const srcName=(_createCopyOn&&_createCopySource)?(_myRooms.find(r=>r.id===_createCopySource)?.name||''):'';
     toast(copiedCount>0?`"${name}" 방 생성 ("${srcName}"에서 ${copiedCount}개 복사됨)`:`"${name}" 방이 만들어졌어요`);
+    _audit('room.create',{targetType:'room',targetId:room.id,roomId:room.id,meta:{name,code,is_admin_mode:room.is_admin_mode||false,copied:copiedCount}});
     await loadRooms();
   }catch(e){
     toast('실패: '+(e.message||'').slice(0,40));
@@ -7227,6 +7234,19 @@ async function deleteEvent(eventId){
     }
     // 사진 cleanup — fire-and-forget
     if(photoUrlToCleanup)deletePhotoFromStorage(photoUrlToCleanup);
+    _audit('event.delete',{
+      targetType:'event',
+      targetId:eventId,
+      roomId:ev.room_id,
+      meta:{
+        title:(ev.title||'').slice(0,80),
+        date:ev.date,
+        is_shared:!!ev.shared_id,
+        group_size:group.length,
+        owner_id:ev.user_id,
+        by_admin:_adminBypass()&&ev.user_id!==_currentUser?.id
+      }
+    });
     await loadEvents();
     if(_selectedDate)openDateSheet(_selectedDate);
   }catch(e){
@@ -7513,6 +7533,16 @@ async function kickMember(userId,name){
       .eq('user_id',userId);
     if(error)throw error;
     toast('멤버를 내보냈어요');
+    _audit('member.kick',{
+      targetType:'member',
+      targetId:userId,
+      roomId:_currentRoom.id,
+      meta:{
+        member_name:(name||'').slice(0,40),
+        room_name:(_currentRoom.name||'').slice(0,40),
+        by_admin:_adminBypass()&&_currentRoom.owner_id!==_currentUser?.id
+      }
+    });
     await loadRoomMembers();
     renderRoomMemberList();
     document.getElementById('roomSetMemberCount').textContent=`${_myMembers.length}명`;
@@ -7527,6 +7557,14 @@ async function deleteRoomConfirm(){
   if(!confirm(confirmText))return;
   // 한 번 더 (안전장치)
   if(!confirm('정말 삭제할까요? 마지막 확인입니다'))return;
+  // audit는 삭제 전에 (room_id FK가 끊기지 않도록 ON DELETE SET NULL 처리되어 있음)
+  const roomSnapshot={
+    name:_currentRoom.name,
+    code:_currentRoom.code,
+    owner_id:_currentRoom.owner_id,
+    by_admin:_adminBypass()&&_currentRoom.owner_id!==_currentUser?.id
+  };
+  const roomIdSnapshot=_currentRoom.id;
   try{
     // events 먼저 (CASCADE 없을 수도)
     await supa.from('events').delete().eq('room_id',_currentRoom.id);
@@ -7534,6 +7572,7 @@ async function deleteRoomConfirm(){
     const {error}=await supa.from('rooms').delete().eq('id',_currentRoom.id);
     if(error)throw error;
     toast('방이 삭제됐어요');
+    _audit('room.delete',{targetType:'room',targetId:roomIdSnapshot,meta:roomSnapshot});
     closeRoomSettings();
     exitRoom();
   }catch(e){
@@ -7630,6 +7669,72 @@ function isAdmin(){
 const ENABLE_GLOBAL_ADMIN_BYPASS=false;
 function _adminBypass(){
   return ENABLE_GLOBAL_ADMIN_BYPASS && isAdmin();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   audit_log 헬퍼 — 핵심 액션 기록 (fire-and-forget)
+   ───────────────────────────────────────────────────────────
+   실패해도 사용자 작업은 진행 (로그 기록 실패가 기능 차단 X).
+   RLS로 actor_user_id = auth.uid() 보장 → 변조 불가.
+   ═══════════════════════════════════════════════════════════ */
+async function _audit(actionType, opts={}){
+  try{
+    if(!_currentUser)return;
+    await supa.from('audit_log').insert({
+      actor_user_id:_currentUser.id,
+      action_type:actionType,
+      target_type:opts.targetType||null,
+      target_id:opts.targetId?String(opts.targetId):null,
+      room_id:opts.roomId||null,
+      meta:opts.meta||{},
+      user_agent:(navigator.userAgent||'').slice(0,300),
+    });
+  }catch(e){
+    console.warn('audit_log 실패(무시):',e);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   회원탈퇴 — 본인 데이터 일괄 삭제 RPC 호출
+   ───────────────────────────────────────────────────────────
+   ※ auth.users 자체 삭제는 별도 (다음 Round Edge Function)
+     현 단계: 본인 데이터만 삭제 + 로그아웃 + 안내
+   ═══════════════════════════════════════════════════════════ */
+async function deleteMyAccount(){
+  if(!_currentUser){toast('로그인이 필요해요');return}
+  // 1차 확인
+  const c1=confirm(
+    '정말 탈퇴하시겠어요?\n\n'+
+    '• 모든 일정, 메모, 사진이 삭제돼요\n'+
+    '• 가입된 모든 방에서 나가요\n'+
+    '• 다른 멤버가 본 함께 일정에서 내 기록이 사라져요\n'+
+    '• 이 작업은 되돌릴 수 없어요'
+  );
+  if(!c1)return;
+  // 2차 확인 (안전장치)
+  const c2=prompt('탈퇴를 진행하려면 "탈퇴"를 정확히 입력해주세요');
+  if(c2!=='탈퇴'){
+    if(c2!==null)toast('입력이 일치하지 않아요');
+    return;
+  }
+  try{
+    toast('탈퇴 처리 중...');
+    const {data,error}=await supa.rpc('delete_my_user_data');
+    if(error)throw error;
+    // 로그아웃
+    await supa.auth.signOut();
+    // localStorage 정리
+    try{
+      localStorage.removeItem('lastRoomId');
+      localStorage.removeItem('uricalv2.readAnnouncements');
+      localStorage.removeItem('admin.data');
+    }catch(_){}
+    alert('탈퇴가 완료됐어요.\n그동안 이용해주셔서 감사합니다.');
+    location.reload();
+  }catch(e){
+    console.error('회원탈퇴 실패:',e);
+    toast('탈퇴 실패: '+(e.message||'').slice(0,40));
+  }
 }
 
 /* ── localStorage 읽음 관리 ── */
