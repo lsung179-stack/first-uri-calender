@@ -1421,6 +1421,18 @@ body.align-right .cal-evbar{text-align:right}
 .rs-member-info{flex:1;min-width:0}
 .rs-member-name{font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rs-member-tag{font-size:10px;color:var(--sub)}
+
+/* 생일 select — native 화살표 제거 + 커스텀 작은 ▾ (텍스트 안 잘리게) */
+.pf-bd-select{
+  appearance:none;-webkit-appearance:none;-moz-appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%238a6c52' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat:no-repeat;
+  background-position:right 8px center;
+  padding-right:22px !important;
+  padding-left:10px !important;
+  text-align:left;
+  font-size:13px;
+}
 .rs-member-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:3px}
 .rs-bd-badge{
   display:inline-flex;align-items:center;gap:3px;
@@ -1911,12 +1923,12 @@ body.align-right .cal-evbar{text-align:right}
   <div class="pf-edit-row">
     <div class="ev-label" style="font-size:11px">내 생일 <span style="font-weight:400;color:var(--mute);font-size:10px">· 매년 캘린더에 자동 표시</span></div>
     <div class="pf-name-input-row">
-      <select class="fi" id="profileBdType" style="flex:0 0 70px">
+      <select class="fi pf-bd-select" id="profileBdType" style="flex:0 0 72px">
         <option value="solar">양력</option>
         <option value="lunar">음력</option>
       </select>
-      <select class="fi" id="profileBdMonth" style="flex:0 0 68px"><option value="">월</option></select>
-      <select class="fi" id="profileBdDay" style="flex:0 0 68px"><option value="">일</option></select>
+      <select class="fi pf-bd-select" id="profileBdMonth" style="flex:0 0 72px"><option value="">월</option></select>
+      <select class="fi pf-bd-select" id="profileBdDay" style="flex:0 0 72px"><option value="">일</option></select>
       <button class="pf-name-save-btn" onclick="saveProfileBirthday()">저장</button>
     </div>
   </div>
