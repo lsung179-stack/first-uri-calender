@@ -1,10 +1,13 @@
-/* 우리 캘린더 V2 — Service Worker (v4: monochrome badge + heads-up 강화) */
-const CACHE_NAME = 'uri-cal-v2-v8';
+/* 우리 캘린더 V2 — Service Worker (v5: 프리캐시 교정 + SKIP_WAITING + 알림 옵션 정리) */
+const CACHE_NAME = 'uri-cal-v2-v9';
 const PRECACHE_URLS = [
-  '/v2.html',
+  '/',
+  '/index.html',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
+  '/icon-192-maskable.png',
+  '/icon-512-maskable.png',
   '/icon-180.png',
   '/icon-monochrome.png',
   '/terms.html',
@@ -18,6 +21,11 @@ self.addEventListener('install', (e) => {
       cache.addAll(PRECACHE_URLS).catch((err) => console.warn('Pre-cache 실패:', err))
     )
   );
+});
+
+/* index.html이 새 SW에게 즉시 활성화 명령 (postMessage SKIP_WAITING) */
+self.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', (e) => {
@@ -61,16 +69,17 @@ self.addEventListener('push', (e) => {
   const opts = {
     body: data.body || '',
     icon: data.icon || '/icon-192.png',          // 컬러 large icon (알림 본문 옆)
-    badge: '/icon-monochrome.png',                // monochrome small icon (상태바) ← v4 fix
-    tag: data.tag || 'wuri-calendar',
+    badge: '/icon-monochrome.png',                // monochrome small icon (상태바)
+    // tag: 송신측이 지정하면 그대로(다이제스트 등 묶기), 없으면 일정마다 unique
+    // → 같은 tag로 덮여서 heads-up 안 뜨는 문제 방지
+    tag: data.tag || ('wuri-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8)),
     data: { url: data.url || '/' },
-    vibrate: [300, 200, 300, 200, 300],           // 더 강한 진동 → heads-up 트리거 유도
-    renotify: true,                               // 같은 tag로 와도 다시 알림
-    requireInteraction: true,                     // 자동 dismiss 막기 ← v4 추가
-    silent: false,                                // 소리 ON
-    actions: [                                    // expanded notification (heads-up 유도) ← v4 추가
-      { action: 'open', title: '열기' }
-    ],
+    vibrate: [200, 100, 200],
+    renotify: !!data.tag,                         // 송신측이 tag 지정한 경우만 renotify
+    silent: false,
+    // requireInteraction / actions 제거:
+    //  - requireInteraction은 일부 Android에서 고정 알림으로 동작 → heads-up 약화
+    //  - actions가 있으면 expanded 형태로 표시되어 heads-up이 작게 뜨거나 안 뜸
   };
   
   e.waitUntil(self.registration.showNotification(title, opts));
