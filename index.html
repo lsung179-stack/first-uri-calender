@@ -1424,6 +1424,9 @@ body.align-right .cal-evbar{text-align:right}
 /* ═══════════════════════════════════
    가상 멤버 (관리자 모드 방)
    ═══════════════════════════════════ */
+/* vMember 모달은 roomSetCard 위에 떠야 함 — mo-overlay/card 기본(50/51)보다 높게 */
+#vMemberOverlay{z-index:60}
+#vMemberCard{z-index:61}
 .rs-add-vmember-btn{
   background:var(--accent);color:#fff;border:none;
   padding:5px 11px;border-radius:14px;
@@ -2917,11 +2920,17 @@ async function uploadProfilePhoto(file){
   try{
     // Canvas로 200x200 압축
     const dataUrl=await compressImage(file,200,0.85);
+    // profiles row가 처음 생성될 때를 대비해 name도 함께 전송 (NOT NULL 컬럼 보호)
+    const meta=_currentUser.user_metadata||{};
+    const safeName=_currentProfile?.name
+      ||meta.name||meta.full_name||meta.preferred_username
+      ||(_currentUser.email?_currentUser.email.split('@')[0]:'익명');
     // profiles.avatar_url 에 Base64 저장
     const {error}=await supa.from('profiles').upsert({
       id:_currentUser.id,
       avatar_url:dataUrl,
       email:_currentUser.email,
+      name:safeName,
     });
     if(error)throw error;
     // _currentProfile 즉시 동기화 (헤더·멤버 탭에 즉시 반영)
@@ -4481,14 +4490,18 @@ function renderMemberTabs(){
     return;
   }
   wrap.classList.add('show');
-  // _viewingMember 유효성 검증 (멤버가 나갔을 경우)
-  if(_viewingMember!=='all'&&!_myMembers.find(m=>m.user_id===_viewingMember)){
-    _viewingMember='all';
+  // _viewingMember 유효성 검증 — 가상 멤버('v-'+member_id)와 일반 멤버(user_id) 둘 다 체크
+  if(_viewingMember!=='all'){
+    const found=_myMembers.find(m=>{
+      if(m.is_virtual)return ('v-'+m.member_id)===_viewingMember;
+      return m.user_id===_viewingMember;
+    });
+    if(!found)_viewingMember='all';
   }
-  // 본인을 첫 번째로 정렬
+  // 본인을 첫 번째로 정렬 (가상 멤버는 joined_at 순)
   const sorted=[..._myMembers].sort((a,b)=>{
-    if(a.user_id===_currentUser?.id)return -1;
-    if(b.user_id===_currentUser?.id)return 1;
+    if(!a.is_virtual && a.user_id===_currentUser?.id)return -1;
+    if(!b.is_virtual && b.user_id===_currentUser?.id)return 1;
     return 0;
   });
   let html='';
@@ -4503,13 +4516,14 @@ function renderMemberTabs(){
     </div>
     <div class="cal-member-tab-name">전체</div>
   </button>`;
-  // 각 멤버 탭
+  // 각 멤버 탭 — 가상은 'v-<member_id>'로 식별
   sorted.forEach(m=>{
-    const on=(_viewingMember===m.user_id);
+    const memberKey=m.is_virtual?('v-'+m.member_id):m.user_id;
+    const on=(_viewingMember===memberKey);
     const initial=(m.name||'?').trim().charAt(0).toUpperCase();
     const bg=colorHex(m.color||'c-vintage');
     // 본인은 _currentProfile.avatar_url 우선 (실시간 반영), 다른 멤버는 m.avatar_url
-    const isMe=(m.user_id===_currentUser?.id);
+    const isMe=(!m.is_virtual && m.user_id===_currentUser?.id);
     const photo=isMe?(_currentProfile?.avatar_url||m.avatar_url):m.avatar_url;
     let iconHtml;
     if(photo){
@@ -4517,7 +4531,7 @@ function renderMemberTabs(){
     }else{
       iconHtml=`<div class="cal-member-tab-icon" style="background:${bg}">${escapeHtml(initial)}</div>`;
     }
-    html+=`<button class="cal-member-tab${on?' on':''}" onclick="setViewingMember('${m.user_id}')">
+    html+=`<button class="cal-member-tab${on?' on':''}" onclick="setViewingMember('${memberKey}')">
       ${iconHtml}
       <div class="cal-member-tab-name">${escapeHtml(m.name||'')}</div>
     </button>`;
@@ -4648,13 +4662,21 @@ function getDayEvents(date){
   // 함께 일정은 _memberIds에 viewingMember가 포함될 때만 (이전엔 _isShared면 무조건 통과해서 다른 멤버 탭에도 보이는 버그)
   const isVisible=ev=>ev._isVirtual||((ev.title||'').trim().length>0);
   if(_viewingMember&&_viewingMember!=='all'){
+    // 가상 멤버 보기: 'v-<member_id>' 형식
+    const isVirtualView=_viewingMember.startsWith('v-');
+    const virtualMemberId=isVirtualView?_viewingMember.slice(2):null;
     return result.filter(ev=>{
       if(!isVisible(ev))return false;
       if(ev._isVirtual)return true;
+      if(isVirtualView){
+        // 가상 멤버 명의 일정만
+        return ev.virtual_member_id===virtualMemberId;
+      }
       if(ev._isShared){
         return ev._memberIds&&ev._memberIds.includes(_viewingMember);
       }
-      return ev.user_id===_viewingMember;
+      // 일반 멤버 — virtual_member_id가 있는 일정은 제외 (가상 멤버 일정이므로)
+      return ev.user_id===_viewingMember && !ev.virtual_member_id;
     });
   }
   return result.filter(isVisible);
@@ -5054,8 +5076,8 @@ function renderDateSheetList(){
     }
     const sharedCls=ev._isShared?' shared':'';
     const virtualTag=isVirtual?`<span class="dp-shared-tag" style="background:rgba(216,104,128,.18);color:#a83855">프로필</span>`:'';
-    // 수정/삭제 버튼 — 단독은 본인만, 함께는 같은 방 누구나, admin은 모두 가능
-    const canEdit=!isVirtual&&(isMine||ev._isShared||isAdmin());
+    // 수정/삭제 버튼 — 단독은 본인만, 함께는 같은 방 누구나. 전역 admin 토글 켜져 있으면 admin은 모두 가능
+    const canEdit=!isVirtual&&(isMine||ev._isShared||_adminBypass());
     const actions=canEdit?`<div class="dp-actions"><button class="dp-btn" onclick="event.stopPropagation();openEditEvent('${ev.id}')">수정</button><button class="dp-btn del" onclick="event.stopPropagation();deleteEvent('${ev.id}')">삭제</button></div>`:'';
 
     // 순서 변경 화살표 — 가상 일정엔 없음. 단일은 위 일정이 기간이면 ▲ 비활성.
@@ -7106,9 +7128,9 @@ function openRoomSettings(){
   document.getElementById('roomSetMemberCount').textContent=`${_myMembers.length}명`;
   syncAnnouncementBadge();
   renderRoomMemberList();
-  // owner / 멤버 메뉴 분기 — admin은 모든 권한 보임
+  // owner / 멤버 메뉴 분기 — 전역 admin 토글 켜져 있으면 admin도 관리 권한
   const isOwner=_currentRoom.owner_id===_currentUser?.id;
-  const canManage=isOwner||isAdmin();
+  const canManage=isOwner||_adminBypass();
   document.getElementById('roomSetOwnerSection').style.display=canManage?'block':'none';
   document.getElementById('roomSetLeaveSection').style.display=canManage?'none':'block';
   document.getElementById('roomSetNameEditBtn').style.display=canManage?'inline-block':'none';
@@ -7201,7 +7223,7 @@ function renderRoomMemberList(){
   if(!list)return;
   list.innerHTML='';
   const isOwner=_currentRoom?.owner_id===_currentUser?.id;
-  const canKick=isOwner||isAdmin();
+  const canKick=isOwner||_adminBypass();
   const isAdminRoom=!!_currentRoom?.is_admin_mode;
   _myMembers.forEach(m=>{
     const isMe=!m.is_virtual && m.user_id===_currentUser?.id;
@@ -7251,7 +7273,7 @@ function renderRoomMemberList(){
 }
 
 async function kickMember(userId,name){
-  if(!_currentRoom||(_currentRoom.owner_id!==_currentUser?.id && !isAdmin())){toast('권한이 없어요');return}
+  if(!_currentRoom||(_currentRoom.owner_id!==_currentUser?.id && !_adminBypass())){toast('권한이 없어요');return}
   if(!confirm(`"${name}" 님을 방에서 내보낼까요?\n(이 멤버의 일정은 그대로 유지됩니다)`))return;
   try{
     const {error}=await supa.from('members').delete()
@@ -7268,7 +7290,7 @@ async function kickMember(userId,name){
 }
 
 async function deleteRoomConfirm(){
-  if(!_currentRoom||(_currentRoom.owner_id!==_currentUser?.id && !isAdmin())){toast('방장만 삭제할 수 있어요');return}
+  if(!_currentRoom||(_currentRoom.owner_id!==_currentUser?.id && !_adminBypass())){toast('방장만 삭제할 수 있어요');return}
   const confirmText=`"${_currentRoom.name}" 방을 영구 삭제할까요?\n방의 모든 일정과 멤버가 사라지며 복구할 수 없습니다.`;
   if(!confirm(confirmText))return;
   // 한 번 더 (안전장치)
@@ -7359,6 +7381,21 @@ let _annCurrentId=null;     // 상세 화면에서 보고 있는 공지 ID
 
 function isAdmin(){
   return _currentUser?.id===ANN_ADMIN_USER_ID;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   전역 admin 권한 토글 — 기본 비활성
+   ───────────────────────────────────────────────────────────
+   true로 바꾸면 admin이 어느 방이든 owner처럼 동작:
+     • 본인이 속한 방에서 다른 멤버 일정 수정/삭제
+     • 본인이 owner가 아닌 방에서 방 이름 변경, 방 삭제
+     • 본인이 owner가 아닌 방에서 멤버 추방
+     • 일정/이모지 반응 자유롭게 추가·제거 (UI 제약 우회)
+   ※ 가상 멤버 시스템(관리자 모드 방)과는 무관 — 그건 별도로 동작
+   ═══════════════════════════════════════════════════════════ */
+const ENABLE_GLOBAL_ADMIN_BYPASS=false;
+function _adminBypass(){
+  return ENABLE_GLOBAL_ADMIN_BYPASS && isAdmin();
 }
 
 /* ── localStorage 읽음 관리 ── */
