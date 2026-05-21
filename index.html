@@ -4939,8 +4939,8 @@ function renderDateSheetList(){
     }
     const sharedCls=ev._isShared?' shared':'';
     const virtualTag=isVirtual?`<span class="dp-shared-tag" style="background:rgba(216,104,128,.18);color:#a83855">프로필</span>`:'';
-    // 수정/삭제 버튼 — 단독은 본인만, 함께는 같은 방 누구나
-    const canEdit=!isVirtual&&(isMine||ev._isShared);
+    // 수정/삭제 버튼 — 단독은 본인만, 함께는 같은 방 누구나, admin은 모두 가능
+    const canEdit=!isVirtual&&(isMine||ev._isShared||isAdmin());
     const actions=canEdit?`<div class="dp-actions"><button class="dp-btn" onclick="event.stopPropagation();openEditEvent('${ev.id}')">수정</button><button class="dp-btn del" onclick="event.stopPropagation();deleteEvent('${ev.id}')">삭제</button></div>`:'';
 
     // 순서 변경 화살표 — 가상 일정엔 없음. 단일은 위 일정이 기간이면 ▲ 비활성.
@@ -6991,11 +6991,12 @@ function openRoomSettings(){
   document.getElementById('roomSetMemberCount').textContent=`${_myMembers.length}명`;
   syncAnnouncementBadge();
   renderRoomMemberList();
-  // owner / 멤버 메뉴 분기
+  // owner / 멤버 메뉴 분기 — admin은 모든 권한 보임
   const isOwner=_currentRoom.owner_id===_currentUser?.id;
-  document.getElementById('roomSetOwnerSection').style.display=isOwner?'block':'none';
-  document.getElementById('roomSetLeaveSection').style.display=isOwner?'none':'block';
-  document.getElementById('roomSetNameEditBtn').style.display=isOwner?'inline-block':'none';
+  const canManage=isOwner||isAdmin();
+  document.getElementById('roomSetOwnerSection').style.display=canManage?'block':'none';
+  document.getElementById('roomSetLeaveSection').style.display=canManage?'none':'block';
+  document.getElementById('roomSetNameEditBtn').style.display=canManage?'inline-block':'none';
   // 편집 모드는 항상 닫힌 상태로 시작
   document.getElementById('roomSetNameRow').style.display='flex';
   document.getElementById('roomSetNameEditRow').style.display='none';
@@ -7080,6 +7081,7 @@ function renderRoomMemberList(){
   if(!list)return;
   list.innerHTML='';
   const isOwner=_currentRoom?.owner_id===_currentUser?.id;
+  const canKick=isOwner||isAdmin();
   _myMembers.forEach(m=>{
     const isMe=m.user_id===_currentUser?.id;
     const isMemberOwner=m.user_id===_currentRoom?.owner_id;
@@ -7087,8 +7089,8 @@ function renderRoomMemberList(){
     const div=document.createElement('div');
     div.className='rs-member-row'+(isMemberOwner?' owner':'');
     let actions='';
-    // 본인이 owner이고, 추방 대상은 본인 제외
-    if(isOwner&&!isMe){
+    // owner/admin이고, 추방 대상은 본인 제외 + (admin은 owner도 추방 가능하게 두지만 일반 owner는 자기 자신만 제외)
+    if(canKick&&!isMe){
       actions=`<button class="rs-kick-btn" onclick="kickMember('${m.user_id}','${escapeHtml(m.name).replace(/'/g,"\\'")}')">내보내기</button>`;
     }
     // 아바타: 사진 있으면 사진, 없으면 첫 글자
@@ -7125,7 +7127,7 @@ function renderRoomMemberList(){
 }
 
 async function kickMember(userId,name){
-  if(!_currentRoom||_currentRoom.owner_id!==_currentUser?.id){toast('권한이 없어요');return}
+  if(!_currentRoom||(_currentRoom.owner_id!==_currentUser?.id && !isAdmin())){toast('권한이 없어요');return}
   if(!confirm(`"${name}" 님을 방에서 내보낼까요?\n(이 멤버의 일정은 그대로 유지됩니다)`))return;
   try{
     const {error}=await supa.from('members').delete()
@@ -7142,7 +7144,7 @@ async function kickMember(userId,name){
 }
 
 async function deleteRoomConfirm(){
-  if(!_currentRoom||_currentRoom.owner_id!==_currentUser?.id){toast('방장만 삭제할 수 있어요');return}
+  if(!_currentRoom||(_currentRoom.owner_id!==_currentUser?.id && !isAdmin())){toast('방장만 삭제할 수 있어요');return}
   const confirmText=`"${_currentRoom.name}" 방을 영구 삭제할까요?\n방의 모든 일정과 멤버가 사라지며 복구할 수 없습니다.`;
   if(!confirm(confirmText))return;
   // 한 번 더 (안전장치)
