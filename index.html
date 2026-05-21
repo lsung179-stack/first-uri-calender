@@ -740,6 +740,8 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 }
 .pf-name{font-family:var(--ff-serif);font-size:20px;font-weight:700;color:var(--text);text-align:center;letter-spacing:.5px}
 .pf-email{font-size:13px;color:var(--sub);text-align:center}
+.pf-restore-btn{display:block;margin:6px auto 0;padding:3px 12px;font-size:10px;color:var(--sub);background:transparent;border:1px solid var(--border);border-radius:99px;cursor:pointer;font-family:inherit;letter-spacing:.2px;transition:all .12s}
+.pf-restore-btn:active{transform:scale(.95);background:var(--bg)}
 .btn-danger{background:var(--accent);color:var(--card)}
 .btn-danger:active{opacity:.85}
 
@@ -2018,6 +2020,7 @@ body.align-right .cal-evbar{text-align:right}
     <input type="file" id="profilePhotoFile" class="pf-photo-upload" accept="image/*" onchange="onProfilePhotoSelect(event)">
     <div class="pf-name" id="profileName">—</div>
     <div class="pf-email" id="profileEmail">—</div>
+    <button class="pf-restore-btn" onclick="restoreKakaoPhoto()">카카오 프로필 사진으로 복구</button>
   </div>
   <div class="pf-edit-row">
     <div class="ev-label" style="font-size:11px">이름 변경</div>
@@ -2746,6 +2749,12 @@ function openProfile(){
   // admin 전용 버튼 노출
   const adminRow=document.getElementById('profileAdminRow');
   if(adminRow)adminRow.style.display=isAdmin()?'':'none';
+  // 카카오 복구 버튼 — user_metadata에 카카오 사진 URL이 있을 때만 표시
+  const restoreBtn=document.querySelector('.pf-restore-btn');
+  if(restoreBtn){
+    const kakaoUrl=meta.avatar_url||meta.picture||meta.profile_image||meta.profile_image_url;
+    restoreBtn.style.display=kakaoUrl?'block':'none';
+  }
   document.getElementById('profileOverlay').classList.add('on');
   document.getElementById('profileCard').classList.add('on');
 }
@@ -2996,6 +3005,71 @@ function compressImage(file,maxSize,quality){
     reader.onerror=reject;
     reader.readAsDataURL(file);
   });
+}
+
+/* 카카오톡 원래 프로필 사진으로 복구 */
+async function restoreKakaoPhoto(){
+  if(!_currentUser){toast('로그인이 필요해요');return}
+  const meta=_currentUser.user_metadata||{};
+  // Supabase Kakao OAuth가 user_metadata에 저장하는 사진 URL 후보들
+  const kakaoUrl=meta.avatar_url||meta.picture||meta.profile_image||meta.profile_image_url;
+  if(!kakaoUrl){
+    toast('카카오 프로필 사진이 없어요');
+    return;
+  }
+  if(!confirm('카카오톡 프로필 사진으로 복구할까요?'))return;
+  toast('복구 중...');
+  try{
+    // 외부 URL → 이미지 로드 → canvas로 base64 변환 (CORS 허용 필요)
+    let dataUrl=kakaoUrl;
+    try{
+      dataUrl=await new Promise((resolve,reject)=>{
+        const img=new Image();
+        img.crossOrigin='anonymous';
+        img.onload=()=>{
+          const canvas=document.createElement('canvas');
+          const max=200;
+          let w=img.width,h=img.height;
+          if(w>h){if(w>max){h=h*max/w;w=max}}
+          else{if(h>max){w=w*max/h;h=max}}
+          canvas.width=w;canvas.height=h;
+          const ctx=canvas.getContext('2d');
+          ctx.drawImage(img,0,0,w,h);
+          resolve(canvas.toDataURL('image/jpeg',0.85));
+        };
+        img.onerror=()=>reject(new Error('이미지 로드 실패'));
+        img.src=kakaoUrl;
+      });
+    }catch(e){
+      // CORS 실패 시 URL 그대로 저장 (카카오 CDN은 안정적)
+      console.warn('canvas 변환 실패, URL 그대로 저장:',e);
+      dataUrl=kakaoUrl;
+    }
+    // name fallback (NOT NULL 보호)
+    const safeName=_currentProfile?.name
+      ||meta.name||meta.full_name||meta.preferred_username
+      ||(_currentUser.email?_currentUser.email.split('@')[0]:'익명');
+    const {error}=await supa.from('profiles').upsert({
+      id:_currentUser.id,
+      avatar_url:dataUrl,
+      email:_currentUser.email,
+      name:safeName,
+    });
+    if(error)throw error;
+    if(!_currentProfile)_currentProfile={};
+    _currentProfile.avatar_url=dataUrl;
+    if(_myMembers&&_myMembers.length){
+      const me=_myMembers.find(m=>m.user_id===_currentUser.id);
+      if(me)me.avatar_url=dataUrl;
+    }
+    toast('카카오 프로필로 복구됐어요');
+    loadProfilePhoto();
+    updateCalAvatar();
+    updateUserAvatar();
+    renderMemberTabs();
+  }catch(e){
+    toast('복구 실패: '+(e.message||'').slice(0,40));
+  }
 }
 
 /* 사용자 정보 표시 (헤더 아바타) */
@@ -3885,6 +3959,13 @@ function _attachVirtualMember(rowsOrRow){
 /* UPDATE용 — 명시적으로 virtual_member_id 컬럼 set (가상→본인 변경 시 NULL로 clear) */
 function _withVirtualMemberForUpdate(updateObj){
   return {...updateObj,virtual_member_id:_virtualMemberIdFromAuthor()};
+}
+/* 함께 일정 row 빌더 — memberKey가 'v-<id>'면 가상 멤버 (user_id=본인, virtual_member_id=가상.id) */
+function _buildCoEventRow(memberKey, baseRow){
+  if(typeof memberKey==='string' && memberKey.startsWith('v-')){
+    return {...baseRow, user_id:_currentUser.id, virtual_member_id:memberKey.slice(2)};
+  }
+  return {...baseRow, user_id:memberKey};
 }
 
 /* 명의 선택 UI 렌더 — 관리자 모드 방 + admin에서만 노출 */
@@ -5451,7 +5532,8 @@ function openEditEvent(eventId){
     _selectedTarget='all';
     const allEvents=Object.values(_events).flat();
     const sharedRows=allEvents.filter(e=>e.shared_id===ev.shared_id);
-    _selectedMembers=[...new Set(sharedRows.map(e=>e.user_id))];
+    // 멤버 식별자: 가상 멤버 row면 'v-'+virtual_member_id, 일반은 user_id
+    _selectedMembers=[...new Set(sharedRows.map(e=>e.virtual_member_id?('v-'+e.virtual_member_id):e.user_id))];
     _editSharedMemberIds=[..._selectedMembers];
   }else{
     _selectedTarget='self';
@@ -5621,9 +5703,8 @@ function syncTimeBtnLabel(v){
 function applyTargetUI(){
   const row=document.getElementById('evTargetRow');
   if(!row)return;
-  // 실제 멤버(가상 멤버 제외) 2명 이상일 때만 함께 토글 표시
-  const realMemberCount=_myMembers.filter(m=>!m.is_virtual && m.user_id).length;
-  if(realMemberCount<2){
+  // 본인 + 다른 멤버(실제+가상) ≥ 2일 때만 함께 토글 표시
+  if(_myMembers.length<2){
     row.style.display='none';
     return;
   }
@@ -5631,7 +5712,7 @@ function applyTargetUI(){
   document.getElementById('evTargetSelf').classList.toggle('on',_selectedTarget==='self');
   document.getElementById('evTargetAll').classList.toggle('on',_selectedTarget==='all');
   updateMembersDisplay();
-  updateMultiRoomVisibility();  // 함께 모드 ↔ 단독 모드 전환 시 다중 방 토글 표시 갱신
+  updateMultiRoomVisibility();
 }
 function setEventTarget(target){
   if(target==='all'){
@@ -5648,9 +5729,15 @@ function updateMembersDisplay(){
   const disp=document.getElementById('evMembersDisplay');
   if(!disp)return;
   if(_selectedTarget==='all'&&_selectedMembers.length>0){
-    const names=_selectedMembers.map(uid=>{
-      if(uid===_currentUser?.id)return '나';
-      const m=_myMembers.find(mm=>mm.user_id===uid);
+    const names=_selectedMembers.map(key=>{
+      if(key===_currentUser?.id)return '나';
+      // 가상 멤버 식별: 'v-' + member_id
+      if(typeof key==='string'&&key.startsWith('v-')){
+        const vmId=key.slice(2);
+        const m=_myMembers.find(mm=>mm.is_virtual&&mm.member_id===vmId);
+        return m?m.name:'?';
+      }
+      const m=_myMembers.find(mm=>!mm.is_virtual&&mm.user_id===key);
       return m?m.name:'?';
     });
     disp.textContent=`함께: ${names.join(', ')} (탭하여 변경)`;
@@ -5672,22 +5759,29 @@ function renderMemberPickList(){
   const list=document.getElementById('memberPickList');
   if(!list)return;
   list.innerHTML='';
-  // 가상 멤버는 함께 일정에 포함될 수 없음 (user_id NULL) → 실제 멤버만 표시
-  _myMembers.filter(m=>!m.is_virtual && m.user_id).forEach(m=>{
-    const isMe=m.user_id===_currentUser?.id;
-    const on=_tempPickedMembers.includes(m.user_id);
+  // 실제 멤버 + 가상 멤버 모두 표시. 식별자: 실제=user_id, 가상='v-'+member_id
+  _myMembers.forEach(m=>{
+    const memberKey=m.is_virtual?('v-'+m.member_id):m.user_id;
+    if(!memberKey)return;
+    const isMe=!m.is_virtual && m.user_id===_currentUser?.id;
+    const on=_tempPickedMembers.includes(memberKey);
     const div=document.createElement('div');
-    div.className=`mp-item${on?' on':''}${isMe?' me':''}`;
-    div.dataset.uid=m.user_id;
+    div.className=`mp-item${on?' on':''}${isMe?' me':''}${m.is_virtual?' virtual':''}`;
+    div.dataset.uid=memberKey;
     const initial=(m.name||'?').trim().charAt(0).toUpperCase();
+    const tagHtml=isMe?' <span class="mp-item-tag">(나)</span>':(m.is_virtual?' <span class="mp-item-tag">가상</span>':'');
+    // 아바타 (사진 있으면 사진, 없으면 첫 글자)
+    const stampHtml=m.avatar_url
+      ?`<div class="mp-item-stamp" style="background:${m.is_virtual?(m.color||'#8b5a3c'):''};overflow:hidden"><img src="${escapeHtml(m.avatar_url)}" alt="" style="width:100%;height:100%;object-fit:cover"></div>`
+      :`<div class="mp-item-stamp" style="background:${m.is_virtual?(m.color||'#8b5a3c'):''}">${escapeHtml(initial)}</div>`;
     div.innerHTML=`
-      <div class="mp-item-stamp">${escapeHtml(initial)}</div>
+      ${stampHtml}
       <div class="mp-item-info">
-        <div class="mp-item-name">${escapeHtml(m.name)}${isMe?' <span class="mp-item-tag">(나)</span>':''}</div>
+        <div class="mp-item-name">${escapeHtml(m.name)}${tagHtml}</div>
       </div>
       <div class="mp-item-check"></div>
     `;
-    div.onclick=()=>toggleMemberPick(m.user_id);
+    div.onclick=()=>toggleMemberPick(memberKey);
     list.appendChild(div);
   });
 }
@@ -5904,14 +5998,14 @@ async function saveEvent(){
         dates.forEach(d=>{
           // 같은 날짜에 함께 일정이면 그 날짜만 sharedId 묶음
           const sharedId=(_selectedTarget==='all'&&targetUsers.length>1)?genShared():null;
-          targetUsers.forEach(uid=>{
-            rows.push({
-              room_id:_currentRoom.id,user_id:uid,date:d,
+          targetUsers.forEach(key=>{
+            rows.push(_buildCoEventRow(key, {
+              room_id:_currentRoom.id, date:d,
               title,time,color,
               shared_id:sharedId,
               recurring_yearly:recurringYearly,
               memo,photo_url:photoUrl,
-            });
+            }));
           });
         });
         const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
@@ -5947,14 +6041,14 @@ async function saveEvent(){
         const sharedId=(_selectedTarget==='all'&&targetUsers.length>1)?genShared():null;
         const rows=[];
         dates.forEach(d=>{
-          targetUsers.forEach(uid=>{
-            rows.push({
-              room_id:_currentRoom.id,user_id:uid,date:d,
+          targetUsers.forEach(key=>{
+            rows.push(_buildCoEventRow(key, {
+              room_id:_currentRoom.id, date:d,
               title,time,color,
               shared_id:sharedId,
               recurring_yearly:recurringYearly,
               memo,photo_url:photoUrl,
-            });
+            }));
           });
         });
         const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
@@ -5981,8 +6075,8 @@ async function saveEvent(){
       }else if(_selectedTarget==='all'&&_selectedMembers.length>=2){
         // 함께 일정 (단일 날짜)
         const sharedId=genShared();
-        const rows=_selectedMembers.map(uid=>({
-          room_id:_currentRoom.id,user_id:uid,date:_selectedDate,
+        const rows=_selectedMembers.map(key=>_buildCoEventRow(key, {
+          room_id:_currentRoom.id, date:_selectedDate,
           title,time,color,shared_id:sharedId,
           recurring_yearly:recurringYearly,
           memo,photo_url:photoUrl,
@@ -6952,12 +7046,12 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
     // 새 row INSERT — 각 날짜 × 각 멤버 (shared_id 유지하면 reactions도 그대로 연결됨)
     const rows=[];
     dates.forEach(d=>{
-      memberIds.forEach(uid=>{
-        rows.push({
-          room_id:_currentRoom.id,user_id:uid,date:d,
+      memberIds.forEach(key=>{
+        rows.push(_buildCoEventRow(key, {
+          room_id:_currentRoom.id, date:d,
           title,time,color,shared_id:ev.shared_id,recurring_yearly:ry,
           memo,photo_url:photoUrl,
-        });
+        }));
       });
     });
     const {error:eIns}=await supa.from('events').insert(_attachVirtualMember(rows));
@@ -7022,8 +7116,8 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
     if(e1)throw e1;
     const others=_selectedMembers.filter(u=>u!==_currentUser.id);
     if(others.length){
-      const rows=others.map(uid=>({
-        room_id:_currentRoom.id,user_id:uid,date:_selectedDate,
+      const rows=others.map(key=>_buildCoEventRow(key, {
+        room_id:_currentRoom.id, date:_selectedDate,
         title,time,color,shared_id:sharedId,recurring_yearly:ry,
         memo,photo_url:photoUrl,
       }));
@@ -7049,23 +7143,40 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
     const toKeep=oldIds.filter(u=>newIds.includes(u));
     const toRemove=oldIds.filter(u=>!newIds.includes(u));
     const toAdd=newIds.filter(u=>!oldIds.includes(u));
+    // 실제 user_id와 가상 member_id 분리
+    const toKeepReal=toKeep.filter(k=>k && !(typeof k==='string'&&k.startsWith('v-')));
+    const toKeepVirtual=toKeep.filter(k=>typeof k==='string'&&k.startsWith('v-')).map(k=>k.slice(2));
+    const toRemoveReal=toRemove.filter(k=>k && !(typeof k==='string'&&k.startsWith('v-')));
+    const toRemoveVirtual=toRemove.filter(k=>typeof k==='string'&&k.startsWith('v-')).map(k=>k.slice(2));
     
-    if(toKeep.length){
+    if(toKeepReal.length){
       const {error}=await supa.from('events').update({title,time,color,recurring_yearly:ry,reminder_sent_at:null,memo,photo_url:photoUrl})
-        .eq('shared_id',ev.shared_id).in('user_id',toKeep);
+        .eq('shared_id',ev.shared_id).in('user_id',toKeepReal);
       if(error)throw error;
     }
-    if(toRemove.length){
-      // RLS 우회 RPC — 다른 멤버 row 삭제 가능
+    if(toKeepVirtual.length){
+      // 가상 멤버 row UPDATE (virtual_member_id 기준)
+      const {error}=await supa.from('events').update({title,time,color,recurring_yearly:ry,reminder_sent_at:null,memo,photo_url:photoUrl})
+        .eq('shared_id',ev.shared_id).in('virtual_member_id',toKeepVirtual);
+      if(error)throw error;
+    }
+    if(toRemoveReal.length){
+      // RLS 우회 RPC — 실제 멤버 row 삭제
       const {error}=await supa.rpc('delete_shared_event_rows',{
         p_shared_id:ev.shared_id,
-        p_user_ids:toRemove
+        p_user_ids:toRemoveReal
       });
       if(error)throw error;
     }
+    if(toRemoveVirtual.length){
+      // 가상 멤버 row 직접 DELETE
+      const {error}=await supa.from('events').delete()
+        .eq('shared_id',ev.shared_id).in('virtual_member_id',toRemoveVirtual);
+      if(error)throw error;
+    }
     if(toAdd.length){
-      const rows=toAdd.map(uid=>({
-        room_id:_currentRoom.id,user_id:uid,date:_selectedDate,
+      const rows=toAdd.map(key=>_buildCoEventRow(key, {
+        room_id:_currentRoom.id, date:_selectedDate,
         title,time,color,shared_id:ev.shared_id,recurring_yearly:ry,
         memo,photo_url:photoUrl,
       }));
