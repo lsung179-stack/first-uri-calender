@@ -755,6 +755,36 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .cs-delete-btn .cs-btn-title{color:var(--sunday)}
 .cs-delete-btn .cs-btn-sub{color:var(--sub)}
 .cs-divider{height:1px;background:var(--border);margin:4px 0;opacity:.6}
+/* 고객센터 링크 버튼 (약관/처리방침) */
+.cs-link-btn{display:flex;align-items:center;gap:14px;width:100%;padding:12px 16px;border-radius:10px;border:none;background:transparent;cursor:pointer;font-family:inherit;text-align:left;transition:background .12s}
+.cs-link-btn:active{background:var(--bg)}
+.cs-link-icon{font-size:18px;flex:0 0 auto;opacity:.85}
+.cs-link-text{flex:1;font-size:14px;color:var(--text);font-weight:500}
+.cs-link-arrow{font-size:18px;color:var(--sub);opacity:.6}
+/* 약관/처리방침 본문 */
+.mo-card-tall{max-height:90vh}
+.legal-content{padding:8px 4px 4px;max-height:65vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.legal-content::-webkit-scrollbar{width:4px}
+.legal-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.legal-meta{font-size:11.5px;color:var(--mute);text-align:center;margin:0 0 16px;letter-spacing:.3px}
+.legal-content h3{font-size:14px;color:var(--accent);font-weight:700;margin:18px 0 8px;letter-spacing:.2px}
+.legal-content h3:first-of-type{margin-top:8px}
+.legal-content p{font-size:13px;color:var(--text);line-height:1.7;margin:0 0 8px;letter-spacing:.1px}
+.legal-content b{font-weight:700;color:var(--accent)}
+/* 회원탈퇴 확인 모달 */
+.la-icon{text-align:center;font-size:42px;margin:6px 0 8px;line-height:1}
+.la-warnings{background:var(--bg);border:1px dashed var(--border);border-radius:12px;padding:14px 16px;margin:14px 0 4px;display:flex;flex-direction:column;gap:10px}
+.la-warn-row{display:flex;align-items:flex-start;gap:10px;font-size:13.5px;color:var(--text);line-height:1.5}
+.la-warn-dot{flex:0 0 6px;width:6px;height:6px;border-radius:50%;background:var(--sub);margin-top:8px}
+.la-warn-row-final{font-weight:600}
+.la-warn-row-final .la-warn-dot-final{background:var(--sunday)}
+.la-confirm-section{margin:16px 0 4px}
+.la-label{display:block;font-size:12.5px;color:var(--sub);margin-bottom:8px;text-align:center;line-height:1.5}
+.la-label b{color:var(--sunday);font-weight:700}
+.la-input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;background:var(--card);font-family:inherit;font-size:14px;color:var(--text);text-align:center;letter-spacing:.3px;transition:border-color .12s,background .12s}
+.la-input:focus{outline:none;border-color:var(--accent);background:#fff}
+.la-input.matched{border-color:var(--sunday);background:rgba(212,56,42,.04)}
+#leaveAccountConfirmBtn:disabled{opacity:.4;cursor:not-allowed}
 .pf-restore-btn{display:block;margin:6px auto 0;padding:3px 12px;font-size:10px;color:var(--sub);background:transparent;border:1px solid var(--border);border-radius:99px;cursor:pointer;font-family:inherit;letter-spacing:.2px;transition:all .12s}
 .pf-restore-btn:active{transform:scale(.95);background:var(--bg)}
 .btn-danger{background:var(--accent);color:var(--card)}
@@ -2066,6 +2096,127 @@ body.align-right .cal-evbar{text-align:right}
   </div>
 </div>
 
+<!-- 이용약관 시트 -->
+<div class="mo-overlay" id="termsOverlay" onclick="closeTerms()"></div>
+<div class="mo-card mo-card-tall" id="termsCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">이용약관</div>
+  <div class="legal-content">
+    <p class="legal-meta">시행일: 2026년 5월 21일</p>
+
+    <h3>제1조 (목적)</h3>
+    <p>본 약관은 우리 캘린더(이하 "서비스")를 이용함에 있어 회사와 회원의 권리·의무 및 책임 사항을 규정함을 목적으로 합니다.</p>
+
+    <h3>제2조 (용어의 정의)</h3>
+    <p>"서비스"란 가족·연인 단위로 일정을 공유하는 웹 애플리케이션을 의미합니다.<br>"회원"이란 본 약관에 동의하고 가입한 자를 말합니다.<br>"방"이란 회원이 다른 회원과 일정을 공유하는 공간을 의미합니다.</p>
+
+    <h3>제3조 (약관의 효력 및 개정)</h3>
+    <p>본 약관은 회원이 동의함으로써 효력이 발생합니다. 회사는 필요 시 약관을 개정할 수 있으며, 개정 시 7일 전 공지합니다. 중대한 변경의 경우 30일 전 공지합니다.</p>
+
+    <h3>제4조 (서비스 이용)</h3>
+    <p>① 만 14세 이상부터 가입할 수 있습니다.<br>② 가입은 이메일 또는 카카오 계정으로 가능합니다.<br>③ 서비스는 무료로 제공되며, 향후 일부 기능에 한해 유료 정책이 도입될 수 있습니다.</p>
+
+    <h3>제5조 (회원의 의무)</h3>
+    <p>회원은 다음 행위를 해서는 안 됩니다.<br>① 타인의 정보를 도용하는 행위<br>② 욕설, 혐오, 차별적 표현을 사용하는 행위<br>③ 저작권 등 타인의 권리를 침해하는 행위<br>④ 서비스 운영을 방해하는 행위<br>⑤ 관련 법령에 위배되는 행위</p>
+
+    <h3>제6조 (서비스 제공 및 중단)</h3>
+    <p>회사는 연중무휴 24시간 서비스 제공을 원칙으로 하며, 시스템 점검 등 사유가 있을 시 사전 공지 후 일시 중단할 수 있습니다.</p>
+
+    <h3>제7조 (책임 제한)</h3>
+    <p>① 천재지변, 통신 장애 등 회사의 귀책이 아닌 사유로 인한 손해에 대해 회사는 책임지지 않습니다.<br>② 회원의 부주의(비밀번호 관리 소홀 등)로 인한 손해는 회원이 부담합니다.<br>③ 회원이 작성한 일정·메모·사진 등의 내용에 대한 책임은 회원에게 있습니다.</p>
+
+    <h3>제8조 (계정 해지)</h3>
+    <p>회원은 언제든지 회원탈퇴를 통해 서비스 이용을 종료할 수 있으며, 탈퇴 시 회원의 모든 데이터는 즉시 영구 삭제됩니다.</p>
+
+    <h3>제9조 (분쟁 해결)</h3>
+    <p>본 약관은 대한민국 법률에 따라 해석되며, 서비스 이용으로 발생한 분쟁의 관할 법원은 회사 소재지 관할 법원으로 합니다.</p>
+
+    <h3>제10조 (문의)</h3>
+    <p>서비스 이용 관련 문의는 앱 내 고객센터(카카오톡 채널)를 통해 접수해주세요.</p>
+  </div>
+  <div class="mo-actions">
+    <button class="mo-cancel" onclick="closeTerms()">닫기</button>
+  </div>
+</div>
+
+<!-- 개인정보처리방침 시트 -->
+<div class="mo-overlay" id="privacyOverlay" onclick="closePrivacy()"></div>
+<div class="mo-card mo-card-tall" id="privacyCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">개인정보처리방침</div>
+  <div class="legal-content">
+    <p class="legal-meta">시행일: 2026년 5월 21일</p>
+
+    <p>우리 캘린더(이하 "서비스")는 회원의 개인정보를 소중히 다루며, 관련 법령(개인정보 보호법, 정보통신망법 등)을 준수합니다.</p>
+
+    <h3>1. 수집하는 개인정보 항목</h3>
+    <p><b>가입 시 수집</b><br>· 이메일, 비밀번호 (이메일 가입 시)<br>· 이름, 프로필 사진 (카카오 OAuth 가입 시)</p>
+    <p><b>서비스 이용 중 수집</b><br>· 일정 정보 (제목, 날짜, 시간, 메모, 사진)<br>· 멤버 정보 (색상, 생일 — 선택)<br>· 이모지 반응 기록</p>
+    <p><b>자동 수집</b><br>· 푸시 알림 토큰<br>· 기기 정보 (User-Agent)<br>· 접속 로그 (변조 방지 목적)</p>
+
+    <h3>2. 개인정보 이용 목적</h3>
+    <p>· 서비스 제공 (일정 공유, 푸시 알림 발송)<br>· 본인 확인 및 회원 관리<br>· 부정 이용 방지 및 보안 강화<br>· 고객 문의 응대<br>· 서비스 개선을 위한 통계 분석</p>
+
+    <h3>3. 보관 및 이용 기간</h3>
+    <p>· 회원 정보: 회원탈퇴 시 즉시 삭제<br>· 접속 로그: 1년 보관 후 삭제<br>· 인앱 알림: 30일 후 자동 삭제<br>· 단, 관련 법령에 따라 일정 기간 보존이 필요한 정보는 해당 법령에 따릅니다.</p>
+
+    <h3>4. 개인정보의 제3자 제공</h3>
+    <p>회사는 회원의 개인정보를 외부에 제공하지 않습니다. 다만, 다음의 경우는 예외로 합니다.<br>· 회원이 사전에 동의한 경우<br>· 법령에 의거하거나 수사기관의 요청이 있는 경우</p>
+
+    <h3>5. 처리 위탁</h3>
+    <p>서비스 제공을 위해 다음 업체에 일부 업무를 위탁합니다.<br>· <b>Supabase</b> (데이터베이스/인프라)<br>· <b>Vercel</b> (웹 호스팅)<br>· <b>Kakao</b> (OAuth 로그인 — 카카오 OAuth 이용 시)<br>· <b>Apple/Google/Mozilla</b> (웹 푸시 알림 전송)</p>
+
+    <h3>6. 회원의 권리</h3>
+    <p>회원은 다음 권리를 행사할 수 있습니다.<br>· 개인정보 조회/수정: 앱 내 프로필 화면<br>· 개인정보 삭제: 회원탈퇴 기능<br>· 처리 정지 요청: 고객센터를 통해 접수</p>
+
+    <h3>7. 개인정보 보호 조치</h3>
+    <p>· 전송 구간 암호화 (HTTPS/TLS)<br>· 데이터베이스 접근 제어 (RLS)<br>· 접속 로그 변조 방지<br>· 비밀번호 단방향 암호화 저장 (Supabase Auth)</p>
+
+    <h3>8. 개인정보 보호책임자</h3>
+    <p>문의 사항은 앱 내 고객센터(카카오톡 채널)를 통해 접수해주세요. 접수된 문의는 신속히 처리하도록 하겠습니다.</p>
+
+    <h3>9. 변경 고지</h3>
+    <p>본 방침이 변경되는 경우, 변경 사항을 앱 내 공지사항을 통해 7일 전 안내합니다.</p>
+  </div>
+  <div class="mo-actions">
+    <button class="mo-cancel" onclick="closePrivacy()">닫기</button>
+  </div>
+</div>
+
+<!-- 회원탈퇴 확인 모달 (커스텀 — 시스템 confirm 대신) -->
+<div class="mo-overlay" id="leaveAccountOverlay" onclick="closeLeaveAccount()"></div>
+<div class="mo-card" id="leaveAccountCard">
+  <div class="mo-handle"></div>
+  <div class="la-icon">⚠️</div>
+  <div class="mo-title">정말 탈퇴하시겠어요?</div>
+  <div class="la-warnings">
+    <div class="la-warn-row">
+      <span class="la-warn-dot"></span>
+      <span>모든 일정, 메모, 사진이 삭제됩니다</span>
+    </div>
+    <div class="la-warn-row">
+      <span class="la-warn-dot"></span>
+      <span>가입된 모든 방에서 나가게 돼요</span>
+    </div>
+    <div class="la-warn-row">
+      <span class="la-warn-dot"></span>
+      <span>다른 멤버가 본 함께 일정에서 내 기록이 사라집니다</span>
+    </div>
+    <div class="la-warn-row la-warn-row-final">
+      <span class="la-warn-dot la-warn-dot-final"></span>
+      <span>이 작업은 되돌릴 수 없어요</span>
+    </div>
+  </div>
+  <div class="la-confirm-section">
+    <label class="la-label">계속하려면 아래에 <b>탈퇴</b>를 입력해주세요</label>
+    <input type="text" id="leaveAccountInput" class="la-input" placeholder="탈퇴" autocomplete="off" inputmode="text">
+  </div>
+  <div class="mo-actions">
+    <button class="btn btn-danger" id="leaveAccountConfirmBtn" onclick="confirmLeaveAccount()" disabled>탈퇴하기</button>
+    <button class="mo-cancel" onclick="closeLeaveAccount()">취소</button>
+  </div>
+</div>
+
 <!-- 고객센터 시트 -->
 <div class="mo-overlay" id="csOverlay" onclick="closeCustomerSupport()"></div>
 <div class="mo-card" id="csCard">
@@ -2079,6 +2230,17 @@ body.align-right .cal-evbar{text-align:right}
         <span class="cs-btn-title">1:1 상담하기</span>
         <span class="cs-btn-sub">카카오톡 채널로 문의를 보낼 수 있어요</span>
       </span>
+    </button>
+    <div class="cs-divider"></div>
+    <button class="cs-link-btn" onclick="openTerms()">
+      <span class="cs-link-icon">📋</span>
+      <span class="cs-link-text">이용약관</span>
+      <span class="cs-link-arrow">›</span>
+    </button>
+    <button class="cs-link-btn" onclick="openPrivacy()">
+      <span class="cs-link-icon">🔒</span>
+      <span class="cs-link-text">개인정보처리방침</span>
+      <span class="cs-link-arrow">›</span>
     </button>
     <div class="cs-divider"></div>
     <button class="cs-delete-btn" onclick="deleteMyAccount()">
@@ -2685,7 +2847,8 @@ function closeMainModals(){
    'storeCard','advCard','annCard','annComposeOverlay','annComposeCard',
    'annMenuOverlay','annMenuCard','annPopupOverlay','annPopup',
    'datePickerOverlay','datePickerCard','searchOverlay','searchCard',
-   'csOverlay','csCard']
+   'csOverlay','csCard','leaveAccountOverlay','leaveAccountCard',
+   'termsOverlay','termsCard','privacyOverlay','privacyCard']
     .forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on')});
 }
 
@@ -7733,31 +7896,50 @@ async function _audit(actionType, opts={}){
 }
 
 /* ═══════════════════════════════════════════════════════════
-   회원탈퇴 — 본인 데이터 일괄 삭제 RPC 호출
+   회원탈퇴 — 커스텀 모달 (앱 톤에 맞춤)
    ───────────────────────────────────────────────────────────
    ※ auth.users 자체 삭제는 별도 (다음 Round Edge Function)
      현 단계: 본인 데이터만 삭제 + 로그아웃 + 안내
    ═══════════════════════════════════════════════════════════ */
-async function deleteMyAccount(){
+function deleteMyAccount(){
   if(!_currentUser){toast('로그인이 필요해요');return}
-  // 1차 확인
-  const c1=confirm(
-    '정말 탈퇴하시겠어요?\n\n'+
-    '• 모든 일정, 메모, 사진이 삭제돼요\n'+
-    '• 가입된 모든 방에서 나가요\n'+
-    '• 다른 멤버가 본 함께 일정에서 내 기록이 사라져요\n'+
-    '• 이 작업은 되돌릴 수 없어요'
-  );
-  if(!c1)return;
-  // 2차 확인 (안전장치)
-  const c2=prompt('탈퇴를 진행하려면 "탈퇴"를 정확히 입력해주세요');
-  if(c2!=='탈퇴'){
-    if(c2!==null)toast('입력이 일치하지 않아요');
+  // 입력값 초기화 + 확인 버튼 비활성화
+  const input=document.getElementById('leaveAccountInput');
+  const btn=document.getElementById('leaveAccountConfirmBtn');
+  if(input){input.value='';input.classList.remove('matched')}
+  if(btn)btn.disabled=true;
+  // 입력 감지 — "탈퇴" 정확히 입력 시에만 버튼 활성
+  if(input&&!input.dataset.bound){
+    input.addEventListener('input',()=>{
+      const matched=input.value.trim()==='탈퇴';
+      input.classList.toggle('matched',matched);
+      if(btn)btn.disabled=!matched;
+    });
+    input.dataset.bound='1';
+  }
+  document.getElementById('leaveAccountOverlay').classList.add('on');
+  document.getElementById('leaveAccountCard').classList.add('on');
+  // 모바일에서 input 포커스 (300ms 시트 애니메이션 후)
+  setTimeout(()=>{if(input)input.focus()},350);
+}
+
+function closeLeaveAccount(){
+  document.getElementById('leaveAccountOverlay').classList.remove('on');
+  document.getElementById('leaveAccountCard').classList.remove('on');
+}
+
+async function confirmLeaveAccount(){
+  const input=document.getElementById('leaveAccountInput');
+  if(!input||input.value.trim()!=='탈퇴'){
+    toast('"탈퇴"를 정확히 입력해주세요');
     return;
   }
+  // 더블 클릭 방지
+  const btn=document.getElementById('leaveAccountConfirmBtn');
+  if(btn)btn.disabled=true;
   try{
     toast('탈퇴 처리 중...');
-    const {data,error}=await supa.rpc('delete_my_user_data');
+    const {error}=await supa.rpc('delete_my_user_data');
     if(error)throw error;
     // 로그아웃
     await supa.auth.signOut();
@@ -7767,11 +7949,13 @@ async function deleteMyAccount(){
       localStorage.removeItem('uricalv2.readAnnouncements');
       localStorage.removeItem('admin.data');
     }catch(_){}
-    alert('탈퇴가 완료됐어요.\n그동안 이용해주셔서 감사합니다.');
-    location.reload();
+    closeLeaveAccount();
+    toast('탈퇴가 완료됐어요. 그동안 이용해주셔서 감사합니다');
+    setTimeout(()=>location.reload(),1500);
   }catch(e){
     console.error('회원탈퇴 실패:',e);
     toast('탈퇴 실패: '+(e.message||'').slice(0,40));
+    if(btn)btn.disabled=false;
   }
 }
 
@@ -9176,6 +9360,24 @@ function openKakaoChannel(){
   }catch(e){
     location.href=KAKAO_CHANNEL_URL;
   }
+}
+
+/* 이용약관 / 개인정보처리방침 */
+function openTerms(){
+  document.getElementById('termsOverlay').classList.add('on');
+  document.getElementById('termsCard').classList.add('on');
+}
+function closeTerms(){
+  document.getElementById('termsOverlay').classList.remove('on');
+  document.getElementById('termsCard').classList.remove('on');
+}
+function openPrivacy(){
+  document.getElementById('privacyOverlay').classList.add('on');
+  document.getElementById('privacyCard').classList.add('on');
+}
+function closePrivacy(){
+  document.getElementById('privacyOverlay').classList.remove('on');
+  document.getElementById('privacyCard').classList.remove('on');
 }
 
 function renderThemeGrid(){
