@@ -637,81 +637,61 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
   background:#5e8a3a;padding:2px 7px;border-radius:99px;letter-spacing:.3px;
 }
 
-/* 캘린더 진입 시 반응 이모지 통통튀기 말풍선 (1 이모지 = 1 말풍선)
-   꼬리(tail)가 해당 날짜의 숫자를 향함 — 이 날짜의 반응임을 시각적으로 표시 */
+/* 캘린더 진입 시 반응 이모지 — 셀 안에서 통통 등장 → 위로 떠오르며 사라짐
+   말풍선 없이 캐릭터/이모지가 메인 (드롭섀도우만) */
 .cal-reaction-bubble{
   position:absolute;
   /* left, top 은 JS에서 동적 설정 */
   display:inline-flex;align-items:center;justify-content:center;
-  padding:5px 11px 7px;
-  background:var(--card);
-  border:1.5px solid var(--accent);
-  border-radius:99px;
-  box-shadow:0 4px 10px rgba(0,0,0,.22);
-  z-index:15;pointer-events:none;white-space:nowrap;
+  z-index:15;pointer-events:none;
   opacity:0;
   transform:translate(-50%,-50%) scale(0);
-  animation:bubble-pop 3.4s cubic-bezier(.34,1.56,.64,1) both;
+  filter:drop-shadow(0 3px 6px rgba(0,0,0,.28)) drop-shadow(0 1px 2px rgba(0,0,0,.15));
 }
-.cal-reaction-bubble span{font-size:15px;line-height:1.3;display:inline-block}
-.cal-reaction-bubble svg{width:22px;height:22px;display:block}
+.cal-reaction-bubble span{font-size:30px;line-height:1;display:inline-block}
+.cal-reaction-bubble svg{width:38px;height:38px;display:block}
 
-/* 통통튀기 (회전 없음) */
-@keyframes bubble-pop{
-  0%   {transform:translate(-50%,-50%) scale(0);opacity:0}
-  10%  {transform:translate(-50%,-50%) scale(1.35);opacity:1}
-  20%  {transform:translate(-50%,-50%) scale(.85);opacity:1}
-  30%  {transform:translate(-50%,-50%) scale(1.08);opacity:1}
-  42%  {transform:translate(-50%,-50%) scale(1);opacity:1}
-  78%  {transform:translate(-50%,-50%) scale(1);opacity:1}
-  100% {transform:translate(-50%,-50%) scale(.5);opacity:0}
+/* 변종 3종 — 떠오르는 방향이 각자 다름 */
+/* 정중앙 위로 */
+@keyframes float-c{
+  0%   {transform:translate(-50%,-50%) translate(0,0)    scale(0);   opacity:0}
+  8%   {transform:translate(-50%,-50%) translate(0,0)    scale(1.4); opacity:1}
+  16%  {transform:translate(-50%,-50%) translate(0,0)    scale(.85); opacity:1}
+  24%  {transform:translate(-50%,-50%) translate(0,0)    scale(1.08);opacity:1}
+  32%  {transform:translate(-50%,-50%) translate(0,0)    scale(1);   opacity:1}
+  55%  {transform:translate(-50%,-50%) translate(0,-8px) scale(1);   opacity:1}
+  100% {transform:translate(-50%,-50%) translate(0,-95px) scale(.55); opacity:0}
+}
+/* 왼쪽 위로 둥실 */
+@keyframes float-l{
+  0%   {transform:translate(-50%,-50%) translate(0,0)       scale(0)   rotate(0);   opacity:0}
+  8%   {transform:translate(-50%,-50%) translate(0,0)       scale(1.45) rotate(0);   opacity:1}
+  16%  {transform:translate(-50%,-50%) translate(0,0)       scale(.88) rotate(0);   opacity:1}
+  24%  {transform:translate(-50%,-50%) translate(0,0)       scale(1.1) rotate(0);   opacity:1}
+  32%  {transform:translate(-50%,-50%) translate(0,0)       scale(1)   rotate(0);   opacity:1}
+  55%  {transform:translate(-50%,-50%) translate(-8px,-12px) scale(1)   rotate(-3deg);opacity:1}
+  100% {transform:translate(-50%,-50%) translate(-32px,-88px) scale(.55) rotate(-15deg);opacity:0}
+}
+/* 오른쪽 위로 둥실 */
+@keyframes float-r{
+  0%   {transform:translate(-50%,-50%) translate(0,0)       scale(0)   rotate(0);   opacity:0}
+  8%   {transform:translate(-50%,-50%) translate(0,0)       scale(1.4)  rotate(0);   opacity:1}
+  16%  {transform:translate(-50%,-50%) translate(0,0)       scale(.9)  rotate(0);   opacity:1}
+  24%  {transform:translate(-50%,-50%) translate(0,0)       scale(1.08) rotate(0);   opacity:1}
+  32%  {transform:translate(-50%,-50%) translate(0,0)       scale(1)   rotate(0);   opacity:1}
+  55%  {transform:translate(-50%,-50%) translate(8px,-12px) scale(1)   rotate(3deg);opacity:1}
+  100% {transform:translate(-50%,-50%) translate(28px,-90px) scale(.55) rotate(15deg);opacity:0}
 }
 
-/* 꼬리 4방향 — 말풍선의 가장자리에서 날짜 숫자 쪽으로 향함 */
-/* 꼬리 아래 (말풍선이 셀 위에 있을 때) */
-.cal-reaction-bubble.tail-b::after{
-  content:'';
-  position:absolute;
-  bottom:-5px;left:50%;
-  width:9px;height:9px;
-  background:var(--card);
-  border:1.5px solid var(--accent);
-  border-top:none;border-left:none;
-  transform:translateX(-50%) rotate(45deg);
-}
-/* 꼬리 위 (말풍선이 셀 안 아래쪽에 있을 때) */
-.cal-reaction-bubble.tail-t::after{
-  content:'';
-  position:absolute;
-  top:-5px;left:50%;
-  width:9px;height:9px;
-  background:var(--card);
-  border:1.5px solid var(--accent);
-  border-bottom:none;border-right:none;
-  transform:translateX(-50%) rotate(45deg);
-}
-/* 꼬리 좌 (말풍선이 셀 우측에 있을 때) */
-.cal-reaction-bubble.tail-l::after{
-  content:'';
-  position:absolute;
-  left:-5px;top:50%;
-  width:9px;height:9px;
-  background:var(--card);
-  border:1.5px solid var(--accent);
-  border-top:none;border-right:none;
-  transform:translateY(-50%) rotate(45deg);
-}
-/* 꼬리 우 (말풍선이 셀 좌측에 있을 때) */
-.cal-reaction-bubble.tail-r::after{
-  content:'';
-  position:absolute;
-  right:-5px;top:50%;
-  width:9px;height:9px;
-  background:var(--card);
-  border:1.5px solid var(--accent);
-  border-bottom:none;border-left:none;
-  transform:translateY(-50%) rotate(45deg);
-}
+.cal-reaction-bubble.float-c{animation:float-c 3.6s cubic-bezier(.34,1.4,.64,1) both}
+.cal-reaction-bubble.float-l{animation:float-l 3.6s cubic-bezier(.34,1.4,.64,1) both}
+.cal-reaction-bubble.float-r{animation:float-r 3.6s cubic-bezier(.34,1.4,.64,1) both}
+
+/* 꼬리 제거 — 변경 후엔 더 이상 사용 안 함 */
+.cal-reaction-bubble.tail-b::after,
+.cal-reaction-bubble.tail-t::after,
+.cal-reaction-bubble.tail-l::after,
+.cal-reaction-bubble.tail-r::after{content:none}
 .ev-color{width:100%;aspect-ratio:1;border-radius:50%;border:none;cursor:pointer;background:var(--accent);transition:transform .12s;position:relative}
 .ev-color:active{transform:scale(.9)}
 .ev-color.on::after{
@@ -4065,19 +4045,18 @@ function showReactionAnimation(){
     });
   });
 
-  // 각 이모지마다 별도 말풍선 + 꼬리(tail)가 날짜 숫자를 향함
-  // 셀 위에 있는 말풍선 → 꼬리 아래 (날짜는 셀 가운데 위에 있음)
-  // 셀 안 좌우에 있는 말풍선 → 꼬리 위 (역시 날짜 향함)
+  // 각 이모지마다 별도로 표시 — 셀 안에서 통통 등장 → 위로 떠오름
+  // 말풍선 없이 캐릭터/이모지가 메인
   const POSITIONS=[
-    // 셀 위쪽 — 꼬리 아래로
-    {top:'-16px', left:'28%', tail:'b'},
-    {top:'-16px', left:'72%', tail:'b'},
-    {top:'-16px', left:'50%', tail:'b'},
-    // 셀 안 측면/아래 — 꼬리 위로 (위쪽 날짜 가리킴)
-    {top:'48%',   left:'18%', tail:'t'},
-    {top:'48%',   left:'82%', tail:'t'},
-    {top:'78%',   left:'50%', tail:'t'},
+    {top:'40%', left:'30%'},
+    {top:'40%', left:'70%'},
+    {top:'62%', left:'25%'},
+    {top:'62%', left:'75%'},
+    {top:'50%', left:'50%'},
+    {top:'70%', left:'50%'},
   ];
+  // 떠오르는 방향 변종 3종
+  const VARIANTS=['float-l','float-c','float-r'];
 
   let globalIdx=0;
   Object.entries(byDate).forEach(([date,emojis])=>{
@@ -4090,8 +4069,9 @@ function showReactionAnimation(){
 
     list.forEach((em,ei)=>{
       const bubble=document.createElement('div');
+      const variant=VARIANTS[(globalIdx*2+ei)%VARIANTS.length];
+      bubble.className=`cal-reaction-bubble ${variant}`;
       const pos=POSITIONS[ei%POSITIONS.length];
-      bubble.className=`cal-reaction-bubble tail-${pos.tail}`;
       bubble.style.left=pos.left;
       bubble.style.top=pos.top;
       bubble.innerHTML=(typeof em==='string'&&em.includes(':'))
@@ -4102,7 +4082,7 @@ function showReactionAnimation(){
       cell.appendChild(bubble);
       setTimeout(()=>{
         if(bubble.parentNode)bubble.parentNode.removeChild(bubble);
-      },3700+globalIdx*100);
+      },3900+globalIdx*100);
       globalIdx++;
     });
   });
