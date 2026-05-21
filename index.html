@@ -740,9 +740,21 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 }
 .pf-name{font-family:var(--ff-serif);font-size:20px;font-weight:700;color:var(--text);text-align:center;letter-spacing:.5px}
 .pf-email{font-size:13px;color:var(--sub);text-align:center}
-.pf-danger-zone{margin-top:24px;padding-top:12px;border-top:1px dashed var(--border);text-align:center}
-.pf-delete-account-btn{display:inline-block;padding:4px 10px;font-size:10px;color:var(--mute);background:transparent;border:none;cursor:pointer;font-family:inherit;text-decoration:underline;letter-spacing:.2px;opacity:.7;transition:opacity .12s}
-.pf-delete-account-btn:hover,.pf-delete-account-btn:active{opacity:1;color:var(--sunday)}
+/* 고객센터 시트 */
+.cs-content{padding:16px 4px 8px;display:flex;flex-direction:column;gap:12px}
+.cs-primary-btn,.cs-delete-btn{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;border-radius:12px;border:1px solid var(--border);background:var(--card);cursor:pointer;font-family:inherit;text-align:left;transition:all .12s}
+.cs-primary-btn{background:var(--accent);border-color:var(--accent);color:#fff}
+.cs-primary-btn:active{transform:scale(.99);opacity:.92}
+.cs-delete-btn{background:transparent;color:var(--text)}
+.cs-delete-btn:active{transform:scale(.99);background:rgba(196,74,74,.06);border-color:var(--sunday)}
+.cs-btn-icon{font-size:22px;flex:0 0 auto}
+.cs-btn-text{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.cs-btn-title{font-size:15px;font-weight:700;letter-spacing:.2px}
+.cs-btn-sub{font-size:11.5px;opacity:.78;line-height:1.4}
+.cs-primary-btn .cs-btn-sub{opacity:.85}
+.cs-delete-btn .cs-btn-title{color:var(--sunday)}
+.cs-delete-btn .cs-btn-sub{color:var(--sub)}
+.cs-divider{height:1px;background:var(--border);margin:4px 0;opacity:.6}
 .pf-restore-btn{display:block;margin:6px auto 0;padding:3px 12px;font-size:10px;color:var(--sub);background:transparent;border:1px solid var(--border);border-radius:99px;cursor:pointer;font-family:inherit;letter-spacing:.2px;transition:all .12s}
 .pf-restore-btn:active{transform:scale(.95);background:var(--bg)}
 .btn-danger{background:var(--accent);color:var(--card)}
@@ -2052,8 +2064,33 @@ body.align-right .cal-evbar{text-align:right}
     <button class="btn btn-danger" onclick="doLogout()">로그아웃</button>
     <button class="mo-cancel" onclick="closeProfile()">닫기</button>
   </div>
-  <div class="pf-danger-zone">
-    <button class="pf-delete-account-btn" onclick="deleteMyAccount()">회원탈퇴</button>
+</div>
+
+<!-- 고객센터 시트 -->
+<div class="mo-overlay" id="csOverlay" onclick="closeCustomerSupport()"></div>
+<div class="mo-card" id="csCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">고객센터</div>
+  <div class="mo-sub">문의 사항이 있으시면 1:1 상담을 이용해주세요</div>
+  <div class="cs-content">
+    <button class="cs-primary-btn" onclick="openKakaoChannel()">
+      <span class="cs-btn-icon">💬</span>
+      <span class="cs-btn-text">
+        <span class="cs-btn-title">1:1 상담하기</span>
+        <span class="cs-btn-sub">카카오톡 채널로 문의를 보낼 수 있어요</span>
+      </span>
+    </button>
+    <div class="cs-divider"></div>
+    <button class="cs-delete-btn" onclick="deleteMyAccount()">
+      <span class="cs-btn-icon">⚠️</span>
+      <span class="cs-btn-text">
+        <span class="cs-btn-title">회원탈퇴</span>
+        <span class="cs-btn-sub">모든 데이터가 영구 삭제되며 복구할 수 없어요</span>
+      </span>
+    </button>
+  </div>
+  <div class="mo-actions">
+    <button class="mo-cancel" onclick="closeCustomerSupport()">닫기</button>
   </div>
 </div>
 
@@ -2647,7 +2684,8 @@ function closeMainModals(){
    'dpOverlay','dpCard','profileOverlay','profileCard','roomSetOverlay','roomSetCard',
    'storeCard','advCard','annCard','annComposeOverlay','annComposeCard',
    'annMenuOverlay','annMenuCard','annPopupOverlay','annPopup',
-   'datePickerOverlay','datePickerCard','searchOverlay','searchCard']
+   'datePickerOverlay','datePickerCard','searchOverlay','searchCard',
+   'csOverlay','csCard']
     .forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on')});
 }
 
@@ -9119,16 +9157,23 @@ function onLockCharFromDetail(key){
 }
 
 /* ═══════════════════════════════════
-   고객센터 (카카오 채널)
+   고객센터 (1:1 상담 + 회원탈퇴)
    ═══════════════════════════════════ */
 const KAKAO_CHANNEL_URL='https://pf.kakao.com/_xoTkxbX';
 function openCustomerSupport(){
-  // 외부 링크로 카카오 채널 채팅 열기
-  // TWA/Safari 모두 새 탭/외부 브라우저로 열림
+  closeMainModals();
+  document.getElementById('csOverlay').classList.add('on');
+  document.getElementById('csCard').classList.add('on');
+}
+function closeCustomerSupport(){
+  document.getElementById('csOverlay').classList.remove('on');
+  document.getElementById('csCard').classList.remove('on');
+}
+function openKakaoChannel(){
+  // 카카오톡 채널 채팅 열기 — TWA/Safari 모두 외부로 열림
   try{
     window.open(KAKAO_CHANNEL_URL,'_blank','noopener,noreferrer');
   }catch(e){
-    // 폴백
     location.href=KAKAO_CHANNEL_URL;
   }
 }
