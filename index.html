@@ -1427,6 +1427,26 @@ body.align-right .cal-evbar{text-align:right}
 /* vMember 모달은 roomSetCard 위에 떠야 함 — mo-overlay/card 기본(50/51)보다 높게 */
 #vMemberOverlay{z-index:60}
 #vMemberCard{z-index:61}
+/* 일정 모달 명의 선택 */
+.ev-author-picker{
+  display:flex;gap:8px;flex-wrap:wrap;flex:1;justify-content:flex-end;
+}
+.ev-author-btn{
+  display:flex;align-items:center;gap:6px;
+  background:var(--bg);border:1.5px solid var(--border);
+  padding:5px 10px 5px 5px;border-radius:99px;
+  font-family:inherit;font-size:12px;font-weight:600;color:var(--text);
+  cursor:pointer;transition:all .12s;
+}
+.ev-author-btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.ev-author-btn:active{transform:scale(.96)}
+.ev-author-icon{
+  width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:10px;font-weight:700;
+  flex-shrink:0;overflow:hidden;
+}
+.ev-author-icon img{width:100%;height:100%;object-fit:cover;display:block}
 .rs-add-vmember-btn{
   background:var(--accent);color:#fff;border:none;
   padding:5px 11px;border-radius:14px;
@@ -1912,6 +1932,11 @@ body.align-right .cal-evbar{text-align:right}
           <div class="ev-multi-count" id="evMultiCount">선택된 날짜 0개</div>
         </div>
       </div>
+    </div>
+    <!-- 명의 선택 (관리자 모드 방 + admin 전용) -->
+    <div class="ev-form-row" id="evAuthorRow" style="display:none">
+      <div class="ev-label">명의</div>
+      <div class="ev-author-picker" id="evAuthorPicker"></div>
     </div>
     <!-- 혼자/함께 토글 (멤버 2명 이상일 때만 표시) -->
     <div class="ev-form-row" id="evTargetRow" style="display:none">
@@ -3450,7 +3475,7 @@ async function createRoom(){
             user_id:_currentUser.id,
             date:e.date,title:e.title,time:e.time,color:e.color,
           }));
-          const {error:eCopy}=await supa.from('events').insert(rows);
+          const {error:eCopy}=await supa.from('events').insert(_attachVirtualMember(rows));
           if(!eCopy)copiedCount=rows.length;
         }
       }catch(eC){console.warn('일정 복사 실패:',eC)}
@@ -3563,7 +3588,7 @@ async function joinRoom(){
             room_id:room.id,user_id:_currentUser.id,
             date:e.date,title:e.title,time:e.time,color:e.color,
           }));
-          const {error:eCopy}=await supa.from('events').insert(rows);
+          const {error:eCopy}=await supa.from('events').insert(_attachVirtualMember(rows));
           if(!eCopy)copiedCount=rows.length;
         }
       }catch(eC){console.warn('일정 복사 실패:',eC)}
@@ -3842,6 +3867,69 @@ let _calMonth=new Date().getMonth();
 let _selectedDate=null;   // 시트에서 선택한 날 (YYYY-MM-DD)
 let _editingEvent=null;   // 수정 중 일정 (null이면 추가 모드)
 let _selectedColor='c-vintage';
+let _eventAuthorKey=null; // 일정 명의: null=본인 / 'v-'+member_id=가상 멤버 (관리자 모드 방)
+
+/* 일정 명의 헬퍼 — 가상 멤버 선택 시 row에 virtual_member_id 첨부 */
+function _virtualMemberIdFromAuthor(){
+  if(_eventAuthorKey && _eventAuthorKey.startsWith('v-'))return _eventAuthorKey.slice(2);
+  return null;
+}
+function _attachVirtualMember(rowsOrRow){
+  const vmId=_virtualMemberIdFromAuthor();
+  if(!vmId)return rowsOrRow;
+  if(Array.isArray(rowsOrRow)){
+    return rowsOrRow.map(r=>({...r,virtual_member_id:vmId}));
+  }
+  return {...rowsOrRow,virtual_member_id:vmId};
+}
+
+/* 명의 선택 UI 렌더 — 관리자 모드 방 + admin에서만 노출 */
+function renderEventAuthorPicker(){
+  const row=document.getElementById('evAuthorRow');
+  const el=document.getElementById('evAuthorPicker');
+  if(!row||!el)return;
+  if(!_currentRoom?.is_admin_mode||!isAdmin()){
+    row.style.display='none';
+    return;
+  }
+  // 본인 + 가상 멤버들
+  const authors=[
+    {key:null,name:'나',avatar:_currentProfile?.avatar_url||null,color:'#8b3a2a'}
+  ];
+  _myMembers.filter(m=>m.is_virtual).forEach(m=>{
+    authors.push({
+      key:'v-'+m.member_id,
+      name:m.name,
+      avatar:m.avatar_url||null,
+      color:m.color||'#8b5a3c'
+    });
+  });
+  el.innerHTML=authors.map(a=>{
+    const on=(_eventAuthorKey||null)===a.key;
+    const initial=(a.name||'?').trim().charAt(0).toUpperCase();
+    const keyArg=a.key===null?'null':`'${a.key}'`;
+    const iconHtml=a.avatar
+      ?`<div class="ev-author-icon" style="background:${a.color}"><img src="${escapeHtml(a.avatar)}" alt=""></div>`
+      :`<div class="ev-author-icon" style="background:${a.color}">${escapeHtml(initial)}</div>`;
+    return `<button type="button" class="ev-author-btn${on?' on':''}" onclick="setEventAuthor(${keyArg})">${iconHtml}<span>${escapeHtml(a.name)}</span></button>`;
+  }).join('');
+  row.style.display='flex';
+}
+
+function setEventAuthor(key){
+  _eventAuthorKey=key;
+  renderEventAuthorPicker();
+  // 가상 멤버 명의 선택 시 강제 단독 (혼자) + 함께 토글 숨김
+  const targetRow=document.getElementById('evTargetRow');
+  if(key && key.startsWith('v-')){
+    if(targetRow)targetRow.style.display='none';
+    _selectedTarget='self';
+    _selectedMembers=[_currentUser?.id];
+  }else{
+    // 본인 명의 — 일반 흐름 (멤버 수에 따라 표시)
+    if(typeof applyTargetUI==='function')applyTargetUI();
+  }
+}
 /* 일정 메모/사진 — evCard 입력 중인 사진 상태 */
 let _evPhotoBlob=null;        // 이번에 새로 선택한 사진 (리사이즈 완료된 Blob)
 let _evPhotoPreviewUrl=null;  // 미리보기용 ObjectURL
@@ -5316,6 +5404,9 @@ function openAddEvent(){
   applyTargetUI();
   document.getElementById('evModeRow').style.display='flex';
   renderColorGrid();
+  // 명의 초기화 — 기본 본인. 관리자 모드 방이면 picker 표시
+  _eventAuthorKey=null;
+  renderEventAuthorPicker();
   closeDateSheet();
   document.getElementById('evOverlay').classList.add('on');
   document.getElementById('evCard').classList.add('on');
@@ -5404,6 +5495,14 @@ function openEditEvent(eventId){
   applyModeUI();
   renderColorGrid();
   applyTargetUI();
+  // 명의 복원 — 편집 중 일정에 virtual_member_id 있으면 가상 멤버 명의
+  _eventAuthorKey=_editingEvent?.virtual_member_id?('v-'+_editingEvent.virtual_member_id):null;
+  renderEventAuthorPicker();
+  // 가상 멤버 명의면 함께 토글 강제 숨김
+  if(_eventAuthorKey && _eventAuthorKey.startsWith('v-')){
+    const tr=document.getElementById('evTargetRow');
+    if(tr)tr.style.display='none';
+  }
   // 수정 시 다중 방 행 숨김
   _selectedExtraRooms=[];
   const mrCb2=document.getElementById('evMultiRoom');
@@ -5793,7 +5892,7 @@ async function saveEvent(){
             });
           });
         });
-        const {error}=await supa.from('events').insert(rows);
+        const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
         if(error)throw error;
         // 다른 방에도 동일 일정 추가 (단독만, 본인 row 기준)
         if(applyExtra){
@@ -5809,7 +5908,7 @@ async function saveEvent(){
             });
           });
           if(extraRows.length){
-            const {error:eX}=await supa.from('events').insert(extraRows);
+            const {error:eX}=await supa.from('events').insert(_attachVirtualMember(extraRows));
             if(eX)console.warn('다른 방 일정 추가 일부 실패:',eX);
           }
         }
@@ -5836,7 +5935,7 @@ async function saveEvent(){
             });
           });
         });
-        const {error}=await supa.from('events').insert(rows);
+        const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
         if(error)throw error;
         // 다른 방에도
         if(applyExtra){
@@ -5852,7 +5951,7 @@ async function saveEvent(){
             });
           });
           if(extraRows.length){
-            const {error:eX}=await supa.from('events').insert(extraRows);
+            const {error:eX}=await supa.from('events').insert(_attachVirtualMember(extraRows));
             if(eX)console.warn('다른 방 일정 추가 일부 실패:',eX);
           }
         }
@@ -5866,17 +5965,17 @@ async function saveEvent(){
           recurring_yearly:recurringYearly,
           memo,photo_url:photoUrl,
         }));
-        const {error}=await supa.from('events').insert(rows);
+        const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
         if(error)throw error;
         toast(`함께 일정 추가됨 (${rows.length}명)`);
       }else{
         // 단독 일정 (단일 날짜)
-        const {error}=await supa.from('events').insert({
+        const {error}=await supa.from('events').insert(_attachVirtualMember({
           room_id:_currentRoom.id,user_id:_currentUser.id,date:_selectedDate,
           title,time,color,
           recurring_yearly:recurringYearly,
           memo,photo_url:photoUrl,
-        });
+        }));
         if(error)throw error;
         // 다른 방에도
         if(applyExtra){
@@ -5886,7 +5985,7 @@ async function saveEvent(){
             recurring_yearly:recurringYearly,
             memo,photo_url:photoUrl,
           }));
-          const {error:eX}=await supa.from('events').insert(extraRows);
+          const {error:eX}=await supa.from('events').insert(_attachVirtualMember(extraRows));
           if(eX)console.warn('다른 방 일정 추가 일부 실패:',eX);
         }
         toast(`일정이 추가됐어요`);
@@ -6839,7 +6938,7 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
         });
       });
     });
-    const {error:eIns}=await supa.from('events').insert(rows);
+    const {error:eIns}=await supa.from('events').insert(_attachVirtualMember(rows));
     if(eIns)throw eIns;
     toast(`함께 기간 일정으로 변경됨 (${dates.length}일 × ${memberIds.length}명)`);
     return;
@@ -6864,7 +6963,7 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
         title,time,color,recurring_yearly:ry,
         memo,photo_url:photoUrl,
       }));
-      const {error}=await supa.from('events').insert(rows);
+      const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
       if(error)throw error;
       toast(`기간 일정으로 변경됨 (${dates.length}일)`);
     }else{
@@ -6877,7 +6976,7 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
         title,time,color,recurring_yearly:ry,
         memo,photo_url:photoUrl,
       }));
-      const {error}=await supa.from('events').insert(rows);
+      const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
       if(error)throw error;
       toast(`여러 날 일정으로 변경됨 (${dates.length}일)`);
     }
@@ -6906,7 +7005,7 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
         title,time,color,shared_id:sharedId,recurring_yearly:ry,
         memo,photo_url:photoUrl,
       }));
-      const {error:e2}=await supa.from('events').insert(rows);
+      const {error:e2}=await supa.from('events').insert(_attachVirtualMember(rows));
       if(e2)throw e2;
     }
     toast(`함께 일정으로 변경됨 (${_selectedMembers.length}명)`);
@@ -6914,11 +7013,11 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
     // Case 2: 함께 → 혼자 — RPC로 전체 shared row 삭제 (RLS 우회)
     const {error:e1}=await supa.rpc('delete_shared_event_rows',{p_shared_id:ev.shared_id});
     if(e1)throw e1;
-    const {error:e2}=await supa.from('events').insert({
+    const {error:e2}=await supa.from('events').insert(_attachVirtualMember({
       room_id:_currentRoom.id,user_id:_currentUser.id,
       date:_selectedDate,title,time,color,recurring_yearly:ry,
       memo,photo_url:photoUrl,
-    });
+    }));
     if(e2)throw e2;
     toast('혼자 일정으로 변경됨');
   }else{
@@ -6948,7 +7047,7 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
         title,time,color,shared_id:ev.shared_id,recurring_yearly:ry,
         memo,photo_url:photoUrl,
       }));
-      const {error}=await supa.from('events').insert(rows);
+      const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
       if(error)throw error;
     }
     toast('함께 일정 수정됨');
