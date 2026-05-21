@@ -1420,7 +1420,30 @@ body.align-right .cal-evbar{text-align:right}
 .rs-member-stamp.has-photo img{width:100%;height:100%;object-fit:cover;display:block;border-radius:50%}
 .rs-member-info{flex:1;min-width:0}
 .rs-member-name{font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rs-member-tag{font-size:10px;color:var(--sub);margin-top:1px}
+.rs-member-tag{font-size:10px;color:var(--sub)}
+.rs-member-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:3px}
+.rs-bd-badge{
+  display:inline-flex;align-items:center;gap:3px;
+  font-size:10px;font-weight:700;
+  padding:2px 8px;
+  background:rgba(139,58,42,.08);
+  color:var(--accent);
+  border-radius:99px;
+  border:1px solid rgba(139,58,42,.2);
+  letter-spacing:.2px;
+}
+.rs-bd-badge.soon{background:rgba(196,74,74,.1);color:#c44a4a;border-color:rgba(196,74,74,.3)}
+.rs-bd-badge.today{background:var(--accent);color:#fff;border-color:var(--accent);animation:bd-pulse 1.8s ease-in-out infinite}
+.rs-bd-lunar{
+  display:inline-block;font-size:8px;font-weight:700;
+  padding:1px 4px;background:rgba(255,255,255,.35);
+  border-radius:6px;margin-left:2px;letter-spacing:0;
+}
+.rs-bd-badge:not(.today) .rs-bd-lunar{background:rgba(139,58,42,.12)}
+@keyframes bd-pulse{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.06)}
+}
 .rs-kick-btn{background:transparent;border:1px solid var(--accent);color:var(--accent);font-family:inherit;font-size:11px;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer;flex-shrink:0}
 .rs-kick-btn:active{background:var(--aP)}
 
@@ -1888,8 +1911,12 @@ body.align-right .cal-evbar{text-align:right}
   <div class="pf-edit-row">
     <div class="ev-label" style="font-size:11px">내 생일 <span style="font-weight:400;color:var(--mute);font-size:10px">· 매년 캘린더에 자동 표시</span></div>
     <div class="pf-name-input-row">
-      <select class="fi" id="profileBdMonth" style="flex:0 0 80px"><option value="">월</option></select>
-      <select class="fi" id="profileBdDay" style="flex:0 0 80px"><option value="">일</option></select>
+      <select class="fi" id="profileBdType" style="flex:0 0 70px">
+        <option value="solar">양력</option>
+        <option value="lunar">음력</option>
+      </select>
+      <select class="fi" id="profileBdMonth" style="flex:0 0 68px"><option value="">월</option></select>
+      <select class="fi" id="profileBdDay" style="flex:0 0 68px"><option value="">일</option></select>
       <button class="pf-name-save-btn" onclick="saveProfileBirthday()">저장</button>
     </div>
   </div>
@@ -2517,7 +2544,83 @@ function openProfile(){
   document.getElementById('profileCard').classList.add('on');
 }
 
+/* ═══════════════════════════════════
+   생일 처리 — 양력/음력 지원
+   ──────────────────────────────────
+   DB 저장 형식:
+     양력: "MM-DD" (예: "08-29")
+     음력: "L-MM-DD" (예: "L-07-17")
+   기존 양력만 있던 데이터와 호환됨.
+   ═══════════════════════════════════ */
+function parseBirthday(bd){
+  if(!bd||typeof bd!=='string')return null;
+  if(bd.startsWith('L-')){
+    const [m,d]=bd.slice(2).split('-').map(Number);
+    if(!m||!d)return null;
+    return {month:m, day:d, isLunar:true};
+  }
+  const [m,d]=bd.split('-').map(Number);
+  if(!m||!d)return null;
+  return {month:m, day:d, isLunar:false};
+}
+
+/* 음력 날짜를 지정 양력 연도의 양력 날짜로 변환 → {year, month, day} 또는 null */
+function lunarToSolar(year, lm, ld){
+  try{
+    if(!window.Lunar)return null;
+    const lunar=window.Lunar.fromYmd(year, lm, ld);
+    const solar=lunar.getSolar();
+    return {year:solar.getYear(), month:solar.getMonth(), day:solar.getDay()};
+  }catch(e){return null}
+}
+
+/* 지정 연도의 양력 생일 'MM-DD' 반환 (음력이면 변환). 양력은 그대로 */
+function birthdayToSolarMd(bd, year){
+  const p=parseBirthday(bd);
+  if(!p)return null;
+  if(p.isLunar){
+    const s=lunarToSolar(year, p.month, p.day);
+    if(!s)return null;
+    // 음력 변환 결과가 다음/이전 해로 넘어갈 수도 있음 — year가 맞는 것만 반환
+    if(s.year!==year)return null;
+    return String(s.month).padStart(2,'0')+'-'+String(s.day).padStart(2,'0');
+  }
+  return String(p.month).padStart(2,'0')+'-'+String(p.day).padStart(2,'0');
+}
+
+/* 다음 생일까지 D-day (오늘 기준). 음력 양력 모두 지원 */
+function daysUntilBirthday(bd){
+  const p=parseBirthday(bd);
+  if(!p)return null;
+  const today=new Date();
+  today.setHours(0,0,0,0);
+  const y=today.getFullYear();
+  // 올해 양력 생일
+  let bdDate=null;
+  if(p.isLunar){
+    let s=lunarToSolar(y, p.month, p.day);
+    if(s)bdDate=new Date(s.year, s.month-1, s.day);
+  }else{
+    bdDate=new Date(y, p.month-1, p.day);
+  }
+  if(!bdDate)return null;
+  bdDate.setHours(0,0,0,0);
+  // 이미 지난 생일이면 내년
+  if(bdDate.getTime()<today.getTime()){
+    if(p.isLunar){
+      const s=lunarToSolar(y+1, p.month, p.day);
+      bdDate = s ? new Date(s.year, s.month-1, s.day) : null;
+    }else{
+      bdDate=new Date(y+1, p.month-1, p.day);
+    }
+  }
+  if(!bdDate)return null;
+  bdDate.setHours(0,0,0,0);
+  return Math.round((bdDate.getTime()-today.getTime())/86400000);
+}
+
 function fillBirthdaySelects(){
+  const ts=document.getElementById('profileBdType');
   const ms=document.getElementById('profileBdMonth');
   const ds=document.getElementById('profileBdDay');
   if(ms.options.length<=1){
@@ -2525,35 +2628,41 @@ function fillBirthdaySelects(){
     for(let d=1;d<=31;d++)ds.add(new Option(d+'일',d));
   }
   // 저장된 생일 적용
-  const bd=_currentProfile?.birthday;
-  if(bd&&bd.length>=5){
-    const [m,d]=bd.split('-').map(Number);
-    ms.value=m; ds.value=d;
+  const parsed=parseBirthday(_currentProfile?.birthday);
+  if(parsed){
+    if(ts)ts.value=parsed.isLunar?'lunar':'solar';
+    ms.value=parsed.month;
+    ds.value=parsed.day;
   }else{
+    if(ts)ts.value='solar';
     ms.value=''; ds.value='';
   }
 }
 
 async function saveProfileBirthday(){
+  const type=(document.getElementById('profileBdType')?.value)||'solar';
   const m=parseInt(document.getElementById('profileBdMonth').value,10);
   const d=parseInt(document.getElementById('profileBdDay').value,10);
-  if(!m||!d){toast('월/일을 선택해줘');return}
-  // 간단한 유효성 (윤년 무시, 31일/4월 등 안 묶음)
+  if(!m||!d){toast('월/일을 선택해주세요');return}
   const maxDay=[31,29,31,30,31,30,31,31,30,31,30,31][m-1];
-  if(d>maxDay){toast(`${m}월은 ${maxDay}일까지야`);return}
-  const md=String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+  if(d>maxDay){toast(`${m}월은 ${maxDay}일까지예요`);return}
+  const mm=String(m).padStart(2,'0');
+  const dd=String(d).padStart(2,'0');
+  // 음력은 L- prefix
+  const md=(type==='lunar'?'L-':'')+mm+'-'+dd;
   try{
     const {error}=await supa.from('profiles').update({birthday:md}).eq('id',_currentUser.id);
     if(error)throw error;
     if(!_currentProfile)_currentProfile={};
     _currentProfile.birthday=md;
-    // _myMembers의 본인 항목도 즉시 동기화 (다른 멤버 시점 대비)
     if(_myMembers&&_myMembers.length){
-      const me=_myMembers.find(m=>m.user_id===_currentUser.id);
+      const me=_myMembers.find(mb=>mb.user_id===_currentUser.id);
       if(me)me.birthday=md;
     }
-    toast(`생일 저장 완료 (${m}/${d})`);
-    renderMonthly();  // 캘린더 즉시 갱신
+    toast(`생일 저장 완료 (${type==='lunar'?'음력 ':''}${m}/${d})`);
+    renderMonthly();
+    // 멤버 시트 열려있으면 갱신
+    try{ if(typeof renderRoomMemberList==='function')renderRoomMemberList(); }catch(_){}
   }catch(e){
     toast('저장 실패: '+(e.message||e));
   }
@@ -4211,8 +4320,11 @@ function getDayEvents(date){
   const md=date.slice(5);  // 'MM-DD'
   const yearlyOnes=(_yearlyEvents[md]||[]).filter(e=>e.date!==date);
   // 본인 생일 가상 일정 (프로필의 birthday — DB events에 안 저장, 매년 자동 표시)
+  // 음력 생일은 매년 양력 날짜가 달라지므로 그 해의 양력으로 변환해서 비교
+  const year=parseInt(date.slice(0,4),10);
   const virtual=[];
-  if(_currentProfile&&_currentProfile.birthday===md){
+  const myBdSolarMd=birthdayToSolarMd(_currentProfile?.birthday, year);
+  if(myBdSolarMd&&myBdSolarMd===md){
     virtual.push({
       id:'__my_birthday__',
       title:'🎂 내 생일',
@@ -4226,7 +4338,8 @@ function getDayEvents(date){
   if(_myMembers&&_myMembers.length){
     _myMembers.forEach(m=>{
       if(m.user_id===_currentUser?.id)return;  // 본인은 위에서 처리
-      if(m.birthday&&m.birthday===md){
+      const memberBdMd=birthdayToSolarMd(m.birthday, year);
+      if(memberBdMd&&memberBdMd===md){
         virtual.push({
           id:'__bday_'+m.user_id,
           title:'🎂 '+(m.name||'멤버')+' 생일',
@@ -6878,11 +6991,28 @@ function renderRoomMemberList(){
     const stamp=m.avatar_url
       ? `<div class="rs-member-stamp has-photo"><img src="${escapeHtml(m.avatar_url)}" alt=""></div>`
       : `<div class="rs-member-stamp">${escapeHtml(initial)}</div>`;
+    // 생일 D-Day 배지
+    const dDay=daysUntilBirthday(m.birthday);
+    let bdBadge='';
+    if(dDay!==null){
+      const parsed=parseBirthday(m.birthday);
+      const lunarTag=parsed&&parsed.isLunar?' <span class="rs-bd-lunar">음</span>':'';
+      if(dDay===0){
+        bdBadge=`<span class="rs-bd-badge today">🎂 오늘 생일!${lunarTag}</span>`;
+      }else if(dDay<=7){
+        bdBadge=`<span class="rs-bd-badge soon">🎂 D-${dDay}${lunarTag}</span>`;
+      }else{
+        bdBadge=`<span class="rs-bd-badge">🎂 D-${dDay}${lunarTag}</span>`;
+      }
+    }
     div.innerHTML=`
       ${stamp}
       <div class="rs-member-info">
         <div class="rs-member-name">${escapeHtml(m.name)}</div>
-        <div class="rs-member-tag">${isMemberOwner?'방장':'멤버'}</div>
+        <div class="rs-member-meta">
+          <span class="rs-member-tag">${isMemberOwner?'방장':'멤버'}</span>
+          ${bdBadge}
+        </div>
       </div>
       ${actions}
     `;
