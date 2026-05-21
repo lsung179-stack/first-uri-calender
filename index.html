@@ -5266,7 +5266,7 @@ function renderDateSheetList(){
     const sharedCls=ev._isShared?' shared':'';
     const virtualTag=isVirtual?`<span class="dp-shared-tag" style="background:rgba(216,104,128,.18);color:#a83855">프로필</span>`:'';
     // 수정/삭제 버튼 — 단독은 본인만, 함께는 같은 방 누구나. 전역 admin 토글 켜져 있으면 admin은 모두 가능
-    const canEdit=!isVirtual&&(isMine||ev._isShared||isAdmin());
+    const canEdit=!isVirtual&&(isMine||ev._isShared||_adminBypass());
     const actions=canEdit?`<div class="dp-actions"><button class="dp-btn" onclick="event.stopPropagation();openEditEvent('${ev.id}')">수정</button><button class="dp-btn del" onclick="event.stopPropagation();deleteEvent('${ev.id}')">삭제</button></div>`:'';
 
     // 순서 변경 화살표 — 가상 일정엔 없음. 단일은 위 일정이 기간이면 ▲ 비활성.
@@ -7362,7 +7362,7 @@ function openRoomSettings(){
   renderRoomMemberList();
   // owner / 멤버 메뉴 분기 — 전역 admin 토글 켜져 있으면 admin도 관리 권한
   const isOwner=_currentRoom.owner_id===_currentUser?.id;
-  const canManage=isOwner||isAdmin();
+  const canManage=isOwner||_adminBypass();
   document.getElementById('roomSetOwnerSection').style.display=canManage?'block':'none';
   document.getElementById('roomSetLeaveSection').style.display=canManage?'none':'block';
   document.getElementById('roomSetNameEditBtn').style.display=canManage?'inline-block':'none';
@@ -7455,7 +7455,7 @@ function renderRoomMemberList(){
   if(!list)return;
   list.innerHTML='';
   const isOwner=_currentRoom?.owner_id===_currentUser?.id;
-  const canKick=isOwner||isAdmin();
+  const canKick=isOwner||_adminBypass();
   const isAdminRoom=!!_currentRoom?.is_admin_mode;
   _myMembers.forEach(m=>{
     const isMe=!m.is_virtual && m.user_id===_currentUser?.id;
@@ -7505,7 +7505,7 @@ function renderRoomMemberList(){
 }
 
 async function kickMember(userId,name){
-  if(!_currentRoom||(_currentRoom.owner_id!==_currentUser?.id && !isAdmin())){toast('권한이 없어요');return}
+  if(!_currentRoom||(_currentRoom.owner_id!==_currentUser?.id && !_adminBypass())){toast('권한이 없어요');return}
   if(!confirm(`"${name}" 님을 방에서 내보낼까요?\n(이 멤버의 일정은 그대로 유지됩니다)`))return;
   try{
     const {error}=await supa.from('members').delete()
@@ -7522,7 +7522,7 @@ async function kickMember(userId,name){
 }
 
 async function deleteRoomConfirm(){
-  if(!_currentRoom||(_currentRoom.owner_id!==_currentUser?.id && !isAdmin())){toast('방장만 삭제할 수 있어요');return}
+  if(!_currentRoom||(_currentRoom.owner_id!==_currentUser?.id && !_adminBypass())){toast('방장만 삭제할 수 있어요');return}
   const confirmText=`"${_currentRoom.name}" 방을 영구 삭제할까요?\n방의 모든 일정과 멤버가 사라지며 복구할 수 없습니다.`;
   if(!confirm(confirmText))return;
   // 한 번 더 (안전장치)
@@ -7616,13 +7616,21 @@ function isAdmin(){
 }
 
 /* ═══════════════════════════════════════════════════════════
-   admin 권한 — 클라이언트는 UI 표시용 가이드일 뿐
+   전역 admin 권한 토글 — 기본 비활성
    ───────────────────────────────────────────────────────────
-   실제 권한 차단은 Supabase RLS 정책이 담당. 클라이언트 토글은
-   브라우저 콘솔에서 우회 가능하므로 보안 의존 금지.
-   admin이 owner가 아닌 방에서 일정/멤버 조작이 가능하려면
-   Supabase에 admin_* RLS 정책이 적용되어 있어야 한다.
+   true로 바꾸면 admin이 어느 방이든 owner처럼 동작:
+     • 본인이 속한 방에서 다른 멤버 일정 수정/삭제
+     • 본인이 owner가 아닌 방에서 방 이름 변경, 방 삭제
+     • 본인이 owner가 아닌 방에서 멤버 추방
+     • 일정/이모지 반응 자유롭게 추가·제거 (UI 제약 우회)
+   ※ isAdmin() 체크로 admin UID만 통과하므로 일반 사용자가
+     콘솔에서 ENABLE_GLOBAL_ADMIN_BYPASS=true로 바꿔도 우회 불가.
+   ※ 가상 멤버 시스템(관리자 모드 방)과는 무관 — 그건 별도로 동작
    ═══════════════════════════════════════════════════════════ */
+const ENABLE_GLOBAL_ADMIN_BYPASS=false;
+function _adminBypass(){
+  return ENABLE_GLOBAL_ADMIN_BYPASS && isAdmin();
+}
 
 /* ── localStorage 읽음 관리 ── */
 function getReadAnnouncementIds(){
