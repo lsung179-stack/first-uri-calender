@@ -257,7 +257,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .welcome-note{font-size:12px;color:var(--mute);margin-top:18px;line-height:1.6}
 
 /* 토스트 */
-.toast{position:fixed;left:50%;bottom:48px;transform:translateX(-50%) translateY(20px);background:#3a2418;color:#fbf2e0;padding:11px 18px;border-radius:24px;font-size:13px;opacity:0;pointer-events:none;transition:all .25s ease;z-index:999;box-shadow:0 6px 20px rgba(0,0,0,.18);max-width:80vw;text-align:center}
+.toast{position:fixed;left:50%;bottom:64px;transform:translateX(-50%) translateY(20px);background:var(--card);color:var(--text);padding:12px 20px;border:1.5px solid var(--accent);border-radius:99px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s ease;z-index:999;box-shadow:0 6px 18px rgba(58,36,24,.18);max-width:84vw;text-align:center;letter-spacing:.2px}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* 로딩 (초기 세션 확인) */
@@ -6739,7 +6739,7 @@ async function setMyReaction(emoji){
       updated_at:new Date().toISOString(),
     },{onConflict:'target_id,user_id'});
     if(error)throw error;
-    toast(`${emoji} 반응을 남겼어요`);
+    toast(`${emojiDisplayName(emoji)} 반응을 남겼어요`);
     closeEmojiPick();
     await loadEvents();
     if(_selectedDate)openDateSheet(_selectedDate);
@@ -7580,6 +7580,23 @@ const CHAR_EXPRESSIONS={
 };
 function charEmojiKeys(charKey){
   return (CHAR_EXPRESSIONS[charKey]||[]).map(e=>`${charKey}:${e}`);
+}
+
+/* 이모지 키 → 사용자에게 보여줄 한국어 이름
+   - 캐릭터 이모지 'mochi:basic' → '모찌 (평온)'
+   - 일반 이모지 '❤️' → '❤️' 그대로 */
+function emojiDisplayName(em){
+  if(typeof em!=='string')return String(em||'');
+  if(em.includes(':')){
+    const [charKey,exprKey]=em.split(':');
+    const meta=CHAR_META&&CHAR_META[charKey];
+    if(meta){
+      const name=meta.name||charKey;
+      const label=meta.labels&&meta.labels[exprKey];
+      return label?`${name} (${label})`:name;
+    }
+  }
+  return em;
 }
 
 /* 이모지 팩 — 모찌 / 곰돌 / 달콩 캐릭터 팩 (각 팩 8개 고유 표정) */
