@@ -1422,8 +1422,25 @@ body.align-right .cal-evbar{text-align:right}
 }
 
 /* ═══════════════════════════════════
-   admin UI — 이용자 무료 부여
+   가상 멤버 (관리자 모드 방)
    ═══════════════════════════════════ */
+.rs-add-vmember-btn{
+  background:var(--accent);color:#fff;border:none;
+  padding:5px 11px;border-radius:14px;
+  font-family:inherit;font-size:11px;font-weight:700;
+  cursor:pointer;transition:transform .12s;letter-spacing:.2px;
+}
+.rs-add-vmember-btn:active{transform:scale(.95);opacity:.85}
+.rs-member-row.virtual{background:rgba(176,135,66,.06);border-color:rgba(176,135,66,.3)}
+.rs-member-row.virtual .rs-member-tag{background:var(--gold);color:#fff}
+.vm-color-picker{display:flex;gap:8px;flex-wrap:wrap}
+.vm-color-btn{
+  width:32px;height:32px;border-radius:50%;
+  border:2px solid transparent;cursor:pointer;padding:0;
+  transition:transform .12s;
+}
+.vm-color-btn.on{border-color:var(--text);transform:scale(1.1)}
+.vm-color-btn:active{transform:scale(.95)}
 .pf-admin-btn{
   width:100%;padding:11px 14px;
   background:linear-gradient(135deg,#fff4dc,#f3e6cf);
@@ -1663,6 +1680,16 @@ body.align-right .cal-evbar{text-align:right}
       </div>
     </div>
     <div class="copy-source-list" id="createCopySourceList" style="display:none"></div>
+  </div>
+  <!-- 관리자 모드 토글 (admin에게만 노출) -->
+  <div id="createAdminModeWrap" style="display:none;margin-top:6px">
+    <div class="copy-option" id="createAdminModeOption" onclick="toggleCreateAdminMode()">
+      <div class="copy-option-check"></div>
+      <div class="copy-option-info">
+        <div class="copy-option-title">🛠 관리자 모드 방</div>
+        <div class="copy-option-sub">가상 멤버를 만들고 자유롭게 일정을 추가할 수 있어요</div>
+      </div>
+    </div>
   </div>
   <div class="mo-actions">
     <button class="btn btn-primary" id="createBtn" onclick="createRoom()">만들기</button>
@@ -1993,6 +2020,52 @@ body.align-right .cal-evbar{text-align:right}
   </div>
 </div>
 
+<!-- 가상 멤버 추가/편집 모달 (관리자 모드 방 전용) -->
+<div class="mo-overlay" id="vMemberOverlay" onclick="closeVMember()"></div>
+<div class="mo-card" id="vMemberCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title" id="vMemberTitle">가상 멤버 추가</div>
+  
+  <div style="text-align:center;margin:14px 0 6px">
+    <div id="vMemberAvatarPreview" style="width:80px;height:80px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;color:#fff;overflow:hidden;background:#8b5a3c">?</div>
+    <div style="margin-top:10px;display:flex;gap:6px;justify-content:center">
+      <button class="pf-photo-btn" onclick="document.getElementById('vMemberPhotoFile').click()">사진 변경</button>
+      <button class="pf-photo-btn" id="vMemberPhotoRemoveBtn" onclick="removeVMemberPhoto()" style="display:none">사진 제거</button>
+    </div>
+    <input type="file" id="vMemberPhotoFile" accept="image/*" style="display:none" onchange="onVMemberPhotoSelect(event)">
+  </div>
+  
+  <div class="mo-form">
+    <div>
+      <div class="mo-label">이름</div>
+      <input class="fi" id="vMemberNameInput" placeholder="예) 아들, 딸" maxlength="20" oninput="refreshVMemberAvatarPreview()" autocomplete="off">
+    </div>
+    
+    <div>
+      <div class="mo-label">색상</div>
+      <div id="vMemberColorPicker" class="vm-color-picker"></div>
+    </div>
+    
+    <div>
+      <div class="mo-label">생일 (선택)</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <select class="fi pf-bd-select" id="vMemberBdType" style="flex:0 0 80px">
+          <option value="solar">양력</option>
+          <option value="lunar">음력</option>
+        </select>
+        <select class="fi pf-bd-select" id="vMemberBdMonth" style="flex:0 0 72px"><option value="">월</option></select>
+        <select class="fi pf-bd-select" id="vMemberBdDay" style="flex:0 0 72px"><option value="">일</option></select>
+      </div>
+    </div>
+  </div>
+  
+  <div class="mo-actions">
+    <button class="btn btn-primary" onclick="saveVMember()">저장</button>
+    <button class="btn btn-danger" id="vMemberDeleteBtn" onclick="deleteVMember()" style="display:none">삭제</button>
+    <button class="mo-cancel" onclick="closeVMember()">취소</button>
+  </div>
+</div>
+
 <!-- admin: 이용자 무료 부여 모달 -->
 <div class="mo-overlay" id="adminGrantOverlay" onclick="closeAdminGrant()"></div>
 <div class="mo-card" id="adminGrantCard">
@@ -2128,7 +2201,10 @@ body.align-right .cal-evbar{text-align:right}
 
   <!-- 2. 멤버 -->
   <div class="rs-section">
-    <div class="rs-section-title">멤버 (<span id="roomSetMemberCount">—</span>)</div>
+    <div class="rs-section-title" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <span>멤버 (<span id="roomSetMemberCount">—</span>)</span>
+      <button id="roomSetAddVMemberBtn" onclick="openVMember(null)" class="rs-add-vmember-btn" style="display:none">＋ 가상 멤버</button>
+    </div>
     <div id="roomSetMemberList"></div>
   </div>
 
@@ -3286,6 +3362,13 @@ function openCreateRoom(){
   }
   document.getElementById('createOverlay').classList.add('on');
   document.getElementById('createCard').classList.add('on');
+  // admin 모드 토글: admin에게만 노출, 매번 OFF로 초기화
+  _createAdminMode=false;
+  const adminWrap=document.getElementById('createAdminModeWrap');
+  if(adminWrap){
+    adminWrap.style.display=isAdmin()?'block':'none';
+    document.getElementById('createAdminModeOption').classList.remove('on');
+  }
   setTimeout(()=>{const x=document.getElementById('newRoomName');if(x)x.focus()},320);
 }
 function closeCreateRoom(){
@@ -3297,6 +3380,12 @@ function toggleCreateCopy(){
   document.getElementById('createCopyOption').classList.toggle('on',_createCopyOn);
   document.getElementById('createCopySourceList').style.display=_createCopyOn?'flex':'none';
   if(!_createCopyOn)_createCopySource=null;
+}
+let _createAdminMode=false;
+function toggleCreateAdminMode(){
+  if(!isAdmin())return;
+  _createAdminMode=!_createAdminMode;
+  document.getElementById('createAdminModeOption').classList.toggle('on',_createAdminMode);
 }
 function selectCopySource(roomId){
   _createCopySource=roomId;
@@ -3326,7 +3415,8 @@ async function createRoom(){
 
     // 방 INSERT (mode 'shared' 고정 — 멤버 탭으로 본인/전체 전환)
     const {data:room,error:e1}=await supa.from('rooms').insert({
-      code,name,mode:'shared',theme:'vintage',owner_id:_currentUser.id
+      code,name,mode:'shared',theme:'vintage',owner_id:_currentUser.id,
+      is_admin_mode: (_createAdminMode && isAdmin()) ? true : false
     }).select().single();
     if(e1)throw e1;
 
@@ -4329,21 +4419,46 @@ async function loadRoomMembers(){
   if(!_currentRoom){_myMembers=[];return}
   try{
     const {data:membersRaw,error}=await supa.from('members')
-      .select('user_id,color,joined_at,notifications_enabled')
+      .select('id,user_id,color,joined_at,notifications_enabled,is_virtual,virtual_name,virtual_avatar,virtual_birthday')
       .eq('room_id',_currentRoom.id);
     if(error)throw error;
     if(!membersRaw||!membersRaw.length){_myMembers=[];return}
-    // profiles 한번에 가져오기 (birthday + avatar_url 포함)
-    const userIds=membersRaw.map(m=>m.user_id);
-    const {data:profiles}=await supa.from('profiles').select('id,name,email,birthday,avatar_url').in('id',userIds);
+    // 실제 멤버의 user_id만 profiles 조회 (가상 멤버 제외)
+    const realUserIds=membersRaw.filter(m=>m.user_id&&!m.is_virtual).map(m=>m.user_id);
+    let profiles=[];
+    if(realUserIds.length){
+      const {data:p}=await supa.from('profiles').select('id,name,email,birthday,avatar_url').in('id',realUserIds);
+      profiles=p||[];
+    }
     _myMembers=membersRaw.map(m=>{
-      const p=(profiles||[]).find(pp=>pp.id===m.user_id);
-      const name=(p&&p.name)||(p&&p.email?p.email.split('@')[0]:'익명');
-      const birthday=(p&&p.birthday)||null;
-      const avatar_url=(p&&p.avatar_url)||null;
-      // notifications_enabled은 기본 true (컬럼 없으면 true로 간주)
-      const notif=m.notifications_enabled===false?false:true;
-      return {user_id:m.user_id,color:m.color,name,joined_at:m.joined_at,birthday,avatar_url,notifications_enabled:notif};
+      if(m.is_virtual){
+        // 가상 멤버 — virtual_* 컬럼 사용
+        return {
+          member_id:m.id,
+          user_id:m.user_id,  // 보통 NULL
+          is_virtual:true,
+          color:m.color,
+          name:m.virtual_name||'가상 멤버',
+          joined_at:m.joined_at,
+          birthday:m.virtual_birthday||null,
+          avatar_url:m.virtual_avatar||null,
+          notifications_enabled:false,  // 가상 멤버는 알림 받지 않음
+        };
+      }else{
+        const p=profiles.find(pp=>pp.id===m.user_id);
+        const name=(p&&p.name)||(p&&p.email?p.email.split('@')[0]:'익명');
+        const birthday=(p&&p.birthday)||null;
+        const avatar_url=(p&&p.avatar_url)||null;
+        const notif=m.notifications_enabled===false?false:true;
+        return {
+          member_id:m.id,
+          user_id:m.user_id,
+          is_virtual:false,
+          color:m.color,
+          name,joined_at:m.joined_at,birthday,avatar_url,
+          notifications_enabled:notif,
+        };
+      }
     });
     // joined_at 순으로 정렬 (본인이 항상 먼저 가입했으므로 첫 번째)
     _myMembers.sort((a,b)=>(a.joined_at||'').localeCompare(b.joined_at||''));
@@ -6997,6 +7112,11 @@ function openRoomSettings(){
   document.getElementById('roomSetOwnerSection').style.display=canManage?'block':'none';
   document.getElementById('roomSetLeaveSection').style.display=canManage?'none':'block';
   document.getElementById('roomSetNameEditBtn').style.display=canManage?'inline-block':'none';
+  // 관리자 모드 방이고 본인이 admin이면 가상 멤버 추가 버튼 표시
+  const addVBtn=document.getElementById('roomSetAddVMemberBtn');
+  if(addVBtn){
+    addVBtn.style.display=(_currentRoom.is_admin_mode && isAdmin())?'inline-block':'none';
+  }
   // 편집 모드는 항상 닫힌 상태로 시작
   document.getElementById('roomSetNameRow').style.display='flex';
   document.getElementById('roomSetNameEditRow').style.display='none';
@@ -7082,15 +7202,19 @@ function renderRoomMemberList(){
   list.innerHTML='';
   const isOwner=_currentRoom?.owner_id===_currentUser?.id;
   const canKick=isOwner||isAdmin();
+  const isAdminRoom=!!_currentRoom?.is_admin_mode;
   _myMembers.forEach(m=>{
-    const isMe=m.user_id===_currentUser?.id;
-    const isMemberOwner=m.user_id===_currentRoom?.owner_id;
+    const isMe=!m.is_virtual && m.user_id===_currentUser?.id;
+    const isMemberOwner=!m.is_virtual && m.user_id===_currentRoom?.owner_id;
     const initial=(m.name||'?').trim().charAt(0).toUpperCase();
     const div=document.createElement('div');
-    div.className='rs-member-row'+(isMemberOwner?' owner':'');
+    div.className='rs-member-row'+(isMemberOwner?' owner':'')+(m.is_virtual?' virtual':'');
     let actions='';
-    // owner/admin이고, 추방 대상은 본인 제외 + (admin은 owner도 추방 가능하게 두지만 일반 owner는 자기 자신만 제외)
-    if(canKick&&!isMe){
+    if(m.is_virtual && isAdmin() && isAdminRoom){
+      // 가상 멤버: 편집 버튼
+      actions=`<button class="rs-kick-btn" onclick="openVMember('${m.member_id}')">편집</button>`;
+    } else if(canKick && !isMe && !m.is_virtual){
+      // 일반 멤버: 내보내기 버튼 (owner/admin만)
       actions=`<button class="rs-kick-btn" onclick="kickMember('${m.user_id}','${escapeHtml(m.name).replace(/'/g,"\\'")}')">내보내기</button>`;
     }
     // 아바타: 사진 있으면 사진, 없으면 첫 글자
@@ -7116,7 +7240,7 @@ function renderRoomMemberList(){
       <div class="rs-member-info">
         <div class="rs-member-name">${escapeHtml(m.name)}</div>
         <div class="rs-member-meta">
-          <span class="rs-member-tag">${isMemberOwner?'방장':'멤버'}</span>
+          <span class="rs-member-tag">${m.is_virtual?'가상':(isMemberOwner?'방장':'멤버')}</span>
           ${bdBadge}
         </div>
       </div>
@@ -8123,6 +8247,217 @@ function backToAdminGrantSearch(){
   document.getElementById('adminGrantSearchView').style.display='';
   document.getElementById('adminGrantUserView').style.display='none';
   _adminGrantSelected=null;
+}
+
+/* ═══════════════════════════════════
+   가상 멤버 시스템 (관리자 모드 방 전용)
+   ═══════════════════════════════════ */
+const V_MEMBER_COLORS=[
+  '#8b5a3c','#6b7d3a','#7a8c5a','#c4a04a',
+  '#a64a3a','#7a4a6a','#3a4a7a','#3a6a4a',
+];
+let _vMemberEditingId=null;
+let _vMemberSelectedColor='#8b5a3c';
+let _vMemberPhoto=null;  // base64 data URL
+
+function openVMember(memberId){
+  if(!_currentRoom||!_currentRoom.is_admin_mode){toast('관리자 모드 방에서만 가능해요');return}
+  if(!isAdmin()){toast('관리자만 가능해요');return}
+  
+  _vMemberEditingId=memberId||null;
+  _vMemberPhoto=null;
+  fillVMemberBdSelects();
+  
+  if(memberId){
+    // 편집 모드 — 기존 가상 멤버 정보 로드
+    const m=_myMembers.find(mm=>mm.member_id===memberId && mm.is_virtual);
+    if(!m){toast('가상 멤버를 찾지 못했어요');return}
+    document.getElementById('vMemberTitle').textContent='가상 멤버 편집';
+    document.getElementById('vMemberNameInput').value=m.name||'';
+    _vMemberSelectedColor=m.color||'#8b5a3c';
+    _vMemberPhoto=m.avatar_url||null;
+    // 생일
+    document.getElementById('vMemberBdType').value='solar';
+    document.getElementById('vMemberBdMonth').value='';
+    document.getElementById('vMemberBdDay').value='';
+    if(m.birthday){
+      const parsed=parseBirthday(m.birthday);
+      if(parsed){
+        document.getElementById('vMemberBdType').value=parsed.isLunar?'lunar':'solar';
+        document.getElementById('vMemberBdMonth').value=parsed.month;
+        document.getElementById('vMemberBdDay').value=parsed.day;
+      }
+    }
+    document.getElementById('vMemberDeleteBtn').style.display='';
+  }else{
+    document.getElementById('vMemberTitle').textContent='가상 멤버 추가';
+    document.getElementById('vMemberNameInput').value='';
+    _vMemberSelectedColor='#8b5a3c';
+    document.getElementById('vMemberBdType').value='solar';
+    document.getElementById('vMemberBdMonth').value='';
+    document.getElementById('vMemberBdDay').value='';
+    document.getElementById('vMemberDeleteBtn').style.display='none';
+  }
+  
+  renderVMemberColorPicker();
+  refreshVMemberAvatarPreview();
+  
+  document.getElementById('vMemberOverlay').classList.add('on');
+  document.getElementById('vMemberCard').classList.add('on');
+}
+
+function closeVMember(){
+  document.getElementById('vMemberOverlay').classList.remove('on');
+  document.getElementById('vMemberCard').classList.remove('on');
+  _vMemberEditingId=null;
+  _vMemberPhoto=null;
+}
+
+function fillVMemberBdSelects(){
+  const mEl=document.getElementById('vMemberBdMonth');
+  if(mEl && mEl.children.length<=1){
+    for(let i=1;i<=12;i++){
+      const o=document.createElement('option');
+      o.value=String(i).padStart(2,'0');
+      o.textContent=i+'월';
+      mEl.appendChild(o);
+    }
+  }
+  const dEl=document.getElementById('vMemberBdDay');
+  if(dEl && dEl.children.length<=1){
+    for(let i=1;i<=31;i++){
+      const o=document.createElement('option');
+      o.value=String(i).padStart(2,'0');
+      o.textContent=i+'일';
+      dEl.appendChild(o);
+    }
+  }
+}
+
+function renderVMemberColorPicker(){
+  const el=document.getElementById('vMemberColorPicker');
+  if(!el)return;
+  el.innerHTML=V_MEMBER_COLORS.map(hex=>{
+    const on=hex===_vMemberSelectedColor;
+    return `<button class="vm-color-btn${on?' on':''}" style="background:${hex}" onclick="setVMemberColor('${hex}')" aria-label="color"></button>`;
+  }).join('');
+}
+
+function setVMemberColor(hex){
+  _vMemberSelectedColor=hex;
+  renderVMemberColorPicker();
+  refreshVMemberAvatarPreview();
+}
+
+function refreshVMemberAvatarPreview(){
+  const el=document.getElementById('vMemberAvatarPreview');
+  if(!el)return;
+  const name=document.getElementById('vMemberNameInput')?.value||'?';
+  const initial=(name||'?').trim().charAt(0).toUpperCase();
+  if(_vMemberPhoto){
+    el.innerHTML=`<img src="${escapeHtml(_vMemberPhoto)}" alt="" style="width:100%;height:100%;object-fit:cover">`;
+    el.style.background='none';
+  }else{
+    el.innerHTML=escapeHtml(initial);
+    el.style.background=_vMemberSelectedColor||'#8b5a3c';
+  }
+  const rmBtn=document.getElementById('vMemberPhotoRemoveBtn');
+  if(rmBtn)rmBtn.style.display=_vMemberPhoto?'':'none';
+}
+
+function onVMemberPhotoSelect(ev){
+  const file=ev.target.files&&ev.target.files[0];
+  if(!file){return}
+  // 간단 리사이즈 (max 256px, quality 0.8)
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const img=new Image();
+    img.onload=function(){
+      const max=256;
+      let w=img.width,h=img.height;
+      if(w>h){if(w>max){h=h*max/w;w=max}}
+      else {if(h>max){w=w*max/h;h=max}}
+      const canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0,w,h);
+      _vMemberPhoto=canvas.toDataURL('image/jpeg',0.8);
+      refreshVMemberAvatarPreview();
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+  ev.target.value='';
+}
+
+function removeVMemberPhoto(){
+  _vMemberPhoto=null;
+  refreshVMemberAvatarPreview();
+}
+
+async function saveVMember(){
+  if(!_currentRoom||!isAdmin())return;
+  const name=document.getElementById('vMemberNameInput').value.trim();
+  if(!name){toast('이름을 입력해주세요');return}
+  if(name.length>20){toast('이름은 20자 이내로');return}
+  
+  // 생일 조합
+  const bdType=document.getElementById('vMemberBdType').value;
+  const bdMonth=document.getElementById('vMemberBdMonth').value;
+  const bdDay=document.getElementById('vMemberBdDay').value;
+  let birthday=null;
+  if(bdMonth && bdDay){
+    birthday=(bdType==='lunar'?'L-':'')+bdMonth+'-'+bdDay;
+  }
+  
+  try{
+    if(_vMemberEditingId){
+      const {error}=await supa.from('members').update({
+        virtual_name:name,
+        virtual_avatar:_vMemberPhoto,
+        virtual_birthday:birthday,
+        color:_vMemberSelectedColor,
+      }).eq('id',_vMemberEditingId);
+      if(error)throw error;
+      toast('가상 멤버가 수정됐어요');
+    }else{
+      const {error}=await supa.from('members').insert({
+        room_id:_currentRoom.id,
+        user_id:null,
+        color:_vMemberSelectedColor,
+        is_virtual:true,
+        virtual_name:name,
+        virtual_avatar:_vMemberPhoto,
+        virtual_birthday:birthday,
+      });
+      if(error)throw error;
+      toast('가상 멤버를 추가했어요');
+    }
+    closeVMember();
+    await loadRoomMembers();
+    renderRoomMemberList();
+    document.getElementById('roomSetMemberCount').textContent=`${_myMembers.length}명`;
+  }catch(e){
+    toast('실패: '+(e.message||'').slice(0,50));
+  }
+}
+
+async function deleteVMember(){
+  if(!_vMemberEditingId)return;
+  if(!confirm('이 가상 멤버를 삭제할까요?\n이 멤버 명의의 일정과 반응도 함께 삭제됩니다.'))return;
+  try{
+    const {error}=await supa.from('members').delete().eq('id',_vMemberEditingId);
+    if(error)throw error;
+    toast('삭제되었습니다');
+    closeVMember();
+    await loadRoomMembers();
+    renderRoomMemberList();
+    await loadEvents();
+    renderMonthly();
+    document.getElementById('roomSetMemberCount').textContent=`${_myMembers.length}명`;
+  }catch(e){
+    toast('실패: '+(e.message||'').slice(0,50));
+  }
 }
 
 let _storeCurrentTab='theme';
