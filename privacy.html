@@ -2,89 +2,106 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#f3e6cf">
 <title>개인정보처리방침 — 우리 캘린더</title>
-<meta name="description" content="우리 캘린더 개인정보처리방침">
-<link rel="icon" href="/icons/icon-192.png" type="image/png">
 <style>
-:root{
-  --bg:#f3e6cf; --card:#fbf2e0; --text:#3a2418; --sub:#8a6a4d;
-  --accent:#8b3a2a; --border:#d4b896; --gold:#b08742;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans KR','맑은 고딕',sans-serif;line-height:1.7;letter-spacing:.1px;-webkit-font-smoothing:antialiased}
-.wrap{max-width:720px;margin:0 auto;padding:40px 24px 80px;min-height:100vh}
-.brand{text-align:center;margin-bottom:40px;padding-bottom:24px;border-bottom:1px solid var(--border)}
-.brand-logo{display:inline-block;width:64px;height:64px;border-radius:14px;background:var(--accent);color:#fff;line-height:64px;text-align:center;font-size:32px;font-weight:700;letter-spacing:-1px;margin-bottom:12px}
-.brand-name{font-size:18px;font-weight:700;color:var(--accent);letter-spacing:.3px}
-.brand-tag{font-size:12px;color:var(--sub);margin-top:4px;letter-spacing:.3px}
-h1{font-size:28px;font-weight:800;color:var(--text);margin-bottom:8px;letter-spacing:-.3px}
-.meta{font-size:13px;color:var(--sub);margin-bottom:32px;letter-spacing:.3px}
-.intro{font-size:15px;color:var(--text);margin-bottom:32px;padding:16px 20px;background:var(--card);border-radius:10px;border:1px solid var(--border)}
-h2{font-size:18px;font-weight:700;color:var(--accent);margin:32px 0 12px;letter-spacing:.1px}
-p{font-size:14px;color:var(--text);margin-bottom:12px}
-b{font-weight:700;color:var(--accent)}
-.footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);text-align:center;font-size:12px;color:var(--sub);line-height:1.7}
-.footer a{color:var(--accent);text-decoration:none;font-weight:600}
-.footer a:hover{text-decoration:underline}
-@media (max-width:480px){
-  .wrap{padding:24px 18px 60px}
-  h1{font-size:24px}
-  h2{font-size:16px;margin:24px 0 10px}
-  p{font-size:13.5px}
-}
+:root{--bg:#f3e6cf;--card:#fbf2e0;--text:#3a2418;--sub:#8a6a4d;--accent:#8b3a2a;--gold:#b08742;--border:rgba(139,58,42,.18)}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Pretendard","Apple SD Gothic Neo","Noto Sans KR",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.7;background-image:radial-gradient(circle,rgba(139,58,42,.10) 1px,transparent 1px);background-size:22px 22px}
+.wrap{max-width:680px;margin:0 auto;padding:32px 24px 60px}
+.back{display:inline-block;color:var(--accent);text-decoration:none;font-size:14px;margin-bottom:18px;font-weight:700}
+.back:before{content:'‹ ';margin-right:4px}
+.head{font-family:'Noto Serif KR',serif;font-weight:700;font-size:28px;color:var(--text);letter-spacing:1px;margin:8px 0 6px;text-align:center}
+.sub{font-size:13px;color:var(--sub);text-align:center;margin-bottom:34px}
+h2{font-family:'Noto Serif KR',serif;font-weight:700;font-size:17px;color:var(--accent);margin:32px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+p,li{font-size:14px;color:var(--text)}
+ul{padding-left:18px;margin:8px 0}
+li{margin-bottom:6px}
+.note{background:var(--card);border:1px solid var(--border);padding:14px 16px;border-radius:10px;margin-top:18px;font-size:13px;color:var(--sub)}
+table{width:100%;border-collapse:collapse;margin:8px 0;font-size:13px}
+th,td{padding:8px 10px;text-align:left;border:1px solid var(--border);vertical-align:top}
+th{background:var(--card);font-weight:700}
+@media (max-width:480px){.head{font-size:22px}.wrap{padding:24px 18px 50px}}
 </style>
 </head>
 <body>
 <div class="wrap">
+  <a href="index.html" class="back">돌아가기</a>
+  <div class="head">개인정보처리방침</div>
+  <div class="sub">우리 캘린더 개인정보처리방침 · 시행일 2026년 7월 1일</div>
 
-  <div class="brand">
-    <div class="brand-logo">U</div>
-    <div class="brand-name">우리 캘린더</div>
-    <div class="brand-tag">함께 일정을 나누는 공간</div>
-  </div>
-
-  <h1>개인정보처리방침</h1>
-  <p class="meta">시행일: 2026년 5월 21일</p>
-
-  <div class="intro">
-    우리 캘린더(이하 "서비스")는 회원의 개인정보를 소중히 다루며, 관련 법령(개인정보 보호법, 정보통신망법 등)을 준수합니다.
-  </div>
+  <p>"우리 캘린더"(이하 "서비스")는 회원의 개인정보를 소중히 다루며, 관련 법령(「개인정보 보호법」, 「정보통신망법」 등)을 준수합니다.</p>
 
   <h2>1. 수집하는 개인정보 항목</h2>
-  <p><b>가입 시 수집</b><br>· 이메일, 비밀번호 (이메일 가입 시)<br>· 이름, 프로필 사진 (카카오 OAuth 가입 시)</p>
-  <p><b>서비스 이용 중 수집</b><br>· 일정 정보 (제목, 날짜, 시간, 메모, 사진)<br>· 멤버 정보 (색상, 생일 — 선택)<br>· 이모지 반응 기록</p>
-  <p><b>자동 수집</b><br>· 푸시 알림 토큰<br>· 기기 정보 (User-Agent)<br>· 접속 로그 (변조 방지 목적)</p>
+  <table>
+    <tr><th>구분</th><th>항목</th><th>수집 시점</th></tr>
+    <tr><td>가입(이메일)</td><td>이메일, 비밀번호</td><td>이메일 회원가입 시</td></tr>
+    <tr><td>가입(카카오)</td><td>이름, 프로필 사진, 카카오 계정 식별자</td><td>카카오 로그인 시</td></tr>
+    <tr><td>이용 중</td><td>일정 정보(제목·날짜·시간·메모·사진), 멤버 정보(색상·생일—선택), 이모지 반응</td><td>서비스 이용 중</td></tr>
+    <tr><td>자동</td><td>푸시 알림 토큰, 기기 정보(User-Agent), 접속 로그</td><td>서비스 이용 중</td></tr>
+  </table>
 
   <h2>2. 개인정보 이용 목적</h2>
-  <p>· 서비스 제공 (일정 공유, 푸시 알림 발송)<br>· 본인 확인 및 회원 관리<br>· 부정 이용 방지 및 보안 강화<br>· 고객 문의 응대<br>· 서비스 개선을 위한 통계 분석</p>
+  <ul>
+    <li>서비스 제공(일정 공유, 푸시 알림 발송)</li>
+    <li>본인 확인 및 회원 관리</li>
+    <li>부정 이용 방지 및 보안 강화</li>
+    <li>고객 문의 응대</li>
+    <li>서비스 개선을 위한 통계 분석</li>
+  </ul>
 
   <h2>3. 보관 및 이용 기간</h2>
-  <p>· 회원 정보: 회원탈퇴 시 즉시 삭제<br>· 접속 로그: 1년 보관 후 삭제<br>· 인앱 알림: 30일 후 자동 삭제<br>· 단, 관련 법령에 따라 일정 기간 보존이 필요한 정보는 해당 법령에 따릅니다.</p>
+  <ul>
+    <li>회원 정보: 회원탈퇴 시 즉시 삭제</li>
+    <li>접속 로그: 1년 보관 후 삭제</li>
+    <li>인앱 알림: 30일 후 자동 삭제</li>
+    <li>단, 관련 법령에 따라 보존 의무가 있는 경우 해당 기간 동안 보관합니다.</li>
+  </ul>
 
   <h2>4. 개인정보의 제3자 제공</h2>
-  <p>회사는 회원의 개인정보를 외부에 제공하지 않습니다. 다만, 다음의 경우는 예외로 합니다.<br>· 회원이 사전에 동의한 경우<br>· 법령에 의거하거나 수사기관의 요청이 있는 경우</p>
+  <p>회사는 회원의 개인정보를 외부에 제공하지 않습니다. 다만 다음의 경우는 예외로 합니다.</p>
+  <ul>
+    <li>회원이 사전에 동의한 경우</li>
+    <li>법령에 의거하거나 수사기관의 적법한 요청이 있는 경우</li>
+  </ul>
 
   <h2>5. 처리 위탁</h2>
-  <p>서비스 제공을 위해 다음 업체에 일부 업무를 위탁합니다.<br>· <b>Supabase</b> (데이터베이스/인프라)<br>· <b>Vercel</b> (웹 호스팅)<br>· <b>Kakao</b> (OAuth 로그인 — 카카오 OAuth 이용 시)<br>· <b>Apple/Google/Mozilla</b> (웹 푸시 알림 전송)</p>
+  <p>서비스 제공을 위해 다음 업체에 일부 업무를 위탁합니다.</p>
+  <ul>
+    <li><b>Supabase</b> — 데이터베이스·인증·인프라</li>
+    <li><b>Vercel</b> — 웹 호스팅</li>
+    <li><b>Kakao</b> — 카카오 로그인(카카오 이용 시)</li>
+    <li><b>Apple, Google, Mozilla</b> — 웹 푸시 알림 전송</li>
+  </ul>
 
   <h2>6. 회원의 권리</h2>
-  <p>회원은 다음 권리를 행사할 수 있습니다.<br>· 개인정보 조회/수정: 앱 내 프로필 화면<br>· 개인정보 삭제: 회원탈퇴 기능<br>· 처리 정지 요청: 고객센터를 통해 접수</p>
+  <ul>
+    <li>개인정보 조회/수정: 앱 내 프로필 화면</li>
+    <li>개인정보 삭제: 회원탈퇴 기능</li>
+    <li>처리 정지 요청: 고객센터 또는 이메일로 접수</li>
+  </ul>
 
-  <h2>7. 개인정보 보호 조치</h2>
-  <p>· 전송 구간 암호화 (HTTPS/TLS)<br>· 데이터베이스 접근 제어 (RLS)<br>· 접속 로그 변조 방지<br>· 비밀번호 단방향 암호화 저장 (Supabase Auth)</p>
+  <h2>7. 개인정보 안전성 확보 조치</h2>
+  <ul>
+    <li>전송 구간 암호화 (HTTPS/TLS)</li>
+    <li>데이터베이스 접근 제어 (Row Level Security)</li>
+    <li>접속 로그 변조 방지</li>
+    <li>비밀번호 단방향 암호화(해시) 저장 (Supabase Auth) — 회사는 비밀번호 원문을 보관하지 않습니다.</li>
+  </ul>
 
   <h2>8. 개인정보 보호책임자</h2>
-  <p>문의 사항은 앱 내 고객센터(카카오톡 채널)를 통해 접수해주세요. 접수된 문의는 신속히 처리하도록 하겠습니다.</p>
+  <p>이름: 이원석<br>문의: lsung179@naver.com 또는 앱 내 고객센터(카카오톡 채널)</p>
 
-  <h2>9. 변경 고지</h2>
-  <p>본 방침이 변경되는 경우, 변경 사항을 앱 내 공지사항을 통해 7일 전 안내합니다.</p>
+  <h2>9. 처리방침 변경</h2>
+  <p>본 방침이 변경되는 경우, 변경 사항을 적용일 7일 전부터 앱 내 공지 또는 본 페이지를 통해 안내합니다.</p>
 
-  <div class="footer">
-    <p><a href="/terms.html">이용약관</a> &nbsp;·&nbsp; <a href="/">홈으로</a></p>
-    <p style="margin-top:8px">© 우리 캘린더. All rights reserved.</p>
+  <div class="note">
+    시행일: 2026년 7월 1일
   </div>
-
 </div>
 </body>
 </html>

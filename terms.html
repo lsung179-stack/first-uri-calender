@@ -2,86 +2,91 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#f3e6cf">
 <title>이용약관 — 우리 캘린더</title>
-<meta name="description" content="우리 캘린더 이용약관">
-<link rel="icon" href="/icons/icon-192.png" type="image/png">
 <style>
-:root{
-  --bg:#f3e6cf; --card:#fbf2e0; --text:#3a2418; --sub:#8a6a4d;
-  --accent:#8b3a2a; --border:#d4b896; --gold:#b08742;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans KR','맑은 고딕',sans-serif;line-height:1.7;letter-spacing:.1px;-webkit-font-smoothing:antialiased}
-.wrap{max-width:720px;margin:0 auto;padding:40px 24px 80px;min-height:100vh}
-.brand{text-align:center;margin-bottom:40px;padding-bottom:24px;border-bottom:1px solid var(--border)}
-.brand-logo{display:inline-block;width:64px;height:64px;border-radius:14px;background:var(--accent);color:#fff;line-height:64px;text-align:center;font-size:32px;font-weight:700;letter-spacing:-1px;margin-bottom:12px}
-.brand-name{font-size:18px;font-weight:700;color:var(--accent);letter-spacing:.3px}
-.brand-tag{font-size:12px;color:var(--sub);margin-top:4px;letter-spacing:.3px}
-h1{font-size:28px;font-weight:800;color:var(--text);margin-bottom:8px;letter-spacing:-.3px}
-.meta{font-size:13px;color:var(--sub);margin-bottom:32px;letter-spacing:.3px}
-h2{font-size:18px;font-weight:700;color:var(--accent);margin:32px 0 12px;letter-spacing:.1px}
-h2:first-of-type{margin-top:0}
-p{font-size:14px;color:var(--text);margin-bottom:12px}
-b{font-weight:700;color:var(--accent)}
-.footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);text-align:center;font-size:12px;color:var(--sub);line-height:1.7}
-.footer a{color:var(--accent);text-decoration:none;font-weight:600}
-.footer a:hover{text-decoration:underline}
-@media (max-width:480px){
-  .wrap{padding:24px 18px 60px}
-  h1{font-size:24px}
-  h2{font-size:16px;margin:24px 0 10px}
-  p{font-size:13.5px}
-}
+:root{--bg:#f3e6cf;--card:#fbf2e0;--text:#3a2418;--sub:#8a6a4d;--accent:#8b3a2a;--gold:#b08742;--border:rgba(139,58,42,.18)}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Pretendard","Apple SD Gothic Neo","Noto Sans KR",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.7;background-image:radial-gradient(circle,rgba(139,58,42,.10) 1px,transparent 1px);background-size:22px 22px}
+.wrap{max-width:680px;margin:0 auto;padding:32px 24px 60px}
+.back{display:inline-block;color:var(--accent);text-decoration:none;font-size:14px;margin-bottom:18px;font-weight:700}
+.back:before{content:'‹ ';margin-right:4px}
+.head{font-family:'Noto Serif KR',serif;font-weight:700;font-size:28px;color:var(--text);letter-spacing:1px;margin:8px 0 6px;text-align:center}
+.sub{font-size:13px;color:var(--sub);text-align:center;margin-bottom:34px}
+h2{font-family:'Noto Serif KR',serif;font-weight:700;font-size:17px;color:var(--accent);margin:32px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+p,li{font-size:14px;color:var(--text)}
+ul{padding-left:18px;margin:8px 0}
+li{margin-bottom:6px}
+.note{background:var(--card);border:1px solid var(--border);padding:14px 16px;border-radius:10px;margin-top:18px;font-size:13px;color:var(--sub)}
+@media (max-width:480px){.head{font-size:22px}.wrap{padding:24px 18px 50px}}
 </style>
 </head>
 <body>
 <div class="wrap">
-
-  <div class="brand">
-    <div class="brand-logo">U</div>
-    <div class="brand-name">우리 캘린더</div>
-    <div class="brand-tag">함께 일정을 나누는 공간</div>
-  </div>
-
-  <h1>이용약관</h1>
-  <p class="meta">시행일: 2026년 5월 21일</p>
+  <a href="index.html" class="back">돌아가기</a>
+  <div class="head">이용약관</div>
+  <div class="sub">우리 캘린더 서비스 이용약관 · 시행일 2026년 7월 1일</div>
 
   <h2>제1조 (목적)</h2>
-  <p>본 약관은 우리 캘린더(이하 "서비스")를 이용함에 있어 회사와 회원의 권리·의무 및 책임 사항을 규정함을 목적으로 합니다.</p>
+  <p>본 약관은 "우리 캘린더"(이하 "서비스")를 이용함에 있어 서비스 제공자(이하 "회사")와 회원의 권리·의무 및 책임 사항을 규정함을 목적으로 합니다.</p>
 
   <h2>제2조 (용어의 정의)</h2>
-  <p>"서비스"란 가족·연인 단위로 일정을 공유하는 웹 애플리케이션을 의미합니다.<br>"회원"이란 본 약관에 동의하고 가입한 자를 말합니다.<br>"방"이란 회원이 다른 회원과 일정을 공유하는 공간을 의미합니다.</p>
+  <ul>
+    <li>"서비스"란 가족·연인·친구 등이 일정을 함께 공유하고 기록하는 애플리케이션을 의미합니다.</li>
+    <li>"회원"이란 본 약관에 동의하고 가입한 자를 말합니다.</li>
+    <li>"방"이란 회원이 다른 회원과 일정을 공유하는 공간을 의미합니다.</li>
+  </ul>
 
   <h2>제3조 (약관의 효력 및 개정)</h2>
-  <p>본 약관은 회원이 동의함으로써 효력이 발생합니다. 회사는 필요 시 약관을 개정할 수 있으며, 개정 시 7일 전 공지합니다. 중대한 변경의 경우 30일 전 공지합니다.</p>
+  <p>본 약관은 회원이 동의함으로써 효력이 발생합니다. 회사는 필요 시 약관을 개정할 수 있으며, 개정 시 적용일 7일 전부터 공지합니다. 회원에게 불리한 중대한 변경의 경우 30일 전부터 공지합니다.</p>
 
-  <h2>제4조 (서비스 이용)</h2>
-  <p>① 만 14세 이상부터 가입할 수 있습니다.<br>② 가입은 이메일 또는 카카오 계정으로 가능합니다.<br>③ 서비스는 무료로 제공되며, 향후 일부 기능에 한해 유료 정책이 도입될 수 있습니다.</p>
+  <h2>제4조 (회원가입 및 서비스 이용)</h2>
+  <ul>
+    <li>① 만 14세 이상부터 가입할 수 있습니다.</li>
+    <li>② 가입은 이메일·비밀번호 또는 카카오 계정으로 가능하며, 이메일 가입 시 본인 확인을 위해 이메일로 발송되는 인증번호 입력이 필요합니다.</li>
+    <li>③ 서비스는 무료로 제공되며, 향후 일부 기능에 한해 유료 정책이 도입될 수 있습니다. 유료 정책 도입 시 사전에 공지합니다.</li>
+  </ul>
 
   <h2>제5조 (회원의 의무)</h2>
-  <p>회원은 다음 행위를 해서는 안 됩니다.<br>① 타인의 정보를 도용하는 행위<br>② 욕설, 혐오, 차별적 표현을 사용하는 행위<br>③ 저작권 등 타인의 권리를 침해하는 행위<br>④ 서비스 운영을 방해하는 행위<br>⑤ 관련 법령에 위배되는 행위</p>
+  <p>회원은 다음 행위를 해서는 안 됩니다.</p>
+  <ul>
+    <li>① 타인의 정보를 도용하는 행위</li>
+    <li>② 욕설·혐오·차별적 표현을 사용하는 행위</li>
+    <li>③ 저작권 등 타인의 권리를 침해하는 행위</li>
+    <li>④ 서비스의 정상적인 운영을 방해하는 행위</li>
+    <li>⑤ 관련 법령에 위배되는 행위</li>
+  </ul>
 
   <h2>제6조 (서비스 제공 및 중단)</h2>
-  <p>회사는 연중무휴 24시간 서비스 제공을 원칙으로 하며, 시스템 점검 등 사유가 있을 시 사전 공지 후 일시 중단할 수 있습니다.</p>
+  <p>회사는 연중무휴 24시간 서비스 제공을 원칙으로 하며, 시스템 점검·장애·기술적 사유가 있을 경우 사전 또는 사후 공지 후 일시 중단할 수 있습니다. 천재지변 등 불가항력으로 발생한 손해에 대해서는 책임지지 않습니다.</p>
 
   <h2>제7조 (책임 제한)</h2>
-  <p>① 천재지변, 통신 장애 등 회사의 귀책이 아닌 사유로 인한 손해에 대해 회사는 책임지지 않습니다.<br>② 회원의 부주의(비밀번호 관리 소홀 등)로 인한 손해는 회원이 부담합니다.<br>③ 회원이 작성한 일정·메모·사진 등의 내용에 대한 책임은 회원에게 있습니다.</p>
+  <ul>
+    <li>① 천재지변, 통신 장애 등 회사의 귀책이 아닌 사유로 인한 손해에 대해 회사는 책임지지 않습니다.</li>
+    <li>② 회원의 부주의(비밀번호 관리 소홀 등)로 인한 손해는 회원이 부담합니다.</li>
+    <li>③ 회원이 작성한 일정·메모·사진 등 콘텐츠에 대한 책임은 회원에게 있습니다.</li>
+  </ul>
 
-  <h2>제8조 (계정 해지)</h2>
-  <p>회원은 언제든지 회원탈퇴를 통해 서비스 이용을 종료할 수 있으며, 탈퇴 시 회원의 모든 데이터는 즉시 영구 삭제됩니다.</p>
+  <h2>제8조 (계정 해지 및 회원 탈퇴)</h2>
+  <ul>
+    <li>① 회원은 언제든지 회원탈퇴를 통해 서비스 이용을 종료할 수 있으며, 탈퇴 시 회원의 개인정보 및 데이터는 즉시 영구 삭제됩니다.</li>
+    <li>② 회원탈퇴와 방 삭제는 별개입니다. 탈퇴 시 본인이 혼자 속한 방은 함께 삭제되나, 다른 회원이 함께 있는 방은 유지되며 해당 방에서 회원의 정보만 제거됩니다.</li>
+    <li>③ 본인이 방장인 방을 삭제하면 해당 방의 모든 일정과 멤버 정보가 영구 삭제됩니다.</li>
+  </ul>
 
   <h2>제9조 (분쟁 해결)</h2>
-  <p>본 약관은 대한민국 법률에 따라 해석되며, 서비스 이용으로 발생한 분쟁은 민사소송법상 관할 법원에서 해결합니다.</p>
+  <p>본 약관은 대한민국 법률에 따라 해석되며, 서비스 이용으로 발생한 분쟁의 관할 법원은 민사소송법에 따릅니다.</p>
 
   <h2>제10조 (문의)</h2>
-  <p>서비스 이용 관련 문의는 앱 내 고객센터(카카오톡 채널)를 통해 접수해주세요.</p>
+  <p>서비스 이용 관련 문의는 이메일(lsung179@naver.com) 또는 앱 내 고객센터(카카오톡 채널)를 통해 접수해주세요.</p>
 
-  <div class="footer">
-    <p><a href="/privacy.html">개인정보처리방침</a> &nbsp;·&nbsp; <a href="/">홈으로</a></p>
-    <p style="margin-top:8px">© 우리 캘린더. All rights reserved.</p>
+  <div class="note">
+    시행일: 2026년 7월 1일<br>문의: lsung179@naver.com 또는 앱 내 고객센터(카카오톡 채널)
   </div>
-
 </div>
 </body>
 </html>
