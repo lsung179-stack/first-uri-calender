@@ -1740,9 +1740,9 @@ body.align-right .cal-evbar{text-align:right}
     <button class="back" onclick="goBack()">←</button>
     <div class="check-wrap">✉</div>
     <div class="title">인증번호를 입력해주세요</div>
-    <div class="sub"><span class="sent-email" id="otpEmail"></span>로<br>6자리 인증번호를 보냈어요</div>
+    <div class="sub"><span class="sent-email" id="otpEmail"></span>로<br>인증번호를 보냈어요</div>
     <div class="email-form">
-      <input class="fi" type="text" id="otpInput" inputmode="numeric" maxlength="6" placeholder="------" autocomplete="one-time-code" autocapitalize="off" autocorrect="off" style="text-align:center;letter-spacing:10px;font-size:22px;font-weight:700">
+      <input class="fi" type="text" id="otpInput" inputmode="numeric" maxlength="8" placeholder="--------" autocomplete="one-time-code" autocapitalize="off" autocorrect="off" style="text-align:center;letter-spacing:8px;font-size:22px;font-weight:700">
       <button class="btn btn-primary" id="otpVerifyBtn" onclick="verifySignupOtp()">인증 완료</button>
       <button class="btn btn-ghost" id="resendBtn" onclick="resendConfirmEmail()">코드 다시 받기</button>
     </div>
@@ -1758,7 +1758,7 @@ body.align-right .cal-evbar{text-align:right}
       <input class="fi" type="email" id="resetEmail" placeholder="name@example.com" autocomplete="email" inputmode="email" autocapitalize="off" autocorrect="off">
       <button class="btn btn-primary" id="resetSendBtn" onclick="sendResetCode()">인증번호 받기</button>
       <div id="resetStep2" style="display:none;flex-direction:column;gap:14px;margin-top:14px">
-        <input class="fi" type="text" id="resetCode" inputmode="numeric" maxlength="6" placeholder="------" autocomplete="one-time-code" autocapitalize="off" autocorrect="off" style="text-align:center;letter-spacing:10px;font-size:22px;font-weight:700">
+        <input class="fi" type="text" id="resetCode" inputmode="numeric" maxlength="8" placeholder="--------" autocomplete="one-time-code" autocapitalize="off" autocorrect="off" style="text-align:center;letter-spacing:8px;font-size:22px;font-weight:700">
         <input class="fi" type="password" id="resetPw" placeholder="새 비밀번호 (6자 이상)" autocomplete="new-password">
         <input class="fi" type="password" id="resetPwConfirm" placeholder="새 비밀번호 확인" autocomplete="new-password">
         <button class="btn btn-primary" id="resetConfirmBtn" onclick="confirmResetPassword()">비밀번호 변경</button>
@@ -3024,7 +3024,7 @@ async function _doKakaoOAuth(){
         scopes:'profile_nickname profile_image'
       }
     });
-    if(error)toast('로그인 실패: '+error.message.slice(0,40));
+    if(error)toast(_authErr(error,'로그인에 실패했어요'));
   }catch(e){
     toast('카카오 로그인 오류');
   }
@@ -3033,6 +3033,33 @@ async function _doKakaoOAuth(){
 /* 로그인 / 회원가입 탭 전환 */
 let _authMode='login';
 let _pendingSignupEmail='';
+
+/* 인증 관련 에러를 사용자 친화적 한글 메시지로 변환 */
+function _authErr(error, fallback){
+  const m=((error&&error.message)||'').toLowerCase();
+  // 메일 시간당 총량 한도 (약 1시간 대기) — security purposes보다 먼저 체크
+  if(m.includes('email rate')||m.includes('over_email'))
+    return '메일 전송 한도를 초과했어요. 1시간 후 다시 시도해주세요';
+  // 짧은 간격 재요청 (약 1분 대기)
+  if(m.includes('security purposes')||m.includes('only request')||(m.includes('after')&&m.includes('second')))
+    return '너무 빨리 다시 요청했어요. 1분 후 다시 시도해주세요';
+  // 기타 요청 과다
+  if(m.includes('rate limit')||m.includes('rate_limit')||m.includes('too many')||m.includes('exceeded'))
+    return '요청이 많아요. 잠시 후 다시 시도해주세요';
+  // 로그인 정보 오류
+  if(m.includes('invalid login')||m.includes('invalid credentials'))
+    return '이메일 또는 비밀번호가 올바르지 않아요';
+  // 이미 가입된 이메일
+  if(m.includes('already registered')||m.includes('already been')||m.includes('user already'))
+    return '이미 가입된 이메일이에요';
+  // 이메일 미인증
+  if(m.includes('not confirmed'))
+    return '이메일 인증이 필요해요';
+  // 인증번호 만료/오류
+  if(m.includes('expired')||m.includes('invalid otp')||m.includes('otp_expired')||(m.includes('token')&&m.includes('invalid')))
+    return '인증번호가 만료됐거나 올바르지 않아요';
+  return fallback;
+}
 function setAuthMode(mode){
   _authMode=mode;
   const isSignup=mode==='signup';
@@ -3081,7 +3108,7 @@ async function doEmailAuth(){
         const m=(error.message||'').toLowerCase();
         if(m.includes('already')||m.includes('registered'))toast('이미 가입된 이메일이에요. 로그인해주세요');
         else if(m.includes('password'))toast('비밀번호는 6자 이상이어야 해요');
-        else toast('가입 실패: '+error.message.slice(0,40));
+        else toast(_authErr(error,'가입에 실패했어요'));
         return;
       }
       // confirm email OFF면 session이 바로 옴 → onAuthStateChange가 진입 처리
@@ -3099,7 +3126,7 @@ async function doEmailAuth(){
         const m=(error.message||'').toLowerCase();
         if(m.includes('invalid'))toast('이메일 또는 비밀번호가 맞지 않아요');
         else if(m.includes('confirm'))toast('이메일 인증이 필요해요. 메일을 확인해주세요');
-        else toast('로그인 실패: '+error.message.slice(0,40));
+        else toast(_authErr(error,'로그인에 실패했어요'));
         return;
       }
       // 성공 → onAuthStateChange(SIGNED_IN)가 화면 전환
@@ -3119,7 +3146,7 @@ async function resendConfirmEmail(){
   if(btn){btn.disabled=true;btn.textContent='보내는 중...'}
   try{
     const {error}=await supa.auth.resend({type:'signup',email:_pendingSignupEmail});
-    if(error)toast('재발송 실패: '+error.message.slice(0,40));
+    if(error)toast(_authErr(error,'재발송에 실패했어요'));
     else toast('인증번호를 다시 보냈어요');
   }catch(e){
     toast('네트워크 오류');
@@ -3131,7 +3158,7 @@ async function resendConfirmEmail(){
 /* 가입 인증번호(OTP) 검증 → 성공 시 자동 로그인 */
 async function verifySignupOtp(){
   const code=document.getElementById('otpInput').value.trim();
-  if(!/^\d{6}$/.test(code)){toast('6자리 숫자를 입력해주세요');return}
+  if(!/^\d{6,8}$/.test(code)){toast('인증번호를 정확히 입력해주세요');return}
   if(!_pendingSignupEmail){toast('이메일 정보가 없어요');return}
   const btn=document.getElementById('otpVerifyBtn');
   btn.disabled=true;btn.textContent='확인 중...';
@@ -3141,7 +3168,7 @@ async function verifySignupOtp(){
       const m=(error.message||'').toLowerCase();
       if(m.includes('expired'))toast('인증번호가 만료됐어요. 다시 받아주세요');
       else if(m.includes('invalid')||m.includes('token'))toast('인증번호가 맞지 않아요');
-      else toast('인증 실패: '+error.message.slice(0,40));
+      else toast(_authErr(error,'인증에 실패했어요'));
       return;
     }
     // 성공 → onAuthStateChange(SIGNED_IN)가 화면 전환
@@ -3176,7 +3203,7 @@ async function sendResetCode(){
   btn.disabled=true;btn.textContent='보내는 중...';
   try{
     const {error}=await supa.auth.resetPasswordForEmail(email);
-    if(error){toast('전송 실패: '+error.message.slice(0,40));return}
+    if(error){toast(_authErr(error,'전송에 실패했어요'));return}
     _resetEmail=email;
     const s2=document.getElementById('resetStep2');if(s2)s2.style.display='flex';
     const sub=document.getElementById('resetSub');if(sub)sub.textContent='메일로 받은 인증번호와 새 비밀번호를 입력해주세요';
@@ -3195,7 +3222,7 @@ async function confirmResetPassword(){
   const pw=document.getElementById('resetPw').value;
   const pwc=document.getElementById('resetPwConfirm').value;
   if(!_resetEmail){toast('먼저 인증번호를 받아주세요');return}
-  if(!/^\d{6}$/.test(code)){toast('6자리 숫자를 입력해주세요');return}
+  if(!/^\d{6,8}$/.test(code)){toast('인증번호를 정확히 입력해주세요');return}
   if(pw.length<6){toast('비밀번호는 6자 이상이어야 해요');return}
   if(pw!==pwc){toast('비밀번호가 일치하지 않아요');return}
   const btn=document.getElementById('resetConfirmBtn');
@@ -3207,12 +3234,12 @@ async function confirmResetPassword(){
       const m=(vErr.message||'').toLowerCase();
       if(m.includes('expired'))toast('인증번호가 만료됐어요. 다시 받아주세요');
       else if(m.includes('invalid')||m.includes('token'))toast('인증번호가 맞지 않아요');
-      else toast('인증 실패: '+vErr.message.slice(0,40));
+      else toast(_authErr(vErr,'인증에 실패했어요'));
       return;
     }
     // 새 비밀번호 설정
     const {error:uErr}=await supa.auth.updateUser({password:pw});
-    if(uErr){toast('비밀번호 변경 실패: '+uErr.message.slice(0,40));return}
+    if(uErr){toast(_authErr(uErr,'비밀번호 변경에 실패했어요'));return}
     toast('비밀번호가 변경됐어요');
     // recovery 흐름은 SIGNED_IN 이벤트가 안 떠서 직접 진입 처리
     const {data:{session}}=await supa.auth.getSession();
