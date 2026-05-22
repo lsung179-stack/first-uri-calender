@@ -256,7 +256,10 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .title{font-family:var(--ff-serif);font-size:22px;font-weight:700;color:var(--text);text-align:center;letter-spacing:.5px;line-height:1.4}
 .sub{font-size:14px;color:var(--sub);text-align:center;margin-top:10px;line-height:1.6}
 
-.email-form{width:100%;max-width:320px;margin-top:36px;display:flex;flex-direction:column;gap:14px}
+.email-form{width:100%;max-width:320px;margin-top:22px;display:flex;flex-direction:column;gap:14px}
+.auth-tabs{width:100%;max-width:320px;display:flex;gap:6px;margin-top:30px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:4px}
+.auth-tab{flex:1;padding:10px 8px;background:transparent;border:none;border-radius:9px;font-family:inherit;font-size:14px;font-weight:700;color:var(--sub);cursor:pointer;transition:all .15s}
+.auth-tab.on{background:var(--accent);color:#fff}
 .fi{width:100%;padding:15px 16px;border:1px solid var(--border);border-radius:12px;font-size:15px;font-family:inherit;background:var(--card);color:var(--text);outline:none;transition:border-color .15s ease}
 .fi:focus{border-color:var(--accent)}
 .fi::placeholder{color:var(--mute)}
@@ -1679,25 +1682,35 @@ body.align-right .cal-evbar{text-align:right}
     </div>
   </div>
 
-  <!-- 이메일 입력 -->
+  <!-- 이메일 로그인 / 회원가입 -->
   <div class="screen" id="emailScreen">
     <button class="back" onclick="goBack()">←</button>
-    <div class="title">메일 주소를 알려주세요</div>
-    <div class="sub">접속 링크를 보내드릴게요</div>
+    <div class="title" id="authTitle">로그인</div>
+    <div class="sub" id="authSub">이메일과 비밀번호를 입력해주세요</div>
+    <div class="auth-tabs">
+      <button type="button" class="auth-tab on" id="authTabLogin" onclick="setAuthMode('login')">로그인</button>
+      <button type="button" class="auth-tab" id="authTabSignup" onclick="setAuthMode('signup')">회원가입</button>
+    </div>
     <div class="email-form">
       <input class="fi" type="email" id="emailInput" placeholder="name@example.com" autocomplete="email" inputmode="email" autocapitalize="off" autocorrect="off">
-      <button class="btn btn-primary" id="sendBtn" onclick="sendMagicLink()">링크 받기</button>
+      <input class="fi" type="password" id="pwInput" placeholder="비밀번호 (6자 이상)" autocomplete="current-password">
+      <input class="fi" type="password" id="pwConfirmInput" placeholder="비밀번호 확인" autocomplete="new-password" style="display:none">
+      <button class="btn btn-primary" id="authBtn" onclick="doEmailAuth()">로그인</button>
     </div>
   </div>
 
-  <!-- 메일 발송 후 -->
-  <div class="screen" id="sentScreen">
-    <div class="check-wrap">✓</div>
-    <div class="title">메일을 확인해주세요</div>
-    <div class="sub">아래 주소로 접속 링크를 보냈어요</div>
-    <div class="sent-email" id="sentEmail"></div>
+  <!-- 가입 인증번호(OTP) 입력 -->
+  <div class="screen" id="otpScreen">
+    <button class="back" onclick="goBack()">←</button>
+    <div class="check-wrap">✉</div>
+    <div class="title">인증번호를 입력해주세요</div>
+    <div class="sub"><span class="sent-email" id="otpEmail"></span>로<br>6자리 인증번호를 보냈어요</div>
+    <div class="email-form">
+      <input class="fi" type="text" id="otpInput" inputmode="numeric" maxlength="6" placeholder="------" autocomplete="one-time-code" autocapitalize="off" autocorrect="off" style="text-align:center;letter-spacing:10px;font-size:22px;font-weight:700">
+      <button class="btn btn-primary" id="otpVerifyBtn" onclick="verifySignupOtp()">인증 완료</button>
+      <button class="btn btn-ghost" id="resendBtn" onclick="resendConfirmEmail()">코드 다시 받기</button>
+    </div>
     <div class="hint">메일이 안 보이면 스팸함도 한 번<br>확인해주세요</div>
-    <button class="btn btn-ghost" onclick="resetFlow()" style="margin-top:18px">다른 주소로 다시 시도</button>
   </div>
 
   <!-- 방 목록 화면 (2단계) -->
@@ -2863,9 +2876,9 @@ function showScreen(id){
   // 환영 화면에 보여줄 때 초대 안내 배너 갱신
   if(id==='welcomeScreen'&&typeof updateWelcomeInviteBanner==='function')updateWelcomeInviteBanner();
 }
-function goEmail(){showScreen('emailScreen');setTimeout(()=>{const i=document.getElementById('emailInput');if(i)i.focus()},350)}
+function goEmail(){setAuthMode('login');['pwInput','pwConfirmInput'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});showScreen('emailScreen');setTimeout(()=>{const i=document.getElementById('emailInput');if(i)i.focus()},350)}
 function goBack(){showScreen('welcomeScreen')}
-function resetFlow(){const i=document.getElementById('emailInput');if(i)i.value='';showScreen('welcomeScreen')}
+function resetFlow(){['emailInput','pwInput','pwConfirmInput','otpInput'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});showScreen('welcomeScreen')}
 
 /* 토스트 */
 let _tt;
@@ -2900,35 +2913,120 @@ async function loginKakao(){
   }
 }
 
-/* 매직 링크 */
-async function sendMagicLink(){
+/* 로그인 / 회원가입 탭 전환 */
+let _authMode='login';
+let _pendingSignupEmail='';
+function setAuthMode(mode){
+  _authMode=mode;
+  const isSignup=mode==='signup';
+  const tabL=document.getElementById('authTabLogin');
+  const tabS=document.getElementById('authTabSignup');
+  if(tabL)tabL.classList.toggle('on',!isSignup);
+  if(tabS)tabS.classList.toggle('on',isSignup);
+  const title=document.getElementById('authTitle');
+  const sub=document.getElementById('authSub');
+  const btn=document.getElementById('authBtn');
+  if(title)title.textContent=isSignup?'회원가입':'로그인';
+  if(sub)sub.textContent=isSignup?'이메일과 비밀번호로 가입해주세요':'이메일과 비밀번호를 입력해주세요';
+  if(btn)btn.textContent=isSignup?'회원가입':'로그인';
+  const pc=document.getElementById('pwConfirmInput');
+  if(pc)pc.style.display=isSignup?'block':'none';
+  const pw=document.getElementById('pwInput');
+  if(pw)pw.setAttribute('autocomplete',isSignup?'new-password':'current-password');
+}
+
+/* 이메일 로그인 / 회원가입 (비밀번호 기반) */
+async function doEmailAuth(){
   const email=document.getElementById('emailInput').value.trim();
-  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
-    toast('이메일 형식이 맞지 않아요');
-    return;
+  const pw=document.getElementById('pwInput').value;
+  const isSignup=_authMode==='signup';
+
+  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){toast('이메일 형식이 맞지 않아요');return}
+  if(!pw){toast('비밀번호를 입력해주세요');return}
+  if(isSignup){
+    if(pw.length<6){toast('비밀번호는 6자 이상이어야 해요');return}
+    const pwc=document.getElementById('pwConfirmInput').value;
+    if(pw!==pwc){toast('비밀번호가 일치하지 않아요');return}
   }
-  const btn=document.getElementById('sendBtn');
+
+  const btn=document.getElementById('authBtn');
   btn.disabled=true;
-  btn.textContent='보내는 중...';
+  btn.textContent=isSignup?'가입 중...':'로그인 중...';
   try{
-    const {error}=await supa.auth.signInWithOtp({
-      email,
-      options:{
-        emailRedirectTo:buildAuthRedirect(),
-        shouldCreateUser:true
+    if(isSignup){
+      const {data,error}=await supa.auth.signUp({email,password:pw,options:{emailRedirectTo:buildAuthRedirect()}});
+      if(error){
+        const m=(error.message||'').toLowerCase();
+        if(m.includes('already')||m.includes('registered'))toast('이미 가입된 이메일이에요. 로그인해주세요');
+        else if(m.includes('password'))toast('비밀번호는 6자 이상이어야 해요');
+        else toast('가입 실패: '+error.message.slice(0,40));
+        return;
       }
-    });
-    if(error){
-      toast('전송 실패: '+error.message.slice(0,40));
-      return;
+      // confirm email OFF면 session이 바로 옴 → onAuthStateChange가 진입 처리
+      // confirm ON이면 session 없음 → 인증번호(OTP) 입력 화면
+      if(!data.session){
+        _pendingSignupEmail=email;
+        document.getElementById('otpEmail').textContent=email;
+        const oi=document.getElementById('otpInput');if(oi)oi.value='';
+        showScreen('otpScreen');
+        setTimeout(()=>{const i=document.getElementById('otpInput');if(i)i.focus()},350);
+      }
+    }else{
+      const {error}=await supa.auth.signInWithPassword({email,password:pw});
+      if(error){
+        const m=(error.message||'').toLowerCase();
+        if(m.includes('invalid'))toast('이메일 또는 비밀번호가 맞지 않아요');
+        else if(m.includes('confirm'))toast('이메일 인증이 필요해요. 메일을 확인해주세요');
+        else toast('로그인 실패: '+error.message.slice(0,40));
+        return;
+      }
+      // 성공 → onAuthStateChange(SIGNED_IN)가 화면 전환
     }
-    document.getElementById('sentEmail').textContent=email;
-    showScreen('sentScreen');
   }catch(e){
     toast('네트워크 오류');
   }finally{
     btn.disabled=false;
-    btn.textContent='링크 받기';
+    btn.textContent=isSignup?'회원가입':'로그인';
+  }
+}
+
+/* 가입 인증번호 재발송 (Confirm email ON일 때) */
+async function resendConfirmEmail(){
+  if(!_pendingSignupEmail){toast('이메일 정보가 없어요');return}
+  const btn=document.getElementById('resendBtn');
+  if(btn){btn.disabled=true;btn.textContent='보내는 중...'}
+  try{
+    const {error}=await supa.auth.resend({type:'signup',email:_pendingSignupEmail});
+    if(error)toast('재발송 실패: '+error.message.slice(0,40));
+    else toast('인증번호를 다시 보냈어요');
+  }catch(e){
+    toast('네트워크 오류');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='코드 다시 받기'}
+  }
+}
+
+/* 가입 인증번호(OTP) 검증 → 성공 시 자동 로그인 */
+async function verifySignupOtp(){
+  const code=document.getElementById('otpInput').value.trim();
+  if(!/^\d{6}$/.test(code)){toast('6자리 숫자를 입력해주세요');return}
+  if(!_pendingSignupEmail){toast('이메일 정보가 없어요');return}
+  const btn=document.getElementById('otpVerifyBtn');
+  btn.disabled=true;btn.textContent='확인 중...';
+  try{
+    const {error}=await supa.auth.verifyOtp({email:_pendingSignupEmail,token:code,type:'signup'});
+    if(error){
+      const m=(error.message||'').toLowerCase();
+      if(m.includes('expired'))toast('인증번호가 만료됐어요. 다시 받아주세요');
+      else if(m.includes('invalid')||m.includes('token'))toast('인증번호가 맞지 않아요');
+      else toast('인증 실패: '+error.message.slice(0,40));
+      return;
+    }
+    // 성공 → onAuthStateChange(SIGNED_IN)가 화면 전환
+  }catch(e){
+    toast('네트워크 오류');
+  }finally{
+    btn.disabled=false;btn.textContent='인증 완료';
   }
 }
 
@@ -9599,8 +9697,12 @@ function setupSheetSwipe(cardId,closeFn){
 
 /* DOM 준비 후 핸들러 + 스와이프 셋업 */
 document.addEventListener('DOMContentLoaded',()=>{
-  const i=document.getElementById('emailInput');
-  if(i)i.addEventListener('keydown',e=>{if(e.key==='Enter')sendMagicLink()});
+  ['emailInput','pwInput','pwConfirmInput'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.addEventListener('keydown',e=>{if(e.key==='Enter')doEmailAuth()});
+  });
+  const otpEl=document.getElementById('otpInput');
+  if(otpEl)otpEl.addEventListener('keydown',e=>{if(e.key==='Enter')verifySignupOtp()});
   setupSwipe();
   setupSheetSwipe('dpCard',closeDateSheet);
   setupSheetSwipe('evCard',closeEventModal);
