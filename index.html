@@ -777,6 +777,22 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .legal-content h3:first-of-type{margin-top:8px}
 .legal-content p{font-size:13px;color:var(--text);line-height:1.7;margin:0 0 8px;letter-spacing:.1px}
 .legal-content b{font-weight:700;color:var(--accent)}
+
+/* 약관 동의 시트 (카카오/이메일가입/기존사용자 공용) */
+.agree-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:90;opacity:0;pointer-events:none;transition:opacity .2s}
+.agree-overlay.on{opacity:1;pointer-events:auto}
+.agree-sheet{position:fixed;left:0;right:0;bottom:0;z-index:91;background:var(--card);border-radius:20px 20px 0 0;padding:24px 22px calc(24px + env(safe-area-inset-bottom));transform:translateY(110%);transition:transform .25s ease;max-width:480px;margin:0 auto}
+.agree-sheet.on{transform:translateY(0)}
+.agree-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:18px;color:var(--text);margin-bottom:14px;text-align:center}
+.agree-row{display:flex;align-items:center;gap:9px;padding:11px 4px;font-size:14px;color:var(--text);cursor:pointer}
+.agree-row.all{border-bottom:1px solid var(--border);font-weight:700;margin-bottom:2px}
+.agree-cb{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--mute);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.agree-cb.on{background:var(--accent);border-color:var(--accent)}
+.agree-cb.on::after{content:'✓';color:#fff;font-size:13px;font-weight:700;line-height:1}
+.agree-row .req{color:var(--accent);font-size:12px;font-weight:700}
+.agree-row a{color:var(--sub);text-decoration:underline;margin-left:auto;font-size:12px;flex-shrink:0}
+.agree-confirm{width:100%;margin-top:18px}
+.agree-confirm:disabled{opacity:.4;pointer-events:none}
 /* 회원탈퇴 확인 모달 */
 .la-icon{text-align:center;font-size:42px;margin:6px 0 8px;line-height:1}
 .la-warnings{background:var(--bg);border:1px dashed var(--border);border-radius:12px;padding:14px 16px;margin:14px 0 4px;display:flex;flex-direction:column;gap:10px}
@@ -1678,8 +1694,27 @@ body.align-right .cal-evbar{text-align:right}
       </button>
     </div>
     <div class="terms">
-      계속하면 <a href="javascript:void(0)" onclick="openTerms()">이용약관</a> 및 <a href="javascript:void(0)" onclick="openPrivacy()">개인정보처리방침</a>에<br>동의하는 것으로 간주됩니다
+      가입 시 <a href="javascript:void(0)" onclick="openTerms()">이용약관</a> 및 <a href="javascript:void(0)" onclick="openPrivacy()">개인정보처리방침</a><br>동의 절차가 진행됩니다
     </div>
+  </div>
+
+  <!-- 약관 동의 시트 (카카오/이메일가입/기존사용자 공용) -->
+  <div class="agree-overlay" id="agreeOverlay" onclick="closeAgree()"></div>
+  <div class="agree-sheet" id="agreeSheet">
+    <div class="agree-title">약관에 동의해주세요</div>
+    <div class="agree-row all" onclick="toggleAgreeAll()">
+      <div class="agree-cb" id="cbAll"></div><span>전체 동의</span>
+    </div>
+    <div class="agree-row" onclick="toggleAgree('14')">
+      <div class="agree-cb" id="cb14"></div><span class="req">(필수)</span><span>만 14세 이상입니다</span>
+    </div>
+    <div class="agree-row" onclick="toggleAgree('terms')">
+      <div class="agree-cb" id="cbTerms"></div><span class="req">(필수)</span><span>이용약관 동의</span><a href="javascript:void(0)" onclick="event.stopPropagation();openTerms()">보기</a>
+    </div>
+    <div class="agree-row" onclick="toggleAgree('privacy')">
+      <div class="agree-cb" id="cbPrivacy"></div><span class="req">(필수)</span><span>개인정보 수집·이용 동의</span><a href="javascript:void(0)" onclick="event.stopPropagation();openPrivacy()">보기</a>
+    </div>
+    <button class="btn btn-primary agree-confirm" id="agreeConfirmBtn" onclick="confirmAgree()" disabled>동의하고 계속</button>
   </div>
 
   <!-- 이메일 로그인 / 회원가입 -->
@@ -2915,7 +2950,70 @@ function buildAuthRedirect(){
 }
 
 /* 카카오 로그인 */
+/* ═══ 약관 동의 (카카오/이메일가입/기존사용자 공용) ═══ */
+let _agree={'14':false,terms:false,privacy:false};
+let _onAgreeConfirm=null;
+
+function openAgree(onConfirm){
+  _agree={'14':false,terms:false,privacy:false};
+  _onAgreeConfirm=onConfirm||null;
+  ['cbAll','cb14','cbTerms','cbPrivacy'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on')});
+  updateAgreeBtn();
+  document.getElementById('agreeOverlay').classList.add('on');
+  document.getElementById('agreeSheet').classList.add('on');
+}
+function closeAgree(){
+  document.getElementById('agreeOverlay').classList.remove('on');
+  document.getElementById('agreeSheet').classList.remove('on');
+}
+function toggleAgree(key){
+  _agree[key]=!_agree[key];
+  const map={'14':'cb14',terms:'cbTerms',privacy:'cbPrivacy'};
+  const el=document.getElementById(map[key]);if(el)el.classList.toggle('on',_agree[key]);
+  const allOn=_agree['14']&&_agree.terms&&_agree.privacy;
+  const cbAll=document.getElementById('cbAll');if(cbAll)cbAll.classList.toggle('on',allOn);
+  updateAgreeBtn();
+}
+function toggleAgreeAll(){
+  const next=!(_agree['14']&&_agree.terms&&_agree.privacy);
+  _agree={'14':next,terms:next,privacy:next};
+  ['cb14','cbTerms','cbPrivacy','cbAll'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.toggle('on',next)});
+  updateAgreeBtn();
+}
+function updateAgreeBtn(){
+  const ok=_agree['14']&&_agree.terms&&_agree.privacy;
+  const btn=document.getElementById('agreeConfirmBtn');if(btn)btn.disabled=!ok;
+}
+function confirmAgree(){
+  if(!(_agree['14']&&_agree.terms&&_agree.privacy)){toast('필수 항목에 동의해주세요');return}
+  closeAgree();
+  const cb=_onAgreeConfirm;_onAgreeConfirm=null;
+  if(cb)cb();
+}
+/* 동의 기록: localStorage(즉시 UX) + DB(영구) */
+function recordAgreement(){
+  try{localStorage.setItem('agreedTerms','2026-07-01')}catch(_){}
+  if(_currentUser){
+    supa.from('profiles').upsert({id:_currentUser.id,agreed_at:new Date().toISOString()}).then(()=>{},()=>{});
+  }
+}
+/* 로그인 후 진입 시 동의 확인 (기존 사용자 대응) */
+function checkAgreement(){
+  if(!_currentUser)return;
+  let local=false;try{local=!!localStorage.getItem('agreedTerms')}catch(_){}
+  const dbAgreed=_currentProfile&&_currentProfile.agreed_at;
+  if(dbAgreed){if(!local){try{localStorage.setItem('agreedTerms','2026-07-01')}catch(_){}}return;}
+  if(local){recordAgreement();return;}
+  openAgree(()=>recordAgreement());
+}
+
+/* 카카오 로그인 — 미동의면 동의 시트 먼저 */
 async function loginKakao(){
+  let local=false;try{local=!!localStorage.getItem('agreedTerms')}catch(_){}
+  if(local){_doKakaoOAuth();return;}
+  openAgree(()=>{recordAgreement();_doKakaoOAuth();});
+}
+async function _doKakaoOAuth(){
   try{
     const {error}=await supa.auth.signInWithOAuth({
       provider:'kakao',
@@ -2966,6 +3064,9 @@ async function doEmailAuth(){
     if(pw.length<6){toast('비밀번호는 6자 이상이어야 해요');return}
     const pwc=document.getElementById('pwConfirmInput').value;
     if(pw!==pwc){toast('비밀번호가 일치하지 않아요');return}
+    // 약관 동의 게이트 — 미동의면 동의 시트 먼저, 동의 후 재진행
+    let agreed=false;try{agreed=!!localStorage.getItem('agreedTerms')}catch(_){}
+    if(!agreed){openAgree(()=>{recordAgreement();doEmailAuth();});return;}
   }
 
   const btn=document.getElementById('authBtn');
@@ -3291,7 +3392,7 @@ async function saveProfileBirthday(){
 async function loadProfilePhoto(){
   if(!_currentUser)return;
   try{
-    const {data}=await supa.from('profiles').select('avatar_url,name,birthday').eq('id',_currentUser.id).maybeSingle();
+    const {data}=await supa.from('profiles').select('avatar_url,name,birthday,agreed_at').eq('id',_currentUser.id).maybeSingle();
     _currentProfile=data||{};
     // 생일 셀렉트 다시 동기화 (모달 열려있을 때 반영)
     if(document.getElementById('profileBdMonth'))fillBirthdaySelects();
@@ -3585,6 +3686,8 @@ async function loadRooms(){
     }catch(_){}
     // 안 읽은 알림 배지 갱신 (fire-and-forget)
     refreshNotifBadge();
+    // 로그인 후 동의 확인 (기존 사용자 대응) — 이미 동의면 즉시 통과
+    checkAgreement();
   }catch(e){
     content.innerHTML='<div style="padding:60px 24px;text-align:center;color:var(--sub);font-size:13px">방 목록을 불러오지 못했어요<br>잠시 후 다시 시도해주세요</div>';
     console.error(e);
@@ -3730,7 +3833,7 @@ function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':
 async function loadCurrentProfile(){
   if(!_currentUser)return;
   try{
-    const {data}=await supa.from('profiles').select('avatar_url,name,birthday').eq('id',_currentUser.id).maybeSingle();
+    const {data}=await supa.from('profiles').select('avatar_url,name,birthday,agreed_at').eq('id',_currentUser.id).maybeSingle();
     _currentProfile=data||{};
   }catch(e){
     console.warn('프로필 로드 실패',e);
