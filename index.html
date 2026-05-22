@@ -1696,6 +1696,7 @@ body.align-right .cal-evbar{text-align:right}
       <input class="fi" type="password" id="pwInput" placeholder="비밀번호 (6자 이상)" autocomplete="current-password">
       <input class="fi" type="password" id="pwConfirmInput" placeholder="비밀번호 확인" autocomplete="new-password" style="display:none">
       <button class="btn btn-primary" id="authBtn" onclick="doEmailAuth()">로그인</button>
+      <button class="btn btn-ghost" id="forgotBtn" onclick="goReset()">비밀번호 찾기</button>
     </div>
   </div>
 
@@ -1713,7 +1714,23 @@ body.align-right .cal-evbar{text-align:right}
     <div class="hint">메일이 안 보이면 스팸함도 한 번<br>확인해주세요</div>
   </div>
 
-  <!-- 방 목록 화면 (2단계) -->
+  <!-- 비밀번호 재설정 (인증번호 방식) -->
+  <div class="screen" id="resetScreen">
+    <button class="back" onclick="goEmail()">←</button>
+    <div class="title">비밀번호 재설정</div>
+    <div class="sub" id="resetSub">가입한 이메일로 인증번호를 보내드려요</div>
+    <div class="email-form">
+      <input class="fi" type="email" id="resetEmail" placeholder="name@example.com" autocomplete="email" inputmode="email" autocapitalize="off" autocorrect="off">
+      <button class="btn btn-primary" id="resetSendBtn" onclick="sendResetCode()">인증번호 받기</button>
+      <div id="resetStep2" style="display:none;flex-direction:column;gap:14px;margin-top:14px">
+        <input class="fi" type="text" id="resetCode" inputmode="numeric" maxlength="6" placeholder="------" autocomplete="one-time-code" autocapitalize="off" autocorrect="off" style="text-align:center;letter-spacing:10px;font-size:22px;font-weight:700">
+        <input class="fi" type="password" id="resetPw" placeholder="새 비밀번호 (6자 이상)" autocomplete="new-password">
+        <input class="fi" type="password" id="resetPwConfirm" placeholder="새 비밀번호 확인" autocomplete="new-password">
+        <button class="btn btn-primary" id="resetConfirmBtn" onclick="confirmResetPassword()">비밀번호 변경</button>
+      </div>
+    </div>
+    <div class="hint">메일이 안 보이면 스팸함도 한 번<br>확인해주세요</div>
+  </div>
   <div class="screen rooms" id="roomsScreen">
     <div class="r-header">
       <div class="r-logo">
@@ -2933,6 +2950,8 @@ function setAuthMode(mode){
   if(pc)pc.style.display=isSignup?'block':'none';
   const pw=document.getElementById('pwInput');
   if(pw)pw.setAttribute('autocomplete',isSignup?'new-password':'current-password');
+  const forgot=document.getElementById('forgotBtn');
+  if(forgot)forgot.style.display=isSignup?'none':'block';
 }
 
 /* 이메일 로그인 / 회원가입 (비밀번호 기반) */
@@ -3027,6 +3046,85 @@ async function verifySignupOtp(){
     toast('네트워크 오류');
   }finally{
     btn.disabled=false;btn.textContent='인증 완료';
+  }
+}
+
+/* ═══ 비밀번호 재설정 (인증번호 방식) ═══ */
+let _resetEmail='';
+
+/* 재설정 화면 진입 */
+function goReset(){
+  _resetEmail='';
+  ['resetEmail','resetCode','resetPw','resetPwConfirm'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+  const s2=document.getElementById('resetStep2');if(s2)s2.style.display='none';
+  const sub=document.getElementById('resetSub');if(sub)sub.textContent='가입한 이메일로 인증번호를 보내드려요';
+  // 로그인 화면의 이메일을 미리 채워주기
+  const le=document.getElementById('emailInput');const re=document.getElementById('resetEmail');
+  if(le&&re&&le.value)re.value=le.value.trim();
+  showScreen('resetScreen');
+  setTimeout(()=>{const i=document.getElementById('resetEmail');if(i)i.focus()},350);
+}
+
+/* 1단계: 재설정 인증번호 발송 */
+async function sendResetCode(){
+  const email=document.getElementById('resetEmail').value.trim();
+  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){toast('이메일 형식이 맞지 않아요');return}
+  const btn=document.getElementById('resetSendBtn');
+  btn.disabled=true;btn.textContent='보내는 중...';
+  try{
+    const {error}=await supa.auth.resetPasswordForEmail(email);
+    if(error){toast('전송 실패: '+error.message.slice(0,40));return}
+    _resetEmail=email;
+    const s2=document.getElementById('resetStep2');if(s2)s2.style.display='flex';
+    const sub=document.getElementById('resetSub');if(sub)sub.textContent='메일로 받은 인증번호와 새 비밀번호를 입력해주세요';
+    toast('인증번호를 보냈어요');
+    setTimeout(()=>{const i=document.getElementById('resetCode');if(i)i.focus()},200);
+  }catch(e){
+    toast('네트워크 오류');
+  }finally{
+    btn.disabled=false;btn.textContent='인증번호 받기';
+  }
+}
+
+/* 2단계: 인증번호 검증 + 새 비밀번호 설정 */
+async function confirmResetPassword(){
+  const code=document.getElementById('resetCode').value.trim();
+  const pw=document.getElementById('resetPw').value;
+  const pwc=document.getElementById('resetPwConfirm').value;
+  if(!_resetEmail){toast('먼저 인증번호를 받아주세요');return}
+  if(!/^\d{6}$/.test(code)){toast('6자리 숫자를 입력해주세요');return}
+  if(pw.length<6){toast('비밀번호는 6자 이상이어야 해요');return}
+  if(pw!==pwc){toast('비밀번호가 일치하지 않아요');return}
+  const btn=document.getElementById('resetConfirmBtn');
+  btn.disabled=true;btn.textContent='변경 중...';
+  try{
+    // 인증번호 검증 → recovery 세션 획득
+    const {error:vErr}=await supa.auth.verifyOtp({email:_resetEmail,token:code,type:'recovery'});
+    if(vErr){
+      const m=(vErr.message||'').toLowerCase();
+      if(m.includes('expired'))toast('인증번호가 만료됐어요. 다시 받아주세요');
+      else if(m.includes('invalid')||m.includes('token'))toast('인증번호가 맞지 않아요');
+      else toast('인증 실패: '+vErr.message.slice(0,40));
+      return;
+    }
+    // 새 비밀번호 설정
+    const {error:uErr}=await supa.auth.updateUser({password:pw});
+    if(uErr){toast('비밀번호 변경 실패: '+uErr.message.slice(0,40));return}
+    toast('비밀번호가 변경됐어요');
+    // recovery 흐름은 SIGNED_IN 이벤트가 안 떠서 직접 진입 처리
+    const {data:{session}}=await supa.auth.getSession();
+    if(session){
+      renderUser(session.user);
+      let hasLast=false;try{hasLast=!!localStorage.getItem('lastRoomId')}catch(_){}
+      showScreen((hasLast&&!_pendingRoomId&&!_pendingJoinCode)?'calendarScreen':'roomsScreen');
+      loadRooms();
+    }else{
+      setAuthMode('login');showScreen('emailScreen');
+    }
+  }catch(e){
+    toast('네트워크 오류');
+  }finally{
+    btn.disabled=false;btn.textContent='비밀번호 변경';
   }
 }
 
@@ -9703,6 +9801,12 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
   const otpEl=document.getElementById('otpInput');
   if(otpEl)otpEl.addEventListener('keydown',e=>{if(e.key==='Enter')verifySignupOtp()});
+  const rEmail=document.getElementById('resetEmail');
+  if(rEmail)rEmail.addEventListener('keydown',e=>{if(e.key==='Enter')sendResetCode()});
+  ['resetCode','resetPw','resetPwConfirm'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.addEventListener('keydown',e=>{if(e.key==='Enter')confirmResetPassword()});
+  });
   setupSwipe();
   setupSheetSwipe('dpCard',closeDateSheet);
   setupSheetSwipe('evCard',closeEventModal);
