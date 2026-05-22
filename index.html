@@ -2953,6 +2953,7 @@ function buildAuthRedirect(){
 /* ═══ 약관 동의 (카카오/이메일가입/기존사용자 공용) ═══ */
 let _agree={'14':false,terms:false,privacy:false};
 let _onAgreeConfirm=null;
+let _agreeAfterAnnPopup=false;  // 공지 팝업 닫은 뒤 동의 시트를 띄울지
 
 function openAgree(onConfirm){
   _agree={'14':false,terms:false,privacy:false};
@@ -3687,8 +3688,6 @@ async function loadRooms(){
     }catch(_){}
     // 안 읽은 알림 배지 갱신 (fire-and-forget)
     refreshNotifBadge();
-    // 로그인 후 동의 확인 (기존 사용자 대응) — 이미 동의면 즉시 통과
-    checkAgreement();
   }catch(e){
     content.innerHTML='<div style="padding:60px 24px;text-align:center;color:var(--sub);font-size:13px">방 목록을 불러오지 못했어요<br>잠시 후 다시 시도해주세요</div>';
     console.error(e);
@@ -3937,8 +3936,15 @@ function enterRoom(roomId){
       const latest=autoShow[autoShow.length-1];
       setTimeout(()=>{
         const hasOpenModal=document.querySelector('.mo-card.on, .dp-card.on, .store-card.on, .ann-card.on, .ann-popup.on');
-        if(!hasOpenModal)showAnnouncementPopup(latest);
+        if(!hasOpenModal){
+          _agreeAfterAnnPopup=true;       // 공지 팝업 닫으면 → 동의 시트
+          showAnnouncementPopup(latest);
+        }else{
+          checkAgreement();               // 다른 모달 떠서 공지 못 띄움 → 동의 체크
+        }
       }, 800);
+    }else{
+      checkAgreement();                   // 자동 공지 없음 → 바로 동의 체크
     }
   });
 }
@@ -8798,9 +8804,14 @@ function closeAnnouncementPopup(){
   document.getElementById('annPopupOverlay').classList.remove('on');
   document.getElementById('annPopup').classList.remove('on');
   syncAnnouncementBadge();
+  // 공지 팝업 닫으면 → 대기 중이던 약관 동의 시트
+  if(_agreeAfterAnnPopup){_agreeAfterAnnPopup=false;checkAgreement();}
 }
 function annPopupSeeAll(){
-  closeAnnouncementPopup();
+  _agreeAfterAnnPopup=false;  // 전체 보기로 가니 동의는 다음 진입 때
+  document.getElementById('annPopupOverlay').classList.remove('on');
+  document.getElementById('annPopup').classList.remove('on');
+  syncAnnouncementBadge();
   setTimeout(()=>openAnnouncements(), 220);
 }
 async function deleteAnnouncementCurrent(){
