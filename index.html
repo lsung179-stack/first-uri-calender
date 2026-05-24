@@ -2868,19 +2868,13 @@ async function autoRegisterPush(){
   }
 
   const status=await getPushStatus();
-  // 이미 구독돼 있으면 끝
-  if(status==='subscribed')return;
-  // 권한 OK인데 구독 없으면 자동 구독 (예: 디바이스 변경)
-  if(status==='granted'){
-    await registerPushNotification(true);
-    return;
-  }
-  // 첫 진입 (아직 권한 안 물음) → 권한 요청 + 구독
-  if(status==='default'){
-    await registerPushNotification(true);
-    return;
-  }
   // denied / unsupported / error: 아무 것도 안 함
+  if(status==='denied'||status==='unsupported'||status==='error')return;
+  // subscribed / granted / default 모두 현재 user_id로 (재)등록.
+  // 폰에 구독이 이미 있어도(다른 계정으로 먼저 로그인했던 경우 등) endpoint 주인을
+  // 현재 로그인 계정으로 갱신해, 계정 전환 후 푸시가 끊기는 문제를 막는다.
+  // (upsert onConflict:'endpoint' 라서 같은 endpoint의 user_id가 현재 계정으로 덮어써짐)
+  await registerPushNotification(true);
 }
 
 /* 푸시 해제 */
