@@ -7168,7 +7168,7 @@ function renderNotifs(){
     return;
   }
   if(clearBtn)clearBtn.hidden=false;
-  if(readBtn)readBtn.hidden=!_notifs.some(n=>!n.read);
+  if(readBtn)readBtn.hidden=false;
 
   // 방 이름 매핑
   const roomMap={};
