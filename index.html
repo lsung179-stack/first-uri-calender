@@ -1949,7 +1949,10 @@ body.align-right .cal-evbar{text-align:right}
   <div class="mo-handle"></div>
   <div class="notif-head">
     <div class="mo-title" style="margin:0">알림</div>
-    <button class="notif-clear-btn" id="notifClearBtn" onclick="clearAllNotifs()" hidden>전체 삭제</button>
+    <div style="display:flex;gap:4px">
+      <button class="notif-clear-btn" id="notifReadBtn" onclick="markAllNotifsRead()" hidden>전체 읽음</button>
+      <button class="notif-clear-btn" id="notifClearBtn" onclick="clearAllNotifs()" hidden>전체 삭제</button>
+    </div>
   </div>
   <div class="notif-list" id="notifList">
     <div class="notif-empty">알림을 불러오고 있어요…</div>
@@ -7156,13 +7159,16 @@ async function loadNotifs(){
 function renderNotifs(){
   const listEl=document.getElementById('notifList');
   const clearBtn=document.getElementById('notifClearBtn');
+  const readBtn=document.getElementById('notifReadBtn');
   if(!listEl)return;
   if(!_notifs.length){
     listEl.innerHTML='<div class="notif-empty">아직 받은 알림이 없어요.</div>';
     if(clearBtn)clearBtn.hidden=true;
+    if(readBtn)readBtn.hidden=true;
     return;
   }
   if(clearBtn)clearBtn.hidden=false;
+  if(readBtn)readBtn.hidden=!_notifs.some(n=>!n.read);
 
   // 방 이름 매핑
   const roomMap={};
@@ -7249,22 +7255,25 @@ async function onNotifClick(notifId){
   }
 }
 
-/* 시트 열 때 안 읽은 알림 일괄 read */
+/* 전체 읽음 처리 (알림 시트 버튼) — 타고 들어가지 않고 일괄 read */
 async function markAllNotifsRead(){
   try{
     if(!_currentUser)return;
+    if(!_notifs.some(n=>!n.read)){toast('읽지 않은 알림이 없어요');return}
     const {error}=await supa
       .from('notifications')
       .update({read:true})
       .eq('user_id',_currentUser.id)
       .eq('read',false);
-    if(!error){
-      // 로컬 상태도 갱신
-      _notifs.forEach(n=>{n.read=true});
-      // 약간 딜레이 두고 시각 갱신 (사용자가 unread 마크 본 후)
-      setTimeout(()=>{renderNotifs();refreshNotifBadge();},800);
-    }
-  }catch(e){console.warn('markAllNotifsRead:',e)}
+    if(error)throw error;
+    _notifs.forEach(n=>{n.read=true});
+    renderNotifs();
+    refreshNotifBadge();
+    toast('모두 읽음 처리했어요');
+  }catch(e){
+    console.warn('markAllNotifsRead:',e);
+    toast('읽음 처리에 실패했어요');
+  }
 }
 
 /* 전체 삭제 */
