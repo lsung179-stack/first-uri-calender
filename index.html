@@ -1640,6 +1640,35 @@ body.align-right .cal-evbar{text-align:right}
 .pf-stamp.has-photo img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 .pf-stamp.has-photo::before{display:none}
 .pf-photo-btn{display:block;font-size:11px;color:var(--sub);background:transparent;border:none;cursor:pointer;margin-top:4px;padding:4px 0;font-family:inherit;text-decoration:underline}
+/* ===== 신규 가입 온보딩 슬라이드 ===== */
+.onb-overlay{position:fixed;inset:0;background:rgba(30,28,24,.55);z-index:95;display:none;align-items:center;justify-content:center;padding:22px;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+.onb-overlay.on{display:flex}
+.onb-card{background:var(--bg);border-radius:24px;width:100%;max-width:350px;padding:30px 24px 20px;box-shadow:0 24px 70px rgba(0,0,0,.35);text-align:center;animation:onbIn .3s ease}
+@keyframes onbIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+.onb-slide{min-height:308px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.onb-hero{font-size:60px;margin-bottom:18px;line-height:1}
+.onb-title{font-size:21px;font-weight:800;color:var(--text);line-height:1.42;margin-bottom:12px}
+.onb-desc{font-size:13.5px;color:var(--sub);line-height:1.65}
+.onb-cal{width:100%;background:var(--card);border-radius:14px;padding:12px 10px;margin-bottom:20px;box-shadow:0 3px 12px rgba(0,0,0,.06)}
+.onb-cal-top{font-size:15px;font-weight:800;color:var(--text);margin-bottom:8px}
+.onb-cal-week{display:grid;grid-template-columns:repeat(7,1fr);font-size:9px;color:var(--mute);margin-bottom:4px}
+.onb-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.onb-c{min-height:36px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.onb-c i{font-size:9px;color:var(--sub);font-style:normal}
+.onb-c b{font-size:7px;font-weight:700;color:#3a2a1a;width:100%;border-radius:3px;padding:2px 0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.onb-feats{display:flex;flex-direction:column;gap:15px;width:100%}
+.onb-feat{display:flex;gap:13px;align-items:flex-start;text-align:left}
+.onb-fic{font-size:23px;flex-shrink:0;line-height:1.2}
+.onb-ft{font-size:12.5px;color:var(--sub);line-height:1.5}
+.onb-ft b{display:block;color:var(--text);font-size:14px;margin-bottom:2px}
+.onb-dots{display:flex;justify-content:center;gap:7px;margin:24px 0 16px}
+.onb-dot{width:7px;height:7px;border-radius:50%;background:var(--mute);opacity:.4;transition:.25s}
+.onb-dot.on{background:var(--accent);opacity:1;width:22px;border-radius:4px}
+.onb-next{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;transition:transform .12s}
+.onb-next:active{transform:scale(.98)}
+.onb-skip{margin-top:8px;padding:8px;background:none;border:none;color:var(--mute);font-size:12.5px;cursor:pointer}
+.onb-dismiss{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;color:var(--sub);margin-bottom:14px;cursor:pointer;-webkit-user-select:none;user-select:none}
+.onb-dismiss input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;margin:0}
 </style>
 <script>
 /* viewport 높이 측정 — 갤럭시/아이폰 모두 같은 기준으로 계산 (dvh 의존성 제거) */
@@ -2739,6 +2768,47 @@ body.align-right .cal-evbar{text-align:right}
   </div>
 </div>
 
+<!-- 신규 가입 온보딩 (슬라이드 3장) -->
+<div class="onb-overlay" id="onbOverlay" role="dialog" aria-modal="true">
+  <div class="onb-card">
+    <div class="onb-slide" data-onb="0">
+      <div class="onb-hero">🗓️</div>
+      <div class="onb-title">우리 캘린더에<br>오신 것을 환영해요</div>
+      <div class="onb-desc">소중한 사람들과 일정을 함께 나누는<br>따뜻한 공간이에요.</div>
+    </div>
+    <div class="onb-slide" data-onb="1" style="display:none">
+      <div class="onb-cal">
+        <div class="onb-cal-top">5월</div>
+        <div class="onb-cal-week"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+        <div class="onb-cal-grid">
+          <div class="onb-c"><i>4</i></div>
+          <div class="onb-c"><i>5</i><b style="background:#f3c7d6">헬스PT</b></div>
+          <div class="onb-c"><i>6</i><b style="background:#cbe6c8">가족식사</b></div>
+          <div class="onb-c"><i>7</i></div>
+          <div class="onb-c"><i>8</i><b style="background:#c5d9f0">여행</b></div>
+          <div class="onb-c"><i>9</i></div>
+          <div class="onb-c"><i>10</i></div>
+        </div>
+      </div>
+      <div class="onb-title">이제 일정, 묻지 말고<br>직접 확인하세요!</div>
+      <div class="onb-desc">친구·가족·직장 동료 등<br>함께하는 사람들과 일정을 공유해보세요.</div>
+    </div>
+    <div class="onb-slide" data-onb="2" style="display:none">
+      <div class="onb-title" style="margin-bottom:20px">이렇게 사용해요</div>
+      <div class="onb-feats">
+        <div class="onb-feat"><span class="onb-fic">🏠</span><div class="onb-ft"><b>방 만들기 · 입장</b>방을 만들어 초대하거나, 받은 초대코드로 입장하세요.</div></div>
+        <div class="onb-feat"><span class="onb-fic">✏️</span><div class="onb-ft"><b>일정 추가</b>날짜를 탭하고 + 버튼을 눌러 일정을 등록해요.</div></div>
+        <div class="onb-feat"><span class="onb-fic">👥</span><div class="onb-ft"><b>함께 일정</b>멤버를 선택하면 약속을 같이 관리할 수 있어요.</div></div>
+        <div class="onb-feat"><span class="onb-fic">😊</span><div class="onb-ft"><b>이모지 반응</b>일정에 이모지로 마음을 표현해보세요.</div></div>
+      </div>
+    </div>
+    <div class="onb-dots" id="onbDots"><span class="onb-dot on"></span><span class="onb-dot"></span><span class="onb-dot"></span></div>
+    <label class="onb-dismiss"><input type="checkbox" id="onbDismiss">다음부터 보지 않기</label>
+    <button class="onb-next" id="onbNextBtn" onclick="onbNext()">다음</button>
+    <button class="onb-skip" id="onbSkipBtn" onclick="closeOnboarding()">건너뛰기</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -3109,6 +3179,8 @@ async function doEmailAuth(){
         else toast(_authErr(error,'가입에 실패했어요'));
         return;
       }
+      // 신규 가입자 → 첫 진입 시 온보딩 1회 표시 예약
+      try{localStorage.setItem('uricalv2.pendingOnboard','1');}catch(_){}
       // confirm email OFF면 session이 바로 옴 → onAuthStateChange가 진입 처리
       // confirm ON이면 session 없음 → 인증번호(OTP) 입력 화면
       if(!data.session){
@@ -3666,6 +3738,8 @@ async function loadRooms(){
     if(!myMems||myMems.length===0){
       renderEmpty();
       _myRooms=[];
+      // 신규 가입자 온보딩 (예약돼 있으면 1회)
+      setTimeout(maybeShowOnboarding, 400);
       // 새 사용자도 카톡 초대 코드가 있으면 처리
       tryHandlePendingJoin();
       return;
@@ -3690,6 +3764,8 @@ async function loadRooms(){
 
     renderRooms(rooms||[],countMap);
     _myRooms=rooms||[];
+    // 신규 가입자 온보딩 (예약돼 있으면 1회)
+    setTimeout(maybeShowOnboarding, 400);
     // 알림 클릭으로 진입할 방이 있으면 자동 진입
     tryEnterPendingRoom();
     // 초대 링크로 들어왔으면 입장 확인
@@ -8842,6 +8918,44 @@ function closeAnnouncementPopup(){
   // 공지 팝업 닫으면 → 대기 중이던 약관 동의 시트
   if(_agreeAfterAnnPopup){_agreeAfterAnnPopup=false;checkAgreement();}
 }
+
+/* ===== 신규 가입 온보딩 (슬라이드 3장, 첫 가입자에게 1회) ===== */
+let _onbIdx=0;
+let _onbShownThisSession=false;
+const _ONB_LAST=2;
+function maybeShowOnboarding(){
+  try{
+    if(localStorage.getItem('uricalv2.onboarded'))return;        // '그만 보기' 선택한 사람
+  }catch(_){return;}
+  if(_onbShownThisSession)return;                                // 같은 세션엔 1회만
+  const ov=document.getElementById('onbOverlay');
+  if(ov&&ov.classList.contains('on'))return;                    // 이미 열려있으면 무시
+  _onbShownThisSession=true;
+  showOnboarding();
+}
+function showOnboarding(){
+  _onbIdx=0; renderOnb();
+  const ov=document.getElementById('onbOverlay');
+  if(ov)ov.classList.add('on');
+}
+function renderOnb(){
+  document.querySelectorAll('#onbOverlay .onb-slide').forEach(s=>{
+    s.style.display=(+s.dataset.onb===_onbIdx)?'flex':'none';
+  });
+  document.querySelectorAll('#onbDots .onb-dot').forEach((d,i)=>d.classList.toggle('on',i===_onbIdx));
+  const btn=document.getElementById('onbNextBtn'); if(btn)btn.textContent=(_onbIdx===_ONB_LAST)?'시작하기':'다음';
+  const sk=document.getElementById('onbSkipBtn'); if(sk)sk.style.visibility=(_onbIdx===_ONB_LAST)?'hidden':'visible';
+}
+function onbNext(){ if(_onbIdx<_ONB_LAST){_onbIdx++;renderOnb();} else closeOnboarding(); }
+function closeOnboarding(){
+  const chk=document.getElementById('onbDismiss');
+  try{
+    if(chk&&chk.checked)localStorage.setItem('uricalv2.onboarded','1'); // '그만 보기' 체크 시만 영구 차단
+    localStorage.removeItem('uricalv2.pendingOnboard');
+  }catch(_){}
+  const ov=document.getElementById('onbOverlay'); if(ov)ov.classList.remove('on');
+}
+
 function annPopupSeeAll(){
   _agreeAfterAnnPopup=false;  // 전체 보기로 가니 동의는 다음 진입 때
   document.getElementById('annPopupOverlay').classList.remove('on');
