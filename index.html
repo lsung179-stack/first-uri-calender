@@ -473,7 +473,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 }
 .cal-cell.holiday .cal-day-num{color:var(--sun);font-weight:700}
 .cal-events{display:flex;flex-direction:column;gap:1px;flex:1;overflow:hidden;padding-bottom:3px}
-.cal-evbar{font-size:9px;font-weight:600;padding:2px 4px;margin:0 3px;border-radius:3px;color:#fff;line-height:1.3;min-height:15px;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:var(--accent)}
+.cal-evbar{font-size:9px;font-weight:600;padding:2px 4px;margin:0;border-radius:3px;color:#fff;line-height:1.3;min-height:15px;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:var(--accent)}
 .cal-evmore{font-size:9px;color:var(--sub);padding-left:3px;font-weight:500}
 
 /* 플로팅 + 추가 버튼 */
@@ -906,9 +906,10 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .ev-multi-count{font-size:11px;color:var(--sub);text-align:center;padding-top:4px}
 
 /* 캘린더 셀 — 기간 일정 바 (시작·중간·끝) */
-.cal-evbar.range-mid{border-radius:0;margin-left:0;margin-right:0}
-.cal-evbar.range-start{border-top-right-radius:0;border-bottom-right-radius:0;margin-right:0}
-.cal-evbar.range-end{border-top-left-radius:0;border-bottom-left-radius:0;margin-left:0}
+.cal-evbar.ev-l-open{border-top-left-radius:3px;border-bottom-left-radius:3px;margin-left:3px}
+.cal-evbar.ev-l-join{border-top-left-radius:0;border-bottom-left-radius:0;margin-left:0}
+.cal-evbar.ev-r-open{border-top-right-radius:3px;border-bottom-right-radius:3px;margin-right:3px}
+.cal-evbar.ev-r-join{border-top-right-radius:0;border-bottom-right-radius:0;margin-right:0}
 
 /* 이모지 반응 */
 .dp-reaction-row{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
@@ -5517,12 +5518,16 @@ function cellHtml(y,m,d,isOther,todayKey){
     // 매년 반복 펼침/가상 일정은 항상 마커 X (모양 통일)
     const showSharedMarker=ev._isShared&&(ev._rangePos==='single'||ev._rangePos==='start')&&ev._isFirstSegment&&!ev._yearlyDisplay&&!ev._isVirtual;
     const sharedCls=showSharedMarker?' shared':'';
-    // 기간 그룹: range-start/mid/end 클래스 + 중간/끝은 텍스트 비우기 (시각적으로 한 줄)
+    // 기간 조각의 좌/우 모서리: 일정 시작/끝이거나 주 경계(일=0/토=6)면 둥글게+여백(open),
+    // 그 외 이어지는 변은 각지게+붙임(join). 같은 주 안은 이어지고 주 넘어가면 양끝 둥근 바.
     let rangeCls='';
     let displayTitle=t;
-    if(ev._rangePos==='start')rangeCls=' range-start';
-    else if(ev._rangePos==='mid'){rangeCls=' range-mid';displayTitle='\u00A0';}
-    else if(ev._rangePos==='end'){rangeCls=' range-end';displayTitle='\u00A0';}
+    const _dow=new Date(y,m,d).getDay(); // 0=일요일, 6=토요일
+    const _pos=ev._rangePos;
+    const _lOpen=(_pos==='single'||_pos==='start'||_dow===0);
+    const _rOpen=(_pos==='single'||_pos==='end'||_dow===6);
+    rangeCls=(_lOpen?' ev-l-open':' ev-l-join')+(_rOpen?' ev-r-open':' ev-r-join');
+    if(_pos==='mid'||_pos==='end')displayTitle='\u00A0';
     // 함께 막대 + 첫날: 좌측에 짧은 cream 마커 (미니멀)
     const sharedMarker=showSharedMarker?`<span class="cal-evbar-marker"></span>`:'';
     const txt=getContrastTextColor(hex);
