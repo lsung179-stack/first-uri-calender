@@ -5182,6 +5182,8 @@ async function loadEvents(){
    1 이모지 = 1 말풍선 — 여러 사람이 반응했으면 그 수만큼 말풍선 등장 */
 function showReactionAnimation(){
   if(!_events||!_reactions)return;
+  // 기존 떠다니는 이모지 제거 (중복 호출 시 누적 방지)
+  document.querySelectorAll('.cal-reaction-bubble').forEach(b=>b.remove());
 
   // target_id별 가장 빠른 날짜 = 그 일정의 "첫날"
   const firstDateByTarget={};
@@ -5685,12 +5687,13 @@ function goToday(){
 /* 페이드 헬퍼 — 캘린더 그리드 부드럽게 전환 */
 function fadeRender(updateState){
   const grid=document.getElementById('calGrid');
-  if(!grid){updateState();renderMonthly();return}
+  if(!grid){updateState();renderMonthly();setTimeout(showReactionAnimation,150);return}
   grid.classList.add('fading');
   setTimeout(()=>{
     updateState();
     renderMonthly();
     requestAnimationFrame(()=>grid.classList.remove('fading'));
+    setTimeout(showReactionAnimation,250);
   },180);
 }
 
@@ -5902,6 +5905,7 @@ function renderDateSheetMembers(){
 function closeDateSheet(){
   document.getElementById('dpOverlay').classList.remove('on');
   document.getElementById('dpCard').classList.remove('on');
+  setTimeout(showReactionAnimation,250);
 }
 function openDateSheetForToday(){
   const t=new Date();
