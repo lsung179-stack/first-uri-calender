@@ -3636,8 +3636,12 @@ async function saveProfileName(){
     updateUserAvatar();
     const initial=name.trim().charAt(0).toUpperCase();
     const cav=document.getElementById('calAvatar');if(cav&&!_currentProfile.avatar_url)cav.textContent=initial;
-    // 멤버 리스트 다시 로드
-    if(_currentRoom)await loadRoomMembers();
+    // 멤버 리스트 다시 로드 + 멤버 탭/캘린더 다시 그리기 (이름 즉시 반영)
+    if(_currentRoom){
+      await loadRoomMembers();
+      try{ renderMemberTabs(); }catch(_){}
+      try{ renderMonthly(); }catch(_){}
+    }
   }catch(e){
     toast('실패: '+(e.message||'').slice(0,40));
   }
