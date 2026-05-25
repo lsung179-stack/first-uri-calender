@@ -1652,10 +1652,17 @@ body.align-right .cal-evbar{text-align:right}
 .onb-title{font-size:21px;font-weight:800;color:var(--text);line-height:1.42;margin-bottom:12px}
 .onb-desc{font-size:13.5px;color:var(--sub);line-height:1.65}
 .onb-cal{width:100%;background:var(--card);border-radius:14px;padding:11px 9px;margin-bottom:16px;box-shadow:0 3px 12px rgba(0,0,0,.06)}
-.onb-cal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
-.onb-cal-mon{font-size:14px;font-weight:800;color:var(--text)}
-.onb-cal-mems{display:flex;gap:3px}
-.onb-cal-mem{width:16px;height:16px;border-radius:50%;font-size:7.5px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
+.onb-cal-tabs{display:flex;justify-content:center;gap:6px;margin-bottom:8px}
+.onb-cal-tab{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:6.5px;color:var(--sub);white-space:nowrap}
+.onb-tab-av{width:21px;height:21px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff}
+.onb-tab-av.all{background:transparent;border:1.5px solid var(--mute);color:var(--mute);font-size:10px;letter-spacing:-1px}
+.onb-cal-head{text-align:center;margin-bottom:7px;line-height:1.1}
+.onb-cal-yr{display:block;font-size:8px;color:var(--mute);margin-bottom:1px}
+.onb-cal-mon{font-size:15px;font-weight:800;color:var(--text)}
+.onb-cal-week .sun{color:var(--sun)}
+.onb-cal-week .sat{color:var(--sat)}
+.onb-c i.sun{color:var(--sun)}
+.onb-c i.sat{color:var(--sat)}
 .onb-cal-week{display:grid;grid-template-columns:repeat(7,1fr);font-size:8px;color:var(--mute);margin-bottom:3px;text-align:center}
 .onb-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
 .onb-c{min-height:21px;display:flex;flex-direction:column;align-items:center;gap:1px;padding-top:1px}
@@ -1665,7 +1672,7 @@ body.align-right .cal-evbar{text-align:right}
 .onb-feats{display:flex;flex-direction:column;gap:13px;width:100%}
 .onb-feat{display:flex;gap:13px;align-items:flex-start;text-align:left}
 .onb-fic{font-size:23px;flex-shrink:0;line-height:1.2}
-.onb-ft{font-size:12.5px;color:var(--sub);line-height:1.5}
+.onb-ft{flex:1;min-width:0;font-size:12.5px;color:var(--sub);line-height:1.5}
 .onb-ft b{display:block;color:var(--text);font-size:14px;margin-bottom:2px}
 .onb-dots{display:flex;justify-content:center;gap:7px;margin:24px 0 16px}
 .onb-dot{width:7px;height:7px;border-radius:50%;background:var(--mute);opacity:.4;transition:.25s}
@@ -2785,49 +2792,48 @@ body.align-right .cal-evbar{text-align:right}
         </div>
         <div class="onb-slide" data-onb="1">
           <div class="onb-cal">
-            <div class="onb-cal-top">
-              <span class="onb-cal-mon">5월</span>
-              <span class="onb-cal-mems">
-                <span class="onb-cal-mem" style="background:#3a342e">나</span>
-                <span class="onb-cal-mem" style="background:#8b5a3c">친</span>
-                <span class="onb-cal-mem" style="background:#5a7d4a">친</span>
-                <span class="onb-cal-mem" style="background:#a64a3a">친</span>
-              </span>
+            <div class="onb-cal-tabs">
+              <span class="onb-cal-tab"><span class="onb-tab-av all">··</span>전체</span>
+              <span class="onb-cal-tab"><span class="onb-tab-av" style="background:#3a342e">나</span>나</span>
+              <span class="onb-cal-tab"><span class="onb-tab-av" style="background:#8b5a3c">친</span>친구1</span>
+              <span class="onb-cal-tab"><span class="onb-tab-av" style="background:#5a7d4a">친</span>친구2</span>
+              <span class="onb-cal-tab"><span class="onb-tab-av" style="background:#a64a3a">친</span>친구3</span>
             </div>
-            <div class="onb-cal-week"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+            <div class="onb-cal-head"><span class="onb-cal-yr">2026년</span><span class="onb-cal-mon">5월</span></div>
+            <div class="onb-cal-week"><span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span></div>
             <div class="onb-cal-grid">
               <div class="onb-c off"></div><div class="onb-c off"></div><div class="onb-c off"></div><div class="onb-c off"></div><div class="onb-c off"></div>
               <div class="onb-c"><i>1</i></div>
-              <div class="onb-c"><i>2</i><b style="background:#f3c7d6">헬스</b></div>
-              <div class="onb-c"><i>3</i></div>
+              <div class="onb-c"><i class="sat">2</i><b style="background:#f3c7d6">헬스</b></div>
+              <div class="onb-c"><i class="sun">3</i></div>
               <div class="onb-c"><i>4</i></div>
-              <div class="onb-c"><i>5</i><b style="background:#cbe6c8">가족</b></div>
+              <div class="onb-c"><i class="sun">5</i><b style="background:#cbe6c8">가족</b></div>
               <div class="onb-c"><i>6</i></div>
               <div class="onb-c"><i>7</i></div>
               <div class="onb-c"><i>8</i><b style="background:#c5d9f0">여행</b></div>
-              <div class="onb-c"><i>9</i><b style="background:#c5d9f0">&nbsp;</b></div>
-              <div class="onb-c"><i>10</i></div>
+              <div class="onb-c"><i class="sat">9</i><b style="background:#c5d9f0">&nbsp;</b></div>
+              <div class="onb-c"><i class="sun">10</i></div>
               <div class="onb-c"><i>11</i></div>
               <div class="onb-c"><i>12</i><b style="background:#f3c7d6">데이트</b></div>
               <div class="onb-c"><i>13</i></div>
               <div class="onb-c"><i>14</i><b style="background:#ffe8a3">회의</b></div>
               <div class="onb-c"><i>15</i></div>
-              <div class="onb-c"><i>16</i><b style="background:#d5c5e8">러닝</b></div>
-              <div class="onb-c"><i>17</i></div>
+              <div class="onb-c"><i class="sat">16</i><b style="background:#d5c5e8">러닝</b></div>
+              <div class="onb-c"><i class="sun">17</i></div>
               <div class="onb-c"><i>18</i></div>
               <div class="onb-c"><i>19</i></div>
               <div class="onb-c"><i>20</i><b style="background:#f5b596">치과</b></div>
               <div class="onb-c"><i>21</i></div>
               <div class="onb-c"><i>22</i></div>
-              <div class="onb-c"><i>23</i></div>
-              <div class="onb-c"><i>24</i><b style="background:#cbe6c8">등산</b></div>
-              <div class="onb-c"><i>25</i></div>
+              <div class="onb-c"><i class="sat">23</i></div>
+              <div class="onb-c"><i class="sun">24</i><b style="background:#cbe6c8">등산</b></div>
+              <div class="onb-c"><i class="sun">25</i></div>
               <div class="onb-c"><i>26</i></div>
               <div class="onb-c"><i>27</i><b style="background:#f5b596">저녁</b></div>
               <div class="onb-c"><i>28</i></div>
               <div class="onb-c"><i>29</i></div>
-              <div class="onb-c"><i>30</i></div>
-              <div class="onb-c"><i>31</i></div>
+              <div class="onb-c"><i class="sat">30</i></div>
+              <div class="onb-c"><i class="sun">31</i></div>
               <div class="onb-c off"></div><div class="onb-c off"></div><div class="onb-c off"></div><div class="onb-c off"></div><div class="onb-c off"></div><div class="onb-c off"></div>
             </div>
           </div>
