@@ -6630,7 +6630,8 @@ function updateMultiRoomVisibility(){
   const isEditing=!!_editingEvent;
   const isCoEvent=(_selectedTarget==='all'&&_selectedMembers&&_selectedMembers.length>=2);
   const others=(_myRooms||[]).filter(r=>r.id!==_currentRoom?.id);
-  const show=!isEditing&&!isCoEvent&&others.length>=1;
+  // 신규/수정 모두 표시 — 단독 일정 + 다른 방이 1개 이상일 때 (함께 일정은 제외)
+  const show=!isCoEvent&&others.length>=1;
   if(show){
     row.style.display='';
   }else{
@@ -6740,6 +6741,38 @@ async function saveEvent(){
       // (fire-and-forget. 실패해도 UX 영향 없음)
       if(oldPhotoUrl && oldPhotoUrl!==photoUrl){
         deletePhotoFromStorage(oldPhotoUrl);
+      }
+      // 수정 화면에서 '다른 방에도 추가' 선택 시 — 현재 편집값으로 다른 방에 복사 (단독만)
+      const _isCoNow=(_selectedTarget==='all'&&_selectedMembers.length>=2);
+      if(_selectedExtraRooms&&_selectedExtraRooms.length>0&&!_isCoNow){
+        let _exDates=[];
+        if(_selectedMode==='multi'){
+          _exDates=[..._multiSelected].sort();
+        }else if(_selectedMode==='range'){
+          const s=document.getElementById('evStartDate').value;
+          const e=document.getElementById('evEndDate').value;
+          if(s&&e)_exDates=daysBetween(s,e);
+        }else{
+          _exDates=[(_dayDate||_selectedDate)];
+        }
+        if(_exDates.length){
+          const _exRows=[];
+          _selectedExtraRooms.forEach(rid=>{
+            _exDates.forEach(d=>{
+              _exRows.push({
+                room_id:rid,user_id:_currentUser.id,date:d,
+                title,time,color,
+                recurring_yearly:recurringYearly,
+                memo,photo_url:photoUrl,
+              });
+            });
+          });
+          if(_exRows.length){
+            const {error:eEx}=await supa.from('events').insert(_attachVirtualMember(_exRows));
+            if(eEx)console.warn('다른 방 추가 일부 실패:',eEx);
+            else toast(`다른 방에도 추가됨 (${_selectedExtraRooms.length}개 방)`);
+          }
+        }
       }
     }else{
       // 추가 — 기간/여러 날/함께 모드 처리
