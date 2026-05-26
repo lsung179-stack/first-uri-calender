@@ -6278,8 +6278,12 @@ function openEditEvent(eventId){
     return;
   }
   const evs=_events[_selectedDate]||[];
-  const ev=evs.find(e=>e.id===eventId);
+  // 매년 반복 일정은 미래 연도(2027+) 칸에서 열면 그 날짜 키엔 없고 원본(등록 연도) row에만 저장돼 있음 → 전체에서 검색
+  let ev=evs.find(e=>e.id===eventId);
+  if(!ev)ev=Object.values(_events).flat().find(e=>e.id===eventId);
   if(!ev){toast('일정 정보를 찾지 못했어요');return}
+  // 편집 기준 날짜를 원본 일정의 실제 날짜로 맞춤 (반복 일정 미래 연도 표시분 대응)
+  _selectedDate=ev.date||_selectedDate;
   closeMainModals();
   _editingEvent=ev;
   _selectedColor=ev.color||'c-vintage';
