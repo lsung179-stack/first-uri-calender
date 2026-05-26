@@ -881,6 +881,8 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 /* 3-D: 여러 날 모드 (불연속 점선택) */
 .ev-multi-section{display:none;margin-top:10px;flex-direction:column;gap:8px}
 .ev-multi-section.show{display:flex}
+.ev-day-section{display:none;margin-top:10px;flex-direction:column;gap:8px}
+.ev-day-section.show{display:flex}
 .ev-multi-chips{display:flex;flex-wrap:wrap;gap:6px;min-height:32px;padding:8px;background:var(--bg);border:1px dashed var(--border);border-radius:8px}
 .ev-multi-empty{font-size:12px;color:var(--mute);padding:4px 6px;align-self:center}
 .ev-multi-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;background:var(--accent);color:var(--card);border-radius:14px;font-size:11px;font-weight:600}
@@ -2103,6 +2105,21 @@ body.align-right .cal-evbar{text-align:right}
         <button type="button" class="ev-mode-btn on" id="evModeDay" onclick="setEventMode('day')">하루</button>
         <button type="button" class="ev-mode-btn" id="evModeRange" onclick="setEventMode('range')">기간</button>
         <button type="button" class="ev-mode-btn" id="evModeMulti" onclick="setEventMode('multi')">여러 날</button>
+      </div>
+      <!-- 하루 모드 — 날짜 이동용 미니 달력 -->
+      <div class="ev-day-section" id="evDaySection">
+        <div class="ev-multi-cal">
+          <div class="ev-multi-nav">
+            <button type="button" class="ev-multi-nav-btn" onclick="dayCalNav(-1)">‹</button>
+            <span class="ev-multi-nav-title" id="evDayNavTitle">2026년 5월</span>
+            <button type="button" class="ev-multi-nav-btn" onclick="dayCalNav(1)">›</button>
+          </div>
+          <div class="ev-multi-dows">
+            <div class="ev-multi-dow sun">일</div><div class="ev-multi-dow">월</div><div class="ev-multi-dow">화</div><div class="ev-multi-dow">수</div><div class="ev-multi-dow">목</div><div class="ev-multi-dow">금</div><div class="ev-multi-dow sat">토</div>
+          </div>
+          <div class="ev-multi-grid" id="evDayGrid"></div>
+          <div class="ev-multi-count" id="evDayCount">날짜를 탭해서 옮기세요</div>
+        </div>
       </div>
       <div class="ev-range-row" id="evRangeRow">
         <input type="hidden" id="evStartDate">
@@ -4763,6 +4780,8 @@ let _multiCalDate=new Date();  // 미니 달력에서 보고 있는 월 (1일)
 /* 3-E: 기간 모드 (range) — V1식 미니 달력 */
 let _rangeStart=null;          // 'YYYY-MM-DD'
 let _rangeEnd=null;            // 'YYYY-MM-DD'
+let _dayDate=null;             // 하루 모드 선택 날짜 'YYYY-MM-DD'
+let _dayCalDate=null;          // 하루 모드 미니 달력 표시 월(Date)
 let _rangeCalDate=new Date();  // 기간 미니 달력의 표시 월
 /* 3-C-2: 주간 뷰 + 스와이프 */
 // 주간 뷰 관련 변수는 V1.2에서 제거됨 (월뷰만 사용)
@@ -6209,6 +6228,7 @@ function openAddEvent(){
   _selectedMode='day';
   _editGroup=[];
   _multiSelected=new Set();
+  _dayDate=_selectedDate; _dayCalDate=null;
   // 모드 버튼 표시 reset — 직전 수정에서 숨겨졌을 수 있음
   const dayBtnN=document.getElementById('evModeDay');
   const multiBtnN=document.getElementById('evModeMulti');
@@ -6265,6 +6285,7 @@ function openEditEvent(eventId){
   _selectedColor=ev.color||'c-vintage';
   _selectedMode='day';
   _editGroup=[];
+  _dayDate=_selectedDate; _dayCalDate=null;
   // 함께 일정인지 확인
   if(ev.shared_id){
     _selectedTarget='all';
@@ -6815,7 +6836,7 @@ async function saveEvent(){
         // 함께 일정 (단일 날짜)
         const sharedId=genShared();
         const rows=_selectedMembers.map(key=>_buildCoEventRow(key, {
-          room_id:_currentRoom.id, date:_selectedDate,
+          room_id:_currentRoom.id, date:(_dayDate||_selectedDate),
           title,time,color,shared_id:sharedId,
           recurring_yearly:recurringYearly,
           memo,photo_url:photoUrl,
@@ -6826,7 +6847,7 @@ async function saveEvent(){
       }else{
         // 단독 일정 (단일 날짜)
         const {error}=await supa.from('events').insert(_attachVirtualMember({
-          room_id:_currentRoom.id,user_id:_currentUser.id,date:_selectedDate,
+          room_id:_currentRoom.id,user_id:_currentUser.id,date:(_dayDate||_selectedDate),
           title,time,color,
           recurring_yearly:recurringYearly,
           memo,photo_url:photoUrl,
@@ -6835,7 +6856,7 @@ async function saveEvent(){
         // 다른 방에도
         if(applyExtra){
           const extraRows=extraRoomIds.map(rid=>({
-            room_id:rid,user_id:_currentUser.id,date:_selectedDate,
+            room_id:rid,user_id:_currentUser.id,date:(_dayDate||_selectedDate),
             title,time,color,
             recurring_yearly:recurringYearly,
             memo,photo_url:photoUrl,
@@ -6849,7 +6870,10 @@ async function saveEvent(){
     closeEventModal();
     await loadEvents();
     // 신규 추가 후엔 캘린더 화면으로, 수정 후엔 일자 시트로 (변경 결과 확인용)
-    if(_editingEvent) openDateSheet(_selectedDate);
+    if(_editingEvent){
+      const _sheetDate=(_selectedMode==='day'&&_dayDate)?_dayDate:_selectedDate;
+      openDateSheet(_sheetDate);
+    }
 
     // ── 5단계: 같은 방 멤버에게 자동 알림 발송 ──
     if(_editingEvent){
@@ -7576,6 +7600,11 @@ function setEventMode(mode){
     syncRangeHiddenInputs();
     renderRangeCal();
     renderRangeBoxes();
+  }else if(mode==='day'){
+    if(!_dayDate)_dayDate=_selectedDate;
+    _dayCalDate=_dayDate?parseDateKey(_dayDate):new Date();
+    _dayCalDate.setDate(1);
+    renderDayCal();
   }
   applyModeUI();
 }
@@ -7585,6 +7614,16 @@ function applyModeUI(){
   document.getElementById('evModeMulti').classList.toggle('on',_selectedMode==='multi');
   document.getElementById('evRangeRow').classList.toggle('show',_selectedMode==='range');
   document.getElementById('evMultiSection').classList.toggle('show',_selectedMode==='multi');
+  const _showDay=_selectedMode==='day';
+  const _daySec=document.getElementById('evDaySection');
+  if(_daySec){
+    _daySec.classList.toggle('show',_showDay);
+    if(_showDay){
+      if(!_dayDate)_dayDate=_selectedDate;
+      if(!_dayCalDate){_dayCalDate=_dayDate?parseDateKey(_dayDate):new Date();_dayCalDate.setDate(1);}
+      renderDayCal();
+    }
+  }
 }
 
 /* 기간 모드 — V1식 미니 달력 */
@@ -7677,6 +7716,62 @@ function renderRangeBoxes(){
   }else{
     cnt.textContent='시작일을 탭해주세요';
   }
+}
+
+/* 하루 모드 — 날짜 이동용 미니 달력 (단일 선택) */
+function renderDayCal(){
+  const grid=document.getElementById('evDayGrid');
+  const title=document.getElementById('evDayNavTitle');
+  const cnt=document.getElementById('evDayCount');
+  if(!grid)return;
+  if(!_dayCalDate){_dayCalDate=_dayDate?parseDateKey(_dayDate):new Date();_dayCalDate.setDate(1);}
+  const y=_dayCalDate.getFullYear();
+  const m=_dayCalDate.getMonth();
+  if(title)title.textContent=`${y}년 ${m+1}월`;
+  const first=new Date(y,m,1);
+  const last=new Date(y,m+1,0);
+  const startDow=first.getDay();
+  const totalDays=last.getDate();
+  const td=new Date();
+  const todayKey=dateKey(td.getFullYear(),td.getMonth(),td.getDate());
+  let html='';
+  const prevLast=new Date(y,m,0).getDate();
+  for(let i=startDow-1;i>=0;i--){
+    const d=prevLast-i;
+    const dt=new Date(y,m-1,d);
+    const k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
+    html+=`<div class="ev-multi-day other${k===_dayDate?' on':''}" onclick="selectDayDate('${k}')">${d}</div>`;
+  }
+  for(let d=1;d<=totalDays;d++){
+    const k=dateKey(y,m,d);
+    const dow=new Date(y,m,d).getDay();
+    let cls='ev-multi-day';
+    if(dow===0)cls+=' sun';else if(dow===6)cls+=' sat';
+    if(k===todayKey)cls+=' today';
+    if(k===_dayDate)cls+=' on';
+    html+=`<div class="${cls}" onclick="selectDayDate('${k}')">${d}</div>`;
+  }
+  const filled=startDow+totalDays;
+  const need=Math.ceil(filled/7)*7;
+  for(let i=1;i<=need-filled;i++){
+    const dt=new Date(y,m+1,i);
+    const k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
+    html+=`<div class="ev-multi-day other${k===_dayDate?' on':''}" onclick="selectDayDate('${k}')">${i}</div>`;
+  }
+  grid.innerHTML=html;
+  if(cnt){
+    if(_dayDate){const dd=parseDateKey(_dayDate);cnt.textContent=`${dd.getMonth()+1}월 ${dd.getDate()}일 ${DOW_NAMES[dd.getDay()]}요일`;}
+    else cnt.textContent='날짜를 탭해주세요';
+  }
+}
+function dayCalNav(diff){
+  if(!_dayCalDate){_dayCalDate=_dayDate?parseDateKey(_dayDate):new Date();_dayCalDate.setDate(1);}
+  _dayCalDate.setMonth(_dayCalDate.getMonth()+diff);
+  renderDayCal();
+}
+function selectDayDate(key){
+  _dayDate=key;
+  renderDayCal();
 }
 
 /* 여러 날 모드 — 미니 달력 그리기 */
@@ -7851,18 +7946,18 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
 
   if(!wasShared&&!isNowShared){
     // Case 4: 혼자 → 혼자 (이 row만 단순 수정) — 명의 변경 시 virtual_member_id 반영
-    const {error}=await supa.from('events').update(_withVirtualMemberForUpdate({title,time,color,recurring_yearly:ry,reminder_sent_at:null,memo,photo_url:photoUrl})).eq('id',ev.id);
+    const {error}=await supa.from('events').update(_withVirtualMemberForUpdate({date:(_dayDate||_selectedDate),title,time,color,recurring_yearly:ry,reminder_sent_at:null,memo,photo_url:photoUrl})).eq('id',ev.id);
     if(error)throw error;
     toast('수정됐어요');
   }else if(!wasShared&&isNowShared){
     // Case 3: 혼자 → 함께 — 함께 변환 시 virtual_member_id 강제 NULL (함께 일정에 가상 멤버 못 들어감)
     const sharedId=genShared();
-    const {error:e1}=await supa.from('events').update({title,time,color,shared_id:sharedId,recurring_yearly:ry,reminder_sent_at:null,memo,photo_url:photoUrl,virtual_member_id:null}).eq('id',ev.id);
+    const {error:e1}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,color,shared_id:sharedId,recurring_yearly:ry,reminder_sent_at:null,memo,photo_url:photoUrl,virtual_member_id:null}).eq('id',ev.id);
     if(e1)throw e1;
     const others=_selectedMembers.filter(u=>u!==_currentUser.id);
     if(others.length){
       const rows=others.map(key=>_buildCoEventRow(key, {
-        room_id:_currentRoom.id, date:_selectedDate,
+        room_id:_currentRoom.id, date:(_dayDate||_selectedDate),
         title,time,color,shared_id:sharedId,recurring_yearly:ry,
         memo,photo_url:photoUrl,
       }));
@@ -7876,7 +7971,7 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
     if(e1)throw e1;
     const {error:e2}=await supa.from('events').insert(_attachVirtualMember({
       room_id:_currentRoom.id,user_id:_currentUser.id,
-      date:_selectedDate,title,time,color,recurring_yearly:ry,
+      date:(_dayDate||_selectedDate),title,time,color,recurring_yearly:ry,
       memo,photo_url:photoUrl,
     }));
     if(e2)throw e2;
@@ -7895,13 +7990,13 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
     const toRemoveVirtual=toRemove.filter(k=>typeof k==='string'&&k.startsWith('v-')).map(k=>k.slice(2));
     
     if(toKeepReal.length){
-      const {error}=await supa.from('events').update({title,time,color,recurring_yearly:ry,reminder_sent_at:null,memo,photo_url:photoUrl})
+      const {error}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,color,recurring_yearly:ry,reminder_sent_at:null,memo,photo_url:photoUrl})
         .eq('shared_id',ev.shared_id).in('user_id',toKeepReal);
       if(error)throw error;
     }
     if(toKeepVirtual.length){
       // 가상 멤버 row UPDATE (virtual_member_id 기준)
-      const {error}=await supa.from('events').update({title,time,color,recurring_yearly:ry,reminder_sent_at:null,memo,photo_url:photoUrl})
+      const {error}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,color,recurring_yearly:ry,reminder_sent_at:null,memo,photo_url:photoUrl})
         .eq('shared_id',ev.shared_id).in('virtual_member_id',toKeepVirtual);
       if(error)throw error;
     }
@@ -7921,7 +8016,7 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
     }
     if(toAdd.length){
       const rows=toAdd.map(key=>_buildCoEventRow(key, {
-        room_id:_currentRoom.id, date:_selectedDate,
+        room_id:_currentRoom.id, date:(_dayDate||_selectedDate),
         title,time,color,shared_id:ev.shared_id,recurring_yearly:ry,
         memo,photo_url:photoUrl,
       }));
