@@ -5621,6 +5621,8 @@ function getDayEvents(date){
   return result.filter(isVisible);
 }
 function isSameRangeGroup(a,b){
+  // 여러 날 일정은 연결(기간) 대상 아님 — 날짜가 붙어 있어도 각각 단독 칩으로 표시
+  if(a.is_multi||b.is_multi)return false;
   // shared_id 있으면 그걸로 매칭, 없으면 user_id+title+time+color (+ recurring_yearly 플래그)
   if(a.shared_id&&b.shared_id)return a.shared_id===b.shared_id;
   if(!a.shared_id&&!b.shared_id){
@@ -6768,6 +6770,7 @@ async function saveEvent(){
                 title,time,color,
                 recurring_yearly:recurringYearly,
                 memo,photo_url:photoUrl,
+                is_multi:(_selectedMode==='multi'),
               });
             });
           });
@@ -6802,6 +6805,7 @@ async function saveEvent(){
               shared_id:sharedId,
               recurring_yearly:recurringYearly,
               memo,photo_url:photoUrl,
+              is_multi:true,
             }));
           });
         });
@@ -6817,6 +6821,7 @@ async function saveEvent(){
                 title,time,color,
                 recurring_yearly:recurringYearly,
                 memo,photo_url:photoUrl,
+                is_multi:true,
               });
             });
           });
@@ -7557,10 +7562,11 @@ function daysBetween(startStr,endStr){
 
 /* 기간 일정 그룹 감지 (V1 findEventGroup) — 같은 title+time+color 연속 날짜 */
 function findEventGroup(ev){
-  if(!ev||ev.shared_id)return [ev];  // 함께 일정은 단일 처리
+  if(!ev||ev.shared_id||ev.is_multi)return [ev];  // 함께/여러 날 일정은 단일 처리
   const allEvents=Object.values(_events).flat();
   const sameAttr=allEvents.filter(e=>
     !e.shared_id
+    && !e.is_multi
     && e.user_id===ev.user_id
     && (e.title||'').trim()===(ev.title||'').trim()
     && (e.time||'')===(ev.time||'')
@@ -7968,6 +7974,7 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
         room_id:_currentRoom.id,user_id:_currentUser.id,date:d,
         title,time,color,recurring_yearly:ry,
         memo,photo_url:photoUrl,
+        is_multi:true,
       }));
       const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
       if(error)throw error;
