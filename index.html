@@ -375,6 +375,11 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .mo-form{display:flex;flex-direction:column;gap:14px;margin-bottom:8px}
 .mo-actions{display:flex;flex-direction:column;gap:10px;margin-top:18px}
 .mo-cancel{font-size:13px;color:var(--sub);text-align:center;background:none;border:none;padding:14px;cursor:pointer;font-family:inherit}
+.vc-overlay{position:fixed;inset:0;background:rgba(30,28,24,.5);z-index:2000;opacity:0;pointer-events:none;transition:opacity .2s ease;display:flex;align-items:center;justify-content:center;padding:28px;box-sizing:border-box}
+.vc-overlay.on{opacity:1;pointer-events:auto}
+.vc-card{background:var(--card);border-radius:22px;max-width:330px;width:100%;padding:28px 24px 14px;box-shadow:0 16px 48px rgba(30,28,24,.3);transform:scale(.94) translateY(8px);opacity:0;transition:transform .22s cubic-bezier(.32,.72,0,1),opacity .2s ease}
+.vc-overlay.on .vc-card{transform:scale(1) translateY(0);opacity:1}
+.vc-card .mo-sub{margin-bottom:6px;white-space:pre-line}
 
 /* 6자리 코드 박스 */
 .code-input-wrap{display:flex;gap:8px;justify-content:center;margin:10px 0 6px}
@@ -1924,6 +1929,18 @@ body.align-right .cal-evbar{text-align:right}
   <div class="mo-actions">
     <button class="btn btn-primary" id="createBtn" onclick="createRoom()">만들기</button>
     <button class="mo-cancel" onclick="closeCreateRoom()">취소</button>
+  </div>
+</div>
+
+<!-- 커스텀 확인 모달 (네이티브 confirm 대체) -->
+<div class="vc-overlay" id="vcOverlay">
+  <div class="vc-card">
+    <div class="mo-title" id="vcTitle">확인</div>
+    <div class="mo-sub" id="vcMsg"></div>
+    <div class="mo-actions">
+      <button class="btn btn-primary" id="vcOk">확인</button>
+      <button class="mo-cancel" id="vcCancel">취소</button>
+    </div>
   </div>
 </div>
 
@@ -3626,8 +3643,34 @@ function closeProfile(){
   document.getElementById('profileOverlay').classList.remove('on');
   document.getElementById('profileCard').classList.remove('on');
 }
-function doLogout(){
-  if(!confirm('로그아웃 하시겠어요?'))return;
+/* 커스텀 확인 모달 — 네이티브 confirm 대체 (Promise<boolean>) */
+function vConfirm(message,opts){
+  opts=opts||{};
+  return new Promise(resolve=>{
+    const ov=document.getElementById('vcOverlay');
+    if(!ov){resolve(window.confirm(message));return;}
+    const titleEl=document.getElementById('vcTitle');
+    const msgEl=document.getElementById('vcMsg');
+    const okBtn=document.getElementById('vcOk');
+    const cancelBtn=document.getElementById('vcCancel');
+    titleEl.textContent=opts.title||'확인';
+    msgEl.textContent=message||'';
+    okBtn.textContent=opts.okText||'확인';
+    cancelBtn.textContent=opts.cancelText||'취소';
+    ov.classList.add('on');
+    const finish=(val)=>{
+      ov.classList.remove('on');
+      okBtn.onclick=null;cancelBtn.onclick=null;ov.onclick=null;
+      resolve(val);
+    };
+    okBtn.onclick=()=>finish(true);
+    cancelBtn.onclick=()=>finish(false);
+    ov.onclick=(e)=>{if(e.target===ov)finish(false);};
+  });
+}
+
+async function doLogout(){
+  if(!await vConfirm('로그아웃 하시겠어요?'))return;
   closeProfile();
   logout();
 }
@@ -3741,7 +3784,7 @@ async function restoreKakaoPhoto(){
     toast('카카오 프로필 사진이 없어요');
     return;
   }
-  if(!confirm('카카오톡 프로필 사진으로 복구할까요?'))return;
+  if(!await vConfirm('카카오톡 프로필 사진으로 복구할까요?'))return;
   toast('복구 중...');
   try{
     // 외부 URL → 이미지 로드 → canvas로 base64 변환 (CORS 허용 필요)
@@ -6593,7 +6636,7 @@ function confirmMemberPick(){
 /* 함께 일정에서 본인만 빠지기 — 본인 row만 삭제, 다른 멤버 row는 그대로 유지 */
 async function leaveSharedEvent(){
   if(!_editingEvent||!_editingEvent.shared_id||!_currentUser)return;
-  if(!confirm('이 함께 일정에서 빠지시겠어요?\n다른 멤버의 일정은 그대로 남아 있어요.'))return;
+  if(!await vConfirm('이 함께 일정에서 빠지시겠어요?\n다른 멤버의 일정은 그대로 남아 있어요.'))return;
 
   try{
     const ev=_editingEvent;
@@ -7530,7 +7573,7 @@ async function markAllNotifsRead(){
 
 /* 전체 삭제 */
 async function clearAllNotifs(){
-  if(!confirm('모든 알림을 삭제하시겠어요?'))return;
+  if(!await vConfirm('모든 알림을 삭제하시겠어요?'))return;
   try{
     await supa.from('notifications').delete().eq('user_id',_currentUser.id);
     _notifs=[];
@@ -8086,7 +8129,7 @@ async function deleteEvent(eventId){
   }else if(group.length>1){
     confirmMsg=`기간 일정 ${group.length}일이 모두 삭제돼요. 계속할까요?`;
   }
-  if(!confirm(confirmMsg))return;
+  if(!await vConfirm(confirmMsg))return;
   
   try{
     // 삭제 전에 사진 URL 캐싱 (함께/기간 그룹은 모두 같은 URL이라 한 번만 삭제하면 됨)
@@ -8404,7 +8447,7 @@ function renderRoomMemberList(){
 
 async function kickMember(userId,name){
   if(!_currentRoom||(_currentRoom.owner_id!==_currentUser?.id && !_adminBypass())){toast('권한이 없어요');return}
-  if(!confirm(`"${name}" 님을 방에서 내보낼까요?\n(이 멤버의 일정은 그대로 유지됩니다)`))return;
+  if(!await vConfirm(`"${name}" 님을 방에서 내보낼까요?\n(이 멤버의 일정은 그대로 유지됩니다)`))return;
   try{
     const {error}=await supa.from('members').delete()
       .eq('room_id',_currentRoom.id)
@@ -8432,9 +8475,9 @@ async function kickMember(userId,name){
 async function deleteRoomConfirm(){
   if(!_currentRoom||(_currentRoom.owner_id!==_currentUser?.id && !_adminBypass())){toast('방장만 삭제할 수 있어요');return}
   const confirmText=`"${_currentRoom.name}" 방을 영구 삭제할까요?\n방의 모든 일정과 멤버가 사라지며 복구할 수 없습니다.`;
-  if(!confirm(confirmText))return;
+  if(!await vConfirm(confirmText))return;
   // 한 번 더 (안전장치)
-  if(!confirm('정말 삭제할까요? 마지막 확인입니다'))return;
+  if(!await vConfirm('정말 삭제할까요? 마지막 확인입니다'))return;
   // audit는 삭제 전에 (room_id FK가 끊기지 않도록 ON DELETE SET NULL 처리되어 있음)
   const roomSnapshot={
     name:_currentRoom.name,
@@ -8464,7 +8507,7 @@ async function leaveRoomConfirm(){
     toast('방장은 나갈 수 없어요. 방 삭제를 사용해주세요');
     return;
   }
-  if(!confirm(`"${_currentRoom.name}" 방에서 나가시겠어요?\n(본인 일정도 함께 삭제됩니다)`))return;
+  if(!await vConfirm(`"${_currentRoom.name}" 방에서 나가시겠어요?\n(본인 일정도 함께 삭제됩니다)`))return;
   try{
     // 본인 일정 모두 삭제
     await supa.from('events').delete()
@@ -9216,7 +9259,7 @@ function annPopupSeeAll(){
 }
 async function deleteAnnouncementCurrent(){
   if(!isAdmin()||!_annCurrentId)return;
-  if(!confirm('이 공지를 삭제하시겠어요?'))return;
+  if(!await vConfirm('이 공지를 삭제하시겠어요?'))return;
   try{
     // 삭제 전 사진 URL 캐싱
     const oldAnn=_announcements.find(a=>a.id===_annCurrentId);
@@ -9642,7 +9685,7 @@ async function grantPackForUser(packType, packKey){
 }
 async function revokePackForUser(packType, packKey){
   if(!isAdmin()||!_adminGrantSelected)return;
-  if(!confirm('이 팩을 회수하시겠어요?'))return;
+  if(!await vConfirm('이 팩을 회수하시겠어요?'))return;
   try{
     const {error}=await supa.from('user_unlocks').delete()
       .eq('user_id', _adminGrantSelected.id)
@@ -9857,7 +9900,7 @@ async function saveVMember(){
 
 async function deleteVMember(){
   if(!_vMemberEditingId)return;
-  if(!confirm('이 가상 멤버를 삭제할까요?\n이 멤버 명의의 일정과 반응도 함께 삭제됩니다.'))return;
+  if(!await vConfirm('이 가상 멤버를 삭제할까요?\n이 멤버 명의의 일정과 반응도 함께 삭제됩니다.'))return;
   try{
     const {error}=await supa.from('members').delete().eq('id',_vMemberEditingId);
     if(error)throw error;
@@ -9998,10 +10041,10 @@ function onUnlockColorClick(key){
   toast(`"${pack.name}" 컬러 팩이 추가되었어요`);
   renderStoreColors();
 }
-function onLockColorClick(key){
+async function onLockColorClick(key){
   const pack=STORE_COLORS.find(p=>p.key===key);
   if(!pack)return;
-  if(!confirm(`"${pack.name}" 컬러 팩 사용을 중단할까요?`))return;
+  if(!await vConfirm(`"${pack.name}" 컬러 팩 사용을 중단할까요?`))return;
   lockColorPack(key);
   toast(`"${pack.name}" 컬러 팩 사용을 중단했어요`);
   renderStoreColors();
@@ -10044,10 +10087,10 @@ function onUnlockCharClick(key){
   toast(`"${pack.name}" 캐릭터 팩이 추가되었어요`);
   renderStoreEmoji();
 }
-function onLockCharClick(key){
+async function onLockCharClick(key){
   const pack=STORE_EMOJI.find(p=>p.key===key);
   if(!pack)return;
-  if(!confirm(`"${pack.name}" 캐릭터 팩 사용을 중단할까요?`))return;
+  if(!await vConfirm(`"${pack.name}" 캐릭터 팩 사용을 중단할까요?`))return;
   lockCharPack(key);
   toast(`"${pack.name}" 캐릭터 팩 사용을 중단했어요`);
   renderStoreEmoji();
@@ -10116,10 +10159,10 @@ function onUnlockCharFromDetail(key){
   closeCharDetail();
   if(_storeCurrentTab==='emoji')renderStoreEmoji();
 }
-function onLockCharFromDetail(key){
+async function onLockCharFromDetail(key){
   const pack=STORE_EMOJI.find(p=>p.key===key);
   if(!pack)return;
-  if(!confirm(`"${pack.name}" 캐릭터 팩 사용을 중단할까요?`))return;
+  if(!await vConfirm(`"${pack.name}" 캐릭터 팩 사용을 중단할까요?`))return;
   lockCharPack(key);
   toast(`"${pack.name}" 캐릭터 팩 사용을 중단했어요`);
   closeCharDetail();
