@@ -2350,7 +2350,7 @@ body.align-right .cal-evbar{text-align:right}
           <span>푸시 알림이 오지 않습니다.</span>
           <svg class="faq-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
-        <div class="faq-a">휴대폰 설정 → 알림 → 우리 캘린더에서 알림 권한이 허용되어 있는지 확인해 주세요. 그래도 안 온다면 앱 안의 방별 알림 토글이 켜져 있는지 확인하시기 바랍니다.</div>
+        <div class="faq-a">휴대폰 설정 → 알림 → 우리 캘린더에서 알림 권한이 허용되어 있는지 확인해 주세요. 그래도 안 온다면 앱 안의 방별 알림 토글이 켜져 있는지 확인하시기 바랍니다.<br><button type="button" onclick="registerPushNotification(false)" style="margin-top:12px;padding:9px 16px;border:1.5px solid var(--accent);background:transparent;color:var(--accent);border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">🔔 이 기기에서 알림 켜기</button></div>
       </div>
       <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)">
@@ -3146,7 +3146,7 @@ async function registerPushNotification(silent){
       if(!silent)toast('알림 설정 실패: '+(error.message||error));
       return false;
     }
-    if(!silent)toast('알림이 켜졌어');
+    if(!silent)toast('알림을 켰어요');
     return true;
   }catch(e){
     console.warn('푸시 등록 실패:',e);
@@ -3178,21 +3178,17 @@ async function autoRegisterPush(){
   }
 
   const status=await getPushStatus();
-  // denied / unsupported / error: 아무 것도 안 함
-  if(status==='denied'||status==='unsupported'||status==='error')return;
-  // 'default'(아직 답 안 함)면 한 번만 자동으로 묻고, 그 뒤로는 묻지 않음.
-  // → TWA(갤럭시)에서 권한 grant 후에도 Notification.permission이 'default'로 남는
-  //    Chromium WebView 버그 때문에 매번 켤 때마다 또 묻는 현상을 방지.
-  //    사용자가 나중에 켜고 싶으면 OS 설정에서 알림 권한을 직접 변경하면 됨.
-  if(status==='default'){
-    if(localStorage.getItem('pushPrompted')==='1') return;
-    localStorage.setItem('pushPrompted','1');
+  // 이미 권한을 허용한 사용자만 조용히 (재)등록한다.
+  // 권한 미정(default)·차단(denied)·미지원이면 방 진입 시 자동으로 권한을 묻지 않는다.
+  // → 갤럭시 등에서 앱을 껐다 켤 때마다 "알림 허용" 팝업이 반복되던 문제를 근본 차단.
+  //   (이전의 localStorage 'pushPrompted' 가드는 브라우저가 사이트 데이터를 비우면
+  //    무력화돼 신뢰할 수 없었음. 그래서 자동 권한요청 자체를 제거.)
+  // 알림을 새로 켜고 싶은 사용자는 고객센터의 '알림 켜기' 버튼으로 직접 요청한다.
+  // granted/subscribed 재등록 시 endpoint 주인을 현재 로그인 계정으로 갱신해,
+  // 계정 전환 후 푸시가 끊기는 문제도 함께 막는다(upsert onConflict:'endpoint').
+  if(status==='granted'||status==='subscribed'){
+    await registerPushNotification(true);
   }
-  // subscribed / granted / default(최초 1회) 모두 현재 user_id로 (재)등록.
-  // 폰에 구독이 이미 있어도(다른 계정으로 먼저 로그인했던 경우 등) endpoint 주인을
-  // 현재 로그인 계정으로 갱신해, 계정 전환 후 푸시가 끊기는 문제를 막는다.
-  // (upsert onConflict:'endpoint' 라서 같은 endpoint의 user_id가 현재 계정으로 덮어써짐)
-  await registerPushNotification(true);
 }
 
 /* 푸시 해제 */
