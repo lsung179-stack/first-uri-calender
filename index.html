@@ -202,6 +202,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .btn:active{transform:scale(.98);opacity:.9}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn-kakao{background:var(--kakao);color:var(--kakaoText)}
+.btn-apple{background:#000;color:#fff}
 .btn-email{background:var(--card);color:var(--text);border:1px solid var(--border);box-shadow:var(--shadow)}
 .btn-primary{background:var(--accent);color:#fff;box-shadow:var(--shadow)}
 .btn-primary:disabled{background:var(--aL)}
@@ -375,7 +376,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .mo-form{display:flex;flex-direction:column;gap:14px;margin-bottom:8px}
 .mo-actions{display:flex;flex-direction:column;gap:10px;margin-top:18px}
 .mo-cancel{font-size:13px;color:var(--sub);text-align:center;background:none;border:none;padding:14px;cursor:pointer;font-family:inherit}
-.vc-overlay{position:fixed;inset:0;background:rgba(30,28,24,.5);z-index:2000;opacity:0;pointer-events:none;transition:opacity .2s ease;display:flex;align-items:center;justify-content:center;padding:28px;box-sizing:border-box}
+.vc-overlay{position:fixed;inset:0;background:rgba(30,28,24,.5);z-index:2000;opacity:0;pointer-events:none;transition:opacity .2s ease;display:flex;align-items:center;justify-content:center;padding:28px;box-sizing:border-box;transform:translateZ(0)}
 .vc-overlay.on{opacity:1;pointer-events:auto}
 .vc-card{background:var(--card);border-radius:22px;max-width:330px;width:100%;padding:28px 24px 14px;box-shadow:0 16px 48px rgba(30,28,24,.3);transform:scale(.94) translateY(8px);opacity:0;transition:transform .22s cubic-bezier(.32,.72,0,1),opacity .2s ease}
 .vc-overlay.on .vc-card{transform:scale(1) translateY(0);opacity:1}
@@ -765,7 +766,9 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .cs-divider{height:1px;background:var(--border);margin:4px 0;opacity:.6}
 /* 약관/처리방침/회원탈퇴는 고객센터(50/51) 위에 떠야 함 */
 #termsOverlay,#privacyOverlay,#leaveAccountOverlay{z-index:1600}
-#termsCard,#privacyCard,#leaveAccountCard{z-index:1601}
+#termsCard,#privacyCard,#leaveAccountCard,#supportCard{z-index:1601}
+.support-email{font-size:12.5px;color:var(--sub);text-align:center;line-height:1.7;margin:14px 0 6px;padding:12px;background:var(--bg);border-radius:12px}
+.support-email b{color:var(--accent);font-weight:700}
 /* 고객센터 링크 버튼 (약관/처리방침) */
 .cs-link-btn{display:flex;align-items:center;gap:14px;width:100%;padding:12px 16px;border-radius:10px;border:none;background:transparent;cursor:pointer;font-family:inherit;text-align:left;transition:background .12s}
 .cs-link-btn:active{background:var(--bg)}
@@ -1045,7 +1048,7 @@ body.ff-jua{letter-spacing:-.2px}
 .store-card.on{display:flex;animation:slide-up .28s ease-out}
 @keyframes slide-up{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .store-head{
-  display:flex;align-items:center;gap:8px;padding:14px 14px 6px;
+  display:flex;align-items:center;gap:8px;padding:max(14px,env(safe-area-inset-top)) 14px 6px;
   border-bottom:1px solid var(--borderL);background:var(--bg);
 }
 .store-title{flex:1;font-size:20px;font-weight:800;color:var(--text);font-family:var(--ff-serif);letter-spacing:.5px}
@@ -1225,7 +1228,7 @@ body.align-right .cal-evbar{text-align:right}
 }
 .ann-card.on{display:flex;animation:slide-up .28s ease-out}
 .ann-head{
-  display:flex;align-items:center;gap:8px;padding:14px 14px 12px;
+  display:flex;align-items:center;gap:8px;padding:max(14px,env(safe-area-inset-top)) 14px 12px;
   border-bottom:1px solid var(--borderL);background:var(--bg);
   flex-shrink:0;
 }
@@ -1782,6 +1785,10 @@ body.align-right .cal-evbar{text-align:right}
       <div class="welcome-deco-line"></div>
     </div>
     <div class="btn-stack">
+      <button class="btn btn-apple" onclick="loginApple()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M17.05 12.04c-.03-2.6 2.13-3.85 2.22-3.91-1.21-1.77-3.1-2.01-3.77-2.04-1.6-.16-3.13.94-3.94.94-.81 0-2.07-.92-3.4-.89-1.75.03-3.36 1.02-4.26 2.58-1.82 3.16-.47 7.84 1.3 10.41.86 1.26 1.89 2.67 3.24 2.62 1.3-.05 1.79-.84 3.36-.84 1.57 0 2.01.84 3.39.81 1.4-.02 2.29-1.28 3.15-2.55.99-1.46 1.4-2.87 1.42-2.94-.03-.01-2.73-1.05-2.76-4.16zM14.5 4.5c.72-.87 1.2-2.08 1.07-3.28-1.03.04-2.28.69-3.02 1.56-.66.77-1.24 2-1.08 3.18 1.15.09 2.32-.59 3.03-1.46z"/></svg>
+        Apple로 시작하기
+      </button>
       <button class="btn btn-kakao" onclick="loginKakao()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="#191919" aria-hidden="true"><path d="M12 3C6.48 3 2 6.48 2 10.78c0 2.68 1.59 5.04 4.04 6.46l-.94 3.45c-.08.3.25.54.51.37l4.13-2.73c.74.1 1.5.16 2.26.16 5.52 0 10-3.48 10-7.78S17.52 3 12 3z"/></svg>
         카카오로 시작하기
@@ -1925,6 +1932,13 @@ body.align-right .cal-evbar{text-align:right}
         <div class="copy-option-sub">가상 멤버를 만들고 자유롭게 일정을 추가할 수 있어요</div>
       </div>
     </div>
+  </div>
+  <!-- 관리자 전용: 내 프로필 직접 설정 (데모/스크린샷용) -->
+  <div id="adminMyProfileWrap" style="display:none;margin-top:8px;padding:12px;background:var(--bg);border-radius:10px;border:1px dashed var(--mute)">
+    <div style="font-size:12px;color:var(--sub);margin-bottom:8px;font-weight:600">🔧 내 프로필 직접 설정 (관리자)</div>
+    <input type="text" id="adminMyNameInput" placeholder="이름 (예: 친4)" maxlength="20" style="width:100%;padding:9px 10px;border:1px solid var(--mute);border-radius:8px;background:var(--card);font-size:14px;box-sizing:border-box;color:var(--text);font-family:inherit">
+    <button onclick="adminSetMyProfile()" style="margin-top:8px;width:100%;padding:10px;background:var(--accent);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:inherit">이름 변경 + 사진 제거 (글자 아바타)</button>
+    <div style="margin-top:6px;font-size:11px;color:var(--sub);line-height:1.4">데모/스크린샷용. 카카오 정보로 되돌리려면 프로필 → "카카오 프로필 사진으로 복구"</div>
   </div>
   <div class="mo-actions">
     <button class="btn btn-primary" id="createBtn" onclick="createRoom()">만들기</button>
@@ -2289,6 +2303,36 @@ body.align-right .cal-evbar{text-align:right}
     <button class="btn btn-danger" onclick="doLogout()">로그아웃</button>
     <button class="mo-cancel" onclick="closeProfile()">닫기</button>
   </div>
+  <div style="text-align:center;padding:2px 0 12px">
+    <a href="javascript:void(0)" onclick="deleteMyAccount()" style="font-size:12px;color:var(--mute);text-decoration:underline">회원탈퇴</a>
+  </div>
+</div>
+
+<!-- 문의하기 시트 -->
+<div class="mo-overlay" id="supportOverlay" onclick="closeSupport()"></div>
+<div class="mo-card mo-card-tall" id="supportCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">문의하기</div>
+  <div class="legal-content">
+    <button class="cs-primary-btn" onclick="openKakaoChannel()">
+      <span class="cs-btn-icon">💬</span>
+      <span class="cs-btn-text">
+        <span class="cs-btn-title">카카오톡 채널로 문의</span>
+        <span class="cs-btn-sub">가장 빠르게 답변드려요</span>
+      </span>
+    </button>
+    <p class="support-email">이메일 <b>lsung179@naver.com</b><br>영업일 기준 1~2일 이내 답변드립니다.</p>
+    <h3>자주 묻는 질문</h3>
+    <p><b>Q. 다른 사람을 방에 어떻게 초대하나요?</b><br>방에 들어간 후 설정 시트(상단 메뉴)에서 6자리 초대 코드를 확인하실 수 있습니다. "카카오톡으로 초대" 버튼을 누르면 카톡으로 바로 초대 링크를 보낼 수도 있습니다.</p>
+    <p><b>Q. 푸시 알림이 오지 않습니다.</b><br>휴대폰 설정 → 알림 → 우리 캘린더에서 알림 권한이 허용되어 있는지 확인해 주세요. 그래도 안 온다면 앱 안의 방별 알림 토글이 켜져 있는지 확인하시기 바랍니다.</p>
+    <p><b>Q. 회원 탈퇴는 어떻게 하나요?</b><br>앱 우상단 프로필 아이콘 → 프로필 시트 하단의 "회원탈퇴" 버튼을 누르시면 됩니다. 탈퇴 시 계정·일정·사진 등 모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다.</p>
+    <p><b>Q. 일정을 다른 멤버에게 보이지 않게 하려면?</b><br>일정 등록 시 "함께 일정"이 아닌 본인 일정으로 등록하시면 다른 멤버에게는 표시되지 않습니다.</p>
+    <p><b>Q. 음력·공휴일·24절기 정보가 안 보입니다.</b><br>날짜를 탭하시면 해당 일자의 음력·공휴일·24절기 정보가 일자 시트에 표시됩니다. 음력은 일자 시트에서만 보이고 캘린더 메인 화면에는 표시되지 않습니다.</p>
+    <p><b>Q. 일정에 사진을 첨부하고 싶어요.</b><br>일정 등록 또는 수정 화면에서 사진 첨부 영역을 탭하시면 사진 보관함에서 선택하거나 카메라로 직접 촬영하실 수 있습니다.</p>
+  </div>
+  <div class="mo-actions">
+    <button class="mo-cancel" onclick="closeSupport()">닫기</button>
+  </div>
 </div>
 
 <!-- 이용약관 시트 -->
@@ -2417,13 +2461,13 @@ body.align-right .cal-evbar{text-align:right}
 <div class="mo-card" id="csCard">
   <div class="mo-handle"></div>
   <div class="mo-title">고객센터</div>
-  <div class="mo-sub">문의 사항이 있으시면 1:1 상담을 이용해주세요</div>
+  <div class="mo-sub">궁금한 점이 있으시면 문의하기를 이용해주세요</div>
   <div class="cs-content">
-    <button class="cs-primary-btn" onclick="openKakaoChannel()">
+    <button class="cs-primary-btn" onclick="openSupport()">
       <span class="cs-btn-icon">💬</span>
       <span class="cs-btn-text">
-        <span class="cs-btn-title">1:1 상담하기</span>
-        <span class="cs-btn-sub">카카오톡 채널로 문의를 보낼 수 있어요</span>
+        <span class="cs-btn-title">문의하기</span>
+        <span class="cs-btn-sub">자주 묻는 질문과 문의 방법을 확인하세요</span>
       </span>
     </button>
     <div class="cs-divider"></div>
@@ -2639,6 +2683,13 @@ body.align-right .cal-evbar{text-align:right}
     <div id="roomSetMemberList"></div>
   </div>
 
+  <!-- 관리자 도구 (관리자 모드 방 + admin + 미배정 본인 일정 있을 때만 표시) -->
+  <div class="rs-section" id="adminRoomToolsSection" style="display:none">
+    <div class="rs-section-title">🔧 관리자 도구</div>
+    <div id="adminMigrateInfo" style="font-size:13px;color:var(--sub);margin-bottom:10px;line-height:1.5"></div>
+    <div id="adminMigrateButtons" style="display:flex;flex-direction:column;gap:6px"></div>
+  </div>
+
   <!-- 3. 꾸미기 -->
   <div class="rs-section">
     <div class="rs-section-title">꾸미기</div>
@@ -2695,6 +2746,7 @@ body.align-right .cal-evbar{text-align:right}
     <button class="btn-danger-full" onclick="leaveRoomConfirm()">이 방 나가기</button>
   </div>
   
+  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 2026.05.30-B</div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeRoomSettings()">닫기</button>
   </div>
@@ -3075,7 +3127,15 @@ async function autoRegisterPush(){
   const status=await getPushStatus();
   // denied / unsupported / error: 아무 것도 안 함
   if(status==='denied'||status==='unsupported'||status==='error')return;
-  // subscribed / granted / default 모두 현재 user_id로 (재)등록.
+  // 'default'(아직 답 안 함)면 한 번만 자동으로 묻고, 그 뒤로는 묻지 않음.
+  // → TWA(갤럭시)에서 권한 grant 후에도 Notification.permission이 'default'로 남는
+  //    Chromium WebView 버그 때문에 매번 켤 때마다 또 묻는 현상을 방지.
+  //    사용자가 나중에 켜고 싶으면 OS 설정에서 알림 권한을 직접 변경하면 됨.
+  if(status==='default'){
+    if(localStorage.getItem('pushPrompted')==='1') return;
+    localStorage.setItem('pushPrompted','1');
+  }
+  // subscribed / granted / default(최초 1회) 모두 현재 user_id로 (재)등록.
   // 폰에 구독이 이미 있어도(다른 계정으로 먼저 로그인했던 경우 등) endpoint 주인을
   // 현재 로그인 계정으로 갱신해, 계정 전환 후 푸시가 끊기는 문제를 막는다.
   // (upsert onConflict:'endpoint' 라서 같은 endpoint의 user_id가 현재 계정으로 덮어써짐)
@@ -3142,9 +3202,21 @@ function toast(msg){
   _tt=setTimeout(()=>el.classList.remove('on'),2800);
 }
 
+/* ── 네이티브(Capacitor) 환경 감지 ── */
+const NATIVE_AUTH_REDIRECT='com.lsung.uricalendar://login-callback';
+function isNativeApp(){
+  try{return !!(window.Capacitor&&typeof window.Capacitor.isNativePlatform==='function'&&window.Capacitor.isNativePlatform());}catch(_){return false;}
+}
+/* 네이티브 OAuth 콜백을 받을 준비가 됐는지 (App + Browser 플러그인 모두 존재할 때만 커스텀 스킴 사용) */
+function nativeAuthReady(){
+  try{return isNativeApp()&&!!(window.Capacitor.Plugins&&window.Capacitor.Plugins.Browser&&window.Capacitor.Plugins.App);}catch(_){return false;}
+}
+
 /* OAuth/매직링크용 redirect URL — Supabase Dashboard의 redirect URL 화이트리스트와 정확히 매칭되도록 query 없이.
-   join 코드는 supabase 초기화 전 IIFE에서 localStorage에 백업되어 OAuth 후 복구됨. */
+   join 코드는 supabase 초기화 전 IIFE에서 localStorage에 백업되어 OAuth 후 복구됨.
+   네이티브(앱)는 커스텀 스킴으로 돌아와야 Safari→앱 복귀가 됨. 웹/PWA는 기존 그대로. */
 function buildAuthRedirect(){
+  if(nativeAuthReady()) return NATIVE_AUTH_REDIRECT;
   return window.location.origin+window.location.pathname;
 }
 
@@ -3216,6 +3288,21 @@ async function loginKakao(){
 }
 async function _doKakaoOAuth(){
   try{
+    if(nativeAuthReady()){
+      // 네이티브: 자동 redirect 막고 URL만 받아 시스템 브라우저로 연다. 콜백은 appUrlOpen에서 처리.
+      const {data,error}=await supa.auth.signInWithOAuth({
+        provider:'kakao',
+        options:{
+          redirectTo:NATIVE_AUTH_REDIRECT,
+          scopes:'profile_nickname profile_image',
+          skipBrowserRedirect:true
+        }
+      });
+      if(error){toast(_authErr(error,'로그인에 실패했어요'));return;}
+      if(data&&data.url){await window.Capacitor.Plugins.Browser.open({url:data.url});}
+      return;
+    }
+    // 웹/PWA: 기존 동작 그대로
     const {error}=await supa.auth.signInWithOAuth({
       provider:'kakao',
       options:{
@@ -3226,6 +3313,75 @@ async function _doKakaoOAuth(){
     if(error)toast(_authErr(error,'로그인에 실패했어요'));
   }catch(e){
     toast('카카오 로그인 오류');
+  }
+}
+
+/* ─── Apple 로그인 ─── */
+/* 안전한 랜덤 nonce 생성 */
+function _genNonce(len){
+  len=len||32;
+  const chars='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let s='';
+  try{
+    const arr=new Uint8Array(len);
+    (window.crypto||crypto).getRandomValues(arr);
+    for(let i=0;i<len;i++) s+=chars[arr[i]%chars.length];
+  }catch(_){
+    for(let i=0;i<len;i++) s+=chars[Math.floor(Math.random()*chars.length)];
+  }
+  return s;
+}
+/* SHA-256 해시 (hex) — Apple nonce용 */
+async function _sha256hex(str){
+  const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function loginApple(){
+  let local=false;try{local=!!localStorage.getItem('agreedTerms')}catch(_){}
+  if(local){_doAppleOAuth();return;}
+  openAgree(()=>{recordAgreement();_doAppleOAuth();});
+}
+async function _doAppleOAuth(){
+  try{
+    const SIWA = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SignInWithApple;
+    // 네이티브 iOS: 플러그인으로 네이티브 Apple 로그인 시트 → identityToken으로 세션 생성
+    if(isNativeApp() && SIWA){
+      const rawNonce = _genNonce();
+      const hashedNonce = await _sha256hex(rawNonce);
+      let result;
+      try{
+        result = await SIWA.authorize({
+          clientId:'com.lsung.uricalendar',
+          redirectURI:NATIVE_AUTH_REDIRECT,
+          scopes:'email name',
+          nonce:hashedNonce
+        });
+      }catch(e){
+        // 사용자가 취소했거나 시트 닫음 — 조용히 종료
+        return;
+      }
+      const resp = result && result.response;
+      const idToken = resp && resp.identityToken;
+      if(!idToken){ toast('Apple 로그인에 실패했어요'); return; }
+      const {error}=await supa.auth.signInWithIdToken({
+        provider:'apple',
+        token:idToken,
+        nonce:rawNonce
+      });
+      if(error){ toast(_authErr(error,'로그인에 실패했어요')); return; }
+      // Apple은 첫 로그인 때만 이름을 줌 — 있으면 프로필 이름 보강에 활용
+      try{ if(resp && (resp.givenName||resp.familyName)){ window._applePendingName=((resp.givenName||'')+' '+(resp.familyName||'')).trim(); } }catch(_){}
+      // 세션 생성됨 → onAuthStateChange(SIGNED_IN)가 이후 흐름 처리
+      return;
+    }
+    // 웹/PWA: OAuth redirect (Service ID 통해)
+    const {error}=await supa.auth.signInWithOAuth({
+      provider:'apple',
+      options:{ redirectTo:buildAuthRedirect() }
+    });
+    if(error) toast(_authErr(error,'로그인에 실패했어요'));
+  }catch(e){
+    toast('Apple 로그인 오류');
   }
 }
 
@@ -3657,6 +3813,7 @@ function vConfirm(message,opts){
     msgEl.textContent=message||'';
     okBtn.textContent=opts.okText||'확인';
     cancelBtn.textContent=opts.cancelText||'취소';
+    document.body.appendChild(ov); // DOM 최하단으로 이동 → 시트(변형 레이어) 위에 확실히 표시 (네이티브 겹침 방지)
     ov.classList.add('on');
     const finish=(val)=>{
       ov.classList.remove('on');
@@ -3676,6 +3833,43 @@ async function doLogout(){
 }
 
 /* 이름 변경 */
+/* 관리자 전용: 본인 프로필 이름 변경 + 사진 제거 (데모/스크린샷용)
+   adminProfileLocked 플래그로 ensureKakaoProfile 자동 보강을 막아 재시작에도 유지됨.
+   복구하려면 프로필 시트의 "카카오 프로필 사진으로 복구" 버튼 사용. */
+async function adminSetMyProfile(){
+  if(!isAdmin()){toast('권한 없음');return}
+  if(!_currentUser){toast('로그인 필요');return}
+  const inp=document.getElementById('adminMyNameInput');
+  const name=(inp?.value||'').trim();
+  if(!name){toast('이름을 입력해주세요');return}
+  if(name.length>20){toast('20자 이내로');return}
+  try{
+    const {error}=await supa.from('profiles').upsert({
+      id:_currentUser.id,
+      name,
+      avatar_url:null,
+      email:_currentUser.email||null
+    });
+    if(error)throw error;
+    localStorage.setItem('adminProfileLocked','1'); // 자동 보강 잠금
+    if(!_currentProfile)_currentProfile={};
+    _currentProfile.name=name;
+    _currentProfile.avatar_url=null;
+    if(typeof updateUserAvatar==='function') updateUserAvatar();
+    if(typeof updateCalAvatar==='function') updateCalAvatar();
+    if(typeof loadProfilePhoto==='function') loadProfilePhoto();
+    if(_currentRoom){
+      await loadRoomMembers();
+      try{ renderMemberTabs(); }catch(_){}
+      try{ renderMonthly(); }catch(_){}
+    }
+    toast('적용됨: '+name);
+    if(inp) inp.value='';
+  }catch(e){
+    toast('실패: '+(e.message||'').slice(0,40));
+  }
+}
+
 async function saveProfileName(){
   if(!_currentUser){toast('로그인이 필요해요');return}
   const name=document.getElementById('profileNameInput').value.trim();
@@ -3785,6 +3979,7 @@ async function restoreKakaoPhoto(){
     return;
   }
   if(!await vConfirm('카카오톡 프로필 사진으로 복구할까요?'))return;
+  localStorage.removeItem('adminProfileLocked'); // 관리자 잠금 해제
   toast('복구 중...');
   try{
     // 외부 URL → 이미지 로드 → canvas로 base64 변환 (CORS 허용 필요)
@@ -3839,6 +4034,118 @@ async function restoreKakaoPhoto(){
   }
 }
 
+/* 카카오 로그인 시 프로필 사진 자동 적용 — 사진이 아직 없을 때만, 조용히(확인창·토스트 없음) */
+/* 이미지 URL → base64 data URL.
+   네이티브는 CapacitorHttp로 직접 받아 CORS·http차단·핫링크를 모두 우회 → 무조건 사진을 띄울 수 있다. */
+function _blobToDataUrl(b){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=()=>rej(new Error('x'));fr.readAsDataURL(b)})}
+function _shrinkDataUrl(dataUrl,max){
+  return new Promise((resolve)=>{
+    try{
+      const img=new Image();
+      img.onload=()=>{let w=img.width,h=img.height;if(w>h){if(w>max){h=h*max/w;w=max}}else{if(h>max){w=w*max/h;h=max}}const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);try{resolve(c.toDataURL('image/jpeg',0.85))}catch(_){resolve(dataUrl)}};
+      img.onerror=()=>resolve(dataUrl);
+      img.src=dataUrl;
+    }catch(_){ resolve(dataUrl); }
+  });
+}
+async function fetchImageAsDataUrl(url){
+  url=String(url||'').replace(/^http:\/\//,'https://');
+  if(!url) return null;
+  const C=window.Capacitor;
+  const isNative=!!(C&&C.isNativePlatform&&C.isNativePlatform());
+  // 1) 네이티브: CapacitorHttp 플러그인으로 직접 다운로드 (CORS·혼합콘텐츠 무관)
+  if(isNative){
+    try{
+      const CH=(C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp;
+      if(CH&&CH.get){
+        const res=await CH.get({url,responseType:'blob'});
+        let mime='image/jpeg';
+        try{const h=res.headers||{};const ct=h['Content-Type']||h['content-type']||'';if(ct)mime=String(ct).split(';')[0].trim();}catch(_){}
+        const d=res.data;
+        if(typeof d==='string'&&d.length){ return d.indexOf('data:')===0?d:('data:'+mime+';base64,'+d); }
+        if(typeof Blob!=='undefined'&&d instanceof Blob){ return await _blobToDataUrl(d); }
+      }
+    }catch(_){}
+  }
+  // 2) fetch → blob (웹에서 동작)
+  try{
+    const r=await fetch(url);
+    if(r&&r.ok){ const b=await r.blob(); if(b&&b.size) return await _blobToDataUrl(b); }
+  }catch(_){}
+  // 3) canvas (CORS 허용 서버 대비)
+  try{
+    return await new Promise((resolve,reject)=>{
+      const img=new Image(); img.crossOrigin='anonymous';
+      img.onload=()=>{const c=document.createElement('canvas');const max=200;let w=img.width,h=img.height;if(w>h){if(w>max){h=h*max/w;w=max}}else{if(h>max){w=w*max/h;h=max}}c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);try{resolve(c.toDataURL('image/jpeg',0.85))}catch(e){reject(e)}};
+      img.onerror=()=>reject(new Error('x')); img.src=url;
+    });
+  }catch(_){}
+  return null;
+}
+
+async function autoApplyKakaoPhoto(){
+  try{
+    if(!_currentUser) return;
+    const meta=_currentUser.user_metadata||{};
+    let kakaoUrl=meta.avatar_url||meta.picture||meta.profile_image||meta.profile_image_url;
+    if(!kakaoUrl) return;
+    let dataUrl=await fetchImageAsDataUrl(kakaoUrl);          // 네이티브 직접 다운로드 → base64 (CORS·http 무관)
+    if(dataUrl&&dataUrl.indexOf('data:')===0) dataUrl=await _shrinkDataUrl(dataUrl,200); // 용량 축소
+    if(!dataUrl) return;                                       // 끝내 못 받으면 저장 안 함(글자 폴백이 처리)
+    const kName=meta.name||meta.full_name||meta.preferred_username;
+    const safeName=kName||(_currentProfile?.name&&_currentProfile.name!=='나'?_currentProfile.name:null)||(_currentUser.email?_currentUser.email.split('@')[0]:'익명');
+    await supa.from('profiles').upsert({id:_currentUser.id,avatar_url:dataUrl,email:_currentUser.email||null,name:safeName});
+    if(!_currentProfile)_currentProfile={};
+    _currentProfile.avatar_url=dataUrl;
+    if(_myMembers&&_myMembers.length){
+      const me=_myMembers.find(m=>m.user_id===_currentUser.id);
+      if(me)me.avatar_url=dataUrl;
+    }
+    if(typeof loadProfilePhoto==='function') loadProfilePhoto();
+    if(typeof updateCalAvatar==='function') updateCalAvatar();
+    if(typeof updateUserAvatar==='function') updateUserAvatar();
+    if(typeof renderMemberTabs==='function') renderMemberTabs();
+  }catch(e){ /* 조용히 실패 — 사용자는 복구 버튼으로 수동 적용 가능 */ }
+}
+
+/* 카카오 사용자 프로필 보강 — DB에 이름/사진 없으면 채우고 화면 갱신.
+   로그인 직후(appUrlOpen)·앱 재실행(getSession)·SIGNED_IN 어디서 와도 안전 (세션당 1회). */
+let _kakaoEnsured=false;
+async function ensureKakaoProfile(){
+  try{
+    if(_kakaoEnsured) return;
+    if(localStorage.getItem('adminProfileLocked')==='1') return; // 관리자가 직접 설정 → 자동 보강 끔
+    let user=_currentUser;
+    try{ const {data}=await supa.auth.getUser(); if(data&&data.user) user=data.user; }catch(_){}
+    if(!user) return;
+    _currentUser=user;
+    const meta=user.user_metadata||{};
+    const kakaoName=meta.name||meta.full_name||meta.preferred_username;
+    const kakaoPhoto=meta.avatar_url||meta.picture||meta.profile_image||meta.profile_image_url;
+    if(!kakaoName&&!kakaoPhoto) return; // 카카오 정보 없음(이메일 가입 등) → 패스
+    const {data:prof}=await supa.from('profiles').select('name,avatar_url').eq('id',user.id).maybeSingle();
+    _kakaoEnsured=true;
+    let touched=false;
+    // 사진이 없거나, 깨질 수 있는 raw URL(data: 아님)이면 base64로 다시 받아 저장
+    const needPhoto = !prof || !prof.avatar_url || prof.avatar_url.indexOf('data:')!==0;
+    if(needPhoto && kakaoPhoto){
+      await autoApplyKakaoPhoto();               // 카카오 사진을 base64로 박음(이름도 닉네임으로)
+      touched=true;
+    }
+    // 이름이 비었거나 옛 기본값 '나'면 카카오 닉네임으로 교체
+    if(kakaoName&&(!prof||!prof.name||prof.name==='나')){
+      await supa.from('profiles').upsert({id:user.id,name:kakaoName,email:user.email||null});
+      touched=true;
+    }
+    if(touched){
+      if(typeof loadCurrentProfile==='function') await loadCurrentProfile();
+      if(typeof updateUserAvatar==='function') updateUserAvatar();
+      if(typeof updateCalAvatar==='function') updateCalAvatar();
+      if(_currentRoom&&typeof loadRoomMembers==='function'){ try{ await loadRoomMembers(); if(typeof renderMemberTabs==='function') renderMemberTabs(); }catch(_){} }
+    }
+  }catch(_){}
+}
+
 /* 사용자 정보 표시 (헤더 아바타) */
 let _currentUser=null;
 let _currentProfile=null;  // { birthday: 'MM-DD', ... } — 캘린더에 생일 자동 표시용
@@ -3849,13 +4156,20 @@ function renderUser(user){
 }
 
 /* 방 목록 화면 우측 상단 아바타 갱신 (사진 있으면 사진, 없으면 첫 글자) */
+function avImg(url,initial,extra){
+  const u=String(url||'').replace(/^http:\/\//,'https://'); // 혼합콘텐츠 차단 방지
+  const ini=String(initial||'·').slice(0,1).replace(/['"\\<>]/g,'');
+  return `<img src="${escapeHtml(u)}" alt="" ${extra||''} onerror="this.onerror=null;var p=this.parentElement;p.classList.remove('has-photo');p.textContent='${ini}'">`;
+}
 function updateUserAvatar(){
   const el=document.getElementById('userAvatar');
   if(!el||!_currentUser)return;
   const photo=_currentProfile?.avatar_url;
   if(photo){
     el.classList.add('has-photo');
-    el.innerHTML=`<img src="${escapeHtml(photo)}" alt="">`;
+    const m1=_currentUser.user_metadata||{};
+    const n1=(_currentProfile?.name)||m1.name||m1.full_name||m1.preferred_username||(_currentUser.email?_currentUser.email.split('@')[0]:'?');
+    el.innerHTML=avImg(photo,(n1||'?').trim().charAt(0).toUpperCase()||'—');
   }else{
     el.classList.remove('has-photo');
     const meta=_currentUser.user_metadata||{};
@@ -4111,10 +4425,18 @@ async function loadCurrentProfile(){
 function updateCalAvatar(){
   const el=document.getElementById('calAvatar');
   if(!el||!_currentUser)return;
+  // 관리자 모드 + 본인 숨김 방: 우상단 아바타도 감춤 (정체 노출 방지)
+  if(typeof _shouldHideSelfInAdminRoom==='function' && _shouldHideSelfInAdminRoom()){
+    el.style.display='none';
+    return;
+  }
+  el.style.display='';
   const photo=_currentProfile?.avatar_url;
   if(photo){
     el.classList.add('has-photo');
-    el.innerHTML=`<img src="${escapeHtml(photo)}" alt="">`;
+    const m1=_currentUser.user_metadata||{};
+    const n1=(_currentProfile?.name)||m1.name||m1.full_name||(_currentUser.email?_currentUser.email.split('@')[0]:'?');
+    el.innerHTML=avImg(photo,(n1||'?').trim().charAt(0).toUpperCase());
   }else{
     el.classList.remove('has-photo');
     const meta=_currentUser.user_metadata||{};
@@ -4255,6 +4577,8 @@ function openCreateRoom(){
     adminWrap.style.display=isAdmin()?'block':'none';
     document.getElementById('createAdminModeOption').classList.remove('on');
   }
+  const adminProfWrap=document.getElementById('adminMyProfileWrap');
+  if(adminProfWrap) adminProfWrap.style.display=isAdmin()?'block':'none';
   setTimeout(()=>{const x=document.getElementById('newRoomName');if(x)x.focus()},320);
 }
 function closeCreateRoom(){
@@ -4517,6 +4841,7 @@ async function init(){
       renderUser(session.user);
       showScreen('roomsScreen');
       loadRooms();
+      ensureKakaoProfile();  // 재실행 시에도 카카오 이름·사진 보강 (아바타 "?" 방지)
     }else{
       showScreen('welcomeScreen');
     }
@@ -4524,6 +4849,7 @@ async function init(){
     showScreen('welcomeScreen');
   }finally{
     setTimeout(()=>document.getElementById('loading').classList.add('hide'),200);
+    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 2026.06.01-A · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
     // in-app browser(카톡·네이버·페이스북 등)에서 열렸을 때 한 줄 안내
     setTimeout(maybeShowInAppBrowserHint,800);
   }
@@ -4609,6 +4935,40 @@ supa.auth.onAuthStateChange((event,session)=>{
     showScreen('welcomeScreen');
   }
 });
+
+/* ═══ 네이티브 딥링크: 카카오 OAuth 콜백(커스텀 스킴) 수신 → 세션 복원 → 앱 복귀 ═══
+   웹/PWA에는 영향 없음 (isNativeApp일 때만 동작). 토큰은 implicit flow라 URL hash로 옴. */
+(function setupNativeAuthDeepLink(){
+  if(!isNativeApp()) return;
+  try{
+    var App=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.App;
+    if(!App||!App.addListener) return;
+    App.addListener('appUrlOpen', async function(event){
+      try{
+        var url=event&&event.url; if(!url) return;
+        if(url.indexOf(NATIVE_AUTH_REDIRECT)!==0) return; // 우리 OAuth 콜백만 처리
+        var hashPart=url.split('#')[1]||'';
+        var queryPart=(url.split('?')[1]||'').split('#')[0];
+        var params=new URLSearchParams(hashPart||queryPart);
+        var access_token=params.get('access_token');
+        var refresh_token=params.get('refresh_token');
+        if(access_token&&refresh_token){
+          await supa.auth.setSession({access_token:access_token,refresh_token:refresh_token}); // → onAuthStateChange(SIGNED_IN)
+          // 카카오 닉네임·사진은 user_metadata에만 오고 DB profiles엔 없어서 아바타가 "?"로 뜬다 → 보강.
+          await ensureKakaoProfile();
+        }else if(params.get('code')&&supa.auth.exchangeCodeForSession){
+          await supa.auth.exchangeCodeForSession(url); // PKCE 대비 (현재는 implicit라 미사용)
+        }else{
+          var errDesc=params.get('error_description')||params.get('error');
+          if(errDesc) toast(decodeURIComponent(errDesc));
+        }
+      }catch(e){ /* noop */ }
+      finally{
+        try{ if(window.Capacitor.Plugins.Browser&&window.Capacitor.Plugins.Browser.close) window.Capacitor.Plugins.Browser.close(); }catch(_){}
+      }
+    });
+  }catch(e){ /* noop */ }
+})();
 
 /* ═══════════════════════════════════
    3-A: 테마 시스템 + 캘린더 + 일정
@@ -4730,21 +5090,24 @@ function _virtualMemberIdFromAuthor(){
 function _attachVirtualMember(rowsOrRow){
   const vmId=_virtualMemberIdFromAuthor();
   if(!vmId)return rowsOrRow;
+  // virtual_member_id가 이미 명시된 row(_buildCoEventRow가 함께 일정 멤버별로 설정한 값)는 보존
+  // → author로 모든 row를 덮어쓰면 함께 일정의 멤버 배정이 깨짐
   if(Array.isArray(rowsOrRow)){
-    return rowsOrRow.map(r=>({...r,virtual_member_id:vmId}));
+    return rowsOrRow.map(r=>('virtual_member_id' in r) ? r : {...r,virtual_member_id:vmId});
   }
-  return {...rowsOrRow,virtual_member_id:vmId};
+  return ('virtual_member_id' in rowsOrRow) ? rowsOrRow : {...rowsOrRow,virtual_member_id:vmId};
 }
 /* UPDATE용 — 명시적으로 virtual_member_id 컬럼 set (가상→본인 변경 시 NULL로 clear) */
 function _withVirtualMemberForUpdate(updateObj){
   return {...updateObj,virtual_member_id:_virtualMemberIdFromAuthor()};
 }
-/* 함께 일정 row 빌더 — memberKey가 'v-<id>'면 가상 멤버 (user_id=본인, virtual_member_id=가상.id) */
+/* 함께 일정 row 빌더 — memberKey가 'v-<id>'면 가상 멤버 (user_id=본인, virtual_member_id=가상.id)
+   실제 멤버 row도 virtual_member_id:null을 명시 → _attachVirtualMember가 author로 덮어쓰지 않도록. */
 function _buildCoEventRow(memberKey, baseRow){
   if(typeof memberKey==='string' && memberKey.startsWith('v-')){
     return {...baseRow, user_id:_currentUser.id, virtual_member_id:memberKey.slice(2)};
   }
-  return {...baseRow, user_id:memberKey};
+  return {...baseRow, user_id:memberKey, virtual_member_id:null};
 }
 
 /* 명의 선택 UI 렌더 — 관리자 모드 방 + admin에서만 노출 */
@@ -4756,8 +5119,9 @@ function renderEventAuthorPicker(){
     row.style.display='none';
     return;
   }
-  // 본인 + 가상 멤버들
-  const authors=[
+  // 가상 멤버 명의들. 관리자 모드(본인 숨김)에선 '나' 옵션 제거, 가상만.
+  const hideSelf=_shouldHideSelfInAdminRoom();
+  const authors=hideSelf?[]:[
     {key:null,name:'나',avatar:_currentProfile?.avatar_url||null,color:'#8b3a2a'}
   ];
   _myMembers.filter(m=>m.is_virtual).forEach(m=>{
@@ -4768,6 +5132,10 @@ function renderEventAuthorPicker(){
       color:m.color||'#8b5a3c'
     });
   });
+  // 본인 숨김 모드에서 현재 author가 null이면 첫 가상으로 자동 설정
+  if(hideSelf&&(_eventAuthorKey===null||_eventAuthorKey===undefined)&&authors.length>0){
+    _eventAuthorKey=authors[0].key;
+  }
   el.innerHTML=authors.map(a=>{
     const on=(_eventAuthorKey||null)===a.key;
     const initial=(a.name||'?').trim().charAt(0).toUpperCase();
@@ -4783,12 +5151,18 @@ function renderEventAuthorPicker(){
 function setEventAuthor(key){
   _eventAuthorKey=key;
   renderEventAuthorPicker();
-  // 가상 멤버 명의 선택 시 강제 단독 (혼자) + 함께 토글 숨김
+  // 가상 멤버 명의 선택 시
   const targetRow=document.getElementById('evTargetRow');
   if(key && key.startsWith('v-')){
-    if(targetRow)targetRow.style.display='none';
-    _selectedTarget='self';
-    _selectedMembers=[_currentUser?.id];
+    if(_shouldHideSelfInAdminRoom()){
+      // 본인 숨김 모드: 가상끼리 함께 일정도 가능 → 멤버 수에 따라 자연스럽게 표시
+      if(typeof applyTargetUI==='function')applyTargetUI();
+    }else{
+      // 기존 admin 모드: 단독으로 강제
+      if(targetRow)targetRow.style.display='none';
+      _selectedTarget='self';
+      _selectedMembers=[_currentUser?.id];
+    }
   }else{
     // 본인 명의 — 일반 흐름 (멤버 수에 따라 표시)
     if(typeof applyTargetUI==='function')applyTargetUI();
@@ -5462,11 +5836,24 @@ async function loadRoomMembers(){
 }
 
 /* 멤버 프로필 탭 렌더 — 전체 + 각 멤버 */
+/* 관리자 모드 방 + 본인이 admin이면 → 본인(real user) 멤버는 모든 멤버 UI에서 숨김 */
+function _shouldHideSelfInAdminRoom(){
+  return !!(_currentRoom&&_currentRoom.is_admin_mode&&typeof isAdmin==='function'&&isAdmin());
+}
+function _visibleMembers(){
+  const arr=_myMembers||[];
+  if(_shouldHideSelfInAdminRoom()){
+    return arr.filter(m=>m.is_virtual||(m.user_id!==_currentUser?.id));
+  }
+  return arr;
+}
+
 function renderMemberTabs(){
   const wrap=document.getElementById('calMemberTabs');
   if(!wrap)return;
+  const _vis=_visibleMembers();
   // 멤버 2명 이상일 때만 표시 (혼자면 의미 없음)
-  if(_myMembers.length<2){
+  if(_vis.length<2){
     wrap.classList.remove('show');
     wrap.innerHTML='';
     return;
@@ -5474,14 +5861,14 @@ function renderMemberTabs(){
   wrap.classList.add('show');
   // _viewingMember 유효성 검증 — 가상 멤버('v-'+member_id)와 일반 멤버(user_id) 둘 다 체크
   if(_viewingMember!=='all'){
-    const found=_myMembers.find(m=>{
+    const found=_vis.find(m=>{
       if(m.is_virtual)return ('v-'+m.member_id)===_viewingMember;
       return m.user_id===_viewingMember;
     });
     if(!found)_viewingMember='all';
   }
   // 본인을 첫 번째로 정렬 (가상 멤버는 joined_at 순)
-  const sorted=[..._myMembers].sort((a,b)=>{
+  const sorted=[..._vis].sort((a,b)=>{
     if(!a.is_virtual && a.user_id===_currentUser?.id)return -1;
     if(!b.is_virtual && b.user_id===_currentUser?.id)return 1;
     return 0;
@@ -5509,7 +5896,7 @@ function renderMemberTabs(){
     const photo=isMe?(_currentProfile?.avatar_url||m.avatar_url):m.avatar_url;
     let iconHtml;
     if(photo){
-      iconHtml=`<div class="cal-member-tab-icon has-photo" style="background:${bg}"><img src="${escapeHtml(photo)}" alt=""></div>`;
+      iconHtml=`<div class="cal-member-tab-icon has-photo" style="background:${bg}">${avImg(photo,initial)}</div>`;
     }else{
       iconHtml=`<div class="cal-member-tab-icon" style="background:${bg}">${escapeHtml(initial)}</div>`;
     }
@@ -6057,7 +6444,7 @@ function renderDateSheetList(){
         if(!m)return '';
         const name=(m.name||'').trim();
         const initial=escapeHtml(name.slice(0,1)||'·');
-        const avInner=m.avatar_url?`<img src="${escapeHtml(m.avatar_url)}" alt="">`:initial;
+        const avInner=m.avatar_url?avImg(m.avatar_url,initial):initial;
         return `<span class="dp-member-chip"><span class="dp-member-chip-av" style="background:${escapeHtml(m.color||'#8b3a2a')}">${avInner}</span><span class="dp-member-chip-name">${escapeHtml(name)}</span></span>`;
       }).join('');
       const moreChip=remaining>0?`<span class="dp-member-chip dp-member-chip-more">+${remaining}명</span>`:'';
@@ -6097,7 +6484,7 @@ function renderDateSheetList(){
         const m=_myMembers.find(mm=>mm.user_id===r.user_id);
         const isMineR=r.user_id===_currentUser?.id;
         const clickHandler=isMineR?`onclick="event.stopPropagation();openEmojiPick('${ev.id}')"`:'';
-        const avInnerR=m&&m.avatar_url?`<img src="${escapeHtml(m.avatar_url)}" alt="">`:escapeHtml((m?.name||'·').slice(0,1));
+        const avInnerR=m&&m.avatar_url?avImg(m.avatar_url,(m?.name||'·').slice(0,1)):escapeHtml((m?.name||'·').slice(0,1));
         const avBgR=escapeHtml(m?.color||'#8b3a2a');
         const emojiContent=(r.emoji&&r.emoji.includes(':'))?svgEmoji(r.emoji):r.emoji;
         reactionHtml+=`<span class="dp-reaction-chip${isMineR?' mine':''}" ${clickHandler} title="${escapeHtml(m?.name||'')}"><span class="dp-reaction-chip-av" style="background:${avBgR}">${avInnerR}</span><span class="dp-reaction-chip-emoji">${emojiContent}</span></span>`;
@@ -6557,8 +6944,19 @@ function updateMembersDisplay(){
 
 /* 멤버 선택 모달 */
 function openMemberPick(preselected){
-  _tempPickedMembers=[...(preselected||[_currentUser?.id])];
-  if(!_tempPickedMembers.includes(_currentUser?.id))_tempPickedMembers.unshift(_currentUser.id);
+  if(_shouldHideSelfInAdminRoom()){
+    // 본인 숨김 모드: 가상 멤버끼리만 함께 일정. real user 강제 포함 안 함.
+    _tempPickedMembers=[...(preselected||[])];
+    // 현재 author가 가상이면 기본 선택에 포함
+    const authorVm=_virtualMemberIdFromAuthor();
+    if(authorVm){
+      const authorKey='v-'+authorVm;
+      if(!_tempPickedMembers.includes(authorKey))_tempPickedMembers.unshift(authorKey);
+    }
+  }else{
+    _tempPickedMembers=[...(preselected||[_currentUser?.id])];
+    if(!_tempPickedMembers.includes(_currentUser?.id))_tempPickedMembers.unshift(_currentUser.id);
+  }
   renderMemberPickList();
   document.getElementById('memberPickOverlay').classList.add('on');
   document.getElementById('memberPickCard').classList.add('on');
@@ -6568,7 +6966,8 @@ function renderMemberPickList(){
   if(!list)return;
   list.innerHTML='';
   // 실제 멤버 + 가상 멤버 모두 표시. 식별자: 실제=user_id, 가상='v-'+member_id
-  _myMembers.forEach(m=>{
+  // 관리자 모드에선 본인(real user)는 숨김
+  _visibleMembers().forEach(m=>{
     const memberKey=m.is_virtual?('v-'+m.member_id):m.user_id;
     if(!memberKey)return;
     const isMe=!m.is_virtual && m.user_id===_currentUser?.id;
@@ -6577,10 +6976,10 @@ function renderMemberPickList(){
     div.className=`mp-item${on?' on':''}${isMe?' me':''}${m.is_virtual?' virtual':''}`;
     div.dataset.uid=memberKey;
     const initial=(m.name||'?').trim().charAt(0).toUpperCase();
-    const tagHtml=isMe?' <span class="mp-item-tag">(나)</span>':(m.is_virtual?' <span class="mp-item-tag">가상</span>':'');
+    const tagHtml=m.is_virtual?' <span class="mp-item-tag">가상</span>':'';
     // 아바타 (사진 있으면 사진, 없으면 첫 글자)
     const stampHtml=m.avatar_url
-      ?`<div class="mp-item-stamp" style="background:${m.is_virtual?(m.color||'#8b5a3c'):''};overflow:hidden"><img src="${escapeHtml(m.avatar_url)}" alt="" style="width:100%;height:100%;object-fit:cover"></div>`
+      ?`<div class="mp-item-stamp" style="background:${m.is_virtual?(m.color||'#8b5a3c'):''};overflow:hidden">${avImg(m.avatar_url,initial,'style="width:100%;height:100%;object-fit:cover"')}</div>`
       :`<div class="mp-item-stamp" style="background:${m.is_virtual?(m.color||'#8b5a3c'):''}">${escapeHtml(initial)}</div>`;
     div.innerHTML=`
       ${stampHtml}
@@ -8301,6 +8700,7 @@ function openRoomSettings(){
   document.getElementById('roomSetMemberCount').textContent=`${_myMembers.length}명`;
   syncAnnouncementBadge();
   renderRoomMemberList();
+  renderAdminMigrateTool();
   // owner / 멤버 메뉴 분기 — 전역 admin 토글 켜져 있으면 admin도 관리 권한
   const isOwner=_currentRoom.owner_id===_currentUser?.id;
   const canManage=isOwner||_adminBypass();
@@ -8391,6 +8791,58 @@ async function saveRoomName(){
   }
 }
 
+/* 관리자 도구 — 관리자 모드 방에서 본인(real user) 일정을 가상 멤버로 이전.
+   본인이 admin + 관리자모드 + 가상 멤버 존재 + 미배정 본인 일정 있을 때만 표시. */
+async function renderAdminMigrateTool(){
+  const section=document.getElementById('adminRoomToolsSection');
+  const info=document.getElementById('adminMigrateInfo');
+  const btnsWrap=document.getElementById('adminMigrateButtons');
+  if(!section||!info||!btnsWrap)return;
+  if(!_currentRoom?.is_admin_mode||!isAdmin()||!_currentUser){
+    section.style.display='none'; return;
+  }
+  const virtuals=(_myMembers||[]).filter(m=>m.is_virtual);
+  if(!virtuals.length){section.style.display='none'; return;}
+  try{
+    const {count}=await supa.from('events')
+      .select('*',{count:'exact',head:true})
+      .eq('room_id',_currentRoom.id)
+      .eq('user_id',_currentUser.id)
+      .is('virtual_member_id',null);
+    if(!count){section.style.display='none'; return;}
+    info.textContent=`내 일정 ${count}개가 가상 멤버에 배정되지 않았어요. 옮길 대상을 선택하세요.`;
+    btnsWrap.innerHTML='';
+    virtuals.forEach(v=>{
+      const btn=document.createElement('button');
+      btn.textContent=`→ ${v.name}(으)로 옮기기`;
+      btn.style.cssText='padding:11px 14px;background:var(--card);color:var(--text);border:1px solid var(--mute);border-radius:8px;font-size:14px;font-family:inherit;text-align:left;cursor:pointer';
+      btn.onclick=()=>adminMigrateMyEvents(v.member_id, v.name, count);
+      btnsWrap.appendChild(btn);
+    });
+    section.style.display='block';
+  }catch(e){
+    console.warn('관리자 도구 렌더 실패:',e);
+    section.style.display='none';
+  }
+}
+async function adminMigrateMyEvents(targetMemberId, targetName, count){
+  if(!isAdmin()||!_currentRoom?.is_admin_mode||!_currentUser)return;
+  if(!await vConfirm(`내 일정 ${count}개를 "${targetName}"(으)로 옮길까요?`))return;
+  try{
+    const {error}=await supa.from('events').update({virtual_member_id:targetMemberId})
+      .eq('room_id',_currentRoom.id)
+      .eq('user_id',_currentUser.id)
+      .is('virtual_member_id',null);
+    if(error)throw error;
+    toast(`${count}개를 ${targetName}(으)로 옮겼어요`);
+    await loadEvents();
+    try{renderMemberTabs();renderMonthly();}catch(_){}
+    await renderAdminMigrateTool(); // 다시 렌더(0개 되면 자동 숨김)
+  }catch(e){
+    toast('실패: '+(e.message||'').slice(0,40));
+  }
+}
+
 function renderRoomMemberList(){
   const list=document.getElementById('roomSetMemberList');
   if(!list)return;
@@ -8398,7 +8850,7 @@ function renderRoomMemberList(){
   const isOwner=_currentRoom?.owner_id===_currentUser?.id;
   const canKick=isOwner||_adminBypass();
   const isAdminRoom=!!_currentRoom?.is_admin_mode;
-  _myMembers.forEach(m=>{
+  _visibleMembers().forEach(m=>{
     const isMe=!m.is_virtual && m.user_id===_currentUser?.id;
     const isMemberOwner=!m.is_virtual && m.user_id===_currentRoom?.owner_id;
     const initial=(m.name||'?').trim().charAt(0).toUpperCase();
@@ -8414,7 +8866,7 @@ function renderRoomMemberList(){
     }
     // 아바타: 사진 있으면 사진, 없으면 첫 글자
     const stamp=m.avatar_url
-      ? `<div class="rs-member-stamp has-photo"><img src="${escapeHtml(m.avatar_url)}" alt=""></div>`
+      ? `<div class="rs-member-stamp has-photo">${avImg(m.avatar_url,initial)}</div>`
       : `<div class="rs-member-stamp">${escapeHtml(initial)}</div>`;
     // 생일 D-Day 배지
     const dDay=daysUntilBirthday(m.birthday);
@@ -10186,6 +10638,16 @@ function openKakaoChannel(){
   }catch(e){
     location.href=KAKAO_CHANNEL_URL;
   }
+}
+
+/* 문의하기 시트 */
+function openSupport(){
+  document.getElementById('supportOverlay').classList.add('on');
+  document.getElementById('supportCard').classList.add('on');
+}
+function closeSupport(){
+  document.getElementById('supportOverlay').classList.remove('on');
+  document.getElementById('supportCard').classList.remove('on');
 }
 
 /* 이용약관 / 개인정보처리방침 */
