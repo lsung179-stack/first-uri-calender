@@ -2835,7 +2835,8 @@ body.align-right .cal-evbar{text-align:right}
       <div class="rs-section-title">알림</div>
       <div class="rs-row">
         <div class="rs-row-info">
-          <div class="rs-row-label">이 방의 알림 받기</div>
+          <div class="rs-row-label">알림 받기</div>
+          <div class="rs-row-sub">내가 속한 모든 방에 함께 적용돼요</div>
         </div>
         <button class="dp-btn primary" id="roomNotifToggleBtn" onclick="toggleRoomNotification()">—</button>
       </div>
@@ -3119,7 +3120,14 @@ async function registerPushNotification(silent){
   }
   if(!_currentUser){if(!silent)toast('로그인이 필요해요');return false}
   try{
-    const permission=await Notification.requestPermission();
+    // ★ 이미 '허용'된 경우 권한을 다시 요청하지 않는다.
+    //   일부 브라우저(삼성 인터넷 등)는 granted 상태에서 requestPermission()을
+    //   또 호출하면 권한 팝업을 다시 띄워서, 허용을 눌러도 방에 들어갈 때마다
+    //   계속 물어보는 문제가 있었다. permission이 'default'일 때만 요청한다.
+    let permission=Notification.permission;
+    if(permission!=='granted'){
+      permission=await Notification.requestPermission();
+    }
     if(permission!=='granted'){
       if(!silent)toast('알림 권한이 필요해요');
       return false;
@@ -3178,17 +3186,18 @@ async function autoRegisterPush(){
   }
 
   const status=await getPushStatus();
-  // 이미 권한을 허용한 사용자만 조용히 (재)등록한다.
-  // 권한 미정(default)·차단(denied)·미지원이면 방 진입 시 자동으로 권한을 묻지 않는다.
-  // → 갤럭시 등에서 앱을 껐다 켤 때마다 "알림 허용" 팝업이 반복되던 문제를 근본 차단.
-  //   (이전의 localStorage 'pushPrompted' 가드는 브라우저가 사이트 데이터를 비우면
-  //    무력화돼 신뢰할 수 없었음. 그래서 자동 권한요청 자체를 제거.)
-  // 알림을 새로 켜고 싶은 사용자는 고객센터의 '알림 켜기' 버튼으로 직접 요청한다.
-  // granted/subscribed 재등록 시 endpoint 주인을 현재 로그인 계정으로 갱신해,
-  // 계정 전환 후 푸시가 끊기는 문제도 함께 막는다(upsert onConflict:'endpoint').
-  if(status==='granted'||status==='subscribed'){
-    await registerPushNotification(true);
+  // denied / unsupported / error: 아무 것도 안 함
+  if(status==='denied'||status==='unsupported'||status==='error')return;
+  // 'default'(아직 허용/차단을 선택 안 함): 첫 진입에 한 번만 자동으로 권한 요청.
+  //  팝업을 무시(X)했을 때 방을 옮길 때마다 반복되지 않도록 1회 표시만 기록한다.
+  if(status==='default'){
+    if(localStorage.getItem('pushPrompted')==='1') return;
+    localStorage.setItem('pushPrompted','1');
   }
+  // granted/subscribed/default(최초 1회) → (재)등록.
+  // ※ registerPushNotification은 이미 granted면 권한 재요청을 생략하므로(위 함수 참고),
+  //   허용한 사용자에게는 방에 들어와도 다시 팝업이 뜨지 않는다.
+  await registerPushNotification(true);
 }
 
 /* 푸시 해제 */
@@ -8778,7 +8787,7 @@ function syncRoomNotifButton(){
   btn.classList.toggle('primary',!on);  // 꺼진 상태일 때 primary(강조)로 — 켜기 권유
 }
 
-/* 방 알림 토글 클릭 */
+/* 알림 토글 클릭 — 내 모든 방의 알림 수신을 한 번에 켜고/끈다 */
 async function toggleRoomNotification(){
   if(!_currentRoom||!_currentUser)return;
   const btn=document.getElementById('roomNotifToggleBtn');
@@ -8787,15 +8796,25 @@ async function toggleRoomNotification(){
   const next=!current;
   btn.disabled=true;
   try{
+    // 켤 때: 브라우저 알림 권한/구독이 없으면 먼저 요청.
+    // (수신 플래그만 켜도 권한이 없으면 푸시가 실제로 오지 않으므로 함께 처리)
+    if(next){
+      const st=await getPushStatus();
+      if(st!=='granted'&&st!=='subscribed'){
+        const ok=await registerPushNotification(true);
+        if(!ok){toast('알림 권한을 허용해야 켤 수 있어요');btn.disabled=false;return;}
+      }
+    }
+    // 내가 속한 모든 방의 멤버 row를 한 번에 갱신.
+    // (가상 멤버는 user_id가 NULL이라 매칭되지 않아 영향 없음)
     const {error}=await supa.from('members')
       .update({notifications_enabled:next})
-      .eq('room_id',_currentRoom.id)
       .eq('user_id',_currentUser.id);
     if(error)throw error;
-    // 로컬 상태 갱신
+    // 로컬 상태 갱신(현재 방 기준 — 전체가 동일 값이 되므로 버튼 표시도 일관)
     if(me)me.notifications_enabled=next;
     syncRoomNotifButton();
-    toast(next?'이 방 알림을 켰어요':'이 방 알림을 껐어요');
+    toast(next?'모든 방 알림을 켰어요':'모든 방 알림을 껐어요');
   }catch(e){
     toast('실패: '+(e.message||'').slice(0,40));
     console.error(e);
