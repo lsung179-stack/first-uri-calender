@@ -767,19 +767,22 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 /* 약관/처리방침/회원탈퇴는 고객센터(50/51) 위에 떠야 함 */
 #termsOverlay,#privacyOverlay,#leaveAccountOverlay{z-index:1600}
 #termsCard,#privacyCard,#leaveAccountCard,#supportCard{z-index:1601}
-.support-email{font-size:12.5px;color:var(--sub);text-align:center;line-height:1.7;margin:14px 0 6px;padding:12px;background:var(--bg);border-radius:12px}
-.support-email b{color:var(--accent);font-weight:700}
-.cs-kakao-btn{display:flex;align-items:center;gap:13px;width:100%;padding:15px 16px;border-radius:12px;border:none;background:var(--kakao);color:var(--kakaoText);cursor:pointer;font-family:inherit;text-align:left;transition:all .12s;margin-bottom:18px}
+.support-email{text-align:left;margin:0 0 22px;padding:16px 17px;background:var(--bg);border-radius:14px}
+.support-email-main{font-size:14px;color:var(--text);font-weight:600;line-height:1.5}
+.support-email-main b{color:var(--accent);font-weight:700}
+.support-email-sub{font-size:12px;color:var(--sub);line-height:1.55;margin-top:5px}
+.cs-kakao-btn{display:flex;align-items:center;gap:14px;width:100%;padding:17px 18px;border-radius:14px;border:none;background:var(--kakao);color:var(--kakaoText);cursor:pointer;font-family:inherit;text-align:left;transition:all .12s;margin-bottom:20px}
 .cs-kakao-btn:active{transform:scale(.99);opacity:.9}
 .cs-kakao-icon{flex:0 0 auto;display:flex;align-items:center;justify-content:center}
+.cs-kakao-btn .cs-btn-title{font-size:15.5px}
 .cs-kakao-btn .cs-btn-sub{opacity:.6}
-.faq-list{margin-top:6px;border-top:1px solid var(--border)}
+.faq-list{margin-top:8px;border-top:1px solid var(--border)}
 .faq-item{border-bottom:1px solid var(--border)}
-.faq-q{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:15px 2px;background:none;border:none;cursor:pointer;font-family:inherit;text-align:left;color:var(--text);font-size:13.5px;font-weight:700;line-height:1.5}
+.faq-q{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:18px 2px;background:none;border:none;cursor:pointer;font-family:inherit;text-align:left;color:var(--text);font-size:14px;font-weight:700;line-height:1.5}
 .faq-q .faq-arrow{flex:0 0 auto;color:var(--sub);transition:transform .25s ease}
 .faq-item.open .faq-q .faq-arrow{transform:rotate(180deg)}
-.faq-a{max-height:0;overflow:hidden;font-size:13px;color:var(--text);line-height:1.7;transition:max-height .3s ease,padding .25s ease;padding:0 2px}
-.faq-item.open .faq-a{max-height:600px;padding:0 2px 15px}
+.faq-a{max-height:0;overflow:hidden;font-size:13.5px;color:var(--text);line-height:1.75;transition:max-height .3s ease,padding .25s ease;padding:0 2px}
+.faq-item.open .faq-a{max-height:600px;padding:2px 2px 18px}
 /* 고객센터 링크 버튼 (약관/처리방침) */
 .cs-link-btn{display:flex;align-items:center;gap:14px;width:100%;padding:12px 16px;border-radius:10px;border:none;background:transparent;cursor:pointer;font-family:inherit;text-align:left;transition:background .12s}
 .cs-link-btn:active{background:var(--bg)}
@@ -2334,7 +2337,10 @@ body.align-right .cal-evbar{text-align:right}
         <span class="cs-btn-sub">가장 빠르게 답변드려요</span>
       </span>
     </button>
-    <p class="support-email">이메일 <b>lsung179@naver.com</b><br>영업일 기준 1~2일 이내 답변드립니다.</p>
+    <div class="support-email">
+      <div class="support-email-main">이메일 <b>lsung179@naver.com</b></div>
+      <div class="support-email-sub">영업일 기준 1~2일 이내 답변드립니다.</div>
+    </div>
     <h3>자주 묻는 질문</h3>
     <div class="faq-list">
       <div class="faq-item">
