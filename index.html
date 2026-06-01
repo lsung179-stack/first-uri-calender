@@ -769,6 +769,17 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 #termsCard,#privacyCard,#leaveAccountCard,#supportCard{z-index:1601}
 .support-email{font-size:12.5px;color:var(--sub);text-align:center;line-height:1.7;margin:14px 0 6px;padding:12px;background:var(--bg);border-radius:12px}
 .support-email b{color:var(--accent);font-weight:700}
+.cs-kakao-btn{display:flex;align-items:center;gap:13px;width:100%;padding:15px 16px;border-radius:12px;border:none;background:var(--kakao);color:var(--kakaoText);cursor:pointer;font-family:inherit;text-align:left;transition:all .12s;margin-bottom:18px}
+.cs-kakao-btn:active{transform:scale(.99);opacity:.9}
+.cs-kakao-icon{flex:0 0 auto;display:flex;align-items:center;justify-content:center}
+.cs-kakao-btn .cs-btn-sub{opacity:.6}
+.faq-list{margin-top:6px;border-top:1px solid var(--border)}
+.faq-item{border-bottom:1px solid var(--border)}
+.faq-q{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:15px 2px;background:none;border:none;cursor:pointer;font-family:inherit;text-align:left;color:var(--text);font-size:13.5px;font-weight:700;line-height:1.5}
+.faq-q .faq-arrow{flex:0 0 auto;color:var(--sub);transition:transform .25s ease}
+.faq-item.open .faq-q .faq-arrow{transform:rotate(180deg)}
+.faq-a{max-height:0;overflow:hidden;font-size:13px;color:var(--text);line-height:1.7;transition:max-height .3s ease,padding .25s ease;padding:0 2px}
+.faq-item.open .faq-a{max-height:600px;padding:0 2px 15px}
 /* 고객센터 링크 버튼 (약관/처리방침) */
 .cs-link-btn{display:flex;align-items:center;gap:14px;width:100%;padding:12px 16px;border-radius:10px;border:none;background:transparent;cursor:pointer;font-family:inherit;text-align:left;transition:background .12s}
 .cs-link-btn:active{background:var(--bg)}
@@ -2314,8 +2325,10 @@ body.align-right .cal-evbar{text-align:right}
   <div class="mo-handle"></div>
   <div class="mo-title">문의하기</div>
   <div class="legal-content">
-    <button class="cs-primary-btn" onclick="openKakaoChannel()">
-      <span class="cs-btn-icon">💬</span>
+    <button class="cs-kakao-btn" onclick="openKakaoChannel()">
+      <span class="cs-kakao-icon">
+        <svg width="27" height="27" viewBox="0 0 24 24" fill="#3C1E1E" aria-hidden="true"><path d="M12 4C7.03 4 3 7.2 3 11.15c0 2.5 1.62 4.7 4.07 5.98-.18.64-.66 2.37-.74 2.72-.11.45.16.44.34.32.14-.09 2.23-1.52 3.14-2.13.71.1 1.44.16 2.19.16 4.97 0 9-3.2 9-7.15S16.97 4 12 4z"/></svg>
+      </span>
       <span class="cs-btn-text">
         <span class="cs-btn-title">카카오톡 채널로 문의</span>
         <span class="cs-btn-sub">가장 빠르게 답변드려요</span>
@@ -2323,12 +2336,50 @@ body.align-right .cal-evbar{text-align:right}
     </button>
     <p class="support-email">이메일 <b>lsung179@naver.com</b><br>영업일 기준 1~2일 이내 답변드립니다.</p>
     <h3>자주 묻는 질문</h3>
-    <p><b>Q. 다른 사람을 방에 어떻게 초대하나요?</b><br>방에 들어간 후 설정 시트(상단 메뉴)에서 6자리 초대 코드를 확인하실 수 있습니다. "카카오톡으로 초대" 버튼을 누르면 카톡으로 바로 초대 링크를 보낼 수도 있습니다.</p>
-    <p><b>Q. 푸시 알림이 오지 않습니다.</b><br>휴대폰 설정 → 알림 → 우리 캘린더에서 알림 권한이 허용되어 있는지 확인해 주세요. 그래도 안 온다면 앱 안의 방별 알림 토글이 켜져 있는지 확인하시기 바랍니다.</p>
-    <p><b>Q. 회원 탈퇴는 어떻게 하나요?</b><br>앱 우상단 프로필 아이콘 → 프로필 시트 하단의 "회원탈퇴" 버튼을 누르시면 됩니다. 탈퇴 시 계정·일정·사진 등 모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다.</p>
-    <p><b>Q. 일정을 다른 멤버에게 보이지 않게 하려면?</b><br>일정 등록 시 "함께 일정"이 아닌 본인 일정으로 등록하시면 다른 멤버에게는 표시되지 않습니다.</p>
-    <p><b>Q. 음력·공휴일·24절기 정보가 안 보입니다.</b><br>날짜를 탭하시면 해당 일자의 음력·공휴일·24절기 정보가 일자 시트에 표시됩니다. 음력은 일자 시트에서만 보이고 캘린더 메인 화면에는 표시되지 않습니다.</p>
-    <p><b>Q. 일정에 사진을 첨부하고 싶어요.</b><br>일정 등록 또는 수정 화면에서 사진 첨부 영역을 탭하시면 사진 보관함에서 선택하거나 카메라로 직접 촬영하실 수 있습니다.</p>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span>다른 사람을 방에 어떻게 초대하나요?</span>
+          <svg class="faq-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-a">방에 들어간 후 설정 시트(상단 메뉴)에서 6자리 초대 코드를 확인하실 수 있습니다. "카카오톡으로 초대" 버튼을 누르면 카톡으로 바로 초대 링크를 보낼 수도 있습니다.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span>푸시 알림이 오지 않습니다.</span>
+          <svg class="faq-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-a">휴대폰 설정 → 알림 → 우리 캘린더에서 알림 권한이 허용되어 있는지 확인해 주세요. 그래도 안 온다면 앱 안의 방별 알림 토글이 켜져 있는지 확인하시기 바랍니다.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span>회원 탈퇴는 어떻게 하나요?</span>
+          <svg class="faq-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-a">앱 우상단 프로필 아이콘 → 프로필 시트 하단의 "회원탈퇴" 버튼을 누르시면 됩니다. 탈퇴 시 계정·일정·사진 등 모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span>일정을 다른 멤버에게 보이지 않게 하려면?</span>
+          <svg class="faq-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-a">일정 등록 시 "함께 일정"이 아닌 본인 일정으로 등록하시면 다른 멤버에게는 표시되지 않습니다.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span>음력·공휴일·24절기 정보가 안 보입니다.</span>
+          <svg class="faq-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-a">날짜를 탭하시면 해당 일자의 음력·공휴일·24절기 정보가 일자 시트에 표시됩니다. 음력은 일자 시트에서만 보이고 캘린더 메인 화면에는 표시되지 않습니다.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span>일정에 사진을 첨부하고 싶어요.</span>
+          <svg class="faq-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-a">일정 등록 또는 수정 화면에서 사진 첨부 영역을 탭하시면 사진 보관함에서 선택하거나 카메라로 직접 촬영하실 수 있습니다.</div>
+      </div>
+    </div>
   </div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeSupport()">닫기</button>
@@ -10648,6 +10699,10 @@ function openSupport(){
 function closeSupport(){
   document.getElementById('supportOverlay').classList.remove('on');
   document.getElementById('supportCard').classList.remove('on');
+}
+function toggleFaq(btn){
+  var item=btn.closest('.faq-item');
+  if(item) item.classList.toggle('open');
 }
 
 /* 이용약관 / 개인정보처리방침 */
