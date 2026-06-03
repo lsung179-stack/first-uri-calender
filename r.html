@@ -3,142 +3,98 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="color-scheme" content="only light">
+<meta name="supported-color-schemes" content="light">
 <meta name="theme-color" content="#f3e6cf">
-<title>우리 캘린더로 이동 중</title>
-
+<title>우리 캘린더 · 방 초대</title>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="우리 캘린더">
 <meta property="og:title" content="우리 캘린더 · 방 초대">
 <meta property="og:description" content="함께 일정을 나누는 공간으로 초대해요">
 <meta property="og:image" content="https://first-uri-calender.vercel.app/icon-512.png">
 <meta property="og:locale" content="ko_KR">
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&display=swap" rel="stylesheet">
-
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Hahmlet:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box}
-body{background:#f3e6cf;color:#2a1c0f;font-family:-apple-system,system-ui,'Noto Sans KR',sans-serif;margin:0;padding:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px}
-.stamp{width:64px;height:64px;border:2px solid #8b3a2a;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:24px;position:relative;background:#fbf2e0}
-.stamp::before{content:'';position:absolute;inset:4px;border:1px solid #8b3a2a;border-radius:50%;pointer-events:none}
-.stamp-text{font-family:'Noto Serif KR',serif;font-size:10px;font-weight:700;color:#8b3a2a;letter-spacing:.6px;line-height:1.2;text-align:center}
-.title{font-family:'Noto Serif KR',serif;font-size:19px;font-weight:700;color:#2a1c0f;margin-bottom:8px;letter-spacing:.4px;text-align:center}
-.sub{font-size:13px;color:#8a6c52;line-height:1.6;margin-bottom:24px;text-align:center;max-width:300px}
-.spinner{width:26px;height:26px;border:2px solid rgba(139,58,42,.18);border-top-color:#8b3a2a;border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.actions{display:none;flex-direction:column;gap:10px;margin-top:8px;width:100%;max-width:280px}
-.actions.on{display:flex}
-.btn{padding:14px 18px;border:none;border-radius:12px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;text-decoration:none;text-align:center;letter-spacing:.2px}
-.btn-primary{background:#8b3a2a;color:#fbf2e0}
-.btn-primary:active{opacity:.85}
-.btn-secondary{background:transparent;color:#8b3a2a;border:1px solid rgba(139,58,42,.35)}
-.btn-secondary:active{background:rgba(139,58,42,.06)}
-.hint{font-size:11px;color:#b8a285;margin-top:18px;line-height:1.55;max-width:280px;text-align:center}
-.hint.on{display:block}
-.hint{display:none}
+:root{--cream:#f3e6cf;--paper:#fbf3e2;--ink:#2a1c0f;--terra:#8b3a2a;--terra-deep:#6e2c1f;--gold:#c9a04e;--muted:#8a6c52;--line:rgba(139,58,42,.22);--shadow:rgba(60,35,15,.14)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{color-scheme:only light !important;forced-color-adjust:none !important}
+body{background:var(--cream);color:var(--ink);font-family:'Noto Sans KR',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center;color-scheme:only light !important;forced-color-adjust:none !important;-webkit-font-smoothing:antialiased}
+.stamp{width:88px;height:88px;border:2.5px solid var(--terra);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;background:var(--paper);margin-bottom:22px;box-shadow:0 6px 18px var(--shadow)}
+.stamp::before{content:'';position:absolute;inset:6px;border:1px solid var(--terra);border-radius:50%}
+.stamp .o{font-family:'Playfair Display',serif;font-weight:700;font-size:22px;color:var(--terra);line-height:1;letter-spacing:1px}
+.stamp .c{font-family:'Playfair Display',serif;font-size:7px;font-weight:700;color:var(--terra);letter-spacing:1.5px;margin-top:3px}
+.title{font-family:'Hahmlet','Gowun Batang',serif;font-weight:700;font-size:20px;color:var(--ink);margin-bottom:6px;letter-spacing:-.3px}
+.sub{font-size:13px;color:var(--muted);margin-bottom:30px}
+.step{font-family:'Hahmlet','Gowun Batang',serif;font-weight:700;font-size:17px;color:var(--terra);margin-bottom:14px}
+.code-box{display:inline-flex;align-items:center;gap:14px;background:#fff7e8;border:2px solid var(--gold);border-radius:16px;padding:18px 26px;cursor:pointer;transition:transform .15s,box-shadow .15s;box-shadow:0 4px 14px var(--shadow);margin-bottom:8px}
+.code-box:active{transform:scale(.97)}
+.code-box .hash{font-family:'Playfair Display',serif;font-size:26px;color:var(--gold);font-weight:700}
+.code-box .code{font-family:'Playfair Display',serif;font-size:30px;font-weight:700;letter-spacing:3px;color:var(--ink)}
+.code-box .cp{width:24px;height:24px;color:var(--terra)}
+.copied{font-size:12.5px;color:var(--terra);font-weight:700;height:18px;margin-bottom:30px;opacity:0;transition:opacity .2s}
+.copied.on{opacity:1}
+.step2{font-family:'Hahmlet','Gowun Batang',serif;font-weight:700;font-size:17px;color:var(--ink);margin-bottom:18px}
+.badges{display:flex;flex-direction:column;gap:12px;width:100%;max-width:300px;margin:0 auto}
+.badge{display:inline-flex;align-items:center;justify-content:center;gap:11px;background:var(--ink);color:var(--paper);padding:13px 20px;border-radius:13px;transition:transform .2s,box-shadow .2s;box-shadow:0 6px 16px var(--shadow);text-decoration:none}
+.badge:active{transform:scale(.98)}
+.badge svg{width:26px;height:26px;flex:none}
+.badge .bt{display:flex;flex-direction:column;line-height:1.18;text-align:left}
+.badge .bt small{font-size:10px;opacity:.78}
+.badge .bt span{font-size:16px;font-weight:700}
+.open-app{margin-top:22px;font-size:13px;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+.foot{margin-top:40px;font-size:11px;color:#b39b7c;line-height:1.6}
+.foot a{color:var(--terra)}
 </style>
 </head>
 <body>
-
-<div class="stamp">
-  <span class="stamp-text">우리<br>캘린더</span>
+<div class="stamp"><span class="o">OUR</span><span class="c">CALENDAR</span></div>
+<div class="title">우리 캘린더에 초대받았어요</div>
+<div class="sub">함께 일정을 나누는 공간으로의 초대예요</div>
+<div class="step">초대 코드를 복사하고</div>
+<div class="code-box" id="codeBox" onclick="copyCode()">
+  <span class="hash">#</span>
+  <span class="code" id="codeText">------</span>
+  <svg class="cp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
 </div>
-<div class="title">우리 캘린더로 이동 중</div>
-<div class="sub" id="sub">잠시만 기다려주세요</div>
-<div class="spinner" id="spinner"></div>
-
-<div class="actions" id="actions">
-  <a class="btn btn-primary" id="openBtn" href="#">앱으로 열기</a>
-  <a class="btn btn-secondary" id="webBtn" href="#">브라우저에서 보기</a>
+<div class="copied" id="copied">코드를 복사했어요!</div>
+<div class="step2">앱 설치 후 입력해주세요</div>
+<div class="badges">
+  <a class="badge" href="https://apps.apple.com/app/id6773996160" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" fill="currentColor" style="transform:scale(1.18)"><path d="M16.36 12.78c.02-2.06 1.68-3.05 1.76-3.1-0.96-1.4-2.45-1.6-2.98-1.62-1.27-.13-2.48.75-3.12.75-.64 0-1.64-.73-2.7-.71-1.39.02-2.67.81-3.38 2.05-1.44 2.5-.37 6.2 1.04 8.23.69 1 1.5 2.11 2.57 2.07 1.03-.04 1.42-.67 2.67-.67 1.24 0 1.6.67 2.69.65 1.11-.02 1.81-1.01 2.49-2.01.78-1.15 1.1-2.27 1.12-2.33-.02-.01-2.15-.83-2.17-3.27zM14.3 6.74c.57-.69.95-1.65.85-2.6-.82.03-1.81.54-2.39 1.23-.52.61-.98 1.59-.86 2.52.91.07 1.84-.46 2.4-1.15z"/></svg>
+    <span class="bt"><small>다운로드</small><span>App Store</span></span>
+  </a>
+  <a class="badge" href="https://play.google.com/store/apps/details?id=app.vercel.first_uri_calender.twa" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24"><path fill="#34A853" d="M3.6 21.2 13 12.4 15.6 15 5.2 21.4c-.6.3-1.2.1-1.6-.2z"/><path fill="#EA4335" d="M3.6 2.8c0-.3.4-.5.9-.5l11.1 6.4-2.6 2.5z"/><path fill="#FBBC04" d="m16.9 9.1 3.4 1.9c.9.5.9 1.5 0 2L16.8 15 14 12z"/><path fill="#4285F4" d="M3.6 2.8 13 11.6 3.6 21.2c-.1-.2-.1-.4-.1-.6V3.4c0-.2 0-.4.1-.6z"/></svg>
+    <span class="bt"><small>다운로드</small><span>Google Play</span></span>
+  </a>
 </div>
-
-<div class="hint" id="hint">자동 이동이 안 되면 위 버튼을 눌러주세요</div>
-
+<a class="open-app" id="openApp" href="#">이미 앱이 있다면 · 앱에서 열기</a>
+<div class="foot">우리 캘린더 · 함께 쓰는 우리들의 캘린더<br>문의 : <a href="mailto:lsung179@naver.com">lsung179@naver.com</a></div>
 <script>
 (function(){
   var params = new URLSearchParams(location.search);
-  var joinCode = (params.get('join') || params.get('code') || '').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
-
-  var ua = (navigator.userAgent || '').toLowerCase();
-  var isAndroid = /android/.test(ua);
-  var isIOS = /iphone|ipad|ipod/.test(ua);
-  var isInApp = /kakaotalk|naver\(inapp|fb_iab|fban|fbav|instagram|line\//.test(ua);
-
-  var host = 'first-uri-calender.vercel.app';
-  var path = joinCode ? '/?join='+joinCode : '/';
-  var httpsUrl = 'https://' + host + path;
-
-  document.getElementById('webBtn').href = httpsUrl;
-
-  function showActions(){
-    document.getElementById('actions').classList.add('on');
-    document.getElementById('hint').classList.add('on');
-    document.getElementById('spinner').style.display='none';
-  }
-
-  function tryOpenIntent(intentUrl){
-    try {
-      var a = document.createElement('a');
-      a.href = intentUrl;
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-    } catch(e) {
-      try { location.href = intentUrl; } catch(e2){}
-    }
-  }
-
-  if (isAndroid) {
-    var pkg = 'app.vercel.first_uri_calender.twa';
-    var fallback = encodeURIComponent(httpsUrl);
-    var intentUrl = 'intent://' + host + path
-      + '#Intent;scheme=https;package=' + pkg
-      + ';action=android.intent.action.VIEW'
-      + ';category=android.intent.category.BROWSABLE'
-      + ';S.browser_fallback_url=' + fallback + ';end';
-
-    var openBtn = document.getElementById('openBtn');
-    openBtn.href = intentUrl;
-
-    // 사용자가 큰 버튼을 누른 것과 동일하게 anchor click 트리거 (location.href보다 카톡 가로채기 덜 당함)
-    setTimeout(function(){ tryOpenIntent(intentUrl); }, 100);
-
-    // 0.6초 후엔 버튼을 즉시 노출 — 자동 redirect가 막혀도 사용자가 바로 누를 수 있게
-    setTimeout(function(){
-      showActions();
-      if (isInApp) {
-        document.getElementById('sub').textContent = '아래 "앱으로 열기"를 눌러주세요';
-      }
-    }, 600);
-
-    // 1.8초 후에도 페이지가 떠있으면 카톡이 가로챈 거 — 외부 브라우저 안내
-    setTimeout(function(){
-      if (isInApp) {
-        document.getElementById('sub').innerHTML = '카톡이 차단하고 있어요.<br>우측 위 메뉴 → Chrome에서 열기를 눌러주세요';
-      }
-    }, 1800);
-
-  } else if (isIOS) {
-    document.getElementById('openBtn').href = httpsUrl;
-    document.getElementById('openBtn').textContent = '계속 진행';
-
-    setTimeout(function(){
-      location.href = httpsUrl;
-    }, 80);
-
-    setTimeout(function(){
-      showActions();
-      if (isInApp) {
-        document.getElementById('sub').innerHTML = '카톡 우측 위 <b>⋯</b> 메뉴에서<br>Safari에서 열기를 눌러주세요';
-      }
-    }, 1500);
-
+  var code = (params.get('join') || params.get('code') || '').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+  if(code){
+    document.getElementById('codeText').textContent = code;
+    document.getElementById('openApp').href = 'com.lsung.uricalendar://join?code=' + code;
   } else {
-    location.href = httpsUrl;
+    document.getElementById('codeText').textContent = '코드없음';
+    document.getElementById('openApp').style.display = 'none';
   }
+  window._code = code;
 })();
+function copyCode(){
+  var code = window._code; if(!code) return;
+  var done = function(){ var el=document.getElementById('copied'); el.classList.add('on'); setTimeout(function(){el.classList.remove('on');},2000); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(code).then(done).catch(function(){ fallbackCopy(code); done(); });
+  } else { fallbackCopy(code); done(); }
+}
+function fallbackCopy(text){
+  try{ var ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }catch(e){}
+}
 </script>
-
 </body>
 </html>
