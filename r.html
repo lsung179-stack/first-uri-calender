@@ -28,11 +28,11 @@ body{background:var(--cream);color:var(--ink);font-family:'Noto Sans KR',sans-se
 .title{font-family:'Hahmlet','Gowun Batang',serif;font-weight:700;font-size:20px;color:var(--ink);margin-bottom:6px;letter-spacing:-.3px}
 .sub{font-size:13px;color:var(--muted);margin-bottom:30px}
 .step{font-family:'Hahmlet','Gowun Batang',serif;font-weight:700;font-size:17px;color:var(--terra);margin-bottom:14px}
-.code-box{display:inline-flex;align-items:center;gap:14px;background:#fff7e8;border:2px solid var(--gold);border-radius:16px;padding:18px 26px;cursor:pointer;transition:transform .15s,box-shadow .15s;box-shadow:0 4px 14px var(--shadow);margin-bottom:8px}
+.code-box{display:inline-flex;align-items:center;gap:12px;background:#fff7e8;border:2px solid var(--gold);border-radius:14px;padding:15px 24px;cursor:pointer;transition:transform .15s,box-shadow .15s;box-shadow:0 4px 14px var(--shadow);margin-bottom:8px}
 .code-box:active{transform:scale(.97)}
-.code-box .hash{font-family:'Playfair Display',serif;font-size:26px;color:var(--gold);font-weight:700}
-.code-box .code{font-family:'Playfair Display',serif;font-size:30px;font-weight:700;letter-spacing:3px;color:var(--ink)}
-.code-box .cp{width:24px;height:24px;color:var(--terra)}
+.code-box .hash{font-family:'Playfair Display',serif;font-size:20px;color:var(--gold);font-weight:600}
+.code-box .code{font-family:'Playfair Display',serif;font-size:23px;font-weight:600;letter-spacing:2px;color:var(--ink)}
+.code-box .cp{width:21px;height:21px;color:var(--terra)}
 .copied{font-size:12.5px;color:var(--terra);font-weight:700;height:18px;margin-bottom:30px;opacity:0;transition:opacity .2s}
 .copied.on{opacity:1}
 .step2{font-family:'Hahmlet','Gowun Batang',serif;font-weight:700;font-size:17px;color:var(--ink);margin-bottom:18px}
@@ -70,7 +70,6 @@ body{background:var(--cream);color:var(--ink);font-family:'Noto Sans KR',sans-se
     <span class="bt"><small>다운로드</small><span>Google Play</span></span>
   </a>
 </div>
-<a class="open-app" id="openApp" href="#">이미 앱이 있다면 · 앱에서 열기</a>
 <div class="foot">우리 캘린더 · 함께 쓰는 우리들의 캘린더<br>문의 : <a href="mailto:lsung179@naver.com">lsung179@naver.com</a></div>
 <script>
 (function(){
@@ -78,10 +77,8 @@ body{background:var(--cream);color:var(--ink);font-family:'Noto Sans KR',sans-se
   var code = (params.get('join') || params.get('code') || '').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
   if(code){
     document.getElementById('codeText').textContent = code;
-    document.getElementById('openApp').href = 'com.lsung.uricalendar://join?code=' + code;
   } else {
     document.getElementById('codeText').textContent = '코드없음';
-    document.getElementById('openApp').style.display = 'none';
   }
   window._code = code;
 })();
