@@ -1985,6 +1985,7 @@ body.align-right .cal-evbar{text-align:right}
     <input class="code-box" type="text" inputmode="text" maxlength="1" autocomplete="off" autocapitalize="characters">
     <input class="code-box" type="text" inputmode="text" maxlength="1" autocomplete="off" autocapitalize="characters">
   </div>
+  <button type="button" onclick="pasteJoinCode()" style="display:block;width:100%;margin:14px 0 2px;padding:11px;background:transparent;border:1px solid rgba(139,58,42,.32);border-radius:10px;color:#8b3a2a;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer">📋 복사한 코드 붙여넣기</button>
   <!-- 일정 복사 옵션 (다른 방이 있을 때만) -->
   <div id="joinCopyWrap" style="display:none;margin-top:6px">
     <div class="copy-option" id="joinCopyOption" onclick="toggleJoinCopy()">
@@ -4207,6 +4208,8 @@ async function ensureKakaoProfile(){
 /* 사용자 정보 표시 (헤더 아바타) */
 let _currentUser=null;
 let _currentProfile=null;  // { birthday: 'MM-DD', ... } — 캘린더에 생일 자동 표시용
+let _myTheme='vintage';    // 개인 전역 테마(profiles.theme) — 내가 참여한 모든 방에 공통 적용, 다른 사람에겐 영향 없음
+let _myThemeLoaded=false;  // 세션당 1회 로드 가드
 function renderUser(user){
   if(!user)return;
   _currentUser=user;
@@ -4255,6 +4258,7 @@ function pickMemberColor(){return MEMBER_COLORS[Math.floor(Math.random()*MEMBER_
 /* 방 목록 로드 + 렌더 */
 async function loadRooms(){
   if(!_currentUser)return;
+  try{ await loadMyTheme(); }catch(_){}  // 내 개인 테마 적용 (세션당 1회)
   const content=document.getElementById('roomsContent');
   content.innerHTML='<div style="padding:60px 0;text-align:center"><div class="spinner" style="margin:0 auto"></div></div>';
 
@@ -4529,7 +4533,7 @@ function enterRoom(roomId){
     renderMemberTabs();
   });
   updateCalAvatar();
-  applyTheme(room.theme||'vintage');
+  applyTheme(_myTheme||'vintage');  // 방 테마가 아니라 내 개인 테마 적용
   const t=new Date();
   _calYear=t.getFullYear();
   _calMonth=t.getMonth();
@@ -4595,7 +4599,7 @@ function exitRoom(){
   _currentRoom=null;
   _events={};
   _viewingMember='all';  // 멤버 뷰도 리셋
-  applyTheme('vintage');  // 기본으로 복귀
+  applyTheme(_myTheme||'vintage');  // 내 개인 테마 유지
   showScreen('roomsScreen');
   loadRooms();
 }
@@ -4757,6 +4761,27 @@ function openJoinRoom(){
   document.getElementById('joinOverlay').classList.add('on');
   document.getElementById('joinCard').classList.add('on');
   setTimeout(()=>{if(boxes[0])boxes[0].focus()},320);
+}
+function fillJoinCode(txt){
+  const code=(txt||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+  if(!code) return false;
+  const boxes=document.querySelectorAll('#codeBoxes .code-box');
+  boxes.forEach((b,j)=>{ if(code[j]){b.value=code[j];b.classList.add('filled')}else{b.value='';b.classList.remove('filled')} });
+  const last=Math.min(code.length,5);
+  if(boxes[last])boxes[last].focus();
+  return code.length===6;
+}
+async function pasteJoinCode(){
+  try{
+    if(navigator.clipboard&&navigator.clipboard.readText){
+      const t=await navigator.clipboard.readText();
+      const code=(t||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+      if(code.length===6){ fillJoinCode(code); }
+      else { toast('클립보드에서 6자리 코드를 찾지 못했어요'); }
+    } else {
+      toast('코드 칸을 길게 눌러 붙여넣어 주세요');
+    }
+  }catch(e){ toast('붙여넣기 권한이 없어요. 코드 칸을 길게 눌러 붙여넣어 주세요'); }
 }
 function closeJoinRoom(){
   document.getElementById('joinOverlay').classList.remove('on');
@@ -5004,6 +5029,17 @@ supa.auth.onAuthStateChange((event,session)=>{
     App.addListener('appUrlOpen', async function(event){
       try{
         var url=event&&event.url; if(!url) return;
+        // ── 초대 딥링크: com.lsung.uricalendar://join?code=XXXXXX ──
+        if(url.indexOf('com.lsung.uricalendar://join')===0){
+          var jp=new URLSearchParams(url.split('?')[1]||'');
+          var jcode=(jp.get('code')||jp.get('join')||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+          if(jcode){
+            _pendingJoinCode=jcode;
+            savePendingJoinCode(jcode);
+            if(_currentUser){ try{ await tryHandlePendingJoin(); }catch(_){} }
+          }
+          return;
+        }
         if(url.indexOf(NATIVE_AUTH_REDIRECT)!==0) return; // 우리 OAuth 콜백만 처리
         var hashPart=url.split('#')[1]||'';
         var queryPart=(url.split('?')[1]||'').split('#')[0];
@@ -9051,8 +9087,13 @@ function shareKakao(){
   if(!_currentRoom)return;
   const code=_currentRoom.code;
   const name=_currentRoom.name||'(이름 없음)';
-  // 카톡 in-app browser 탈출용 redirect 전용 페이지 URL 사용
-  const url=`${location.origin}/r.html?join=${encodeURIComponent(code)}`;
+  // 초대 링크는 다른 사람이 외부(카톡 등)에서 여는 링크이므로 항상 공개 웹 주소를 사용한다.
+  // iOS 네이티브 앱에서는 location.origin이 'capacitor://localhost'라서 외부에서 열 수 없으므로,
+  // http(s)가 아니거나 localhost면 공개 웹 도메인으로 대체한다.
+  const shareBase=(/^https?:/i.test(location.origin)&&!/localhost/i.test(location.origin))
+    ? location.origin
+    : 'https://first-uri-calender.vercel.app';
+  const url=`${shareBase}/r.html?join=${encodeURIComponent(code)}`;
   const text=`[우리 캘린더] '${name}'에 초대해요\n\n함께 일정을 나누는 공간이에요.\n아래 링크로 입장하실 수 있어요.\n\n${url}\n방 코드 · ${code}`;
   // Web Share API (모바일 카카오톡 포함 공유)
   if(navigator.share){
@@ -9853,17 +9894,6 @@ const STORE_THEMES=[
   {key:'rose',     name:'로즈',     tag:'free', price:'무료', rating:4.7, locked:false},
   {key:'sky',      name:'스카이',   tag:'free', price:'무료', rating:4.7, locked:false},
 ];
-const STORE_COMING_SOON=[
-  {key:'cherry',  name:'벚꽃 향기',  price:'₩2,900', rating:null, locked:true,
-   preview:{bg:'#fdf0f2',accent:'#e87b8c',card:'#ffffff'}},
-  {key:'noir',    name:'느와르',     price:'₩2,900', rating:null, locked:true,
-   preview:{bg:'#1a1a1a',accent:'#d4af6a',card:'#262626'}},
-  {key:'sunset',  name:'선셋',       price:'₩2,900', rating:null, locked:true,
-   preview:{bg:'#fff4e8',accent:'#e87830',card:'#ffffff'}},
-  {key:'forest',  name:'포레스트',   price:'₩2,900', rating:null, locked:true,
-   preview:{bg:'#f0f5ee',accent:'#5a7d3a',card:'#ffffff'}},
-];
-
 /* 컬러 팩 — 각 팩 12색, 컨셉 유지하되 다양한 hue 분포 */
 const STORE_COLORS=[
   {key:'vivid',   name:'비비드',    price:'₩2,900',
@@ -10476,7 +10506,7 @@ function onActivateTrialClick(){/* deprecated */}
 function renderStoreThemes(){
   const body=document.getElementById('storeBody');
   if(!body)return;
-  const curTheme=_currentRoom?.theme||'vintage';
+  const curTheme=_myTheme||'vintage';
   
   // Pick 배너
   let html=`
@@ -10744,7 +10774,7 @@ function renderThemeGrid(){
   const grid=document.getElementById('themeGrid');
   if(!grid)return;
   grid.innerHTML='';
-  const cur=_currentRoom?.theme||'vintage';
+  const cur=_myTheme||'vintage';
   Object.keys(THEMES).forEach(key=>{
     const t=THEMES[key];
     const div=document.createElement('div');
@@ -10767,23 +10797,37 @@ function themeName(k){
   const names={vintage:'빈티지',lavender:'라벤더',peach:'피치',mint:'민트',rose:'로즈',sky:'스카이'};
   return names[k]||k;
 }
+/* 내 개인 테마 로드 (세션당 1회) — profiles.theme */
+async function loadMyTheme(){
+  if(_myThemeLoaded||!_currentUser)return;
+  _myThemeLoaded=true;
+  try{
+    const {data}=await supa.from('profiles').select('theme').eq('id',_currentUser.id).maybeSingle();
+    if(data&&data.theme&&THEMES[data.theme])_myTheme=data.theme;
+  }catch(_){}
+  applyTheme(_myTheme);
+}
 async function changeRoomTheme(themeKey){
-  if(!_currentRoom||!THEMES[themeKey])return;
-  const old=_currentRoom.theme;
-  // 즉시 적용
-  _currentRoom.theme=themeKey;
+  if(!THEMES[themeKey])return;
+  if(!_currentUser){ toast('로그인이 필요해요'); return; }
+  const old=_myTheme;
+  // 즉시 내 화면에만 적용 (다른 사람에겐 영향 없음)
+  _myTheme=themeKey;
   applyTheme(themeKey);
   renderThemeGrid();
-  // DB 업데이트
+  if(typeof renderStoreThemes==='function'){ try{renderStoreThemes();}catch(_){} }
+  // 내 프로필에 저장 (사용자별 전역 테마) — .select()로 실제 저장 여부 확인
   try{
-    const {error}=await supa.from('rooms').update({theme:themeKey}).eq('id',_currentRoom.id);
+    const {data,error}=await supa.from('profiles').update({theme:themeKey}).eq('id',_currentUser.id).select();
     if(error)throw error;
+    if(!data||!data.length)throw new Error('not saved');
     toast(`테마: ${themeName(themeKey)}`);
   }catch(e){
     // 실패 시 롤백
-    _currentRoom.theme=old;
+    _myTheme=old;
     applyTheme(old);
     renderThemeGrid();
+    if(typeof renderStoreThemes==='function'){ try{renderStoreThemes();}catch(_){} }
     toast('테마 변경 실패');
   }
 }
