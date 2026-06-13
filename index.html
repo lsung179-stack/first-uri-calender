@@ -636,34 +636,45 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .store-trial-notice .trial-text{flex:1;line-height:1.4;font-weight:500;color:var(--text)}
 
 /* ═══ 달력 주문하기 (캘린더 굿즈) ═══ */
-.co-hero{
-  background:linear-gradient(160deg,#f3e6cf,#f8f0e0);
-  border:1px solid rgba(139,58,42,.18);border-radius:14px;
-  padding:20px 18px;margin-bottom:18px;text-align:center;
-}
-.co-hero-badge{
-  display:inline-block;background:var(--accent);color:#fff;
-  font-size:11px;font-weight:700;letter-spacing:1px;
-  padding:4px 12px;border-radius:20px;margin-bottom:10px;
-}
+.co-hero{background:linear-gradient(160deg,#f3e6cf,#f8f0e0);border:1px solid rgba(139,58,42,.18);border-radius:14px;padding:20px 18px;margin-bottom:18px;text-align:center}
+.co-hero-badge{display:inline-block;background:var(--accent);color:#fff;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 12px;border-radius:20px;margin-bottom:10px}
 .co-hero-title{font-family:var(--ff-serif);font-size:21px;font-weight:800;color:var(--accent);margin-bottom:6px}
 .co-hero-sub{font-size:12.5px;color:var(--sub);line-height:1.5}
 .co-section{margin-bottom:22px}
 .co-section-title{font-size:14px;font-weight:800;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:8px}
 .co-section-title .co-step{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
 .co-section-desc{font-size:12px;color:var(--sub);margin:0 0 12px 30px;line-height:1.5}
+/* 방 리스트 */
+.co-roomlist{margin-left:30px;display:flex;flex-direction:column;gap:9px}
+.co-room-row{display:flex;align-items:center;gap:12px;padding:14px 14px;background:#fff;border:1px solid rgba(139,58,42,.12);border-radius:11px;cursor:pointer;transition:border-color .15s,transform .1s}
+.co-room-row:active{transform:scale(.99);border-color:var(--accent)}
+.co-room-ic{font-size:22px;flex-shrink:0}
+.co-room-info{flex:1;min-width:0}
+.co-room-name{font-size:14.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.co-room-code{font-size:11.5px;color:var(--sub);margin-top:2px}
+.co-room-arrow{font-size:22px;color:var(--accent);flex-shrink:0;font-weight:300}
+/* 방 바 + 월 네비 */
+.co-room-bar{margin-left:30px;display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.co-room-back{font-size:12px;color:var(--accent);font-weight:700;cursor:pointer;flex-shrink:0}
+.co-room-cur{flex:1;font-size:13px;font-weight:700;color:var(--text);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.co-room-cnt{font-size:11.5px;color:var(--sub);flex-shrink:0}
+.co-month-nav{margin-left:30px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:#faf4e8;border-radius:10px;padding:8px 12px;margin-bottom:12px}
+.co-mn-btn{width:38px;height:38px;border-radius:9px;border:none;background:var(--accent);color:#fff;font-size:20px;font-weight:700;cursor:pointer;font-family:inherit}
+.co-mn-btn:disabled{opacity:.3}
+.co-mn-label{flex:1;text-align:center;font-size:15px;font-weight:800;color:var(--text);font-family:var(--ff-serif)}
+.co-ytag{font-size:10px;color:var(--accent);background:rgba(139,58,42,.08);padding:1px 6px;border-radius:8px;margin-left:6px}
 /* 표지 선택 */
 .co-cover-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-left:30px}
 .co-cover-card{border:2px solid rgba(139,58,42,.15);border-radius:12px;overflow:hidden;cursor:pointer;background:#fff;transition:border-color .15s,transform .1s;position:relative}
 .co-cover-card.sel{border-color:var(--accent)}
 .co-cover-card:active{transform:scale(.98)}
-.co-cover-thumb{width:100%;aspect-ratio:3/2;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#f3e6cf}
-.co-cover-label{padding:8px;text-align:center;font-size:12px;font-weight:600;color:var(--text)}
+.co-cover-thumb{width:100%;background:#f3e6cf;line-height:0}
+.co-cover-label{padding:8px;text-align:center;font-size:12px;font-weight:600;color:var(--text);line-height:1.4}
 .co-cover-card.sel .co-cover-label{color:var(--accent)}
 .co-cover-check{position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;display:none;align-items:center;justify-content:center;font-size:14px;font-weight:700;z-index:2}
 .co-cover-card.sel .co-cover-check{display:flex}
-/* 일정 선택 */
-.co-evlist{margin-left:30px;display:flex;flex-direction:column;gap:8px}
+/* 일정 목록 */
+.co-evlist{display:flex;flex-direction:column;gap:8px}
 .co-ev-row{display:flex;align-items:center;gap:12px;padding:11px 13px;background:#fff;border:1px solid rgba(139,58,42,.12);border-radius:10px;cursor:pointer;transition:border-color .15s,background .15s}
 .co-ev-row.sel{border-color:var(--accent);background:#fff8f0}
 .co-ev-check{width:22px;height:22px;border-radius:6px;border:2px solid #d6c4a5;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;transition:background .15s,border-color .15s}
@@ -673,8 +684,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .co-ev-title{font-size:13.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .co-ev-date{font-size:11.5px;color:var(--sub);margin-top:2px}
 .co-ev-empty{margin-left:30px;padding:24px 16px;text-align:center;background:#faf4e8;border-radius:10px;font-size:12.5px;color:var(--sub);line-height:1.6}
-.co-selectall{margin:0 0 10px 30px;font-size:12px;color:var(--accent);font-weight:600;cursor:pointer;display:inline-block}
-/* 액션 버튼 */
+/* 액션 */
 .co-actions{margin-left:30px;display:flex;flex-direction:column;gap:10px}
 .co-btn{width:100%;padding:14px;border-radius:11px;font-size:14.5px;font-weight:700;font-family:inherit;cursor:pointer;border:none;transition:opacity .15s,transform .1s}
 .co-btn:active{transform:scale(.99)}
@@ -690,95 +700,11 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .co-preview-head .co-preview-title{flex:1;font-family:var(--ff-serif);font-size:17px;font-weight:800;color:var(--text)}
 .co-preview-head button{background:none;border:none;font-size:22px;color:var(--sub);cursor:pointer;width:34px;height:34px}
 .co-preview-body{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch;background:#e3d5bc}
-.co-preview-stage{margin:0 auto}
 .co-preview-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-top:1px solid rgba(139,58,42,.12);flex-shrink:0;background:var(--bg)}
 .co-preview-nav button{background:var(--accent);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer}
 .co-preview-nav button:disabled{opacity:.35}
 .co-preview-nav .co-pg{font-size:13px;font-weight:700;color:var(--text)}
-
-/* ── 실제 표지 재현 (cc-) ── */
-.cc-cover{width:100%;aspect-ratio:3/2;background:#f3e6cf;position:relative}
-.cc-full{border-radius:6px;overflow:hidden}
-.cc-frame{position:absolute;inset:5%;border:2px solid var(--accent);border-radius:4px;
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
-  padding:6% 4%;box-sizing:border-box}
-.cc-thumb .cc-frame{border-width:1.2px}
-.cc-corner{position:absolute;width:5%;height:7.5%;border:1.5px solid var(--gold,#b08a50)}
-.cc-corner.tl{top:5%;left:4%;border-right:none;border-bottom:none}
-.cc-corner.tr{top:5%;right:4%;border-left:none;border-bottom:none}
-.cc-corner.bl{bottom:5%;left:4%;border-right:none;border-top:none}
-.cc-corner.br{bottom:5%;right:4%;border-left:none;border-top:none}
-.cc-year{font-family:var(--ff-serif);font-weight:800;color:var(--accent);
-  font-size:13cqw;letter-spacing:.12em;line-height:1;margin-top:2%}
-.cc-full .cc-year{font-size:64px}
-.cc-thumb .cc-year{font-size:26px}
-.cc-stamp{border:1.5px solid var(--accent);border-radius:50%;
-  width:24%;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  margin:3% 0;text-align:center}
-.cc-thumb .cc-stamp{border-width:1px;width:26%}
-.cc-stamp-our{font-family:var(--ff-serif);font-weight:800;color:var(--accent);font-size:5cqw;line-height:1}
-.cc-full .cc-stamp-our{font-size:26px}
-.cc-thumb .cc-stamp-our{font-size:11px}
-.cc-stamp-line{width:50%;height:1px;background:var(--accent);margin:4% 0}
-.cc-stamp-cal{font-weight:700;color:var(--accent);font-size:2cqw;letter-spacing:.05em}
-.cc-full .cc-stamp-cal{font-size:11px}
-.cc-thumb .cc-stamp-cal{font-size:5px}
-.cc-stamp-est{color:var(--gold,#b08a50);font-size:1.6cqw;margin-top:2%}
-.cc-full .cc-stamp-est{font-size:8px}
-.cc-thumb .cc-stamp-est{font-size:4px}
-.cc-laurel{display:none}
-.cc-name{font-family:var(--ff-serif);font-weight:800;color:var(--accent);
-  font-size:7cqw;letter-spacing:.08em;margin-top:1%}
-.cc-full .cc-name{font-size:34px}
-.cc-thumb .cc-name{font-size:14px}
-.cc-sub{color:var(--text);font-size:3cqw;letter-spacing:.1em;margin-top:1.5%}
-.cc-full .cc-sub{font-size:15px}
-.cc-thumb .cc-sub{font-size:6.5px}
-.cc-chars{font-size:7cqw;margin-top:3%;letter-spacing:.1em}
-.cc-full .cc-chars{font-size:30px}
-.cc-thumb .cc-chars{font-size:13px}
-.cc-est{color:var(--gold,#b08a50);font-family:var(--ff-serif);font-size:2.6cqw;letter-spacing:.12em;margin-top:3%}
-.cc-full .cc-est{font-size:13px}
-.cc-thumb .cc-est{font-size:6px}
-.cc-divider{display:flex;align-items:center;gap:6px;margin-top:3%}
-.cc-divider span{width:14%;height:1.5px;background:var(--gold,#b08a50);display:block}
-.cc-full .cc-divider span{width:60px}
-.cc-thumb .cc-divider span{width:24px}
-.cc-divider i{width:5px;height:5px;border-radius:50%;background:var(--gold,#b08a50)}
-.cc-thumb .cc-divider i{width:3px;height:3px}
-
-/* ── 실제 내지 달력 재현 (cm-) ── */
-.cm-page{width:100%;aspect-ratio:3/2;background:#f8f0e0;border-radius:6px;overflow:hidden}
-.cm-frame{position:absolute;inset:0;border:3px solid var(--accent);border-radius:6px;padding:3.5%;box-sizing:border-box;position:relative}
-.cm-page{position:relative}
-.cm-page .cm-frame{position:absolute;inset:0}
-.cm-head{display:flex;align-items:flex-start;gap:3%;padding:0 1%}
-.cm-num{font-family:var(--ff-serif);font-weight:800;color:var(--accent);font-size:13cqw;line-height:.9}
-.cm-headtxt{flex:1;padding-top:1.5%}
-.cm-en{font-family:var(--ff-serif);font-weight:600;color:var(--text);font-size:5cqw;line-height:1}
-.cm-kr{color:var(--gold,#b08a50);font-size:3cqw;margin-top:2%;font-weight:600}
-.cm-stamp{border:1.5px solid var(--accent);border-radius:50%;width:11%;aspect-ratio:1;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  font-family:var(--ff-serif);font-weight:800;color:var(--accent);font-size:2.4cqw;line-height:1.1;text-align:center}
-.cm-stamp small{font-size:1.4cqw;font-weight:700}
-.cm-divider{height:2px;background:var(--gold,#b08a50);margin:2.5% 1% 2%}
-.cm-table{width:100%;border-collapse:collapse;table-layout:fixed}
-.cm-table th{font-size:2.6cqw;font-weight:700;padding:1% 0;color:#78604b}
-.cm-table th.sun,.cm-table td.sun{color:#b24c3c}
-.cm-table th.sat,.cm-table td.sat{color:#5a6e96}
-.cm-table td{vertical-align:top;border-top:1px solid rgba(139,58,42,.1);height:11cqw;padding:1% .5% 0;position:relative;overflow:hidden}
-.cm-daynum{font-family:var(--ff-serif);font-weight:600;color:var(--text);font-size:3.4cqw;display:flex;align-items:baseline;gap:3px}
-.cm-table td.sun .cm-daynum{color:#b24c3c}
-.cm-table td.sat .cm-daynum{color:#5a6e96}
-.cm-lun{font-size:1.9cqw;color:#a8967d;font-weight:400}
-.cm-hol{display:block;font-size:1.9cqw;color:#b24c3c;line-height:1.1;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cm-chip{display:block;font-size:1.9cqw;line-height:1.25;border-radius:3px;padding:1px 3px;margin-top:1.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
-
-/* container query 단위(cqw) 지원 — 미리보기 무대에 컨테이너 지정 */
-.co-preview-stage{container-type:inline-size;width:100%;position:relative}
-.cc-cover,.cm-page{container-type:inline-size}
-
-/* ── 주문 폼 / 계좌 ── */
+/* 주문 폼 / 계좌 */
 .co-form{background:var(--bg);border-radius:12px;padding:18px}
 .co-form-title{font-family:var(--ff-serif);font-size:17px;font-weight:800;color:var(--accent);margin-bottom:14px}
 .co-fields{margin-top:14px;display:flex;flex-direction:column;gap:10px}
@@ -10168,18 +10094,16 @@ const STORE_EMOJI=[
 ];
 
 /* ═══════════════════════════════════════════════
-   📅 달력 주문하기 (캘린더 굿즈) — 2027 우리 캘린더
-   스토어 탭 → 일정 선택(전체) → 표지 선택 → 미리보기 → 주문(계좌이체)
+   📅 달력 주문하기 (캘린더 굿즈) — 2027 우리 캘린더 (v3)
+   방 선택 → 월별 일정(가로 스와이프) → 표지 → 미리보기 → 주문(계좌이체)
    ═══════════════════════════════════════════════ */
 
 const CO_YEAR = 2027;
 const CO_MONTH_EN = ['','JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
 const CO_MONTH_KR = ['','일월','이월','삼월','사월','오월','유월','칠월','팔월','구월','시월','십일월','십이월'];
 const CO_PRICE = 19900;
-const CO_BANK = '카카오뱅크 3333-12-0069460 이원석';
 const CO_BANK_NUM = '3333-12-0069460';
 
-/* 2027 공휴일 (월-일 → 이름) */
 const CO_HOLIDAYS = {
   '1-1':'신정','2-6':'설날 연휴','2-7':'설날','2-8':'설날 연휴','2-9':'대체공휴일',
   '3-1':'삼일절','5-1':'근로자의 날','5-5':'어린이날','5-13':'부처님오신날','6-6':'현충일',
@@ -10188,90 +10112,33 @@ const CO_HOLIDAYS = {
   '10-3':'개천절','10-4':'대체공휴일','10-9':'한글날','10-11':'대체공휴일',
   '12-25':'성탄절','12-27':'대체공휴일'
 };
-
-/* 표지 2종 */
 const CO_COVERS = [
   {key:'chars', name:'캐릭터 표지', sub:'모찌·곰돌·달콩'},
   {key:'clean', name:'클래식 표지', sub:'심플 빈티지'}
 ];
 
-/* 선택 상태 */
-let _coSelectedEvents = new Set();   // 선택된 일정 key
+/* 상태 */
+let _coStep = 'rooms';            // 'rooms' | 'events'
+let _coRoom = null;               // 선택된 방 {id,name,code}
+let _coRoomEvents = [];           // 선택된 방의 모든 일정 [{key,month,day,title,color,time,yearly,ymd}]
+let _coMonthView = 1;             // 월별 스와이프 현재 월
+let _coSelectedEvents = {};       // {eventKey: {month,day,title,color}}  (방 무관 누적)
 let _coCover = 'chars';
-let _coPreviewPage = 0;              // 0=표지, 1~12=각 월
-let _coEventCache = [];              // [{key, ymd, month, day, title, color, time}]
+let _coPreviewPage = 0;
 
-/* 양력→음력 (앱과 동일하게 lunar-javascript 사용) */
 function coLunar(y,m,d){
-  try{
-    if(window.Solar){
-      const lunar=window.Solar.fromYmd(y,m,d).getLunar();
-      return `음 ${lunar.getMonth()}.${lunar.getDay()}`;
-    }
-  }catch(e){}
+  try{ if(window.Solar){ const l=window.Solar.fromYmd(y,m,d).getLunar(); return `음 ${l.getMonth()}.${l.getDay()}`; } }catch(e){}
   return '';
 }
-
-/* 내가 등록한 모든 일정 수집 (단일/기간/매년반복 전부) → _coEventCache
-   _events: {YYYY-MM-DD: [ev,...]} */
-function coCollectEvents(){
-  const list=[];
-  const seen=new Set();
-  Object.entries(_events||{}).forEach(([date,evs])=>{
-    if(!date || date.length<10)return;
-    const y=parseInt(date.slice(0,4),10);
-    const mm=parseInt(date.slice(5,7),10);
-    const dd=parseInt(date.slice(8,10),10);
-    evs.forEach(ev=>{
-      const title=(ev.title||'').trim();
-      if(!title)return;
-      // 같은 날짜+제목 중복 제거 (함께 일정은 멤버 수만큼 row가 있음)
-      const key=date+'|'+title;
-      if(seen.has(key))return;
-      seen.add(key);
-      list.push({
-        key, ymd:date, year:y, month:mm, day:dd, title,
-        color: ev.color || 'c-vintage',
-        time: ev.time || '',
-        yearly: !!ev.recurring_yearly
-      });
-    });
-  });
-  // 월,일 순 정렬
-  list.sort((a,b)=> a.month-b.month || a.day-b.day || (a.time||'').localeCompare(b.time||''));
-  _coEventCache=list;
-  return list;
-}
-
-/* 일정 색 키 → hex */
 function coColorHex(colorKey){
-  try{
-    if(typeof EVENT_COLORS!=='undefined'){
-      const c=EVENT_COLORS.find(x=>x.key===colorKey);
-      if(c&&c.hex)return c.hex;
-    }
-  }catch(e){}
+  try{ if(typeof EVENT_COLORS!=='undefined'){ const c=EVENT_COLORS.find(x=>x.key===colorKey); if(c&&c.hex)return c.hex; } }catch(e){}
   return '#8b3a2a';
 }
 
-/* 미리보기에서 특정 월에 표시할 선택된 일정 → {day:[ev,...]}
-   매년반복은 연도 무관하게 그 달에 표시, 일반 일정은 2027년 것만 (혹은 연도 무시하고 월일로) */
-function coEventsForMonth(month){
-  const byDay={};
-  _coEventCache.forEach(ev=>{
-    if(!_coSelectedEvents.has(ev.key))return;
-    if(ev.month!==month)return;
-    (byDay[ev.day]=byDay[ev.day]||[]).push(ev);
-  });
-  return byDay;
-}
-
-/* ───── 메인 렌더 ───── */
+/* ───── 메인 렌더 (스텝 분기) ───── */
 function renderCalOrder(){
   const body=document.getElementById('storeBody');
   if(!body)return;
-  coCollectEvents();
-
   let html='';
   html+=`
     <div class="co-hero">
@@ -10280,51 +10147,35 @@ function renderCalOrder(){
       <div class="co-hero-sub">내가 등록한 일정이 그대로 인쇄되는<br>세상에 하나뿐인 빈티지 탁상달력</div>
     </div>`;
 
-  // STEP 1 — 일정 선택 (모든 일정)
+  // STEP 1 — 일정 선택 (방 → 월별)
   html+=`<div class="co-section">
-    <div class="co-section-title"><span class="co-step">1</span>달력에 넣을 일정 선택</div>
-    <div class="co-section-desc">내가 등록한 일정 중 달력에 인쇄하고 싶은 일정을 골라주세요.</div>`;
-  if(_coEventCache.length===0){
-    html+=`<div class="co-ev-empty">아직 등록된 일정이 없어요.<br>방에서 일정을 만들면 여기 목록에 나타나요.</div>`;
+    <div class="co-section-title"><span class="co-step">1</span>달력에 넣을 일정 선택</div>`;
+  if(_coStep==='rooms'){
+    html+=`<div class="co-section-desc">먼저 일정을 가져올 방을 선택해 주세요.</div>`;
+    html+=coRenderRoomList();
   }else{
-    html+=`<span class="co-selectall" onclick="coToggleAll()">전체 선택 / 해제</span>`;
-    html+=`<div class="co-evlist">`;
-    _coEventCache.forEach(ev=>{
-      const sel=_coSelectedEvents.has(ev.key);
-      const hex=coColorHex(ev.color);
-      const yearlyTag=ev.yearly?'<span style="font-size:10px;color:var(--accent);background:rgba(139,58,42,.08);padding:1px 6px;border-radius:8px;margin-left:6px">매년</span>':'';
-      html+=`
-        <div class="co-ev-row${sel?' sel':''}" onclick="coToggleEvent('${escapeHtml(ev.key)}')">
-          <div class="co-ev-check">${sel?'✓':''}</div>
-          <div class="co-ev-dot" style="background:${hex}"></div>
-          <div class="co-ev-info">
-            <div class="co-ev-title">${escapeHtml(ev.title)}${yearlyTag}</div>
-            <div class="co-ev-date">${ev.month}월 ${ev.day}일${ev.time?' · '+escapeHtml(ev.time):''}</div>
-          </div>
-        </div>`;
-    });
-    html+=`</div>`;
+    html+=`<div class="co-section-desc">월을 좌우로 넘기며 달력에 넣을 일정을 골라주세요.</div>`;
+    html+=coRenderMonthPicker();
   }
   html+=`</div>`;
 
-  // STEP 2 — 표지 선택 (실제 표지 미리보기)
+  // STEP 2 — 표지
   html+=`<div class="co-section">
     <div class="co-section-title"><span class="co-step">2</span>표지 디자인 선택</div>
     <div class="co-section-desc">두 가지 표지 중 마음에 드는 걸 골라주세요.</div>
     <div class="co-cover-grid">`;
   CO_COVERS.forEach(cv=>{
     const sel=_coCover===cv.key;
-    html+=`
-      <div class="co-cover-card${sel?' sel':''}" onclick="coSelectCover('${cv.key}')">
+    html+=`<div class="co-cover-card${sel?' sel':''}" onclick="coSelectCover('${cv.key}')">
         <div class="co-cover-check">✓</div>
-        <div class="co-cover-thumb">${coCoverHTML(cv.key, true)}</div>
+        <div class="co-cover-thumb" id="coThumb-${cv.key}"></div>
         <div class="co-cover-label">${escapeHtml(cv.name)}<br><small style="font-weight:400;color:var(--sub)">${escapeHtml(cv.sub)}</small></div>
       </div>`;
   });
   html+=`</div></div>`;
 
   // STEP 3 — 미리보기 & 주문
-  const cnt=_coSelectedEvents.size;
+  const cnt=Object.keys(_coSelectedEvents).length;
   html+=`<div class="co-section">
     <div class="co-section-title"><span class="co-step">3</span>미리보기 후 주문</div>
     <div class="co-summary">
@@ -10338,75 +10189,243 @@ function renderCalOrder(){
   </div>`;
 
   body.innerHTML=html;
+  // 표지 썸네일 px 렌더
+  CO_COVERS.forEach(cv=>{
+    const el=document.getElementById('coThumb-'+cv.key);
+    if(el)coRenderCoverInto(el, cv.key);
+  });
 }
 
-/* ───── 실제 표지 재현 (PIL 디자인과 동일 구성) ─────
-   thumb=true면 작은 썸네일(텍스트 작게) */
-function coCoverHTML(key, thumb){
-  const scale = thumb ? 'thumb' : 'full';
-  const charsRow = key==='chars'
-    ? `<div class="cc-chars">🐰　🐻　🌙</div>`
-    : `<div class="cc-est">OUR CALENDAR · EST 2026</div>`;
-  // 클린 버전엔 디바이더, 캐릭터 버전엔 캐릭터
-  const divider = key==='clean'
-    ? `<div class="cc-divider"><span></span><i></i><span></span></div>`
-    : '';
-  return `
-    <div class="cc-cover cc-${scale}">
-      <div class="cc-frame">
-        <span class="cc-corner tl"></span><span class="cc-corner tr"></span>
-        <span class="cc-corner bl"></span><span class="cc-corner br"></span>
-        <div class="cc-year">2027</div>
-        <div class="cc-laurel cc-laurel-l">❧</div>
-        <div class="cc-stamp">
-          <div class="cc-stamp-our">OUR</div>
-          <div class="cc-stamp-line"></div>
-          <div class="cc-stamp-cal">CALENDAR</div>
-          <div class="cc-stamp-est">EST · 2026</div>
-        </div>
-        <div class="cc-laurel cc-laurel-r">❧</div>
-        <div class="cc-name">우리 캘린더</div>
-        <div class="cc-sub">함께 쓰는 우리만의 기록</div>
-        ${divider}
-        ${charsRow}
+/* 방 리스트 */
+function coRenderRoomList(){
+  const rooms=(typeof _myRooms!=='undefined'&&_myRooms)?_myRooms:[];
+  if(!rooms.length){
+    return `<div class="co-ev-empty">참여 중인 방이 없어요.<br>방을 만들고 일정을 등록하면<br>달력을 만들 수 있어요.</div>`;
+  }
+  let h=`<div class="co-roomlist">`;
+  rooms.forEach(r=>{
+    h+=`<div class="co-room-row" onclick="coOpenRoom('${r.id}')">
+      <div class="co-room-ic">📅</div>
+      <div class="co-room-info">
+        <div class="co-room-name">${escapeHtml(r.name||'우리 방')}</div>
+        <div class="co-room-code">코드 ${escapeHtml(r.code||'')}</div>
       </div>
+      <div class="co-room-arrow">›</div>
     </div>`;
+  });
+  h+=`</div>`;
+  return h;
 }
 
-/* ───── 인터랙션 ───── */
-function coToggleEvent(key){
-  if(_coSelectedEvents.has(key))_coSelectedEvents.delete(key);
-  else _coSelectedEvents.add(key);
+/* 방 선택 → 그 방 일정 로드 */
+async function coOpenRoom(roomId){
+  const rooms=(typeof _myRooms!=='undefined'&&_myRooms)?_myRooms:[];
+  _coRoom=rooms.find(r=>String(r.id)===String(roomId))||null;
+  if(!_coRoom){toast('방을 찾을 수 없어요');return;}
+  _coStep='events';
+  _coRoomEvents=[];
+  // 로딩 표시
+  const body=document.getElementById('storeBody');
   renderCalOrder();
-}
-function coToggleAll(){
-  if(_coSelectedEvents.size===_coEventCache.length){
-    _coSelectedEvents.clear();
-  }else{
-    _coEventCache.forEach(ev=>_coSelectedEvents.add(ev.key));
+  try{
+    const {data,error}=await supa.from('events').select('*').eq('room_id',_coRoom.id);
+    if(error)throw error;
+    const seen=new Set();
+    const list=[];
+    (data||[]).forEach(ev=>{
+      const title=(ev.title||'').trim();
+      if(!title||!ev.date||ev.date.length<10)return;
+      const mm=parseInt(ev.date.slice(5,7),10);
+      const dd=parseInt(ev.date.slice(8,10),10);
+      const key=ev.date+'|'+title;
+      if(seen.has(key))return;
+      seen.add(key);
+      list.push({key, ymd:ev.date, month:mm, day:dd, title, color:ev.color||'c-vintage', time:ev.time||'', yearly:!!ev.recurring_yearly});
+    });
+    list.sort((a,b)=> a.month-b.month || a.day-b.day);
+    _coRoomEvents=list;
+    // 현재 달로 시작 (없으면 1월)
+    const now=new Date();
+    _coMonthView=(now.getMonth()+1);
+  }catch(e){
+    console.error(e); toast('일정 불러오기 실패');
+    _coRoomEvents=[];
   }
   renderCalOrder();
 }
-function coSelectCover(key){
-  _coCover=key;
+function coBackToRooms(){
+  _coStep='rooms'; _coRoom=null; _coRoomEvents=[];
   renderCalOrder();
+}
+
+/* 월별 가로 스와이프 일정 선택기 */
+function coRenderMonthPicker(){
+  const m=_coMonthView;
+  const monthEvents=_coRoomEvents.filter(e=>e.month===m);
+  let rows='';
+  if(monthEvents.length===0){
+    rows=`<div class="co-ev-empty" style="margin-left:0">${m}월에 등록된 일정이 없어요.</div>`;
+  }else{
+    rows=`<div class="co-evlist" style="margin-left:0">`;
+    monthEvents.forEach(ev=>{
+      const sel=!!_coSelectedEvents[ev.key];
+      const hex=coColorHex(ev.color);
+      const tag=ev.yearly?'<span class="co-ytag">매년</span>':'';
+      rows+=`<div class="co-ev-row${sel?' sel':''}" onclick="coToggleEvent('${escapeHtml(ev.key)}')">
+        <div class="co-ev-check">${sel?'✓':''}</div>
+        <div class="co-ev-dot" style="background:${hex}"></div>
+        <div class="co-ev-info">
+          <div class="co-ev-title">${escapeHtml(ev.title)}${tag}</div>
+          <div class="co-ev-date">${ev.month}월 ${ev.day}일${ev.time?' · '+escapeHtml(ev.time):''}</div>
+        </div>
+      </div>`;
+    });
+    rows+=`</div>`;
+  }
+  const cnt=Object.keys(_coSelectedEvents).length;
+  return `
+    <div class="co-room-bar">
+      <span class="co-room-back" onclick="coBackToRooms()">‹ 방 목록</span>
+      <span class="co-room-cur">${escapeHtml(_coRoom?_coRoom.name:'')}</span>
+      <span class="co-room-cnt">${cnt}개 선택</span>
+    </div>
+    <div class="co-month-nav">
+      <button class="co-mn-btn" onclick="coMonthNav(-1)" ${m<=1?'disabled':''}>‹</button>
+      <div class="co-mn-label">${CO_YEAR}년 ${m}월</div>
+      <button class="co-mn-btn" onclick="coMonthNav(1)" ${m>=12?'disabled':''}>›</button>
+    </div>
+    ${rows}`;
+}
+function coMonthNav(dir){
+  _coMonthView=Math.max(1,Math.min(12,_coMonthView+dir));
+  renderCalOrder();
+}
+function coToggleEvent(key){
+  const ev=_coRoomEvents.find(e=>e.key===key);
+  if(!ev)return;
+  if(_coSelectedEvents[key])delete _coSelectedEvents[key];
+  else _coSelectedEvents[key]={month:ev.month,day:ev.day,title:ev.title,color:ev.color};
+  renderCalOrder();
+}
+function coSelectCover(key){ _coCover=key; renderCalOrder(); }
+
+/* ───── 표지/달력 렌더 (px 스케일, cqw 미사용) ─────
+   targetEl 의 실제 폭을 재서 비율 px로 그린다. iOS 안정. */
+function coBuildCover(key, W){
+  const H=W*2/3;                 // 3:2
+  const c=v=>Math.round(v*W);    // 폭 비율
+  const accent='#8b3a2a', gold='#b08a50', cream='#f3e6cf', text='#3d2a21';
+  const charsRow = key==='chars'
+    ? `<div style="font-size:${c(.07)}px;letter-spacing:.12em;margin-top:${c(.03)}px">🐰　🐻　🌙</div>`
+    : `<div style="color:${gold};font-family:var(--ff-serif);font-size:${c(.026)}px;letter-spacing:.12em;margin-top:${c(.03)}px">OUR CALENDAR · EST 2026</div>`;
+  const divider = key==='clean'
+    ? `<div style="display:flex;align-items:center;gap:${c(.012)}px;margin-top:${c(.028)}px">
+         <span style="width:${c(.1)}px;height:2px;background:${gold}"></span>
+         <i style="width:${c(.01)}px;height:${c(.01)}px;border-radius:50%;background:${gold};display:block"></i>
+         <span style="width:${c(.1)}px;height:2px;background:${gold}"></span>
+       </div>`
+    : '';
+  const cnr=`position:absolute;width:${c(.05)}px;height:${c(.05)}px;border:2px solid ${gold}`;
+  return `
+  <div style="width:${W}px;height:${H}px;background:${cream};border-radius:${c(.012)}px;position:relative;overflow:hidden;box-sizing:border-box">
+    <div style="position:absolute;inset:${c(.045)}px;border:${Math.max(2,c(.004))}px solid ${accent};border-radius:${c(.008)}px"></div>
+    <div style="position:absolute;inset:${c(.062)}px;border:1px solid ${accent};border-radius:${c(.006)}px"></div>
+    <span style="${cnr};top:${c(.08)}px;left:${c(.08)}px;border-right:none;border-bottom:none"></span>
+    <span style="${cnr};top:${c(.08)}px;right:${c(.08)}px;border-left:none;border-bottom:none"></span>
+    <span style="${cnr};bottom:${c(.08)}px;left:${c(.08)}px;border-right:none;border-top:none"></span>
+    <span style="${cnr};bottom:${c(.08)}px;right:${c(.08)}px;border-left:none;border-top:none"></span>
+    <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:${c(.1)}px;box-sizing:border-box">
+      <div style="font-family:var(--ff-serif);font-weight:800;color:${accent};font-size:${c(.16)}px;letter-spacing:.1em;line-height:1">2027</div>
+      <div style="border:${Math.max(1,c(.0015))}px solid ${accent};border-radius:50%;width:${c(.2)}px;height:${c(.2)}px;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:${c(.028)}px 0;text-align:center">
+        <div style="font-family:var(--ff-serif);font-weight:800;color:${accent};font-size:${c(.05)}px;line-height:1">OUR</div>
+        <div style="width:50%;height:1px;background:${accent};margin:${c(.008)}px 0"></div>
+        <div style="font-weight:700;color:${accent};font-size:${c(.022)}px;letter-spacing:.05em">CALENDAR</div>
+        <div style="color:${gold};font-size:${c(.016)}px;margin-top:${c(.006)}px">EST · 2026</div>
+      </div>
+      <div style="font-family:var(--ff-serif);font-weight:800;color:${accent};font-size:${c(.075)}px;letter-spacing:.06em">우리 캘린더</div>
+      <div style="color:${text};font-size:${c(.03)}px;letter-spacing:.08em;margin-top:${c(.012)}px">함께 쓰는 우리만의 기록</div>
+      ${divider}
+      ${charsRow}
+    </div>
+  </div>`;
+}
+function coRenderCoverInto(el, key){
+  const W=el.clientWidth || el.getBoundingClientRect().width || 160;
+  el.innerHTML=coBuildCover(key, W);
+}
+
+/* 내지 달력 (px 스케일) */
+function coBuildMonth(month, W){
+  const H=W*2/3;
+  const c=v=>Math.round(v*W);
+  const accent='#8b3a2a', gold='#b08a50', text='#3d2a21', line='rgba(139,58,42,.12)';
+  const sun='#b24c3c', sat='#5a6e96', lunC='#a8967d', paper='#f8f0e0';
+  const first=new Date(CO_YEAR,month-1,1).getDay();
+  const dim=new Date(CO_YEAR,month,0).getDate();
+  // 선택 일정 → 날짜별
+  const byDay={};
+  Object.values(_coSelectedEvents).forEach(ev=>{ if(ev.month===month)(byDay[ev.day]=byDay[ev.day]||[]).push(ev); });
+
+  const fz=v=>Math.max(6,c(v));  // 최소 6px 보장
+  let cells='';
+  let day=1;
+  const rows=Math.ceil((first+dim)/7);
+  for(let r=0;r<rows;r++){
+    cells+='<tr>';
+    for(let cc=0;cc<7;cc++){
+      const idx=r*7+cc;
+      if(idx<first||day>dim){cells+=`<td style="border-top:1px solid ${line}"></td>`;continue;}
+      const hol=CO_HOLIDAYS[month+'-'+day];
+      const col = (cc===0||hol)?sun : (cc===6?sat:text);
+      const lun=coLunar(CO_YEAR,month,day);
+      let chips='';
+      (byDay[day]||[]).forEach(ev=>{
+        const hx=coColorHex(ev.color);
+        chips+=`<div style="font-size:${fz(.019)}px;line-height:1.2;background:${hx}22;color:${hx};border-radius:3px;padding:0 ${c(.004)}px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600">${escapeHtml(ev.title)}</div>`;
+      });
+      const holName=hol?`<div style="font-size:${fz(.018)}px;color:${sun};line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${hol}</div>`:'';
+      cells+=`<td style="border-top:1px solid ${line};vertical-align:top;height:${c(.11)}px;padding:${c(.006)}px ${c(.004)}px 0;overflow:hidden">
+        <span style="font-family:var(--ff-serif);font-weight:600;color:${col};font-size:${fz(.034)}px">${day}</span>
+        <span style="font-size:${fz(.018)}px;color:${lunC};margin-left:2px">${lun}</span>
+        ${holName}${chips}
+      </td>`;
+      day++;
+    }
+    cells+='</tr>';
+  }
+  const th=(t,col)=>`<th style="font-size:${fz(.026)}px;font-weight:700;color:${col||'#78604b'};padding:${c(.008)}px 0">${t}</th>`;
+  return `
+  <div style="width:${W}px;height:${H}px;background:${paper};border-radius:${c(.012)}px;position:relative;overflow:hidden;box-sizing:border-box">
+    <div style="position:absolute;inset:0;border:${Math.max(2,c(.004))}px solid ${accent};border-radius:${c(.012)}px;padding:${c(.035)}px;box-sizing:border-box">
+      <div style="display:flex;align-items:flex-start;gap:${c(.03)}px">
+        <div style="font-family:var(--ff-serif);font-weight:800;color:${accent};font-size:${c(.13)}px;line-height:.9">${month}</div>
+        <div style="flex:1;padding-top:${c(.015)}px">
+          <div style="font-family:var(--ff-serif);font-weight:600;color:${text};font-size:${c(.05)}px;line-height:1">${CO_MONTH_EN[month]}</div>
+          <div style="color:${gold};font-size:${c(.03)}px;margin-top:${c(.02)}px;font-weight:600">${CO_YEAR} · ${CO_MONTH_KR[month]}</div>
+        </div>
+        <div style="border:1.5px solid ${accent};border-radius:50%;width:${c(.11)}px;height:${c(.11)}px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--ff-serif);font-weight:800;color:${accent};font-size:${fz(.024)}px;line-height:1.1;text-align:center">OUR<br><span style="font-size:${fz(.014)}px">CALENDAR</span></div>
+      </div>
+      <div style="height:2px;background:${gold};margin:${c(.025)}px ${c(.01)}px ${c(.02)}px"></div>
+      <table style="width:100%;border-collapse:collapse;table-layout:fixed">
+        <thead><tr>${th('일',sun)}${th('월')}${th('화')}${th('수')}${th('목')}${th('금')}${th('토',sat)}</tr></thead>
+        <tbody>${cells}</tbody>
+      </table>
+    </div>
+  </div>`;
 }
 
 /* ───── 미리보기 모달 ───── */
 function openCalPreview(){
   _coPreviewPage=0;
-  // 주문폼에서 재활용했을 수 있으니 nav/title 원복
-  const nav=document.querySelector('.co-preview-nav');
-  if(nav)nav.style.display='';
-  renderCalPreviewPage();
+  const nav=document.querySelector('.co-preview-nav'); if(nav)nav.style.display='';
   document.getElementById('coPreviewModal').classList.add('on');
+  // 모달이 표시된 뒤 폭 측정 위해 다음 프레임에 렌더
+  requestAnimationFrame(()=>{ requestAnimationFrame(renderCalPreviewPage); });
 }
 function closeCalPreview(){
   document.getElementById('coPreviewModal').classList.remove('on');
-  const nav=document.querySelector('.co-preview-nav');
-  if(nav)nav.style.display='';
-  const t=document.querySelector('.co-preview-title');
-  if(t)t.textContent='나만의 달력 미리보기';
+  const nav=document.querySelector('.co-preview-nav'); if(nav)nav.style.display='';
+  const t=document.querySelector('.co-preview-title'); if(t)t.textContent='나만의 달력 미리보기';
 }
 function calPreviewNav(dir){
   _coPreviewPage=Math.max(0,Math.min(12,_coPreviewPage+dir));
@@ -10418,74 +10437,19 @@ function renderCalPreviewPage(){
   const prev=document.getElementById('coPrevBtn');
   const next=document.getElementById('coNextBtn');
   if(!body)return;
-  if(_coPreviewPage===0){
-    body.innerHTML=`<div class="co-preview-stage">${coCoverHTML(_coCover,false)}</div>`;
-    pg.textContent='표지';
-  }else{
-    body.innerHTML=`<div class="co-preview-stage">${coRenderMonthHTML(_coPreviewPage)}</div>`;
-    pg.textContent=`${_coPreviewPage}월`;
-  }
-  prev.disabled=(_coPreviewPage===0);
-  next.disabled=(_coPreviewPage===12);
+  // 무대 폭 = body 내부 패딩 제외
+  const stageW=Math.max(220, (body.clientWidth||320) - 32);
+  let inner;
+  if(_coPreviewPage===0){ inner=coBuildCover(_coCover, stageW); pg.textContent='표지'; }
+  else { inner=coBuildMonth(_coPreviewPage, stageW); pg.textContent=`${_coPreviewPage}월`; }
+  body.innerHTML=`<div style="display:flex;justify-content:center">${inner}</div>`;
+  if(prev)prev.disabled=(_coPreviewPage===0);
+  if(next)next.disabled=(_coPreviewPage===12);
 }
 
-/* 실제 내지 달력 재현 (음력 표기 + 선택 일정 칩 + 공휴일) */
-function coRenderMonthHTML(month){
-  const first=new Date(CO_YEAR,month-1,1).getDay(); // 0=일
-  const dim=new Date(CO_YEAR,month,0).getDate();
-  const byDay=coEventsForMonth(month);
-
-  let cells='';
-  let day=1;
-  const rows=Math.ceil((first+dim)/7);
-  for(let r=0;r<rows;r++){
-    cells+='<tr>';
-    for(let c=0;c<7;c++){
-      const idx=r*7+c;
-      if(idx<first||day>dim){cells+='<td></td>';continue;}
-      const hol=CO_HOLIDAYS[month+'-'+day];
-      const cls=[];
-      if(c===0||hol)cls.push('sun');
-      else if(c===6)cls.push('sat');
-      const lun=coLunar(CO_YEAR,month,day);
-      let chips='';
-      (byDay[day]||[]).forEach(ev=>{
-        chips+=`<span class="cm-chip" style="background:${coColorHex(ev.color)}22;color:${coColorHex(ev.color)}">${escapeHtml(ev.title)}</span>`;
-      });
-      const holName = hol ? `<span class="cm-hol">${hol}</span>` : '';
-      cells+=`<td class="${cls.join(' ')}">
-        <div class="cm-daynum">${day}<span class="cm-lun">${lun}</span></div>
-        ${holName}${chips}
-      </td>`;
-      day++;
-    }
-    cells+='</tr>';
-  }
-  return `
-    <div class="cm-page">
-      <div class="cm-frame">
-        <div class="cm-head">
-          <span class="cm-num">${month}</span>
-          <div class="cm-headtxt">
-            <div class="cm-en">${CO_MONTH_EN[month]}</div>
-            <div class="cm-kr">${CO_YEAR} · ${CO_MONTH_KR[month]}</div>
-          </div>
-          <div class="cm-stamp">OUR<br><small>CALENDAR</small></div>
-        </div>
-        <div class="cm-divider"></div>
-        <table class="cm-table">
-          <thead><tr>
-            <th class="sun">일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th class="sat">토</th>
-          </tr></thead>
-          <tbody>${cells}</tbody>
-        </table>
-      </div>
-    </div>`;
-}
-
-/* ───── 주문 폼 (계좌이체 전용) ───── */
+/* ───── 주문 폼 (계좌이체) ───── */
 function openCalOrderForm(){
-  const cnt=_coSelectedEvents.size;
+  const cnt=Object.keys(_coSelectedEvents).length;
   const coverName=CO_COVERS.find(c=>c.key===_coCover).name;
   const body=document.getElementById('coPreviewBody');
   document.getElementById('coPreviewModal').classList.add('on');
@@ -10510,22 +10474,12 @@ function openCalOrderForm(){
         <div class="co-pay-fixed">계좌이체</div>
       </div>
       <button class="co-btn co-btn-order" style="margin-top:18px" onclick="coSubmitOrder()">${CO_PRICE.toLocaleString()}원 · 계좌 정보 보기</button>
-      <div style="text-align:center;margin-top:10px">
-        <span class="co-back-link" onclick="coBackToOrder()">‹ 돌아가기</span>
-      </div>
+      <div style="text-align:center;margin-top:10px"><span class="co-back-link" onclick="closeCalPreview()">‹ 돌아가기</span></div>
     </div>`;
 }
 function coField(label,id,ph){
-  return `<div class="co-field">
-    <div class="co-field-label">${label}</div>
-    <input id="${id}" placeholder="${ph}" class="co-input">
-  </div>`;
+  return `<div class="co-field"><div class="co-field-label">${label}</div><input id="${id}" placeholder="${ph}" class="co-input"></div>`;
 }
-function coBackToOrder(){
-  closeCalPreview();
-}
-
-/* 결제하기 → 계좌번호 표시 + 복사 */
 function coSubmitOrder(){
   const body=document.getElementById('coPreviewBody');
   document.querySelector('.co-preview-title').textContent='입금 안내';
@@ -10549,30 +10503,21 @@ function coSubmitOrder(){
         문의 : lsung179@naver.com
       </div>
       <button class="co-btn co-btn-order" style="margin-top:18px" onclick="coCopyBank()">계좌번호 복사하기</button>
-      <div style="text-align:center;margin-top:10px">
-        <span class="co-back-link" onclick="closeCalPreview()">닫기</span>
-      </div>
+      <div style="text-align:center;margin-top:10px"><span class="co-back-link" onclick="closeCalPreview()">닫기</span></div>
     </div>`;
 }
 function coCopyBank(){
-  const txt=CO_BANK_NUM;
-  const done=()=>toast('계좌번호를 복사했어요');
+  const txt=CO_BANK_NUM, done=()=>toast('계좌번호를 복사했어요');
   try{
     if(navigator.clipboard&&navigator.clipboard.writeText){
       navigator.clipboard.writeText(txt).then(done).catch(()=>coCopyFallback(txt,done));
-    }else{
-      coCopyFallback(txt,done);
-    }
+    }else coCopyFallback(txt,done);
   }catch(e){ coCopyFallback(txt,done); }
 }
 function coCopyFallback(txt,done){
   try{
-    const ta=document.createElement('textarea');
-    ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0';
-    document.body.appendChild(ta); ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    done();
+    const ta=document.createElement('textarea'); ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done();
   }catch(e){ toast('복사 실패 — 길게 눌러 복사해 주세요'); }
 }
 
