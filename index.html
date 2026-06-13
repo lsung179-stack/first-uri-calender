@@ -695,7 +695,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 /* 미리보기 모달 */
 .co-preview-modal{position:fixed;inset:0;background:rgba(40,28,20,.7);z-index:1500;display:none;align-items:center;justify-content:center;padding:16px;padding-top:max(16px,env(safe-area-inset-top));padding-bottom:max(16px,env(safe-area-inset-bottom))}
 .co-preview-modal.on{display:flex;animation:fade-in .2s ease-out}
-.co-preview-inner{background:var(--bg);border-radius:16px;width:100%;max-width:560px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;margin:auto}
+.co-preview-inner{background:var(--bg);border-radius:16px;width:100%;max-width:620px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;margin:auto}
 .co-preview-head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(139,58,42,.12);flex-shrink:0}
 .co-preview-head .co-preview-title{flex:1;font-family:var(--ff-serif);font-size:17px;font-weight:800;color:var(--text)}
 .co-preview-head button{background:none;border:none;font-size:22px;color:var(--sub);cursor:pointer;width:34px;height:34px}
@@ -730,6 +730,15 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .co-event-monthbar .co-mn-btn{width:36px;height:36px;border-radius:9px;border:1px solid rgba(139,58,42,.2);background:#fff;color:var(--accent);font-size:18px;font-weight:700;cursor:pointer;flex-shrink:0}
 .co-event-monthbar .co-mn-btn:disabled{opacity:.3}
 .co-event-monthbar .co-mn-label{font-size:15px;font-weight:700;color:var(--text)}
+.co-mn-center{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.co-yr-nav{display:flex;align-items:center;gap:8px}
+.co-yr-btn{width:28px;height:28px;border-radius:7px;border:1px solid rgba(139,58,42,.2);background:#fff;color:var(--accent);font-size:15px;font-weight:700;cursor:pointer;line-height:1}
+.co-yr-btn:disabled{opacity:.3}
+.co-yr-label{font-size:14px;font-weight:700;color:var(--accent);min-width:58px;text-align:center}
+.co-event-roombar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:var(--bg)}
+.co-event-roomchg{font-size:13px;font-weight:700;color:var(--accent);background:rgba(139,58,42,.08);padding:6px 12px;border-radius:20px;cursor:pointer}
+.co-event-roomchg:active{transform:scale(.97)}
+.co-event-roomname{font-size:13.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .co-ev-grouplabel{font-size:12px;font-weight:700;color:var(--accent);padding:4px 2px 8px;letter-spacing:.3px}
 .co-ev-divline{height:1px;background:rgba(139,58,42,.15);margin:12px 2px 14px}
 /* 팩 카드 내부 체험/사용중 버튼 */
@@ -2955,9 +2964,20 @@ body.align-right .cal-evbar{text-align:right}
       <span class="co-event-count" id="coEventCount">0개 선택</span>
       <button onclick="closeEventModal()" aria-label="닫기">✕</button>
     </div>
+    <div class="co-event-roombar">
+      <span class="co-event-roomchg" onclick="coChangeRoomFromModal()">⇄ 방 변경</span>
+      <span class="co-event-roomname" id="coEventRoomName">우리 방</span>
+    </div>
     <div class="co-event-monthbar">
       <button class="co-mn-btn" id="coEvPrevBtn" onclick="coMonthNav(-1)">‹</button>
-      <div class="co-mn-label" id="coEventMonthLabel">2027년 1월</div>
+      <div class="co-mn-center">
+        <div class="co-yr-nav">
+          <button class="co-yr-btn" id="coYrPrevBtn" onclick="coYearNav(-1)">‹</button>
+          <span class="co-yr-label" id="coEventYearLabel">2027년</span>
+          <button class="co-yr-btn" id="coYrNextBtn" onclick="coYearNav(1)">›</button>
+        </div>
+        <div class="co-mn-label" id="coEventMonthLabel">1월</div>
+      </div>
       <button class="co-mn-btn" id="coEvNextBtn" onclick="coMonthNav(1)">›</button>
     </div>
     <div class="co-preview-body" id="coEventBody" style="background:var(--bg)"></div>
@@ -10125,6 +10145,7 @@ const CO_LOGO_IMG='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHgAAAB4CAYAAAA
    ═══════════════════════════════════════════════ */
 
 const CO_YEAR = 2027;
+let _coYear = 2027;
 const CO_MONTH_EN = ['','JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
 const CO_MONTH_KR = ['','일월','이월','삼월','사월','오월','유월','칠월','팔월','구월','시월','십일월','십이월'];
 const CO_PRICE = 19900;
@@ -10249,7 +10270,6 @@ function openRoomModal(){
         <div class="co-room-row" onclick="coOpenRoom('${r.id}')">
           <div class="co-room-info">
             <div class="co-room-name">${escapeHtml(r.name||'우리 방')}</div>
-            <div class="co-room-code">코드 ${escapeHtml(r.code||'')}</div>
           </div>
           <div class="co-room-arrow">›</div>
         </div>`).join('')+`</div>`;
@@ -10341,6 +10361,8 @@ function closeEventModal(){
   renderCalOrder();
 }
 function coMonthNav(dir){ _coMonthView=Math.max(1,Math.min(12,_coMonthView+dir)); renderEventModalBody(); }
+function coYearNav(dir){ _coYear=Math.max(2024,Math.min(2030,_coYear+dir)); renderEventModalBody(); }
+function coChangeRoomFromModal(){ closeEventModal(); openRoomModal(); }
 
 function coFmtRange(ev){
   if(!ev.isRange)return `${ev.month}월 ${ev.day}일`;
@@ -10352,7 +10374,7 @@ function coEventsInMonth(m){
   return _coRoomEvents.filter(ev=>{
     if(ev.yearly)return ev.month===m;
     const s=coParseYmd(ev.startYmd), e=coParseYmd(ev.endYmd);
-    const startIdx=s.y*12+s.m, endIdx=e.y*12+e.m, cur=CO_YEAR*12+m;
+    const startIdx=s.y*12+s.m, endIdx=e.y*12+e.m, cur=_coYear*12+m;
     return cur>=startIdx&&cur<=endIdx;
   });
 }
@@ -10360,7 +10382,11 @@ function renderEventModalBody(){
   const m=_coMonthView;
   const body=document.getElementById('coEventBody');
   const head=document.getElementById('coEventMonthLabel');
-  if(head)head.textContent=`${CO_YEAR}년 ${m}월`;
+  if(head)head.textContent=`${m}월`;
+  const yhead=document.getElementById('coEventYearLabel');
+  if(yhead)yhead.textContent=`${_coYear}년`;
+  const rn=document.getElementById('coEventRoomName');
+  if(rn)rn.textContent=(_coRoom&&_coRoom.name)?_coRoom.name:'우리 방';
   const prev=document.getElementById('coEvPrevBtn'), next=document.getElementById('coEvNextBtn');
   if(prev)prev.disabled=(m<=1); if(next)next.disabled=(m>=12);
 
@@ -10457,7 +10483,7 @@ function coDayMap(month){
     let cur=ev.startYmd;
     while(cur<=ev.endYmd){
       const p=coParseYmd(cur);
-      if(p.m===month&&p.y===CO_YEAR){
+      if(p.m===month&&p.y===_coYear){
         const isStart=(cur===ev.startYmd), isEnd=(cur===ev.endYmd);
         const seg=(ev.startYmd===ev.endYmd)?'single':(isStart?'start':(isEnd?'end':'mid'));
         (byDay[p.d]=byDay[p.d]||[]).push({title:ev.title,color:ev.color,seg});
@@ -10475,8 +10501,8 @@ function coBuildMonth(month, W){
   const c=v=>Math.round(v*W);
   const accent='#8b3a2a', gold='#b08a50', text='#3d2a21', line='rgba(139,58,42,.12)';
   const sun='#b24c3c', sat='#5a6e96', lunC='#a8967d', paper='#f8f0e0';
-  const first=new Date(CO_YEAR,month-1,1).getDay();
-  const dim=new Date(CO_YEAR,month,0).getDate();
+  const first=new Date(_coYear,month-1,1).getDay();
+  const dim=new Date(_coYear,month,0).getDate();
   const byDay=coDayMap(month);
   const fz=v=>Math.max(7,c(v));
   let cells=''; let day=1;
@@ -10488,7 +10514,7 @@ function coBuildMonth(month, W){
       if(idx<first||day>dim){cells+=`<td style="border-top:1px solid ${line}"></td>`;continue;}
       const hol=CO_HOLIDAYS[month+'-'+day];
       const col=(cc===0||hol)?sun:(cc===6?sat:text);
-      const lun=coLunar(CO_YEAR,month,day);
+      const lun=coLunar(_coYear,month,day);
       let bars='';
       (byDay[day]||[]).forEach(ev=>{
         const hx=coColorHex(ev.color), tc=coTextColor(hx);
@@ -10501,7 +10527,7 @@ function coBuildMonth(month, W){
         bars+=`<div style="font-size:${fz(.02)}px;font-weight:600;padding:${c(.003)}px ${c(.006)}px;border-radius:${tl}px ${tr}px ${tr}px ${tl}px;color:${tc};background:${hx};line-height:1.3;margin:1.5px ${mr} 0 ${ml};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:${c(.013)}px">${showT?escapeHtml(ev.title):'&nbsp;'}</div>`;
       });
       const holName=hol?`<div style="font-size:${fz(.018)}px;color:${sun};line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${hol}</div>`:'';
-      cells+=`<td style="border-top:1px solid ${line};vertical-align:top;height:${c(.115)}px;padding:${c(.006)}px ${c(.004)}px 0;overflow:hidden">
+      cells+=`<td style="border-top:1px solid ${line};vertical-align:top;min-height:${c(.105)}px;padding:${c(.006)}px ${c(.004)}px ${c(.006)}px;overflow:visible">
         <span style="font-family:var(--ff-serif);font-weight:600;color:${col};font-size:${fz(.034)}px">${day}</span>
         <span style="font-size:${fz(.018)}px;color:${lunC};margin-left:2px">${lun}</span>
         ${holName}${bars}
@@ -10512,13 +10538,12 @@ function coBuildMonth(month, W){
   }
   const th=(t,cl)=>`<th style="font-size:${fz(.026)}px;font-weight:700;color:${cl||'#78604b'};padding:${c(.008)}px 0">${t}</th>`;
   return `
-  <div style="width:${W}px;height:${H}px;background:${paper};border-radius:${c(.012)}px;position:relative;overflow:hidden;box-sizing:border-box">
-    <div style="position:absolute;inset:0;border:${Math.max(2,c(.004))}px solid ${accent};border-radius:${c(.012)}px;padding:${c(.035)}px;box-sizing:border-box">
+  <div style="width:${W}px;min-height:${H}px;background:${paper};border-radius:${c(.012)}px;position:relative;box-sizing:border-box;border:${Math.max(2,c(.004))}px solid ${accent};padding:${c(.035)}px">
       <div style="display:flex;align-items:flex-start;gap:${c(.03)}px">
         <div style="font-family:var(--ff-serif);font-weight:800;color:${accent};font-size:${c(.13)}px;line-height:.9">${month}</div>
         <div style="flex:1;padding-top:${c(.015)}px">
           <div style="font-family:var(--ff-serif);font-weight:600;color:${text};font-size:${c(.05)}px;line-height:1">${CO_MONTH_EN[month]}</div>
-          <div style="color:${gold};font-size:${c(.03)}px;margin-top:${c(.02)}px;font-weight:600">${CO_YEAR} · ${CO_MONTH_KR[month]}</div>
+          <div style="color:${gold};font-size:${c(.03)}px;margin-top:${c(.02)}px;font-weight:600">${_coYear} · ${CO_MONTH_KR[month]}</div>
         </div>
         <img src="${CO_LOGO_IMG}" style="width:${c(.11)}px;height:${c(.11)}px;object-fit:contain">
       </div>
@@ -10527,7 +10552,6 @@ function coBuildMonth(month, W){
         <thead><tr>${th('일',sun)}${th('월')}${th('화')}${th('수')}${th('목')}${th('금')}${th('토',sat)}</tr></thead>
         <tbody>${cells}</tbody>
       </table>
-    </div>
   </div>`;
 }
 
@@ -10538,13 +10562,13 @@ function coBuildBackPage(month, W){
   const accent='#8b3a2a', gold='#b08a50', text='#3d2a21', line='rgba(139,58,42,.18)';
   const sun='#b24c3c', sat='#5a6e96', paper='#f8f0e0';
   const fz=v=>Math.max(6,c(v));
-  const nm=month<12?month+1:1, ny=month<12?CO_YEAR:CO_YEAR+1;
+  const nm=month<12?month+1:1, ny=month<12?_coYear:_coYear+1;
   // 다음달 미니 그리드
   const first=new Date(ny,nm-1,1).getDay(), dim=new Date(ny,nm,0).getDate();
   let mini=''; let d=1; const rows=Math.ceil((first+dim)/7);
   for(let r=0;r<rows;r++){ mini+='<tr>'; for(let cc=0;cc<7;cc++){ const idx=r*7+cc;
     if(idx<first||d>dim){mini+='<td></td>';continue;}
-    const hol=CO_HOLIDAYS[nm+'-'+d]&&ny===CO_YEAR;
+    const hol=CO_HOLIDAYS[nm+'-'+d]&&ny===_coYear;
     const col=(cc===0||hol)?sun:(cc===6?sat:text);
     mini+=`<td style="text-align:center;font-family:var(--ff-serif);font-size:${fz(.025)}px;color:${col};padding:${c(.004)}px 0">${d}</td>`; d++;
   } mini+='</tr>'; }
@@ -10554,10 +10578,9 @@ function coBuildBackPage(month, W){
   for(let i=0;i<lines;i++) memo+=`<div style="border-bottom:1px dotted ${line};height:${c(.07)}px"></div>`;
   const quote=(CO_QUOTES[month]||'').split('\n').map(q=>`<div>${escapeHtml(q)}</div>`).join('');
   return `
-  <div style="width:${W}px;height:${H}px;background:${paper};border-radius:${c(.012)}px;position:relative;overflow:hidden;box-sizing:border-box">
-    <div style="position:absolute;inset:0;border:${Math.max(2,c(.004))}px solid ${accent};border-radius:${c(.012)}px;padding:${c(.04)}px;box-sizing:border-box">
+  <div style="width:${W}px;min-height:${H}px;background:${paper};border-radius:${c(.012)}px;position:relative;box-sizing:border-box;border:${Math.max(2,c(.004))}px solid ${accent};padding:${c(.04)}px">
       <div style="font-family:var(--ff-serif);font-weight:800;color:${accent};font-size:${c(.06)}px">${month}월의 기록</div>
-      <div style="color:${gold};font-size:${c(.024)}px;margin-top:${c(.01)}px;font-weight:600">MEMO · ${CO_MONTH_EN[month]} ${CO_YEAR}</div>
+      <div style="color:${gold};font-size:${c(.024)}px;margin-top:${c(.01)}px;font-weight:600">MEMO · ${CO_MONTH_EN[month]} ${_coYear}</div>
       <div style="height:2px;background:${gold};margin:${c(.02)}px 0 ${c(.025)}px"></div>
       <div style="display:flex;gap:${c(.04)}px">
         <div style="flex:1.3">${memo}</div>
@@ -10577,7 +10600,6 @@ function coBuildBackPage(month, W){
         </div>
       </div>
       <img src="${CO_LOGO_IMG}" style="position:absolute;right:${c(.04)}px;bottom:${c(.04)}px;width:${c(.09)}px;height:${c(.09)}px;object-fit:contain;opacity:.85">
-    </div>
   </div>`;
 }
 
