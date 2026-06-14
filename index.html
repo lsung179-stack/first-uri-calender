@@ -741,6 +741,26 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .co-event-roomname{font-size:13.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .co-ev-grouplabel{font-size:12px;font-weight:700;color:var(--accent);padding:4px 2px 8px;letter-spacing:.3px}
 .co-ev-divline{height:1px;background:rgba(139,58,42,.15);margin:12px 2px 14px}
+/* 주문 관리 */
+.oa-filterbar{display:flex;gap:6px;padding:10px 14px;overflow-x:auto;background:var(--bg);border-bottom:1px solid rgba(139,58,42,.1);-webkit-overflow-scrolling:touch}
+.oa-fbtn{flex-shrink:0;font-size:12.5px;font-weight:700;padding:6px 12px;border-radius:18px;border:1px solid rgba(139,58,42,.2);background:#fff;color:var(--sub);cursor:pointer;font-family:inherit}
+.oa-fbtn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.oa-list{display:flex;flex-direction:column;gap:12px;padding:4px 2px}
+.oa-card{background:#fff;border:1px solid rgba(139,58,42,.12);border-radius:12px;padding:14px}
+.oa-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.oa-status{font-size:11.5px;font-weight:700;color:#fff;padding:3px 10px;border-radius:14px}
+.oa-date{font-size:11.5px;color:var(--sub)}
+.oa-name{font-size:15px;font-weight:700;color:var(--text)}
+.oa-phone{font-size:13px;font-weight:500;color:var(--sub);margin-left:6px}
+.oa-addr{font-size:13px;color:var(--text);margin-top:4px;line-height:1.4}
+.oa-memo{font-size:12.5px;color:var(--sub);margin-top:4px}
+.oa-meta{font-size:12px;color:var(--sub);margin-top:8px;padding-top:8px;border-top:1px solid rgba(139,58,42,.08)}
+.oa-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.oa-btn{font-size:12.5px;font-weight:700;padding:7px 12px;border-radius:8px;border:none;cursor:pointer;font-family:inherit}
+.oa-btn-pdf{background:rgba(139,58,42,.1);color:var(--accent)}
+.oa-btn-next{background:var(--accent);color:#fff}
+.oa-btn-cancel{background:#f4f4f4;color:#999}
+.oa-nopdf{font-size:12px;color:var(--mute);align-self:center}
 /* 팩 카드 내부 체험/사용중 버튼 */
 .theme-card-action{margin-top:8px;display:flex;justify-content:flex-end}
 .pack-btn{
@@ -2418,6 +2438,7 @@ body.align-right .cal-evbar{text-align:right}
   <!-- admin 전용: 이용자 무료 부여 -->
   <div class="pf-edit-row" id="profileAdminRow" style="display:none">
     <button class="pf-admin-btn" onclick="openAdminGrant()">🎁 이용자 무료 부여 (관리자)</button>
+    <button class="pf-admin-btn" style="margin-top:8px" onclick="openOrderAdmin()">📦 달력 주문 관리 (관리자)</button>
   </div>
   <div class="mo-actions">
     <button class="btn btn-danger" onclick="doLogout()">로그아웃</button>
@@ -2987,6 +3008,26 @@ body.align-right .cal-evbar{text-align:right}
   </div>
 </div>
 
+<!-- 달력 주문 관리 (관리자 전용) -->
+<div class="co-preview-modal" id="orderAdminModal">
+  <div class="co-preview-inner" style="max-width:680px">
+    <div class="co-preview-head">
+      <div class="co-preview-title">📦 달력 주문 관리</div>
+      <span class="co-event-count" id="orderAdminCount">0건</span>
+      <button onclick="closeOrderAdmin()" aria-label="닫기">✕</button>
+    </div>
+    <div class="oa-filterbar" id="orderAdminFilter">
+      <button class="oa-fbtn on" data-st="all" onclick="oaFilter('all')">전체</button>
+      <button class="oa-fbtn" data-st="pending" onclick="oaFilter('pending')">입금대기</button>
+      <button class="oa-fbtn" data-st="paid" onclick="oaFilter('paid')">입금확인</button>
+      <button class="oa-fbtn" data-st="making" onclick="oaFilter('making')">제작중</button>
+      <button class="oa-fbtn" data-st="shipped" onclick="oaFilter('shipped')">배송중</button>
+      <button class="oa-fbtn" data-st="done" onclick="oaFilter('done')">완료</button>
+    </div>
+    <div class="co-preview-body" id="orderAdminBody" style="background:var(--bg)"></div>
+  </div>
+</div>
+
 <!-- 공지사항 -->
 <!-- 고급 설정 시트 (알림, 폰트 크기, 주 시작 요일, 일정 정렬) -->
 <div class="ann-card" id="advCard">
@@ -3216,6 +3257,8 @@ body.align-right .cal-evbar{text-align:right}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.6.11/lunar.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 /* ═══════════════════════════════════
    설정 (배포 시 채울 것)
@@ -10674,12 +10717,126 @@ function openCalOrderForm(){
 function coField(label,id,ph){
   return `<div class="co-field"><div class="co-field-label">${label}</div><input id="${id}" placeholder="${ph}" class="co-input"></div>`;
 }
-function coSubmitOrder(){
+/* 주문 제출: 검증 → PDF 생성 → Storage 업로드 → DB 저장 → 계좌 안내 */
+async function coSubmitOrder(){
+  const name=(document.getElementById('co-name')?.value||'').trim();
+  const phone=(document.getElementById('co-phone')?.value||'').trim();
+  const addr=(document.getElementById('co-addr')?.value||'').trim();
+  const memo=(document.getElementById('co-memo')?.value||'').trim();
+  if(!name){toast('받는 분 성함을 입력해 주세요');return;}
+  if(!phone){toast('연락처를 입력해 주세요');return;}
+  if(!addr){toast('주소를 입력해 주세요');return;}
+  if(!_currentUser){toast('로그인이 필요해요');return;}
+  const cnt=Object.keys(_coSelectedEvents).length;
+
+  const body=document.getElementById('coPreviewBody');
+  document.querySelector('#coPreviewModal .co-preview-title').textContent='주문 처리 중';
+  body.innerHTML=`<div class="co-form" style="text-align:center;padding:40px 0">
+    <div class="co-form-title">주문서를 만들고 있어요</div>
+    <div id="coOrderProgress" style="color:var(--sub);font-size:14px;margin-top:12px">달력 파일 생성 준비 중…</div>
+    <div style="margin-top:20px;font-size:13px;color:var(--sub)">잠시만 기다려 주세요 (최대 1분)</div>
+  </div>`;
+  const prog=t=>{const e=document.getElementById('coOrderProgress'); if(e)e.textContent=t;};
+
+  try{
+    // 1) PDF 생성
+    prog('달력 페이지를 그리는 중…');
+    const blob=await coGeneratePDF(prog);
+    // 2) Storage 업로드
+    prog('파일을 업로드하는 중…');
+    const stamp=new Date().toISOString().replace(/[:.]/g,'-');
+    const path=`${_currentUser.id}/calendar-${_coYear}-${stamp}.pdf`;
+    const {error:upErr}=await supa.storage.from('calendar-pdfs').upload(path, blob, {contentType:'application/pdf',upsert:false});
+    if(upErr)throw upErr;
+    let pdfUrl='';
+    try{ const {data:signed}=await supa.storage.from('calendar-pdfs').createSignedUrl(path, 60*60*24*365); pdfUrl=signed?.signedUrl||''; }catch(e){}
+    // 3) 주문 DB 저장
+    prog('주문 정보를 저장하는 중…');
+    const coverName=(CO_COVERS.find(c=>c.key===_coCover)||{}).name||'';
+    const {error:insErr}=await supa.from('calendar_orders').insert({
+      user_id:_currentUser.id,
+      recipient_name:name, phone, address:addr, memo:memo||null,
+      cover_key:_coCover, cover_name:coverName,
+      cal_year:_coYear, event_count:cnt, price:CO_PRICE,
+      selected_events:_coSelectedEvents,
+      room_id:_coRoom?.id||null, room_name:_coRoom?.name||null,
+      pdf_path:path, pdf_url:pdfUrl, status:'pending'
+    });
+    if(insErr)throw insErr;
+    // 4) 완료 → 계좌 안내
+    coShowBankInfo();
+  }catch(e){
+    console.error('주문 실패', e);
+    body.innerHTML=`<div class="co-form" style="text-align:center;padding:30px 0">
+      <div class="co-form-title">주문 처리에 실패했어요</div>
+      <div style="color:var(--sub);font-size:14px;margin:14px 0">${escapeHtml(e?.message||'알 수 없는 오류')}<br>잠시 후 다시 시도해 주세요.</div>
+      <button class="co-btn co-btn-order" onclick="openCalOrderForm()">다시 시도</button>
+      <div style="text-align:center;margin-top:10px"><span class="co-back-link" onclick="closeCalPreview()">닫기</span></div>
+    </div>`;
+  }
+}
+
+/* 레드프린팅 규격 PDF 생성 — 214×154mm, 26페이지(표지+12개월 앞/뒤+뒤표지) */
+async function coGeneratePDF(prog){
+  const {jsPDF}=window.jspdf;
+  // 214 x 154 mm 가로형 (작업 사이즈 = 재단 210x150 + 사방 2mm 도련)
+  const PW=214, PH=154;
+  const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:[PW,PH]});
+  // 렌더용 임시 컨테이너 (화면 밖)
+  const stage=document.createElement('div');
+  stage.style.cssText='position:fixed;left:-9999px;top:0;width:1070px;background:#f8f0e0';
+  document.body.appendChild(stage);
+  const RW=1070; // 렌더 폭(px) — 214mm 비율
+  const addHtmlPage=async (html, first)=>{
+    stage.innerHTML=`<div style="width:${RW}px;background:#f8f0e0">${html}</div>`;
+    const node=stage.firstElementChild;
+    const canvas=await html2canvas(node,{scale:2,backgroundColor:'#f8f0e0',logging:false,useCORS:true});
+    const img=canvas.toDataURL('image/jpeg',0.92);
+    if(!first)pdf.addPage([PW,PH],'landscape');
+    pdf.addImage(img,'JPEG',0,0,PW,PH,undefined,'FAST');
+  };
+  // p1: 표지
+  prog&&prog('표지 그리는 중…');
+  await addHtmlPage(coBuildCoverPage(RW), true);
+  // p2~25: 각 월 앞면(달력) + 뒷면(메모)
+  for(let m=1;m<=12;m++){
+    prog&&prog(`${m}월 페이지 그리는 중… (${m}/12)`);
+    await addHtmlPage(coBuildMonth(m, RW), false);
+    await addHtmlPage(coBuildBackPage(m, RW), false);
+  }
+  // p26: 뒤표지
+  prog&&prog('마무리 페이지…');
+  await addHtmlPage(coBuildEndPage(RW), false);
+  document.body.removeChild(stage);
+  return pdf.output('blob');
+}
+
+/* 표지 페이지 (선택한 표지 이미지 풀블리드) */
+function coBuildCoverPage(W){
+  const cv=CO_COVERS.find(c=>c.key===_coCover)||CO_COVERS[0];
+  const H=Math.round(W*154/214);
+  return `<div style="width:${W}px;height:${H}px;overflow:hidden;background:#f8f0e0;display:flex;align-items:center;justify-content:center">
+    <img src="${cv.img}" style="width:100%;height:100%;object-fit:cover" crossorigin="anonymous">
+  </div>`;
+}
+
+/* 뒤표지 (로고 + 연도) */
+function coBuildEndPage(W){
+  const H=Math.round(W*154/214);
+  const c=v=>Math.round(v*W);
+  return `<div style="width:${W}px;height:${H}px;background:#8b3a2a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:${c(.02)}px">
+    <img src="${CO_LOGO_IMG}" style="width:${c(.16)}px;height:${c(.16)}px;object-fit:contain;border-radius:50%;background:#f8f0e0;padding:${c(.01)}px">
+    <div style="font-family:var(--ff-serif);color:#f8f0e0;font-size:${c(.05)}px;font-weight:700;letter-spacing:2px">OUR CALENDAR</div>
+    <div style="color:#e8d5b5;font-size:${c(.028)}px">${_coYear} · 우리 캘린더</div>
+  </div>`;
+}
+
+function coShowBankInfo(){
   const body=document.getElementById('coPreviewBody');
   document.querySelector('#coPreviewModal .co-preview-title').textContent='입금 안내';
   body.innerHTML=`
     <div class="co-form">
-      <div class="co-form-title">입금 계좌 안내</div>
+      <div class="co-form-title" style="color:#2e7d32">✓ 주문이 접수됐어요!</div>
       <div class="co-bank-card">
         <div class="co-bank-row">
           <div>
@@ -10699,6 +10856,78 @@ function coSubmitOrder(){
       <button class="co-btn co-btn-order" style="margin-top:18px" onclick="coCopyBank()">계좌번호 복사하기</button>
       <div style="text-align:center;margin-top:10px"><span class="co-back-link" onclick="closeCalPreview()">닫기</span></div>
     </div>`;
+}
+
+/* ═══ 달력 주문 관리 (관리자) ═══ */
+const OA_STATUS={pending:'입금대기',paid:'입금확인',making:'제작중',shipped:'배송중',done:'완료',canceled:'취소'};
+const OA_FLOW=['pending','paid','making','shipped','done'];
+let _oaOrders=[], _oaFilter='all';
+
+async function openOrderAdmin(){
+  if(!isAdmin()){toast('권한 없음');return;}
+  closeProfile&&closeProfile();
+  document.getElementById('orderAdminModal').classList.add('on');
+  const body=document.getElementById('orderAdminBody');
+  body.innerHTML=`<div style="text-align:center;padding:40px 0;color:var(--sub)">주문을 불러오는 중…</div>`;
+  try{
+    const {data,error}=await supa.from('calendar_orders').select('*').order('created_at',{ascending:false});
+    if(error)throw error;
+    _oaOrders=data||[];
+    renderOrderAdmin();
+  }catch(e){
+    body.innerHTML=`<div style="text-align:center;padding:40px 0;color:var(--sub)">불러오기 실패<br>${escapeHtml(e?.message||'')}</div>`;
+  }
+}
+function closeOrderAdmin(){ document.getElementById('orderAdminModal').classList.remove('on'); }
+function oaFilter(st){
+  _oaFilter=st;
+  document.querySelectorAll('#orderAdminFilter .oa-fbtn').forEach(b=>b.classList.toggle('on',b.dataset.st===st));
+  renderOrderAdmin();
+}
+function renderOrderAdmin(){
+  const body=document.getElementById('orderAdminBody');
+  const list=_oaFilter==='all'?_oaOrders:_oaOrders.filter(o=>o.status===_oaFilter);
+  document.getElementById('orderAdminCount').textContent=`${list.length}건`;
+  if(!list.length){ body.innerHTML=`<div style="text-align:center;padding:40px 0;color:var(--sub)">주문이 없어요.</div>`; return; }
+  body.innerHTML=`<div class="oa-list">`+list.map(o=>{
+    const dt=new Date(o.created_at);
+    const dstr=`${dt.getFullYear()}.${String(dt.getMonth()+1).padStart(2,'0')}.${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+    const stColor={pending:'#c0392b',paid:'#2e7d32',making:'#b08a50',shipped:'#3d85d4',done:'#666',canceled:'#999'}[o.status]||'#666';
+    const idx=OA_FLOW.indexOf(o.status);
+    const nextSt=idx>=0&&idx<OA_FLOW.length-1?OA_FLOW[idx+1]:null;
+    return `<div class="oa-card">
+      <div class="oa-card-top">
+        <span class="oa-status" style="background:${stColor}">${OA_STATUS[o.status]||o.status}</span>
+        <span class="oa-date">${dstr}</span>
+      </div>
+      <div class="oa-name">${escapeHtml(o.recipient_name)} <span class="oa-phone">${escapeHtml(o.phone)}</span></div>
+      <div class="oa-addr">${escapeHtml(o.address)}</div>
+      ${o.memo?`<div class="oa-memo">요청: ${escapeHtml(o.memo)}</div>`:''}
+      <div class="oa-meta">${o.cal_year}년 · ${escapeHtml(o.cover_name||o.cover_key)} · 일정 ${o.event_count}개 · ${(o.price||0).toLocaleString()}원${o.room_name?' · '+escapeHtml(o.room_name):''}</div>
+      <div class="oa-actions">
+        ${o.pdf_path?`<button class="oa-btn oa-btn-pdf" onclick="oaDownloadPdf('${o.id}')">📄 PDF 받기</button>`:'<span class="oa-nopdf">PDF 없음</span>'}
+        ${nextSt?`<button class="oa-btn oa-btn-next" onclick="oaSetStatus('${o.id}','${nextSt}')">→ ${OA_STATUS[nextSt]}</button>`:''}
+        ${o.status!=='canceled'&&o.status!=='done'?`<button class="oa-btn oa-btn-cancel" onclick="oaSetStatus('${o.id}','canceled')">취소</button>`:''}
+      </div>
+    </div>`;
+  }).join('')+`</div>`;
+}
+async function oaSetStatus(id, st){
+  try{
+    const {error}=await supa.from('calendar_orders').update({status:st}).eq('id',id);
+    if(error)throw error;
+    const o=_oaOrders.find(x=>x.id===id); if(o)o.status=st;
+    renderOrderAdmin();
+    toast(`상태 변경: ${OA_STATUS[st]||st}`);
+  }catch(e){ toast('변경 실패'); }
+}
+async function oaDownloadPdf(id){
+  const o=_oaOrders.find(x=>x.id===id); if(!o||!o.pdf_path){toast('PDF 경로 없음');return;}
+  try{
+    const {data,error}=await supa.storage.from('calendar-pdfs').createSignedUrl(o.pdf_path, 60*10);
+    if(error)throw error;
+    window.open(data.signedUrl,'_blank');
+  }catch(e){ toast('PDF 열기 실패'); }
 }
 function coCopyBank(){
   const txt=CO_BANK_NUM, done=()=>toast('계좌번호를 복사했어요');
