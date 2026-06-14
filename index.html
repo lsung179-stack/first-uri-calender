@@ -2452,7 +2452,7 @@ body.align-right .cal-evbar{text-align:right}
       <button class="pf-name-save-btn" onclick="saveProfileBirthday()">저장</button>
     </div>
   </div>
-  <div class="pf-edit-row" id="profileOrdersRow" style="cursor:pointer" onclick="openMyOrders()">
+  <div class="pf-edit-row" id="profileOrdersRow" style="cursor:pointer" onclick="openMyOrders(true)">
     <button class="pf-admin-btn" style="background:rgba(139,58,42,.08);color:var(--accent)">📦 내 주문 내역 · 배송 조회</button>
   </div>
   <!-- admin 전용: 이용자 무료 부여 -->
@@ -10604,16 +10604,25 @@ function coDayMap(month){
 
 /* 내지 앞면 — 실제 cal-evbar 스타일 + 기간 연결 막대 + 우상단 실제 로고 */
 /* ───── 미리보기/PDF 공통 프레임 ───── */
-function coFrameOpen(W,c,pad){
+/* 페이지 프레임 — 레드프린팅 214×154mm. 상단 10mm는 스프링 링 여백, 네 모서리에 트림용 크롭마크(┌┐└┘) */
+function coFrameOpen(W){
+  const c=v=>v*W;
   const accent='#8b3a2a';
-  const ow=Math.max(1,c(.0022));      // outer thin line width
-  const gap=Math.max(2,c(.004));      // gap between lines
-  const iw=Math.max(1,c(.0018));      // inner line width
-  const rad=c(.02);
-  return `<div style="width:${W}px;height:${W*2/3}px;background:#f8f0e0;border-radius:${rad}px;position:relative;box-sizing:border-box;
-    border:${iw}px solid ${accent};
-    box-shadow:inset 0 0 0 ${gap}px #f8f0e0, inset 0 0 0 ${gap+ow}px ${accent};
-    padding:${pad}px">`;
+  const H=W*154/214;
+  const ring=W*10/214;            // 상단 링 여백(10mm)
+  const topPad=ring+c(.012);
+  const sidePad=c(.055);
+  const botPad=c(.022);
+  const inset=c(.020);            // 모서리 마크 안쪽 여백
+  const arm=c(.020);              // 마크 팔 길이
+  const th=Math.max(1,c(.0016));  // 마크 두께
+  const mk=(v,h,bv,bh)=>`<div style="position:absolute;${v};${h};width:${arm}px;height:${arm}px;${bv};${bh}"></div>`;
+  const corners=
+    mk(`top:${inset}px`,`left:${inset}px`,`border-top:${th}px solid ${accent}`,`border-left:${th}px solid ${accent}`)+
+    mk(`top:${inset}px`,`right:${inset}px`,`border-top:${th}px solid ${accent}`,`border-right:${th}px solid ${accent}`)+
+    mk(`bottom:${inset}px`,`left:${inset}px`,`border-bottom:${th}px solid ${accent}`,`border-left:${th}px solid ${accent}`)+
+    mk(`bottom:${inset}px`,`right:${inset}px`,`border-bottom:${th}px solid ${accent}`,`border-right:${th}px solid ${accent}`);
+  return `<div style="width:${W}px;height:${H}px;background:#f3e6cf;position:relative;box-sizing:border-box;overflow:hidden;font-family:var(--ff-serif);padding:${topPad}px ${sidePad}px ${botPad}px">${corners}`;
 }
 function coDividerDots(c){
   const gold='#b08a50'; const d=Math.max(4,c(.008));
@@ -10626,11 +10635,11 @@ function coDividerDots(c){
 
 /* 내지 앞면 — 레퍼런스 디자인 (음력·공휴일·기간막대·접힘) */
 function coBuildMonth(month, W){
-  const H=W*2/3;
   const c=v=>v*W;
+  const H=W*154/214;
   const accent='#8b3a2a', gold='#b08a50', text='#3d2a21';
   const sun='#b24c3c', sat='#5a6e96', lunC='#a8967d';
-  const hLine='rgba(139,58,42,.14)';
+  const hLine='rgba(139,58,42,.16)';
   const y=_coYear;
   const first=new Date(y,month-1,1).getDay();
   const dim=new Date(y,month,0).getDate();
@@ -10648,16 +10657,15 @@ function coBuildMonth(month, W){
   }
   const rows=weeks.length;
 
-  // sizing
-  const pad=c(.03);
-  const headerH=c(.105);
-  const dividerH=c(.04);
-  const weekdayH=c(.05);
-  const gridTop=pad+headerH+dividerH+weekdayH;
-  const availH=H-gridTop-pad;
-  const cellH=availH/rows;
-  const dayLineH=c(.05);
-  const barH=c(.022), barGap=c(.004);
+  // geometry (상단 10mm 링 여백 반영)
+  const ring=W*10/214;
+  const topPad=ring+c(.012);
+  const botPad=c(.022);
+  const contentH=H-topPad-botPad;
+  const headerH=c(.10);
+  const gridH=contentH-headerH-c(.034)-c(.052);   // header + divider + weekday 제외
+  const cellH=Math.max(c(.06), gridH/rows);
+  const barH=c(.024), barGap=c(.004);
 
   // weekday header
   const wd=['일','월','화','수','목','금','토'];
@@ -10676,40 +10684,38 @@ function coBuildMonth(month, W){
       const hol=CO_HOLIDAYS[month+'-'+day];
       const numCol=(cc===0||hol)?sun:(cc===6?sat:text);
       const lun=coLunar(y,month,day);
-      // event bars (primary day + folded extra day)
+      // event bars — 셀 풀폭으로 그려 기간일정이 옆 칸과 끊김없이 연결됨
       let bars='';
       const drawBars=(dd)=>{ (byDay[dd]||[]).forEach(ev=>{
         if(ev.seg==='gap'){ bars+=`<div style="height:${barH}px;margin-bottom:${barGap}px"></div>`; return; }
         const hx=coColorHex(ev.color), tc=coTextColor(hx);
-        const rl=c(.005);
+        const rl=c(.006);
         const tl=(ev.seg==='single'||ev.seg==='start')?rl:0;
         const tr=(ev.seg==='single'||ev.seg==='end')?rl:0;
         const showT=(ev.seg==='single'||ev.seg==='start');
-        const ml=(ev.seg==='mid'||ev.seg==='end')?(-c(.012)-2)+'px':'0';
-        const mr=(ev.seg==='mid'||ev.seg==='start')?(-c(.012)-2)+'px':'0';
-        bars+=`<div style="height:${barH}px;font-size:${c(.018)}px;font-weight:600;padding:0 ${c(.006)}px;border-radius:${tl}px ${tr}px ${tr}px ${tl}px;color:${tc};background:${hx};line-height:${barH}px;margin:0 ${mr} ${barGap}px ${ml};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${showT?escapeHtml(ev.title):'&nbsp;'}</div>`;
+        bars+=`<div style="height:${barH}px;font-size:${c(.0165)}px;font-weight:600;padding:0 ${c(.006)}px;border-radius:${tl}px ${tr}px ${tr}px ${tl}px;color:${tc};background:${hx};line-height:${barH}px;margin-bottom:${barGap}px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box">${showT?escapeHtml(ev.title):'&nbsp;'}</div>`;
       }); };
       drawBars(day); if(ex!=null) drawBars(ex);
-      const exHtml=ex!=null?`<span style="font-family:var(--ff-serif);font-weight:600;color:${sun};font-size:${c(.022)}px;margin-left:${c(.004)}px"> /${ex}</span>`:'';
-      trs+=`<td style="${topBorder};vertical-align:top;height:${cellH}px;padding:${c(.012)}px ${c(.01)}px 0;box-sizing:border-box">
-        <div style="line-height:1.1;white-space:nowrap">
+      const exHtml=ex!=null?`<span style="font-family:var(--ff-serif);font-weight:600;color:${sun};font-size:${c(.021)}px;margin-left:${c(.004)}px">/${ex}</span>`:'';
+      trs+=`<td style="${topBorder};vertical-align:top;height:${cellH}px;padding:0;box-sizing:border-box">
+        <div style="padding:${c(.011)}px ${c(.008)}px 0;line-height:1.05;white-space:nowrap">
           <span style="font-family:var(--ff-serif);font-weight:500;color:${numCol};font-size:${c(.028)}px">${day}</span>${exHtml}<span style="font-size:${c(.014)}px;color:${lunC};margin-left:3px">${lun}</span>
         </div>
-        ${hol?`<div style="font-size:${c(.0145)}px;color:${sun};margin-top:1px;line-height:1.1">${hol}</div>`:''}
-        <div style="margin-top:${c(.006)}px">${bars}</div>
+        ${hol?`<div style="font-size:${c(.0145)}px;color:${sun};margin:1px ${c(.008)}px 0;line-height:1.05">${hol}</div>`:''}
+        <div style="margin-top:${c(.005)}px">${bars}</div>
       </td>`;
     }
     trs+='</tr>';
   }
 
-  return coFrameOpen(W,c,pad)+`
+  return coFrameOpen(W)+`
     <div style="display:flex;align-items:flex-start;height:${headerH}px">
-      <div style="font-family:var(--ff-serif);font-weight:700;color:${accent};font-size:${c(.095)}px;line-height:.82">${month}</div>
-      <div style="flex:1;padding-left:${c(.022)}px;padding-top:${c(.01)}px">
+      <div style="font-family:var(--ff-serif);font-weight:700;color:${accent};font-size:${c(.092)}px;line-height:.82">${month}</div>
+      <div style="flex:1;padding-left:${c(.02)}px;padding-top:${c(.012)}px">
         <div style="font-family:var(--ff-serif);font-weight:600;color:${text};font-size:${c(.031)}px;line-height:1;letter-spacing:.5px">${CO_MONTH_EN[month]}</div>
-        <div style="color:${gold};font-size:${c(.022)}px;margin-top:${c(.012)}px;font-weight:600">${y} · ${CO_MONTH_KR[month]}</div>
+        <div style="color:${gold};font-size:${c(.021)}px;margin-top:${c(.011)}px;font-weight:600">${y} · ${CO_MONTH_KR[month]}</div>
       </div>
-      <img src="${CO_LOGO_IMG}" style="width:${c(.10)}px;height:${c(.10)}px;object-fit:contain">
+      <img src="${CO_LOGO_IMG}" style="width:${c(.105)}px;height:${c(.105)}px;object-fit:contain">
     </div>
     ${coDividerDots(c)}
     <table style="width:100%;border-collapse:collapse;table-layout:fixed">
@@ -10718,11 +10724,10 @@ function coBuildMonth(month, W){
     </table>
   </div>`;
 }
-
 /* 내지 뒷면 — 메모 점선 + 다음 달 미리보기 + 월별 문구 + 우하단 로고 */
 /* 내지 뒷면 — 메모 점선 + 다음 달 미리보기 + 문구 */
 function coBuildBackPage(month, W){
-  const H=W*2/3;
+  const H=W*154/214;
   const c=v=>v*W;
   const accent='#8b3a2a', gold='#b08a50', text='#3d2a21';
   const sun='#b24c3c', sat='#5a6e96';
@@ -10868,18 +10873,18 @@ async function coSubmitOrder(){
 /* 레드프린팅 규격 PDF 생성 — 214×154mm, 26페이지(표지+12개월 앞/뒤+뒤표지) */
 async function coGeneratePDF(prog){
   const {jsPDF}=window.jspdf;
-  // 270 x 180 mm 가로형 탁상 달력 (레퍼런스와 동일 비율 2:3)
-  const PW=270, PH=180;
+  // 214 x 154 mm 가로형 탁상 달력 (레드프린팅 규격, 블리드 포함)
+  const PW=214, PH=154;
   const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:[PW,PH]});
   // 렌더용 임시 컨테이너 (화면 밖)
   const stage=document.createElement('div');
-  stage.style.cssText='position:fixed;left:-9999px;top:0;width:1070px;background:#f8f0e0';
+  stage.style.cssText='position:fixed;left:-9999px;top:0;width:1070px;background:#f3e6cf';
   document.body.appendChild(stage);
   const RW=1070; // 렌더 폭(px) — 214mm 비율
   const addHtmlPage=async (html, first)=>{
-    stage.innerHTML=`<div style="width:${RW}px;background:#f8f0e0">${html}</div>`;
+    stage.innerHTML=`<div style="width:${RW}px;background:#f3e6cf">${html}</div>`;
     const node=stage.firstElementChild;
-    const canvas=await html2canvas(node,{scale:2,backgroundColor:'#f8f0e0',logging:false,useCORS:true});
+    const canvas=await html2canvas(node,{scale:2,backgroundColor:'#f3e6cf',logging:false,useCORS:true});
     const img=canvas.toDataURL('image/jpeg',0.92);
     if(!first)pdf.addPage([PW,PH],'landscape');
     pdf.addImage(img,'JPEG',0,0,PW,PH,undefined,'FAST');
@@ -10901,8 +10906,8 @@ async function coGeneratePDF(prog){
 /* 표지 페이지 (선택한 표지 이미지 풀블리드) */
 function coBuildCoverPage(W){
   const cv=CO_COVERS.find(c=>c.key===_coCover)||CO_COVERS[0];
-  const H=Math.round(W*2/3);
-  return `<div style="width:${W}px;height:${H}px;overflow:hidden;background:#f8f0e0;display:flex;align-items:center;justify-content:center">
+  const H=Math.round(W*154/214);
+  return `<div style="width:${W}px;height:${H}px;overflow:hidden;background:#f3e6cf;display:flex;align-items:center;justify-content:center">
     <img src="${cv.img}" style="width:100%;height:100%;object-fit:cover" crossorigin="anonymous">
   </div>`;
 }
@@ -10932,7 +10937,7 @@ function coShowBankInfo(){
         입금 확인 후 제작·배송이 진행됩니다. 🚚<br>
         문의 : lsung179@naver.com
       </div>
-      <button class="co-btn co-btn-order" style="margin-top:18px" onclick="closeCalPreview();openMyOrders()">상세내역 확인</button>
+      <button class="co-btn co-btn-order" style="margin-top:18px" onclick="closeStore();closeCalPreview();openMyOrders()">상세내역 확인</button>
       <div style="text-align:center;margin-top:10px"><span class="co-back-link" onclick="closeCalPreview()">닫기</span></div>
     </div>`;
 }
@@ -11035,8 +11040,10 @@ const MY_FLOW=['pending','paid','making','shipped','done'];
 const MY_FLOW_LABEL={pending:'입금대기',paid:'입금확인',making:'제작중',shipped:'배송중',done:'배송완료'};
 let _myOrders=[];
 
-async function openMyOrders(){
+let _moFromProfile=false;
+async function openMyOrders(fromProfile){
   if(!_currentUser){toast('로그인이 필요해요');return;}
+  _moFromProfile=!!fromProfile;
   closeProfile&&closeProfile();
   document.getElementById('myOrdersOverlay').classList.add('on');
   document.getElementById('myOrdersCard').classList.add('on');
@@ -11054,6 +11061,7 @@ async function openMyOrders(){
 function closeMyOrders(){
   document.getElementById('myOrdersOverlay').classList.remove('on');
   document.getElementById('myOrdersCard').classList.remove('on');
+  if(_moFromProfile){ _moFromProfile=false; openProfile&&openProfile(); }
 }
 function myFmtDate(s){ if(!s)return '-'; const d=new Date(s); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }
 function myTracker(status){
