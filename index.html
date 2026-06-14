@@ -10560,17 +10560,15 @@ function coBuildMonth(month, W){
         const tl=(ev.seg==='single'||ev.seg==='start')?rl:0;
         const tr=(ev.seg==='single'||ev.seg==='end')?rl:0;
         const showT=(ev.seg==='single'||ev.seg==='start');
-        const ml=(ev.seg==='mid'||ev.seg==='end')?(-c(.006)-1)+'px':'0';
-        const mr=(ev.seg==='mid'||ev.seg==='start')?(-c(.006)-1)+'px':'0';
+        const ml=(ev.seg==='mid'||ev.seg==='end')?(-c(.012)-2)+'px':'0';
+        const mr=(ev.seg==='mid'||ev.seg==='start')?(-c(.012)-2)+'px':'0';
         bars+=`<div style="height:${barH}px;font-size:${fz(.019)}px;font-weight:600;padding:0 ${c(.006)}px;border-radius:${tl}px ${tr}px ${tr}px ${tl}px;color:${tc};background:${hx};line-height:${barH}px;margin:0 ${mr} ${barGap}px ${ml};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${showT?escapeHtml(ev.title):'&nbsp;'}</div>`;
       });
       cells+=`<td style="border-top:1px solid ${line};vertical-align:top;height:${cellH}px;padding:0">
-        <div style="height:${dayH}px;text-align:center;padding-top:${c(.006)}px;box-sizing:border-box">
-          <span style="font-family:var(--ff-serif);font-weight:600;color:${col};font-size:${fz(.032)}px">${day}</span>
-          <span style="font-size:${fz(.016)}px;color:${lunC};margin-left:2px">${lun}</span>
-          ${hol?`<div style="font-size:${fz(.016)}px;color:${sun};line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${hol}</div>`:''}
+        <div style="height:${dayH}px;padding:${c(.005)}px ${c(.006)}px 0;box-sizing:border-box;white-space:nowrap;overflow:hidden;line-height:1.05">
+          <span style="font-family:var(--ff-serif);font-weight:600;color:${col};font-size:${fz(.03)}px">${day}</span><span style="font-size:${fz(.014)}px;color:${lunC};margin-left:2px">${lun}</span>${hol?`<span style="font-size:${fz(.014)}px;color:${sun};margin-left:3px">${hol}</span>`:''}
         </div>
-        <div style="padding:0 ${c(.002)}px">${bars}</div>
+        <div style="padding:0">${bars}</div>
       </td>`;
       day++;
     }
