@@ -742,6 +742,9 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .co-ev-grouplabel{font-size:12px;font-weight:700;color:var(--accent);padding:4px 2px 8px;letter-spacing:.3px}
 .co-ev-divline{height:1px;background:rgba(139,58,42,.15);margin:12px 2px 14px}
 /* 주문 관리 */
+.oa-openfull-bar{padding:10px 14px 0}
+.oa-openfull{width:100%;padding:11px;border-radius:10px;background:var(--accent);color:#fff;font-size:13.5px;font-weight:700;border:none;cursor:pointer;font-family:inherit}
+.oa-openfull:active{transform:scale(.99)}
 .oa-filterbar{display:flex;gap:6px;padding:10px 14px;overflow-x:auto;background:var(--bg);border-bottom:1px solid rgba(139,58,42,.1);-webkit-overflow-scrolling:touch}
 .oa-fbtn{flex-shrink:0;font-size:12.5px;font-weight:700;padding:6px 12px;border-radius:18px;border:1px solid rgba(139,58,42,.2);background:#fff;color:var(--sub);cursor:pointer;font-family:inherit}
 .oa-fbtn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
@@ -3015,6 +3018,9 @@ body.align-right .cal-evbar{text-align:right}
       <div class="co-preview-title">📦 달력 주문 관리</div>
       <span class="co-event-count" id="orderAdminCount">0건</span>
       <button onclick="closeOrderAdmin()" aria-label="닫기">✕</button>
+    </div>
+    <div class="oa-openfull-bar">
+      <button class="oa-openfull" onclick="openAdminFullPage()">🖥 관리자 페이지 전체화면으로 열기</button>
     </div>
     <div class="oa-filterbar" id="orderAdminFilter">
       <button class="oa-fbtn on" data-st="all" onclick="oaFilter('all')">전체</button>
@@ -10879,6 +10885,11 @@ async function openOrderAdmin(){
   }
 }
 function closeOrderAdmin(){ document.getElementById('orderAdminModal').classList.remove('on'); }
+/* 관리자 전용 웹페이지(admin.html)를 새 탭으로 — 같은 도메인 기준 */
+function openAdminFullPage(){
+  try{ window.open(window.location.origin+'/admin.html','_blank'); }
+  catch(e){ window.location.href='/admin.html'; }
+}
 function oaFilter(st){
   _oaFilter=st;
   document.querySelectorAll('#orderAdminFilter .oa-fbtn').forEach(b=>b.classList.toggle('on',b.dataset.st===st));
