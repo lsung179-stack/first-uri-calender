@@ -4,23 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="only light">
-<title>우리 캘린더 · 주문 관리</title>
+<title>우리 캘린더 · 관리자</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700;800&family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
 :root{
-  --paper:#f3e6cf; --card:#fffdf8; --ink:#3a2418; --accent:#8b3a2a;
+  --paper:#f3e6cf; --bg:#f6ecda; --card:#fffdf8; --ink:#3a2418; --accent:#8b3a2a;
   --gold:#b08a50; --sub:#8a6f57; --mute:#c9b89a; --line:rgba(139,58,42,.14);
-  --ff-serif:'Noto Serif KR',serif; --ff:'Noto Sans KR',sans-serif;
   --st-pending:#c0392b; --st-paid:#2e7d32; --st-making:#b08a50; --st-shipped:#3d85d4; --st-done:#777; --st-canceled:#aaa;
+  --ff-serif:'Noto Serif KR',serif; --ff:'Noto Sans KR',sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
 body{font-family:var(--ff);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased}
 button{font-family:inherit;cursor:pointer;border:none;background:none}
-input,select{font-family:inherit}
+input,select,textarea{font-family:inherit}
 
-/* ───── 로그인 ───── */
 #login{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--paper)}
 .login-card{width:100%;max-width:380px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:32px 28px;box-shadow:0 8px 30px rgba(139,58,42,.08)}
 .login-logo{width:54px;height:54px;border-radius:50%;background:var(--accent);margin:0 auto 16px;display:flex;align-items:center;justify-content:center;color:#f3e6cf;font-family:var(--ff-serif);font-weight:800;font-size:20px}
@@ -33,114 +32,127 @@ input,select{font-family:inherit}
 .login-btn:active{transform:scale(.99)}
 .login-err{color:var(--st-pending);font-size:13px;text-align:center;margin-top:14px;min-height:18px}
 
-/* ───── 앱 셸 ───── */
 #app{display:none;min-height:100vh}
-.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:14px 20px;background:var(--accent);color:#f5ead4}
+.topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:12px;padding:14px 20px;background:var(--accent);color:#f5ead4}
 .topbar .tb-logo{width:34px;height:34px;border-radius:50%;background:#f3e6cf;color:var(--accent);display:flex;align-items:center;justify-content:center;font-family:var(--ff-serif);font-weight:800;font-size:15px;flex-shrink:0}
 .topbar .tb-title{font-family:var(--ff-serif);font-weight:700;font-size:17px}
 .topbar .tb-spacer{flex:1}
 .topbar .tb-user{font-size:12.5px;opacity:.85}
 .topbar .tb-logout{font-size:13px;font-weight:700;color:#f5ead4;border:1px solid rgba(245,234,212,.4);padding:6px 12px;border-radius:8px}
 
-.shell{display:flex;max-width:1280px;margin:0 auto}
+.shell{display:flex;max-width:1320px;margin:0 auto}
+.nav{width:210px;flex-shrink:0;padding:20px 12px;border-right:1px solid var(--line)}
+.nav-btn{width:100%;text-align:left;padding:11px 14px;border-radius:10px;font-size:14.5px;font-weight:600;color:var(--sub);display:flex;align-items:center;gap:10px;margin-bottom:4px;position:relative}
+.nav-btn:hover{background:var(--card)}
+.nav-btn.on{background:var(--accent);color:#fff}
+.nav-btn .badge{margin-left:auto;background:var(--st-pending);color:#fff;font-size:11px;font-weight:700;padding:1px 7px;border-radius:10px;min-width:18px;text-align:center}
+.nav-btn.on .badge{background:rgba(255,255,255,.25)}
 
-/* 사이드바 (PC) */
-.side{width:240px;flex-shrink:0;padding:24px 16px;border-right:1px solid var(--line)}
-.side-sec{font-size:11px;font-weight:700;color:var(--mute);letter-spacing:.5px;text-transform:uppercase;margin:18px 8px 8px}
-.side-sec:first-child{margin-top:0}
-.side-stat{display:flex;justify-content:space-between;align-items:baseline;padding:10px 12px;border-radius:10px;background:var(--card);border:1px solid var(--line);margin-bottom:8px}
-.side-stat .ss-label{font-size:13px;color:var(--sub)}
-.side-stat .ss-val{font-family:var(--ff-serif);font-weight:800;font-size:20px;color:var(--accent)}
-.side-filter{display:flex;flex-direction:column;gap:4px}
-.side-fbtn{text-align:left;padding:10px 12px;border-radius:9px;font-size:14px;font-weight:600;color:var(--sub);display:flex;justify-content:space-between;align-items:center}
-.side-fbtn:hover{background:var(--card)}
-.side-fbtn.on{background:var(--accent);color:#fff}
-.side-fbtn .cnt{font-size:12px;opacity:.8}
-
-/* 메인 */
-.main{flex:1;min-width:0;padding:24px 20px 60px}
-.main-head{display:flex;align-items:center;gap:12px;margin-bottom:18px}
-.main-title{font-family:var(--ff-serif);font-weight:800;font-size:22px;color:var(--ink)}
-.main-head .mh-spacer{flex:1}
+.main{flex:1;min-width:0;padding:24px 22px 70px}
+.page-title{font-family:var(--ff-serif);font-weight:800;font-size:22px;margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--sub);margin-bottom:20px}
+.head-row{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.head-row .spacer{flex:1}
+.btn-line{padding:9px 14px;border-radius:9px;background:var(--card);border:1px solid var(--line);font-size:13.5px;font-weight:700;color:var(--accent)}
+.btn-solid{padding:10px 16px;border-radius:9px;background:var(--accent);color:#fff;font-size:14px;font-weight:700}
 .search{position:relative}
 .search input{width:230px;padding:9px 12px 9px 34px;border:1px solid var(--line);border-radius:9px;background:#fff;font-size:14px}
 .search input:focus{outline:none;border-color:var(--accent)}
 .search::before{content:"🔍";position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:13px;opacity:.5}
-.refresh{padding:9px 14px;border-radius:9px;background:var(--card);border:1px solid var(--line);font-size:13.5px;font-weight:700;color:var(--accent)}
 
-/* 모바일 필터칩 (PC 숨김) */
-.mob-filter{display:none;gap:7px;overflow-x:auto;padding:0 0 14px;-webkit-overflow-scrolling:touch}
-.mob-fbtn{flex-shrink:0;font-size:13px;font-weight:700;padding:7px 13px;border-radius:18px;border:1px solid var(--line);background:#fff;color:var(--sub)}
-.mob-fbtn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:24px}
+.stat-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.stat-card .sc-label{font-size:13px;color:var(--sub);font-weight:600}
+.stat-card .sc-val{font-family:var(--ff-serif);font-weight:800;font-size:30px;color:var(--accent);margin-top:6px;line-height:1}
+.stat-card .sc-extra{font-size:12px;color:var(--gold);margin-top:6px;font-weight:600}
+.stat-card.alert .sc-val{color:var(--st-pending)}
+.chart-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+.chart-title{font-size:14px;font-weight:700;margin-bottom:16px}
+.bars{display:flex;align-items:flex-end;gap:6px;height:140px;padding-top:10px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end}
+.bar{width:100%;max-width:26px;background:var(--accent);border-radius:5px 5px 0 0;min-height:3px}
+.bar-cnt{font-size:11px;font-weight:700;color:var(--accent)}
+.bar-day{font-size:10px;color:var(--sub)}
 
-/* 테이블 (PC) */
-.table-wrap{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.chips{display:flex;gap:7px;overflow-x:auto;padding-bottom:14px;-webkit-overflow-scrolling:touch}
+.chip{flex-shrink:0;font-size:13px;font-weight:700;padding:7px 13px;border-radius:18px;border:1px solid var(--line);background:#fff;color:var(--sub)}
+.chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+.table-wrap{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:13.5px}
-thead th{text-align:left;padding:13px 14px;background:rgba(139,58,42,.05);color:var(--sub);font-weight:700;font-size:12px;border-bottom:1px solid var(--line);white-space:nowrap}
-tbody td{padding:13px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+thead th{text-align:left;padding:12px 14px;background:rgba(139,58,42,.05);color:var(--sub);font-weight:700;font-size:12px;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
 tbody tr:last-child td{border-bottom:none}
 tbody tr:hover{background:rgba(139,58,42,.025)}
-.t-name{font-weight:700;font-size:14px}
-.t-phone{color:var(--sub);font-size:12.5px;margin-top:2px}
-.t-addr{font-size:12.5px;color:var(--ink);max-width:240px;line-height:1.45}
-.t-memo{font-size:11.5px;color:var(--sub);margin-top:3px}
-.t-meta{font-size:12px;color:var(--sub);line-height:1.6}
-.t-date{font-size:12px;color:var(--sub);white-space:nowrap}
+.t-strong{font-weight:700}
+.t-dim{color:var(--sub);font-size:12.5px}
 .status-badge{display:inline-block;font-size:11.5px;font-weight:700;color:#fff;padding:3px 10px;border-radius:13px;white-space:nowrap}
-.row-actions{display:flex;flex-direction:column;gap:6px;min-width:120px}
-.ra-btn{font-size:12px;font-weight:700;padding:6px 10px;border-radius:7px;white-space:nowrap;text-align:center}
-.ra-pdf{background:rgba(139,58,42,.1);color:var(--accent)}
-.ra-next{background:var(--accent);color:#fff}
-.ra-cancel{background:#f0eadf;color:#999}
-.ra-nopdf{font-size:11px;color:var(--mute);text-align:center;padding:4px}
+.mini-btn{font-size:12px;font-weight:700;padding:6px 10px;border-radius:7px;white-space:nowrap;margin:2px 0}
+.mb-accent{background:rgba(139,58,42,.1);color:var(--accent)}
+.mb-solid{background:var(--accent);color:#fff}
+.mb-gray{background:#f0eadf;color:#999}
+.row-actions{display:flex;flex-direction:column;gap:5px;min-width:108px}
 
-/* 카드 (모바일) */
-.cards{display:none;flex-direction:column;gap:12px}
-.ocard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
-.ocard-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
-.ocard-date{font-size:11.5px;color:var(--sub)}
-.ocard-name{font-size:16px;font-weight:700}
-.ocard-phone{font-size:13px;color:var(--sub);font-weight:500;margin-left:6px}
-.ocard-addr{font-size:13.5px;margin-top:5px;line-height:1.5}
-.ocard-memo{font-size:12.5px;color:var(--sub);margin-top:4px}
-.ocard-meta{font-size:12px;color:var(--sub);margin-top:9px;padding-top:9px;border-top:1px solid var(--line);line-height:1.6}
-.ocard-actions{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
-.ocard-actions .ra-btn{flex:1;padding:9px;font-size:13px}
+.clist{display:flex;flex-direction:column;gap:12px}
+.ccard{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:15px}
+.ccard-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px}
+.ccard-date{font-size:11.5px;color:var(--sub);white-space:nowrap}
+.ccard-title{font-size:15px;font-weight:700}
+.ccard-body{font-size:13.5px;color:var(--ink);line-height:1.5;margin-top:4px;white-space:pre-wrap;word-break:break-word}
+.ccard-meta{font-size:12px;color:var(--sub);margin-top:8px;padding-top:8px;border-top:1px solid var(--line);line-height:1.6}
+.ccard-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.ccard-actions .mini-btn{flex:1;text-align:center;padding:9px;font-size:13px}
 
 .empty{text-align:center;padding:60px 20px;color:var(--sub)}
 .empty .e-emoji{font-size:34px;margin-bottom:10px}
-.loading{text-align:center;padding:60px;color:var(--sub)}
+.loading{text-align:center;padding:50px;color:var(--sub)}
+
+.modal{position:fixed;inset:0;background:rgba(40,28,20,.55);z-index:50;display:none;align-items:center;justify-content:center;padding:20px}
+.modal.on{display:flex}
+.modal-card{width:100%;max-width:480px;background:var(--card);border-radius:16px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--line)}
+.modal-head .mt{font-family:var(--ff-serif);font-weight:700;font-size:17px}
+.modal-body{padding:18px;overflow-y:auto}
+.modal-body label{display:block;font-size:12.5px;font-weight:700;color:var(--sub);margin:14px 0 6px}
+.modal-body label:first-child{margin-top:0}
+.modal-body input,.modal-body textarea{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:14.5px;color:var(--ink)}
+.modal-body textarea{min-height:120px;resize:vertical;line-height:1.5}
+.modal-body input:focus,.modal-body textarea:focus{outline:none;border-color:var(--accent)}
+.check-row{display:flex;align-items:center;gap:8px;margin-top:14px}
+.check-row input{width:auto}
+.modal-foot{padding:14px 18px;border-top:1px solid var(--line);display:flex;gap:10px}
+.modal-foot button{flex:1;padding:12px;border-radius:10px;font-size:14.5px;font-weight:700}
+.mf-cancel{background:#f0eadf;color:var(--sub)}
+.mf-save{background:var(--accent);color:#fff}
 
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:30px;font-size:14px;font-weight:600;opacity:0;transition:.25s;z-index:100;box-shadow:0 6px 20px rgba(0,0,0,.2)}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 
-/* ───── 반응형 ───── */
-@media(max-width:860px){
-  .side{display:none}
+.only-mobile{display:none}
+@media(max-width:880px){
+  .nav{position:fixed;bottom:0;left:0;right:0;top:auto;width:100%;display:flex;padding:6px;border-right:none;border-top:1px solid var(--line);background:var(--card);z-index:25;overflow-x:auto}
+  .nav-btn{flex-direction:column;gap:3px;font-size:10.5px;padding:7px 4px;margin-bottom:0;min-width:62px;text-align:center;align-items:center;border-radius:8px}
+  .nav-btn .badge{margin-left:0;position:absolute;top:2px;right:8px}
+  .main{padding:16px 14px 84px}
+  .shell{display:block}
   .table-wrap{display:none}
-  .cards{display:flex}
-  .mob-filter{display:flex}
-  .main{padding:16px 14px 60px}
-  .main-head{flex-wrap:wrap}
-  .main-title{font-size:19px}
+  .only-mobile{display:flex}
+  .only-pc{display:none!important}
   .search input{width:100%}
-  .search{flex:1;order:3;width:100%}
-  .mh-spacer{display:none}
+  .search{flex:1;width:100%}
+  .stat-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .stat-card .sc-val{font-size:24px}
 }
-@media(min-width:861px){
-  .mob-filter{display:none!important}
-  .cards{display:none!important}
-}
+@media(min-width:881px){ .only-mobile{display:none!important} }
 </style>
 </head>
 <body>
 
-<!-- 로그인 -->
 <div id="login">
   <div class="login-card">
     <div class="login-logo">우리</div>
-    <div class="login-title">주문 관리</div>
-    <div class="login-sub">관리자 전용 페이지입니다</div>
+    <div class="login-title">관리자</div>
+    <div class="login-sub">우리 캘린더 운영 콘솔</div>
     <label for="email">이메일</label>
     <input id="email" type="email" autocomplete="username" placeholder="관리자 이메일">
     <label for="pw">비밀번호</label>
@@ -150,40 +162,40 @@ tbody tr:hover{background:rgba(139,58,42,.025)}
   </div>
 </div>
 
-<!-- 앱 -->
 <div id="app">
   <div class="topbar">
     <div class="tb-logo">우리</div>
-    <div class="tb-title">달력 주문 관리</div>
+    <div class="tb-title">관리자 콘솔</div>
     <div class="tb-spacer"></div>
     <span class="tb-user" id="tbUser"></span>
     <button class="tb-logout" id="logoutBtn">로그아웃</button>
   </div>
-
   <div class="shell">
-    <!-- 사이드바 (PC) -->
-    <aside class="side">
-      <div class="side-sec">현황</div>
-      <div class="side-stat"><span class="ss-label">전체 주문</span><span class="ss-val" id="statTotal">0</span></div>
-      <div class="side-stat"><span class="ss-label">입금 대기</span><span class="ss-val" id="statPending">0</span></div>
-      <div class="side-stat"><span class="ss-label">진행 중</span><span class="ss-val" id="statActive">0</span></div>
-      <div class="side-sec">상태별 보기</div>
-      <div class="side-filter" id="sideFilter"></div>
-    </aside>
+    <nav class="nav" id="nav"></nav>
+    <main class="main" id="main"></main>
+  </div>
+</div>
 
-    <!-- 메인 -->
-    <main class="main">
-      <div class="main-head">
-        <div class="main-title" id="mainTitle">전체 주문</div>
-        <div class="mh-spacer"></div>
-        <div class="search"><input id="searchInput" placeholder="이름·연락처 검색"></div>
-        <button class="refresh" id="refreshBtn">새로고침</button>
+<div class="modal" id="annModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div class="mt" id="annModalTitle">공지 작성</div>
+      <button onclick="closeAnnModal()" style="font-size:18px;color:var(--sub)">✕</button>
+    </div>
+    <div class="modal-body">
+      <label>제목</label>
+      <input id="annTitle" placeholder="예: v1.0.1 업데이트 안내" maxlength="80">
+      <label>내용</label>
+      <textarea id="annBody" placeholder="공지 내용을 입력하세요"></textarea>
+      <div class="check-row">
+        <input type="checkbox" id="annShowOpen">
+        <label for="annShowOpen" style="margin:0;font-weight:600;color:var(--ink)">앱 실행 시 팝업으로 표시</label>
       </div>
-      <div class="mob-filter" id="mobFilter"></div>
-      <div id="listArea">
-        <div class="loading">불러오는 중…</div>
-      </div>
-    </main>
+    </div>
+    <div class="modal-foot">
+      <button class="mf-cancel" onclick="closeAnnModal()">취소</button>
+      <button class="mf-save" id="annSaveBtn" onclick="saveAnn()">발행하기</button>
+    </div>
   </div>
 </div>
 
@@ -195,23 +207,34 @@ const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 const ADMIN_USER_ID='3bc13a8b-618d-4d47-abea-1eec4d682ec0';
 const supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 
-const STATUS={pending:'입금대기',paid:'입금확인',making:'제작중',shipped:'배송중',done:'완료',canceled:'취소'};
-const STATUS_COLOR={pending:'var(--st-pending)',paid:'var(--st-paid)',making:'var(--st-making)',shipped:'var(--st-shipped)',done:'var(--st-done)',canceled:'var(--st-canceled)'};
-const FLOW=['pending','paid','making','shipped','done'];
-const FILTERS=[['all','전체'],['pending','입금대기'],['paid','입금확인'],['making','제작중'],['shipped','배송중'],['done','완료'],['canceled','취소']];
+const ORDER_STATUS={pending:'입금대기',paid:'입금확인',making:'제작중',shipped:'배송중',done:'완료',canceled:'취소'};
+const ORDER_COLOR={pending:'var(--st-pending)',paid:'var(--st-paid)',making:'var(--st-making)',shipped:'var(--st-shipped)',done:'var(--st-done)',canceled:'var(--st-canceled)'};
+const ORDER_FLOW=['pending','paid','making','shipped','done'];
 
-let _orders=[], _filter='all', _search='';
+const TABS=[
+  {k:'dash',icon:'📊',label:'대시보드'},
+  {k:'orders',icon:'📦',label:'주문'},
+  {k:'announce',icon:'📢',label:'공지'},
+  {k:'users',icon:'👥',label:'회원'},
+  {k:'errors',icon:'🐞',label:'에러'},
+  {k:'feedback',icon:'💬',label:'피드백'},
+];
+let _tab='dash';
+let _cache={};
+let _editAnnId=null;
+let _ordFilter='all', _ordSearch='', _usrSearch='', _fbFilter='all';
 
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.remove('show'),2200);}
-function fmtDate(s){const d=new Date(s);const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;}
+function fmtDate(s){if(!s)return '-';const d=new Date(s);const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;}
+function fmtDay(s){if(!s)return '-';const d=new Date(s);const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())}`;}
+function errBox(e){return `<div class="empty"><div class="e-emoji">⚠️</div>불러오기 실패<br><span style="font-size:12px">${esc(e.message||'')}</span></div>`;}
 
-/* ── 로그인 ── */
 async function checkSession(){
   const {data}=await supa.auth.getSession();
   const s=data.session;
-  if(s&&s.user&&s.user.id===ADMIN_USER_ID){ enterApp(s.user); }
-  else if(s&&s.user){ await supa.auth.signOut(); showLogin('관리자 계정이 아니에요'); }
+  if(s&&s.user&&s.user.id===ADMIN_USER_ID)enterApp(s.user);
+  else if(s&&s.user){await supa.auth.signOut();showLogin('관리자 계정이 아니에요');}
   else showLogin('');
 }
 function showLogin(err){
@@ -223,127 +246,302 @@ function enterApp(user){
   document.getElementById('login').style.display='none';
   document.getElementById('app').style.display='block';
   document.getElementById('tbUser').textContent=user.email||'';
-  buildFilters();
-  loadOrders();
+  buildNav();
+  switchTab('dash');
 }
 document.getElementById('loginBtn').onclick=doLogin;
 document.getElementById('pw').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 async function doLogin(){
   const email=document.getElementById('email').value.trim();
   const pw=document.getElementById('pw').value;
-  const errEl=document.getElementById('loginErr');
-  errEl.textContent='';
+  const errEl=document.getElementById('loginErr');errEl.textContent='';
   if(!email||!pw){errEl.textContent='이메일과 비밀번호를 입력해 주세요';return;}
   document.getElementById('loginBtn').textContent='로그인 중…';
   const {data,error}=await supa.auth.signInWithPassword({email,password:pw});
   document.getElementById('loginBtn').textContent='로그인';
   if(error){errEl.textContent='로그인 실패 — 이메일 또는 비밀번호를 확인해 주세요';return;}
-  if(data.user.id!==ADMIN_USER_ID){ await supa.auth.signOut(); errEl.textContent='관리자 계정이 아니에요'; return; }
+  if(data.user.id!==ADMIN_USER_ID){await supa.auth.signOut();errEl.textContent='관리자 계정이 아니에요';return;}
   enterApp(data.user);
 }
-document.getElementById('logoutBtn').onclick=async()=>{ await supa.auth.signOut(); showLogin(''); };
+document.getElementById('logoutBtn').onclick=async()=>{await supa.auth.signOut();showLogin('');};
 
-/* ── 필터 UI ── */
-function buildFilters(){
-  const side=document.getElementById('sideFilter');
-  const mob=document.getElementById('mobFilter');
-  side.innerHTML=FILTERS.map(([k,l])=>`<button class="side-fbtn${k===_filter?' on':''}" data-f="${k}"><span>${l}</span><span class="cnt" id="sc-${k}"></span></button>`).join('');
-  mob.innerHTML=FILTERS.map(([k,l])=>`<button class="mob-fbtn${k===_filter?' on':''}" data-f="${k}">${l}</button>`).join('');
-  side.querySelectorAll('.side-fbtn').forEach(b=>b.onclick=()=>setFilter(b.dataset.f));
-  mob.querySelectorAll('.mob-fbtn').forEach(b=>b.onclick=()=>setFilter(b.dataset.f));
+function buildNav(){
+  const nav=document.getElementById('nav');
+  nav.innerHTML=TABS.map(t=>`<button class="nav-btn${t.k===_tab?' on':''}" data-k="${t.k}" onclick="switchTab('${t.k}')">
+    <span>${t.icon}</span><span>${t.label}</span><span class="badge" id="badge-${t.k}" style="display:none"></span>
+  </button>`).join('');
 }
-function setFilter(f){
-  _filter=f;
-  document.querySelectorAll('.side-fbtn').forEach(b=>b.classList.toggle('on',b.dataset.f===f));
-  document.querySelectorAll('.mob-fbtn').forEach(b=>b.classList.toggle('on',b.dataset.f===f));
-  document.getElementById('mainTitle').textContent=(FILTERS.find(x=>x[0]===f)||['','전체'])[1]+' 주문';
-  render();
+function setBadge(k,n){
+  const el=document.getElementById('badge-'+k);
+  if(!el)return;
+  if(n>0){el.textContent=n;el.style.display='';}else el.style.display='none';
 }
-document.getElementById('searchInput').addEventListener('input',e=>{_search=e.target.value.trim().toLowerCase();render();});
-document.getElementById('refreshBtn').onclick=loadOrders;
+function switchTab(k){
+  _tab=k;
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
+  const m=document.getElementById('main');
+  m.innerHTML='<div class="loading">불러오는 중…</div>';
+  if(k==='dash')renderDash(m);
+  else if(k==='orders')renderOrders(m);
+  else if(k==='announce')renderAnnounce(m);
+  else if(k==='users')renderUsers(m);
+  else if(k==='errors')renderErrors(m);
+  else if(k==='feedback')renderFeedback(m);
+}
 
-/* ── 데이터 ── */
-async function loadOrders(){
-  document.getElementById('listArea').innerHTML='<div class="loading">불러오는 중…</div>';
+async function renderDash(m){
+  let st;
+  try{ const {data,error}=await supa.rpc('admin_dashboard_stats'); if(error)throw error; st=data; }
+  catch(e){ m.innerHTML=`<div class="empty"><div class="e-emoji">⚠️</div>통계 로드 실패<br><span style="font-size:12px">${esc(e.message)}</span></div>`; return; }
+  setBadge('orders',st.orders_pending);
+  setBadge('feedback',st.feedback_new);
+  const cards=[
+    {l:'전체 회원',v:st.total_users,e:`오늘 +${st.new_users_today} · 최근7일 +${st.new_users_7d}`},
+    {l:'전체 방',v:st.total_rooms,e:`등록 일정 ${(st.total_events||0).toLocaleString()}개`},
+    {l:'오늘 주문',v:st.orders_today,e:`누적 ${st.total_orders}건`},
+    {l:'입금 대기',v:st.orders_pending,e:`${(st.pending_amount||0).toLocaleString()}원`,alert:st.orders_pending>0},
+    {l:'오늘 에러',v:st.errors_today,e:'에러 탭에서 확인',alert:st.errors_today>0},
+    {l:'새 피드백',v:st.feedback_new,e:'피드백 탭에서 확인',alert:st.feedback_new>0},
+  ];
+  const daily=st.signups_daily||[];
+  const maxc=Math.max(1,...daily.map(d=>d.cnt));
+  m.innerHTML=`
+    <div class="page-title">대시보드</div>
+    <div class="page-sub">${fmtDate(new Date().toISOString())} 기준</div>
+    <div class="stat-grid">
+      ${cards.map(c=>`<div class="stat-card${c.alert?' alert':''}">
+        <div class="sc-label">${c.l}</div>
+        <div class="sc-val">${c.v}</div>
+        <div class="sc-extra">${c.e}</div>
+      </div>`).join('')}
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">최근 14일 가입 추이</div>
+      <div class="bars">
+        ${daily.map(d=>`<div class="bar-col">
+          <div class="bar-cnt">${d.cnt||''}</div>
+          <div class="bar" style="height:${Math.round((d.cnt/maxc)*100)}%"></div>
+          <div class="bar-day">${d.day}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+async function renderOrders(m){
   const {data,error}=await supa.from('calendar_orders').select('*').order('created_at',{ascending:false});
-  if(error){ document.getElementById('listArea').innerHTML=`<div class="empty"><div class="e-emoji">⚠️</div>불러오기 실패<br><span style="font-size:12px">${esc(error.message)}</span></div>`; return; }
-  _orders=data||[];
-  updateStats();
-  render();
+  if(error){m.innerHTML=errBox(error);return;}
+  _cache.orders=data||[];
+  setBadge('orders',_cache.orders.filter(o=>o.status==='pending').length);
+  drawOrders(m);
 }
-function updateStats(){
-  document.getElementById('statTotal').textContent=_orders.length;
-  document.getElementById('statPending').textContent=_orders.filter(o=>o.status==='pending').length;
-  document.getElementById('statActive').textContent=_orders.filter(o=>['paid','making','shipped'].includes(o.status)).length;
-  FILTERS.forEach(([k])=>{
-    const el=document.getElementById('sc-'+k);
-    if(el)el.textContent=k==='all'?_orders.length:_orders.filter(o=>o.status===k).length;
-  });
+function drawOrders(m){
+  const FILTERS=[['all','전체'],['pending','입금대기'],['paid','입금확인'],['making','제작중'],['shipped','배송중'],['done','완료'],['canceled','취소']];
+  let list=_ordFilter==='all'?_cache.orders:_cache.orders.filter(o=>o.status===_ordFilter);
+  if(_ordSearch)list=list.filter(o=>(o.recipient_name||'').toLowerCase().includes(_ordSearch)||(o.phone||'').includes(_ordSearch));
+  const badge=st=>`<span class="status-badge" style="background:${ORDER_COLOR[st]||'#777'}">${ORDER_STATUS[st]||st}</span>`;
+  const nextB=o=>{const i=ORDER_FLOW.indexOf(o.status);return (i>=0&&i<ORDER_FLOW.length-1)?`<button class="mini-btn mb-solid" onclick="ordNext('${o.id}','${ORDER_FLOW[i+1]}')">→ ${ORDER_STATUS[ORDER_FLOW[i+1]]}</button>`:'';};
+  const cancelB=o=>(o.status!=='canceled'&&o.status!=='done')?`<button class="mini-btn mb-gray" onclick="ordNext('${o.id}','canceled')">취소</button>`:'';
+  const pdfB=o=>o.pdf_path?`<button class="mini-btn mb-accent" onclick="ordPdf('${o.id}')">📄 PDF</button>`:'<span class="t-dim" style="font-size:11px">PDF 없음</span>';
+  m.innerHTML=`
+    <div class="page-title">주문 관리</div>
+    <div class="page-sub">총 ${_cache.orders.length}건 · 입금 확인 후 상태를 변경하세요</div>
+    <div class="head-row">
+      <div class="search"><input id="ordSearch" placeholder="이름·연락처 검색" value="${esc(_ordSearch)}"></div>
+      <div class="spacer only-pc"></div>
+      <button class="btn-line only-pc" onclick="switchTab('orders')">새로고침</button>
+    </div>
+    <div class="chips">${FILTERS.map(([k,l])=>`<button class="chip${k===_ordFilter?' on':''}" onclick="ordFilter('${k}')">${l}</button>`).join('')}</div>
+    ${!list.length?`<div class="empty"><div class="e-emoji">📭</div>${_ordSearch?'검색 결과가 없어요':'주문이 없어요'}</div>`:`
+    <div class="table-wrap only-pc"><table>
+      <thead><tr><th>상태</th><th>주문자</th><th>배송지</th><th>주문 내역</th><th>주문 시각</th><th>처리</th></tr></thead>
+      <tbody>${list.map(o=>`<tr>
+        <td>${badge(o.status)}</td>
+        <td><div class="t-strong">${esc(o.recipient_name)}</div><div class="t-dim">${esc(o.phone)}</div></td>
+        <td><div style="max-width:230px">${esc(o.address)}</div>${o.memo?`<div class="t-dim" style="margin-top:3px">요청: ${esc(o.memo)}</div>`:''}</td>
+        <td class="t-dim">${o.cal_year}년 · ${esc(o.cover_name||o.cover_key)}<br>일정 ${o.event_count}개 · ${(o.price||0).toLocaleString()}원${o.room_name?'<br>'+esc(o.room_name):''}</td>
+        <td class="t-dim">${fmtDate(o.created_at)}</td>
+        <td><div class="row-actions">${pdfB(o)}${nextB(o)}${cancelB(o)}</div></td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+    <div class="clist only-mobile">${list.map(o=>`<div class="ccard">
+      <div class="ccard-top">${badge(o.status)}<span class="ccard-date">${fmtDate(o.created_at)}</span></div>
+      <div class="ccard-title">${esc(o.recipient_name)} <span class="t-dim" style="font-weight:500">${esc(o.phone)}</span></div>
+      <div class="ccard-body">${esc(o.address)}${o.memo?`\n요청: ${esc(o.memo)}`:''}</div>
+      <div class="ccard-meta">${o.cal_year}년 · ${esc(o.cover_name||o.cover_key)} · 일정 ${o.event_count}개 · ${(o.price||0).toLocaleString()}원</div>
+      <div class="ccard-actions">${pdfB(o)}${nextB(o)}${cancelB(o)}</div>
+    </div>`).join('')}</div>`}`;
+  const si=document.getElementById('ordSearch');
+  if(si)si.oninput=e=>{_ordSearch=e.target.value.trim().toLowerCase();drawOrders(m);const el=document.getElementById('ordSearch');if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}};
 }
-function filtered(){
-  let list=_filter==='all'?_orders:_orders.filter(o=>o.status===_filter);
-  if(_search)list=list.filter(o=>(o.recipient_name||'').toLowerCase().includes(_search)||(o.phone||'').toLowerCase().includes(_search));
-  return list;
-}
-
-/* ── 렌더 ── */
-function render(){
-  const list=filtered();
-  const area=document.getElementById('listArea');
-  if(!list.length){ area.innerHTML=`<div class="empty"><div class="e-emoji">📭</div>${_search?'검색 결과가 없어요':'주문이 없어요'}</div>`; return; }
-  area.innerHTML=tableHTML(list)+cardsHTML(list);
-}
-function statusBadge(st){return `<span class="status-badge" style="background:${STATUS_COLOR[st]||'#777'}">${STATUS[st]||st}</span>`;}
-function nextBtn(o){
-  const i=FLOW.indexOf(o.status);
-  if(i>=0&&i<FLOW.length-1)return `<button class="ra-btn ra-next" onclick="setStatus('${o.id}','${FLOW[i+1]}')">→ ${STATUS[FLOW[i+1]]}</button>`;
-  return '';
-}
-function cancelBtn(o){
-  if(o.status!=='canceled'&&o.status!=='done')return `<button class="ra-btn ra-cancel" onclick="setStatus('${o.id}','canceled')">취소</button>`;
-  return '';
-}
-function pdfBtn(o){
-  return o.pdf_path?`<button class="ra-btn ra-pdf" onclick="downloadPdf('${o.id}')">📄 PDF</button>`:'<span class="ra-nopdf">PDF 없음</span>';
-}
-function tableHTML(list){
-  return `<div class="table-wrap"><table>
-    <thead><tr><th>상태</th><th>주문자</th><th>배송지</th><th>주문 내역</th><th>주문 시각</th><th>처리</th></tr></thead>
-    <tbody>${list.map(o=>`
-      <tr>
-        <td>${statusBadge(o.status)}</td>
-        <td><div class="t-name">${esc(o.recipient_name)}</div><div class="t-phone">${esc(o.phone)}</div></td>
-        <td><div class="t-addr">${esc(o.address)}</div>${o.memo?`<div class="t-memo">요청: ${esc(o.memo)}</div>`:''}</td>
-        <td><div class="t-meta">${o.cal_year}년 · ${esc(o.cover_name||o.cover_key)}<br>일정 ${o.event_count}개 · ${(o.price||0).toLocaleString()}원${o.room_name?'<br>'+esc(o.room_name):''}</div></td>
-        <td><div class="t-date">${fmtDate(o.created_at)}</div></td>
-        <td><div class="row-actions">${pdfBtn(o)}${nextBtn(o)}${cancelBtn(o)}</div></td>
-      </tr>`).join('')}
-    </tbody></table></div>`;
-}
-function cardsHTML(list){
-  return `<div class="cards">${list.map(o=>`
-    <div class="ocard">
-      <div class="ocard-top">${statusBadge(o.status)}<span class="ocard-date">${fmtDate(o.created_at)}</span></div>
-      <div><span class="ocard-name">${esc(o.recipient_name)}</span><span class="ocard-phone">${esc(o.phone)}</span></div>
-      <div class="ocard-addr">${esc(o.address)}</div>
-      ${o.memo?`<div class="ocard-memo">요청: ${esc(o.memo)}</div>`:''}
-      <div class="ocard-meta">${o.cal_year}년 · ${esc(o.cover_name||o.cover_key)} · 일정 ${o.event_count}개 · ${(o.price||0).toLocaleString()}원${o.room_name?' · '+esc(o.room_name):''}</div>
-      <div class="ocard-actions">${pdfBtn(o)}${nextBtn(o)}${cancelBtn(o)}</div>
-    </div>`).join('')}</div>`;
-}
-
-/* ── 액션 ── */
-async function setStatus(id,st){
+function ordFilter(k){_ordFilter=k;drawOrders(document.getElementById('main'));}
+async function ordNext(id,st){
   const {error}=await supa.from('calendar_orders').update({status:st}).eq('id',id);
   if(error){toast('변경 실패');return;}
-  const o=_orders.find(x=>x.id===id); if(o)o.status=st;
-  updateStats(); render(); toast('상태 변경: '+(STATUS[st]||st));
+  const o=_cache.orders.find(x=>x.id===id);if(o)o.status=st;
+  setBadge('orders',_cache.orders.filter(x=>x.status==='pending').length);
+  drawOrders(document.getElementById('main'));toast('상태 변경: '+(ORDER_STATUS[st]||st));
 }
-async function downloadPdf(id){
-  const o=_orders.find(x=>x.id===id); if(!o||!o.pdf_path){toast('PDF 경로 없음');return;}
+async function ordPdf(id){
+  const o=_cache.orders.find(x=>x.id===id);if(!o||!o.pdf_path){toast('PDF 경로 없음');return;}
   const {data,error}=await supa.storage.from('calendar-pdfs').createSignedUrl(o.pdf_path,600);
   if(error){toast('PDF 열기 실패');return;}
   window.open(data.signedUrl,'_blank');
+}
+
+async function renderAnnounce(m){
+  const {data,error}=await supa.from('announcements').select('*').order('created_at',{ascending:false});
+  if(error){m.innerHTML=errBox(error);return;}
+  _cache.ann=data||[];
+  m.innerHTML=`
+    <div class="page-title">공지사항</div>
+    <div class="page-sub">앱 종 아이콘에 표시됩니다 · 팝업 옵션을 켜면 앱 실행 시 자동으로 떠요</div>
+    <div class="head-row">
+      <div class="spacer"></div>
+      <button class="btn-solid" onclick="openAnnModal()">+ 새 공지 작성</button>
+    </div>
+    ${!_cache.ann.length?`<div class="empty"><div class="e-emoji">📢</div>등록된 공지가 없어요</div>`:`
+    <div class="clist">${_cache.ann.map(a=>`<div class="ccard">
+      <div class="ccard-top">
+        <span class="ccard-title">${esc(a.title)}</span>
+        <span class="ccard-date">${fmtDate(a.created_at)}</span>
+      </div>
+      ${a.show_on_open?'<span class="status-badge" style="background:var(--gold)">실행 시 팝업</span>':''}
+      <div class="ccard-body">${esc(a.body)}</div>
+      <div class="ccard-actions">
+        <button class="mini-btn mb-accent" onclick="editAnn('${a.id}')">수정</button>
+        <button class="mini-btn mb-gray" onclick="delAnn('${a.id}')">삭제</button>
+      </div>
+    </div>`).join('')}</div>`}`;
+}
+function openAnnModal(){
+  _editAnnId=null;
+  document.getElementById('annModalTitle').textContent='공지 작성';
+  document.getElementById('annSaveBtn').textContent='발행하기';
+  document.getElementById('annTitle').value='';
+  document.getElementById('annBody').value='';
+  document.getElementById('annShowOpen').checked=false;
+  document.getElementById('annModal').classList.add('on');
+}
+function editAnn(id){
+  const a=_cache.ann.find(x=>x.id===id);if(!a)return;
+  _editAnnId=id;
+  document.getElementById('annModalTitle').textContent='공지 수정';
+  document.getElementById('annSaveBtn').textContent='수정 저장';
+  document.getElementById('annTitle').value=a.title||'';
+  document.getElementById('annBody').value=a.body||'';
+  document.getElementById('annShowOpen').checked=!!a.show_on_open;
+  document.getElementById('annModal').classList.add('on');
+}
+function closeAnnModal(){document.getElementById('annModal').classList.remove('on');}
+async function saveAnn(){
+  const title=document.getElementById('annTitle').value.trim();
+  const body=document.getElementById('annBody').value.trim();
+  const showOpen=document.getElementById('annShowOpen').checked;
+  if(!title){toast('제목을 입력해 주세요');return;}
+  if(!body){toast('내용을 입력해 주세요');return;}
+  document.getElementById('annSaveBtn').textContent='저장 중…';
+  let error;
+  if(_editAnnId){({error}=await supa.from('announcements').update({title,body,show_on_open:showOpen}).eq('id',_editAnnId));}
+  else{({error}=await supa.from('announcements').insert({title,body,show_on_open:showOpen}));}
+  document.getElementById('annSaveBtn').textContent=_editAnnId?'수정 저장':'발행하기';
+  if(error){toast('저장 실패: '+error.message);return;}
+  closeAnnModal();toast(_editAnnId?'공지를 수정했어요':'공지를 발행했어요');
+  renderAnnounce(document.getElementById('main'));
+}
+async function delAnn(id){
+  if(!confirm('이 공지를 삭제할까요?'))return;
+  const {error}=await supa.from('announcements').delete().eq('id',id);
+  if(error){toast('삭제 실패');return;}
+  toast('공지를 삭제했어요');renderAnnounce(document.getElementById('main'));
+}
+
+async function renderUsers(m){
+  const {data,error}=await supa.from('profiles').select('*').order('created_at',{ascending:false});
+  if(error){m.innerHTML=errBox(error);return;}
+  _cache.users=data||[];
+  drawUsers(m);
+}
+function drawUsers(m){
+  let list=_cache.users;
+  if(_usrSearch)list=list.filter(u=>(u.name||'').toLowerCase().includes(_usrSearch)||(u.email||'').toLowerCase().includes(_usrSearch));
+  m.innerHTML=`
+    <div class="page-title">회원 관리</div>
+    <div class="page-sub">총 ${_cache.users.length}명</div>
+    <div class="head-row"><div class="search"><input id="usrSearch" placeholder="이름·이메일 검색" value="${esc(_usrSearch)}"></div></div>
+    ${!list.length?`<div class="empty"><div class="e-emoji">👥</div>${_usrSearch?'검색 결과가 없어요':'회원이 없어요'}</div>`:`
+    <div class="table-wrap only-pc"><table>
+      <thead><tr><th>이름</th><th>이메일</th><th>가입 경로</th><th>생일</th><th>가입일</th></tr></thead>
+      <tbody>${list.map(u=>`<tr>
+        <td class="t-strong">${esc(u.name||'(이름 없음)')}</td>
+        <td class="t-dim">${esc(u.email||'-')}</td>
+        <td class="t-dim">${esc(u.provider||'-')}</td>
+        <td class="t-dim">${esc(u.birthday||'-')}</td>
+        <td class="t-dim">${fmtDay(u.created_at)}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+    <div class="clist only-mobile">${list.map(u=>`<div class="ccard">
+      <div class="ccard-top"><span class="ccard-title">${esc(u.name||'(이름 없음)')}</span><span class="ccard-date">${fmtDay(u.created_at)}</span></div>
+      <div class="ccard-body" style="font-size:13px">${esc(u.email||'-')}</div>
+      <div class="ccard-meta">가입 ${esc(u.provider||'-')}${u.birthday?' · 생일 '+esc(u.birthday):''}</div>
+    </div>`).join('')}</div>`}`;
+  const si=document.getElementById('usrSearch');
+  if(si)si.oninput=e=>{_usrSearch=e.target.value.trim().toLowerCase();drawUsers(m);const el=document.getElementById('usrSearch');if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}};
+}
+
+async function renderErrors(m){
+  const {data,error}=await supa.from('errors').select('*').order('created_at',{ascending:false}).limit(200);
+  if(error){m.innerHTML=errBox(error);return;}
+  _cache.errors=data||[];
+  m.innerHTML=`
+    <div class="page-title">에러 모니터링</div>
+    <div class="page-sub">최근 200건 · 사용자 기기에서 발생한 오류</div>
+    ${!_cache.errors.length?`<div class="empty"><div class="e-emoji">✅</div>기록된 에러가 없어요</div>`:`
+    <div class="clist">${_cache.errors.map(er=>`<div class="ccard">
+      <div class="ccard-top"><span class="ccard-title" style="color:var(--st-pending);font-size:14px">${esc((er.message||'(메시지 없음)').slice(0,120))}</span><span class="ccard-date">${fmtDate(er.created_at)}</span></div>
+      ${er.url?`<div class="ccard-body" style="font-size:12px;color:var(--sub)">📍 ${esc(er.url)}</div>`:''}
+      ${er.stack?`<details style="margin-top:6px"><summary style="font-size:12px;color:var(--accent);cursor:pointer;font-weight:600">스택 보기</summary><pre style="font-size:11px;color:var(--sub);white-space:pre-wrap;word-break:break-word;margin-top:6px;background:var(--bg);padding:10px;border-radius:8px;max-height:200px;overflow:auto">${esc(er.stack)}</pre></details>`:''}
+      <div class="ccard-meta">${er.user_id?'사용자 '+esc(String(er.user_id).slice(0,8)):'비로그인'}${er.user_agent?' · '+esc(er.user_agent.slice(0,60)):''}</div>
+    </div>`).join('')}</div>`}`;
+}
+
+async function renderFeedback(m){
+  const {data,error}=await supa.from('feedback').select('*').order('created_at',{ascending:false});
+  if(error){m.innerHTML=errBox(error);return;}
+  _cache.fb=data||[];
+  setBadge('feedback',_cache.fb.filter(f=>f.status==='new').length);
+  drawFeedback(m);
+}
+function drawFeedback(m){
+  const FB_STATUS={new:'새 글',read:'확인',done:'처리완료'};
+  const FB_COLOR={new:'var(--st-pending)',read:'var(--gold)',done:'var(--st-done)'};
+  const FB_CAT={general:'일반',bug:'버그',feature:'기능 제안',etc:'기타'};
+  let list=_fbFilter==='all'?_cache.fb:_cache.fb.filter(f=>f.status===_fbFilter);
+  const FILTERS=[['all','전체'],['new','새 글'],['read','확인'],['done','처리완료']];
+  m.innerHTML=`
+    <div class="page-title">피드백</div>
+    <div class="page-sub">총 ${_cache.fb.length}건 · 앱에서 사용자가 보낸 의견</div>
+    <div class="chips">${FILTERS.map(([k,l])=>`<button class="chip${k===_fbFilter?' on':''}" onclick="fbFilter('${k}')">${l}</button>`).join('')}</div>
+    ${!list.length?`<div class="empty"><div class="e-emoji">💬</div>피드백이 없어요</div>`:`
+    <div class="clist">${list.map(f=>`<div class="ccard">
+      <div class="ccard-top">
+        <span><span class="status-badge" style="background:${FB_COLOR[f.status]||'#777'}">${FB_STATUS[f.status]||f.status}</span> <span class="t-dim" style="font-size:12px">${FB_CAT[f.category]||f.category||''}</span></span>
+        <span class="ccard-date">${fmtDate(f.created_at)}</span>
+      </div>
+      <div class="ccard-body">${esc(f.message)}</div>
+      <div class="ccard-meta">${esc(f.user_name||'익명')}${f.user_email?' · '+esc(f.user_email):''}</div>
+      <div class="ccard-actions">
+        ${f.status!=='read'?`<button class="mini-btn mb-accent" onclick="fbStatus('${f.id}','read')">확인함</button>`:''}
+        ${f.status!=='done'?`<button class="mini-btn mb-solid" onclick="fbStatus('${f.id}','done')">처리완료</button>`:''}
+      </div>
+    </div>`).join('')}</div>`}`;
+}
+function fbFilter(k){_fbFilter=k;drawFeedback(document.getElementById('main'));}
+async function fbStatus(id,st){
+  const {error}=await supa.from('feedback').update({status:st}).eq('id',id);
+  if(error){toast('변경 실패');return;}
+  const f=_cache.fb.find(x=>x.id===id);if(f)f.status=st;
+  setBadge('feedback',_cache.fb.filter(x=>x.status==='new').length);
+  drawFeedback(document.getElementById('main'));toast('처리했어요');
 }
 
 checkSession();
