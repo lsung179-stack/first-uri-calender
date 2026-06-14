@@ -10673,8 +10673,20 @@ function coBuildMonth(month, W){
   wd.forEach((w,i)=>{ const cl=i===0?sun:(i===6?sat:'#6f5a48'); thRow+=`<th style="width:${100/7}%;text-align:center;font-family:var(--ff-serif);font-weight:700;color:${cl};font-size:${c(.023)}px;padding-bottom:${c(.012)}px">${w}</th>`; });
 
   // grid rows
+  // 날짜 숫자/공휴일 영역 높이 — 같은 주(행)에서 통일해야 기간 막대가 아래로 밀리지 않고 끊김없이 연결됨
+  const numRowH=c(.011)+c(.028)*1.05;   // 날짜 숫자 한 줄
+  const holRowH=c(.0145)*1.1+c(.002);   // 공휴일 한 줄
   let trs='';
   for(let r=0;r<rows;r++){
+    // 이 주에 공휴일이 하나라도 있으면, 공휴일 없는 칸도 같은 높이의 머리 영역을 확보 → 막대 높이 정렬
+    let rowHasHol=false;
+    for(let cc=0;cc<7;cc++){
+      const d0=weeks[r][cc];
+      if(d0!=null&&CO_HOLIDAYS[month+'-'+d0])rowHasHol=true;
+      const ex0=(r===rows-1&&extra[cc]!=null)?extra[cc]:null;
+      if(ex0!=null&&CO_HOLIDAYS[month+'-'+ex0])rowHasHol=true;
+    }
+    const headH=numRowH+(rowHasHol?holRowH:0);
     trs+='<tr>';
     for(let cc=0;cc<7;cc++){
       const day=weeks[r][cc];
@@ -10698,11 +10710,13 @@ function coBuildMonth(month, W){
       drawBars(day); if(ex!=null) drawBars(ex);
       const exHtml=ex!=null?`<span style="font-family:var(--ff-serif);font-weight:600;color:${sun};font-size:${c(.021)}px;margin-left:${c(.004)}px">/${ex}</span>`:'';
       trs+=`<td style="${topBorder};vertical-align:top;height:${cellH}px;padding:0;box-sizing:border-box">
-        <div style="padding:${c(.011)}px ${c(.008)}px 0;line-height:1.05;white-space:nowrap">
-          <span style="font-family:var(--ff-serif);font-weight:500;color:${numCol};font-size:${c(.028)}px">${day}</span>${exHtml}<span style="font-size:${c(.014)}px;color:${lunC};margin-left:3px">${lun}</span>
+        <div style="height:${headH}px;overflow:hidden">
+          <div style="padding:${c(.011)}px ${c(.008)}px 0;line-height:1.05;white-space:nowrap">
+            <span style="font-family:var(--ff-serif);font-weight:500;color:${numCol};font-size:${c(.028)}px">${day}</span>${exHtml}<span style="font-size:${c(.014)}px;color:${lunC};margin-left:3px">${lun}</span>
+          </div>
+          ${hol?`<div style="font-size:${c(.0145)}px;color:${sun};margin:0 ${c(.008)}px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${hol}</div>`:''}
         </div>
-        ${hol?`<div style="font-size:${c(.0145)}px;color:${sun};margin:1px ${c(.008)}px 0;line-height:1.05">${hol}</div>`:''}
-        <div style="margin-top:${c(.005)}px">${bars}</div>
+        <div style="margin-top:${c(.004)}px">${bars}</div>
       </td>`;
     }
     trs+='</tr>';
