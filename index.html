@@ -745,8 +745,8 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .oa-openfull-bar{padding:10px 14px 0}
 .oa-openfull{width:100%;padding:11px;border-radius:10px;background:var(--accent);color:#fff;font-size:13.5px;font-weight:700;border:none;cursor:pointer;font-family:inherit}
 .oa-openfull:active{transform:scale(.99)}
-.oa-filterbar{display:flex;gap:6px;padding:10px 14px;overflow-x:auto;background:var(--bg);border-bottom:1px solid rgba(139,58,42,.1);-webkit-overflow-scrolling:touch}
-.oa-fbtn{flex-shrink:0;font-size:12.5px;font-weight:700;padding:6px 12px;border-radius:18px;border:1px solid rgba(139,58,42,.2);background:#fff;color:var(--sub);cursor:pointer;font-family:inherit}
+.oa-filterbar{display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px;background:var(--bg);border-bottom:1px solid rgba(139,58,42,.1)}
+.oa-fbtn{flex:0 0 auto;white-space:nowrap;font-size:12.5px;font-weight:700;padding:6px 12px;border-radius:18px;border:1px solid rgba(139,58,42,.2);background:#fff;color:var(--sub);cursor:pointer;font-family:inherit}
 .oa-fbtn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .oa-list{display:flex;flex-direction:column;gap:12px;padding:4px 2px}
 .oa-card{background:#fff;border:1px solid rgba(139,58,42,.12);border-radius:12px;padding:14px}
@@ -10281,7 +10281,7 @@ function renderCalOrder(){
   html+=`
     <div class="co-hero">
       <div class="co-hero-badge">NEW · 한정 굿즈</div>
-      <div class="co-hero-title">2027 우리 캘린더 만들기</div>
+      <div class="co-hero-title">${coSelectedYear()||_coYear} 우리 캘린더 만들기</div>
       <div class="co-hero-sub">내가 등록한 일정이 그대로 인쇄되는<br>세상에 하나뿐인 빈티지 탁상달력</div>
     </div>`;
 
@@ -10497,11 +10497,46 @@ function renderEventModalBody(){
   }
   body.innerHTML=html;
 }
+const CO_MAX_PER_DAY=2;   // 실물 달력 — 하루 최대 2개
+// 특정 날짜(ymd)에 이미 선택된 일정 수 (기간·매년 포함, exceptKey 제외)
+function coCountOnDay(ymd, exceptKey){
+  const t=coParseYmd(ymd);
+  let n=0;
+  for(const k in _coSelectedEvents){
+    if(k===exceptKey)continue;
+    const e=_coSelectedEvents[k];
+    if(e.yearly){
+      const p=coParseYmd(e.startYmd);
+      if(p.m===t.m && p.d===t.d) n++;
+    }else if(e.startYmd<=ymd && ymd<=e.endYmd){ n++; }
+  }
+  return n;
+}
 function coToggleEvent(key){
   const ev=_coRoomEvents.find(e=>e.key===key);
   if(!ev)return;
-  if(_coSelectedEvents[key])delete _coSelectedEvents[key];
-  else _coSelectedEvents[key]={startYmd:ev.startYmd,endYmd:ev.endYmd,title:ev.title,color:ev.color,yearly:ev.yearly};
+  if(_coSelectedEvents[key]){
+    delete _coSelectedEvents[key];
+  }else{
+    // 단일 연도만 — 이미 담은 일정과 다른 해면 차단하고 안내 (표지·내지 연도가 하나로 정해져야 함)
+    if(!ev.yearly){
+      const selYr=coSelectedYear();
+      const evYr=+String(ev.startYmd).slice(0,4);
+      if(selYr && evYr!==selYr){
+        toast(`${selYr}년 일정을 담는 중이에요. 한 해의 일정만 넣을 수 있어요`);
+        return;
+      }
+    }
+    // 하루 최대 2개 — 추가하려는 일정의 기간 중 한 날이라도 이미 2개면 차단하고 안내
+    let days=[];
+    if(ev.yearly){ days=[ev.startYmd]; }
+    else { let cur=ev.startYmd; while(cur<=ev.endYmd){ days.push(cur); if(cur===ev.endYmd)break; cur=coAddDay(cur,1); } }
+    if(days.some(d=>coCountOnDay(d,key)>=CO_MAX_PER_DAY)){
+      toast('하루에 일정은 최대 2개까지 넣을 수 있어요');
+      return;
+    }
+    _coSelectedEvents[key]={startYmd:ev.startYmd,endYmd:ev.endYmd,title:ev.title,color:ev.color,yearly:ev.yearly};
+  }
   renderEventModalBody();
   // 헤더 카운트 갱신
   const cntEl=document.getElementById('coEventCount');
@@ -10509,8 +10544,25 @@ function coToggleEvent(key){
 }
 function coSelectCover(key){ _coCover=key; renderCalOrder(); }
 
+// 선택한 일정들의 대표 연도(가장 많은 연도). 매년 반복은 제외. 없으면 null
+function coSelectedYear(){
+  const yrs={};
+  for(const k in _coSelectedEvents){
+    const e=_coSelectedEvents[k];
+    if(e.yearly)continue;
+    const yy=+String(e.startYmd).slice(0,4);
+    if(yy) yrs[yy]=(yrs[yy]||0)+1;
+  }
+  let best=null,bestN=0;
+  for(const yy in yrs){ if(yrs[yy]>bestN){bestN=yrs[yy];best=+yy;} }
+  return best;
+}
+// 표지·내지 연도를 선택한 일정 연도에 맞춘다 (미리보기·PDF 생성 직전 호출)
+function coSyncYear(){ const yy=coSelectedYear(); if(yy)_coYear=yy; }
+
 /* ───── 미리보기 모달 (앞면/뒷면) ───── */
 function openCalPreview(){
+  coSyncYear();
   _coPreviewPage=0;
   const nav=document.querySelector('#coPreviewModal .co-preview-nav'); if(nav)nav.style.display='';
   document.getElementById('coPreviewModal').classList.add('on');
@@ -10530,8 +10582,7 @@ function renderCalPreviewPage(){
   const stageW=Math.max(240,(body.clientWidth||320)-32);
   let inner, label;
   if(_coPreviewPage===0){
-    const cv=CO_COVERS.find(c=>c.key===_coCover);
-    inner=`<img src="${cv.img}" style="width:${stageW}px;display:block;border-radius:6px" alt="표지">`;
+    inner=`<div style="border-radius:6px;overflow:hidden">${coBuildCoverPage(stageW)}</div>`;
     label='표지';
   }else if(_coPreviewPage<=12){
     inner=coBuildMonth(_coPreviewPage, stageW);
@@ -10669,7 +10720,7 @@ function coBuildMonth(month, W){
   const weekdayH=c(.036);
   const gridH=contentH-headerH-dividerH-weekdayH;
   const cellH=Math.max(c(.06), gridH/rows);   // 모든 주(행) 동일 높이로 고정
-  const barGap=c(.0028);
+  const barGap=c(.0038);
   const dayFont=c(.032);          // 날짜 숫자 (확대)
 
   // weekday header
@@ -10679,36 +10730,23 @@ function coBuildMonth(month, W){
 
   // grid rows
   // 날짜 숫자/공휴일 영역 높이 — 같은 주(행)에서 통일해야 기간 막대가 아래로 밀리지 않고 끊김없이 연결됨
-  const numRowH=c(.006)+dayFont*1.02;   // 날짜 숫자 한 줄
-  const holRowH=c(.0135)*1.05+c(.002);  // 공휴일 한 줄
+  const numRowH=c(.006)+dayFont*1.02;        // 날짜 숫자 한 줄
+  const holRowH=c(.0145)*1.2+c(.004);        // 공휴일 한 줄 (글자 아래가 잘리지 않게 여유)
+  const MAX_BARS=2;                          // 실물 달력 — 하루 최대 2개만 표시
+  const barH=c(.016), barFont=Math.min(c(.0155), barH*0.85);  // 2개 기준 적당한 크기 + 아래 여백 확보
 
-  // 각 행의 머리 높이/최대 일정 수를 미리 계산
+  // 각 행의 공휴일 유무 → 머리 높이 (같은 주는 동일하게 맞춰 막대 정렬)
   const rowMeta=[];
   for(let r=0;r<rows;r++){
-    let rowHasHol=false, maxLanes=0;
+    let rowHasHol=false;
     for(let cc=0;cc<7;cc++){
       const d0=weeks[r][cc];
-      if(d0==null)continue;
-      if(CO_HOLIDAYS[month+'-'+d0])rowHasHol=true;
-      let n=(byDay[d0]||[]).length;
+      if(d0!=null&&CO_HOLIDAYS[month+'-'+d0])rowHasHol=true;
       const ex0=(r===rows-1&&extra[cc]!=null)?extra[cc]:null;
-      if(ex0!=null){ if(CO_HOLIDAYS[month+'-'+ex0])rowHasHol=true; n+=(byDay[ex0]||[]).length; }
-      if(n>maxLanes)maxLanes=n;
+      if(ex0!=null&&CO_HOLIDAYS[month+'-'+ex0])rowHasHol=true;
     }
-    rowMeta.push({rowHasHol,maxLanes,headH:numRowH+(rowHasHol?holRowH:0)});
+    rowMeta.push({headH:numRowH+(rowHasHol?holRowH:0)});
   }
-  // 실물 달력 — 일정을 +N으로 접지 않고 모두 표시한다.
-  // 가장 빡빡한 칸(최다 일정)이 행 안에 다 들어가도록 막대 높이를 자동 축소 (모든 막대 동일 크기, 색상 그대로).
-  const BAR_MAX=c(.020), BAR_MIN=c(.0095);
-  let barH=BAR_MAX;
-  rowMeta.forEach(m=>{
-    if(m.maxLanes>0){
-      const fit=(cellH-m.headH-(m.maxLanes-1)*barGap)/m.maxLanes;
-      if(fit<barH)barH=fit;
-    }
-  });
-  barH=Math.max(BAR_MIN, Math.min(BAR_MAX, barH));
-  const barFont=Math.min(c(.0155), barH*0.82);
   // 막대 한 줄 렌더
   const renderBar=(ev)=>{
     if(!ev||ev.seg==='gap') return `<div style="height:${barH}px;margin-bottom:${barGap}px"></div>`;
@@ -10731,9 +10769,10 @@ function coBuildMonth(month, W){
       const hol=CO_HOLIDAYS[month+'-'+day];
       const numCol=(cc===0||hol)?sun:(cc===6?sat:text);
       const lun=coLunar(y,month,day);
-      // 이 칸의 레인들 (기간일정 정렬을 위해 빈 칸(gap)도 포함) — 모두 표시
+      // 이 칸의 레인들 — 하루 최대 2개만 표시 (선택 단계에서 2개로 제한, 여기선 안전망)
       let lanes=(byDay[day]||[]).slice();
       if(ex!=null) lanes=lanes.concat(byDay[ex]||[]);
+      if(lanes.length>MAX_BARS) lanes=lanes.slice(0,MAX_BARS);
       let bars='';
       lanes.forEach(ev=>bars+=renderBar(ev));
       const exHtml=ex!=null?`<span style="font-family:var(--ff-serif);font-weight:600;color:${sun};font-size:${c(.021)}px;margin-left:${c(.004)}px">/${ex}</span>`:'';
@@ -10743,9 +10782,9 @@ function coBuildMonth(month, W){
             <div style="padding:${c(.006)}px ${c(.007)}px 0;line-height:1.0;white-space:nowrap">
               <span style="font-family:var(--ff-serif);font-weight:500;color:${numCol};font-size:${dayFont}px">${day}</span>${exHtml}<span style="font-size:${c(.0135)}px;color:${lunC};margin-left:3px">${lun}</span>
             </div>
-            ${hol?`<div style="font-size:${c(.0135)}px;color:${sun};margin:0 ${c(.007)}px;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${hol}</div>`:''}
+            ${hol?`<div style="font-size:${c(.0135)}px;color:${sun};margin:${c(.0015)}px ${c(.007)}px 0;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${hol}</div>`:''}
           </div>
-          <div>${bars}</div>
+          <div style="padding-top:${c(.003)}px">${bars}</div>
         </div>
       </td>`;
     }
@@ -10832,7 +10871,7 @@ function openCalOrderForm(){
   document.querySelector('#coPreviewModal .co-preview-nav').style.display='none';
   body.innerHTML=`
     <div class="co-form">
-      <div class="co-form-title">2027 우리 캘린더 주문</div>
+      <div class="co-form-title">${coSelectedYear()||_coYear} 우리 캘린더 주문</div>
       <div class="co-summary" style="margin-left:0">
         선택 일정 <b>${cnt}개</b> · 표지 <b>${coverName}</b><br>
         탁상 달력 270×180mm · 표지 + 12개월<br>
@@ -10916,6 +10955,7 @@ async function coSubmitOrder(){
 
 /* 레드프린팅 규격 PDF 생성 — 214×154mm, 26페이지(표지+12개월 앞/뒤+뒤표지) */
 async function coGeneratePDF(prog){
+  coSyncYear();   // 선택한 일정 연도에 표지·내지를 맞춤
   const {jsPDF}=window.jspdf;
   // 214 x 154 mm 가로형 탁상 달력 (레드프린팅 규격, 블리드 포함)
   const PW=214, PH=154;
@@ -10951,8 +10991,19 @@ async function coGeneratePDF(prog){
 function coBuildCoverPage(W){
   const cv=CO_COVERS.find(c=>c.key===_coCover)||CO_COVERS[0];
   const H=Math.round(W*154/214);
-  return `<div style="width:${W}px;height:${H}px;overflow:hidden;background:#f3e6cf;display:flex;align-items:center;justify-content:center">
+  // 표지의 연도는 이미지에 인쇄돼 있어(기본 2027) 코드로 못 바꾼다.
+  // 선택 연도가 2027이 아니면, 같은 크림색(#f2e6ce) 판으로 상단 연도를 덮고 올바른 연도를 다시 그린다.
+  const coverBg='#f2e6ce';
+  let yearOverlay='';
+  if(_coYear!==CO_YEAR){
+    const yfs=Math.round(H*0.125), lsp=Math.round(W*0.018);
+    yearOverlay=`<div style="position:absolute;left:18%;top:3.5%;width:64%;height:25.5%;background:${coverBg};display:flex;align-items:center;justify-content:center">
+      <span style="font-family:var(--ff-serif);font-weight:800;color:#8b3a2a;font-size:${yfs}px;letter-spacing:${lsp}px;line-height:1;padding-left:${lsp}px">${_coYear}</span>
+    </div>`;
+  }
+  return `<div style="position:relative;width:${W}px;height:${H}px;overflow:hidden;background:${coverBg}">
     <img src="${cv.img}" style="width:100%;height:100%;object-fit:cover" crossorigin="anonymous">
+    ${yearOverlay}
   </div>`;
 }
 
