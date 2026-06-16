@@ -10610,23 +10610,25 @@ function coFrameOpen(W){
   const accent='#8b3a2a';
   const H=W*154/214;
   const ring=W*10/214;            // 상단 링 여백(10mm)
-  const topPad=ring+c(.012);
+  const topPad=ring+c(.008);
   const sidePad=c(.055);
-  const botPad=c(.022);
+  const botPad=c(.018);
   const inset=c(.020);            // 모서리 마크 안쪽 여백
   const arm=c(.020);              // 마크 팔 길이
   const th=Math.max(1,c(.0016));  // 마크 두께
   const mk=(v,h,bv,bh)=>`<div style="position:absolute;${v};${h};width:${arm}px;height:${arm}px;${bv};${bh}"></div>`;
+  // 상단 마크는 10mm 링 여백 선까지 함께 내려, 달력 본문(헤더) 바로 위를 감싸도록 한다
+  const topMk=ring;
   const corners=
-    mk(`top:${inset}px`,`left:${inset}px`,`border-top:${th}px solid ${accent}`,`border-left:${th}px solid ${accent}`)+
-    mk(`top:${inset}px`,`right:${inset}px`,`border-top:${th}px solid ${accent}`,`border-right:${th}px solid ${accent}`)+
+    mk(`top:${topMk}px`,`left:${inset}px`,`border-top:${th}px solid ${accent}`,`border-left:${th}px solid ${accent}`)+
+    mk(`top:${topMk}px`,`right:${inset}px`,`border-top:${th}px solid ${accent}`,`border-right:${th}px solid ${accent}`)+
     mk(`bottom:${inset}px`,`left:${inset}px`,`border-bottom:${th}px solid ${accent}`,`border-left:${th}px solid ${accent}`)+
     mk(`bottom:${inset}px`,`right:${inset}px`,`border-bottom:${th}px solid ${accent}`,`border-right:${th}px solid ${accent}`);
   return `<div style="width:${W}px;height:${H}px;background:#f3e6cf;position:relative;box-sizing:border-box;overflow:hidden;font-family:var(--ff-serif);padding:${topPad}px ${sidePad}px ${botPad}px">${corners}`;
 }
 function coDividerDots(c){
   const gold='#b08a50'; const d=Math.max(4,c(.008));
-  return `<div style="display:flex;align-items:center;margin:${c(.018)}px ${c(.004)}px ${c(.014)}px">
+  return `<div style="display:flex;align-items:center;margin:${c(.010)}px ${c(.004)}px ${c(.009)}px">
     <span style="width:${d}px;height:${d}px;border-radius:50%;background:${gold};flex:none"></span>
     <span style="flex:1;height:2px;background:${gold}"></span>
     <span style="width:${d}px;height:${d}px;border-radius:50%;background:${gold};flex:none"></span>
@@ -10659,13 +10661,16 @@ function coBuildMonth(month, W){
 
   // geometry (상단 10mm 링 여백 반영)
   const ring=W*10/214;
-  const topPad=ring+c(.012);
-  const botPad=c(.022);
+  const topPad=ring+c(.008);
+  const botPad=c(.018);
   const contentH=H-topPad-botPad;
-  const headerH=c(.10);
-  const gridH=contentH-headerH-c(.034)-c(.052);   // header + divider + weekday 제외
-  const cellH=Math.max(c(.06), gridH/rows);
-  const barH=c(.024), barGap=c(.004);
+  const headerH=c(.066);          // 상단 제목 영역 (세로 축소)
+  const dividerH=c(.022);
+  const weekdayH=c(.036);
+  const gridH=contentH-headerH-dividerH-weekdayH;
+  const cellH=Math.max(c(.06), gridH/rows);   // 모든 주(행) 동일 높이로 고정
+  const barGap=c(.0028);
+  const dayFont=c(.032);          // 날짜 숫자 (확대)
 
   // weekday header
   const wd=['일','월','화','수','목','금','토'];
@@ -10674,19 +10679,49 @@ function coBuildMonth(month, W){
 
   // grid rows
   // 날짜 숫자/공휴일 영역 높이 — 같은 주(행)에서 통일해야 기간 막대가 아래로 밀리지 않고 끊김없이 연결됨
-  const numRowH=c(.011)+c(.028)*1.05;   // 날짜 숫자 한 줄
-  const holRowH=c(.0145)*1.1+c(.002);   // 공휴일 한 줄
-  let trs='';
+  const numRowH=c(.006)+dayFont*1.02;   // 날짜 숫자 한 줄
+  const holRowH=c(.0135)*1.05+c(.002);  // 공휴일 한 줄
+
+  // 각 행의 머리 높이/최대 일정 수를 미리 계산
+  const rowMeta=[];
   for(let r=0;r<rows;r++){
-    // 이 주에 공휴일이 하나라도 있으면, 공휴일 없는 칸도 같은 높이의 머리 영역을 확보 → 막대 높이 정렬
-    let rowHasHol=false;
+    let rowHasHol=false, maxLanes=0;
     for(let cc=0;cc<7;cc++){
       const d0=weeks[r][cc];
-      if(d0!=null&&CO_HOLIDAYS[month+'-'+d0])rowHasHol=true;
+      if(d0==null)continue;
+      if(CO_HOLIDAYS[month+'-'+d0])rowHasHol=true;
+      let n=(byDay[d0]||[]).length;
       const ex0=(r===rows-1&&extra[cc]!=null)?extra[cc]:null;
-      if(ex0!=null&&CO_HOLIDAYS[month+'-'+ex0])rowHasHol=true;
+      if(ex0!=null){ if(CO_HOLIDAYS[month+'-'+ex0])rowHasHol=true; n+=(byDay[ex0]||[]).length; }
+      if(n>maxLanes)maxLanes=n;
     }
-    const headH=numRowH+(rowHasHol?holRowH:0);
+    rowMeta.push({rowHasHol,maxLanes,headH:numRowH+(rowHasHol?holRowH:0)});
+  }
+  // 실물 달력 — 일정을 +N으로 접지 않고 모두 표시한다.
+  // 가장 빡빡한 칸(최다 일정)이 행 안에 다 들어가도록 막대 높이를 자동 축소 (모든 막대 동일 크기, 색상 그대로).
+  const BAR_MAX=c(.020), BAR_MIN=c(.0095);
+  let barH=BAR_MAX;
+  rowMeta.forEach(m=>{
+    if(m.maxLanes>0){
+      const fit=(cellH-m.headH-(m.maxLanes-1)*barGap)/m.maxLanes;
+      if(fit<barH)barH=fit;
+    }
+  });
+  barH=Math.max(BAR_MIN, Math.min(BAR_MAX, barH));
+  const barFont=Math.min(c(.0155), barH*0.82);
+  // 막대 한 줄 렌더
+  const renderBar=(ev)=>{
+    if(!ev||ev.seg==='gap') return `<div style="height:${barH}px;margin-bottom:${barGap}px"></div>`;
+    const hx=coColorHex(ev.color), tc=coTextColor(hx);
+    const rl=c(.006);
+    const tl=(ev.seg==='single'||ev.seg==='start')?rl:0;
+    const tr=(ev.seg==='single'||ev.seg==='end')?rl:0;
+    const showT=(ev.seg==='single'||ev.seg==='start');
+    return `<div style="height:${barH}px;font-size:${barFont}px;font-weight:600;padding:0 ${c(.006)}px;border-radius:${tl}px ${tr}px ${tr}px ${tl}px;color:${tc};background:${hx};line-height:${barH}px;margin-bottom:${barGap}px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box">${showT?escapeHtml(ev.title):'&nbsp;'}</div>`;
+  };
+  let trs='';
+  for(let r=0;r<rows;r++){
+    const headH=rowMeta[r].headH;
     trs+='<tr>';
     for(let cc=0;cc<7;cc++){
       const day=weeks[r][cc];
@@ -10696,40 +10731,35 @@ function coBuildMonth(month, W){
       const hol=CO_HOLIDAYS[month+'-'+day];
       const numCol=(cc===0||hol)?sun:(cc===6?sat:text);
       const lun=coLunar(y,month,day);
-      // event bars — 셀 풀폭으로 그려 기간일정이 옆 칸과 끊김없이 연결됨
+      // 이 칸의 레인들 (기간일정 정렬을 위해 빈 칸(gap)도 포함) — 모두 표시
+      let lanes=(byDay[day]||[]).slice();
+      if(ex!=null) lanes=lanes.concat(byDay[ex]||[]);
       let bars='';
-      const drawBars=(dd)=>{ (byDay[dd]||[]).forEach(ev=>{
-        if(ev.seg==='gap'){ bars+=`<div style="height:${barH}px;margin-bottom:${barGap}px"></div>`; return; }
-        const hx=coColorHex(ev.color), tc=coTextColor(hx);
-        const rl=c(.006);
-        const tl=(ev.seg==='single'||ev.seg==='start')?rl:0;
-        const tr=(ev.seg==='single'||ev.seg==='end')?rl:0;
-        const showT=(ev.seg==='single'||ev.seg==='start');
-        bars+=`<div style="height:${barH}px;font-size:${c(.0165)}px;font-weight:600;padding:0 ${c(.006)}px;border-radius:${tl}px ${tr}px ${tr}px ${tl}px;color:${tc};background:${hx};line-height:${barH}px;margin-bottom:${barGap}px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box">${showT?escapeHtml(ev.title):'&nbsp;'}</div>`;
-      }); };
-      drawBars(day); if(ex!=null) drawBars(ex);
+      lanes.forEach(ev=>bars+=renderBar(ev));
       const exHtml=ex!=null?`<span style="font-family:var(--ff-serif);font-weight:600;color:${sun};font-size:${c(.021)}px;margin-left:${c(.004)}px">/${ex}</span>`:'';
       trs+=`<td style="${topBorder};vertical-align:top;height:${cellH}px;padding:0;box-sizing:border-box">
-        <div style="height:${headH}px;overflow:hidden">
-          <div style="padding:${c(.011)}px ${c(.008)}px 0;line-height:1.05;white-space:nowrap">
-            <span style="font-family:var(--ff-serif);font-weight:500;color:${numCol};font-size:${c(.028)}px">${day}</span>${exHtml}<span style="font-size:${c(.014)}px;color:${lunC};margin-left:3px">${lun}</span>
+        <div style="height:${cellH}px;overflow:hidden;box-sizing:border-box">
+          <div style="height:${headH}px;overflow:hidden">
+            <div style="padding:${c(.006)}px ${c(.007)}px 0;line-height:1.0;white-space:nowrap">
+              <span style="font-family:var(--ff-serif);font-weight:500;color:${numCol};font-size:${dayFont}px">${day}</span>${exHtml}<span style="font-size:${c(.0135)}px;color:${lunC};margin-left:3px">${lun}</span>
+            </div>
+            ${hol?`<div style="font-size:${c(.0135)}px;color:${sun};margin:0 ${c(.007)}px;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${hol}</div>`:''}
           </div>
-          ${hol?`<div style="font-size:${c(.0145)}px;color:${sun};margin:0 ${c(.008)}px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${hol}</div>`:''}
+          <div>${bars}</div>
         </div>
-        <div style="margin-top:${c(.004)}px">${bars}</div>
       </td>`;
     }
     trs+='</tr>';
   }
 
   return coFrameOpen(W)+`
-    <div style="display:flex;align-items:flex-start;height:${headerH}px">
-      <div style="font-family:var(--ff-serif);font-weight:700;color:${accent};font-size:${c(.092)}px;line-height:.82">${month}</div>
-      <div style="flex:1;padding-left:${c(.02)}px;padding-top:${c(.012)}px">
-        <div style="font-family:var(--ff-serif);font-weight:600;color:${text};font-size:${c(.031)}px;line-height:1;letter-spacing:.5px">${CO_MONTH_EN[month]}</div>
-        <div style="color:${gold};font-size:${c(.021)}px;margin-top:${c(.011)}px;font-weight:600">${y} · ${CO_MONTH_KR[month]}</div>
+    <div style="display:flex;align-items:center;height:${headerH}px">
+      <div style="font-family:var(--ff-serif);font-weight:700;color:${accent};font-size:${c(.058)}px;line-height:.9">${month}</div>
+      <div style="flex:1;padding-left:${c(.016)}px">
+        <div style="font-family:var(--ff-serif);font-weight:600;color:${text};font-size:${c(.026)}px;line-height:1;letter-spacing:.5px">${CO_MONTH_EN[month]}</div>
+        <div style="color:${gold};font-size:${c(.018)}px;margin-top:${c(.005)}px;font-weight:600">${y} · ${CO_MONTH_KR[month]}</div>
       </div>
-      <img src="${CO_LOGO_IMG}" style="width:${c(.105)}px;height:${c(.105)}px;object-fit:contain">
+      <img src="${CO_LOGO_IMG}" style="width:${c(.078)}px;height:${c(.078)}px;object-fit:contain">
     </div>
     ${coDividerDots(c)}
     <table style="width:100%;border-collapse:collapse;table-layout:fixed">
@@ -11623,10 +11653,38 @@ function setStoreTab(tab){
   if(tab==='theme')renderStoreThemes();
   else if(tab==='color')renderStoreColors();
   else if(tab==='emoji')renderStoreEmoji();
-  else if(tab==='calorder')renderCalOrder();
+  else if(tab==='calorder'){
+    // 달력 주문 — 관리자(나)만 이용, 그 외 사용자에겐 '준비 중' 모달 안내
+    if(typeof isAdmin==='function' && !isAdmin()){ renderCalOrderPrep(); coShowPrepModal(); }
+    else renderCalOrder();
+  }
   // 컨텐츠 영역을 맨 위로 스크롤
   const body=document.getElementById('storeBody');
   if(body)body.scrollTop=0;
+}
+/* 달력 주문 '준비 중' — 관리자 외 사용자용 안내 */
+function renderCalOrderPrep(){
+  const body=document.getElementById('storeBody');
+  if(!body)return;
+  body.innerHTML=`<div style="text-align:center;padding:60px 20px;color:var(--sub)">
+    <div style="font-size:48px;margin-bottom:14px">🛠️</div>
+    <div style="font-size:17px;font-weight:800;color:var(--text);margin-bottom:8px">달력 주문 준비 중</div>
+    <div style="font-size:14px;line-height:1.6">더 좋은 모습으로 곧 찾아올게요.</div>
+  </div>`;
+}
+function coShowPrepModal(){
+  const old=document.getElementById('coPrepModal'); if(old)old.remove();
+  const el=document.createElement('div');
+  el.id='coPrepModal';
+  el.style.cssText='position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);padding:20px';
+  el.innerHTML=`<div style="background:var(--card);border-radius:18px;padding:28px 24px;max-width:300px;width:100%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.25)">
+    <div style="font-size:40px;margin-bottom:10px">🛠️</div>
+    <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:8px">준비 중이에요</div>
+    <div style="font-size:14px;color:var(--sub);line-height:1.55">달력 주문 기능은 현재 준비 중입니다.<br>곧 만나보실 수 있어요!</div>
+    <button type="button" onclick="document.getElementById('coPrepModal')?.remove()" style="margin-top:18px;width:100%;padding:12px;border:none;border-radius:12px;background:var(--accent);color:#fff;font-size:15px;font-weight:700;cursor:pointer">확인</button>
+  </div>`;
+  el.addEventListener('click',e=>{ if(e.target===el)el.remove(); });
+  document.body.appendChild(el);
 }
 
 /* 무료 체험 배너 — 짧은 안내문 (개별 unlock 시스템) */
