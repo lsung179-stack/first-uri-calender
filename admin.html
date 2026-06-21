@@ -144,6 +144,11 @@ tbody tr:hover{background:rgba(139,58,42,.025)}
   .search{flex:1;width:100%}
   .stat-grid{grid-template-columns:repeat(2,1fr);gap:10px}
   .stat-card .sc-val{font-size:24px}
+  /* 모바일 헤더 레이아웃 정리: 이메일은 아랫줄, 제목·버튼은 줄바꿈 금지 */
+  .topbar{flex-wrap:wrap;gap:8px 10px;padding:12px 14px}
+  .topbar .tb-title{font-size:16px;white-space:nowrap}
+  .topbar .tb-back,.topbar .tb-logout{white-space:nowrap;padding:6px 10px;align-self:center}
+  .topbar .tb-user{order:9;flex-basis:100%;width:100%;font-size:12px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
 }
 @media(min-width:881px){ .only-mobile{display:none!important} }
 </style>
