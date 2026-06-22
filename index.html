@@ -745,8 +745,8 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .oa-openfull-bar{padding:10px 14px 0}
 .oa-openfull{width:100%;padding:11px;border-radius:10px;background:var(--accent);color:#fff;font-size:13.5px;font-weight:700;border:none;cursor:pointer;font-family:inherit}
 .oa-openfull:active{transform:scale(.99)}
-.oa-filterbar{display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px;background:var(--bg);border-bottom:1px solid rgba(139,58,42,.1)}
-.oa-fbtn{flex:0 0 auto;white-space:nowrap;font-size:12.5px;font-weight:700;padding:6px 12px;border-radius:18px;border:1px solid rgba(139,58,42,.2);background:#fff;color:var(--sub);cursor:pointer;font-family:inherit}
+.oa-filterbar{display:flex;gap:6px;padding:10px 14px;overflow-x:auto;background:var(--bg);border-bottom:1px solid rgba(139,58,42,.1);-webkit-overflow-scrolling:touch}
+.oa-fbtn{flex-shrink:0;font-size:12.5px;font-weight:700;padding:6px 12px;border-radius:18px;border:1px solid rgba(139,58,42,.2);background:#fff;color:var(--sub);cursor:pointer;font-family:inherit}
 .oa-fbtn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .oa-list{display:flex;flex-direction:column;gap:12px;padding:4px 2px}
 .oa-card{background:#fff;border:1px solid rgba(139,58,42,.12);border-radius:12px;padding:14px}
@@ -3014,7 +3014,7 @@ body.align-right .cal-evbar{text-align:right}
     <div class="co-preview-head">
       <div class="co-preview-title">일정 선택</div>
       <span class="co-event-count" id="coEventCount">0개 선택</span>
-      <button onclick="closeEventModal()" aria-label="닫기">✕</button>
+      <button onclick="coCloseEventModal()" aria-label="닫기">✕</button>
     </div>
     <div class="co-event-roombar">
       <span class="co-event-roomchg" onclick="coChangeRoomFromModal()">⇄ 방 변경</span>
@@ -3034,7 +3034,7 @@ body.align-right .cal-evbar{text-align:right}
     </div>
     <div class="co-preview-body" id="coEventBody" style="background:var(--bg)"></div>
     <div class="co-preview-nav" style="justify-content:center">
-      <button onclick="closeEventModal()" style="min-width:160px">선택 완료</button>
+      <button onclick="coCloseEventModal()" style="min-width:160px">선택 완료</button>
     </div>
   </div>
 </div>
@@ -3117,6 +3117,15 @@ body.align-right .cal-evbar{text-align:right}
         <button class="dm-btn" data-align="left" onclick="onAlignSelect('left')">왼쪽</button>
         <button class="dm-btn" data-align="center" onclick="onAlignSelect('center')">가운데</button>
         <button class="dm-btn" data-align="right" onclick="onAlignSelect('right')">오른쪽</button>
+      </div>
+    </div>
+
+    <div class="rs-section">
+      <div class="rs-section-title">첫 화면 기본 보기</div>
+      <div style="font-size:11px;color:var(--sub);margin-bottom:8px">방에 들어갈 때 처음 보여줄 화면이에요</div>
+      <div class="dm-row" id="defaultViewRow">
+        <button class="dm-btn" data-dv="all" onclick="onDefaultViewSelect('all')">전체</button>
+        <button class="dm-btn" data-dv="me" onclick="onDefaultViewSelect('me')">내 일정</button>
       </div>
     </div>
 
@@ -4764,7 +4773,7 @@ function enterRoom(roomId){
   if(wantedMember){
     _viewingMember=wantedMember;
   }else{
-    _viewingMember=_currentUser ? _currentUser.id : 'all';
+    _viewingMember=(_currentUser && getDefaultViewPref()!=='all') ? _currentUser.id : 'all';
   }
   // 헤더 정보 채우기
   document.getElementById('calRoomName').textContent=room.name||'(이름 없음)';
@@ -10077,6 +10086,31 @@ document.addEventListener('DOMContentLoaded',()=>{
 /* ═══════════════════════════════════
    고급 설정 시트 (알림, 폰트 크기, 주 시작 요일, 일정 정렬)
    ═══════════════════════════════════ */
+/* 첫 화면 기본 보기 (전체 | 내 일정) — 방 입장 시 적용. 기본값 'me' */
+function getDefaultViewPref(){
+  try{
+    const v=localStorage.getItem('uricalv2.defaultView');
+    return (v==='all'||v==='me')?v:'me';
+  }catch(e){ return 'me'; }
+}
+function setDefaultViewPref(value){
+  const v=(value==='all')?'all':'me';
+  try{ localStorage.setItem('uricalv2.defaultView', v); }catch(e){}
+}
+function onDefaultViewSelect(value){
+  setDefaultViewPref(value);
+  syncDefaultViewButtons();
+}
+function syncDefaultViewButtons(){
+  const pref=getDefaultViewPref();
+  const row=document.getElementById('defaultViewRow');
+  if(!row)return;
+  row.querySelectorAll('.dm-btn').forEach(b=>{
+    if(b.dataset.dv===pref)b.classList.add('on');
+    else b.classList.remove('on');
+  });
+}
+
 function openAdvSettings(){
   closeMainModals();
   document.getElementById('advCard').classList.add('on');
@@ -10086,6 +10120,7 @@ function openAdvSettings(){
   try{ syncWeekStartButtons(); }catch(_){}
   try{ syncAlignButtons(); }catch(_){}
   try{ syncFontFamilyButtons(); }catch(_){}
+  try{ syncDefaultViewButtons(); }catch(_){}
 }
 function closeAdvSettings(){
   document.getElementById('advCard').classList.remove('on');
@@ -10281,7 +10316,7 @@ function renderCalOrder(){
   html+=`
     <div class="co-hero">
       <div class="co-hero-badge">NEW · 한정 굿즈</div>
-      <div class="co-hero-title">${coSelectedYear()||_coYear} 우리 캘린더 만들기</div>
+      <div class="co-hero-title">2027 우리 캘린더 만들기</div>
       <div class="co-hero-sub">내가 등록한 일정이 그대로 인쇄되는<br>세상에 하나뿐인 빈티지 탁상달력</div>
     </div>`;
 
@@ -10299,7 +10334,7 @@ function renderCalOrder(){
         <span class="co-room-cur">${escapeHtml(_coRoom.name||'우리 방')}</span>
         <span class="co-room-cnt">${cnt}개 선택</span>
       </div>
-      <div class="co-actions"><button class="co-btn co-btn-preview" onclick="openEventModal()">일정 선택하기 (${cnt}개)</button></div>`;
+      <div class="co-actions"><button class="co-btn co-btn-preview" onclick="coOpenEventModal()">일정 선택하기 (${cnt}개)</button></div>`;
   }
   html+=`</div>`;
 
@@ -10371,7 +10406,7 @@ async function coOpenRoom(roomId){
     _coMonthView=(new Date().getMonth()+1);
   }catch(e){ console.error(e); toast('일정 불러오기 실패'); _coRoomEvents=[]; }
   // 일정 로드되면 모달 자동 오픈
-  openEventModal();
+  coOpenEventModal();
   renderCalOrder();
 }
 
@@ -10428,18 +10463,18 @@ function coGroupEvents(raw){
 }
 
 /* ───── 일정 선택 모달 (월별) ───── */
-function openEventModal(){
+function coOpenEventModal(){
   if(!_coRoom){ openRoomModal(); return; }
   renderEventModalBody();
   document.getElementById('coEventModal').classList.add('on');
 }
-function closeEventModal(){
+function coCloseEventModal(){
   document.getElementById('coEventModal').classList.remove('on');
   renderCalOrder();
 }
 function coMonthNav(dir){ _coMonthView=Math.max(1,Math.min(12,_coMonthView+dir)); renderEventModalBody(); }
 function coYearNav(dir){ _coYear=Math.max(2024,Math.min(2030,_coYear+dir)); renderEventModalBody(); }
-function coChangeRoomFromModal(){ closeEventModal(); openRoomModal(); }
+function coChangeRoomFromModal(){ coCloseEventModal(); openRoomModal(); }
 
 function coFmtRange(ev){
   if(!ev.isRange)return `${ev.month}월 ${ev.day}일`;
@@ -10497,46 +10532,11 @@ function renderEventModalBody(){
   }
   body.innerHTML=html;
 }
-const CO_MAX_PER_DAY=2;   // 실물 달력 — 하루 최대 2개
-// 특정 날짜(ymd)에 이미 선택된 일정 수 (기간·매년 포함, exceptKey 제외)
-function coCountOnDay(ymd, exceptKey){
-  const t=coParseYmd(ymd);
-  let n=0;
-  for(const k in _coSelectedEvents){
-    if(k===exceptKey)continue;
-    const e=_coSelectedEvents[k];
-    if(e.yearly){
-      const p=coParseYmd(e.startYmd);
-      if(p.m===t.m && p.d===t.d) n++;
-    }else if(e.startYmd<=ymd && ymd<=e.endYmd){ n++; }
-  }
-  return n;
-}
 function coToggleEvent(key){
   const ev=_coRoomEvents.find(e=>e.key===key);
   if(!ev)return;
-  if(_coSelectedEvents[key]){
-    delete _coSelectedEvents[key];
-  }else{
-    // 단일 연도만 — 이미 담은 일정과 다른 해면 차단하고 안내 (표지·내지 연도가 하나로 정해져야 함)
-    if(!ev.yearly){
-      const selYr=coSelectedYear();
-      const evYr=+String(ev.startYmd).slice(0,4);
-      if(selYr && evYr!==selYr){
-        toast(`${selYr}년 일정을 담는 중이에요. 한 해의 일정만 넣을 수 있어요`);
-        return;
-      }
-    }
-    // 하루 최대 2개 — 추가하려는 일정의 기간 중 한 날이라도 이미 2개면 차단하고 안내
-    let days=[];
-    if(ev.yearly){ days=[ev.startYmd]; }
-    else { let cur=ev.startYmd; while(cur<=ev.endYmd){ days.push(cur); if(cur===ev.endYmd)break; cur=coAddDay(cur,1); } }
-    if(days.some(d=>coCountOnDay(d,key)>=CO_MAX_PER_DAY)){
-      toast('하루에 일정은 최대 2개까지 넣을 수 있어요');
-      return;
-    }
-    _coSelectedEvents[key]={startYmd:ev.startYmd,endYmd:ev.endYmd,title:ev.title,color:ev.color,yearly:ev.yearly};
-  }
+  if(_coSelectedEvents[key])delete _coSelectedEvents[key];
+  else _coSelectedEvents[key]={startYmd:ev.startYmd,endYmd:ev.endYmd,title:ev.title,color:ev.color,yearly:ev.yearly};
   renderEventModalBody();
   // 헤더 카운트 갱신
   const cntEl=document.getElementById('coEventCount');
@@ -10544,25 +10544,8 @@ function coToggleEvent(key){
 }
 function coSelectCover(key){ _coCover=key; renderCalOrder(); }
 
-// 선택한 일정들의 대표 연도(가장 많은 연도). 매년 반복은 제외. 없으면 null
-function coSelectedYear(){
-  const yrs={};
-  for(const k in _coSelectedEvents){
-    const e=_coSelectedEvents[k];
-    if(e.yearly)continue;
-    const yy=+String(e.startYmd).slice(0,4);
-    if(yy) yrs[yy]=(yrs[yy]||0)+1;
-  }
-  let best=null,bestN=0;
-  for(const yy in yrs){ if(yrs[yy]>bestN){bestN=yrs[yy];best=+yy;} }
-  return best;
-}
-// 표지·내지 연도를 선택한 일정 연도에 맞춘다 (미리보기·PDF 생성 직전 호출)
-function coSyncYear(){ const yy=coSelectedYear(); if(yy)_coYear=yy; }
-
 /* ───── 미리보기 모달 (앞면/뒷면) ───── */
 function openCalPreview(){
-  coSyncYear();
   _coPreviewPage=0;
   const nav=document.querySelector('#coPreviewModal .co-preview-nav'); if(nav)nav.style.display='';
   document.getElementById('coPreviewModal').classList.add('on');
@@ -10582,7 +10565,8 @@ function renderCalPreviewPage(){
   const stageW=Math.max(240,(body.clientWidth||320)-32);
   let inner, label;
   if(_coPreviewPage===0){
-    inner=`<div style="border-radius:6px;overflow:hidden">${coBuildCoverPage(stageW)}</div>`;
+    const cv=CO_COVERS.find(c=>c.key===_coCover);
+    inner=`<img src="${cv.img}" style="width:${stageW}px;display:block;border-radius:6px" alt="표지">`;
     label='표지';
   }else if(_coPreviewPage<=12){
     inner=coBuildMonth(_coPreviewPage, stageW);
@@ -10661,25 +10645,23 @@ function coFrameOpen(W){
   const accent='#8b3a2a';
   const H=W*154/214;
   const ring=W*10/214;            // 상단 링 여백(10mm)
-  const topPad=ring+c(.008);
+  const topPad=ring+c(.012);
   const sidePad=c(.055);
-  const botPad=c(.018);
+  const botPad=c(.022);
   const inset=c(.020);            // 모서리 마크 안쪽 여백
   const arm=c(.020);              // 마크 팔 길이
   const th=Math.max(1,c(.0016));  // 마크 두께
   const mk=(v,h,bv,bh)=>`<div style="position:absolute;${v};${h};width:${arm}px;height:${arm}px;${bv};${bh}"></div>`;
-  // 상단 마크는 10mm 링 여백 선까지 함께 내려, 달력 본문(헤더) 바로 위를 감싸도록 한다
-  const topMk=ring;
   const corners=
-    mk(`top:${topMk}px`,`left:${inset}px`,`border-top:${th}px solid ${accent}`,`border-left:${th}px solid ${accent}`)+
-    mk(`top:${topMk}px`,`right:${inset}px`,`border-top:${th}px solid ${accent}`,`border-right:${th}px solid ${accent}`)+
+    mk(`top:${inset}px`,`left:${inset}px`,`border-top:${th}px solid ${accent}`,`border-left:${th}px solid ${accent}`)+
+    mk(`top:${inset}px`,`right:${inset}px`,`border-top:${th}px solid ${accent}`,`border-right:${th}px solid ${accent}`)+
     mk(`bottom:${inset}px`,`left:${inset}px`,`border-bottom:${th}px solid ${accent}`,`border-left:${th}px solid ${accent}`)+
     mk(`bottom:${inset}px`,`right:${inset}px`,`border-bottom:${th}px solid ${accent}`,`border-right:${th}px solid ${accent}`);
   return `<div style="width:${W}px;height:${H}px;background:#f3e6cf;position:relative;box-sizing:border-box;overflow:hidden;font-family:var(--ff-serif);padding:${topPad}px ${sidePad}px ${botPad}px">${corners}`;
 }
 function coDividerDots(c){
   const gold='#b08a50'; const d=Math.max(4,c(.008));
-  return `<div style="display:flex;align-items:center;margin:${c(.010)}px ${c(.004)}px ${c(.009)}px">
+  return `<div style="display:flex;align-items:center;margin:${c(.018)}px ${c(.004)}px ${c(.014)}px">
     <span style="width:${d}px;height:${d}px;border-radius:50%;background:${gold};flex:none"></span>
     <span style="flex:1;height:2px;background:${gold}"></span>
     <span style="width:${d}px;height:${d}px;border-radius:50%;background:${gold};flex:none"></span>
@@ -10712,16 +10694,13 @@ function coBuildMonth(month, W){
 
   // geometry (상단 10mm 링 여백 반영)
   const ring=W*10/214;
-  const topPad=ring+c(.008);
-  const botPad=c(.018);
+  const topPad=ring+c(.012);
+  const botPad=c(.022);
   const contentH=H-topPad-botPad;
-  const headerH=c(.066);          // 상단 제목 영역 (세로 축소)
-  const dividerH=c(.022);
-  const weekdayH=c(.036);
-  const gridH=contentH-headerH-dividerH-weekdayH;
-  const cellH=Math.max(c(.06), gridH/rows);   // 모든 주(행) 동일 높이로 고정
-  const barGap=c(.0038);
-  const dayFont=c(.032);          // 날짜 숫자 (확대)
+  const headerH=c(.10);
+  const gridH=contentH-headerH-c(.034)-c(.052);   // header + divider + weekday 제외
+  const cellH=Math.max(c(.06), gridH/rows);
+  const barH=c(.024), barGap=c(.004);
 
   // weekday header
   const wd=['일','월','화','수','목','금','토'];
@@ -10729,37 +10708,8 @@ function coBuildMonth(month, W){
   wd.forEach((w,i)=>{ const cl=i===0?sun:(i===6?sat:'#6f5a48'); thRow+=`<th style="width:${100/7}%;text-align:center;font-family:var(--ff-serif);font-weight:700;color:${cl};font-size:${c(.023)}px;padding-bottom:${c(.012)}px">${w}</th>`; });
 
   // grid rows
-  // 날짜 숫자/공휴일 영역 높이 — 같은 주(행)에서 통일해야 기간 막대가 아래로 밀리지 않고 끊김없이 연결됨
-  const numRowH=c(.006)+dayFont*1.02;        // 날짜 숫자 한 줄
-  const holRowH=c(.0145)*1.2+c(.004);        // 공휴일 한 줄 (글자 아래가 잘리지 않게 여유)
-  const MAX_BARS=2;                          // 실물 달력 — 하루 최대 2개만 표시
-  const barH=c(.016), barFont=Math.min(c(.0155), barH*0.85);  // 2개 기준 적당한 크기 + 아래 여백 확보
-
-  // 각 행의 공휴일 유무 → 머리 높이 (같은 주는 동일하게 맞춰 막대 정렬)
-  const rowMeta=[];
-  for(let r=0;r<rows;r++){
-    let rowHasHol=false;
-    for(let cc=0;cc<7;cc++){
-      const d0=weeks[r][cc];
-      if(d0!=null&&CO_HOLIDAYS[month+'-'+d0])rowHasHol=true;
-      const ex0=(r===rows-1&&extra[cc]!=null)?extra[cc]:null;
-      if(ex0!=null&&CO_HOLIDAYS[month+'-'+ex0])rowHasHol=true;
-    }
-    rowMeta.push({headH:numRowH+(rowHasHol?holRowH:0)});
-  }
-  // 막대 한 줄 렌더
-  const renderBar=(ev)=>{
-    if(!ev||ev.seg==='gap') return `<div style="height:${barH}px;margin-bottom:${barGap}px"></div>`;
-    const hx=coColorHex(ev.color), tc=coTextColor(hx);
-    const rl=c(.006);
-    const tl=(ev.seg==='single'||ev.seg==='start')?rl:0;
-    const tr=(ev.seg==='single'||ev.seg==='end')?rl:0;
-    const showT=(ev.seg==='single'||ev.seg==='start');
-    return `<div style="height:${barH}px;font-size:${barFont}px;font-weight:600;padding:0 ${c(.006)}px;border-radius:${tl}px ${tr}px ${tr}px ${tl}px;color:${tc};background:${hx};line-height:${barH}px;margin-bottom:${barGap}px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box">${showT?escapeHtml(ev.title):'&nbsp;'}</div>`;
-  };
   let trs='';
   for(let r=0;r<rows;r++){
-    const headH=rowMeta[r].headH;
     trs+='<tr>';
     for(let cc=0;cc<7;cc++){
       const day=weeks[r][cc];
@@ -10769,36 +10719,38 @@ function coBuildMonth(month, W){
       const hol=CO_HOLIDAYS[month+'-'+day];
       const numCol=(cc===0||hol)?sun:(cc===6?sat:text);
       const lun=coLunar(y,month,day);
-      // 이 칸의 레인들 — 하루 최대 2개만 표시 (선택 단계에서 2개로 제한, 여기선 안전망)
-      let lanes=(byDay[day]||[]).slice();
-      if(ex!=null) lanes=lanes.concat(byDay[ex]||[]);
-      if(lanes.length>MAX_BARS) lanes=lanes.slice(0,MAX_BARS);
+      // event bars — 셀 풀폭으로 그려 기간일정이 옆 칸과 끊김없이 연결됨
       let bars='';
-      lanes.forEach(ev=>bars+=renderBar(ev));
+      const drawBars=(dd)=>{ (byDay[dd]||[]).forEach(ev=>{
+        if(ev.seg==='gap'){ bars+=`<div style="height:${barH}px;margin-bottom:${barGap}px"></div>`; return; }
+        const hx=coColorHex(ev.color), tc=coTextColor(hx);
+        const rl=c(.006);
+        const tl=(ev.seg==='single'||ev.seg==='start')?rl:0;
+        const tr=(ev.seg==='single'||ev.seg==='end')?rl:0;
+        const showT=(ev.seg==='single'||ev.seg==='start');
+        bars+=`<div style="height:${barH}px;font-size:${c(.0165)}px;font-weight:600;padding:0 ${c(.006)}px;border-radius:${tl}px ${tr}px ${tr}px ${tl}px;color:${tc};background:${hx};line-height:${barH}px;margin-bottom:${barGap}px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box">${showT?escapeHtml(ev.title):'&nbsp;'}</div>`;
+      }); };
+      drawBars(day); if(ex!=null) drawBars(ex);
       const exHtml=ex!=null?`<span style="font-family:var(--ff-serif);font-weight:600;color:${sun};font-size:${c(.021)}px;margin-left:${c(.004)}px">/${ex}</span>`:'';
       trs+=`<td style="${topBorder};vertical-align:top;height:${cellH}px;padding:0;box-sizing:border-box">
-        <div style="height:${cellH}px;overflow:hidden;box-sizing:border-box">
-          <div style="height:${headH}px;overflow:hidden">
-            <div style="padding:${c(.006)}px ${c(.007)}px 0;line-height:1.0;white-space:nowrap">
-              <span style="font-family:var(--ff-serif);font-weight:500;color:${numCol};font-size:${dayFont}px">${day}</span>${exHtml}<span style="font-size:${c(.0135)}px;color:${lunC};margin-left:3px">${lun}</span>
-            </div>
-            ${hol?`<div style="font-size:${c(.0135)}px;color:${sun};margin:${c(.0015)}px ${c(.007)}px 0;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${hol}</div>`:''}
-          </div>
-          <div style="padding-top:${c(.003)}px">${bars}</div>
+        <div style="padding:${c(.011)}px ${c(.008)}px 0;line-height:1.05;white-space:nowrap">
+          <span style="font-family:var(--ff-serif);font-weight:500;color:${numCol};font-size:${c(.028)}px">${day}</span>${exHtml}<span style="font-size:${c(.014)}px;color:${lunC};margin-left:3px">${lun}</span>
         </div>
+        ${hol?`<div style="font-size:${c(.0145)}px;color:${sun};margin:1px ${c(.008)}px 0;line-height:1.05">${hol}</div>`:''}
+        <div style="margin-top:${c(.005)}px">${bars}</div>
       </td>`;
     }
     trs+='</tr>';
   }
 
   return coFrameOpen(W)+`
-    <div style="display:flex;align-items:center;height:${headerH}px">
-      <div style="font-family:var(--ff-serif);font-weight:700;color:${accent};font-size:${c(.058)}px;line-height:.9">${month}</div>
-      <div style="flex:1;padding-left:${c(.016)}px">
-        <div style="font-family:var(--ff-serif);font-weight:600;color:${text};font-size:${c(.026)}px;line-height:1;letter-spacing:.5px">${CO_MONTH_EN[month]}</div>
-        <div style="color:${gold};font-size:${c(.018)}px;margin-top:${c(.005)}px;font-weight:600">${y} · ${CO_MONTH_KR[month]}</div>
+    <div style="display:flex;align-items:flex-start;height:${headerH}px">
+      <div style="font-family:var(--ff-serif);font-weight:700;color:${accent};font-size:${c(.092)}px;line-height:.82">${month}</div>
+      <div style="flex:1;padding-left:${c(.02)}px;padding-top:${c(.012)}px">
+        <div style="font-family:var(--ff-serif);font-weight:600;color:${text};font-size:${c(.031)}px;line-height:1;letter-spacing:.5px">${CO_MONTH_EN[month]}</div>
+        <div style="color:${gold};font-size:${c(.021)}px;margin-top:${c(.011)}px;font-weight:600">${y} · ${CO_MONTH_KR[month]}</div>
       </div>
-      <img src="${CO_LOGO_IMG}" style="width:${c(.078)}px;height:${c(.078)}px;object-fit:contain">
+      <img src="${CO_LOGO_IMG}" style="width:${c(.105)}px;height:${c(.105)}px;object-fit:contain">
     </div>
     ${coDividerDots(c)}
     <table style="width:100%;border-collapse:collapse;table-layout:fixed">
@@ -10871,7 +10823,7 @@ function openCalOrderForm(){
   document.querySelector('#coPreviewModal .co-preview-nav').style.display='none';
   body.innerHTML=`
     <div class="co-form">
-      <div class="co-form-title">${coSelectedYear()||_coYear} 우리 캘린더 주문</div>
+      <div class="co-form-title">2027 우리 캘린더 주문</div>
       <div class="co-summary" style="margin-left:0">
         선택 일정 <b>${cnt}개</b> · 표지 <b>${coverName}</b><br>
         탁상 달력 270×180mm · 표지 + 12개월<br>
@@ -10955,7 +10907,6 @@ async function coSubmitOrder(){
 
 /* 레드프린팅 규격 PDF 생성 — 214×154mm, 26페이지(표지+12개월 앞/뒤+뒤표지) */
 async function coGeneratePDF(prog){
-  coSyncYear();   // 선택한 일정 연도에 표지·내지를 맞춤
   const {jsPDF}=window.jspdf;
   // 214 x 154 mm 가로형 탁상 달력 (레드프린팅 규격, 블리드 포함)
   const PW=214, PH=154;
@@ -10991,19 +10942,8 @@ async function coGeneratePDF(prog){
 function coBuildCoverPage(W){
   const cv=CO_COVERS.find(c=>c.key===_coCover)||CO_COVERS[0];
   const H=Math.round(W*154/214);
-  // 표지의 연도는 이미지에 인쇄돼 있어(기본 2027) 코드로 못 바꾼다.
-  // 선택 연도가 2027이 아니면, 같은 크림색(#f2e6ce) 판으로 상단 연도를 덮고 올바른 연도를 다시 그린다.
-  const coverBg='#f2e6ce';
-  let yearOverlay='';
-  if(_coYear!==CO_YEAR){
-    const yfs=Math.round(H*0.125), lsp=Math.round(W*0.018);
-    yearOverlay=`<div style="position:absolute;left:18%;top:3.5%;width:64%;height:25.5%;background:${coverBg};display:flex;align-items:center;justify-content:center">
-      <span style="font-family:var(--ff-serif);font-weight:800;color:#8b3a2a;font-size:${yfs}px;letter-spacing:${lsp}px;line-height:1;padding-left:${lsp}px">${_coYear}</span>
-    </div>`;
-  }
-  return `<div style="position:relative;width:${W}px;height:${H}px;overflow:hidden;background:${coverBg}">
+  return `<div style="width:${W}px;height:${H}px;overflow:hidden;background:#f3e6cf;display:flex;align-items:center;justify-content:center">
     <img src="${cv.img}" style="width:100%;height:100%;object-fit:cover" crossorigin="anonymous">
-    ${yearOverlay}
   </div>`;
 }
 
@@ -11704,38 +11644,10 @@ function setStoreTab(tab){
   if(tab==='theme')renderStoreThemes();
   else if(tab==='color')renderStoreColors();
   else if(tab==='emoji')renderStoreEmoji();
-  else if(tab==='calorder'){
-    // 달력 주문 — 관리자(나)만 이용, 그 외 사용자에겐 '준비 중' 모달 안내
-    if(typeof isAdmin==='function' && !isAdmin()){ renderCalOrderPrep(); coShowPrepModal(); }
-    else renderCalOrder();
-  }
+  else if(tab==='calorder')renderCalOrder();
   // 컨텐츠 영역을 맨 위로 스크롤
   const body=document.getElementById('storeBody');
   if(body)body.scrollTop=0;
-}
-/* 달력 주문 '준비 중' — 관리자 외 사용자용 안내 */
-function renderCalOrderPrep(){
-  const body=document.getElementById('storeBody');
-  if(!body)return;
-  body.innerHTML=`<div style="text-align:center;padding:60px 20px;color:var(--sub)">
-    <div style="font-size:48px;margin-bottom:14px">🛠️</div>
-    <div style="font-size:17px;font-weight:800;color:var(--text);margin-bottom:8px">달력 주문 준비 중</div>
-    <div style="font-size:14px;line-height:1.6">더 좋은 모습으로 곧 찾아올게요.</div>
-  </div>`;
-}
-function coShowPrepModal(){
-  const old=document.getElementById('coPrepModal'); if(old)old.remove();
-  const el=document.createElement('div');
-  el.id='coPrepModal';
-  el.style.cssText='position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);padding:20px';
-  el.innerHTML=`<div style="background:var(--card);border-radius:18px;padding:28px 24px;max-width:300px;width:100%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.25)">
-    <div style="font-size:40px;margin-bottom:10px">🛠️</div>
-    <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:8px">준비 중이에요</div>
-    <div style="font-size:14px;color:var(--sub);line-height:1.55">달력 주문 기능은 현재 준비 중입니다.<br>곧 만나보실 수 있어요!</div>
-    <button type="button" onclick="document.getElementById('coPrepModal')?.remove()" style="margin-top:18px;width:100%;padding:12px;border:none;border-radius:12px;background:var(--accent);color:#fff;font-size:15px;font-weight:700;cursor:pointer">확인</button>
-  </div>`;
-  el.addEventListener('click',e=>{ if(e.target===el)el.remove(); });
-  document.body.appendChild(el);
 }
 
 /* 무료 체험 배너 — 짧은 안내문 (개별 unlock 시스템) */
