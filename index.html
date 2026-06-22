@@ -2400,18 +2400,6 @@ body.align-right .cal-evbar{text-align:right}
         <button type="button" class="dm-btn" data-rep="yearly" onclick="onEvRepeatSelect('yearly')">매년</button>
       </div>
     </div>
-    <div class="ev-form-row" id="evWeekdayRow" style="display:none">
-      <div class="ev-label" id="evWeekdayLabel">반복 요일</div>
-      <div class="ev-weekday-pick" id="evWeekdayPick">
-        <button type="button" class="ev-wd" data-dow="0" onclick="toggleEvWeekday(0)">일</button>
-        <button type="button" class="ev-wd" data-dow="1" onclick="toggleEvWeekday(1)">월</button>
-        <button type="button" class="ev-wd" data-dow="2" onclick="toggleEvWeekday(2)">화</button>
-        <button type="button" class="ev-wd" data-dow="3" onclick="toggleEvWeekday(3)">수</button>
-        <button type="button" class="ev-wd" data-dow="4" onclick="toggleEvWeekday(4)">목</button>
-        <button type="button" class="ev-wd" data-dow="5" onclick="toggleEvWeekday(5)">금</button>
-        <button type="button" class="ev-wd" data-dow="6" onclick="toggleEvWeekday(6)">토</button>
-      </div>
-    </div>
     <!-- 다른 방에도 추가 (참여 방 ≥ 2 + 단독 일정 + 신규일 때만 표시) -->
     <div class="ev-form-row ev-yearly-row" id="evMultiRoomRow" style="display:none">
       <div class="ev-label">다른 방에도 추가
@@ -7058,33 +7046,27 @@ function selectColor(key){
   renderColorPager();
 }
 /* ── 반복 설정 (안 함 / 매주 / 매월 / 매년) ── */
+/* 매주는 일정 날짜의 요일로 자동 반복 (별도 요일 선택 없음) */
 let _evRepeatType='none';
-let _evWeekdays=new Set();
 function onEvRepeatSelect(t){
   _evRepeatType=(t==='weekly'||t==='monthly'||t==='yearly')?t:'none';
-  syncEvRepeatUI();
-}
-function toggleEvWeekday(d){
-  if(_evWeekdays.has(d))_evWeekdays.delete(d); else _evWeekdays.add(d);
   syncEvRepeatUI();
 }
 function syncEvRepeatUI(){
   document.querySelectorAll('#evRepeatSeg .dm-btn').forEach(b=>{
     b.classList.toggle('on', b.dataset.rep===_evRepeatType);
   });
-  const wdRow=document.getElementById('evWeekdayRow');
-  if(wdRow)wdRow.style.display=(_evRepeatType==='weekly')?'':'none';
-  document.querySelectorAll('#evWeekdayPick .ev-wd').forEach(b=>{
-    b.classList.toggle('on', _evWeekdays.has(parseInt(b.dataset.dow,10)));
-  });
   const yc=document.getElementById('evYearly');
   if(yc)yc.checked=(_evRepeatType==='yearly');
 }
-function resetEvRepeat(){ _evRepeatType='none'; _evWeekdays=new Set(); syncEvRepeatUI(); }
-function getEvRepeatPayload(){
+function resetEvRepeat(){ _evRepeatType='none'; syncEvRepeatUI(); }
+function getEvRepeatPayload(baseDate){
   const rt=_evRepeatType||'none';
-  const wd=(rt==='weekly'&&_evWeekdays.size)?Array.from(_evWeekdays).sort((a,b)=>a-b):null;
-  // 매주인데 요일 미선택이면 반복 안 함 처리 (영원히 안 뜨는 일정 방지)
+  let wd=null;
+  if(rt==='weekly'){
+    // 일정 날짜의 요일로 매주 반복
+    try{ const d=parseDateKey(baseDate); if(d&&!isNaN(d.getTime()))wd=[d.getDay()]; }catch(e){}
+  }
   const finalType=(rt==='weekly'&&!wd)?'none':rt;
   return { repeat_type: finalType, repeat_weekdays: wd, recurring_yearly: finalType==='yearly' };
 }
@@ -7183,7 +7165,6 @@ function openEditEvent(eventId){
   document.getElementById('evTitle').value=ev.title||'';
   document.getElementById('evTime').value=ev.time||'';
   _evRepeatType=ev.repeat_type||(ev.recurring_yearly?'yearly':'none');
-  _evWeekdays=new Set(Array.isArray(ev.repeat_weekdays)?ev.repeat_weekdays:[]);
   syncEvRepeatUI();
   // 메모/사진 — 기존 값 로드
   const memoEl=document.getElementById('evMemo');
@@ -7600,7 +7581,7 @@ async function saveEvent(){
   if(title.length>40){toast('제목은 40자 이내로');return}
   const time=document.getElementById('evTime').value||null;
   const color=_selectedColor||'c-vintage';
-  const _rep=getEvRepeatPayload();
+  const _rep=getEvRepeatPayload(_dayDate||_selectedDate);
   const recurringYearly=_rep.recurring_yearly;
   const repeatType=_rep.repeat_type;
   const repeatWeekdays=_rep.repeat_weekdays;
@@ -8788,7 +8769,7 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
   const ev=_editingEvent;
   const wasShared=!!ev.shared_id;
   const isNowShared=_selectedTarget==='all'&&_selectedMembers.length>=2;
-  const _rep=getEvRepeatPayload();
+  const _rep=getEvRepeatPayload(_dayDate||_selectedDate);
   const ry=_rep.recurring_yearly;
   const repeatType=_rep.repeat_type;
   const repeatWeekdays=_rep.repeat_weekdays;
