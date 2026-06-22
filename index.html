@@ -10968,26 +10968,16 @@ function coFrameDims(W){
   const H=W*154/214;
   const ring=W*10/214;                  // 트윈링 제본 상단 여백(10mm)
   const sidePad=c(.05);                 // 좌우 여백
-  const botPad=ring;                    // 하단 여백(10mm)
+  const botPad=c(.020);                 // 하단 여백(크롭마크 제거로 축소 → 칸 확대)
   const contentH=H-ring-botPad;
   const contentW=W-2*sidePad;
   return {H,ring,sidePad,botPad,contentH,contentW};
 }
-/* 페이지 프레임 — 레드프린팅 214×154mm. 상단 10mm 트윈링 여백 + 네 모서리 크롭마크(┌┐└┘). 테두리 박스 없음 */
+/* 페이지 프레임 — 레드프린팅 214×154mm. 상단 10mm 트윈링 여백. 크롭마크/테두리 없음 */
 function coFrameOpen(W){
   const c=v=>v*W;
-  const accent='#8b3a2a';
   const D=coFrameDims(W);
-  const inset=D.ring*0.5;          // 크롭마크 위치(상단 약 5mm)
-  const arm=c(.018);              // 마크 팔 길이
-  const th=Math.max(1,c(.0016));  // 마크 두께
-  const mk=(v,h,bv,bh)=>`<div style="position:absolute;${v};${h};width:${arm}px;height:${arm}px;${bv};${bh}"></div>`;
-  const corners=
-    mk(`top:${inset}px`,`left:${inset}px`,`border-top:${th}px solid ${accent}`,`border-left:${th}px solid ${accent}`)+
-    mk(`top:${inset}px`,`right:${inset}px`,`border-top:${th}px solid ${accent}`,`border-right:${th}px solid ${accent}`)+
-    mk(`bottom:${inset}px`,`left:${inset}px`,`border-bottom:${th}px solid ${accent}`,`border-left:${th}px solid ${accent}`)+
-    mk(`bottom:${inset}px`,`right:${inset}px`,`border-bottom:${th}px solid ${accent}`,`border-right:${th}px solid ${accent}`);
-  return `<div style="width:${W}px;height:${D.H}px;background:#f3e6cf;position:relative;box-sizing:border-box;overflow:hidden;font-family:var(--ff-serif);padding:${D.ring}px ${D.sidePad}px ${D.botPad}px">${corners}`;
+  return `<div style="width:${W}px;height:${D.H}px;background:#f3e6cf;position:relative;box-sizing:border-box;overflow:hidden;font-family:var(--ff-serif);padding:${D.ring}px ${D.sidePad}px ${D.botPad}px">`;
 }
 function coDividerDots(c){
   const gold='#b08a50'; const d=Math.max(4,c(.008));
@@ -11026,19 +11016,19 @@ function coBuildMonth(month, W){
   const D=coFrameDims(W);
   const headPad=c(.0145);  // 큰 숫자 line-height(.82) 보정 → 상단 여백 10mm
   const contentH=D.contentH-headPad;
-  const headerH=c(.10);
-  const gridH=contentH-headerH-c(.034)-c(.052);   // header + divider + weekday 제외
+  const headerH=c(.078);
+  const gridH=contentH-headerH-c(.030)-c(.046);   // header + divider + weekday 제외
   const cellH=gridH/rows;                          // 모든 날짜 칸 동일 높이
-  const dateHeaderH=c(.050);                       // 날짜+공휴일 영역(고정)
+  const dateHeaderH=c(.056);                       // 날짜+공휴일 영역 — 일정바와 분리되게 충분히 확보
   const barGap=Math.max(2,c(.003));
   const barH=Math.max(c(.012),(cellH-dateHeaderH-barGap*2)/2);  // 칸 안에 일정 2개가 딱 들어가게
-  const barFont=Math.min(c(.0165), barH*0.62);
-  const dayFont=c(.026), holFont=c(.013);
+  const barFont=Math.min(c(.018), barH*0.64);
+  const dayFont=c(.030), holFont=c(.013);
 
   // weekday header
   const wd=['일','월','화','수','목','금','토'];
   let thRow='';
-  wd.forEach((w,i)=>{ const cl=i===0?sun:(i===6?sat:'#6f5a48'); thRow+=`<th style="width:${100/7}%;text-align:center;font-family:var(--ff-serif);font-weight:700;color:${cl};font-size:${c(.023)}px;padding-bottom:${c(.012)}px">${w}</th>`; });
+  wd.forEach((w,i)=>{ const cl=i===0?sun:(i===6?sat:'#6f5a48'); thRow+=`<th style="width:${100/7}%;text-align:center;font-family:var(--ff-serif);font-weight:700;color:${cl};font-size:${c(.023)}px;padding-bottom:${c(.009)}px">${w}</th>`; });
 
   // grid rows
   let trs='';
@@ -11069,7 +11059,7 @@ function coBuildMonth(month, W){
       trs+=`<td style="${topBorder};vertical-align:top;height:${cellH}px;padding:0;box-sizing:border-box">
         <div style="height:${cellH}px;overflow:hidden;box-sizing:border-box">
           <div style="height:${dateHeaderH}px;overflow:hidden;box-sizing:border-box">
-            <div style="padding:${c(.009)}px ${c(.008)}px 0;line-height:1.05;white-space:nowrap">
+            <div style="padding:${c(.007)}px ${c(.008)}px 0;line-height:1.05;white-space:nowrap">
               <span style="font-family:var(--ff-serif);font-weight:500;color:${numCol};font-size:${dayFont}px">${day}</span>${exHtml}<span style="font-size:${c(.013)}px;color:${lunC};margin-left:3px">${lun}</span>
             </div>
             ${hol?`<div style="height:${c(.015)}px;margin-top:1px;font-size:${holFont}px;color:${sun};line-height:${c(.015)}px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${hol}</div>`:`<div style="height:${c(.015)}px;margin-top:1px"></div>`}
@@ -11083,12 +11073,12 @@ function coBuildMonth(month, W){
 
   return coFrameOpen(W)+`
     <div style="display:flex;align-items:flex-start;height:${headerH}px;margin-top:${headPad}px">
-      <div style="font-family:var(--ff-serif);font-weight:700;color:${accent};font-size:${c(.092)}px;line-height:.82">${month}</div>
-      <div style="flex:1;padding-left:${c(.02)}px;padding-top:${c(.012)}px">
-        <div style="font-family:var(--ff-serif);font-weight:600;color:${text};font-size:${c(.031)}px;line-height:1;letter-spacing:.5px">${CO_MONTH_EN[month]}</div>
-        <div style="color:${gold};font-size:${c(.021)}px;margin-top:${c(.011)}px;font-weight:600">${y} · ${CO_MONTH_KR[month]}</div>
+      <div style="font-family:var(--ff-serif);font-weight:700;color:${accent};font-size:${c(.072)}px;line-height:.82">${month}</div>
+      <div style="flex:1;padding-left:${c(.018)}px;padding-top:${c(.010)}px">
+        <div style="font-family:var(--ff-serif);font-weight:600;color:${text};font-size:${c(.026)}px;line-height:1;letter-spacing:.5px">${CO_MONTH_EN[month]}</div>
+        <div style="color:${gold};font-size:${c(.018)}px;margin-top:${c(.009)}px;font-weight:600">${y} · ${CO_MONTH_KR[month]}</div>
       </div>
-      <img src="${CO_LOGO_IMG}" style="width:${c(.105)}px;height:${c(.105)}px;object-fit:contain">
+      <img src="${CO_LOGO_IMG}" style="width:${c(.082)}px;height:${c(.082)}px;object-fit:contain">
     </div>
     ${coDividerDots(c)}
     <table style="width:100%;border-collapse:collapse;table-layout:fixed">
