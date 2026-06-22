@@ -12214,13 +12214,13 @@ async function _evMove(anchorRow,fromDate,toDate){
     try{await loadEvents()}catch(_){}
   }
 }
-function _evMakeGhost(srcBar,x,y){
+function _evMakeGhost(srcBar,x,y,label){
   const g=document.createElement('div');
   g.className='ev-drag-ghost';
   const cs=getComputedStyle(srcBar);
   g.style.background=cs.backgroundColor;
   g.style.color=cs.color;
-  g.textContent=(srcBar.textContent||'').trim()||'일정';
+  g.textContent=((label||srcBar.textContent||'')+'').trim()||'일정';
   g.style.left=x+'px';g.style.top=y+'px';
   document.body.appendChild(g);
   return g;
@@ -12251,8 +12251,17 @@ function setupEventDrag(){
     _evDragging=true;
     _swipeEnabled=false;
     document.body.classList.add('ev-dragging');
-    _evDrag.bar.classList.add('ev-drag-src');
-    _evDrag.ghost=_evMakeGhost(_evDrag.bar,_evDrag.startX,_evDrag.startY);
+    // 기간/그룹(함께·여러날 제외) 일정이면 그룹의 모든 조각을 함께 들어올림 — 전체가 잡혔음을 표시
+    const grp=_evCollectGroup(row,_evDrag.fromDate);
+    _evDrag.groupDates=[...new Set(grp.map(o=>o.date))];
+    const bars=[];
+    grp.forEach(o=>{
+      const b=document.querySelector(`.cal-evbar[data-evid="${o.id}"]`);
+      if(b&&!bars.includes(b)){b.classList.add('ev-drag-src');bars.push(b)}
+    });
+    if(!bars.includes(_evDrag.bar)){_evDrag.bar.classList.add('ev-drag-src');bars.push(_evDrag.bar)}
+    _evDrag.srcBars=bars;
+    _evDrag.ghost=_evMakeGhost(_evDrag.bar,_evDrag.startX,_evDrag.startY,row.title);
     if(navigator.vibrate)navigator.vibrate(15);
     try{_evDrag.bar.setPointerCapture(_evDrag.pid)}catch(_){}
   }
@@ -12263,7 +12272,7 @@ function setupEventDrag(){
     if(!d.active)return;            // 길게 누르기 전이면 일반 탭 — 그대로 둠
     try{d.bar.releasePointerCapture(d.pid)}catch(_){}
     if(d.ghost)d.ghost.remove();
-    if(d.bar)d.bar.classList.remove('ev-drag-src');
+    (d.srcBars||[d.bar]).forEach(b=>{if(b)b.classList.remove('ev-drag-src')});
     _evClearDropHl();
     document.body.classList.remove('ev-dragging');
     _evDragging=false;
@@ -12297,14 +12306,19 @@ function setupEventDrag(){
     const x=e.clientX,y=e.clientY;
     if(_evDrag.ghost){_evDrag.ghost.style.left=x+'px';_evDrag.ghost.style.top=y+'px'}
     const hit=_evCellFromPoint(x,y);
-    if(hit){
-      if(_evDrag.lastCell!==hit.cell){
-        _evClearDropHl();
-        if(hit.date!==_evDrag.fromDate)hit.cell.classList.add('ev-drop-target');
-        _evDrag.lastCell=hit.cell;
-        _evDrag.dropDate=(hit.date!==_evDrag.fromDate)?hit.date:null;
+    const newDrop=(hit&&hit.date!==_evDrag.fromDate)?hit.date:null;
+    if(newDrop!==_evDrag.dropDate){
+      _evClearDropHl();
+      _evDrag.dropDate=newDrop;
+      if(newDrop){
+        // 기간 전체가 떨어질 칸들을 같은 간격으로 강조
+        const diff=_evDayDiff(_evDrag.fromDate,newDrop);
+        (_evDrag.groupDates||[_evDrag.fromDate]).forEach(gd=>{
+          const c=document.querySelector(`.cal-cell[data-date="${shiftDateKey(gd,diff)}"]`);
+          if(c)c.classList.add('ev-drop-target');
+        });
       }
-    }else{_evClearDropHl();_evDrag.lastCell=null;_evDrag.dropDate=null}
+    }
   },{passive:false});
 
   window.addEventListener('pointerup',(e)=>{if(_evDrag&&e.pointerId===_evDrag.pid)_finish(true)});
