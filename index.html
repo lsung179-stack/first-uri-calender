@@ -1330,6 +1330,13 @@ body.ff-jua{letter-spacing:-.2px}
 /* 컬러 팩 미리보기 — 8색 그리드 (2×4) */
 .color-pack-preview{background:#fbf2e0;padding:10px}
 /* 텍스트 테마 카드 — 미니 캘린더 칩 (선택 폰트로 날짜+일정 렌더) */
+/* 스토어 내부는 적용된 텍스트 테마의 영향을 받지 않고 항상 기본 글꼴 유지
+   (미리보기 카드 .tt-preview만 인라인 font-family로 각자 폰트 표시) */
+#storeCard{
+  --ff-sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  --ff-serif:'Noto Serif KR',serif;
+  --ff-num:-apple-system,BlinkMacSystemFont,sans-serif;
+}
 .tt-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:6px}
 .tt-card{background:var(--card);border:1.5px solid var(--border);border-radius:16px;overflow:hidden;cursor:pointer;transition:border-color .15s,transform .1s,box-shadow .15s}
 .tt-card:active{transform:scale(.985)}
