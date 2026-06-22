@@ -10839,11 +10839,30 @@ function coToggleEvent(key){
   const ev=_coRoomEvents.find(e=>e.key===key);
   if(!ev)return;
   if(_coSelectedEvents[key])delete _coSelectedEvents[key];
-  else _coSelectedEvents[key]={startYmd:ev.startYmd,endYmd:ev.endYmd,title:ev.title,color:ev.color,yearly:ev.yearly};
+  else {
+    // 하루 최대 2개 — 추가하려는 일정이 지나는 날 중 이미 2개 찬 날이 있으면 차단
+    if(coWouldExceedTwo(ev)){ toast('하루에 최대 2개의 일정만 담을 수 있어요'); return; }
+    _coSelectedEvents[key]={startYmd:ev.startYmd,endYmd:ev.endYmd,title:ev.title,color:ev.color,yearly:ev.yearly};
+  }
   renderEventModalBody();
   // 헤더 카운트 갱신
   const cntEl=document.getElementById('coEventCount');
   if(cntEl)cntEl.textContent=`${Object.keys(_coSelectedEvents).length}개 선택`;
+}
+/* 추가하려는 일정이 차지하는 날짜 중, 이미 선택된 일정이 2개 이상인 날이 있으면 true */
+function coWouldExceedTwo(ev){
+  let dates=[];
+  if(ev.yearly){ dates=[ev.startYmd]; }
+  else { let cur=ev.startYmd; let guard=0; while(cur<=ev.endYmd&&guard++<1000){ dates.push(cur); if(cur===ev.endYmd)break; cur=coAddDay(cur,1); } }
+  for(const ymd of dates){
+    let n=0;
+    Object.values(_coSelectedEvents).forEach(s=>{
+      if(s.yearly){ if(s.startYmd===ymd)n++; return; }
+      if(s.startYmd<=ymd && ymd<=s.endYmd)n++;
+    });
+    if(n>=2)return true;
+  }
+  return false;
 }
 function coSelectCover(key){ _coCover=key; renderCalOrder(); }
 
@@ -11022,9 +11041,9 @@ function coBuildMonth(month, W){
       const hol=CO_HOLIDAYS[month+'-'+day];
       const numCol=(cc===0||hol)?sun:(cc===6?sat:text);
       const lun=coLunar(y,month,day);
-      // event bars — 셀 풀폭으로 그려 기간일정이 옆 칸과 끊김없이 연결됨
+      // event bars — 셀 풀폭으로 그려 기간일정이 옆 칸과 끊김없이 연결됨 (최대 2개)
       let bars='';
-      const drawBars=(dd)=>{ (byDay[dd]||[]).forEach(ev=>{
+      const drawBars=(dd)=>{ (byDay[dd]||[]).slice(0,2).forEach(ev=>{
         if(ev.seg==='gap'){ bars+=`<div style="height:${barH}px;margin-bottom:${barGap}px"></div>`; return; }
         const hx=coColorHex(ev.color), tc=coTextColor(hx);
         const rl=c(.006);
@@ -11035,12 +11054,16 @@ function coBuildMonth(month, W){
       }); };
       drawBars(day); if(ex!=null) drawBars(ex);
       const exHtml=ex!=null?`<span style="font-family:var(--ff-serif);font-weight:600;color:${sun};font-size:${c(.021)}px;margin-left:${c(.004)}px">/${ex}</span>`:'';
+      // 날짜 헤더 고정 높이 — 공휴일 유무와 무관하게 일정바 시작 Y위치 통일 (기간 바 끊김 방지)
+      const dateHeaderH=c(.013)+c(.03)+c(.002)+c(.016); // padding+날짜+간격+공휴일 1줄 높이
       trs+=`<td style="${topBorder};vertical-align:top;height:${cellH}px;padding:0;box-sizing:border-box">
-        <div style="padding:${c(.011)}px ${c(.008)}px 0;line-height:1.05;white-space:nowrap">
-          <span style="font-family:var(--ff-serif);font-weight:500;color:${numCol};font-size:${c(.028)}px">${day}</span>${exHtml}<span style="font-size:${c(.014)}px;color:${lunC};margin-left:3px">${lun}</span>
+        <div style="height:${dateHeaderH}px;overflow:hidden;box-sizing:border-box">
+          <div style="padding:${c(.011)}px ${c(.008)}px 0;line-height:1.05;white-space:nowrap">
+            <span style="font-family:var(--ff-serif);font-weight:500;color:${numCol};font-size:${c(.028)}px">${day}</span>${exHtml}<span style="font-size:${c(.014)}px;color:${lunC};margin-left:3px">${lun}</span>
+          </div>
+          ${hol?`<div style="height:${c(.016)}px;margin-top:1px;font-size:${c(.0145)}px;color:${sun};line-height:${c(.016)}px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${hol}</div>`:`<div style="height:${c(.016)}px;margin-top:1px"></div>`}
         </div>
-        ${hol?`<div style="font-size:${c(.0145)}px;color:${sun};margin:1px ${c(.008)}px 0;line-height:1.05">${hol}</div>`:''}
-        <div style="margin-top:${c(.005)}px">${bars}</div>
+        <div>${bars}</div>
       </td>`;
     }
     trs+='</tr>';
