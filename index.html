@@ -12005,21 +12005,28 @@ const TEXT_THEME_FONT={
   'bebas':'"Bebas Neue",sans-serif',
   'abril':'"Abril Fatface",serif',
 };
+/* 미리보기 전용 폰트 로드 — 필요한 글자(한글 포함)만 text subset으로 콕 집어 받아 확실히 렌더 */
+function _loadTextPreviewFonts(){
+  if(document.getElementById('ttPreviewFonts'))return Promise.resolve();
+  const uniq=[...new Set(TEXT_THEMES.filter(t=>t.key!=='default')
+    .map(t=>(TEXT_THEME_FONT[t.key]||'').split(',')[0].replace(/['"]/g,'').trim())
+    .filter(Boolean))];
+  if(!uniq.length)return Promise.resolve();
+  const sample='가나다라마바사아자차약속회의일정모임0123456789LunchMeeting';
+  let url='https://fonts.googleapis.com/css2?';
+  uniq.forEach(f=>{ url+='family='+f.replace(/ /g,'+')+'&'; });
+  url+='text='+encodeURIComponent(sample)+'&display=swap';
+  return new Promise(res=>{
+    const link=document.createElement('link');
+    link.id='ttPreviewFonts'; link.rel='stylesheet'; link.href=url;
+    link.onload=()=>res(); link.onerror=()=>res();
+    document.head.appendChild(link);
+  });
+}
 function renderStoreText(){
   const body=document.getElementById('storeBody');
   if(!body)return;
   const cur=getFontFamilyPref();
-  // 웹폰트 로딩 트리거 (swap 가속 — 미리보기가 바로 해당 폰트로 보이게)
-  if(document.fonts&&document.fonts.load){
-    TEXT_THEMES.forEach(t=>{
-      if(t.key==='default')return;
-      const fam=(TEXT_THEME_FONT[t.key]||'').split(',')[0];
-      if(!fam)return;
-      // Google Fonts는 한글/라틴을 subset으로 분리 — 한글 글자를 직접 줘서 한글 subset까지 로드
-      try{ document.fonts.load('24px '+fam, '약속회의가나다15'); }catch(_){}
-      try{ document.fonts.load('24px '+fam, 'Lunch Meeting'); }catch(_){}
-    });
-  }
   const card=(item)=>{
     const applied=item.key===cur;
     // 인라인 style 속성 충돌 방지 — 폰트명 큰따옴표를 작은따옴표로
@@ -12042,12 +12049,14 @@ function renderStoreText(){
   html+='<div class="tt-grid">'+TEXT_THEMES.filter(t=>t.cat==='ko').map(card).join('')+'</div>';
   html+='<div class="store-section-title" style="margin-top:18px">영문 글꼴 <small>ENGLISH</small></div>';
   html+='<div style="font-size:11px;color:var(--sub);margin:-2px 0 10px">한글은 기본 글꼴로 표시되고, 영문·날짜 숫자에 적용돼요</div>';
+  html+='<div class="tt-grid">'+TEXT_THEMES.filter(t=>t.cat==='en').map(card).join('')+'</div>';
   body.innerHTML=html;
-  // 폰트 로드가 늦게 끝나도 미리보기가 반영되도록 — 로드 완료 시 1회 재렌더
-  if(!renderStoreText._fontsReadied && document.fonts && document.fonts.ready){
-    renderStoreText._fontsReadied=true;
-    document.fonts.ready.then(()=>{ if(_storeCurrentTab==='text')renderStoreText(); });
-  }
+  // 미리보기 폰트 보장 — 글자별 subset 로드 후 swap 적용. 로드 완료되면 1회 재렌더로 확실히 반영
+  _loadTextPreviewFonts().then(()=>{
+    if(document.fonts&&document.fonts.ready){
+      document.fonts.ready.then(()=>{ if(_storeCurrentTab==='text' && !renderStoreText._reflowed){ renderStoreText._reflowed=true; renderStoreText(); } });
+    }
+  });
 }
 function applyTextTheme(key){
   setFontFamilyPref(key);
