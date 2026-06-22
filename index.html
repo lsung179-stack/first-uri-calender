@@ -12012,8 +12012,12 @@ function renderStoreText(){
   // 웹폰트 로딩 트리거 (swap 가속 — 미리보기가 바로 해당 폰트로 보이게)
   if(document.fonts&&document.fonts.load){
     TEXT_THEMES.forEach(t=>{
-      const f=TEXT_THEME_FONT[t.key];
-      if(f){ try{ document.fonts.load('24px '+f.split(',')[0]); }catch(_){} }
+      if(t.key==='default')return;
+      const fam=(TEXT_THEME_FONT[t.key]||'').split(',')[0];
+      if(!fam)return;
+      // Google Fonts는 한글/라틴을 subset으로 분리 — 한글 글자를 직접 줘서 한글 subset까지 로드
+      try{ document.fonts.load('24px '+fam, '약속회의가나다15'); }catch(_){}
+      try{ document.fonts.load('24px '+fam, 'Lunch Meeting'); }catch(_){}
     });
   }
   const card=(item)=>{
@@ -12038,8 +12042,12 @@ function renderStoreText(){
   html+='<div class="tt-grid">'+TEXT_THEMES.filter(t=>t.cat==='ko').map(card).join('')+'</div>';
   html+='<div class="store-section-title" style="margin-top:18px">영문 글꼴 <small>ENGLISH</small></div>';
   html+='<div style="font-size:11px;color:var(--sub);margin:-2px 0 10px">한글은 기본 글꼴로 표시되고, 영문·날짜 숫자에 적용돼요</div>';
-  html+='<div class="tt-grid">'+TEXT_THEMES.filter(t=>t.cat==='en').map(card).join('')+'</div>';
   body.innerHTML=html;
+  // 폰트 로드가 늦게 끝나도 미리보기가 반영되도록 — 로드 완료 시 1회 재렌더
+  if(!renderStoreText._fontsReadied && document.fonts && document.fonts.ready){
+    renderStoreText._fontsReadied=true;
+    document.fonts.ready.then(()=>{ if(_storeCurrentTab==='text')renderStoreText(); });
+  }
 }
 function applyTextTheme(key){
   setFontFamilyPref(key);
