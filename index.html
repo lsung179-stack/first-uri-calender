@@ -514,10 +514,10 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .dp-member-chip-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dp-member-chip-more{padding:3px 9px;background:rgba(139,58,42,.04);color:var(--sub);font-weight:600}
 .dp-time{font-size:11px;color:var(--sub)}
-.dp-actions{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
-.dp-btn{background:none;border:none;cursor:pointer;font-size:11px;font-family:inherit;padding:3px 6px;color:var(--sub);border-radius:5px;line-height:1.3;white-space:nowrap}
-.dp-btn:active{background:rgba(139,58,42,.1)}
-.dp-btn.del{color:var(--accent)}
+.dp-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.dp-btn{background:rgba(139,58,42,.06);border:1px solid rgba(139,58,42,.18);cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;padding:9px 18px;color:var(--sub);border-radius:9px;line-height:1.2;white-space:nowrap;min-height:38px}
+.dp-btn:active{background:rgba(139,58,42,.16)}
+.dp-btn.del{color:var(--accent);border-color:rgba(139,58,42,.3)}
 .dp-add{width:100%;padding:14px;background:var(--accent);color:var(--card);border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.3px;transition:opacity .15s}
 .dp-add:active{opacity:.85}
 
@@ -874,6 +874,12 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .ev-yearly-slider::before{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:left .2s;box-shadow:0 1px 2px rgba(60,40,25,.18)}
 .ev-yearly-toggle input:checked+.ev-yearly-slider{background:var(--accent)}
 .ev-yearly-toggle input:checked+.ev-yearly-slider::before{left:25px}
+.ev-weekday-pick{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:6px;width:100%}
+.ev-wd{padding:9px 0;border:1px solid var(--line);background:var(--card);color:var(--sub);border-radius:9px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;text-align:center}
+.ev-wd.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.ev-wd[data-dow="0"]{color:var(--sun)}
+.ev-wd[data-dow="6"]{color:var(--sat)}
+.ev-wd.on[data-dow="0"],.ev-wd.on[data-dow="6"]{color:#fff}
 
 /* 프로필 시트 */
 .pf-section{display:flex;flex-direction:column;align-items:center;gap:12px;padding:8px 0 28px}
@@ -2370,13 +2376,28 @@ body.align-right .cal-evbar{text-align:right}
         </div>
       </div>
     </div>
-    <!-- 매년 반복 (생일/기념일 등) -->
-    <div class="ev-form-row ev-yearly-row" id="evYearlyRow">
-      <div class="ev-label">매년 반복</div>
-      <label class="ev-yearly-toggle">
-        <input type="checkbox" id="evYearly">
-        <span class="ev-yearly-slider"></span>
-      </label>
+    <!-- 반복 (안 함 / 매주 / 매월 / 매년) -->
+    <input type="checkbox" id="evYearly" hidden>
+    <div class="ev-form-row" id="evRepeatRow">
+      <div class="ev-label">반복</div>
+      <div class="dm-row" id="evRepeatSeg" style="margin-top:4px">
+        <button type="button" class="dm-btn on" data-rep="none" onclick="onEvRepeatSelect('none')">안 함</button>
+        <button type="button" class="dm-btn" data-rep="weekly" onclick="onEvRepeatSelect('weekly')">매주</button>
+        <button type="button" class="dm-btn" data-rep="monthly" onclick="onEvRepeatSelect('monthly')">매월</button>
+        <button type="button" class="dm-btn" data-rep="yearly" onclick="onEvRepeatSelect('yearly')">매년</button>
+      </div>
+    </div>
+    <div class="ev-form-row" id="evWeekdayRow" style="display:none">
+      <div class="ev-label" id="evWeekdayLabel">반복 요일</div>
+      <div class="ev-weekday-pick" id="evWeekdayPick">
+        <button type="button" class="ev-wd" data-dow="0" onclick="toggleEvWeekday(0)">일</button>
+        <button type="button" class="ev-wd" data-dow="1" onclick="toggleEvWeekday(1)">월</button>
+        <button type="button" class="ev-wd" data-dow="2" onclick="toggleEvWeekday(2)">화</button>
+        <button type="button" class="ev-wd" data-dow="3" onclick="toggleEvWeekday(3)">수</button>
+        <button type="button" class="ev-wd" data-dow="4" onclick="toggleEvWeekday(4)">목</button>
+        <button type="button" class="ev-wd" data-dow="5" onclick="toggleEvWeekday(5)">금</button>
+        <button type="button" class="ev-wd" data-dow="6" onclick="toggleEvWeekday(6)">토</button>
+      </div>
     </div>
     <!-- 다른 방에도 추가 (참여 방 ≥ 2 + 단독 일정 + 신규일 때만 표시) -->
     <div class="ev-form-row ev-yearly-row" id="evMultiRoomRow" style="display:none">
@@ -3937,7 +3958,7 @@ function openProfile(){
   if(!_currentUser){toast('사용자 정보를 찾지 못했어요');return}
   closeMainModals();  // 다른 메인 모달 닫기
   const meta=_currentUser.user_metadata||{};
-  const name=meta.name||meta.full_name||meta.preferred_username||(_currentUser.email?_currentUser.email.split('@')[0]:'익명');
+  const name=(_currentProfile&&_currentProfile.name)||meta.name||meta.full_name||meta.preferred_username||(_currentUser.email?_currentUser.email.split('@')[0]:'익명');
   const email=_currentUser.email||'(이메일 없음)';
   const letter=(name||'?').trim().charAt(0).toUpperCase();
   const letterEl=document.getElementById('profileLetter');
@@ -5403,6 +5424,8 @@ function clearPendingJoinCode(){
 })();
 let _events={};           // {YYYY-MM-DD: [eventObj, ...]}
 let _yearlyEvents={};     // {MM-DD: [eventObj, ...]} — 매년 반복 일정 (월,일 기준)
+let _monthlyEvents={};    // {DD: [eventObj, ...]} — 매월 반복 (일 기준)
+let _weeklyEvents={};     // {dow: [eventObj, ...]} — 매주 반복 (요일 0=일~6=토)
 let _reactions={};        // {target_id: [{user_id, emoji}]} — target_id는 단독=events.id, 함께=events.shared_id
 let _calYear=new Date().getFullYear();
 let _calMonth=new Date().getMonth();
@@ -5967,6 +5990,8 @@ async function loadEvents(){
   if(!_currentRoom)return;
   _events={};
   _yearlyEvents={};
+  _monthlyEvents={};
+  _weeklyEvents={};
   renderMonthly();  // 일단 빈 상태로 그려놓고
   try{
     const {data,error}=await supa.from('events').select('*').eq('room_id',_currentRoom.id);
@@ -5974,11 +5999,18 @@ async function loadEvents(){
     (data||[]).forEach(ev=>{
       if(!_events[ev.date])_events[ev.date]=[];
       _events[ev.date].push(ev);
-      // 매년 반복이면 (월,일) 키로도 저장
-      if(ev.recurring_yearly&&ev.date&&ev.date.length>=10){
-        const md=ev.date.slice(5);  // 'MM-DD'
-        if(!_yearlyEvents[md])_yearlyEvents[md]=[];
-        _yearlyEvents[md].push(ev);
+      // 반복 일정 펼치기용 인덱스
+      const rt=ev.repeat_type||(ev.recurring_yearly?'yearly':'none');
+      if(ev.date&&ev.date.length>=10){
+        if(rt==='yearly'){
+          const md=ev.date.slice(5);  // 'MM-DD'
+          (_yearlyEvents[md]=_yearlyEvents[md]||[]).push(ev);
+        }else if(rt==='monthly'){
+          const dd=ev.date.slice(8,10);  // 'DD'
+          (_monthlyEvents[dd]=_monthlyEvents[dd]||[]).push(ev);
+        }else if(rt==='weekly'&&Array.isArray(ev.repeat_weekdays)){
+          ev.repeat_weekdays.forEach(d=>{ (_weeklyEvents[d]=_weeklyEvents[d]||[]).push(ev); });
+        }
       }
     });
     // 이모지 반응도 같이 로드
@@ -6249,7 +6281,12 @@ function getDayEvents(date){
   const baseEvs=_events[date]||[];
   // 매년 반복 일정 펼치기 — 이 날짜의 (월,일)에 등록된 반복 일정 중 origin이 아닌 것
   const md=date.slice(5);  // 'MM-DD'
+  const dd=date.slice(8,10);  // 'DD'
+  const cellDow=parseDateKey(date).getDay();  // 0=일~6=토
   const yearlyOnes=(_yearlyEvents[md]||[]).filter(e=>e.date!==date);
+  // 매월/매주 반복 — origin 날짜 이후의 칸에만 표시 (과거엔 안 뜸, origin 칸은 _events로 이미 표시)
+  const monthlyOnes=(_monthlyEvents[dd]||[]).filter(e=>e.date<date);
+  const weeklyOnes=(_weeklyEvents[cellDow]||[]).filter(e=>e.date<date);
   // 본인 생일 가상 일정 (프로필의 birthday — DB events에 안 저장, 매년 자동 표시)
   // 음력 생일은 매년 양력 날짜가 달라지므로 그 해의 양력으로 변환해서 비교
   const year=parseInt(date.slice(0,4),10);
@@ -6282,7 +6319,11 @@ function getDayEvents(date){
       }
     });
   }
-  const evs=baseEvs.concat(yearlyOnes.map(e=>({...e,_yearlyDisplay:true}))).concat(virtual);
+  const evs=baseEvs
+    .concat(yearlyOnes.map(e=>({...e,_yearlyDisplay:true})))
+    .concat(monthlyOnes.map(e=>({...e,_yearlyDisplay:true})))
+    .concat(weeklyOnes.map(e=>({...e,_yearlyDisplay:true})))
+    .concat(virtual);
   const seen=new Set();
   const result=[];
   evs.forEach(ev=>{
@@ -6979,6 +7020,38 @@ function selectColor(key){
   _selectedColor=key;
   renderColorPager();
 }
+/* ── 반복 설정 (안 함 / 매주 / 매월 / 매년) ── */
+let _evRepeatType='none';
+let _evWeekdays=new Set();
+function onEvRepeatSelect(t){
+  _evRepeatType=(t==='weekly'||t==='monthly'||t==='yearly')?t:'none';
+  syncEvRepeatUI();
+}
+function toggleEvWeekday(d){
+  if(_evWeekdays.has(d))_evWeekdays.delete(d); else _evWeekdays.add(d);
+  syncEvRepeatUI();
+}
+function syncEvRepeatUI(){
+  document.querySelectorAll('#evRepeatSeg .dm-btn').forEach(b=>{
+    b.classList.toggle('on', b.dataset.rep===_evRepeatType);
+  });
+  const wdRow=document.getElementById('evWeekdayRow');
+  if(wdRow)wdRow.style.display=(_evRepeatType==='weekly')?'':'none';
+  document.querySelectorAll('#evWeekdayPick .ev-wd').forEach(b=>{
+    b.classList.toggle('on', _evWeekdays.has(parseInt(b.dataset.dow,10)));
+  });
+  const yc=document.getElementById('evYearly');
+  if(yc)yc.checked=(_evRepeatType==='yearly');
+}
+function resetEvRepeat(){ _evRepeatType='none'; _evWeekdays=new Set(); syncEvRepeatUI(); }
+function getEvRepeatPayload(){
+  const rt=_evRepeatType||'none';
+  const wd=(rt==='weekly'&&_evWeekdays.size)?Array.from(_evWeekdays).sort((a,b)=>a-b):null;
+  // 매주인데 요일 미선택이면 반복 안 함 처리 (영원히 안 뜨는 일정 방지)
+  const finalType=(rt==='weekly'&&!wd)?'none':rt;
+  return { repeat_type: finalType, repeat_weekdays: wd, recurring_yearly: finalType==='yearly' };
+}
+
 function openAddEvent(){
   if(!_selectedDate){toast('날짜를 먼저 선택해주세요');return}
   closeMainModals();
@@ -7010,6 +7083,7 @@ function openAddEvent(){
   document.getElementById('evStartDate').value=_selectedDate;
   document.getElementById('evEndDate').value=_selectedDate;
   document.getElementById('evYearly').checked=false;
+  resetEvRepeat();
   // 메모/사진 초기화
   const memoEl=document.getElementById('evMemo');
   if(memoEl)memoEl.value='';
@@ -7071,7 +7145,9 @@ function openEditEvent(eventId){
   document.getElementById('evModalDate').textContent=`${dt.getMonth()+1}월 ${dt.getDate()}일 ${DOW_NAMES[dt.getDay()]}요일`;
   document.getElementById('evTitle').value=ev.title||'';
   document.getElementById('evTime').value=ev.time||'';
-  document.getElementById('evYearly').checked=!!ev.recurring_yearly;
+  _evRepeatType=ev.repeat_type||(ev.recurring_yearly?'yearly':'none');
+  _evWeekdays=new Set(Array.isArray(ev.repeat_weekdays)?ev.repeat_weekdays:[]);
+  syncEvRepeatUI();
   // 메모/사진 — 기존 값 로드
   const memoEl=document.getElementById('evMemo');
   if(memoEl)memoEl.value=ev.memo||'';
@@ -7487,7 +7563,10 @@ async function saveEvent(){
   if(title.length>40){toast('제목은 40자 이내로');return}
   const time=document.getElementById('evTime').value||null;
   const color=_selectedColor||'c-vintage';
-  const recurringYearly=document.getElementById('evYearly').checked;
+  const _rep=getEvRepeatPayload();
+  const recurringYearly=_rep.recurring_yearly;
+  const repeatType=_rep.repeat_type;
+  const repeatWeekdays=_rep.repeat_weekdays;
   // 메모 (최대 500자 — input maxlength로 1차 보호되지만 trim 후 길이 재확인)
   const memoRaw=(document.getElementById('evMemo')?.value||'').trim();
   if(memoRaw.length>500){toast('메모는 500자 이내로');return}
@@ -7539,7 +7618,7 @@ async function saveEvent(){
               _exRows.push({
                 room_id:rid,user_id:_currentUser.id,date:d,
                 title,time,color,
-                recurring_yearly:recurringYearly,
+                recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
                 memo,photo_url:photoUrl,
                 is_multi:(_selectedMode==='multi'),
               });
@@ -7574,7 +7653,7 @@ async function saveEvent(){
               room_id:_currentRoom.id, date:d,
               title,time,color,
               shared_id:sharedId,
-              recurring_yearly:recurringYearly,
+              recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
               memo,photo_url:photoUrl,
               is_multi:true,
             }));
@@ -7590,7 +7669,7 @@ async function saveEvent(){
               extraRows.push({
                 room_id:rid,user_id:_currentUser.id,date:d,
                 title,time,color,
-                recurring_yearly:recurringYearly,
+                recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
                 memo,photo_url:photoUrl,
                 is_multi:true,
               });
@@ -7619,7 +7698,7 @@ async function saveEvent(){
               room_id:_currentRoom.id, date:d,
               title,time,color,
               shared_id:sharedId,
-              recurring_yearly:recurringYearly,
+              recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
               memo,photo_url:photoUrl,
             }));
           });
@@ -7634,7 +7713,7 @@ async function saveEvent(){
               extraRows.push({
                 room_id:rid,user_id:_currentUser.id,date:d,
                 title,time,color,
-                recurring_yearly:recurringYearly,
+                recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
                 memo,photo_url:photoUrl,
               });
             });
@@ -7651,7 +7730,7 @@ async function saveEvent(){
         const rows=_selectedMembers.map(key=>_buildCoEventRow(key, {
           room_id:_currentRoom.id, date:(_dayDate||_selectedDate),
           title,time,color,shared_id:sharedId,
-          recurring_yearly:recurringYearly,
+          recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
           memo,photo_url:photoUrl,
         }));
         const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
@@ -7662,7 +7741,7 @@ async function saveEvent(){
         const {error}=await supa.from('events').insert(_attachVirtualMember({
           room_id:_currentRoom.id,user_id:_currentUser.id,date:(_dayDate||_selectedDate),
           title,time,color,
-          recurring_yearly:recurringYearly,
+          recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
           memo,photo_url:photoUrl,
         }));
         if(error)throw error;
@@ -7671,7 +7750,7 @@ async function saveEvent(){
           const extraRows=extraRoomIds.map(rid=>({
             room_id:rid,user_id:_currentUser.id,date:(_dayDate||_selectedDate),
             title,time,color,
-            recurring_yearly:recurringYearly,
+            recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
             memo,photo_url:photoUrl,
           }));
           const {error:eX}=await supa.from('events').insert(_attachVirtualMember(extraRows));
@@ -8672,7 +8751,10 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
   const ev=_editingEvent;
   const wasShared=!!ev.shared_id;
   const isNowShared=_selectedTarget==='all'&&_selectedMembers.length>=2;
-  const ry=!!recurringYearly;
+  const _rep=getEvRepeatPayload();
+  const ry=_rep.recurring_yearly;
+  const repeatType=_rep.repeat_type;
+  const repeatWeekdays=_rep.repeat_weekdays;
 
   // 함께 일정에는 multi 모드 금지 (안전판)
   if((wasShared||isNowShared)&&_selectedMode==='multi'){
@@ -8703,7 +8785,7 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
       memberIds.forEach(key=>{
         rows.push(_buildCoEventRow(key, {
           room_id:_currentRoom.id, date:d,
-          title,time,color,shared_id:ev.shared_id,recurring_yearly:ry,
+          title,time,color,shared_id:ev.shared_id,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
           memo,photo_url:photoUrl,
         }));
       });
@@ -8730,7 +8812,7 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
       if(dates.length>180){toast('기간이 너무 길어요 (최대 6개월)');return}
       const rows=dates.map(d=>({
         room_id:_currentRoom.id,user_id:_currentUser.id,date:d,
-        title,time,color,recurring_yearly:ry,
+        title,time,color,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
         memo,photo_url:photoUrl,
       }));
       const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
@@ -8743,7 +8825,7 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
       if(dates.length>31){toast('한 번에 최대 31일까지');return}
       const rows=dates.map(d=>({
         room_id:_currentRoom.id,user_id:_currentUser.id,date:d,
-        title,time,color,recurring_yearly:ry,
+        title,time,color,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
         memo,photo_url:photoUrl,
         is_multi:true,
       }));
@@ -8761,19 +8843,19 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
 
   if(!wasShared&&!isNowShared){
     // Case 4: 혼자 → 혼자 (이 row만 단순 수정) — 명의 변경 시 virtual_member_id 반영
-    const {error}=await supa.from('events').update(_withVirtualMemberForUpdate({date:(_dayDate||_selectedDate),title,time,color,recurring_yearly:ry,reminder_sent_at:null,memo,photo_url:photoUrl})).eq('id',ev.id);
+    const {error}=await supa.from('events').update(_withVirtualMemberForUpdate({date:(_dayDate||_selectedDate),title,time,color,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,reminder_sent_at:null,memo,photo_url:photoUrl})).eq('id',ev.id);
     if(error)throw error;
     toast('수정됐어요');
   }else if(!wasShared&&isNowShared){
     // Case 3: 혼자 → 함께 — 함께 변환 시 virtual_member_id 강제 NULL (함께 일정에 가상 멤버 못 들어감)
     const sharedId=genShared();
-    const {error:e1}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,color,shared_id:sharedId,recurring_yearly:ry,reminder_sent_at:null,memo,photo_url:photoUrl,virtual_member_id:null}).eq('id',ev.id);
+    const {error:e1}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,color,shared_id:sharedId,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,reminder_sent_at:null,memo,photo_url:photoUrl,virtual_member_id:null}).eq('id',ev.id);
     if(e1)throw e1;
     const others=_selectedMembers.filter(u=>u!==_currentUser.id);
     if(others.length){
       const rows=others.map(key=>_buildCoEventRow(key, {
         room_id:_currentRoom.id, date:(_dayDate||_selectedDate),
-        title,time,color,shared_id:sharedId,recurring_yearly:ry,
+        title,time,color,shared_id:sharedId,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
         memo,photo_url:photoUrl,
       }));
       const {error:e2}=await supa.from('events').insert(_attachVirtualMember(rows));
@@ -8786,7 +8868,7 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
     if(e1)throw e1;
     const {error:e2}=await supa.from('events').insert(_attachVirtualMember({
       room_id:_currentRoom.id,user_id:_currentUser.id,
-      date:(_dayDate||_selectedDate),title,time,color,recurring_yearly:ry,
+      date:(_dayDate||_selectedDate),title,time,color,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
       memo,photo_url:photoUrl,
     }));
     if(e2)throw e2;
@@ -8805,13 +8887,13 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
     const toRemoveVirtual=toRemove.filter(k=>typeof k==='string'&&k.startsWith('v-')).map(k=>k.slice(2));
     
     if(toKeepReal.length){
-      const {error}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,color,recurring_yearly:ry,reminder_sent_at:null,memo,photo_url:photoUrl})
+      const {error}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,color,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,reminder_sent_at:null,memo,photo_url:photoUrl})
         .eq('shared_id',ev.shared_id).in('user_id',toKeepReal);
       if(error)throw error;
     }
     if(toKeepVirtual.length){
       // 가상 멤버 row UPDATE (virtual_member_id 기준)
-      const {error}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,color,recurring_yearly:ry,reminder_sent_at:null,memo,photo_url:photoUrl})
+      const {error}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,color,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,reminder_sent_at:null,memo,photo_url:photoUrl})
         .eq('shared_id',ev.shared_id).in('virtual_member_id',toKeepVirtual);
       if(error)throw error;
     }
@@ -8832,7 +8914,7 @@ async function saveEditedEvent(title,time,color,recurringYearly,memo,photoUrl){
     if(toAdd.length){
       const rows=toAdd.map(key=>_buildCoEventRow(key, {
         room_id:_currentRoom.id, date:(_dayDate||_selectedDate),
-        title,time,color,shared_id:ev.shared_id,recurring_yearly:ry,
+        title,time,color,shared_id:ev.shared_id,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
         memo,photo_url:photoUrl,
       }));
       const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
@@ -12021,7 +12103,8 @@ function setupSwipe(){
     const t=e.changedTouches[0];
     const dx=t.clientX-_swipeStartX;
     const dy=t.clientY-_swipeStartY;
-    if(Math.abs(dx)<60||Math.abs(dy)>40)return;  // 가로 스와이프만
+    if(Math.abs(dx)<45)return;                 // 최소 가로 이동
+    if(Math.abs(dx)<Math.abs(dy)*1.3)return;   // 세로보다 가로가 우세할 때만 (살짝 비스듬해도 인식)
     if(dx<0)nextMonth();else prevMonth();
   },{passive:true});
 }
