@@ -519,8 +519,9 @@ body.evpos-bottom .cal-events{justify-content:flex-end}
 /* 격자선 — 세로(우측)/가로(하단). 가상요소로 그려 일정바(자식) 아래에 둔다 → 기간 일정바가 선을 덮음 */
 body.grid-v .cal-cell::after{content:'';position:absolute;top:0;right:0;width:1px;height:100%;background:rgba(120,108,92,.16);z-index:0;pointer-events:none}
 body.grid-h .cal-cell::before{content:'';position:absolute;left:0;bottom:0;width:100%;height:1px;background:rgba(120,108,92,.16);z-index:0;pointer-events:none}
-/* 날짜·일정은 선 위로 */
-body.grid-v .cal-cell>*,body.grid-h .cal-cell>*{position:relative;z-index:1}
+/* 날짜·일정만 선 위로 (반응 이모지 등은 자기 z-index 유지) */
+body.grid-v .cal-day-num,body.grid-h .cal-day-num,
+body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .cal-evbar{font-size:9px;font-weight:600;padding:2px 4px;margin:0;border-radius:3px;color:#fff;line-height:1.3;min-height:15px;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:var(--accent)}
 .cal-evmore{font-size:9px;color:var(--sub);padding-left:3px;font-weight:500}
 
@@ -1397,7 +1398,7 @@ body.fs-small .ann-popup-title{font-size:16px}
 body.fs-small .ann-popup-body{font-size:12px}
 body.fs-small .rs-nav-row-label{font-size:12px}
 body.fs-small .rs-nav-row-sub{font-size:10px}
-body.fs-small .rs-section-title{font-size:10px}
+body.fs-small .rs-section-title{font-size:11.5px}
 body.fs-small .mo-title{font-size:18px}
 body.fs-small .mo-sub{font-size:12px}
 body.fs-small .cs-btn-title{font-size:13.5px}
@@ -1429,7 +1430,7 @@ body.fs-large .ann-popup-title{font-size:21px}
 body.fs-large .ann-popup-body{font-size:16px}
 body.fs-large .rs-nav-row-label{font-size:16.5px}
 body.fs-large .rs-nav-row-sub{font-size:14px}
-body.fs-large .rs-section-title{font-size:13px}
+body.fs-large .rs-section-title{font-size:15px}
 body.fs-large .mo-title{font-size:24px}
 body.fs-large .mo-sub{font-size:16.5px}
 body.fs-large .cs-btn-title{font-size:18px}
@@ -1693,8 +1694,8 @@ body.align-right .cal-evbar{text-align:right}
 /* 방 설정 모달 (테마/방이름/멤버) */
 .rs-section{margin-bottom:18px}
 .rs-section-title{
-  font-size:11px;font-weight:700;color:var(--sub);
-  letter-spacing:.4px;margin-bottom:8px;
+  font-size:13px;font-weight:800;color:var(--sub);
+  letter-spacing:.3px;margin-bottom:8px;
 }
 .rs-row{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fdf6e8;border:1px solid var(--borderL);border-radius:10px;margin-bottom:6px}
 .rs-row-info{flex:1}
@@ -3205,7 +3206,7 @@ body.align-right .cal-evbar{text-align:right}
 
     <div class="rs-section">
       <div class="rs-section-title">일정 위치</div>
-      <div style="font-size:11px;color:var(--sub);margin-bottom:8px">달력 칸에서 일정이 붙는 위치예요</div>
+      <div style="font-size:12px;color:var(--sub);margin-bottom:8px">달력 칸에서 일정이 붙는 위치예요</div>
       <div class="dm-row" id="evPosRow">
         <button class="dm-btn" data-evpos="top" onclick="onEvPosSelect('top')">상단</button>
         <button class="dm-btn" data-evpos="bottom" onclick="onEvPosSelect('bottom')">하단</button>
@@ -3214,7 +3215,7 @@ body.align-right .cal-evbar{text-align:right}
 
     <div class="rs-section">
       <div class="rs-section-title">격자선</div>
-      <div style="font-size:11px;color:var(--sub);margin-bottom:8px">달력 칸 사이에 선을 표시해요</div>
+      <div style="font-size:12px;color:var(--sub);margin-bottom:8px">달력 칸 사이에 선을 표시해요</div>
       <div class="dm-row" id="gridVRow" style="margin-bottom:8px">
         <button class="dm-btn" data-gridv="off" onclick="onGridSelect('v','off')">세로선 끔</button>
         <button class="dm-btn" data-gridv="on" onclick="onGridSelect('v','on')">세로선 켬</button>
@@ -3227,7 +3228,7 @@ body.align-right .cal-evbar{text-align:right}
 
     <div class="rs-section">
       <div class="rs-section-title">첫 화면 기본 보기</div>
-      <div style="font-size:11px;color:var(--sub);margin-bottom:8px">방에 들어갈 때 처음 보여줄 화면이에요</div>
+      <div style="font-size:12px;color:var(--sub);margin-bottom:8px">방에 들어갈 때 처음 보여줄 화면이에요</div>
       <div class="dm-row" id="defaultViewRow">
         <button class="dm-btn" data-dv="all" onclick="onDefaultViewSelect('all')">전체</button>
         <button class="dm-btn" data-dv="me" onclick="onDefaultViewSelect('me')">내 일정</button>
