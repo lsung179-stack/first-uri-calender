@@ -2120,6 +2120,19 @@ body.align-right .cal-evbar{text-align:right}
   </div>
 </div>
 
+<!-- 반복 일정 삭제 선택 모달 -->
+<div class="vc-overlay" id="rdOverlay">
+  <div class="vc-card">
+    <div class="mo-title">반복 일정 삭제</div>
+    <div class="mo-sub" id="rdMsg">반복되는 일정이에요.<br>어떻게 삭제할까요?</div>
+    <div class="mo-actions">
+      <button class="btn btn-primary" id="rdOne">이 날짜만 삭제</button>
+      <button class="btn" id="rdAll" style="background:#fff;color:var(--accent);border:1.5px solid var(--accent)">모든 반복 삭제</button>
+      <button class="mo-cancel" id="rdCancel">취소</button>
+    </div>
+  </div>
+</div>
+
 <!-- 코드 입장 모달 -->
 <div class="mo-overlay" id="joinOverlay" onclick="closeJoinRoom()"></div>
 <div class="mo-card" id="joinCard">
@@ -4154,6 +4167,29 @@ function vConfirm(message,opts){
     okBtn.onclick=()=>finish(true);
     cancelBtn.onclick=()=>finish(false);
     ov.onclick=(e)=>{if(e.target===ov)finish(false);};
+  });
+}
+
+/* 반복 일정 삭제 선택 — 'one'(이 날짜만) | 'all'(모두) | null(취소) */
+function askRecurringDelete(msg){
+  return new Promise(resolve=>{
+    const ov=document.getElementById('rdOverlay');
+    if(!ov){resolve(window.confirm((msg||'')+'\n\n확인=모두 삭제, 취소=중단')?'all':null);return;}
+    const oneBtn=document.getElementById('rdOne');
+    const allBtn=document.getElementById('rdAll');
+    const cancelBtn=document.getElementById('rdCancel');
+    if(msg)document.getElementById('rdMsg').innerHTML=msg;
+    document.body.appendChild(ov);  // 시트 위로 올림
+    ov.classList.add('on');
+    const finish=(val)=>{
+      ov.classList.remove('on');
+      oneBtn.onclick=null;allBtn.onclick=null;cancelBtn.onclick=null;ov.onclick=null;
+      resolve(val);
+    };
+    oneBtn.onclick=()=>finish('one');
+    allBtn.onclick=()=>finish('all');
+    cancelBtn.onclick=()=>finish(null);
+    ov.onclick=(e)=>{if(e.target===ov)finish(null);};
   });
 }
 
@@ -6323,7 +6359,8 @@ function getDayEvents(date){
     .concat(yearlyOnes.map(e=>({...e,_yearlyDisplay:true})))
     .concat(monthlyOnes.map(e=>({...e,_yearlyDisplay:true})))
     .concat(weeklyOnes.map(e=>({...e,_yearlyDisplay:true})))
-    .concat(virtual);
+    .concat(virtual)
+    .filter(e=>!(Array.isArray(e.repeat_except)&&e.repeat_except.includes(date)));
   const seen=new Set();
   const result=[];
   evs.forEach(ev=>{
@@ -8929,7 +8966,44 @@ async function deleteEvent(eventId){
   const evs=Object.values(_events).flat();
   const ev=evs.find(e=>e.id===eventId);
   if(!ev){toast('일정 정보를 찾지 못했어요');return}
-  
+
+  // 반복 일정(매주/매월/매년)이면 '이 날짜만 / 모두' 선택
+  const _rt=ev.repeat_type||(ev.recurring_yearly?'yearly':'none');
+  if(_rt!=='none' && !ev.shared_id){
+    const occDate=_selectedDate||_dayDate||ev.date;
+    const scopeLabel={weekly:'매주',monthly:'매월',yearly:'매년'}[_rt]||'반복';
+    const choice=await askRecurringDelete(
+      `${scopeLabel} 반복되는 일정이에요.<br><b>${occDate}</b> 일정만 삭제할까요,<br>아니면 모든 반복을 삭제할까요?`
+    );
+    if(!choice)return;
+    try{
+      if(choice==='one'){
+        // 이 날짜를 예외로 추가 (반복 규칙은 유지, 이 날짜만 숨김)
+        const {data:cur,error:e0}=await supa.from('events').select('repeat_except').eq('id',ev.id).maybeSingle();
+        if(e0)throw e0;
+        const ex=Array.isArray(cur&&cur.repeat_except)?cur.repeat_except.slice():[];
+        if(!ex.includes(occDate))ex.push(occDate);
+        const {error}=await supa.from('events').update({repeat_except:ex}).eq('id',ev.id);
+        if(error)throw error;
+        toast('이 날짜 일정만 삭제됐어요');
+      }else{
+        const photoUrlToCleanup=ev.photo_url||null;
+        const {error}=await supa.from('events').delete().eq('id',ev.id);
+        if(error)throw error;
+        if(photoUrlToCleanup)deletePhotoFromStorage(photoUrlToCleanup);
+        toast('모든 반복 일정이 삭제됐어요');
+        notifyEventDeleted(ev);
+      }
+      _audit('event.delete',{targetType:'event',targetId:eventId,roomId:ev.room_id,
+        meta:{title:(ev.title||'').slice(0,80),date:ev.date,recurring:_rt,scope:choice,owner_id:ev.user_id}});
+      await loadEvents();
+      if(_selectedDate)openDateSheet(_selectedDate);
+    }catch(e){
+      toast('실패: '+(e.message||'').slice(0,40));console.error(e);
+    }
+    return;
+  }
+
   // 기간 그룹 감지
   const group=ev.shared_id?[ev]:findEventGroup(ev);
   
