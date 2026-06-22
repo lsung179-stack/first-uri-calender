@@ -1329,10 +1329,19 @@ body.ff-jua{letter-spacing:-.2px}
 
 /* 컬러 팩 미리보기 — 8색 그리드 (2×4) */
 .color-pack-preview{background:#fbf2e0;padding:10px}
-/* 텍스트 테마 미리보기 — 큰 숫자 + 샘플 텍스트 (선택 폰트로 렌더) */
-.tt-preview{background:#fbf2e0;text-transform:none;letter-spacing:0;flex-direction:row;align-items:baseline;gap:9px;padding:8px}
-.tt-num{font-size:34px;font-weight:600;color:var(--text);line-height:1}
-.tt-sample{font-size:16px;color:var(--text);opacity:.82;line-height:1}
+/* 텍스트 테마 카드 — 미니 캘린더 칩 (선택 폰트로 날짜+일정 렌더) */
+.tt-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:6px}
+.tt-card{background:var(--card);border:1.5px solid var(--border);border-radius:16px;overflow:hidden;cursor:pointer;transition:border-color .15s,transform .1s,box-shadow .15s}
+.tt-card:active{transform:scale(.985)}
+.tt-card.on{border-color:var(--accent);box-shadow:0 0 0 1.5px var(--accent)}
+.tt-preview{background:#fbf3e3;padding:15px 13px 13px;min-height:104px;display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--border)}
+.tt-date{font-size:38px;font-weight:700;color:var(--text);line-height:.9;letter-spacing:-.5px}
+.tt-evbar{font-size:12.5px;color:#fff;border-radius:6px;padding:3px 9px;background:#7d9b6a;line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tt-evbar2{background:#c97c5d}
+.tt-foot{display:flex;align-items:center;justify-content:space-between;padding:10px 13px;gap:8px}
+.tt-name{font-size:14px;font-weight:700;color:var(--text)}
+.tt-apply{font-size:12px;font-weight:700;border-radius:999px;padding:6px 15px;border:1.5px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;white-space:nowrap;font-family:inherit;transition:background .12s}
+.tt-apply.using{background:var(--accent);color:var(--card);border-color:var(--accent)}
 .color-swatch-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%;max-width:120px}
 .color-swatch{width:100%;aspect-ratio:1;border-radius:50%;display:block;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
 
@@ -12000,28 +12009,36 @@ function renderStoreText(){
   const body=document.getElementById('storeBody');
   if(!body)return;
   const cur=getFontFamilyPref();
+  // 웹폰트 로딩 트리거 (swap 가속 — 미리보기가 바로 해당 폰트로 보이게)
+  if(document.fonts&&document.fonts.load){
+    TEXT_THEMES.forEach(t=>{
+      const f=TEXT_THEME_FONT[t.key];
+      if(f){ try{ document.fonts.load('24px '+f.split(',')[0]); }catch(_){} }
+    });
+  }
   const card=(item)=>{
     const applied=item.key===cur;
-    const fam=TEXT_THEME_FONT[item.key]||'inherit';
-    const sample=item.cat==='en'?'Plan':'약속';
+    // 인라인 style 속성 충돌 방지 — 폰트명 큰따옴표를 작은따옴표로
+    const fam=(TEXT_THEME_FONT[item.key]||'inherit').replace(/"/g,"'");
+    const en=item.cat==='en';
+    const s1=en?'Lunch':'약속', s2=en?'Meeting':'회의';
     const btn=applied
-      ? `<button class="pack-btn pack-btn-using" onclick="event.stopPropagation();applyTextTheme('default')">사용 중</button>`
-      : `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();applyTextTheme('${item.key}')">적용하기</button>`;
-    return `<div class="theme-card${applied?' unlocked':''}" onclick="applyTextTheme('${applied?'default':item.key}')">
-      <div class="theme-preview tt-preview" style="font-family:${fam}">
-        <span class="tt-num">15</span><span class="tt-sample">${sample}</span>
+      ? `<button class="tt-apply using" onclick="event.stopPropagation();applyTextTheme('default')">사용 중</button>`
+      : `<button class="tt-apply" onclick="event.stopPropagation();applyTextTheme('${item.key}')">적용</button>`;
+    return `<div class="tt-card${applied?' on':''}" onclick="applyTextTheme('${applied?'default':item.key}')">
+      <div class="tt-preview" style="font-family:${fam}">
+        <div class="tt-date">15</div>
+        <div class="tt-evbar">${s1}</div>
+        <div class="tt-evbar tt-evbar2">${s2}</div>
       </div>
-      <div class="theme-card-info">
-        <div class="theme-card-name">${escapeHtml(item.name)}</div>
-        <div class="theme-card-action">${btn}</div>
-      </div>
+      <div class="tt-foot"><span class="tt-name">${escapeHtml(item.name)}</span>${btn}</div>
     </div>`;
   };
   let html='<div class="store-section-title">한글 글꼴 <small>KOREAN</small></div>';
-  html+='<div class="theme-grid-store">'+TEXT_THEMES.filter(t=>t.cat==='ko').map(card).join('')+'</div>';
-  html+='<div class="store-section-title">영문 글꼴 <small>ENGLISH</small></div>';
-  html+='<div style="font-size:11px;color:var(--sub);margin:-4px 0 10px">한글은 기본 글꼴로 표시되고, 영문·날짜 숫자에 적용돼요</div>';
-  html+='<div class="theme-grid-store">'+TEXT_THEMES.filter(t=>t.cat==='en').map(card).join('')+'</div>';
+  html+='<div class="tt-grid">'+TEXT_THEMES.filter(t=>t.cat==='ko').map(card).join('')+'</div>';
+  html+='<div class="store-section-title" style="margin-top:18px">영문 글꼴 <small>ENGLISH</small></div>';
+  html+='<div style="font-size:11px;color:var(--sub);margin:-2px 0 10px">한글은 기본 글꼴로 표시되고, 영문·날짜 숫자에 적용돼요</div>';
+  html+='<div class="tt-grid">'+TEXT_THEMES.filter(t=>t.cat==='en').map(card).join('')+'</div>';
   body.innerHTML=html;
 }
 function applyTextTheme(key){
