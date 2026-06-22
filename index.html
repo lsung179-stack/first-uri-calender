@@ -10631,7 +10631,7 @@ function renderCalOrder(){
       <div class="co-actions"><button class="co-btn co-btn-preview" onclick="openRoomModal()">방 선택하기</button></div>`;
   }else{
     const cnt=Object.keys(_coSelectedEvents).length;
-    html+=`<div class="co-section-desc">선택한 방의 일정을 골라 달력에 넣어보세요.</div>
+    html+=`<div class="co-section-desc">선택한 방의 일정을 골라 달력에 넣어보세요. <b>하루에 최대 2개</b>까지 담을 수 있어요.</div>
       <div class="co-room-bar">
         <span class="co-room-back" onclick="coChangeRoom()">⇄ 방 변경</span>
         <span class="co-room-cur">${escapeHtml(_coRoom.name||'우리 방')}</span>
@@ -10833,7 +10833,8 @@ function renderEventModalBody(){
     normalOnes.forEach(ev=>html+=renderRow(ev));
     html+='</div>';
   }
-  body.innerHTML=html;
+  const notice=`<div style="font-size:12.5px;color:var(--sub);background:rgba(139,58,42,.07);border-radius:8px;padding:8px 10px;margin:0 0 10px;text-align:center">하루에 최대 <b>2개</b>의 일정만 담을 수 있어요</div>`;
+  body.innerHTML=notice+html;
 }
 function coToggleEvent(key){
   const ev=_coRoomEvents.find(e=>e.key===key);
@@ -10966,12 +10967,12 @@ function coFrameOpen(W){
   const c=v=>v*W;
   const accent='#8b3a2a';
   const H=W*154/214;
-  const ring=W*10/214;            // 상단 링 여백(10mm)
-  const topPad=ring+c(.012);
+  const ring=W*10/214;            // 상단 링 여백(10mm) — 트윈링 제본 안전선
+  const topPad=ring;              // 상단 내용 여백 = 정확히 10mm
   const sidePad=c(.055);
-  const botPad=c(.022);
-  const inset=c(.020);            // 모서리 마크 안쪽 여백
-  const arm=c(.020);              // 마크 팔 길이
+  const botPad=ring;              // 하단도 10mm로 통일
+  const inset=ring*0.55;          // 크롭마크도 여백 안쪽으로 내림(상단 약 5.5mm)
+  const arm=c(.016);              // 마크 팔 길이
   const th=Math.max(1,c(.0016));  // 마크 두께
   const mk=(v,h,bv,bh)=>`<div style="position:absolute;${v};${h};width:${arm}px;height:${arm}px;${bv};${bh}"></div>`;
   const corners=
@@ -11014,11 +11015,12 @@ function coBuildMonth(month, W){
   }
   const rows=weeks.length;
 
-  // geometry (상단 10mm 링 여백 반영)
+  // geometry (상단 10mm 트윈링 여백)
   const ring=W*10/214;
-  const topPad=ring+c(.012);
-  const botPad=c(.022);
-  const contentH=H-topPad-botPad;
+  const topPad=ring;       // coFrameOpen과 동일(10mm)
+  const headPad=c(.0135);  // 큰 숫자 line-height(.82) 튀어나옴만 보정 → 글자 top이 정확히 10mm
+  const botPad=ring;
+  const contentH=H-topPad-botPad-headPad;
   const headerH=c(.10);
   const gridH=contentH-headerH-c(.034)-c(.052);   // header + divider + weekday 제외
   const cellH=Math.max(c(.06), gridH/rows);
@@ -11070,7 +11072,7 @@ function coBuildMonth(month, W){
   }
 
   return coFrameOpen(W)+`
-    <div style="display:flex;align-items:flex-start;height:${headerH}px">
+    <div style="display:flex;align-items:flex-start;height:${headerH}px;margin-top:${headPad}px">
       <div style="font-family:var(--ff-serif);font-weight:700;color:${accent};font-size:${c(.092)}px;line-height:.82">${month}</div>
       <div style="flex:1;padding-left:${c(.02)}px;padding-top:${c(.012)}px">
         <div style="font-family:var(--ff-serif);font-weight:600;color:${text};font-size:${c(.031)}px;line-height:1;letter-spacing:.5px">${CO_MONTH_EN[month]}</div>
