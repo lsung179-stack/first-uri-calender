@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&family=Jua&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&family=Jua&family=Nanum+Pen+Script&family=Gowun+Dodum&family=Song+Myung&family=Gowun+Batang&family=Do+Hyeon&family=Black+Han+Sans&family=Gaegu&family=Gamja+Flower&family=Hi+Melody&family=Stylish&family=Diphylleia&family=Gugi&family=Playfair+Display:wght@400;600&family=Bebas+Neue&family=Abril+Fatface&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <meta name="color-scheme" content="only light" id="metaColorScheme">
 <meta name="supported-color-schemes" content="light">
@@ -22,11 +22,12 @@
     }
   }catch(e){}
 })();
-/* 글꼴 즉시 적용: 일정 텍스트용 폰트 클래스 부착 */
+/* 글꼴 즉시 적용: 텍스트 테마 폰트 클래스 부착 (날짜 숫자·일정·제목 연동) */
 (function(){
   try{
     var ff=localStorage.getItem('uricalv2.fontFamily');
-    if(ff==='pretendard'||ff==='jua'||ff==='pen'){
+    // 구버전 'pretendard'는 제거됨 → 기본으로
+    if(ff && ff!=='default' && ff!=='pretendard'){
       var apply=function(){if(document.body)document.body.classList.add('ff-'+ff)};
       if(document.body)apply();
       else document.addEventListener('DOMContentLoaded',apply,{once:true});
@@ -39,6 +40,17 @@
     var al=localStorage.getItem('uricalv2.align');
     if(al==='center'||al==='right'){
       var apply=function(){if(document.body)document.body.classList.add('align-'+al)};
+      if(document.body)apply();
+      else document.addEventListener('DOMContentLoaded',apply,{once:true});
+    }
+  }catch(e){}
+})();
+/* 일정 세로 위치(상단/하단) 즉시 적용 */
+(function(){
+  try{
+    var ep=localStorage.getItem('uricalv2.evpos');
+    if(ep==='bottom'){
+      var apply=function(){if(document.body)document.body.classList.add('evpos-bottom')};
       if(document.body)apply();
       else document.addEventListener('DOMContentLoaded',apply,{once:true});
     }
@@ -88,20 +100,30 @@
   /* 폰트 변수 — body class로 override 가능 */
   --ff-sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Pretendard","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
   --ff-serif:'Noto Serif KR',serif;
+  /* 날짜 숫자 전용 — 텍스트 테마와 연동 (기본은 시스템) */
+  --ff-num:-apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;
 }
-/* 폰트 패밀리 전환 — body class로 두 변수 모두 override */
-body.ff-pretendard{
-  --ff-sans:"Pretendard Variable","Pretendard",-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
-  --ff-serif:"Pretendard Variable","Pretendard",-apple-system,sans-serif;
-}
-body.ff-jua{
-  --ff-sans:"Jua","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
-  --ff-serif:"Jua","Apple SD Gothic Neo",sans-serif;
-}
-body.ff-pen{
-  --ff-sans:"Nanum Pen Script",cursive;
-  --ff-serif:"Nanum Pen Script",cursive;
-}
+/* ═══ 텍스트 테마 — body.ff-{key} 로 일정 텍스트·제목·날짜 숫자 폰트 동시 전환 ═══ */
+/* ── 한글 ── */
+body.ff-gowun-dodum{--ff-sans:"Gowun Dodum","Apple SD Gothic Neo","Noto Sans KR",sans-serif;--ff-serif:"Gowun Dodum","Noto Sans KR",sans-serif;--ff-num:"Gowun Dodum",sans-serif}
+body.ff-song-myung{--ff-sans:"Song Myung","Noto Serif KR",serif;--ff-serif:"Song Myung","Noto Serif KR",serif;--ff-num:"Song Myung",serif}
+body.ff-gowun-batang{--ff-sans:"Gowun Batang","Noto Serif KR",serif;--ff-serif:"Gowun Batang","Noto Serif KR",serif;--ff-num:"Gowun Batang",serif}
+body.ff-jua{--ff-sans:"Jua","Apple SD Gothic Neo","Noto Sans KR",sans-serif;--ff-serif:"Jua","Apple SD Gothic Neo",sans-serif;--ff-num:"Jua",sans-serif}
+body.ff-do-hyeon{--ff-sans:"Do Hyeon","Apple SD Gothic Neo","Noto Sans KR",sans-serif;--ff-serif:"Do Hyeon","Noto Sans KR",sans-serif;--ff-num:"Do Hyeon",sans-serif}
+body.ff-black-han{--ff-sans:"Black Han Sans","Apple SD Gothic Neo","Noto Sans KR",sans-serif;--ff-serif:"Black Han Sans","Noto Sans KR",sans-serif;--ff-num:"Black Han Sans",sans-serif}
+body.ff-pen{--ff-sans:"Nanum Pen Script",cursive;--ff-serif:"Nanum Pen Script",cursive;--ff-num:"Nanum Pen Script",cursive}
+body.ff-gaegu{--ff-sans:"Gaegu","Apple SD Gothic Neo","Noto Sans KR",cursive;--ff-serif:"Gaegu","Noto Sans KR",cursive;--ff-num:"Gaegu",cursive}
+body.ff-gamja{--ff-sans:"Gamja Flower","Apple SD Gothic Neo","Noto Sans KR",cursive;--ff-serif:"Gamja Flower","Noto Sans KR",cursive;--ff-num:"Gamja Flower",cursive}
+body.ff-himelody{--ff-sans:"Hi Melody","Apple SD Gothic Neo","Noto Sans KR",cursive;--ff-serif:"Hi Melody","Noto Sans KR",cursive;--ff-num:"Hi Melody",cursive}
+body.ff-stylish{--ff-sans:"Stylish","Apple SD Gothic Neo","Noto Sans KR",sans-serif;--ff-serif:"Stylish","Noto Sans KR",sans-serif;--ff-num:"Stylish",sans-serif}
+body.ff-diphylleia{--ff-sans:"Diphylleia","Noto Serif KR",serif;--ff-serif:"Diphylleia","Noto Serif KR",serif;--ff-num:"Diphylleia",serif}
+body.ff-gugi{--ff-sans:"Gugi","Apple SD Gothic Neo","Noto Sans KR",cursive;--ff-serif:"Gugi","Noto Sans KR",cursive;--ff-num:"Gugi",cursive}
+/* ── 영문 (한글은 Noto fallback, 숫자·영문이 메인) ── */
+body.ff-playfair{--ff-sans:"Playfair Display","Noto Serif KR",serif;--ff-serif:"Playfair Display","Noto Serif KR",serif;--ff-num:"Playfair Display",serif}
+body.ff-bebas{--ff-sans:"Bebas Neue","Noto Sans KR",sans-serif;--ff-serif:"Bebas Neue","Noto Sans KR",sans-serif;--ff-num:"Bebas Neue",sans-serif}
+body.ff-abril{--ff-sans:"Abril Fatface","Noto Serif KR",serif;--ff-serif:"Abril Fatface","Noto Serif KR",serif;--ff-num:"Abril Fatface",serif}
+/* 가는/손글씨 테마 — 날짜 숫자 가독성 보정 (굵기 ↑) */
+body.ff-pen .cal-day-num,body.ff-gamja .cal-day-num,body.ff-himelody .cal-day-num,body.ff-diphylleia .cal-day-num,body.ff-stylish .cal-day-num{font-weight:700}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{background:#e5dec7}
 html,body{margin:0;padding:0;height:100%;color:var(--text);font-family:var(--ff-sans);-webkit-font-smoothing:antialiased;color-scheme:only light !important;forced-color-adjust:none !important;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
@@ -455,7 +477,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .cal-cell{min-height:max(90px,calc((var(--vh100, 100dvh) - 310px) / 6));padding:2px 0;display:flex;flex-direction:column;cursor:pointer;border-radius:0;transition:background .12s;position:relative}
 .cal-cell:active{background:rgba(139,58,42,.06)}
 .cal-cell.other{opacity:.35}
-.cal-day-num{text-align:center;font-size:13px;font-weight:500;color:var(--text);margin:2px 0 3px;line-height:20px;font-family:-apple-system,sans-serif;position:relative}
+.cal-day-num{text-align:center;font-size:13px;font-weight:500;color:var(--text);margin:2px 0 3px;line-height:20px;font-family:var(--ff-num,-apple-system,sans-serif);position:relative}
 .cal-day-lunar{display:inline-block;font-size:8px;color:var(--mute);margin-left:3px;font-weight:400;vertical-align:1px;letter-spacing:0}
 .cal-cell.today .cal-day-lunar{display:none}
 .cal-cell.sun .cal-day-num{color:var(--sun);font-weight:700}
@@ -479,6 +501,8 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 }
 .cal-cell.holiday .cal-day-num{color:var(--sun);font-weight:700}
 .cal-events{display:flex;flex-direction:column;gap:1px;flex:1;overflow:hidden;padding-bottom:3px}
+/* 일정 세로 위치: 하단 정렬 (기본은 상단부터 쌓임) */
+body.evpos-bottom .cal-events{justify-content:flex-end}
 .cal-evbar{font-size:9px;font-weight:600;padding:2px 4px;margin:0;border-radius:3px;color:#fff;line-height:1.3;min-height:15px;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:var(--accent)}
 .cal-evmore{font-size:9px;color:var(--sub);padding-left:3px;font-weight:500}
 
@@ -1305,6 +1329,10 @@ body.ff-jua{letter-spacing:-.2px}
 
 /* 컬러 팩 미리보기 — 8색 그리드 (2×4) */
 .color-pack-preview{background:#fbf2e0;padding:10px}
+/* 텍스트 테마 미리보기 — 큰 숫자 + 샘플 텍스트 (선택 폰트로 렌더) */
+.tt-preview{background:#fbf2e0;text-transform:none;letter-spacing:0;flex-direction:row;align-items:baseline;gap:9px;padding:8px}
+.tt-num{font-size:34px;font-weight:600;color:var(--text);line-height:1}
+.tt-sample{font-size:16px;color:var(--text);opacity:.82;line-height:1}
 .color-swatch-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%;max-width:120px}
 .color-swatch{width:100%;aspect-ratio:1;border-radius:50%;display:block;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
 
@@ -3006,6 +3034,7 @@ body.align-right .cal-evbar{text-align:right}
   <div class="store-tabs" id="storeTabs">
     <button class="store-tab on" data-tab="theme" onclick="setStoreTab('theme')">테마</button>
     <button class="store-tab" data-tab="color" onclick="setStoreTab('color')">컬러</button>
+    <button class="store-tab" data-tab="text" onclick="setStoreTab('text')">텍스트</button>
     <button class="store-tab" data-tab="emoji" onclick="setStoreTab('emoji')">이모지</button>
     <button class="store-tab" data-tab="calorder" onclick="setStoreTab('calorder')">달력 주문</button>
   </div>
@@ -3124,17 +3153,6 @@ body.align-right .cal-evbar{text-align:right}
     </div>
 
     <div class="rs-section">
-      <div class="rs-section-title">글꼴 변경</div>
-      <div style="font-size:11px;color:var(--sub);margin-bottom:8px">일정 텍스트에만 적용돼요</div>
-      <div class="dm-row dm-row-grid" id="fontFamilyRow">
-        <button class="dm-btn ff-default" data-ff="default" onclick="onFontFamilySelect('default')">기본</button>
-        <button class="dm-btn ff-pretendard" data-ff="pretendard" onclick="onFontFamilySelect('pretendard')">프리텐다드</button>
-        <button class="dm-btn ff-jua" data-ff="jua" onclick="onFontFamilySelect('jua')">주아체</button>
-        <button class="dm-btn ff-pen" data-ff="pen" onclick="onFontFamilySelect('pen')">나눔펜</button>
-      </div>
-    </div>
-
-    <div class="rs-section">
       <div class="rs-section-title">주 시작 요일</div>
       <div class="dm-row" id="weekStartRow">
         <button class="dm-btn" data-ws="0" onclick="onWeekStartSelect(0)">일요일</button>
@@ -3148,6 +3166,15 @@ body.align-right .cal-evbar{text-align:right}
         <button class="dm-btn" data-align="left" onclick="onAlignSelect('left')">왼쪽</button>
         <button class="dm-btn" data-align="center" onclick="onAlignSelect('center')">가운데</button>
         <button class="dm-btn" data-align="right" onclick="onAlignSelect('right')">오른쪽</button>
+      </div>
+    </div>
+
+    <div class="rs-section">
+      <div class="rs-section-title">일정 위치</div>
+      <div style="font-size:11px;color:var(--sub);margin-bottom:8px">달력 칸에서 일정이 붙는 위치예요</div>
+      <div class="dm-row" id="evPosRow">
+        <button class="dm-btn" data-evpos="top" onclick="onEvPosSelect('top')">상단</button>
+        <button class="dm-btn" data-evpos="bottom" onclick="onEvPosSelect('bottom')">하단</button>
       </div>
     </div>
 
@@ -5167,6 +5194,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   try{ applyFontFamily(getFontFamilyPref()); }catch(e){}
   // 일정 텍스트 정렬 초기 적용
   try{ applyAlign(getAlignPref()); }catch(e){}
+  try{ applyEvPos(getEvPosPref()); }catch(e){}
   // 주 시작 요일 헤더 초기 렌더
   try{ renderWeekHead(); }catch(e){}
   const boxes=document.querySelectorAll('#codeBoxes .code-box');
@@ -5897,39 +5925,76 @@ function syncAlignButtons(){
   });
 }
 
-/* ── 글꼴 (기본 / Pretendard / Jua / Nanum Pen Script) ── */
+/* ── 일정 세로 위치 (top / bottom) ── */
+function getEvPosPref(){
+  try{
+    const v=localStorage.getItem('uricalv2.evpos');
+    return v==='bottom'?'bottom':'top';
+  }catch(e){ return 'top'; }
+}
+function setEvPosPref(value){
+  const v=(value==='bottom')?'bottom':'top';
+  try{ localStorage.setItem('uricalv2.evpos', v); }catch(e){}
+  applyEvPos(v);
+}
+function applyEvPos(v){
+  if(!document.body)return;
+  document.body.classList.remove('evpos-bottom');
+  if(v==='bottom')document.body.classList.add('evpos-bottom');
+}
+function onEvPosSelect(value){
+  if(!['top','bottom'].includes(value))return;
+  setEvPosPref(value);
+  syncEvPosButtons();
+}
+function syncEvPosButtons(){
+  const pref=getEvPosPref();
+  const row=document.getElementById('evPosRow');
+  if(!row)return;
+  row.querySelectorAll('.dm-btn').forEach(b=>{
+    if(b.dataset.evpos===pref)b.classList.add('on');
+    else b.classList.remove('on');
+  });
+}
+
+/* ── 텍스트 테마(글꼴) — 일정 텍스트·제목·날짜 숫자 동시 적용 ── */
+const TEXT_THEMES=[
+  {key:'default',     name:'기본',       cat:'ko'},
+  {key:'gowun-dodum', name:'고운돋움',    cat:'ko'},
+  {key:'song-myung',  name:'송명',       cat:'ko'},
+  {key:'gowun-batang',name:'고운바탕',    cat:'ko'},
+  {key:'jua',         name:'주아',       cat:'ko'},
+  {key:'do-hyeon',    name:'도현',       cat:'ko'},
+  {key:'black-han',   name:'검은고딕',    cat:'ko'},
+  {key:'pen',         name:'나눔펜',      cat:'ko'},
+  {key:'gaegu',       name:'개구',       cat:'ko'},
+  {key:'gamja',       name:'감자꽃',      cat:'ko'},
+  {key:'himelody',    name:'하이멜로디',   cat:'ko'},
+  {key:'stylish',     name:'스타일리시',   cat:'ko'},
+  {key:'diphylleia',  name:'디필레이아',   cat:'ko'},
+  {key:'gugi',        name:'구기',       cat:'ko'},
+  {key:'playfair',    name:'Playfair',   cat:'en'},
+  {key:'bebas',       name:'Bebas Neue', cat:'en'},
+  {key:'abril',       name:'Abril',      cat:'en'},
+];
+const TEXT_THEME_KEYS=TEXT_THEMES.map(t=>t.key);
+const TEXT_THEME_CLASSES=TEXT_THEMES.filter(t=>t.key!=='default').map(t=>'ff-'+t.key);
 function getFontFamilyPref(){
   try{
     const v=localStorage.getItem('uricalv2.fontFamily');
-    if(v==='pretendard'||v==='jua'||v==='pen')return v;
+    if(v && v!=='pretendard' && TEXT_THEME_KEYS.includes(v))return v;
     return 'default';
   }catch(e){ return 'default'; }
 }
 function setFontFamilyPref(value){
-  const v=(value==='pretendard'||value==='jua'||value==='pen')?value:'default';
+  const v=TEXT_THEME_KEYS.includes(value)?value:'default';
   try{ localStorage.setItem('uricalv2.fontFamily', v); }catch(e){}
   applyFontFamily(v);
 }
 function applyFontFamily(v){
   if(!document.body)return;
-  document.body.classList.remove('ff-pretendard','ff-jua','ff-pen');
-  if(v==='pretendard')document.body.classList.add('ff-pretendard');
-  else if(v==='jua')document.body.classList.add('ff-jua');
-  else if(v==='pen')document.body.classList.add('ff-pen');
-}
-function onFontFamilySelect(value){
-  if(!['default','pretendard','jua','pen'].includes(value))return;
-  setFontFamilyPref(value);
-  syncFontFamilyButtons();
-}
-function syncFontFamilyButtons(){
-  const pref=getFontFamilyPref();
-  const row=document.getElementById('fontFamilyRow');
-  if(!row)return;
-  row.querySelectorAll('.dm-btn').forEach(b=>{
-    if(b.dataset.ff===pref)b.classList.add('on');
-    else b.classList.remove('on');
-  });
+  document.body.classList.remove(...TEXT_THEME_CLASSES,'ff-pretendard');
+  if(v && v!=='default')document.body.classList.add('ff-'+v);
 }
 function applyTheme(name){
   const t=THEMES[name]||THEMES.vintage;
@@ -10269,7 +10334,7 @@ function openAdvSettings(){
   try{ syncFontSizeButtons(); }catch(_){}
   try{ syncWeekStartButtons(); }catch(_){}
   try{ syncAlignButtons(); }catch(_){}
-  try{ syncFontFamilyButtons(); }catch(_){}
+  try{ syncEvPosButtons(); }catch(_){}
   try{ syncDefaultViewButtons(); }catch(_){}
 }
 function closeAdvSettings(){
@@ -11793,6 +11858,7 @@ function setStoreTab(tab){
   _storeCurrentTab=tab;
   if(tab==='theme')renderStoreThemes();
   else if(tab==='color')renderStoreColors();
+  else if(tab==='text')renderStoreText();
   else if(tab==='emoji')renderStoreEmoji();
   else if(tab==='calorder')renderCalOrder();
   // 컨텐츠 영역을 맨 위로 스크롤
@@ -11909,6 +11975,62 @@ async function onLockColorClick(key){
 /* (구) — 호환성 위해 남김 (이제 호출 안 됨) */
 function onLockedColorTap(name){toast(`"${name}"`)}
 function onColorPackTap(name){toast(`"${name}"`)}
+
+/* ── 텍스트 테마(글꼴) 스토어 탭 ── */
+const TEXT_THEME_FONT={
+  'default':'-apple-system,BlinkMacSystemFont,sans-serif',
+  'gowun-dodum':'"Gowun Dodum",sans-serif',
+  'song-myung':'"Song Myung",serif',
+  'gowun-batang':'"Gowun Batang",serif',
+  'jua':'"Jua",sans-serif',
+  'do-hyeon':'"Do Hyeon",sans-serif',
+  'black-han':'"Black Han Sans",sans-serif',
+  'pen':'"Nanum Pen Script",cursive',
+  'gaegu':'"Gaegu",cursive',
+  'gamja':'"Gamja Flower",cursive',
+  'himelody':'"Hi Melody",cursive',
+  'stylish':'"Stylish",sans-serif',
+  'diphylleia':'"Diphylleia",serif',
+  'gugi':'"Gugi",cursive',
+  'playfair':'"Playfair Display",serif',
+  'bebas':'"Bebas Neue",sans-serif',
+  'abril':'"Abril Fatface",serif',
+};
+function renderStoreText(){
+  const body=document.getElementById('storeBody');
+  if(!body)return;
+  const cur=getFontFamilyPref();
+  const card=(item)=>{
+    const applied=item.key===cur;
+    const fam=TEXT_THEME_FONT[item.key]||'inherit';
+    const sample=item.cat==='en'?'Plan':'약속';
+    const btn=applied
+      ? `<button class="pack-btn pack-btn-using" onclick="event.stopPropagation();applyTextTheme('default')">사용 중</button>`
+      : `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();applyTextTheme('${item.key}')">적용하기</button>`;
+    return `<div class="theme-card${applied?' unlocked':''}" onclick="applyTextTheme('${applied?'default':item.key}')">
+      <div class="theme-preview tt-preview" style="font-family:${fam}">
+        <span class="tt-num">15</span><span class="tt-sample">${sample}</span>
+      </div>
+      <div class="theme-card-info">
+        <div class="theme-card-name">${escapeHtml(item.name)}</div>
+        <div class="theme-card-action">${btn}</div>
+      </div>
+    </div>`;
+  };
+  let html='<div class="store-section-title">한글 글꼴 <small>KOREAN</small></div>';
+  html+='<div class="theme-grid-store">'+TEXT_THEMES.filter(t=>t.cat==='ko').map(card).join('')+'</div>';
+  html+='<div class="store-section-title">영문 글꼴 <small>ENGLISH</small></div>';
+  html+='<div style="font-size:11px;color:var(--sub);margin:-4px 0 10px">한글은 기본 글꼴로 표시되고, 영문·날짜 숫자에 적용돼요</div>';
+  html+='<div class="theme-grid-store">'+TEXT_THEMES.filter(t=>t.cat==='en').map(card).join('')+'</div>';
+  body.innerHTML=html;
+}
+function applyTextTheme(key){
+  setFontFamilyPref(key);
+  const t=TEXT_THEMES.find(x=>x.key===key);
+  toast(key==='default'?'기본 글꼴로 돌아왔어요':(t?`"${t.name}" 글꼴이 적용됐어요`:'적용됐어요'));
+  renderStoreText();
+  try{ renderMonthly(); }catch(_){}
+}
 
 /* ── 이모지 팩 (캐릭터 미리보기 — 곧 일정 반응에 적용) ── */
 function renderStoreEmoji(){
