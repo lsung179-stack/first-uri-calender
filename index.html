@@ -1010,6 +1010,15 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 /* 캘린더 일정 바 — 함께 표시 (작은 도트) */
 .cal-evbar.shared{position:relative;padding-left:9px}
 .cal-evbar-marker{position:absolute;left:3px;top:50%;margin-top:-5.5px;width:3px;height:11px;background:var(--card);border-radius:1.5px}
+/* ── 드래그로 일정 이동 ── */
+.cal-evbar[data-drag="1"]{-webkit-touch-callout:none}
+body.ev-dragging{touch-action:none;-webkit-user-select:none;user-select:none}
+body.ev-dragging .cal-evbar,body.ev-dragging input,body.ev-dragging textarea{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+body.ev-dragging .cal-cell{cursor:grabbing}
+.cal-evbar.ev-drag-src{opacity:.35}
+.cal-cell.ev-drop-target{box-shadow:inset 0 0 0 2px var(--accent);border-radius:7px;background:rgba(0,0,0,.04)}
+.cal-cell.ev-drop-target .cal-day-num{font-weight:800}
+.ev-drag-ghost{position:fixed;z-index:9999;pointer-events:none;font-size:10px;font-weight:700;padding:4px 9px;border-radius:6px;color:#fff;box-shadow:0 8px 22px rgba(0,0,0,.30);white-space:nowrap;max-width:170px;overflow:hidden;text-overflow:ellipsis;transform:translate(-50%,-135%) scale(1.06);opacity:.97;will-change:left,top}
 
 /* 일정 복사 옵션 (방 만들기/입장 시) */
 .copy-option{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fdf6e8;border:1.5px solid var(--borderL);border-radius:10px;margin:4px 0 10px;cursor:pointer}
@@ -6556,7 +6565,11 @@ function cellHtml(y,m,d,isOther,todayKey){
     // 함께 막대 + 첫날: 좌측에 짧은 cream 마커 (미니멀)
     const sharedMarker=showSharedMarker?`<span class="cal-evbar-marker"></span>`:'';
     const txt=getContrastTextColor(hex);
-    evsHtml+=`<div class="cal-evbar${sharedCls}${rangeCls}" style="background:${hex};color:${txt}">${sharedMarker}${displayTitle}</div>`;
+    // 드래그 이동 가능 여부 — 실제 DB row만 (반복 펼침/생일 등 가상 일정 제외)
+    const _evRt=ev.repeat_type||(ev.recurring_yearly?'yearly':'none');
+    const _canDrag=!ev._isVirtual&&!ev._yearlyDisplay&&(!_evRt||_evRt==='none')&&!ev.recurring_yearly&&!!ev.id;
+    const dragAttr=_canDrag?` data-drag="1" data-evid="${ev.id}"`:'';
+    evsHtml+=`<div class="cal-evbar${sharedCls}${rangeCls}" style="background:${hex};color:${txt}"${dragAttr}>${sharedMarker}${displayTitle}</div>`;
   });
   
   return `<div class="${cls.join(' ')}" data-date="${key}" onclick="openDateSheet('${key}')">
@@ -12143,16 +12156,178 @@ function copyRoomCode(){
    ═══════════════════════════════════ */
 let _swipeStartX=0,_swipeStartY=0,_swipeEnabled=false;
 
+/* ═══════════════════════════════════
+   드래그로 일정 이동 (길게 눌러 → 드래그 → 다른 날짜에 놓기)
+   - 반복 일정·생일(가상)은 제외, 실제 DB row만 이동
+   - 함께/기간/여러 날 일정은 그룹 전체를 같은 간격으로 이동
+   ═══════════════════════════════════ */
+let _evDragging=false;
+let _evDrag=null;
+let _evDragSuppressClick=false;
+const EV_DRAG_HOLD=220;     // 길게 누름 임계(ms)
+const EV_DRAG_CANCEL=12;    // 시작 전 허용 이동(px) — 넘으면 스크롤/스와이프로 양보
+
+function _evDayDiff(a,b){return Math.round((parseDateKey(b)-parseDateKey(a))/86400000)}
+function _evFindRowById(id){
+  for(const k in _events){
+    const arr=_events[k];if(!arr)continue;
+    const r=arr.find(e=>e.id===id);
+    if(r)return r;
+  }
+  return null;
+}
+/* anchorRow가 속한 '연속 그룹'의 {id,date} 목록 (단독이면 자기 하나) */
+function _evCollectGroup(anchorRow,anchorDate){
+  if(anchorRow.is_multi)return [{id:anchorRow.id,date:anchorDate}];
+  const dates=[anchorDate];
+  let d=shiftDateKey(anchorDate,-1);
+  while((_events[d]||[]).some(e=>isSameRangeGroup(e,anchorRow))){dates.unshift(d);d=shiftDateKey(d,-1)}
+  d=shiftDateKey(anchorDate,1);
+  while((_events[d]||[]).some(e=>isSameRangeGroup(e,anchorRow))){dates.push(d);d=shiftDateKey(d,1)}
+  const out=[],seen=new Set();
+  dates.forEach(dt=>{
+    (_events[dt]||[]).forEach(e=>{
+      if(!e.id)return;
+      if(e.id===anchorRow.id||isSameRangeGroup(e,anchorRow)){
+        if(!seen.has(e.id)){seen.add(e.id);out.push({id:e.id,date:dt})}
+      }
+    });
+  });
+  return out;
+}
+async function _evMove(anchorRow,fromDate,toDate){
+  const diff=_evDayDiff(fromDate,toDate);
+  if(!diff)return;
+  const grp=_evCollectGroup(anchorRow,fromDate);
+  if(!grp.length)return;
+  const moves=grp.map(o=>({id:o.id,nd:shiftDateKey(o.date,diff)}));
+  try{
+    const results=await Promise.all(moves.map(m=>supa.from('events').update({date:m.nd}).eq('id',m.id)));
+    const bad=results.find(r=>r&&r.error);
+    if(bad)throw bad.error;
+    if(navigator.vibrate)navigator.vibrate(10);
+    await loadEvents();
+    toast(grp.length>1?'기간 일정을 옮겼어요':'일정을 옮겼어요');
+  }catch(err){
+    console.error('move event failed',err);
+    toast('일정 이동에 실패했어요');
+    try{await loadEvents()}catch(_){}
+  }
+}
+function _evMakeGhost(srcBar,x,y){
+  const g=document.createElement('div');
+  g.className='ev-drag-ghost';
+  const cs=getComputedStyle(srcBar);
+  g.style.background=cs.backgroundColor;
+  g.style.color=cs.color;
+  g.textContent=(srcBar.textContent||'').trim()||'일정';
+  g.style.left=x+'px';g.style.top=y+'px';
+  document.body.appendChild(g);
+  return g;
+}
+function _evCellFromPoint(x,y){
+  const el=document.elementFromPoint(x,y);
+  if(!el||!el.closest)return null;
+  const cell=el.closest('.cal-cell');
+  if(!cell)return null;
+  const date=cell.getAttribute('data-date');
+  if(!date)return null;
+  return {cell,date};
+}
+function _evClearDropHl(){
+  document.querySelectorAll('.cal-cell.ev-drop-target').forEach(c=>c.classList.remove('ev-drop-target'));
+}
+function setupEventDrag(){
+  const grid=document.getElementById('calGrid');
+  if(!grid||grid._evDragBound)return;
+  grid._evDragBound=true;
+
+  function _start(){
+    if(!_evDrag)return;
+    const row=_evFindRowById(_evDrag.evid);
+    if(!row){_evDrag=null;return}
+    _evDrag.anchorRow=row;
+    _evDrag.active=true;
+    _evDragging=true;
+    _swipeEnabled=false;
+    document.body.classList.add('ev-dragging');
+    _evDrag.bar.classList.add('ev-drag-src');
+    _evDrag.ghost=_evMakeGhost(_evDrag.bar,_evDrag.startX,_evDrag.startY);
+    if(navigator.vibrate)navigator.vibrate(15);
+    try{_evDrag.bar.setPointerCapture(_evDrag.pid)}catch(_){}
+  }
+  function _finish(commit){
+    if(!_evDrag)return;
+    clearTimeout(_evDrag.holdTimer);
+    const d=_evDrag;_evDrag=null;
+    if(!d.active)return;            // 길게 누르기 전이면 일반 탭 — 그대로 둠
+    try{d.bar.releasePointerCapture(d.pid)}catch(_){}
+    if(d.ghost)d.ghost.remove();
+    if(d.bar)d.bar.classList.remove('ev-drag-src');
+    _evClearDropHl();
+    document.body.classList.remove('ev-dragging');
+    _evDragging=false;
+    _evDragSuppressClick=true;      // 드롭 직후 셀 click(날짜시트) 1회 차단
+    setTimeout(()=>{_evDragSuppressClick=false},400);
+    if(commit&&d.dropDate&&d.anchorRow)_evMove(d.anchorRow,d.fromDate,d.dropDate);
+  }
+
+  grid.addEventListener('pointerdown',(e)=>{
+    if(e.button!==undefined&&e.button!==0)return;
+    if(_evDrag)_finish(false);
+    const bar=e.target.closest&&e.target.closest('.cal-evbar[data-drag="1"]');
+    if(!bar)return;
+    const cell=bar.closest('.cal-cell');if(!cell)return;
+    const fromDate=cell.getAttribute('data-date');
+    const evid=bar.getAttribute('data-evid');
+    if(!fromDate||!evid)return;
+    _evDrag={bar,fromDate,evid,startX:e.clientX,startY:e.clientY,pid:e.pointerId,
+             active:false,ghost:null,lastCell:null,dropDate:null,
+             holdTimer:setTimeout(_start,EV_DRAG_HOLD)};
+  },{passive:true});
+
+  window.addEventListener('pointermove',(e)=>{
+    if(!_evDrag||e.pointerId!==_evDrag.pid)return;
+    if(!_evDrag.active){
+      const dx=Math.abs(e.clientX-_evDrag.startX),dy=Math.abs(e.clientY-_evDrag.startY);
+      if(dx>EV_DRAG_CANCEL||dy>EV_DRAG_CANCEL){clearTimeout(_evDrag.holdTimer);_evDrag=null}
+      return;
+    }
+    e.preventDefault();
+    const x=e.clientX,y=e.clientY;
+    if(_evDrag.ghost){_evDrag.ghost.style.left=x+'px';_evDrag.ghost.style.top=y+'px'}
+    const hit=_evCellFromPoint(x,y);
+    if(hit){
+      if(_evDrag.lastCell!==hit.cell){
+        _evClearDropHl();
+        if(hit.date!==_evDrag.fromDate)hit.cell.classList.add('ev-drop-target');
+        _evDrag.lastCell=hit.cell;
+        _evDrag.dropDate=(hit.date!==_evDrag.fromDate)?hit.date:null;
+      }
+    }else{_evClearDropHl();_evDrag.lastCell=null;_evDrag.dropDate=null}
+  },{passive:false});
+
+  window.addEventListener('pointerup',(e)=>{if(_evDrag&&e.pointerId===_evDrag.pid)_finish(true)});
+  window.addEventListener('pointercancel',(e)=>{if(_evDrag&&e.pointerId===_evDrag.pid)_finish(false)});
+}
+/* 드래그 직후 셀 클릭(날짜 시트 열림) 1회 차단 — capture 단계 */
+document.addEventListener('click',(e)=>{
+  if(_evDragSuppressClick){e.stopPropagation();e.preventDefault();_evDragSuppressClick=false}
+},true);
+
+
 function setupSwipe(){
   const grid=document.getElementById('calGrid');
   if(!grid)return;
   grid.addEventListener('touchstart',(e)=>{
     if(e.touches.length!==1)return;
+    if(typeof _evDragging!=='undefined'&&_evDragging){_swipeEnabled=false;return;}
     _swipeStartX=e.touches[0].clientX;
     _swipeStartY=e.touches[0].clientY;
     _swipeEnabled=true;
   },{passive:true});
   grid.addEventListener('touchend',(e)=>{
+    if(typeof _evDragging!=='undefined'&&_evDragging){_swipeEnabled=false;return;}
     if(!_swipeEnabled)return;
     _swipeEnabled=false;
     const t=e.changedTouches[0];
@@ -12210,6 +12385,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(el)el.addEventListener('keydown',e=>{if(e.key==='Enter')confirmResetPassword()});
   });
   setupSwipe();
+  setupEventDrag();
   setupSheetSwipe('dpCard',closeDateSheet);
   setupSheetSwipe('evCard',closeEventModal);
   setupSheetSwipe('createCard',closeCreateRoom);
