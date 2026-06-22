@@ -12019,7 +12019,10 @@ function _loadTextPreviewFonts(){
     .map(t=>(TEXT_THEME_FONT[t.key]||'').split(',')[0].replace(/['"]/g,'').trim())
     .filter(Boolean))];
   if(!uniq.length)return Promise.resolve();
-  const sample='가나다라마바사아자차약속회의일정모임0123456789LunchMeeting';
+  // 미리보기에 실제 쓰는 글자 = 칩 텍스트 + 모든 폰트명(라벨도 자기 폰트로 보이게)
+  const baseChars='약속회의일정모임0123456789LunchMeeting';
+  const nameChars=TEXT_THEMES.map(t=>t.name||'').join('');
+  const sample=[...new Set((baseChars+nameChars).split(''))].join('');
   let url='https://fonts.googleapis.com/css2?';
   uniq.forEach(f=>{ url+='family='+f.replace(/ /g,'+')+'&'; });
   url+='text='+encodeURIComponent(sample)+'&display=swap';
@@ -12049,7 +12052,7 @@ function renderStoreText(){
         <div class="tt-evbar">${s1}</div>
         <div class="tt-evbar tt-evbar2">${s2}</div>
       </div>
-      <div class="tt-foot"><span class="tt-name">${escapeHtml(item.name)}</span>${btn}</div>
+      <div class="tt-foot"><span class="tt-name" style="font-family:${fam}">${escapeHtml(item.name)}</span>${btn}</div>
     </div>`;
   };
   let html='<div class="store-section-title">한글 글꼴 <small>KOREAN</small></div>';
