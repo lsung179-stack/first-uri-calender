@@ -11133,10 +11133,11 @@ function coBuildMonth(month, W){
   const headerH=c(.078);
   const gridH=contentH-headerH-c(.030)-c(.046);   // header + divider + weekday 제외
   const cellH=gridH/rows;                          // 모든 날짜 칸 동일 높이
-  const dateHeaderH=c(.056);                       // 날짜+공휴일 영역 — 일정바와 분리되게 충분히 확보
+  const dateHeaderHol=c(.054);                     // 공휴일 있는 날 — 날짜+공휴일 영역
+  const dateHeaderPlain=c(.038);                   // 공휴일 없는 날 — 여백 축소(일정바가 위로 붙음)
   const barGap=Math.max(2,c(.003));
-  const barH=Math.max(c(.012),(cellH-dateHeaderH-barGap*2)/2);  // 칸 안에 일정 2개가 딱 들어가게
-  const barFont=Math.min(c(.018), barH*0.64);
+  const barH=c(.026);                              // 앱과 비슷한 고정 높이 — 상단부터 차례 배치
+  const barFont=Math.min(c(.017), barH*0.62);
   const dayFont=c(.030), holFont=c(.013);
 
   // weekday header
@@ -11165,18 +11166,19 @@ function coBuildMonth(month, W){
         const tl=(ev.seg==='single'||ev.seg==='start')?rl:0;
         const tr=(ev.seg==='single'||ev.seg==='end')?rl:0;
         const showT=(ev.seg==='single'||ev.seg==='start');
-        bars+=`<div style="height:${barH}px;font-size:${barFont}px;font-weight:600;padding:0 ${c(.006)}px;border-radius:${tl}px ${tr}px ${tr}px ${tl}px;color:${tc};background:${hx};line-height:${barH}px;margin-bottom:${barGap}px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box">${showT?escapeHtml(ev.title):'&nbsp;'}</div>`;
+        bars+=`<div style="height:${barH}px;display:flex;align-items:center;padding:0 ${c(.006)}px;border-radius:${tl}px ${tr}px ${tr}px ${tl}px;background:${hx};margin-bottom:${barGap}px;box-sizing:border-box;overflow:hidden"><span style="font-size:${barFont}px;font-weight:600;color:${tc};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;line-height:1.1">${showT?escapeHtml(ev.title):'&nbsp;'}</span></div>`;
       }); };
       drawBars(day); if(ex!=null) drawBars(ex);
       const exHtml=ex!=null?`<span style="font-family:var(--ff-serif);font-weight:600;color:${sun};font-size:${c(.021)}px;margin-left:${c(.004)}px">/${ex}</span>`:'';
+      const dh=hol?dateHeaderHol:dateHeaderPlain;   // 공휴일 없으면 날짜영역 축소 → 일정바 위로 붙음
       // 날짜 칸 — 일정 유무와 무관하게 모두 동일한 cellH 높이로 고정
       trs+=`<td style="${topBorder};vertical-align:top;height:${cellH}px;padding:0;box-sizing:border-box">
         <div style="height:${cellH}px;overflow:hidden;box-sizing:border-box">
-          <div style="height:${dateHeaderH}px;overflow:hidden;box-sizing:border-box">
+          <div style="height:${dh}px;overflow:hidden;box-sizing:border-box">
             <div style="padding:${c(.007)}px ${c(.008)}px 0;line-height:1.05;white-space:nowrap">
               <span style="font-family:var(--ff-serif);font-weight:500;color:${numCol};font-size:${dayFont}px">${day}</span>${exHtml}<span style="font-size:${c(.013)}px;color:${lunC};margin-left:3px">${lun}</span>
             </div>
-            ${hol?`<div style="height:${c(.015)}px;margin-top:1px;font-size:${holFont}px;color:${sun};line-height:${c(.015)}px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${hol}</div>`:`<div style="height:${c(.015)}px;margin-top:1px"></div>`}
+            ${hol?`<div style="height:${c(.015)}px;margin-top:1px;font-size:${holFont}px;color:${sun};line-height:${c(.015)}px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${hol}</div>`:''}
           </div>
           <div>${bars}</div>
         </div>
@@ -11281,7 +11283,7 @@ function openCalOrderForm(){
         <div class="co-pay-label">결제 수단</div>
         <div class="co-pay-fixed">계좌이체</div>
       </div>
-      <button class="co-btn co-btn-order" style="margin-top:18px" onclick="coSubmitOrder()">${CO_PRICE.toLocaleString()}원 · 계좌 정보 보기</button>
+      <button class="co-btn co-btn-order" style="margin-top:18px" onclick="coSubmitOrder()">${CO_PRICE.toLocaleString()}원 · 주문하기</button>
       <div style="text-align:center;margin-top:10px"><span class="co-back-link" onclick="closeCalPreview()">‹ 돌아가기</span></div>
     </div>`;
 }
