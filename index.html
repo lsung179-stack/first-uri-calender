@@ -10835,7 +10835,7 @@ let _coRoomEvents = [];          // 그룹핑된 일정 [{key,month,day,endDay,e
 let _coMonthView = 1;
 let _coSelectedEvents = {};      // {key:{startYmd,endYmd,title,color,yearly}}
 let _coCover = 'chars';
-let _coPreviewPage = 0;          // 0=표지, 1=전년12월 메모, 2..13=앞면(month=page-1), 14..25=뒷면(month=page-13)
+let _coPreviewPage = 0;          // 0=표지, 1=전년12월 메모, 2~25=각 달 앞면/뒷면 번갈아(앞=짝수 idx, 뒤=홀수)
 
 function coLunar(y,m,d){
   try{ if(window.Solar){ const l=window.Solar.fromYmd(y,m,d).getLunar(); return `음 ${l.getMonth()}.${l.getDay()}`; } }catch(e){}
@@ -11137,14 +11137,12 @@ function renderCalPreviewPage(){
   }else if(_coPreviewPage===1){
     inner=coBuildBackPage(12, stageW, _coYear-1);
     label=`${_coYear-1}년 12월`;
-  }else if(_coPreviewPage<=13){
-    const m=_coPreviewPage-1;
-    inner=coBuildMonth(m, stageW);
-    label=`${m}월`;
   }else{
-    const m=_coPreviewPage-13;
-    inner=coBuildBackPage(m, stageW);
-    label=`${m}월 뒷면`;
+    // 실제 인쇄 순서와 동일하게: 각 달 앞면 → 그 달 뒷면(메모) 번갈아
+    const idx=_coPreviewPage-2;          // 0..23
+    const m=Math.floor(idx/2)+1;         // 1..12월
+    if(idx%2===0){ inner=coBuildMonth(m, stageW); label=`${m}월`; }
+    else{ inner=coBuildBackPage(m, stageW); label=`${m}월 뒷면`; }
   }
   pg.textContent=label;
   body.innerHTML=`<div style="display:flex;justify-content:center">${inner}</div>`;
@@ -11360,8 +11358,7 @@ function coBuildBackPage(month, W, yearOverride){
   const lines=10;
   let memo='';
   for(let i=0;i<lines;i++) memo+=`<div style="border-bottom:1px dotted ${dotLine};height:${c(.052)}px"></div>`;
-  const quoteLines=(CO_QUOTES[month]||'').split('\n');
-  const quoteHtml=quoteLines.map((q,i)=>`<div style="${i===0?'text-indent:'+c(.028)+'px':''}">${escapeHtml(q)}</div>`).join('');
+  const quoteText=escapeHtml((CO_QUOTES[month]||'').replace(/\n/g,' ').replace(/\s+/g,' ').trim());
 
   return coFrameOpen(W,c,pad)+`
     <div style="font-family:var(--ff-serif);font-weight:700;color:${accent};font-size:${c(.05)}px;line-height:1">${month}월의 기록</div>
@@ -11369,7 +11366,7 @@ function coBuildBackPage(month, W, yearOverride){
     ${coDividerDots(c)}
     <div style="display:flex;gap:${c(.05)}px;margin-top:${c(.01)}px">
       <div style="flex:1.35">${memo}</div>
-      <div style="flex:1;position:relative">
+      <div style="flex:1;display:flex;flex-direction:column;min-height:${c(.50)}px">
         <div style="display:flex;align-items:flex-start;gap:${c(.014)}px">
           <span style="font-family:var(--ff-serif);font-weight:700;color:${accent};font-size:${c(.05)}px;line-height:.85">${nm}</span>
           <div style="padding-top:${c(.004)}px">
@@ -11381,12 +11378,14 @@ function coBuildBackPage(month, W, yearOverride){
           <thead><tr>${mth('일',sun)}${mth('월')}${mth('화')}${mth('수')}${mth('목')}${mth('금')}${mth('토',sat)}</tr></thead>
           <tbody>${mini}</tbody>
         </table>
-        <div style="clear:both;border-top:1px solid ${miniLine};margin-top:${c(.014)}px;padding-top:${c(.016)}px;position:relative;font-family:var(--ff-serif);font-style:italic;color:${text};font-size:${c(.024)}px;line-height:1.55;text-align:center">
-          <span style="position:absolute;left:0;top:${c(.012)}px;color:${gold};font-size:${c(.05)}px;font-weight:800;font-style:normal;line-height:1">“</span>${quoteHtml}
+        <div style="border-top:1px solid ${miniLine};margin-top:${c(.016)}px;padding:${c(.016)}px ${c(.020)}px 0 ${c(.030)}px;position:relative;font-family:var(--ff-serif);font-style:italic;color:${text};font-size:${c(.022)}px;line-height:1.62;text-align:center;word-break:keep-all">
+          <span style="position:absolute;left:0;top:${c(.012)}px;color:${gold};font-size:${c(.046)}px;font-weight:800;font-style:normal;line-height:1">“</span>${quoteText}
+        </div>
+        <div style="margin-top:auto;padding-top:${c(.012)}px;text-align:center">
+          <img src="${CO_LOGO_IMG}" style="width:${c(.072)}px;height:${c(.072)}px;object-fit:contain">
         </div>
       </div>
     </div>
-    <img src="${CO_LOGO_IMG}" style="position:absolute;right:${c(.045)}px;bottom:${c(.038)}px;width:${c(.078)}px;height:${c(.078)}px;object-fit:contain">
   </div>`;
 }
 
