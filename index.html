@@ -478,13 +478,13 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .cal-month-name{font-family:var(--ff-serif);font-size:24px;font-weight:700;color:var(--text);letter-spacing:.5px;line-height:1.1}
 
 /* 요일 헤더 */
-.cal-week-head{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:6px 12px 4px}
+.cal-week-head{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:6px 4px 4px}
 .cal-dow{text-align:center;font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.5px;padding:6px 0}
 .cal-dow.sun{color:var(--sun)}
 .cal-dow.sat{color:var(--sat)}
 
 /* 캘린더 그리드 */
-.cal-grid{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:0 12px;gap:0;overflow:hidden;padding-bottom:calc(110px + env(safe-area-inset-bottom));transition:opacity .2s ease}
+.cal-grid{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:0 4px;gap:0;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(110px + env(safe-area-inset-bottom));transition:opacity .2s ease}
 .cal-grid.fading{opacity:0}
 .cal-cell{min-height:max(90px,calc((var(--vh100, 100dvh) - 310px) / 6));padding:2px 0;display:flex;flex-direction:column;cursor:pointer;border-radius:0;transition:background .12s;position:relative}
 .cal-cell:active{background:rgba(139,58,42,.06)}
@@ -512,7 +512,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
   pointer-events:none;
 }
 .cal-cell.holiday .cal-day-num{color:var(--sun);font-weight:700}
-.cal-events{display:flex;flex-direction:column;gap:1px;flex:1;overflow:hidden;padding-bottom:3px}
+.cal-events{display:flex;flex-direction:column;gap:1px;flex:1;padding-bottom:3px}
 /* 일정 세로 위치: 하단 정렬 (기본은 상단부터 쌓임) */
 body.evpos-bottom .cal-events{justify-content:flex-end}
 /* 격자선 — 세로(우측)/가로(하단) 토글. box-shadow inset으로 레이아웃 안 밀리게 */
@@ -6704,7 +6704,7 @@ function cellHtml(y,m,d,isOther,todayKey){
   
   let evsHtml='';
   let _hasRangeStart=false;
-  const maxShow=3;
+  const maxShow=20;
   const shown=evs.slice(0,maxShow);
   shown.forEach(ev=>{
     const hex=colorHex(ev.color);
