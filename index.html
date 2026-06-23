@@ -5447,7 +5447,14 @@ supa.auth.onAuthStateChange((event,session)=>{
         }
       }catch(e){ /* noop */ }
       finally{
-        try{ if(window.Capacitor.Plugins.Browser&&window.Capacitor.Plugins.Browser.close) window.Capacitor.Plugins.Browser.close(); }catch(_){}
+        // Browser.close()는 Promise라 동기 try-catch로는 reject가 안 잡힘 →
+        // 이미 닫힌 경우 "No active window to close!"로 reject되므로 .catch로 조용히 무시
+        try{
+          if(window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Browser&&window.Capacitor.Plugins.Browser.close){
+            var _closeP=window.Capacitor.Plugins.Browser.close();
+            if(_closeP&&typeof _closeP.catch==='function') _closeP.catch(function(){});
+          }
+        }catch(_){}
       }
     });
   }catch(e){ /* noop */ }
@@ -11136,8 +11143,8 @@ function coBuildMonth(month, W){
   const dateHeaderHol=c(.054);                     // 공휴일 있는 날 — 날짜+공휴일 영역
   const dateHeaderPlain=c(.038);                   // 공휴일 없는 날 — 여백 축소(일정바가 위로 붙음)
   const barGap=Math.max(2,c(.003));
-  const barH=c(.026);                              // 앱과 비슷한 고정 높이 — 상단부터 차례 배치
-  const barFont=Math.min(c(.017), barH*0.62);
+  const barH=c(.030);                              // 앱과 비슷한 고정 높이 — 상단부터 차례 배치
+  const barFont=Math.min(c(.016), barH*0.52);
   const dayFont=c(.030), holFont=c(.013);
 
   // weekday header
@@ -11166,7 +11173,7 @@ function coBuildMonth(month, W){
         const tl=(ev.seg==='single'||ev.seg==='start')?rl:0;
         const tr=(ev.seg==='single'||ev.seg==='end')?rl:0;
         const showT=(ev.seg==='single'||ev.seg==='start');
-        bars+=`<div style="height:${barH}px;display:flex;align-items:center;padding:0 ${c(.006)}px;border-radius:${tl}px ${tr}px ${tr}px ${tl}px;background:${hx};margin-bottom:${barGap}px;box-sizing:border-box;overflow:hidden"><span style="font-size:${barFont}px;font-weight:600;color:${tc};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;line-height:1.1">${showT?escapeHtml(ev.title):'&nbsp;'}</span></div>`;
+        bars+=`<div style="height:${barH}px;padding:0 ${c(.006)}px;border-radius:${tl}px ${tr}px ${tr}px ${tl}px;background:${hx};margin-bottom:${barGap}px;box-sizing:border-box;overflow:hidden;font-family:'Noto Sans KR',sans-serif;font-size:${barFont}px;font-weight:600;color:${tc};line-height:${barH}px;white-space:nowrap;text-overflow:ellipsis">${showT?escapeHtml(ev.title):'&nbsp;'}</div>`;
       }); };
       drawBars(day); if(ex!=null) drawBars(ex);
       const exHtml=ex!=null?`<span style="font-family:var(--ff-serif);font-weight:600;color:${sun};font-size:${c(.021)}px;margin-left:${c(.004)}px">/${ex}</span>`:'';
