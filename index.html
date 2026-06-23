@@ -450,12 +450,12 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .cal-avatar:active{opacity:.7}
 
 /* 멤버 프로필 탭 (전체 + 각 멤버) */
-.cal-member-tabs{display:none;gap:18px;padding:8px 20px 6px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;-webkit-overflow-scrolling:touch}
+.cal-member-tabs{display:none;gap:18px;padding:4px 20px 2px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;-webkit-overflow-scrolling:touch}
 .cal-member-tabs::-webkit-scrollbar{display:none}
 .cal-member-tabs.show{display:flex}
-.cal-member-tab{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;flex-shrink:0;background:none;border:none;padding:3px;font-family:inherit;transition:opacity .15s}
+.cal-member-tab{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;flex-shrink:0;background:none;border:none;padding:2px;font-family:inherit;transition:opacity .15s}
 .cal-member-tab:active{opacity:.6}
-.cal-member-tab-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--ff-serif);font-size:18px;font-weight:700;color:var(--card);flex-shrink:0;transition:box-shadow .15s;position:relative;overflow:hidden}
+.cal-member-tab-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--ff-serif);font-size:17px;font-weight:700;color:var(--card);flex-shrink:0;transition:box-shadow .15s;position:relative;overflow:hidden}
 .cal-member-tab-icon.has-photo{padding:0}
 .cal-member-tab-icon.has-photo img{width:100%;height:100%;object-fit:cover;display:block}
 .cal-member-tab.on .cal-member-tab-icon{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--accent)}
@@ -470,23 +470,23 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .cal-avatar.has-photo img{width:100%;height:100%;object-fit:cover;display:block}
 
 /* 월/년 타이틀 */
-.cal-month-row{display:flex;align-items:center;justify-content:center;gap:18px;padding:14px 0 6px;position:relative}
+.cal-month-row{display:flex;align-items:center;justify-content:center;gap:16px;padding:6px 0 3px;position:relative}
 .cal-month-arrow{background:none;border:none;cursor:pointer;font-size:22px;color:var(--sub);font-family:inherit;font-weight:300;padding:6px 10px;line-height:1}
 .cal-month-arrow:active{opacity:.5}
 .cal-month-title{display:flex;flex-direction:column;align-items:center;cursor:pointer;min-width:90px}
-.cal-month-year{font-size:11px;color:var(--sub);letter-spacing:1px;margin-bottom:2px}
-.cal-month-name{font-family:var(--ff-serif);font-size:24px;font-weight:700;color:var(--text);letter-spacing:.5px;line-height:1.1}
+.cal-month-year{font-size:11px;color:var(--sub);letter-spacing:1px;margin-bottom:1px}
+.cal-month-name{font-family:var(--ff-serif);font-size:21px;font-weight:700;color:var(--text);letter-spacing:.5px;line-height:1.1}
 
 /* 요일 헤더 */
-.cal-week-head{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:6px 4px 4px}
+.cal-week-head{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:4px 4px 2px}
 .cal-dow{text-align:center;font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.5px;padding:6px 0}
 .cal-dow.sun{color:var(--sun)}
 .cal-dow.sat{color:var(--sat)}
 
 /* 캘린더 그리드 */
-.cal-grid{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:0 4px;gap:0;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(110px + env(safe-area-inset-bottom));transition:opacity .2s ease}
+.cal-grid{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:minmax(calc((var(--vh100, 100dvh) - 280px) / 6),auto);padding:0 4px;gap:0;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(110px + env(safe-area-inset-bottom));transition:opacity .2s ease}
 .cal-grid.fading{opacity:0}
-.cal-cell{min-height:max(90px,calc((var(--vh100, 100dvh) - 310px) / 6));padding:2px 0;display:flex;flex-direction:column;cursor:pointer;border-radius:0;transition:background .12s;position:relative}
+.cal-cell{min-height:0;padding:2px 0;display:flex;flex-direction:column;cursor:pointer;border-radius:0;transition:background .12s;position:relative}
 .cal-cell:active{background:rgba(139,58,42,.06)}
 .cal-cell.other{opacity:.35}
 .cal-day-num{text-align:center;font-size:13px;font-weight:500;color:var(--text);margin:2px 0 3px;line-height:20px;font-family:var(--ff-num,-apple-system,sans-serif);position:relative}
