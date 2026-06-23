@@ -10696,12 +10696,18 @@ const CO_HOLIDAYS = {
   '12-25':'성탄절','12-27':'대체공휴일'
 };
 const CO_QUOTES = {
-  1:'같은 달력을 보는 것만으로도\n우리는 조금 더 가까워진다',2:'함께 보낸 평범한 하루가\n가장 특별한 기념일이 된다',
-  3:'봄이 오는 길목에서\n우리의 계획도 피어난다',4:'흩날리는 벚꽃처럼\n우리의 날들도 반짝인다',
-  5:'고마운 사람들과 보내는 5월,\n달력이 제일 바쁜 달',6:'한 해의 절반,\n우리는 잘 걸어가고 있다',
-  7:'뜨거운 여름,\n우리의 여행은 이제 시작',8:'쉼표 같은 휴가도\n함께라서 문장이 된다',
-  9:'둥근 보름달처럼\n우리의 마음도 가득 차오른다',10:'하늘이 높아지는 계절,\n우리의 기록도 깊어진다',
-  11:'한 장 남은 달력이\n아쉽지 않도록 오늘을 살자',12:'올해의 마지막 장,\n내년에도 함께 넘기자'
+  1:'당신은 세상에 오직 하나뿐인 존재입니다\n그 자체로 이미 충분히 가치 있고 아름답습니다',
+  2:'누군가에게 사랑받는 것은 힘을 주지만\n누군가를 깊이 사랑하는 것은 용기를 준다',
+  3:'당신이 할 수 있는 가장 큰 모험은\n당신이 꿈꾸는 삶을 사는 것입니다',
+  4:'폭풍이 지나가기를 기다리는 것이 아니라\n빗속에서 춤추는 법을 배우는 것이 인생이다',
+  5:'친구란 내 마음속의 노래를 알고\n가사를 잊었을 때 다시 불러주는 사람이다',
+  6:'서로를 치유해 주는 가장 강력한 약은\n사랑과 친절이다',
+  7:"어제는 역사, 내일은 미스터리\n오늘은 선물이라 'Present'라 부른다",
+  8:'행복은 목적지에 이르는 여정이지\n목적지 그 자체가 아니다',
+  9:'작은 일에 감사하는 마음을 가질 때\n삶은 기적으로 가득 차기 시작한다',
+  10:'가장 아름다운 것들은 눈에 보이지 않고\n오직 마음으로만 느껴진다',
+  11:'가장 어두운 밤도 언젠가는 끝나고\n해가 떠오를 것이다',
+  12:'인생에서 가질 수 있는 최고의 행복은\n우리가 사랑받고 있다는 확신이다'
 };
 const CO_COVERS = [
   {key:'chars', name:'캐릭터 표지', sub:'모찌·곰돌·달콩', img:CO_COVER_IMG_CHARS},
@@ -11140,8 +11146,8 @@ function coBuildMonth(month, W){
   const headerH=c(.078);
   const gridH=contentH-headerH-c(.030)-c(.046);   // header + divider + weekday 제외
   const cellH=gridH/rows;                          // 모든 날짜 칸 동일 높이
-  const dateHeaderHol=c(.054);                     // 공휴일 있는 날 — 날짜+공휴일 영역
-  const dateHeaderPlain=c(.038);                   // 공휴일 없는 날 — 여백 축소(일정바가 위로 붙음)
+  const dateHeaderHol=c(.058);                     // 공휴일 있는 날 — 날짜+공휴일 영역
+  const dateHeaderPlain=c(.046);                   // 공휴일 없는 날 — 날짜숫자(.030)+패딩보다 충분히 커야 바가 안 겹침
   const barGap=Math.max(2,c(.003));
   const barH=c(.030);                              // 앱과 비슷한 고정 높이 — 상단부터 차례 배치
   const barFont=Math.min(c(.016), barH*0.52);
@@ -12794,6 +12800,23 @@ document.addEventListener('DOMContentLoaded',()=>{
   setupSheetSwipe('emojiCard',closeEmojiPick);
   setupSheetSwipe('roomSetCard',closeRoomSettings);
   setupSheetSwipe('profileCard',closeProfile);
+  // 나머지 바텀시트 모달도 위→아래 스와이프로 닫기 (닫기 함수 없으면 setupSheetSwipe가 무시)
+  setupSheetSwipe('datePickerCard',closeDatePicker);
+  setupSheetSwipe('searchCard',closeSearch);
+  setupSheetSwipe('notifCard',closeNotifs);
+  setupSheetSwipe('myOrdersCard',closeMyOrders);
+  setupSheetSwipe('supportCard',closeSupport);
+  setupSheetSwipe('termsCard',closeTerms);
+  setupSheetSwipe('privacyCard',closePrivacy);
+  setupSheetSwipe('leaveAccountCard',closeLeaveAccount);
+  setupSheetSwipe('csCard',closeCustomerSupport);
+  setupSheetSwipe('vMemberCard',closeVMember);
+  setupSheetSwipe('adminGrantCard',closeAdminGrant);
+  setupSheetSwipe('roomPickCard',cancelRoomPick);
+  setupSheetSwipe('charDetailCard',closeCharDetail);
+  setupSheetSwipe('inviteConfirmCard',cancelInviteConfirm);
+  setupSheetSwipe('annComposeCard',closeAnnouncementCompose);
+  setupSheetSwipe('annMenuCard',closeAnnouncementMenu);
 });
 
 init();
