@@ -583,6 +583,16 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .ev-time-clear{background:none;border:none;cursor:pointer;font-size:13px;color:var(--sub);font-family:inherit;padding:8px 12px}
 .ev-time-clear:active{color:var(--accent)}
 
+/* 시간 직접 입력 칸 + 시계 버튼 */
+.time-input-box{flex:1;display:flex;align-items:center;gap:2px;padding:11px 14px;border:1px solid var(--border);border-radius:12px;background:var(--card);transition:border-color .15s ease}
+.time-input-box.focused{border-color:var(--accent)}
+.time-input{width:34px;border:none;background:none;font-family:inherit;font-size:16px;font-weight:600;color:var(--text);text-align:center;padding:0;outline:none;font-variant-numeric:tabular-nums;-webkit-appearance:none}
+.time-input::placeholder{color:var(--mute);font-weight:400}
+.time-input-colon{font-size:16px;font-weight:700;color:var(--sub);padding:0 1px}
+.time-clock-btn{flex:none;width:46px;align-self:stretch;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:12px;background:var(--card);color:var(--accent);cursor:pointer;transition:border-color .15s ease,background .15s ease}
+.time-clock-btn:active{border-color:var(--accent);background:rgba(176,135,66,.10)}
+.time-clock-btn.on{border-color:var(--accent);background:rgba(176,135,66,.12)}
+.time-clock-btn svg{width:21px;height:21px}
 /* 시간 휠 picker (iOS 시스템 picker 대체, 우리 톤) */
 .time-trigger{flex:1;width:100%;padding:15px 16px;border:1px solid var(--border);border-radius:12px;font-family:inherit;font-size:15px;background:var(--card);color:var(--mute);text-align:left;cursor:pointer;transition:border-color .15s ease;letter-spacing:.2px}
 .time-trigger.has-value{color:var(--text);font-weight:600}
@@ -2370,7 +2380,14 @@ body.align-right .cal-evbar{text-align:right}
     <div class="ev-form-row">
       <div class="ev-label">시간 (선택)</div>
       <div class="ev-time-row">
-        <button type="button" class="time-trigger" id="evTimeBtn" onclick="toggleTimePicker()">시간 선택</button>
+        <div class="time-input-box" id="evTimeBox">
+          <input type="text" class="time-input" id="evTimeHour" inputmode="numeric" maxlength="2" placeholder="--" aria-label="시">
+          <span class="time-input-colon">:</span>
+          <input type="text" class="time-input" id="evTimeMin" inputmode="numeric" maxlength="2" placeholder="--" aria-label="분">
+        </div>
+        <button type="button" class="time-clock-btn" id="evTimeBtn" onclick="toggleTimePicker()" aria-label="시간 선택">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+        </button>
         <input type="hidden" id="evTime">
         <button class="ev-time-clear" onclick="clearEventTime()">지우기</button>
       </div>
@@ -7484,6 +7501,7 @@ function toggleTimePicker(){
     _tpMin=m;
   }
   p.classList.add('show');
+  const cbtn=document.getElementById('evTimeBtn'); if(cbtn)cbtn.classList.add('on');
   // 스크롤 위치 설정 (40px * idx)
   setTimeout(()=>{
     const hCol=document.getElementById('tpHourCol');
@@ -7499,6 +7517,7 @@ function setActiveItem(col,idx){
 }
 function closeTimePicker(){
   document.getElementById('timePicker').classList.remove('show');
+  const cbtn=document.getElementById('evTimeBtn'); if(cbtn)cbtn.classList.remove('on');
 }
 function applyTimePicker(){
   const v=`${String(_tpHour).padStart(2,'0')}:${String(_tpMin).padStart(2,'0')}`;
@@ -7506,11 +7525,52 @@ function applyTimePicker(){
   syncTimeBtnLabel(v);
   closeTimePicker();
 }
+/* 시간 값(HH:MM)을 직접 입력칸에 채움 — 휠 picker 적용/편집 로드/초기화 공용 */
 function syncTimeBtnLabel(v){
-  const btn=document.getElementById('evTimeBtn');
-  if(!btn)return;
-  if(v){btn.textContent=v;btn.classList.add('has-value')}
-  else{btn.textContent='시간 선택';btn.classList.remove('has-value')}
+  const hEl=document.getElementById('evTimeHour'), mEl=document.getElementById('evTimeMin');
+  if(hEl&&mEl){
+    if(v&&v.includes(':')){ const p=v.split(':'); hEl.value=p[0]; mEl.value=p[1]; }
+    else { hEl.value=''; mEl.value=''; }
+  }
+  const box=document.getElementById('evTimeBox'); if(box)box.classList.remove('focused');
+}
+function _padTime(n){ return String(n).padStart(2,'0'); }
+/* 직접 입력칸 → 숨김 evTime 동기화 */
+function recomputeEvTime(){
+  const hEl=document.getElementById('evTimeHour'), mEl=document.getElementById('evTimeMin');
+  const tEl=document.getElementById('evTime');
+  if(!hEl||!mEl||!tEl)return;
+  const hv=hEl.value.replace(/\D/g,''), mv=mEl.value.replace(/\D/g,'');
+  if(hv===''&&mv===''){ tEl.value=''; return; }
+  let h=parseInt(hv||'0',10); if(isNaN(h)||h>23)h=23;
+  let m=parseInt(mv||'0',10); if(isNaN(m)||m>59)m=59;
+  tEl.value=_padTime(h)+':'+_padTime(m);
+}
+/* 시간 직접 입력 칸 이벤트 바인딩 (DOM 1회) */
+function bindEvTimeInputs(){
+  const hEl=document.getElementById('evTimeHour'), mEl=document.getElementById('evTimeMin');
+  const box=document.getElementById('evTimeBox');
+  if(!hEl||!mEl)return;
+  [hEl,mEl].forEach(el=>{
+    el.addEventListener('focus',()=>{ if(box)box.classList.add('focused'); });
+    el.addEventListener('blur',()=>{
+      let v=el.value.replace(/\D/g,'');
+      if(v!==''){ let n=parseInt(v,10); const max=(el===hEl)?23:59; if(isNaN(n)||n>max)n=max; el.value=_padTime(n); }
+      recomputeEvTime();
+      if(box)box.classList.remove('focused');
+    });
+  });
+  hEl.addEventListener('input',()=>{
+    let v=hEl.value.replace(/\D/g,''); if(v!==hEl.value)hEl.value=v;
+    if(v.length>=2 && parseInt(v,10)>23){ hEl.value='23'; v='23'; }
+    recomputeEvTime();
+    if(v.length>=2)mEl.focus();   // 시 2자리 입력 시 분 칸으로 자동 이동
+  });
+  mEl.addEventListener('input',()=>{
+    let v=mEl.value.replace(/\D/g,''); if(v!==mEl.value)mEl.value=v;
+    if(v.length>=2 && parseInt(v,10)>59){ mEl.value='59'; v='59'; }
+    recomputeEvTime();
+  });
 }
 
 /* 혼자/함께 토글 UI 적용 */
@@ -12755,7 +12815,7 @@ function setupSheetSwipe(cardId,closeFn){
     if(card.scrollTop>0)return;  // 스크롤 위치 위쪽일 때만
     // form 요소(input, textarea, select, button, label) 위에선 swipe 비활성 (모바일 input 닫힘 방지)
     const t=e.target;
-    if(t&&t.closest&&t.closest('input,textarea,select,button,label,.ev-multi-day,.ev-color,.code-box,.tp-col,.tp-item,.time-picker'))return;
+    if(t&&t.closest&&t.closest('input,textarea,select,button,label,.ev-multi-day,.ev-color,.code-box,.tp-col,.tp-item,.time-picker,.time-input-box'))return;
     startY=e.touches[0].clientY;
     active=true;
   },{passive:true});
@@ -12792,6 +12852,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
   setupSwipe();
   setupEventDrag();
+  bindEvTimeInputs();
   setupSheetSwipe('dpCard',closeDateSheet);
   setupSheetSwipe('evCard',closeEventModal);
   setupSheetSwipe('createCard',closeCreateRoom);
