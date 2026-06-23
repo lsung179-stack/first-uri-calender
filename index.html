@@ -7451,6 +7451,15 @@ function closeEventModal(){
   document.getElementById('evCard').classList.remove('on');
   _editingEvent=null;
 }
+/* 하위 모달(방/멤버 선택) 띄울 때 일정 모달을 시각적으로만 감춤 — 입력값/상태는 그대로 보존 */
+function _hideEvCardForSub(){
+  document.getElementById('evOverlay').classList.remove('on');
+  document.getElementById('evCard').classList.remove('on');
+}
+function _showEvCardFromSub(){
+  document.getElementById('evOverlay').classList.add('on');
+  document.getElementById('evCard').classList.add('on');
+}
 function clearEventTime(){
   document.getElementById('evTime').value='';
   syncTimeBtnLabel('');
@@ -7623,6 +7632,7 @@ function updateMembersDisplay(){
 
 /* 멤버 선택 모달 */
 function openMemberPick(preselected){
+  _hideEvCardForSub();  // 일정 모달 감춤 (이중 모달 방지)
   if(_shouldHideSelfInAdminRoom()){
     // 본인 숨김 모드: 가상 멤버끼리만 함께 일정. real user 강제 포함 안 함.
     _tempPickedMembers=[...(preselected||[])];
@@ -7707,6 +7717,7 @@ function confirmMemberPick(){
   _selectedTarget='all';
   _selectedMembers=[..._tempPickedMembers];
   closeMemberPick();
+  _showEvCardFromSub();  // 멤버 선택 후 일정 모달로 복귀
   applyTargetUI();
   updateMultiRoomVisibility();
 }
@@ -7738,6 +7749,7 @@ async function leaveSharedEvent(){
 }
 function cancelMemberPick(){
   closeMemberPick();
+  _showEvCardFromSub();  // 일정 모달로 복귀 (입력값 보존)
   // 변경 안 함 — _selectedTarget 그대로
 }
 function closeMemberPick(){
@@ -7762,6 +7774,7 @@ function onOutlineToggle(checked){
 /* ── 저장 시 방 선택 모달 ──
    현재 방은 기본 포함(고정), 다른 방은 선택. 확인 시 _doSaveEvent() 실행, 취소 시 저장 중단 */
 function openRoomPick(){
+  _hideEvCardForSub();  // 일정 모달 감춤 (이중 모달 방지)
   document.getElementById('roomPickOverlay').classList.add('on');
   document.getElementById('roomPickCard').classList.add('on');
   const list=document.getElementById('roomPickList');
@@ -7794,12 +7807,13 @@ function confirmRoomPick(){
   const checks=document.querySelectorAll('#roomPickList input[type="checkbox"]:not(:disabled):checked');
   _selectedExtraRooms=Array.from(checks).map(c=>c.value);
   closeRoomPick();
-  _doSaveEvent();  // 방 선택 후 실제 저장 진행
+  _doSaveEvent();  // 일정 모달은 숨겨둔 채 저장 — 성공 시 그대로 닫히고, 실패 시 _doSaveEvent 내부에서 복원
 }
 function cancelRoomPick(){
-  // 저장 중단
+  // 저장 중단 — 일정 모달 다시 표시 (입력값 보존)
   _selectedExtraRooms=[];
   closeRoomPick();
+  _showEvCardFromSub();
 }
 function closeRoomPick(){
   document.getElementById('roomPickOverlay').classList.remove('on');
@@ -7851,11 +7865,11 @@ async function saveEvent(){
 }
 
 async function _doSaveEvent(){
-  if(!_currentRoom||!_currentUser){toast('로그인이 필요해요');return}
-  if(!_throttleAction('saveEvent',800)){toast('잠시 후 다시 시도해주세요');return}
+  if(!_currentRoom||!_currentUser){toast('로그인이 필요해요');_showEvCardFromSub();return}
+  if(!_throttleAction('saveEvent',800)){toast('잠시 후 다시 시도해주세요');_showEvCardFromSub();return}
   const title=document.getElementById('evTitle').value.trim();
-  if(!title){toast('제목을 입력해주세요');return}
-  if(title.length>40){toast('제목은 40자 이내로');return}
+  if(!title){toast('제목을 입력해주세요');_showEvCardFromSub();return}
+  if(title.length>40){toast('제목은 40자 이내로');_showEvCardFromSub();return}
   const time=document.getElementById('evTime').value||null;
   const color=_selectedColor||'c-vintage';
   const barStyle=_selectedStyle||'solid';
@@ -7867,7 +7881,7 @@ async function _doSaveEvent(){
   const repeatWeekdays=_rep.repeat_weekdays;
   // 메모 (최대 500자 — input maxlength로 1차 보호되지만 trim 후 길이 재확인)
   const memoRaw=(document.getElementById('evMemo')?.value||'').trim();
-  if(memoRaw.length>500){toast('메모는 500자 이내로');return}
+  if(memoRaw.length>500){toast('메모는 500자 이내로');_showEvCardFromSub();return}
   const memo=memoRaw||null;
   
   const btn=document.getElementById('evSaveBtn');
@@ -7882,6 +7896,7 @@ async function _doSaveEvent(){
     console.error(e);
     toast('사진 업로드 실패: '+(e.message||'').slice(0,40));
     btn.disabled=false;btn.textContent='저장';
+    _showEvCardFromSub();
     return;
   }
   btn.textContent='저장 중...';
@@ -7938,8 +7953,8 @@ async function _doSaveEvent(){
       if(_selectedMode==='multi'){
         // 여러 날 — 선택된 날짜들 각각에 events 생성 (불연속, 묶음 X)
         const dates=[..._multiSelected].sort();
-        if(!dates.length){toast('날짜를 하나 이상 선택해주세요');return}
-        if(dates.length>31){toast('한 번에 최대 31일까지');return}
+        if(!dates.length){toast('날짜를 하나 이상 선택해주세요');_showEvCardFromSub();return}
+        if(dates.length>31){toast('한 번에 최대 31일까지');_showEvCardFromSub();return}
         // 함께 모드와 결합
         const targetUsers=(_selectedTarget==='all'&&_selectedMembers.length>=2)?_selectedMembers:[_currentUser.id];
         const rows=[];
@@ -7983,9 +7998,9 @@ async function _doSaveEvent(){
         // 기간 일정 — 시작~끝 모든 날짜 events 생성
         const startStr=document.getElementById('evStartDate').value;
         const endStr=document.getElementById('evEndDate').value;
-        if(!startStr||!endStr){toast('시작/종료 날짜를 입력해주세요');return}
+        if(!startStr||!endStr){toast('시작/종료 날짜를 입력해주세요');_showEvCardFromSub();return}
         const dates=daysBetween(startStr,endStr);
-        if(dates.length>180){toast('기간이 너무 길어요 (최대 6개월)');return}
+        if(dates.length>180){toast('기간이 너무 길어요 (최대 6개월)');_showEvCardFromSub();return}
         // 함께 모드와 결합
         const targetUsers=(_selectedTarget==='all'&&_selectedMembers.length>=2)?_selectedMembers:[_currentUser.id];
         const sharedId=(_selectedTarget==='all'&&targetUsers.length>1)?genShared():null;
@@ -8073,6 +8088,7 @@ async function _doSaveEvent(){
     }
   }catch(e){
     toast('실패: '+(e.message||'').slice(0,40));
+    _showEvCardFromSub();
     console.error(e);
   }finally{
     btn.disabled=false;btn.textContent='저장';
