@@ -584,9 +584,11 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .ev-time-clear:active{color:var(--accent)}
 
 /* 시간 직접 입력 칸 + 시계 버튼 */
-.time-input-box{flex:1;display:flex;align-items:center;gap:2px;padding:11px 14px;border:1px solid var(--border);border-radius:12px;background:var(--card);transition:border-color .15s ease}
+.time-range-wrap{flex:1;display:flex;align-items:center;gap:6px;min-width:0}
+.time-range-tilde{color:var(--sub);font-weight:700;font-size:15px;flex:none}
+.time-input-box{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:1px;padding:11px 8px;border:1px solid var(--border);border-radius:12px;background:var(--card);transition:border-color .15s ease}
 .time-input-box.focused{border-color:var(--accent)}
-.time-input{width:34px;border:none;background:none;font-family:inherit;font-size:16px;font-weight:600;color:var(--text);text-align:center;padding:0;outline:none;font-variant-numeric:tabular-nums;-webkit-appearance:none}
+.time-input{width:28px;border:none;background:none;font-family:inherit;font-size:16px;font-weight:600;color:var(--text);text-align:center;padding:0;outline:none;font-variant-numeric:tabular-nums;-webkit-appearance:none}
 .time-input::placeholder{color:var(--mute);font-weight:400}
 .time-input-colon{font-size:16px;font-weight:700;color:var(--sub);padding:0 1px}
 .time-clock-btn{flex:none;width:46px;align-self:stretch;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:12px;background:var(--card);color:var(--accent);cursor:pointer;transition:border-color .15s ease,background .15s ease}
@@ -2380,15 +2382,24 @@ body.align-right .cal-evbar{text-align:right}
     <div class="ev-form-row">
       <div class="ev-label">시간 (선택)</div>
       <div class="ev-time-row">
-        <div class="time-input-box" id="evTimeBox">
-          <input type="text" class="time-input" id="evTimeHour" inputmode="numeric" maxlength="2" placeholder="--" aria-label="시">
-          <span class="time-input-colon">:</span>
-          <input type="text" class="time-input" id="evTimeMin" inputmode="numeric" maxlength="2" placeholder="--" aria-label="분">
+        <div class="time-range-wrap">
+          <div class="time-input-box" id="evTimeStartBox" data-which="start">
+            <input type="text" class="time-input" id="evStartHour" inputmode="numeric" maxlength="2" placeholder="--" aria-label="시작 시">
+            <span class="time-input-colon">:</span>
+            <input type="text" class="time-input" id="evStartMin" inputmode="numeric" maxlength="2" placeholder="--" aria-label="시작 분">
+          </div>
+          <span class="time-range-tilde">~</span>
+          <div class="time-input-box" id="evTimeEndBox" data-which="end">
+            <input type="text" class="time-input" id="evEndHour" inputmode="numeric" maxlength="2" placeholder="--" aria-label="종료 시">
+            <span class="time-input-colon">:</span>
+            <input type="text" class="time-input" id="evEndMin" inputmode="numeric" maxlength="2" placeholder="--" aria-label="종료 분">
+          </div>
         </div>
         <button type="button" class="time-clock-btn" id="evTimeBtn" onclick="toggleTimePicker()" aria-label="시간 선택">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
         </button>
         <input type="hidden" id="evTime">
+        <input type="hidden" id="evEndTime">
         <button class="ev-time-clear" onclick="clearEventTime()">지우기</button>
       </div>
       <div class="time-picker" id="timePicker">
@@ -6957,7 +6968,8 @@ function runSearch(){
     const dt=parseDateKey(e.date);
     const dateText=`${dt.getFullYear()}.${String(dt.getMonth()+1).padStart(2,'0')}.${String(dt.getDate()).padStart(2,'0')} (${['일','월','화','수','목','금','토'][dt.getDay()]})`;
     const sharedTag=e.shared_id?'<span class="search-row-tag">함께</span>':'';
-    const timeText=e.time?`<div class="search-row-time">${escapeHtml(e.time)}</div>`:'';
+    const _trng=fmtTimeRange(e.time,e.end_time);
+    const timeText=_trng?`<div class="search-row-time">${escapeHtml(_trng)}</div>`:'';
     return `<div class="search-row" onclick="jumpToSearch('${e.date}')">
       <div class="search-row-bar" style="background:${hex}"></div>
       <div class="search-row-main">
@@ -7044,7 +7056,7 @@ function renderDateSheetList(){
     const isMine=(ev.user_id===_currentUser?.id);
     const isVirtual=ev._isVirtual;
     const t=escapeHtml(ev.title||'');
-    const tm=ev.time?escapeHtml(ev.time):'';
+    const tm=escapeHtml(fmtTimeRange(ev.time, ev.end_time));
     let memberChipsHtml='';
     if(ev._isShared){
       const ids=ev._memberIds||[];
@@ -7315,8 +7327,7 @@ function openAddEvent(){
   const dt=parseDateKey(_selectedDate);
   document.getElementById('evModalDate').textContent=`${dt.getMonth()+1}월 ${dt.getDate()}일 ${DOW_NAMES[dt.getDay()]}요일`;
   document.getElementById('evTitle').value='';
-  document.getElementById('evTime').value='';
-  syncTimeBtnLabel('');
+  setEvTimeFields('','');
   closeTimePicker();
   document.getElementById('evStartDate').value=_selectedDate;
   document.getElementById('evEndDate').value=_selectedDate;
@@ -7380,7 +7391,7 @@ function openEditEvent(eventId){
   const dt=parseDateKey(_selectedDate);
   document.getElementById('evModalDate').textContent=`${dt.getMonth()+1}월 ${dt.getDate()}일 ${DOW_NAMES[dt.getDay()]}요일`;
   document.getElementById('evTitle').value=ev.title||'';
-  document.getElementById('evTime').value=ev.time||'';
+  setEvTimeFields(ev.time||'', ev.end_time||'');
   _evRepeatType=ev.repeat_type||(ev.recurring_yearly?'yearly':'none');
   syncEvRepeatUI();
   // 메모/사진 — 기존 값 로드
@@ -7388,7 +7399,6 @@ function openEditEvent(eventId){
   if(memoEl)memoEl.value=ev.memo||'';
   resetEventPhotoState();
   if(ev.photo_url)showExistingEventPhoto(ev.photo_url);
-  syncTimeBtnLabel(ev.time||'');
   closeTimePicker();
   // 기간 일정 그룹은 _editGroup으로 관리 — 모드 토글에서 'range'로 전환할 때 시작/끝 자동 채움
   // 모드 토글 표시 — 단독/함께 모두 표시 (단, 함께는 multi 버튼 비활성)
@@ -7460,15 +7470,48 @@ function _showEvCardFromSub(){
   document.getElementById('evOverlay').classList.add('on');
   document.getElementById('evCard').classList.add('on');
 }
-function clearEventTime(){
-  document.getElementById('evTime').value='';
-  syncTimeBtnLabel('');
-  closeTimePicker();
-}
-
 /* 시간 휠 picker (iOS 시스템 picker 대체) */
 let _tpHour=9,_tpMin=0,_tpScrollT=null;
+let _activeTimeField='start';  // 시계 picker가 적용될 칸 (start|end)
 
+function _padTime(n){ return String(n).padStart(2,'0'); }
+/* 한 칸(start|end)의 두 입력에서 HH:MM 계산 (비어있으면 '') */
+function _readTimeBox(which){
+  const hEl=document.getElementById(which==='start'?'evStartHour':'evEndHour');
+  const mEl=document.getElementById(which==='start'?'evStartMin':'evEndMin');
+  if(!hEl||!mEl)return '';
+  const hv=hEl.value.replace(/\D/g,''), mv=mEl.value.replace(/\D/g,'');
+  if(hv===''&&mv==='')return '';
+  let h=parseInt(hv||'0',10); if(isNaN(h)||h>23)h=23;
+  let m=parseInt(mv||'0',10); if(isNaN(m)||m>59)m=59;
+  return _padTime(h)+':'+_padTime(m);
+}
+/* 직접 입력칸 → 숨김 evTime(시작)/evEndTime(종료) 동기화 */
+function recomputeEvTime(){
+  const tEl=document.getElementById('evTime'), eEl=document.getElementById('evEndTime');
+  if(tEl)tEl.value=_readTimeBox('start');
+  if(eEl)eEl.value=_readTimeBox('end');
+}
+/* 시작~종료 시간 표시 문자열 — 종료 있으면 "HH:MM ~ HH:MM", 없으면 "HH:MM", 시작 없으면 '' */
+function fmtTimeRange(start,end){
+  if(!start)return '';
+  return end?`${start} ~ ${end}`:start;
+}
+/* 값으로 두 칸 채우기 — 편집 로드/초기화/picker 적용 공용 */
+function setEvTimeFields(startV, endV){
+  [['evStartHour','evStartMin',startV],['evEndHour','evEndMin',endV]].forEach(([hId,mId,v])=>{
+    const hEl=document.getElementById(hId), mEl=document.getElementById(mId);
+    if(!hEl||!mEl)return;
+    if(v&&v.includes(':')){ const p=v.split(':'); hEl.value=p[0]; mEl.value=p[1]; }
+    else { hEl.value=''; mEl.value=''; }
+  });
+  recomputeEvTime();
+  document.querySelectorAll('.time-input-box').forEach(b=>b.classList.remove('focused'));
+}
+function clearEventTime(){
+  setEvTimeFields('','');
+  closeTimePicker();
+}
 function buildTimePicker(){
   const hCol=document.getElementById('tpHourCol');
   const mCol=document.getElementById('tpMinCol');
@@ -7502,8 +7545,8 @@ function toggleTimePicker(){
   const p=document.getElementById('timePicker');
   if(p.classList.contains('show')){closeTimePicker();return}
   buildTimePicker();
-  // 현재 evTime 값으로 초기 위치
-  const cur=document.getElementById('evTime').value;
+  // 활성 칸의 현재 값으로 초기 위치 (없으면 시작칸 값)
+  const cur=_readTimeBox(_activeTimeField) || _readTimeBox('start');
   if(cur&&cur.includes(':')){
     const [h,m]=cur.split(':').map(Number);
     _tpHour=h;
@@ -7529,56 +7572,44 @@ function closeTimePicker(){
   const cbtn=document.getElementById('evTimeBtn'); if(cbtn)cbtn.classList.remove('on');
 }
 function applyTimePicker(){
-  const v=`${String(_tpHour).padStart(2,'0')}:${String(_tpMin).padStart(2,'0')}`;
-  document.getElementById('evTime').value=v;
-  syncTimeBtnLabel(v);
+  // 활성 칸(시작/종료)에 적용
+  const hId=_activeTimeField==='start'?'evStartHour':'evEndHour';
+  const mId=_activeTimeField==='start'?'evStartMin':'evEndMin';
+  const hEl=document.getElementById(hId), mEl=document.getElementById(mId);
+  if(hEl)hEl.value=_padTime(_tpHour);
+  if(mEl)mEl.value=_padTime(_tpMin);
+  recomputeEvTime();
   closeTimePicker();
 }
-/* 시간 값(HH:MM)을 직접 입력칸에 채움 — 휠 picker 적용/편집 로드/초기화 공용 */
-function syncTimeBtnLabel(v){
-  const hEl=document.getElementById('evTimeHour'), mEl=document.getElementById('evTimeMin');
-  if(hEl&&mEl){
-    if(v&&v.includes(':')){ const p=v.split(':'); hEl.value=p[0]; mEl.value=p[1]; }
-    else { hEl.value=''; mEl.value=''; }
-  }
-  const box=document.getElementById('evTimeBox'); if(box)box.classList.remove('focused');
-}
-function _padTime(n){ return String(n).padStart(2,'0'); }
-/* 직접 입력칸 → 숨김 evTime 동기화 */
-function recomputeEvTime(){
-  const hEl=document.getElementById('evTimeHour'), mEl=document.getElementById('evTimeMin');
-  const tEl=document.getElementById('evTime');
-  if(!hEl||!mEl||!tEl)return;
-  const hv=hEl.value.replace(/\D/g,''), mv=mEl.value.replace(/\D/g,'');
-  if(hv===''&&mv===''){ tEl.value=''; return; }
-  let h=parseInt(hv||'0',10); if(isNaN(h)||h>23)h=23;
-  let m=parseInt(mv||'0',10); if(isNaN(m)||m>59)m=59;
-  tEl.value=_padTime(h)+':'+_padTime(m);
-}
-/* 시간 직접 입력 칸 이벤트 바인딩 (DOM 1회) */
+/* 시간 직접 입력 칸(시작/종료) 이벤트 바인딩 (DOM 1회) */
 function bindEvTimeInputs(){
-  const hEl=document.getElementById('evTimeHour'), mEl=document.getElementById('evTimeMin');
-  const box=document.getElementById('evTimeBox');
-  if(!hEl||!mEl)return;
-  [hEl,mEl].forEach(el=>{
-    el.addEventListener('focus',()=>{ if(box)box.classList.add('focused'); });
-    el.addEventListener('blur',()=>{
-      let v=el.value.replace(/\D/g,'');
-      if(v!==''){ let n=parseInt(v,10); const max=(el===hEl)?23:59; if(isNaN(n)||n>max)n=max; el.value=_padTime(n); }
-      recomputeEvTime();
-      if(box)box.classList.remove('focused');
+  const groups=[
+    {which:'start',h:'evStartHour',m:'evStartMin',box:'evTimeStartBox'},
+    {which:'end',  h:'evEndHour',  m:'evEndMin',  box:'evTimeEndBox'},
+  ];
+  groups.forEach(g=>{
+    const hEl=document.getElementById(g.h), mEl=document.getElementById(g.m), box=document.getElementById(g.box);
+    if(!hEl||!mEl)return;
+    [hEl,mEl].forEach(el=>{
+      el.addEventListener('focus',()=>{ _activeTimeField=g.which; if(box)box.classList.add('focused'); });
+      el.addEventListener('blur',()=>{
+        let v=el.value.replace(/\D/g,'');
+        if(v!==''){ let n=parseInt(v,10); const max=(el===hEl)?23:59; if(isNaN(n)||n>max)n=max; el.value=_padTime(n); }
+        recomputeEvTime();
+        if(box)box.classList.remove('focused');
+      });
     });
-  });
-  hEl.addEventListener('input',()=>{
-    let v=hEl.value.replace(/\D/g,''); if(v!==hEl.value)hEl.value=v;
-    if(v.length>=2 && parseInt(v,10)>23){ hEl.value='23'; v='23'; }
-    recomputeEvTime();
-    if(v.length>=2)mEl.focus();   // 시 2자리 입력 시 분 칸으로 자동 이동
-  });
-  mEl.addEventListener('input',()=>{
-    let v=mEl.value.replace(/\D/g,''); if(v!==mEl.value)mEl.value=v;
-    if(v.length>=2 && parseInt(v,10)>59){ mEl.value='59'; v='59'; }
-    recomputeEvTime();
+    hEl.addEventListener('input',()=>{
+      let v=hEl.value.replace(/\D/g,''); if(v!==hEl.value)hEl.value=v;
+      if(v.length>=2 && parseInt(v,10)>23){ hEl.value='23'; v='23'; }
+      recomputeEvTime();
+      if(v.length>=2)mEl.focus();   // 시 2자리 입력 시 분 칸으로 자동 이동
+    });
+    mEl.addEventListener('input',()=>{
+      let v=mEl.value.replace(/\D/g,''); if(v!==mEl.value)mEl.value=v;
+      if(v.length>=2 && parseInt(v,10)>59){ mEl.value='59'; v='59'; }
+      recomputeEvTime();
+    });
   });
 }
 
@@ -7851,6 +7882,14 @@ async function saveEvent(){
   const title=document.getElementById('evTitle').value.trim();
   if(!title){toast('제목을 입력해주세요');return}
   if(title.length>40){toast('제목은 40자 이내로');return}
+  // 시간 검증 — 종료시간 단독 불가 / 종료가 시작보다 빠르면 막기
+  // (단, 기간 모드는 종료가 '다른 날'이라 시간 역전 허용. 하루·여러날은 같은 날 종료라 막음)
+  const _sTime=document.getElementById('evTime').value||'';
+  const _eTime=document.getElementById('evEndTime').value||'';
+  if(_eTime && !_sTime){ toast('시작 시간을 먼저 입력해주세요');return }
+  if(_sTime && _eTime && _eTime < _sTime && _selectedMode!=='range'){
+    toast('종료가 시작보다 빨라요');return;
+  }
   // 방 선택 모달 노출 조건: 신규 + 단독(함께 아님) + 다른 방이 1개 이상
   const isCoEvent=(_selectedTarget==='all'&&_selectedMembers&&_selectedMembers.length>=2);
   const others=(_myRooms||[]).filter(r=>r.id!==_currentRoom?.id);
@@ -7871,6 +7910,7 @@ async function _doSaveEvent(){
   if(!title){toast('제목을 입력해주세요');_showEvCardFromSub();return}
   if(title.length>40){toast('제목은 40자 이내로');_showEvCardFromSub();return}
   const time=document.getElementById('evTime').value||null;
+  const endTime=document.getElementById('evEndTime').value||null;
   const color=_selectedColor||'c-vintage';
   const barStyle=_selectedStyle||'solid';
   // 다른 방에도 추가 시 — 같은 그룹으로 묶을 multi_group_id (단일 방이면 null)
@@ -7905,7 +7945,7 @@ async function _doSaveEvent(){
     if(_editingEvent){
       // 수정 — 6가지 케이스 분기
       const oldPhotoUrl=_editingEvent.photo_url||null;
-      await saveEditedEvent(title,time,color,barStyle,recurringYearly,memo,photoUrl);
+      await saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly,memo,photoUrl);
       // 옛 사진 정리 — photo_url이 바뀌었으면 Storage에서 옛 파일 삭제
       // (fire-and-forget. 실패해도 UX 영향 없음)
       if(oldPhotoUrl && oldPhotoUrl!==photoUrl){
@@ -7930,7 +7970,7 @@ async function _doSaveEvent(){
             _exDates.forEach(d=>{
               _exRows.push({
                 room_id:rid,user_id:_currentUser.id,date:d,
-                title,time,color,bar_style:barStyle,multi_group_id:mgid,
+                title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
                 recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
                 memo,photo_url:photoUrl,
                 is_multi:(_selectedMode==='multi'),
@@ -7964,7 +8004,7 @@ async function _doSaveEvent(){
           targetUsers.forEach(key=>{
             rows.push(_buildCoEventRow(key, {
               room_id:_currentRoom.id, date:d,
-              title,time,color,bar_style:barStyle,multi_group_id:mgid,
+              title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
               shared_id:sharedId,
               recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
               memo,photo_url:photoUrl,
@@ -7981,7 +8021,7 @@ async function _doSaveEvent(){
             dates.forEach(d=>{
               extraRows.push({
                 room_id:rid,user_id:_currentUser.id,date:d,
-                title,time,color,bar_style:barStyle,multi_group_id:mgid,
+                title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
                 recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
                 memo,photo_url:photoUrl,
                 is_multi:true,
@@ -8009,7 +8049,7 @@ async function _doSaveEvent(){
           targetUsers.forEach(key=>{
             rows.push(_buildCoEventRow(key, {
               room_id:_currentRoom.id, date:d,
-              title,time,color,bar_style:barStyle,multi_group_id:mgid,
+              title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
               shared_id:sharedId,
               recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
               memo,photo_url:photoUrl,
@@ -8025,7 +8065,7 @@ async function _doSaveEvent(){
             dates.forEach(d=>{
               extraRows.push({
                 room_id:rid,user_id:_currentUser.id,date:d,
-                title,time,color,bar_style:barStyle,multi_group_id:mgid,
+                title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
                 recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
                 memo,photo_url:photoUrl,
               });
@@ -8042,7 +8082,7 @@ async function _doSaveEvent(){
         const sharedId=genShared();
         const rows=_selectedMembers.map(key=>_buildCoEventRow(key, {
           room_id:_currentRoom.id, date:(_dayDate||_selectedDate),
-          title,time,color,bar_style:barStyle,multi_group_id:mgid,shared_id:sharedId,
+          title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,shared_id:sharedId,
           recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
           memo,photo_url:photoUrl,
         }));
@@ -8053,7 +8093,7 @@ async function _doSaveEvent(){
         // 단독 일정 (단일 날짜)
         const {error}=await supa.from('events').insert(_attachVirtualMember({
           room_id:_currentRoom.id,user_id:_currentUser.id,date:(_dayDate||_selectedDate),
-          title,time,color,bar_style:barStyle,multi_group_id:mgid,
+          title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
           recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
           memo,photo_url:photoUrl,
         }));
@@ -8062,7 +8102,7 @@ async function _doSaveEvent(){
         if(applyExtra){
           const extraRows=extraRoomIds.map(rid=>({
             room_id:rid,user_id:_currentUser.id,date:(_dayDate||_selectedDate),
-            title,time,color,bar_style:barStyle,multi_group_id:mgid,
+            title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
             recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
             memo,photo_url:photoUrl,
           }));
@@ -8082,9 +8122,9 @@ async function _doSaveEvent(){
 
     // ── 5단계: 같은 방 멤버에게 자동 알림 발송 ──
     if(_editingEvent){
-      notifyEventUpdated(title, time);
+      notifyEventUpdated(title, fmtTimeRange(time,endTime));
     }else{
-      notifyEventCreated(title, time);
+      notifyEventCreated(title, fmtTimeRange(time,endTime));
     }
   }catch(e){
     toast('실패: '+(e.message||'').slice(0,40));
@@ -9061,7 +9101,7 @@ function removeMultiDate(key){
 }
 
 /* 일정 수정 — 모드별 분기 처리 */
-async function saveEditedEvent(title,time,color,barStyle,recurringYearly,memo,photoUrl){
+async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly,memo,photoUrl){
   const ev=_editingEvent;
   const wasShared=!!ev.shared_id;
   const isNowShared=_selectedTarget==='all'&&_selectedMembers.length>=2;
@@ -9099,7 +9139,7 @@ async function saveEditedEvent(title,time,color,barStyle,recurringYearly,memo,ph
       memberIds.forEach(key=>{
         rows.push(_buildCoEventRow(key, {
           room_id:_currentRoom.id, date:d,
-          title,time,color,bar_style:barStyle,shared_id:ev.shared_id,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
+          title,time,end_time:endTime,color,bar_style:barStyle,shared_id:ev.shared_id,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
           memo,photo_url:photoUrl,
         }));
       });
@@ -9126,7 +9166,7 @@ async function saveEditedEvent(title,time,color,barStyle,recurringYearly,memo,ph
       if(dates.length>180){toast('기간이 너무 길어요 (최대 6개월)');return}
       const rows=dates.map(d=>({
         room_id:_currentRoom.id,user_id:_currentUser.id,date:d,
-        title,time,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
+        title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
         memo,photo_url:photoUrl,
       }));
       const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
@@ -9139,7 +9179,7 @@ async function saveEditedEvent(title,time,color,barStyle,recurringYearly,memo,ph
       if(dates.length>31){toast('한 번에 최대 31일까지');return}
       const rows=dates.map(d=>({
         room_id:_currentRoom.id,user_id:_currentUser.id,date:d,
-        title,time,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
+        title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
         memo,photo_url:photoUrl,
         is_multi:true,
       }));
@@ -9158,13 +9198,13 @@ async function saveEditedEvent(title,time,color,barStyle,recurringYearly,memo,ph
   if(!wasShared&&!isNowShared){
     // Case 4: 혼자 → 혼자 (이 row만 단순 수정) — 명의 변경 시 virtual_member_id 반영
     // 다른 방에도 등록된 일정(multi_group_id 존재)이면 적용 범위 선택
-    const _fields={date:(_dayDate||_selectedDate),title,time,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,reminder_sent_at:null,memo,photo_url:photoUrl};
+    const _fields={date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,reminder_sent_at:null,memo,photo_url:photoUrl};
     if(ev.multi_group_id){
       const scope=await askMultiRoomScope('이 일정은 여러 방에 함께 등록돼 있어요.<br>전체 방에 수정 내용을 적용할까요,<br>아니면 이 방에만 적용할까요?',false);
       if(!scope)return;  // 취소
       if(scope==='all'){
         // 그룹 전체(모든 방의 내 복사본) 일괄 수정 — 날짜 포함(단일 일정이라 방마다 같은 날)
-        const _f2={date:(_dayDate||_selectedDate),title,time,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,reminder_sent_at:null,memo,photo_url:photoUrl};
+        const _f2={date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,reminder_sent_at:null,memo,photo_url:photoUrl};
         const {error}=await supa.from('events').update(_f2)
           .eq('multi_group_id',ev.multi_group_id).eq('user_id',_currentUser.id);
         if(error)throw error;
@@ -9183,13 +9223,13 @@ async function saveEditedEvent(title,time,color,barStyle,recurringYearly,memo,ph
   }else if(!wasShared&&isNowShared){
     // Case 3: 혼자 → 함께 — 함께 변환 시 virtual_member_id 강제 NULL (함께 일정에 가상 멤버 못 들어감)
     const sharedId=genShared();
-    const {error:e1}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,color,bar_style:barStyle,shared_id:sharedId,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,reminder_sent_at:null,memo,photo_url:photoUrl,virtual_member_id:null}).eq('id',ev.id);
+    const {error:e1}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,shared_id:sharedId,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,reminder_sent_at:null,memo,photo_url:photoUrl,virtual_member_id:null}).eq('id',ev.id);
     if(e1)throw e1;
     const others=_selectedMembers.filter(u=>u!==_currentUser.id);
     if(others.length){
       const rows=others.map(key=>_buildCoEventRow(key, {
         room_id:_currentRoom.id, date:(_dayDate||_selectedDate),
-        title,time,color,bar_style:barStyle,shared_id:sharedId,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
+        title,time,end_time:endTime,color,bar_style:barStyle,shared_id:sharedId,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
         memo,photo_url:photoUrl,
       }));
       const {error:e2}=await supa.from('events').insert(_attachVirtualMember(rows));
@@ -9202,7 +9242,7 @@ async function saveEditedEvent(title,time,color,barStyle,recurringYearly,memo,ph
     if(e1)throw e1;
     const {error:e2}=await supa.from('events').insert(_attachVirtualMember({
       room_id:_currentRoom.id,user_id:_currentUser.id,
-      date:(_dayDate||_selectedDate),title,time,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
+      date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
       memo,photo_url:photoUrl,
     }));
     if(e2)throw e2;
@@ -9221,13 +9261,13 @@ async function saveEditedEvent(title,time,color,barStyle,recurringYearly,memo,ph
     const toRemoveVirtual=toRemove.filter(k=>typeof k==='string'&&k.startsWith('v-')).map(k=>k.slice(2));
     
     if(toKeepReal.length){
-      const {error}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,reminder_sent_at:null,memo,photo_url:photoUrl})
+      const {error}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,reminder_sent_at:null,memo,photo_url:photoUrl})
         .eq('shared_id',ev.shared_id).in('user_id',toKeepReal);
       if(error)throw error;
     }
     if(toKeepVirtual.length){
       // 가상 멤버 row UPDATE (virtual_member_id 기준)
-      const {error}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,reminder_sent_at:null,memo,photo_url:photoUrl})
+      const {error}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,reminder_sent_at:null,memo,photo_url:photoUrl})
         .eq('shared_id',ev.shared_id).in('virtual_member_id',toKeepVirtual);
       if(error)throw error;
     }
@@ -9248,7 +9288,7 @@ async function saveEditedEvent(title,time,color,barStyle,recurringYearly,memo,ph
     if(toAdd.length){
       const rows=toAdd.map(key=>_buildCoEventRow(key, {
         room_id:_currentRoom.id, date:(_dayDate||_selectedDate),
-        title,time,color,bar_style:barStyle,shared_id:ev.shared_id,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
+        title,time,end_time:endTime,color,bar_style:barStyle,shared_id:ev.shared_id,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
         memo,photo_url:photoUrl,
       }));
       const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
