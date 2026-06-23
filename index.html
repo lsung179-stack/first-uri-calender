@@ -10835,7 +10835,7 @@ let _coRoomEvents = [];          // 그룹핑된 일정 [{key,month,day,endDay,e
 let _coMonthView = 1;
 let _coSelectedEvents = {};      // {key:{startYmd,endYmd,title,color,yearly}}
 let _coCover = 'chars';
-let _coPreviewPage = 0;          // 0=표지, 1=전년12월 메모, 2~25=각 달 앞면/뒷면 번갈아(앞=짝수 idx, 뒤=홀수)
+let _coPreviewPage = 0;          // 0=전년12월 앞,1=전년12월 뒤, 2~25=각 달 앞/뒤 번갈아 (총 26p, 표지 없음)
 
 function coLunar(y,m,d){
   try{ if(window.Solar){ const l=window.Solar.fromYmd(y,m,d).getLunar(); return `음 ${l.getMonth()}.${l.getDay()}`; } }catch(e){}
@@ -10905,7 +10905,7 @@ function renderCalOrder(){
     <div class="co-section-title"><span class="co-step">3</span>미리보기 후 주문</div>
     <div class="co-summary">
       선택한 일정 <b>${cnt}개</b> · 표지 <b>${CO_COVERS.find(c=>c.key===_coCover).name}</b><br>
-      탁상 달력 (270×180mm) · 표지 + 12개월 · <b>${CO_PRICE.toLocaleString()}원</b>
+      탁상 달력 (270×180mm) · 전년 12월 + 12개월 양면(26p) · <b>${CO_PRICE.toLocaleString()}원</b>
     </div>
     <div class="co-actions">
       <button class="co-btn co-btn-preview" onclick="openCalPreview()">나만의 달력 미리보기</button>
@@ -11130,13 +11130,11 @@ function renderCalPreviewPage(){
   if(!body)return;
   const stageW=Math.max(240,(body.clientWidth||320)-32);
   let inner, label;
-  if(_coPreviewPage===0){
-    const cv=CO_COVERS.find(c=>c.key===_coCover);
-    inner=`<img src="${cv.img}" style="width:${stageW}px;display:block;border-radius:6px" alt="표지">`;
-    label='표지';
-  }else if(_coPreviewPage===1){
-    inner=coBuildBackPage(12, stageW, _coYear-1);
-    label=`${_coYear-1}년 12월`;
+  if(_coPreviewPage<=1){
+    // 전년 12월: 0=앞면(달력), 1=뒷면(메모)
+    const yr=_coYear-1;
+    if(_coPreviewPage===0){ inner=coBuildMonth(12, stageW, yr); label=`${yr}년 12월`; }
+    else{ inner=coBuildBackPage(12, stageW, yr); label=`${yr}년 12월 뒷면`; }
   }else{
     // 실제 인쇄 순서와 동일하게: 각 달 앞면 → 그 달 뒷면(메모) 번갈아
     const idx=_coPreviewPage-2;          // 0..23
@@ -11151,7 +11149,8 @@ function renderCalPreviewPage(){
 }
 
 /* 선택 일정 → 특정 월의 날짜별 [{title,color,isStart,isEnd,isRange}] */
-function coDayMap(month){
+function coDayMap(month, yearOverride){
+  const yr=yearOverride||_coYear;
   const byDay={};
   // 이 달에 표시할 이벤트 모으기 (원본 순서 유지 — 휴무 등 실제 순서 반영)
   const items=Object.values(_coSelectedEvents);
@@ -11167,7 +11166,7 @@ function coDayMap(month){
     let cur=ev.startYmd, days=[];
     while(cur<=ev.endYmd){
       const p=coParseYmd(cur);
-      if(p.m===month&&p.y===_coYear) days.push({d:p.d,ymd:cur});
+      if(p.m===month&&p.y===yr) days.push({d:p.d,ymd:cur});
       if(cur===ev.endYmd)break;
       cur=coAddDay(cur,1);
     }
@@ -11222,7 +11221,7 @@ function coFrameDims(W){
 function coFrameOpen(W){
   const c=v=>v*W;
   const D=coFrameDims(W);
-  return `<div style="width:${W}px;height:${D.H}px;background:#f3e6cf;position:relative;box-sizing:border-box;overflow:hidden;font-family:var(--ff-serif);padding:${D.ring}px ${D.sidePad}px ${D.botPad}px">`;
+  return `<div style="width:${W}px;height:${D.H}px;background:#faf3e3;position:relative;box-sizing:border-box;overflow:hidden;font-family:var(--ff-serif);padding:${D.ring}px ${D.sidePad}px ${D.botPad}px">`;
 }
 function coDividerDots(c){
   const gold='#b08a50'; const d=Math.max(4,c(.008));
@@ -11234,16 +11233,16 @@ function coDividerDots(c){
 }
 
 /* 내지 앞면 — 레퍼런스 디자인 (음력·공휴일·기간막대·접힘) */
-function coBuildMonth(month, W){
+function coBuildMonth(month, W, yearOverride){
   const c=v=>v*W;
   const H=W*154/214;
   const accent='#8b3a2a', gold='#b08a50', text='#3d2a21';
   const sun='#b24c3c', sat='#5a6e96', lunC='#a8967d';
   const hLine='rgba(139,58,42,.16)';
-  const y=_coYear;
+  const y=yearOverride||_coYear;
   const first=new Date(y,month-1,1).getDay();
   const dim=new Date(y,month,0).getDate();
-  const byDay=coDayMap(month);
+  const byDay=coDayMap(month, yearOverride);
 
   // build weeks
   let weeks=[]; let wk=new Array(7).fill(null); let col=first;
@@ -11402,7 +11401,7 @@ function openCalOrderForm(){
       <div class="co-form-title">2027 우리 캘린더 주문</div>
       <div class="co-summary" style="margin-left:0">
         선택 일정 <b>${cnt}개</b> · 표지 <b>${coverName}</b><br>
-        탁상 달력 270×180mm · 표지 + 12개월<br>
+        탁상 달력 270×180mm · 전년 12월 + 12개월 양면(26p)<br>
         금액 <b>${CO_PRICE.toLocaleString()}원</b> <span style="color:var(--sub)">(배송비 별도)</span>
       </div>
       <div class="co-fields">
@@ -11489,7 +11488,7 @@ async function coGeneratePDF(prog){
   const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:[PW,PH]});
   // 렌더용 임시 컨테이너 (화면 밖)
   const stage=document.createElement('div');
-  stage.style.cssText='position:fixed;left:-9999px;top:0;width:1070px;background:#f3e6cf';
+  stage.style.cssText='position:fixed;left:-9999px;top:0;width:1070px;background:#faf3e3';
   document.body.appendChild(stage);
   const RW=1070, RH=Math.round(RW*PH/PW); // 렌더 폭/높이(px) — 214:154 비율 (1070 x 770)
   // ── 해상도 최상: 페이지를 2×2 타일로 쪼개 각 조각을 고배율 렌더 → PDF에 정확히 배치 ──
@@ -11499,7 +11498,7 @@ async function coGeneratePDF(prog){
   const TSCALE=4.8;          // 타일 렌더 배율 → 1070*4.8≈5136px ≈ 609DPI
   const mwMM=PW/TX, mhMM=PH/TY;   // 타일 1칸 배치 크기(mm)
   const addHtmlPage=async (html, first)=>{
-    stage.innerHTML=`<div style="width:${RW}px;background:#f3e6cf">${html}</div>`;
+    stage.innerHTML=`<div style="width:${RW}px;background:#faf3e3">${html}</div>`;
     const node=stage.firstElementChild;
     const fullH=node.offsetHeight||RH;        // 실제 렌더 높이
     const twCss=RW/TX, thCss=fullH/TY;        // 타일 1칸 크롭 크기(css px)
@@ -11509,26 +11508,25 @@ async function coGeneratePDF(prog){
         const canvas=await html2canvas(node,{
           x:cx*twCss, y:ry*thCss, width:twCss, height:thCss,
           windowWidth:RW, windowHeight:fullH,
-          scale:TSCALE, backgroundColor:'#f3e6cf', logging:false, useCORS:true
+          scale:TSCALE, backgroundColor:'#faf3e3', logging:false, useCORS:true
         });
         const img=canvas.toDataURL('image/jpeg',0.95);
         pdf.addImage(img,'JPEG', cx*mwMM, ry*mhMM, mwMM, mhMM, undefined,'NONE');
       }
     }
   };
-  // p1: 표지
-  prog&&prog('표지 그리는 중…');
-  await addHtmlPage(coBuildCoverPage(RW), true);
-  // p2: 전년 12월 뒷면 메모 (달력 연도 -1 자동) — 다음 달 미리보기가 1월로 이어짐
-  prog&&prog('전년 12월 메모 페이지 그리는 중…');
+  // 레드프린팅 양면 13건 = 총 26페이지 (표지 없음). 각 장 = 앞면(달력) + 뒷면(메모).
+  // p1~2: 전년 12월 앞면(달력) + 뒷면(메모) — 연도 자동 (_coYear-1)
+  prog&&prog('전년 12월 페이지 그리는 중…');
+  await addHtmlPage(coBuildMonth(12, RW, _coYear-1), true);
   await addHtmlPage(coBuildBackPage(12, RW, _coYear-1), false);
-  // p3~26: 각 월 앞면(달력) + 뒷면(메모)
+  // p3~26: 1~12월 앞면(달력) + 뒷면(메모)
   for(let m=1;m<=12;m++){
     prog&&prog(`${m}월 페이지 그리는 중… (${m}/12)`);
     await addHtmlPage(coBuildMonth(m, RW), false);
     await addHtmlPage(coBuildBackPage(m, RW), false);
   }
-  // 총 26페이지 = 표지 + 전년12월 메모 + 12개월×(앞/뒤)
+  // 총 26페이지 = 13개월 × (앞면/뒷면). 표지 페이지 없음.
   document.body.removeChild(stage);
   return pdf.output('blob');
 }
@@ -11537,7 +11535,7 @@ async function coGeneratePDF(prog){
 function coBuildCoverPage(W){
   const cv=CO_COVERS.find(c=>c.key===_coCover)||CO_COVERS[0];
   const H=Math.round(W*154/214);
-  return `<div style="width:${W}px;height:${H}px;overflow:hidden;background:#f3e6cf;display:flex;align-items:center;justify-content:center">
+  return `<div style="width:${W}px;height:${H}px;overflow:hidden;background:#faf3e3;display:flex;align-items:center;justify-content:center">
     <img src="${cv.img}" style="width:100%;height:100%;object-fit:cover" crossorigin="anonymous">
   </div>`;
 }
