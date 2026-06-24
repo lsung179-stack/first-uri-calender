@@ -517,12 +517,14 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .cal-more{font-size:8px;font-weight:700;color:var(--accent);opacity:.7;padding-left:3px;line-height:1.1;flex:none}
 .cal-tditem{display:flex;align-items:center;gap:3px;min-height:15px;flex:none;font-size:9px;line-height:1.3;color:var(--text);padding-left:2px;overflow:hidden;white-space:nowrap}
 .cal-tditem.done .cal-tdtxt{text-decoration:line-through;opacity:.55}
-.cal-tdchk{width:9px;height:9px;border:1.3px solid var(--accent);border-radius:2px;box-sizing:border-box;flex:none;display:inline-block}
+.cal-tdchk{width:9px;height:9px;border:1.3px solid var(--accent);border-radius:2px;box-sizing:border-box;flex:none;display:flex;align-items:center;justify-content:center;overflow:visible}
+.cal-tdchk svg{width:11px;height:11px;display:block}
 .cal-tdtxt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cal-tdline{position:relative;min-height:15px;flex:none}
-.cal-tdline-bar{position:absolute;top:6px;height:3px;border-radius:2px}
+.cal-tdline-bar{position:absolute;top:6px;height:3px}
 .cal-tdline-dot{position:absolute;top:4px;width:7px;height:7px;border-radius:50%}
-.cal-tdline-lab{position:absolute;top:1px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:3px;white-space:nowrap;padding:0 3px;border-radius:3px;background:var(--bg);font-size:9px;line-height:1.3;color:var(--text);max-width:calc(100% - 4px);overflow:hidden}
+.cal-tdline-lab{position:absolute;top:1px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:3px;white-space:nowrap;padding:0 2px;background:transparent;font-size:9px;line-height:1.3;color:var(--text);max-width:calc(100% - 4px);overflow:hidden}
+.cal-tdline-lab .cal-tdtxt{text-shadow:0 0 2px var(--bg),0 0 2px var(--bg),0 1px 1px var(--bg),0 -1px 1px var(--bg)}
 /* 일정 세로 위치: 하단 정렬 (기본은 상단부터 쌓임) */
 body.evpos-bottom .cal-events{justify-content:flex-end}
 /* 격자선 — 세로(우측)/가로(하단) 토글. box-shadow inset으로 레이아웃 안 밀리게 */
@@ -587,8 +589,7 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .dp-add-row .dp-add:nth-child(2){background:var(--card);color:var(--accent);border:1.5px solid var(--accent)}
 .dp-item.todo .dp-bar{align-self:stretch}
 .dp-tdchk{width:20px;height:20px;border:2px solid var(--accent);border-radius:6px;box-sizing:border-box;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.dp-tdchk.on{background:var(--accent);color:#fff}
-.dp-tdchk svg{width:12px;height:12px}
+.dp-tdchk svg{width:13px;height:13px}
 .dp-item.tddone .dp-title{text-decoration:line-through;opacity:.55}
 .dp-add:active{opacity:.85}
 
@@ -2161,15 +2162,16 @@ body.align-right .cal-evbar{text-align:right}
 .tmc-cell.sun{color:var(--sun)}
 .tmc-cell.sat{color:var(--sat)}
 .tmc-cell.sel{background:var(--accent);color:#fff!important;font-weight:700}
-.tmc-cell.in-range{background:rgba(139,58,42,.13);border-radius:0}
+.tmc-cell.in-range{background:var(--aP);border-radius:0}
 .tmc-cell.range-start{background:var(--accent);color:#fff!important;font-weight:700;border-radius:8px 0 0 8px}
 .tmc-cell.range-end{background:var(--accent);color:#fff!important;font-weight:700;border-radius:0 8px 8px 0}
 .tmc-cell.range-one{background:var(--accent);color:#fff!important;font-weight:700;border-radius:8px}
 .tmc-summary{text-align:center;font-size:12px;color:var(--sub);font-weight:600;padding:9px 4px 2px}
-.todo-color-grid{display:flex;flex-wrap:wrap;gap:9px;padding:2px 0}
-.todo-color-dot{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .1s}
-.todo-color-dot.on{border-color:var(--text);transform:scale(1.12)}
-.todo-color-dot:active{transform:scale(.92)}
+.todo-color-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:4px 2px;margin-top:4px}
+.todo-color-dot{width:100%;aspect-ratio:1;height:auto;border-radius:50%;cursor:pointer;border:none;position:relative;transition:transform .12s}
+.todo-color-dot.on{transform:none}
+.todo-color-dot.on::after{content:'';position:absolute;inset:-3px;border:2px solid var(--text);border-radius:50%;pointer-events:none}
+.todo-color-dot:active{transform:scale(.9)}
 
 /* ── 9. 우리할일 화면 ── */
 #todoScreen{padding:0;align-items:stretch;justify-content:flex-start}
@@ -2197,7 +2199,12 @@ body.align-right .cal-evbar{text-align:right}
 .todo-empty{text-align:center;color:var(--mute);font-size:14px;padding:60px 20px;line-height:1.7}
 
 /* ── 4. 통합 설정 카드 ── */
-#unifiedSettingsCard{max-height:90vh;display:flex;flex-direction:column;padding-bottom:0}
+#settingsScreen{padding:0;align-items:stretch;justify-content:flex-start}
+.settings-inner{width:100%;height:100%;display:flex;flex-direction:column}
+.settings-header{padding:max(14px,env(safe-area-inset-top)) 24px 6px;text-align:center;flex-shrink:0}
+.settings-header .s-title{font-family:var(--ff-serif);font-size:22px;font-weight:700;color:var(--text)}
+.settings-header .s-sub{font-size:13px;color:var(--sub);margin-top:2px}
+#settingsScreen .uni-scroll{padding:6px 22px calc(104px + env(safe-area-inset-bottom))}
 .uni-scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 2px 10px;flex:1}
 .uni-divider{height:1px;background:var(--borderL);margin:18px 0}
 .uni-sec-label{font-size:12px;font-weight:700;color:var(--mute);letter-spacing:.4px;margin:0 0 10px}
@@ -2516,7 +2523,7 @@ body.align-right .cal-evbar{text-align:right}
   <div class="cal-grid" id="calGrid">
     <!-- renderMonthly()가 여기 채움 -->
   </div>
-  <button class="cal-fab" id="calFab" onclick="calFabAdd()" aria-label="일정 추가">+</button>
+  <button class="cal-fab" id="calFab" onclick="calFabAdd()" aria-label="일정 추가" style="display:none">+</button>
 </div>
 
 <!-- ═══ 우리 할일 화면 ═══ -->
@@ -2558,94 +2565,92 @@ body.align-right .cal-evbar{text-align:right}
 </div><!-- /.app -->
 
 <!-- ═══ 할일 추가 시트 ═══ -->
-<div class="mo-overlay" id="todoAddOverlay" onclick="closeTodoAddSheet()"></div>
+<div class="mo-overlay" id="todoAddOverlay" onclick="cancelTodoAddSheet()"></div>
 <div class="mo-card" id="todoAddCard">
   <div class="mo-handle"></div>
-  <div class="mo-title" id="todoAddTitle">할 일 추가</div>
+  <div class="mo-title" id="todoAddTitle">새 할 일 추가</div>
   <div class="mo-sub" id="todoAddDateSub"></div>
+  <div class="ev-form">
 
-  <div class="ev-form-row">
-    <div class="ev-label">기간</div>
-    <div class="todo-type-row">
-      <button class="todo-type-btn on" id="todoTypeSingle" onclick="setTodoType('single',this)">하루</button>
-      <button class="todo-type-btn" id="todoTypeRange" onclick="setTodoType('range',this)">기간</button>
-      <button class="todo-type-btn" id="todoTypeMulti" onclick="setTodoType('multi',this)">여러 날</button>
+    <div class="ev-form-row">
+      <div class="ev-label">제목</div>
+      <input class="fi" id="todoTitleInput" type="text" placeholder="예) 여행준비, 청소주간" maxlength="40" autocomplete="off">
     </div>
-  </div>
 
-  <div class="ev-form-row">
-    <div class="ev-label">제목</div>
-    <input class="fi" id="todoTitleInput" type="text" placeholder="예) 여행준비, 청소주간" maxlength="40" autocomplete="off">
-  </div>
-
-  <div class="ev-form-row">
-    <div class="ev-label">시간 (선택)</div>
-    <div class="todo-time-row">
-      <div class="todo-time-box empty" id="todoStartTimeBox" onclick="toggleTodoTimePanel()">-- : --</div>
-      <span class="todo-time-sep">~</span>
-      <div class="todo-time-box empty" id="todoEndTimeBox" onclick="toggleTodoTimePanel()">-- : --</div>
-      <button class="todo-time-clear-btn" onclick="clearTodoTime()">지우기</button>
-    </div>
-    <div id="todoTimePanel" style="display:none;margin-top:8px;background:var(--bg);border-radius:10px;padding:10px">
-      <div style="display:flex;align-items:center;gap:6px;justify-content:center;font-size:13px;flex-wrap:wrap">
-        <select class="fi" id="todoSH" style="width:60px"></select><span style="color:var(--mute)">:</span><select class="fi" id="todoSM" style="width:60px"></select>
-        <span style="color:var(--mute);margin:0 4px">~</span>
-        <select class="fi" id="todoEH" style="width:60px"></select><span style="color:var(--mute)">:</span><select class="fi" id="todoEM" style="width:60px"></select>
+    <div class="ev-form-row">
+      <div class="ev-label">시간 (선택)</div>
+      <div class="todo-time-row">
+        <div class="todo-time-box empty" id="todoStartTimeBox" onclick="toggleTodoTimePanel()">-- : --</div>
+        <span class="todo-time-sep">~</span>
+        <div class="todo-time-box empty" id="todoEndTimeBox" onclick="toggleTodoTimePanel()">-- : --</div>
+        <button class="todo-time-clear-btn" onclick="clearTodoTime()">지우기</button>
       </div>
-      <button class="btn btn-primary" style="width:100%;margin-top:10px" onclick="applyTodoTime()">확인</button>
+      <div id="todoTimePanel" style="display:none;margin-top:8px;background:var(--bg);border-radius:10px;padding:10px">
+        <div style="display:flex;align-items:center;gap:6px;justify-content:center;font-size:13px;flex-wrap:wrap">
+          <select class="fi" id="todoSH" style="width:60px"></select><span style="color:var(--mute)">:</span><select class="fi" id="todoSM" style="width:60px"></select>
+          <span style="color:var(--mute);margin:0 4px">~</span>
+          <select class="fi" id="todoEH" style="width:60px"></select><span style="color:var(--mute)">:</span><select class="fi" id="todoEM" style="width:60px"></select>
+        </div>
+        <button class="btn btn-primary" style="width:100%;margin-top:10px" onclick="applyTodoTime()">확인</button>
+      </div>
     </div>
-  </div>
 
-  <div class="ev-form-row" id="todoRangeDateRow" style="display:none">
-    <div class="todo-range-row">
-      <div class="todo-date-chip active" id="todoRangeStartChip" onclick="focusTodoRangeDate('start')">시작일</div>
-      <span class="todo-range-arrow">→</span>
-      <div class="todo-date-chip" id="todoRangeEndChip" onclick="focusTodoRangeDate('end')">종료일</div>
+    <!-- 기간 + 달력 (하나의 그룹) -->
+    <div class="ev-form-row">
+      <div class="ev-label">기간</div>
+      <div class="todo-type-row">
+        <button class="todo-type-btn on" id="todoTypeSingle" onclick="setTodoType('single',this)">하루</button>
+        <button class="todo-type-btn" id="todoTypeRange" onclick="setTodoType('range',this)">기간</button>
+        <button class="todo-type-btn" id="todoTypeMulti" onclick="setTodoType('multi',this)">여러 날</button>
+      </div>
+      <div id="todoRangeDateRow" style="display:none;margin-top:8px">
+        <div class="todo-range-row">
+          <div class="todo-date-chip active" id="todoRangeStartChip" onclick="focusTodoRangeDate('start')">시작일</div>
+          <span class="todo-range-arrow">→</span>
+          <div class="todo-date-chip" id="todoRangeEndChip" onclick="focusTodoRangeDate('end')">종료일</div>
+        </div>
+      </div>
+      <div id="todoMultiDateRow" style="display:none;margin-top:8px">
+        <div class="todo-multi-input" id="todoMultiChips"><span class="todo-multi-placeholder">아래 달력에서 날짜를 탭하세요</span></div>
+      </div>
+      <div class="todo-mini-cal" id="todoMiniCal"></div>
     </div>
-  </div>
 
-  <div class="ev-form-row" id="todoMultiDateRow" style="display:none">
-    <div class="todo-multi-input" id="todoMultiChips"><span class="todo-multi-placeholder">아래 달력에서 날짜를 탭하세요</span></div>
-  </div>
-
-  <div class="ev-form-row">
-    <div class="ev-label" id="todoDateLabel">날짜</div>
-    <div class="todo-mini-cal" id="todoMiniCal"></div>
-  </div>
-
-  <div class="ev-form-row">
-    <div class="ev-label">색상</div>
-    <div class="todo-color-grid" id="todoColorGrid"></div>
-  </div>
-
-  <div class="ev-form-row">
-    <div class="ev-label">반복</div>
-    <div class="todo-repeat-row">
-      <button class="todo-repeat-btn on" id="todoRepNone" onclick="setTodoRepeat('none',this)">안 함</button>
-      <button class="todo-repeat-btn" id="todoRepWeekly" onclick="setTodoRepeat('weekly',this)">매주</button>
-      <button class="todo-repeat-btn" id="todoRepMonthly" onclick="setTodoRepeat('monthly',this)">매월</button>
-      <button class="todo-repeat-btn" id="todoRepYearly" onclick="setTodoRepeat('yearly',this)">매년</button>
+    <div class="ev-form-row">
+      <div class="ev-label">색상</div>
+      <div class="todo-color-grid" id="todoColorGrid"></div>
     </div>
-  </div>
 
-  <div class="ev-form-row">
-    <div class="ev-label">메모 (선택)</div>
-    <textarea class="fi" id="todoMemoInput" placeholder="간단한 메모를 적어 주세요" rows="3" style="resize:none"></textarea>
-  </div>
+    <div class="ev-form-row">
+      <div class="ev-label">반복</div>
+      <div class="todo-repeat-row">
+        <button class="todo-repeat-btn on" id="todoRepNone" onclick="setTodoRepeat('none',this)">안 함</button>
+        <button class="todo-repeat-btn" id="todoRepWeekly" onclick="setTodoRepeat('weekly',this)">매주</button>
+        <button class="todo-repeat-btn" id="todoRepMonthly" onclick="setTodoRepeat('monthly',this)">매월</button>
+        <button class="todo-repeat-btn" id="todoRepYearly" onclick="setTodoRepeat('yearly',this)">매년</button>
+      </div>
+    </div>
 
+    <div class="ev-form-row">
+      <div class="ev-label">메모 (선택)</div>
+      <textarea class="fi" id="todoMemoInput" placeholder="간단한 메모를 적어 주세요" rows="3" style="resize:none"></textarea>
+    </div>
+
+  </div>
   <div class="mo-actions">
     <button class="btn btn-primary" onclick="saveTodo()">저장</button>
-    <button class="mo-cancel" onclick="closeTodoAddSheet()">취소</button>
+    <button class="mo-cancel" onclick="cancelTodoAddSheet()">취소</button>
   </div>
 </div>
 
-<!-- ═══ 통합 설정 카드 ═══ -->
-<div class="mo-overlay" id="uniSettingsOverlay" onclick="closeUnifiedSettings()"></div>
-<div class="mo-card" id="unifiedSettingsCard">
-  <div class="mo-handle"></div>
-  <div class="mo-title">설정</div>
-  <div class="mo-sub" id="uniRoomSub">—</div>
-  <div class="uni-scroll">
+<!-- ═══ 통합 설정 (자체 탭/스크린) ═══ -->
+<div class="screen" id="settingsScreen">
+  <div class="settings-inner">
+    <div class="settings-header">
+      <div class="s-title">설정</div>
+      <div class="s-sub" id="uniRoomSub">—</div>
+    </div>
+    <div class="uni-scroll">
 
     <div class="uni-stamp-wrap">
       <div class="pf-stamp" id="uniStamp"><span class="pf-stamp-letter" id="uniLetter">—</span></div>
@@ -2671,7 +2676,7 @@ body.align-right .cal-evbar{text-align:right}
       <button class="uni-mini-btn" onclick="uniSaveBirthday()">저장</button>
     </div>
 
-    <button class="uni-nav" onclick="openMyOrders(true)"><span>📦 내 주문 내역 · 배송 조회</span><span class="chev">›</span></button>
+    <button class="uni-nav" onclick="openMyOrders('settings')"><span>📦 내 주문 내역 · 배송 조회</span><span class="chev">›</span></button>
 
     <div class="uni-divider"></div>
 
@@ -2718,12 +2723,20 @@ body.align-right .cal-evbar{text-align:right}
       <button class="uni-nav" style="color:#c0392b" onclick="leaveRoomConfirm()"><span>🚪 이 방 나가기</span><span class="chev">›</span></button>
     </div>
 
-    <div style="text-align:center;opacity:.45;font-size:11px;padding:14px 0 4px" id="uniBuildInfo"></div>
-  </div>
-  <div class="uni-bottom">
+    <div id="uniAdminSection" style="display:none">
+      <div class="uni-divider"></div>
+      <div class="uni-sec-label">🔧 관리자 전용</div>
+      <button class="uni-nav" onclick="openAdminGrant()"><span>🎁 이용자 무료 부여</span><span class="chev">›</span></button>
+      <button class="uni-nav" onclick="openOrderAdmin()"><span>📦 달력 주문 관리 (관리자 페이지)</span><span class="chev">›</span></button>
+    </div>
+
+    <div class="uni-divider"></div>
     <button class="btn btn-danger" style="width:100%" onclick="doLogout()">로그아웃</button>
-    <button class="mo-cancel" style="width:100%;margin-top:8px" onclick="closeUnifiedSettings()">닫기</button>
-    <button onclick="deleteMyAccount()" style="display:block;width:100%;margin-top:10px;background:none;border:none;color:var(--mute);font-size:12px;text-decoration:underline;cursor:pointer;font-family:inherit">회원탈퇴</button>
+    <button class="mo-cancel" style="width:100%;margin-top:4px" onclick="closeUnifiedSettings()">닫기</button>
+    <button onclick="deleteMyAccount()" style="display:block;width:100%;margin-top:6px;background:none;border:none;color:var(--mute);font-size:12px;text-decoration:underline;cursor:pointer;font-family:inherit">회원탈퇴</button>
+
+    <div style="text-align:center;opacity:.45;font-size:11px;padding:14px 0 4px" id="uniBuildInfo"></div>
+    </div>
   </div>
 </div>
 
@@ -2795,7 +2808,7 @@ body.align-right .cal-evbar{text-align:right}
 </div>
 
 <!-- 일정 추가/수정 모달 -->
-<div class="mo-overlay" id="evOverlay" onclick="closeEventModal()"></div>
+<div class="mo-overlay" id="evOverlay" onclick="cancelEventModal()"></div>
 <div class="mo-card" id="evCard">
   <div class="mo-handle"></div>
   <div class="mo-title" id="evModalTitle">새 일정 추가</div>
@@ -2967,7 +2980,7 @@ body.align-right .cal-evbar{text-align:right}
   </div>
   <div class="mo-actions">
     <button class="btn btn-primary" id="evSaveBtn" onclick="saveEvent()">저장</button>
-    <button class="mo-cancel" onclick="closeEventModal()">취소</button>
+    <button class="mo-cancel" onclick="cancelEventModal()">취소</button>
   </div>
 </div>
 
@@ -7149,6 +7162,7 @@ function renderMonthly(){
 
 /* ===== 통합 레인 시스템: 일정 + 할일을 같은 순서 체계로 ===== */
 let _laneMap={};
+let _laneItems=[];
 function _eventItemKey(ev){
   if(ev._isVirtual) return 'v:'+(ev.id||((ev.title||'')+'|'+(ev.date||'')));
   if(ev._isRangeEvent){
@@ -7168,7 +7182,7 @@ function _computeMonthLanes(gridDays){
       let it=seen[k];
       if(!it){
         const ord=ev._isVirtual?VIRT:((typeof ev.order_index==='number')?ev.order_index:0);
-        it={k:k, order:ord, dates:{}, tb:(ev.start_date||ev.date||'')+'|'+(ev.time||'')+'|'+(ev.created_at||'')+'|'+k};
+        it={k:k, order:ord, dates:{}, virt:!!ev._isVirtual, kind:'event', ev:ev, tb:(ev.start_date||ev.date||'')+'|'+(ev.time||'')+'|'+(ev.created_at||'')+'|'+k};
         seen[k]=it; items.push(it);
       }
       it.dates[key]=true;
@@ -7180,10 +7194,11 @@ function _computeMonthLanes(gridDays){
     todos.forEach(function(t){
       const dates={}; let any=false;
       gridDays.forEach(function(key){ if(occ2(t,key)){ dates[key]=true; any=true; } });
-      if(any) items.push({k:'t:'+t.id, order:(typeof t.order_index==='number')?t.order_index:0, dates:dates, tb:'~td|'+(t.start_date||'')+'|'+(t.created_at||'')+'|'+t.id});
+      if(any) items.push({k:'t:'+t.id, order:(typeof t.order_index==='number')?t.order_index:0, dates:dates, virt:false, kind:'todo', todo:t, tb:'~td|'+(t.start_date||'')+'|'+(t.created_at||'')+'|'+t.id});
     });
   }
   items.sort(function(a,b){ if(a.order!==b.order) return a.order-b.order; return a.tb<b.tb?-1:(a.tb>b.tb?1:0); });
+  _laneItems=items;
   const occ={};
   items.forEach(function(it){
     const ds=Object.keys(it.dates);
@@ -7192,6 +7207,44 @@ function _computeMonthLanes(gridDays){
     _laneMap[it.k]=L;
     ds.forEach(function(dk){ (occ[dk]||(occ[dk]={}))[L]=true; });
   });
+}
+/* 순서변경 후보: 이동 대상과 하루라도 겹치는(같은 날 존재) 모든 항목 — 정렬 순서 유지, 가상 제외.
+   기간 항목은 자기 기간 어디든 다른 항목과 겹치면 그 항목들과 순서를 바꿀 수 있음. */
+function _reorderCandidates(key){
+  const me=_laneItems.find(function(it){ return it.k===key; });
+  if(!me) return {list:[], idx:-1, me:null};
+  const list=_laneItems.filter(function(it){
+    if(it.virt) return false;
+    if(it.k===key) return true;
+    return Object.keys(it.dates).some(function(dk){ return me.dates[dk]; });
+  });
+  const idx=list.findIndex(function(it){ return it.k===key; });
+  return {list:list, idx:idx, me:me};
+}
+async function _applyOrderIndex(item, ord){
+  if(item.kind==='todo'){
+    const {error}=await supa.from('todos').update({order_index:ord}).eq('id', item.todo.id);
+    if(error) throw error; return;
+  }
+  const ev=item.ev;
+  if(ev && ev.shared_id){
+    const {error}=await supa.from('events').update({order_index:ord}).eq('shared_id', ev.shared_id);
+    if(error) throw error; return;
+  }
+  // 그룹(또는 단일)의 실제 row id들을 모아 일괄 업데이트
+  const ids=[];
+  Object.keys(item.dates).forEach(function(dk){
+    const arr=_events[dk]||[];
+    arr.forEach(function(r){ if(r.id && _eventItemKey(r)===item.k) ids.push(r.id); });
+  });
+  if(ids.length){
+    const {error}=await supa.from('events').update({order_index:ord}).in('id', ids);
+    if(error) throw error; return;
+  }
+  if(ev && ev.id){
+    const {error}=await supa.from('events').update({order_index:ord}).eq('id', ev.id);
+    if(error) throw error;
+  }
 }
 function _eventBarHTML(ev,key,y,m,d){
   const hex=colorHex(ev.color);
@@ -7548,12 +7601,14 @@ function renderDateSheetList(){
 
   let html='';
   combined.forEach(function(item,i){
-    // 순서 화살표 (가상 제외) — 일정/할일 구분 없이 자유롭게 이동
+    // 순서 화살표 — 가상 제외. 기간 항목은 자기 기간 어디든 다른 항목과 겹치면 순서변경 가능.
     let orderHtml='';
     if(!item.virt){
-      const canUp=(i>0)&&combined[i-1]&&!combined[i-1].virt;
-      const canDown=(i<lastNormalIdx);
       const idArg=(item.kind==='todo')?item.t.id:item.ev.id;
+      const myKey=(item.kind==='todo')?('t:'+item.t.id):_eventItemKey(item.ev);
+      const cand=_reorderCandidates(myKey);
+      const canUp=(cand.idx>0);
+      const canDown=(cand.idx>=0 && cand.idx<cand.list.length-1);
       orderHtml=`<div class="dp-order">
         <button class="dp-arrow" ${canUp?'':'disabled'} onclick="event.stopPropagation();moveItemInList('${item.kind}','${idArg}',-1)" aria-label="위로">▲</button>
         <button class="dp-arrow" ${canDown?'':'disabled'} onclick="event.stopPropagation();moveItemInList('${item.kind}','${idArg}',1)" aria-label="아래로">▼</button>
@@ -7570,7 +7625,7 @@ function renderDateSheetList(){
       const chk=done?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>':'';
       const memoHtml=t.memo?`<div class="dp-memo">${escapeHtml(t.memo)}</div>`:'';
       html+=`<div class="dp-item todo${done?' tddone':''}">
-        <div class="dp-tdchk${done?' on':''}" style="border-color:${hex}${done?(';background:'+hex):''}" onclick="event.stopPropagation();window.toggleTodoDone('${t.id}');setTimeout(renderDateSheetList,40)">${chk}</div>
+        <div class="dp-tdchk" style="border-color:${hex};color:${hex}" onclick="event.stopPropagation();window.toggleTodoDone('${t.id}');setTimeout(renderDateSheetList,40)">${chk}</div>
         <div class="dp-info">
           <div class="dp-title">${escapeHtml(t.title||'')} <span class="dp-shared-tag" style="background:#efe2c5;color:#6b4a35">${tag}</span></div>
           ${tr?`<div class="dp-meta">${tr}</div>`:''}
@@ -7656,35 +7711,26 @@ function renderDateSheetList(){
 
 async function moveItemInList(kind, id, direction){
   if(!_selectedDate||!_currentRoom){return}
-  const evs=getDayEvents(_selectedDate);
-  const todos=(window.__getTodos?window.__getTodos():[]).filter(function(t){ return window.todoOccursOnDate&&window.todoOccursOnDate(t,_selectedDate); });
-  const combined=[];
-  evs.forEach(function(ev){ combined.push({kind:'event', ev:ev, virt:!!ev._isVirtual, order:(typeof ev.order_index==='number')?ev.order_index:0, tb:(ev.start_date||ev.date||'')+'|'+(ev.time||'')+'|'+(ev.created_at||'')}); });
-  todos.forEach(function(t){ combined.push({kind:'todo', t:t, virt:false, order:(typeof t.order_index==='number')?t.order_index:0, tb:'~td|'+(t.start_date||'')+'|'+(t.created_at||'')}); });
-  combined.sort(function(a,b){ if(a.virt!==b.virt) return a.virt?1:-1; if(a.order!==b.order) return a.order-b.order; return a.tb<b.tb?-1:(a.tb>b.tb?1:0); });
-  const idx=combined.findIndex(function(x){ return (x.kind===kind) && ((kind==='todo')?(x.t.id===id):(x.ev.id===id)); });
-  if(idx<0)return;
-  const swapIdx=idx+direction;
-  if(swapIdx<0||swapIdx>=combined.length)return;
-  const A=combined[idx], B=combined[swapIdx];
-  if(A.virt||B.virt){toast('순서 변경이 안 되는 항목이에요');return}
+  // 이동 대상의 레인 키
+  let key=null;
+  if(kind==='todo'){ key='t:'+id; }
+  else{
+    const ev=getDayEvents(_selectedDate).find(function(e){ return e.id===id; });
+    if(!ev) return;
+    key=_eventItemKey(ev);
+  }
+  // 겹치는(같은 날 존재하는) 항목들 사이에서만 순서 교환 — 기간 항목은 기간 전체 기준
+  const cand=_reorderCandidates(key);
+  if(cand.idx<0) return;
+  const swapIdx=cand.idx+direction;
+  if(swapIdx<0||swapIdx>=cand.list.length) return;
+  const A=cand.list[cand.idx], B=cand.list[swapIdx];
+  if(A.virt||B.virt){ toast('순서 변경이 안 되는 항목이에요'); return; }
   let newA=B.order, newB=A.order;
   if(A.order===B.order){ newA=A.order+direction; newB=A.order; }
-  const upd=async function(item,ord){
-    if(item.kind==='todo'){
-      const {error}=await supa.from('todos').update({order_index:ord}).eq('id',item.t.id);
-      if(error)throw error;
-    }else if(item.ev.shared_id){
-      const {error}=await supa.from('events').update({order_index:ord}).eq('shared_id',item.ev.shared_id);
-      if(error)throw error;
-    }else{
-      const {error}=await supa.from('events').update({order_index:ord}).eq('id',item.ev.id);
-      if(error)throw error;
-    }
-  };
   try{
-    await upd(A,newA);
-    await upd(B,newB);
+    await _applyOrderIndex(A,newA);
+    await _applyOrderIndex(B,newB);
     await loadEvents();
     if(window.loadTodos) await window.loadTodos();
     renderDateSheetList();
@@ -8006,6 +8052,12 @@ function closeEventModal(){
   document.getElementById('evOverlay').classList.remove('on');
   document.getElementById('evCard').classList.remove('on');
   _editingEvent=null;
+}
+/* 취소/스와이프/오버레이 — 캘린더가 아니라 이전 단계(날짜 시트)로 복귀 */
+function cancelEventModal(){
+  const d=_selectedDate;
+  closeEventModal();
+  if(d){ try{ openDateSheet(d); }catch(e){} }
 }
 /* 하위 모달(방/멤버 선택) 띄울 때 일정 모달을 시각적으로만 감춤 — 입력값/상태는 그대로 보존 */
 function _hideEvCardForSub(){
@@ -12271,11 +12323,11 @@ const MY_FLOW=['pending','paid','making','shipped','done'];
 const MY_FLOW_LABEL={pending:'입금대기',paid:'입금확인',making:'제작중',shipped:'배송중',done:'배송완료'};
 let _myOrders=[];
 
-let _moFromProfile=false;
-async function openMyOrders(fromProfile){
+let _moOrigin=null;
+async function openMyOrders(origin){
   if(!_currentUser){toast('로그인이 필요해요');return;}
-  _moFromProfile=!!fromProfile;
-  closeProfile&&closeProfile();
+  _moOrigin=(origin===true)?'profile':(origin||null);
+  if(_moOrigin==='profile') closeProfile&&closeProfile();
   document.getElementById('myOrdersOverlay').classList.add('on');
   document.getElementById('myOrdersCard').classList.add('on');
   const body=document.getElementById('myOrdersBody');
@@ -12292,7 +12344,9 @@ async function openMyOrders(fromProfile){
 function closeMyOrders(){
   document.getElementById('myOrdersOverlay').classList.remove('on');
   document.getElementById('myOrdersCard').classList.remove('on');
-  if(_moFromProfile){ _moFromProfile=false; openProfile&&openProfile(); }
+  const o=_moOrigin; _moOrigin=null;
+  if(o==='settings'){ showScreen('settingsScreen'); }
+  else if(o==='profile'){ openProfile&&openProfile(); }
 }
 function myFmtDate(s){ if(!s)return '-'; const d=new Date(s); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }
 function myTracker(status){
@@ -13533,7 +13587,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   setupEventDrag();
   bindEvTimeInputs();
   setupSheetSwipe('dpCard',closeDateSheet);
-  setupSheetSwipe('evCard',closeEventModal);
+  setupSheetSwipe('evCard',cancelEventModal);
+  setupSheetSwipe('todoAddCard',cancelTodoAddSheet);
   setupSheetSwipe('createCard',closeCreateRoom);
   setupSheetSwipe('joinCard',closeJoinRoom);
   setupSheetSwipe('memberPickCard',cancelMemberPick);
@@ -13949,13 +14004,14 @@ function _setActiveTab(idx){
 }
 function _afterShowScreen(id){
   const bar=$('calTabbar'); if(!bar) return;
-  const inApp=(id==='roomsScreen'||id==='calendarScreen'||id==='todoScreen');
+  const inApp=(id==='roomsScreen'||id==='calendarScreen'||id==='todoScreen'||id==='settingsScreen');
   bar.hidden=!inApp;
   bar.classList.remove('tabbar-gone');
   let idx=-1;
   if(id==='calendarScreen') idx=0;
   else if(id==='roomsScreen') idx=1;
   else if(id==='todoScreen') idx=2;
+  else if(id==='settingsScreen') idx=3;
   _setActiveTab(idx);
 }
 function _syncTabbarNow(){
@@ -14094,7 +14150,7 @@ function openTodoAddSheet(dateKeyStr){
   const start=dateKeyStr||_selectedDate||_todayKeyStr();
   hideTabbar();
   _editingTodoId=null;
-  setText('todoAddTitle','할 일 추가');
+  setText('todoAddTitle','새 할 일 추가');
   _todoType='single';
   _todoSingleDate=start;
   _todoRangeStart=start; _todoRangeEnd=null; _todoRangeFocus='start';
@@ -14171,6 +14227,11 @@ function closeTodoAddSheet(){
   showTabbar();
   if($('todoAddOverlay')) $('todoAddOverlay').classList.remove('on');
   if($('todoAddCard')) $('todoAddCard').classList.remove('on');
+}
+function cancelTodoAddSheet(){
+  const d=(typeof _selectedDate!=='undefined'&&_selectedDate)?_selectedDate:null;
+  closeTodoAddSheet();
+  if(d){ try{ if(typeof openDateSheet==='function') openDateSheet(d); }catch(e){} }
 }
 function setTodoType(type,btn){
   _todoType=type;
@@ -14358,7 +14419,7 @@ function updateTodoMiniSummary(){
     } else if(_todoRangeStart){ el.textContent=_korShort(_todoRangeStart)+' → 종료일 선택'; }
     else el.textContent='';
   } else {
-    el.textContent=_todoMultiDates.length?(_todoMultiDates.map(_shortMD).join(', ')+' · '+_todoMultiDates.length+'개'):'';
+    el.textContent=_todoMultiDates.length?('선택된 날짜 '+_todoMultiDates.length+'개'):'';
   }
 }
 async function saveTodo(){
@@ -14461,14 +14522,13 @@ function openUnifiedSettings(){
   let adminOn=false; try{ adminOn=isAdmin(); }catch(e){}
   const vbtn=$('uniAddVMemberBtn'); if(vbtn) vbtn.style.display=(_currentRoom.is_admin_mode&&adminOn)?'inline-block':'none';
   const bi=$('buildInfo'), ub=$('uniBuildInfo'); if(bi&&ub) ub.textContent=bi.textContent;
-  if($('uniSettingsOverlay')) $('uniSettingsOverlay').classList.add('on');
-  if($('unifiedSettingsCard')) $('unifiedSettingsCard').classList.add('on');
+  let adminUser=false; try{ adminUser=isAdmin(); }catch(e){}
+  showEl('uniAdminSection',adminUser);
+  showScreen('settingsScreen');
   _setActiveTab(3);
 }
 function closeUnifiedSettings(){
-  if($('uniSettingsOverlay')) $('uniSettingsOverlay').classList.remove('on');
-  if($('unifiedSettingsCard')) $('unifiedSettingsCard').classList.remove('on');
-  _syncTabbarNow();
+  showScreen('calendarScreen');
 }
 function uniChangePhoto(){ _uniAwaitPhoto=true; const f=$('profilePhotoFile'); if(f) f.click(); }
 function uniRestorePhoto(){ try{ restoreKakaoPhoto(); }catch(e){} setTimeout(uniSyncProfileDisplay,500); }
@@ -14577,6 +14637,7 @@ window.openTodoAddSheet=openTodoAddSheet;
 window.openTodoEditSheet=openTodoEditSheet;
 window.editTodoFromDay=editTodoFromDay;
 window.closeTodoAddSheet=closeTodoAddSheet;
+window.cancelTodoAddSheet=cancelTodoAddSheet;
 window.setTodoType=setTodoType;
 window.setTodoRepeat=setTodoRepeat;
 window.toggleTodoTimePanel=toggleTodoTimePanel;
@@ -14594,10 +14655,12 @@ window.renderTodosIntoCells=renderTodosIntoCells;
 function __todoCellHTML(t,key){
   const hex=todoHex(t.color);
   const done=!!t.is_done;
+  const CHK='<svg viewBox="0 0 24 24" fill="none" stroke="'+hex+'" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
+  const chkSpan='<span class="cal-tdchk" style="border-color:'+hex+'">'+(done?CHK:'')+'</span>';
   const isRange=(t.todo_type==='range' && t.end_date && t.end_date>t.start_date);
   if(!isRange){
     return '<div class="cal-tditem'+(done?' done':'')+'" data-tdid="'+t.id+'">'
-      +'<span class="cal-tdchk" style="border-color:'+hex+';'+(done?'background:'+hex+';':'')+'"></span>'
+      +chkSpan
       +'<span class="cal-tdtxt">'+escapeHtml(t.title||'')+'</span></div>';
   }
   const isStart=(key===t.start_date);
@@ -14605,11 +14668,13 @@ function __todoCellHTML(t,key){
   let n=0; try{ n=_dayDiff(t.start_date,t.end_date); }catch(e){ n=0; }
   const midKey=shiftDateKey(t.start_date, Math.floor(n/2));
   const isMid=(key===midKey);
-  let inner='<span class="cal-tdline-bar" style="left:'+(isStart?4:0)+'px;right:'+(isEnd?4:0)+'px;background:'+hex+';"></span>';
+  // 선은 셀 경계에서 끊기지 않게 — 진짜 시작/끝에만 둥근 모서리, 내부는 각지게 이어붙임
+  const radius=(isStart?'2px':'0')+' '+(isEnd?'2px':'0')+' '+(isEnd?'2px':'0')+' '+(isStart?'2px':'0');
+  let inner='<span class="cal-tdline-bar" style="left:'+(isStart?4:0)+'px;right:'+(isEnd?4:0)+'px;background:'+hex+';border-radius:'+radius+';"></span>';
   if(isStart) inner+='<span class="cal-tdline-dot" style="left:1px;background:'+hex+';"></span>';
   if(isEnd) inner+='<span class="cal-tdline-dot" style="right:1px;background:'+hex+';"></span>';
   if(isMid){
-    inner+='<span class="cal-tdline-lab'+(done?' done':'')+'"><span class="cal-tdchk" style="border-color:'+hex+';'+(done?'background:'+hex+';':'')+'"></span><span class="cal-tdtxt">'+escapeHtml(t.title||'')+'</span></span>';
+    inner+='<span class="cal-tdline-lab'+(done?' done':'')+'">'+chkSpan+'<span class="cal-tdtxt">'+escapeHtml(t.title||'')+'</span></span>';
   }
   return '<div class="cal-tdline" data-tdid="'+t.id+'">'+inner+'</div>';
 }
