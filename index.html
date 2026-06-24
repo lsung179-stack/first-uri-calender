@@ -10861,12 +10861,12 @@ function coBuildCover(W, key){
   var c=function(v){return (v*W).toFixed(2);};
   var H=(W*154/214), cy=function(v){return (v*H).toFixed(2);};
   var accent='#8b3a2a', gold='#a8a05c', sub='#6f5a48';
-  var wreathSize=c(.285), logoSize=c(.155), ls=c(.045), rad=c(.022);
+  var wreathSize=c(.27), logoSize=c(.15), ls=c(.045), rad=c(.022);
   var bottom;
   if(key==='clean'){
-    bottom='<div style="position:absolute;top:'+cy(.83)+'px;left:0;right:0;text-align:center;font-size:'+c(.021)+'px;color:'+gold+';letter-spacing:'+c(.005)+'px;padding-left:'+c(.005)+'px">OUR CALENDAR · EST 2026</div>';
+    bottom='<div style="position:absolute;top:'+cy(.85)+'px;left:0;right:0;text-align:center;font-size:'+c(.021)+'px;color:'+gold+';letter-spacing:'+c(.005)+'px;padding-left:'+c(.005)+'px">OUR CALENDAR · EST 2026</div>';
   } else {
-    bottom='<div style="position:absolute;top:'+cy(.80)+'px;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:'+c(.04)+'px">'
+    bottom='<div style="position:absolute;top:'+cy(.825)+'px;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:'+c(.04)+'px">'
       +'<img src="'+CO_CHAR_MOCHI+'" style="width:'+c(.07)+'px;height:'+c(.07)+'px;object-fit:contain">'
       +'<img src="'+CO_CHAR_GOM+'" style="width:'+c(.07)+'px;height:'+c(.07)+'px;object-fit:contain">'
       +'<img src="'+CO_CHAR_DALKONG+'" style="width:'+c(.07)+'px;height:'+c(.07)+'px;object-fit:contain"></div>';
@@ -10875,15 +10875,19 @@ function coBuildCover(W, key){
     +'<div style="position:absolute;top:'+cy(.052)+'px;left:'+c(.040)+'px;right:'+c(.040)+'px;bottom:'+cy(.052)+'px;border:'+Math.max(2,W*.0055)+'px solid '+accent+';border-radius:'+rad+'px"></div>'
     +'<div style="position:absolute;top:'+cy(.075)+'px;left:'+c(.056)+'px;right:'+c(.056)+'px;bottom:'+cy(.075)+'px;border:'+Math.max(1,W*.0014)+'px solid '+accent+';border-radius:'+c(.016)+'px"></div>'
     +'<div style="position:absolute;top:'+cy(.125)+'px;left:0;right:0;text-align:center;font-family:&quot;Playfair Display&quot;,serif;font-weight:600;font-size:'+c(.088)+'px;letter-spacing:'+ls+'px;padding-left:'+ls+'px;color:'+accent+';line-height:1">2027</div>'
-    +'<div style="position:absolute;top:'+cy(.27)+'px;left:50%;transform:translateX(-50%);width:'+wreathSize+'px;height:'+wreathSize+'px">'
+    +'<div style="position:absolute;top:'+cy(.25)+'px;left:50%;transform:translateX(-50%);width:'+wreathSize+'px;height:'+wreathSize+'px">'
       +'<svg viewBox="0 0 200 200" width="'+wreathSize+'" height="'+wreathSize+'" style="position:absolute;top:0;left:0">'+coWreath('L')+coWreath('R')+'</svg>'
       +'<img src="'+CO_COVER_LOGO+'" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:'+logoSize+'px;height:'+logoSize+'px;object-fit:contain">'
     +'</div>'
-    +'<div style="position:absolute;top:'+cy(.59)+'px;left:0;right:0;text-align:center;font-weight:700;font-size:'+c(.062)+'px;color:'+accent+';letter-spacing:'+c(.012)+'px;padding-left:'+c(.012)+'px">우리 캘린더</div>'
-    +'<div style="position:absolute;top:'+cy(.70)+'px;left:0;right:0;text-align:center;font-size:'+c(.023)+'px;color:'+sub+';letter-spacing:'+c(.007)+'px;padding-left:'+c(.007)+'px">함께 쓰는 우리만의 기록</div>'
+    +'<div style="position:absolute;top:'+cy(.63)+'px;left:0;right:0;text-align:center;font-weight:700;font-size:'+c(.062)+'px;color:'+accent+';letter-spacing:'+c(.012)+'px;padding-left:'+c(.012)+'px">우리 캘린더</div>'
+    +'<div style="position:absolute;top:'+cy(.735)+'px;left:0;right:0;text-align:center;font-size:'+c(.023)+'px;color:'+sub+';letter-spacing:'+c(.007)+'px;padding-left:'+c(.007)+'px">함께 쓰는 우리만의 기록</div>'
     +bottom
   +'</div>';
-}function coColorHex(colorKey){
+}function coLunar(y,m,d){
+  try{ if(window.Solar){ const l=window.Solar.fromYmd(y,m,d).getLunar(); return `음 ${l.getMonth()}.${l.getDay()}`; } }catch(e){}
+  return '';
+}
+function coColorHex(colorKey){
   try{ if(typeof colorHex==='function')return colorHex(colorKey); }catch(e){}
   try{ if(typeof EVENT_COLORS!=='undefined'){ const c=EVENT_COLORS.find(x=>x.key===colorKey); if(c&&c.hex)return c.hex; } }catch(e){}
   return '#8b3a2a';
