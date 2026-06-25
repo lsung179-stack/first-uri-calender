@@ -484,9 +484,9 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .cal-dow.sat{color:var(--sat)}
 
 /* 캘린더 그리드 */
-.cal-grid{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-template-rows:repeat(6,minmax(88px,auto));align-content:start;padding:0 4px;gap:0;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(28px + env(safe-area-inset-bottom));transition:opacity .2s ease}
+.cal-grid{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:minmax(88px,auto);align-content:start;padding:0 4px;gap:0;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(28px + env(safe-area-inset-bottom));transition:opacity .2s ease}
 .cal-grid.fading{opacity:0}
-.cal-cell{min-height:0;padding:2px 0;display:flex;flex-direction:column;cursor:pointer;border-radius:0;transition:background .12s;position:relative}
+.cal-cell{min-height:88px;padding:2px 0;display:flex;flex-direction:column;cursor:pointer;border-radius:0;transition:background .12s;position:relative}
 .cal-cell:active{background:rgba(139,58,42,.06)}
 .cal-cell.other{opacity:.35}
 .cal-day-num{text-align:center;font-size:13px;font-weight:500;color:var(--text);margin:2px 0 3px;line-height:20px;font-family:var(--ff-num,-apple-system,sans-serif);position:relative}
@@ -512,7 +512,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
   pointer-events:none;
 }
 .cal-cell.holiday .cal-day-num{color:var(--sun);font-weight:700}
-.cal-events{display:flex;flex-direction:column;gap:1px;flex:1 0 auto;padding-bottom:3px}
+.cal-events{display:flex;flex-direction:column;gap:1px;flex:0 0 auto;padding-bottom:3px}
 .cal-evspacer{min-height:15px;flex:none;pointer-events:none}
 .cal-more{font-size:8px;font-weight:700;color:var(--accent);opacity:.7;padding-left:3px;line-height:1.1;flex:none}
 .cal-tditem{display:flex;align-items:center;gap:3px;min-height:15px;flex:none;font-size:9px;line-height:1.3;color:var(--text);padding-left:2px;overflow:hidden;white-space:nowrap}
