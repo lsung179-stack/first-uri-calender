@@ -6742,6 +6742,7 @@ async function loadEvents(){
   _monthlyEvents={};
   _weeklyEvents={};
   invalidateSearchCache();  // 일정 재로드 시 검색 캐시 무효화
+  invalidateDayEventsCache();  // 일정 재로드 시 getDayEvents 캐시 무효화
   renderMonthly();  // 일단 빈 상태로 그려놓고
   try{
     const {data,error}=await supa.from('events').select('*').eq('room_id',_currentRoom.id);
@@ -7081,7 +7082,7 @@ function setViewingMember(uid){
 }
 
 /* 일자별 일정 — 함께 일정은 shared_id로 그룹핑 (한 번만 표시) */
-function getDayEvents(date){
+function _getDayEventsRaw(date){
   const baseEvs=_events[date]||[];
   // 매년 반복 일정 펼치기 — 이 날짜의 (월,일)에 등록된 반복 일정 중 origin이 아닌 것
   const md=date.slice(5);  // 'MM-DD'
@@ -7224,6 +7225,25 @@ function getDayEvents(date){
     });
   }
   return result.filter(isVisible);
+}
+/* getDayEvents 메모이제이션 — renderMonthly 1회 실행 동안만 유효한 캐시.
+   같은 렌더에서 _computeMonthLanes(42회) + cellHtml(42회) 등 같은 날짜를 여러 번 계산하던 것을 1회로 줄임.
+   _events / _viewingMember 가 바뀌면 캐시 무효화. */
+let _gdeCache=new Map();
+let _gdeCacheToken=null;
+function _gdeCurrentToken(){
+  // _events 객체 참조 + 보고 있는 멤버를 토큰으로 — 데이터가 바뀌면 자동 무효화
+  return (_viewingMember||'all');
+}
+function invalidateDayEventsCache(){ _gdeCache.clear(); _gdeCacheToken=null; }
+function getDayEvents(date){
+  const token=_gdeCurrentToken();
+  if(token!==_gdeCacheToken){ _gdeCache.clear(); _gdeCacheToken=token; }
+  const hit=_gdeCache.get(date);
+  if(hit)return hit;
+  const res=_getDayEventsRaw(date);
+  _gdeCache.set(date,res);
+  return res;
 }
 function isSameRangeGroup(a,b){
   // 여러 날 일정은 연결(기간) 대상 아님 — 날짜가 붙어 있어도 각각 단독 칩으로 표시
@@ -7566,15 +7586,16 @@ function goToday(){
   });
 }
 /* 페이드 헬퍼 — 캘린더 그리드 부드럽게 전환 */
-function fadeRender(updateState){
+function fadeRender(updateState,onDone){
   const grid=document.getElementById('calGrid');
-  if(!grid){updateState();renderMonthly();setTimeout(showReactionAnimation,150);return}
+  if(!grid){updateState();renderMonthly();setTimeout(showReactionAnimation,150);if(onDone)onDone();return}
   grid.classList.add('fading');
   setTimeout(()=>{
     updateState();
     renderMonthly();
     requestAnimationFrame(()=>grid.classList.remove('fading'));
     setTimeout(showReactionAnimation,250);
+    if(onDone)onDone();
   },180);
 }
 
@@ -7757,8 +7778,7 @@ function jumpToSearch(date){
   closeSearch();
   fadeRender(()=>{
     _calYear=d.getFullYear();_calMonth=d.getMonth();
-  });
-  setTimeout(()=>openDateSheet(date),250);
+  },()=>{ openDateSheet(date); });  // 렌더 완료 후 시트 열기 (고정 250ms 대신)
 }
 
 /* 오늘 버튼 — 다른 달에 있을 때만 표시 */
@@ -10327,7 +10347,13 @@ async function deleteEvent(eventId){
         // 이 날짜를 예외로 추가 (반복 규칙은 유지, 이 날짜만 숨김)
         const {data:cur,error:e0}=await supa.from('events').select('repeat_except').eq('id',ev.id).maybeSingle();
         if(e0)throw e0;
-        const ex=Array.isArray(cur&&cur.repeat_except)?cur.repeat_except.slice():[];
+        let ex=Array.isArray(cur&&cur.repeat_except)?cur.repeat_except.slice():[];
+        // 과거 예외 정리 — 오늘(또는 이번 삭제 날짜 중 더 이른 쪽)보다 과거 항목은 더 이상 렌더되지 않아 불필요
+        try{
+          const _today=_todayKeyStr();
+          const _cut=(occDate<_today)?occDate:_today;
+          if(ex.length>30) ex=ex.filter(d=>d>=_cut); // 너무 커졌을 때만 정리(불필요한 쓰기 방지)
+        }catch(_){}
         if(!ex.includes(occDate))ex.push(occDate);
         const {error}=await supa.from('events').update({repeat_except:ex}).eq('id',ev.id);
         if(error)throw error;
@@ -14062,9 +14088,16 @@ function _beginSheetEvDrag(s){
   if(navigator.vibrate)navigator.vibrate(15);
   try{ if(bar)bar.setPointerCapture(s.pid); }catch(_){}
 }
-/* 드래그 직후 셀 클릭(날짜 시트 열림) 1회 차단 — capture 단계 */
+/* 드래그 직후 셀 클릭(날짜 시트 열림) 1회 차단 — capture 단계
+   차단 대상을 캘린더 셀로 한정해 FAB·버튼 등 다른 UI 클릭이 함께 막히지 않게 함 */
 document.addEventListener('click',(e)=>{
-  if(_evDragSuppressClick){e.stopPropagation();e.preventDefault();_evDragSuppressClick=false}
+  if(!_evDragSuppressClick)return;
+  _evDragSuppressClick=false;
+  // 드롭 위치가 캘린더 셀/일정바일 때만 차단 (그 외 버튼·FAB는 정상 통과)
+  const t=e.target;
+  if(t&&t.closest&&t.closest('.cal-cell,.cal-evbar,.cal-tditem,.cal-tdline')){
+    e.stopPropagation();e.preventDefault();
+  }
 },true);
 
 
@@ -14092,10 +14125,11 @@ function setupSwipe(){
 }
 
 /* 시트 swipe-down (handle/card 위쪽 영역에서) */
+const _swipeBoundSet=new WeakSet();
 function setupSheetSwipe(cardId,closeFn){
   const card=document.getElementById(cardId);
-  if(!card||card._swipeBound)return;
-  card._swipeBound=true;
+  if(!card||_swipeBoundSet.has(card))return;
+  _swipeBoundSet.add(card);
   let sy=0,sx=0,cy=0,active=false,decided=false,drag=false,fromHandle=false;
   // 헤더/핸들 영역 — 여기서 시작한 드래그는 스크롤 위치와 무관하게 무조건 닫기 드래그
   const HANDLE_SEL='.mo-handle,.mo-title,.mo-sub,.dp-head,.dp-sub,.dp-members-section';
