@@ -7160,7 +7160,19 @@ function _computeMonthLanes(gridDays){
       if(any) items.push({k:'t:'+t.id, order:(typeof t.order_index==='number')?t.order_index:0, dates:dates, virt:false, kind:'todo', todo:t, tb:'~td|'+(t.start_date||'')+'|'+(t.created_at||'')+'|'+t.id});
     });
   }
-  items.sort(function(a,b){ if(a.order!==b.order) return a.order-b.order; return a.tb<b.tb?-1:(a.tb>b.tb?1:0); });
+  items.sort(function(a,b){
+    if(a.virt!==b.virt) return a.virt?-1:1; // virt(생일 등) 최상단 레인
+    // 완료된 할일은 최하단 그룹으로
+    const aD=(a.kind==='todo'&&a.todo&&a.todo.is_done)?1:0;
+    const bD=(b.kind==='todo'&&b.todo&&b.todo.is_done)?1:0;
+    if(aD!==bD) return aD-bD;
+    // 기간 항목 → 단일 항목 순으로 배치 (기간 상단 고정, 미완료 그룹 안에서)
+    const aR=(a.kind==='event')?(a.ev&&a.ev._isRangeEvent):!!(a.todo&&a.todo.todo_type==='range'&&a.todo.end_date&&a.todo.end_date>a.todo.start_date);
+    const bR=(b.kind==='event')?(b.ev&&b.ev._isRangeEvent):!!(b.todo&&b.todo.todo_type==='range'&&b.todo.end_date&&b.todo.end_date>b.todo.start_date);
+    if(!!aR!==!!bR) return aR?-1:1;
+    if(a.order!==b.order) return a.order-b.order;
+    return a.tb<b.tb?-1:(a.tb>b.tb?1:0);
+  });
   _laneItems=items;
   const occ={};
   items.forEach(function(it){
@@ -7557,23 +7569,43 @@ function renderDateSheetList(){
     list.innerHTML='<div class="dp-empty">아직 일정·할 일이 없어요</div>';
     return;
   }
-  // 일정 + 할일 통합 정렬 (order_index → 시간/생성순, 가상은 항상 마지막)
+  // 일정 + 할일 통합 정렬: 기간 항목 상단 고정 → 단일 항목 → 가상 맨 아래
   const combined=[];
   evs.forEach(function(ev){ combined.push({kind:'event', ev:ev, virt:!!ev._isVirtual, order:(typeof ev.order_index==='number')?ev.order_index:0, tb:(ev.start_date||ev.date||'')+'|'+(ev.time||'')+'|'+(ev.created_at||'')}); });
   todos.forEach(function(t){ combined.push({kind:'todo', t:t, virt:false, order:(typeof t.order_index==='number')?t.order_index:0, tb:'~td|'+(t.start_date||'')+'|'+(t.created_at||'')}); });
-  combined.sort(function(a,b){ if(a.virt!==b.virt) return a.virt?1:-1; if(a.order!==b.order) return a.order-b.order; return a.tb<b.tb?-1:(a.tb>b.tb?1:0); });
+  combined.sort(function(a,b){
+    if(a.virt!==b.virt) return a.virt?1:-1; // 가상 맨 아래
+    // 완료된 할일은 하단 그룹(가상 위, 미완료 아래)
+    const aD=(a.kind==='todo'&&a.t&&a.t.is_done)?1:0;
+    const bD=(b.kind==='todo'&&b.t&&b.t.is_done)?1:0;
+    if(aD!==bD) return aD-bD;
+    const aR=(a.kind==='event')?(a.ev&&a.ev._isRangeEvent):!!(a.t&&a.t.todo_type==='range'&&a.t.end_date&&a.t.end_date>a.t.start_date);
+    const bR=(b.kind==='event')?(b.ev&&b.ev._isRangeEvent):!!(b.t&&b.t.todo_type==='range'&&b.t.end_date&&b.t.end_date>b.t.start_date);
+    if(!!aR!==!!bR) return aR?-1:1; // 기간 항목 상단
+    if(a.order!==b.order) return a.order-b.order;
+    return a.tb<b.tb?-1:(a.tb>b.tb?1:0);
+  });
   const firstVirtualIdx=combined.findIndex(function(x){ return x.virt; });
   const lastNormalIdx=(firstVirtualIdx>=0?firstVirtualIdx:combined.length)-1;
+  // ▲▼ 순서변경은 단일·미완료 항목끼리만 — 기간·완료·가상 제외
+  const _swappable=combined.filter(function(x){
+    if(x.virt) return false;
+    if(x.kind==='todo'&&x.t&&x.t.is_done) return false; // 완료 할일 제외
+    const xR=(x.kind==='event')?(x.ev&&x.ev._isRangeEvent):!!(x.t&&x.t.todo_type==='range'&&x.t.end_date&&x.t.end_date>x.t.start_date);
+    return !xR;
+  });
 
   let html='';
   combined.forEach(function(item,i){
-    // 순서 화살표 — 가상 제외. 기간 항목은 자기 기간 어디든 다른 항목과 겹치면 순서변경 가능.
+    // 기간·완료·가상 항목은 버튼 없음, 단일 미완료 항목끼리만 ▲▼
+    const _itemIsRange=(item.kind==='event')?(item.ev&&item.ev._isRangeEvent):!!(item.t&&item.t.todo_type==='range'&&item.t.end_date&&item.t.end_date>item.t.start_date);
+    const _itemDone=(item.kind==='todo'&&item.t&&item.t.is_done);
     let orderHtml='';
-    if(!item.virt){
+    if(!item.virt && !_itemIsRange && !_itemDone){
       const idArg=(item.kind==='todo')?item.t.id:item.ev.id;
-      // 이 날짜에 보이는 항목들(combined) 기준으로 위/아래 — 보이는 그대로 순서 교환
-      const canUp=(i>0);
-      const canDown=(i<lastNormalIdx);
+      const swIdx=_swappable.indexOf(item);
+      const canUp=swIdx>0;
+      const canDown=swIdx<_swappable.length-1;
       orderHtml=`<div class="dp-order">
         <button class="dp-arrow" ${canUp?'':'disabled'} onclick="event.stopPropagation();moveItemInList('${item.kind}','${idArg}',-1)" aria-label="위로">▲</button>
         <button class="dp-arrow" ${canDown?'':'disabled'} onclick="event.stopPropagation();moveItemInList('${item.kind}','${idArg}',1)" aria-label="아래로">▼</button>
@@ -7679,23 +7711,26 @@ function renderDateSheetList(){
 
 async function moveItemInList(kind, id, direction){
   if(!_selectedDate||!_currentRoom){return}
-  // 이 날짜에 "보이는" 항목들(일정+할일)을 day-sheet와 동일하게 구성/정렬 → 보이는 그대로 한 칸 교환
   const evs=getDayEvents(_selectedDate);
   const todos=(window.__getTodos?window.__getTodos():[]).filter(function(t){ return window.todoOccursOnDate&&window.todoOccursOnDate(t,_selectedDate); });
   const combined=[];
   evs.forEach(function(ev){ combined.push({kind:'event', ev:ev, virt:!!ev._isVirtual, order:(typeof ev.order_index==='number')?ev.order_index:0, tb:(ev.start_date||ev.date||'')+'|'+(ev.time||'')+'|'+(ev.created_at||'')}); });
   todos.forEach(function(t){ combined.push({kind:'todo', t:t, virt:false, order:(typeof t.order_index==='number')?t.order_index:0, tb:'~td|'+(t.start_date||'')+'|'+(t.created_at||'')}); });
-  combined.sort(function(a,b){ if(a.virt!==b.virt) return a.virt?1:-1; if(a.order!==b.order) return a.order-b.order; return a.tb<b.tb?-1:(a.tb>b.tb?1:0); });
-  const idx=combined.findIndex(function(x){ return !x.virt && x.kind===kind && ((kind==='todo')?(x.t&&x.t.id===id):(x.ev&&x.ev.id===id)); });
+  // 기간·완료 항목 제외한 단일 미완료 항목끼리만 순서 변경
+  const swappable=combined.filter(function(x){
+    if(x.virt) return false;
+    if(x.kind==='todo'&&x.t&&x.t.is_done) return false; // 완료 할일 제외
+    const xR=(x.kind==='event')?(x.ev&&x.ev._isRangeEvent):!!(x.t&&x.t.todo_type==='range'&&x.t.end_date&&x.t.end_date>x.t.start_date);
+    return !xR;
+  });
+  swappable.sort(function(a,b){ if(a.order!==b.order) return a.order-b.order; return a.tb<b.tb?-1:(a.tb>b.tb?1:0); });
+  const idx=swappable.findIndex(function(x){ return x.kind===kind && ((kind==='todo')?(x.t&&x.t.id===id):(x.ev&&x.ev.id===id)); });
   if(idx<0) return;
   const swapIdx=idx+direction;
-  if(swapIdx<0||swapIdx>=combined.length) return;
-  const A=combined[idx], B=combined[swapIdx];
-  if(A.virt||B.virt){ toast('순서 변경이 안 되는 항목이에요'); return; }
-  // 같은 order면 방향만큼 밀어 확실히 교차
+  if(swapIdx<0||swapIdx>=swappable.length) return;
+  const A=swappable[idx], B=swappable[swapIdx];
   let newA=B.order, newB=A.order;
   if(A.order===B.order){ newA=A.order+direction; newB=A.order; }
-  // 그룹(기간/반복) 전체에 적용하기 위해 레인 항목(_laneItems)을 키로 찾아 넘김
   function laneFor(item){
     const k=(item.kind==='todo')?('t:'+item.t.id):_eventItemKey(item.ev);
     const found=(typeof _laneItems!=='undefined'&&_laneItems)?_laneItems.find(function(it){ return it.k===k; }):null;
@@ -7707,8 +7742,8 @@ async function moveItemInList(kind, id, direction){
     await _applyOrderIndex(laneFor(B),newB);
     await loadEvents();
     if(window.loadTodos) await window.loadTodos();
-    renderMonthly();        // _laneItems 먼저 갱신
-    renderDateSheetList();  // 갱신된 데이터로 화살표/순서 재계산
+    renderMonthly();
+    renderDateSheetList();
   }catch(e){ console.warn('순서 변경 실패:',e); toast('순서 변경 실패'); }
 }
 
