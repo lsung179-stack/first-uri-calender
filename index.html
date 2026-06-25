@@ -1164,8 +1164,8 @@ body.ev-dragging .cal-cell{cursor:grabbing}
 
 /* 이모지 반응 */
 .dp-reaction-row{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
-.dp-order{display:flex;flex-direction:column;gap:2px;align-items:center;justify-content:center;flex-shrink:0;padding-left:0}
-.dp-arrow{width:22px;height:18px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--sub);font-size:8px;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;line-height:1}
+.dp-order{display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;flex-shrink:0;padding-left:0}
+.dp-arrow{width:30px;height:24px;background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--sub);font-size:11px;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;line-height:1}
 .dp-arrow:active{background:var(--bg);transform:scale(.94)}
 .dp-arrow:disabled{opacity:.22;cursor:not-allowed}
 .dp-reaction-chip{
@@ -7163,7 +7163,8 @@ function _computeMonthLanes(gridDays){
     const ds=Object.keys(it.dates);
     // order_index를 '희망 레인'으로 사용 — 위에 항목이 없어도 빈 줄 아래로 배치 가능.
     // 같은 레인 충돌 시에만 아래로 한 칸씩 밀어 겹침 방지(데이터 안전).
-    let L=it.virt?0:Math.max(0,(typeof it.order==='number'?it.order:0));
+    // 희망 레인(슬롯)을 0~3으로 제한 → 셀 밖(+N) 이탈 방지
+    let L=it.virt?0:Math.min(3,Math.max(0,(typeof it.order==='number'?it.order:0)));
     for(;;){ let ok=true; for(let i=0;i<ds.length;i++){ const s=occ[ds[i]]; if(s&&s[L]){ ok=false; break; } } if(ok) break; L++; }
     _laneMap[it.k]=L;
     ds.forEach(function(dk){ (occ[dk]||(occ[dk]={}))[L]=true; });
@@ -7676,24 +7677,25 @@ function renderDateSheetList(){
 
 async function moveItemInList(kind, id, direction){
   if(!_selectedDate||!_currentRoom){return}
-  // 항목의 레인 키
-  let key;
-  if(kind==='todo'){ key='t:'+id; }
-  else{ const r=(typeof _evFindRowById==='function')?_evFindRowById(id):null; if(!r)return; key=_eventItemKey(r); }
-  // 현재 레인 → 목표 레인(빈 줄이어도 이동). 0~3 범위로 클램프.
-  const curLane=(typeof _laneMap!=='undefined'&&_laneMap&&typeof _laneMap[key]==='number')?_laneMap[key]:0;
-  let target=curLane+direction;
-  if(target<0)target=0; if(target>3)target=3;
-  if(target===curLane){ return; }
-  // 그룹(기간/반복) 전체에 같은 order_index 적용 — _laneItems의 레인 항목을 키로 찾아 넘김
-  let laneItem=(typeof _laneItems!=='undefined'&&_laneItems)?_laneItems.find(function(it){ return it.k===key; }):null;
-  if(!laneItem){
-    laneItem=(kind==='todo')
-      ? {kind:'todo', todo:{id:id}, k:key, dates:{}}
-      : {kind:'event', ev:_evFindRowById(id), k:key, dates:{}};
-  }
+  if(typeof _laneItems==='undefined'||!_laneItems)return;
+  // 대상 항목의 레인 키
+  let meKey;
+  if(kind==='todo'){ meKey='t:'+id; }
+  else{ const r=(typeof _evFindRowById==='function')?_evFindRowById(id):null; if(!r)return; meKey=_eventItemKey(r); }
+  // 이 날짜에 보이는 항목들(가상 제외)의 현재 레인 맵
+  const laneOf={};
+  _laneItems.forEach(function(it){ if(typeof _laneMap[it.k]==='number') laneOf[it.k]=_laneMap[it.k]; });
+  const here=_laneItems.filter(function(it){ return !it.virt && it.dates && it.dates[_selectedDate]; });
+  const me=here.find(function(it){ return it.k===meKey; });
+  if(!me)return;
+  const curLane=(typeof laneOf[meKey]==='number')?laneOf[meKey]:0;
+  const newLane=curLane+direction;
+  if(newLane<0||newLane>3)return; // 슬롯 0~3 범위 밖이면 무시
+  // 그 슬롯을 이미 차지한 다른 항목 → 자리 맞바꿈
+  const other=here.find(function(it){ return it.k!==meKey && laneOf[it.k]===newLane; });
   try{
-    await _applyOrderIndex(laneItem,target);
+    await _applyOrderIndex(me,newLane);
+    if(other) await _applyOrderIndex(other,curLane);
     await loadEvents();
     if(window.loadTodos) await window.loadTodos();
     renderMonthly();        // _laneMap/_laneItems 먼저 갱신
