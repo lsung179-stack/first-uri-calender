@@ -7167,8 +7167,8 @@ function _computeMonthLanes(gridDays){
     const ds=Object.keys(it.dates);
     // order_index를 '희망 레인'으로 사용 — 위에 항목이 없어도 빈 줄 아래로 배치 가능.
     // 같은 레인 충돌 시에만 아래로 한 칸씩 밀어 겹침 방지(데이터 안전).
-    // 희망 레인(슬롯)을 0~3으로 제한 → 셀 밖(+N) 이탈 방지
-    let L=it.virt?0:Math.min(3,Math.max(0,(typeof it.order==='number'?it.order:0)));
+    // 항상 위(0번 레인)에서부터 차례로 쌓기 — 빈 줄 없이 채움
+    let L=0;
     for(;;){ let ok=true; for(let i=0;i<ds.length;i++){ const s=occ[ds[i]]; if(s&&s[L]){ ok=false; break; } } if(ok) break; L++; }
     _laneMap[it.k]=L;
     ds.forEach(function(dk){ (occ[dk]||(occ[dk]={}))[L]=true; });
@@ -7571,11 +7571,9 @@ function renderDateSheetList(){
     let orderHtml='';
     if(!item.virt){
       const idArg=(item.kind==='todo')?item.t.id:item.ev.id;
-      // 현재 레인(_laneMap) 기준 — 위아래에 다른 항목이 없어도 빈 줄로 이동 가능.
-      const _laneKey=(item.kind==='todo')?('t:'+item.t.id):_eventItemKey(item.ev);
-      const _curLane=(typeof _laneMap!=='undefined'&&_laneMap&&typeof _laneMap[_laneKey]==='number')?_laneMap[_laneKey]:0;
-      const canUp=(_curLane>0);
-      const canDown=(_curLane<3);
+      // 이 날짜에 보이는 항목들(combined) 기준으로 위/아래 — 보이는 그대로 순서 교환
+      const canUp=(i>0);
+      const canDown=(i<lastNormalIdx);
       orderHtml=`<div class="dp-order">
         <button class="dp-arrow" ${canUp?'':'disabled'} onclick="event.stopPropagation();moveItemInList('${item.kind}','${idArg}',-1)" aria-label="위로">▲</button>
         <button class="dp-arrow" ${canDown?'':'disabled'} onclick="event.stopPropagation();moveItemInList('${item.kind}','${idArg}',1)" aria-label="아래로">▼</button>
@@ -7681,29 +7679,36 @@ function renderDateSheetList(){
 
 async function moveItemInList(kind, id, direction){
   if(!_selectedDate||!_currentRoom){return}
-  if(typeof _laneItems==='undefined'||!_laneItems)return;
-  // 대상 항목의 레인 키
-  let meKey;
-  if(kind==='todo'){ meKey='t:'+id; }
-  else{ const r=(typeof _evFindRowById==='function')?_evFindRowById(id):null; if(!r)return; meKey=_eventItemKey(r); }
-  // 이 날짜에 보이는 항목들(가상 제외)의 현재 레인 맵
-  const laneOf={};
-  _laneItems.forEach(function(it){ if(typeof _laneMap[it.k]==='number') laneOf[it.k]=_laneMap[it.k]; });
-  const here=_laneItems.filter(function(it){ return !it.virt && it.dates && it.dates[_selectedDate]; });
-  const me=here.find(function(it){ return it.k===meKey; });
-  if(!me)return;
-  const curLane=(typeof laneOf[meKey]==='number')?laneOf[meKey]:0;
-  const newLane=curLane+direction;
-  if(newLane<0||newLane>3)return; // 슬롯 0~3 범위 밖이면 무시
-  // 그 슬롯을 이미 차지한 다른 항목 → 자리 맞바꿈
-  const other=here.find(function(it){ return it.k!==meKey && laneOf[it.k]===newLane; });
+  // 이 날짜에 "보이는" 항목들(일정+할일)을 day-sheet와 동일하게 구성/정렬 → 보이는 그대로 한 칸 교환
+  const evs=getDayEvents(_selectedDate);
+  const todos=(window.__getTodos?window.__getTodos():[]).filter(function(t){ return window.todoOccursOnDate&&window.todoOccursOnDate(t,_selectedDate); });
+  const combined=[];
+  evs.forEach(function(ev){ combined.push({kind:'event', ev:ev, virt:!!ev._isVirtual, order:(typeof ev.order_index==='number')?ev.order_index:0, tb:(ev.start_date||ev.date||'')+'|'+(ev.time||'')+'|'+(ev.created_at||'')}); });
+  todos.forEach(function(t){ combined.push({kind:'todo', t:t, virt:false, order:(typeof t.order_index==='number')?t.order_index:0, tb:'~td|'+(t.start_date||'')+'|'+(t.created_at||'')}); });
+  combined.sort(function(a,b){ if(a.virt!==b.virt) return a.virt?1:-1; if(a.order!==b.order) return a.order-b.order; return a.tb<b.tb?-1:(a.tb>b.tb?1:0); });
+  const idx=combined.findIndex(function(x){ return !x.virt && x.kind===kind && ((kind==='todo')?(x.t&&x.t.id===id):(x.ev&&x.ev.id===id)); });
+  if(idx<0) return;
+  const swapIdx=idx+direction;
+  if(swapIdx<0||swapIdx>=combined.length) return;
+  const A=combined[idx], B=combined[swapIdx];
+  if(A.virt||B.virt){ toast('순서 변경이 안 되는 항목이에요'); return; }
+  // 같은 order면 방향만큼 밀어 확실히 교차
+  let newA=B.order, newB=A.order;
+  if(A.order===B.order){ newA=A.order+direction; newB=A.order; }
+  // 그룹(기간/반복) 전체에 적용하기 위해 레인 항목(_laneItems)을 키로 찾아 넘김
+  function laneFor(item){
+    const k=(item.kind==='todo')?('t:'+item.t.id):_eventItemKey(item.ev);
+    const found=(typeof _laneItems!=='undefined'&&_laneItems)?_laneItems.find(function(it){ return it.k===k; }):null;
+    if(found) return found;
+    return (item.kind==='todo') ? {kind:'todo', todo:item.t, k:k, dates:{}} : {kind:'event', ev:item.ev, k:k, dates:{}};
+  }
   try{
-    await _applyOrderIndex(me,newLane);
-    if(other) await _applyOrderIndex(other,curLane);
+    await _applyOrderIndex(laneFor(A),newA);
+    await _applyOrderIndex(laneFor(B),newB);
     await loadEvents();
     if(window.loadTodos) await window.loadTodos();
-    renderMonthly();        // _laneMap/_laneItems 먼저 갱신
-    renderDateSheetList();  // 갱신된 레인으로 화살표 재계산
+    renderMonthly();        // _laneItems 먼저 갱신
+    renderDateSheetList();  // 갱신된 데이터로 화살표/순서 재계산
   }catch(e){ console.warn('순서 변경 실패:',e); toast('순서 변경 실패'); }
 }
 
@@ -13571,32 +13576,31 @@ function setupSwipe(){
 function setupSheetSwipe(cardId,closeFn){
   const card=document.getElementById(cardId);
   if(!card)return;
-  let startY=0,curY=0,active=false,pid=null;
-  card.addEventListener('pointerdown',(e)=>{
-    if(e.pointerType==='mouse')return;      // 터치/펜만
-    if(card.scrollTop>0)return;             // 스크롤 위쪽일 때만
+  let startY=0,curY=0,active=false;
+  card.addEventListener('touchstart',(e)=>{
+    if(e.touches.length!==1)return;
+    if(card.scrollTop>0)return;             // 스크롤 맨 위일 때만
     // form 요소·버튼·일정드래그 핸들 위에선 swipe 비활성
     const t=e.target;
     if(t&&t.closest&&t.closest('input,textarea,select,button,label,.ev-multi-day,.ev-color,.code-box,.tp-col,.tp-item,.time-picker,.time-input-box,.dp-order,.dp-actions,.dp-tdchk,.dp-reaction-row,.dp-photo-thumb'))return;
-    startY=e.clientY;curY=e.clientY;active=true;pid=e.pointerId;
+    startY=e.touches[0].clientY;curY=e.touches[0].clientY;active=true;
   },{passive:true});
-  card.addEventListener('pointermove',(e)=>{
-    if(!active||e.pointerId!==pid)return;
-    curY=e.clientY;
+  card.addEventListener('touchmove',(e)=>{
+    if(!active)return;
+    curY=e.touches[0].clientY;
     const dy=curY-startY;
     if(dy>0&&card.scrollTop===0){ card.style.transform=`translateY(${dy*0.6}px)`; }
   },{passive:true});
-  const end=(e)=>{
-    if(!active||(e&&e.pointerId!==pid))return;
-    active=false;pid=null;
+  card.addEventListener('touchend',()=>{
+    if(!active)return;
+    active=false;
     const dy=curY-startY;
     card.style.transition='transform .22s cubic-bezier(.32,.72,0,1)';
     card.style.transform='';
     setTimeout(()=>{ card.style.transition=''; },240);
     if(dy>120)closeFn();
-  };
-  card.addEventListener('pointerup',end,{passive:true});
-  card.addEventListener('pointercancel',end,{passive:true});
+  },{passive:true});
+  card.addEventListener('touchcancel',()=>{ if(active){active=false;card.style.transform='';} },{passive:true});
 }
 
 /* DOM 준비 후 핸들러 + 스와이프 셋업 */
