@@ -2659,7 +2659,13 @@ body.align-right .cal-evbar{text-align:right}
 
     <div class="ev-form-row">
       <div class="ev-label">색상</div>
-      <div class="todo-color-grid" id="todoColorGrid"></div>
+      <div class="ev-color-pager-wrap">
+        <div class="ev-color-pager" id="todoColorPager"></div>
+        <div class="ev-color-pager-foot">
+          <div class="ev-color-page-label" id="todoColorPageLabel">기본</div>
+          <div class="ev-color-dots" id="todoColorDots"></div>
+        </div>
+      </div>
     </div>
 
     <div class="ev-form-row">
@@ -14103,7 +14109,7 @@ function _korDow(k){ const d=parseDateKey(k); return DOW_NAMES[d.getDay()]; }
 function _korShort(k){ return _shortMD(k)+' ('+_korDow(k)+')'; }
 function _korFull(k){ const d=parseDateKey(k); return (d.getMonth()+1)+'월 '+d.getDate()+'일 '+DOW_NAMES[d.getDay()]+'요일'; }
 function todoHex(c){ if(!c) return '#8b3a2a'; if(c.charAt(0)==='#') return c; try{ const h=colorHex(c); return h||c; }catch(e){ return c; } }
-function _curHex(){ try{ const f=(EVENT_COLORS||[]).find(x=>x.key===_todoColorKey); return f?f.hex:'#8b3a2a'; }catch(e){ return '#8b3a2a'; } }
+function _curHex(){ try{ if(typeof _todoColorKey==='string'&&_todoColorKey.charAt(0)==='#') return _todoColorKey; const f=(EVENT_COLORS||[]).find(x=>x.key===_todoColorKey); return f?f.hex:'#8b3a2a'; }catch(e){ return '#8b3a2a'; } }
 function fmtClock(t){ if(!t) return ''; const p=t.split(':'); const h=parseInt(p[0],10), m=parseInt(p[1]||'0',10); const ap=h<12?'오전':'오후'; let hh=h%12; if(hh===0)hh=12; return ap+' '+hh+':'+String(m).padStart(2,'0'); }
 
 /* ---------- 상태 ---------- */
@@ -14657,7 +14663,7 @@ function openTodoEditSheet(id, opts){
   _todoRangeStart=t.start_date||start; _todoRangeEnd=t.end_date||null; _todoRangeFocus='start';
   _todoMultiDates=(Array.isArray(t.multi_dates)&&t.multi_dates.length)?t.multi_dates.slice():[start];
   _todoStartTime=t.start_time||''; _todoEndTime=t.end_time||'';
-  _todoColorKey=_hexToColorKey(t.color);
+  _todoColorKey=(function(c){ if(!c)return 'c-vintage'; const f=(EVENT_COLORS||[]).find(function(x){ return x.hex===c||x.key===c; }); return f?f.key:c; })(t.color);
   _todoRepeat=t.repeat_type||'none';
   if(Array.isArray(t.member_keys)&&t.member_keys.length>=2){
     _todoTarget='all'; _todoMembers=t.member_keys.slice();
@@ -14718,16 +14724,58 @@ function setTodoRepeat(rep,btn){
   document.querySelectorAll('.todo-repeat-row .todo-repeat-btn').forEach(function(b){ b.classList.remove('on'); });
   if(btn) btn.classList.add('on'); else _setRepeatBtns(rep);
 }
-function buildTodoColorGrid(){
-  const grid=$('todoColorGrid'); if(!grid) return;
-  grid.innerHTML='';
-  (EVENT_COLORS||[]).forEach(function(c){
-    const d=document.createElement('div');
-    d.className='todo-color-dot'+(c.key===_todoColorKey?' on':'');
-    d.style.background=c.hex;
-    if(c.name) d.title=c.name;
-    d.onclick=function(){ _todoColorKey=c.key; buildTodoColorGrid(); };
-    grid.appendChild(d);
+function buildTodoColorGrid(){ renderTodoColorPager(); } // 호환 유지: 호출처는 그대로
+function selectTodoColor(key){ _todoColorKey=key; renderTodoColorPager(); }
+function renderTodoColorPager(){
+  const pager=document.getElementById('todoColorPager');
+  if(!pager)return;
+  // 페이지 구성: 기본 + 해제된 컬러 팩들 (일정과 동일)
+  const pages=[{key:'default',name:'기본',colors:EVENT_COLORS.map(c=>({key:c.key,hex:c.hex,name:c.name}))}];
+  const unlockedPacks=getUnlockedColorPacks();
+  unlockedPacks.forEach(packKey=>{
+    const pack=STORE_COLORS.find(p=>p.key===packKey);
+    if(!pack)return;
+    pages.push({key:packKey,name:pack.name,colors:pack.colors.map(hex=>({key:hex,hex,name:''}))});
+  });
+  let activePageIdx=0;
+  for(let i=0;i<pages.length;i++){
+    if(pages[i].colors.some(c=>c.key===_todoColorKey)){activePageIdx=i;break}
+  }
+  pager.innerHTML=pages.map(p=>{
+    const cells=p.colors.map(c=>{
+      const on=(c.key===_todoColorKey)?' on':'';
+      return `<button type="button" class="ev-color${on}" data-key="${escapeHtml(c.key)}" style="background:${c.hex}" onclick="selectTodoColor('${escapeHtml(c.key)}')" title="${escapeHtml(c.name||'')}"></button>`;
+    }).join('');
+    return `<div class="ev-color-page" data-key="${escapeHtml(p.key)}" data-name="${escapeHtml(p.name)}"><div class="ev-color-page-grid">${cells}</div></div>`;
+  }).join('');
+  const dots=document.getElementById('todoColorDots');
+  if(dots){
+    dots.innerHTML=pages.map((p,i)=>`<span class="ev-color-dot${i===activePageIdx?' on':''}"></span>`).join('');
+  }
+  const label=document.getElementById('todoColorPageLabel');
+  if(label)label.textContent=pages[activePageIdx]?.name||'기본';
+  requestAnimationFrame(()=>{
+    pager.scrollLeft=activePageIdx*pager.clientWidth;
+    pager._pages=pages;
+    if(!pager._listenerAdded){
+      pager._listenerAdded=true;
+      let scrollTimeout;
+      pager.addEventListener('scroll',()=>{
+        clearTimeout(scrollTimeout);
+        scrollTimeout=setTimeout(()=>{
+          const idx=Math.round(pager.scrollLeft/pager.clientWidth);
+          const pgs=pager._pages||[];
+          const dotsEl=document.getElementById('todoColorDots');
+          const lblEl=document.getElementById('todoColorPageLabel');
+          if(dotsEl){
+            dotsEl.querySelectorAll('.ev-color-dot').forEach((d,i)=>{
+              d.classList.toggle('on',i===idx);
+            });
+          }
+          if(lblEl&&pgs[idx])lblEl.textContent=pgs[idx].name;
+        },80);
+      });
+    }
   });
 }
 /* 시간 선택 — 일정과 동일한 직접 입력 + 휠 피커 방식 */
@@ -15222,6 +15270,7 @@ window._todoMiniNav=todoMiniNav;
 window._todoMiniPick=todoMiniPick;
 window._todoRemoveMulti=removeTodoMultiDate;
 window.saveTodo=saveTodo;
+window.selectTodoColor=selectTodoColor;
 window._doSaveTodo=_doSaveTodo;
 window.bindTodoTimeInputs=bindTodoTimeInputs;
 window.safeRender=safeRender;
