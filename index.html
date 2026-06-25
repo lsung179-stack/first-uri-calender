@@ -5,8 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&family=Jua&family=Nanum+Pen+Script&family=Gowun+Dodum&family=Song+Myung&family=Gowun+Batang&family=Do+Hyeon&family=Black+Han+Sans&family=Gaegu&family=Gamja+Flower&family=Hi+Melody&family=Stylish&family=Diphylleia&family=Gugi&family=Playfair+Display:wght@400;600&family=Bebas+Neue&family=Abril+Fatface&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<!-- 장식 폰트(16종): 초기 렌더를 막지 않도록 비동기 로드. 설정에서 선택 시 즉시 사용 가능 -->
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Pen+Script&family=Gowun+Dodum&family=Song+Myung&family=Gowun+Batang&family=Do+Hyeon&family=Black+Han+Sans&family=Gaegu&family=Gamja+Flower&family=Hi+Melody&family=Stylish&family=Diphylleia&family=Gugi&family=Playfair+Display:wght@400;600&family=Bebas+Neue&family=Abril+Fatface&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Pen+Script&family=Gowun+Dodum&family=Song+Myung&family=Gowun+Batang&family=Do+Hyeon&family=Black+Han+Sans&family=Gaegu&family=Gamja+Flower&family=Hi+Melody&family=Stylish&family=Diphylleia&family=Gugi&family=Playfair+Display:wght@400;600&family=Bebas+Neue&family=Abril+Fatface&display=swap" rel="stylesheet"></noscript>
 <meta name="color-scheme" content="light" id="metaColorScheme">
 <meta name="supported-color-schemes" content="light">
 <meta name="theme-color" content="#f3e6cf">
@@ -2811,6 +2814,7 @@ body.align-right .cal-evbar{text-align:right}
       <div class="uni-sec-label">🔧 관리자 전용</div>
       <button class="uni-nav" onclick="openAdminGrant()"><span>🎁 이용자 무료 부여</span><span class="chev">›</span></button>
       <button class="uni-nav" onclick="openOrderAdmin()"><span>📦 달력 주문 관리 (관리자 페이지)</span><span class="chev">›</span></button>
+      <button class="uni-nav" id="deployBtn" onclick="openDeploySheet()"><span id="deployBtnLabel">🚀 배포하기</span><span class="chev">›</span></button>
     </div>
 
     <div class="uni-divider"></div>
@@ -2881,7 +2885,6 @@ body.align-right .cal-evbar{text-align:right}
   <div class="mo-handle"></div>
   <div class="dp-head" id="dpHead">5월 7일 목요일</div>
   <div class="dp-sub" id="dpSub">일정 0개</div>
-  <div class="dp-members-section" id="dpMembers" style="display:none"></div>
   <div class="dp-list" id="dpList"></div>
   <div id="dpTodoList" style="display:none"></div>
   <div class="dp-add-row">
@@ -3135,6 +3138,27 @@ body.align-right .cal-evbar{text-align:right}
   <div id="myOrdersBody" style="padding:4px 0 4px"></div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeMyOrders()">닫기</button>
+  </div>
+</div>
+
+<!-- 배포하기 시트 (관리자 전용) -->
+<div class="mo-overlay" id="deployOverlay" onclick="closeDeploySheet()"></div>
+<div class="mo-card" id="deployCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">🚀 배포하기</div>
+  <div class="mo-sub">버튼을 누르면 현재 버전이 전체 이용자에게 배포됩니다.</div>
+  <div style="margin:20px 0 8px">
+    <div style="background:var(--bg);border:1px solid var(--borderL);border-radius:12px;padding:14px 16px;font-size:13px;line-height:1.7;color:var(--sub)">
+      <div style="margin-bottom:6px"><span style="font-weight:700;color:var(--text)">현재 배포 버전</span></div>
+      <div id="deployCurrentVersion" style="font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums">불러오는 중…</div>
+      <div style="margin-top:10px;margin-bottom:6px"><span style="font-weight:700;color:var(--text)">배포할 버전 (지금 이 화면)</span></div>
+      <div id="deployNewVersion" style="font-size:12px;color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums"></div>
+    </div>
+  </div>
+  <div id="deployStatusMsg" style="text-align:center;font-size:13px;color:var(--sub);min-height:20px;margin-bottom:8px"></div>
+  <div class="mo-actions" style="margin-top:4px">
+    <button class="mo-cancel" onclick="closeDeploySheet()">취소</button>
+    <button class="btn btn-primary" id="deployConfirmBtn" onclick="confirmDeploy()" style="flex:1">🚀 전체 배포</button>
   </div>
 </div>
 
@@ -5885,6 +5909,8 @@ async function init(){
       showScreen('roomsScreen');
       loadRooms();
       ensureKakaoProfile();  // 재실행 시에도 카카오 이름·사진 보강 (아바타 "?" 방지)
+      // 배포 버전 체크 — 관리자는 스킵, 일반 이용자는 새 버전 있으면 자동 새로고침
+      setTimeout(checkDeployVersionOnStart, 1500);
     }else{
       showScreen('welcomeScreen');
     }
@@ -5892,7 +5918,7 @@ async function init(){
     showScreen('welcomeScreen');
   }finally{
     setTimeout(()=>document.getElementById('loading').classList.add('hide'),200);
-    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 2026.06.01-A · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
+    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 2026.06.26-DEPLOY · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
     // in-app browser(카톡·네이버·페이스북 등)에서 열렸을 때 한 줄 안내
     setTimeout(maybeShowInAppBrowserHint,800);
   }
@@ -6739,6 +6765,8 @@ async function loadEvents(){
   _yearlyEvents={};
   _monthlyEvents={};
   _weeklyEvents={};
+  invalidateSearchCache();  // 일정 재로드 시 검색 캐시 무효화
+  invalidateDayEventsCache();  // 일정 재로드 시 getDayEvents 캐시 무효화
   renderMonthly();  // 일단 빈 상태로 그려놓고
   try{
     const {data,error}=await supa.from('events').select('*').eq('room_id',_currentRoom.id);
@@ -7078,7 +7106,7 @@ function setViewingMember(uid){
 }
 
 /* 일자별 일정 — 함께 일정은 shared_id로 그룹핑 (한 번만 표시) */
-function getDayEvents(date){
+function _getDayEventsRaw(date){
   const baseEvs=_events[date]||[];
   // 매년 반복 일정 펼치기 — 이 날짜의 (월,일)에 등록된 반복 일정 중 origin이 아닌 것
   const md=date.slice(5);  // 'MM-DD'
@@ -7221,6 +7249,25 @@ function getDayEvents(date){
     });
   }
   return result.filter(isVisible);
+}
+/* getDayEvents 메모이제이션 — renderMonthly 1회 실행 동안만 유효한 캐시.
+   같은 렌더에서 _computeMonthLanes(42회) + cellHtml(42회) 등 같은 날짜를 여러 번 계산하던 것을 1회로 줄임.
+   _events / _viewingMember 가 바뀌면 캐시 무효화. */
+let _gdeCache=new Map();
+let _gdeCacheToken=null;
+function _gdeCurrentToken(){
+  // _events 객체 참조 + 보고 있는 멤버를 토큰으로 — 데이터가 바뀌면 자동 무효화
+  return (_viewingMember||'all');
+}
+function invalidateDayEventsCache(){ _gdeCache.clear(); _gdeCacheToken=null; }
+function getDayEvents(date){
+  const token=_gdeCurrentToken();
+  if(token!==_gdeCacheToken){ _gdeCache.clear(); _gdeCacheToken=token; }
+  const hit=_gdeCache.get(date);
+  if(hit)return hit;
+  const res=_getDayEventsRaw(date);
+  _gdeCache.set(date,res);
+  return res;
 }
 function isSameRangeGroup(a,b){
   // 여러 날 일정은 연결(기간) 대상 아님 — 날짜가 붙어 있어도 각각 단독 칩으로 표시
@@ -7563,15 +7610,16 @@ function goToday(){
   });
 }
 /* 페이드 헬퍼 — 캘린더 그리드 부드럽게 전환 */
-function fadeRender(updateState){
+function fadeRender(updateState,onDone){
   const grid=document.getElementById('calGrid');
-  if(!grid){updateState();renderMonthly();setTimeout(showReactionAnimation,150);return}
+  if(!grid){updateState();renderMonthly();setTimeout(showReactionAnimation,150);if(onDone)onDone();return}
   grid.classList.add('fading');
   setTimeout(()=>{
     updateState();
     renderMonthly();
     requestAnimationFrame(()=>grid.classList.remove('fading'));
     setTimeout(showReactionAnimation,250);
+    if(onDone)onDone();
   },180);
 }
 
@@ -7656,8 +7704,11 @@ function clearSearchInput(){
   document.getElementById('searchInput').focus();
 }
 /* 같은 방의 검색 가능한 모든 일정 (가상/반복 제외, 함께 일정은 shared_id+date로 중복 제거) */
+let _searchCache=null;
+function invalidateSearchCache(){ _searchCache=null; }
 function _getSearchableEvents(){
   if(!_currentUser?.id)return [];
+  if(_searchCache)return _searchCache;
   const out=[];
   const seenShared=new Set();
   Object.values(_events).flat().forEach(e=>{
@@ -7668,6 +7719,7 @@ function _getSearchableEvents(){
     }
     out.push(e);
   });
+  _searchCache=out;
   return out;
 }
 function renderRecentTitles(){
@@ -7694,10 +7746,18 @@ function renderRecentTitles(){
 }
 function useSuggest(t){
   const inp=document.getElementById('searchInput');
-  inp.value=t;runSearch();
+  inp.value=t;_doSearch();
 }
+let _searchTimer=null;
 function runSearch(){
-  const q=(document.getElementById('searchInput').value||'').trim().toLowerCase();
+  // 키 입력마다 즉시 실행하지 않고 150ms 디바운스 (저사양 기기 버벅임 방지)
+  clearTimeout(_searchTimer);
+  _searchTimer=setTimeout(_doSearch,150);
+}
+function _doSearch(){
+  const inp=document.getElementById('searchInput');
+  if(!inp)return;
+  const q=(inp.value||'').trim().toLowerCase();
   const list=document.getElementById('searchResults');
   const hint=document.getElementById('searchHint');
   if(!q){renderRecentTitles();return}
@@ -7722,7 +7782,7 @@ function runSearch(){
     const sharedTag=e.shared_id?'<span class="search-row-tag">함께</span>':'';
     const _trng=fmtTimeRange(e.time,e.end_time);
     const timeText=_trng?`<div class="search-row-time">${escapeHtml(_trng)}</div>`:'';
-    return `<div class="search-row" onclick="jumpToSearch('${e.date}')">
+    return `<div class="search-row" onclick="jumpToSearch('${e.date}','${e.user_id||''}','${e.virtual_member_id||''}','${e.shared_id||''}')">
       <div class="search-row-bar" style="background:${hex}"></div>
       <div class="search-row-main">
         <div class="search-row-title">${escapeHtml(e.title||'')}</div>
@@ -7737,13 +7797,32 @@ function _dateDiff(a,b){
   const dA=parseDateKey(a),dB=parseDateKey(b);
   return Math.round((dA-dB)/86400000);
 }
-function jumpToSearch(date){
+function jumpToSearch(date,authorId,virtualMemberId,sharedId){
   const d=parseDateKey(date);
   closeSearch();
+  // 검색한 일정이 현재 보고 있는 멤버 뷰에서 안 보일 수 있으므로 작성자 탭으로 전환.
+  // 함께 일정(shared_id)은 모든 멤버에 보이므로 그대로 두고, 그 외엔 작성자/가상멤버 탭으로.
+  let targetView=_viewingMember;
+  if(!sharedId){
+    if(virtualMemberId){
+      targetView='v-'+virtualMemberId;
+    }else if(authorId){
+      targetView=authorId;
+    }
+    // 대상 탭이 실제 존재하는지 검증 — 없으면 '전체'로 fallback (일정이 반드시 보이도록)
+    const exists=(_myMembers||[]).some(function(m){
+      if(virtualMemberId) return m.is_virtual && ('v-'+m.member_id)===targetView;
+      return !m.is_virtual && m.user_id===targetView;
+    });
+    if(targetView!=='all' && !exists) targetView='all';
+  }
+  if(_viewingMember!==targetView){
+    _viewingMember=targetView;
+    try{ renderMemberTabs(); }catch(_){}
+  }
   fadeRender(()=>{
     _calYear=d.getFullYear();_calMonth=d.getMonth();
-  });
-  setTimeout(()=>openDateSheet(date),250);
+  },()=>{ openDateSheet(date); });  // 렌더 완료 후 시트 열기
 }
 
 /* 오늘 버튼 — 다른 달에 있을 때만 표시 */
@@ -7768,19 +7847,13 @@ function openDateSheet(key){
   if(headInfo){
     subEl.innerHTML=`${escapeHtml(headInfo)}`;
   }
-  renderDateSheetMembers();
   renderDateSheetList();
   document.getElementById('dpOverlay').classList.add('on');
   document.getElementById('dpCard').classList.add('on');
 }
 
-/* 멤버 섹션 — 날짜 시트에선 더 이상 표시하지 않음
+/* 멤버 섹션 — 날짜 시트에선 더 이상 표시하지 않음 (제거됨)
    (함께 일정 생성 시엔 일정 모달에서 멤버 선택 UI 별도 제공) */
-function renderDateSheetMembers(){
-  const sec=document.getElementById('dpMembers');
-  if(!sec)return;
-  sec.style.display='none';
-}
 function closeDateSheet(){
   document.getElementById('dpOverlay').classList.remove('on');
   document.getElementById('dpCard').classList.remove('on');
@@ -9587,7 +9660,7 @@ async function loadNotifs(){
   try{
     const {data,error}=await supa
       .from('notifications')
-      .select('id, title, body, room_id, event_date, read, type, created_at')
+      .select('id, title, body, room_id, event_date, read, type, created_at, actor_user_id')
       .eq('user_id',_currentUser.id)
       .order('created_at',{ascending:false})
       .limit(100);
@@ -9624,9 +9697,9 @@ function renderNotifs(){
     const ts=formatNotifTime(n.created_at);
     const cls=['notif-row'];
     if(!n.read)cls.push('unread');
-    const safeTitle=_escHtml(n.title||'');
-    const safeBody=_escHtml(n.body||'');
-    const roomBadge=roomName?`<span class="notif-row-room">${_escHtml(roomName)}</span>`:'';
+    const safeTitle=escapeHtml(n.title||'');
+    const safeBody=escapeHtml(n.body||'');
+    const roomBadge=roomName?`<span class="notif-row-room">${escapeHtml(roomName)}</span>`:'';
     return `<div class="${cls.join(' ')}" onclick="onNotifClick('${n.id}')">
       <div class="notif-row-main">
         <div class="notif-row-title">${safeTitle}</div>
@@ -9637,10 +9710,6 @@ function renderNotifs(){
     </div>`;
   }).join('');
   listEl.innerHTML=html;
-}
-
-function _escHtml(s){
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 /* 상대 시간 (방금, N분 전, N시간 전, M월 D일) */
@@ -10322,7 +10391,13 @@ async function deleteEvent(eventId){
         // 이 날짜를 예외로 추가 (반복 규칙은 유지, 이 날짜만 숨김)
         const {data:cur,error:e0}=await supa.from('events').select('repeat_except').eq('id',ev.id).maybeSingle();
         if(e0)throw e0;
-        const ex=Array.isArray(cur&&cur.repeat_except)?cur.repeat_except.slice():[];
+        let ex=Array.isArray(cur&&cur.repeat_except)?cur.repeat_except.slice():[];
+        // 과거 예외 정리 — 오늘(또는 이번 삭제 날짜 중 더 이른 쪽)보다 과거 항목은 더 이상 렌더되지 않아 불필요
+        try{
+          const _today=_todayKeyStr();
+          const _cut=(occDate<_today)?occDate:_today;
+          if(ex.length>30) ex=ex.filter(d=>d>=_cut); // 너무 커졌을 때만 정리(불필요한 쓰기 방지)
+        }catch(_){}
         if(!ex.includes(occDate))ex.push(occDate);
         const {error}=await supa.from('events').update({repeat_except:ex}).eq('id',ev.id);
         if(error)throw error;
@@ -12913,6 +12988,135 @@ let _adminGrantSelected=null;
 let _adminGrantTargetUnlocks={color:[], char:[]};
 let _adminGrantSearchTimer=null;
 
+/* ═══════════════════════════════════
+   배포 관리 시스템 (관리자 전용)
+   ─────────────────────────────────
+   구조:
+   · Supabase app_config 테이블: key='deploy_version', value='YYYY-MM-DD-HH-MM-SS'
+   · 앱 시작 시 버전 비교 → 다르면 SW 캐시 비우고 새로고침 (관리자는 스킵)
+   · "배포하기" 버튼 → 현재 타임스탬프를 deploy_version에 저장
+   · SW 업데이트도 배포 허용 전까지 대기
+   ═══════════════════════════════════ */
+
+/* 현재 앱 버전 — 배포 시 자동 생성 (빌드 타임스탬프) */
+const _APP_BUILD_TS = new Date().toISOString().slice(0,19).replace('T',' ');
+
+/* SW 대기 중인 워커 참조 */
+let _swWaitingWorker = null;
+
+/* 배포 허용 여부 확인 후 SW 활성화 — init에서 SW 발견 시 호출 */
+async function _checkAndApplySWUpdate(){
+  if(!_swWaitingWorker) return;
+  // 관리자는 항상 즉시 활성화 (최신 버전 유지)
+  if(isAdmin()){
+    _swWaitingWorker.postMessage({type:'SKIP_WAITING'});
+    return;
+  }
+  // 일반 이용자: 서버 deploy_version과 로컬 버전 비교
+  try{
+    const {data} = await supa.from('app_config')
+      .select('value').eq('key','deploy_version').maybeSingle();
+    if(!data) return; // 테이블 없으면 기존 동작 유지
+    const serverVer = data.value||'';
+    const localVer = localStorage.getItem('uricalv2.deployVersion')||'';
+    if(serverVer && serverVer !== localVer){
+      // 배포된 새 버전 → SW 활성화 허용
+      localStorage.setItem('uricalv2.deployVersion', serverVer);
+      _swWaitingWorker.postMessage({type:'SKIP_WAITING'});
+    }
+    // serverVer === localVer: 아직 배포 안 됨 → SW 대기 유지 (새로고침 없음)
+  }catch(e){
+    console.warn('버전 체크 실패, 기존 동작 유지:', e);
+  }
+}
+
+/* 앱 시작 시 버전 체크 (관리자 스킵) — init() 직후 호출 */
+async function checkDeployVersionOnStart(){
+  if(isAdmin()) return; // 관리자는 항상 최신 Vercel 버전 사용
+  try{
+    const {data} = await supa.from('app_config')
+      .select('value').eq('key','deploy_version').maybeSingle();
+    if(!data) return;
+    const serverVer = data.value||'';
+    const localVer = localStorage.getItem('uricalv2.deployVersion')||'';
+    if(serverVer && localVer && serverVer !== localVer){
+      // 배포된 버전이 다름 → 캐시 비우고 새로고침
+      localStorage.setItem('uricalv2.deployVersion', serverVer);
+      try{
+        if('serviceWorker' in navigator){
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r=>r.unregister()));
+        }
+        if(window.caches){
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k=>caches.delete(k)));
+        }
+      }catch(_){}
+      location.reload(true);
+    }else if(serverVer && !localVer){
+      // 첫 실행: 현재 서버 버전을 로컬에 저장
+      localStorage.setItem('uricalv2.deployVersion', serverVer);
+    }
+  }catch(e){
+    // 오프라인 등 실패 시 그냥 통과
+    console.warn('배포 버전 체크 실패:', e);
+  }
+}
+
+/* 배포하기 시트 */
+async function openDeploySheet(){
+  if(!isAdmin()){toast('권한이 없어요');return}
+  closeMainModals();
+  // 현재 배포 버전 로드
+  const verEl = document.getElementById('deployCurrentVersion');
+  const newEl = document.getElementById('deployNewVersion');
+  const msgEl = document.getElementById('deployStatusMsg');
+  const btn   = document.getElementById('deployConfirmBtn');
+  if(verEl) verEl.textContent = '불러오는 중…';
+  if(newEl) newEl.textContent = _APP_BUILD_TS;
+  if(msgEl) msgEl.textContent = '';
+  if(btn)   btn.disabled = false;
+  try{
+    const {data} = await supa.from('app_config')
+      .select('value').eq('key','deploy_version').maybeSingle();
+    if(verEl) verEl.textContent = data?.value || '(아직 배포된 버전 없음)';
+  }catch(e){
+    if(verEl) verEl.textContent = '불러오기 실패';
+  }
+  document.getElementById('deployOverlay').classList.add('on');
+  document.getElementById('deployCard').classList.add('on');
+}
+function closeDeploySheet(){
+  document.getElementById('deployOverlay').classList.remove('on');
+  document.getElementById('deployCard').classList.remove('on');
+}
+async function confirmDeploy(){
+  if(!isAdmin()){toast('권한이 없어요');return}
+  if(!await vConfirm('지금 버전을 전체 이용자에게 배포할까요?<br>이용자들이 다음 앱 실행 시 새 버전을 받습니다.'))return;
+  const btn   = document.getElementById('deployConfirmBtn');
+  const msgEl = document.getElementById('deployStatusMsg');
+  if(btn)   btn.disabled = true;
+  if(msgEl) msgEl.textContent = '배포 중…';
+  const newVer = _APP_BUILD_TS;
+  try{
+    // upsert: 없으면 insert, 있으면 update
+    const {error} = await supa.from('app_config')
+      .upsert({key:'deploy_version', value:newVer}, {onConflict:'key'});
+    if(error) throw error;
+    // 관리자 로컬도 동기화
+    localStorage.setItem('uricalv2.deployVersion', newVer);
+    if(msgEl) msgEl.textContent = '✅ 배포 완료!';
+    const verEl = document.getElementById('deployCurrentVersion');
+    if(verEl) verEl.textContent = newVer;
+    toast('🚀 배포 완료! 이용자들이 다음 실행 시 업데이트됩니다');
+    setTimeout(closeDeploySheet, 1500);
+  }catch(e){
+    if(msgEl) msgEl.textContent = '❌ 배포 실패: '+(e.message||'').slice(0,40);
+    if(btn)   btn.disabled = false;
+    toast('배포 실패: '+(e.message||'').slice(0,30));
+  }
+}
+
 function openAdminGrant(){
   if(!isAdmin()){toast('권한이 없어요');return}
   document.getElementById('adminGrantSearchView').style.display='';
@@ -13784,11 +13988,24 @@ async function _evMove(anchorRow,fromDate,toDate){
   if(!diff)return;
   const grp=_evCollectGroup(anchorRow,fromDate);
   if(!grp.length)return;
-  const moves=grp.map(o=>({id:o.id,nd:shiftDateKey(o.date,diff)}));
+  const moves=grp.map(o=>({id:o.id,od:o.date,nd:shiftDateKey(o.date,diff)}));
   try{
     const results=await Promise.all(moves.map(m=>supa.from('events').update({date:m.nd}).eq('id',m.id)));
-    const bad=results.find(r=>r&&r.error);
-    if(bad)throw bad.error;
+    // 성공/실패를 인덱스로 매칭 (find는 어떤 row가 실패했는지 모름)
+    const failedIdx=[];
+    results.forEach((r,i)=>{ if(r&&r.error)failedIdx.push(i); });
+    if(failedIdx.length){
+      // 일부만 성공한 경우 → 이미 성공한 row를 원래 날짜로 되돌려 그룹 일관성 복구
+      const okMoves=moves.filter((_,i)=>!failedIdx.includes(i));
+      if(okMoves.length){
+        try{
+          await Promise.all(okMoves.map(m=>supa.from('events').update({date:m.od}).eq('id',m.id)));
+        }catch(rollbackErr){
+          console.error('rollback failed',rollbackErr);
+        }
+      }
+      throw (results[failedIdx[0]]&&results[failedIdx[0]].error)||new Error('partial move failed');
+    }
     if(navigator.vibrate)navigator.vibrate(10);
     await loadEvents();
     toast(grp.length>1?'기간 일정을 옮겼어요':'일정을 옮겼어요');
@@ -14044,9 +14261,16 @@ function _beginSheetEvDrag(s){
   if(navigator.vibrate)navigator.vibrate(15);
   try{ if(bar)bar.setPointerCapture(s.pid); }catch(_){}
 }
-/* 드래그 직후 셀 클릭(날짜 시트 열림) 1회 차단 — capture 단계 */
+/* 드래그 직후 셀 클릭(날짜 시트 열림) 1회 차단 — capture 단계
+   차단 대상을 캘린더 셀로 한정해 FAB·버튼 등 다른 UI 클릭이 함께 막히지 않게 함 */
 document.addEventListener('click',(e)=>{
-  if(_evDragSuppressClick){e.stopPropagation();e.preventDefault();_evDragSuppressClick=false}
+  if(!_evDragSuppressClick)return;
+  _evDragSuppressClick=false;
+  // 드롭 위치가 캘린더 셀/일정바일 때만 차단 (그 외 버튼·FAB는 정상 통과)
+  const t=e.target;
+  if(t&&t.closest&&t.closest('.cal-cell,.cal-evbar,.cal-tditem,.cal-tdline')){
+    e.stopPropagation();e.preventDefault();
+  }
 },true);
 
 
@@ -14074,10 +14298,11 @@ function setupSwipe(){
 }
 
 /* 시트 swipe-down (handle/card 위쪽 영역에서) */
+const _swipeBoundSet=new WeakSet();
 function setupSheetSwipe(cardId,closeFn){
   const card=document.getElementById(cardId);
-  if(!card||card._swipeBound)return;
-  card._swipeBound=true;
+  if(!card||_swipeBoundSet.has(card))return;
+  _swipeBoundSet.add(card);
   let sy=0,sx=0,cy=0,active=false,decided=false,drag=false,fromHandle=false;
   // 헤더/핸들 영역 — 여기서 시작한 드래그는 스크롤 위치와 무관하게 무조건 닫기 드래그
   const HANDLE_SEL='.mo-handle,.mo-title,.mo-sub,.dp-head,.dp-sub,.dp-members-section';
@@ -14160,6 +14385,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   setupSheetSwipe('searchCard',closeSearch);
   setupSheetSwipe('notifCard',closeNotifs);
   setupSheetSwipe('myOrdersCard',closeMyOrders);
+  setupSheetSwipe('deployCard',closeDeploySheet);
   setupSheetSwipe('supportCard',closeSupport);
   setupSheetSwipe('termsCard',closeTerms);
   setupSheetSwipe('privacyCard',closePrivacy);
@@ -14177,8 +14403,8 @@ init();
 /* PWA Service Worker 등록 + 자동 업데이트 (사용자 개입 없이 새 버전 자동 적용) */
 if('serviceWorker' in navigator&&location.protocol!=='file:'){
   window.addEventListener('load', async ()=>{
-    /* 일회성: 옛 SW + 옛 캐시 강제 정리 (배포 후 사용자 폰 정상화용) — sw.js v7 전환에 맞춰 bump */
-    if(!localStorage.getItem('sw_clean_v5')){
+    /* 일회성: 옛 SW + 옛 캐시 강제 정리 (배포 후 사용자 폰 정상화용) — 배포 시스템 도입에 맞춰 v6 bump */
+    if(!localStorage.getItem('sw_clean_v6')){
       try{
         const regs=await navigator.serviceWorker.getRegistrations();
         await Promise.all(regs.map(r=>r.unregister()));
@@ -14186,7 +14412,7 @@ if('serviceWorker' in navigator&&location.protocol!=='file:'){
           const keys=await caches.keys();
           await Promise.all(keys.map(k=>caches.delete(k)));
         }
-        localStorage.setItem('sw_clean_v5','1');
+        localStorage.setItem('sw_clean_v6','1');
         location.reload();
         return;
       }catch(e){console.warn('SW 정리 실패:',e)}
@@ -14205,14 +14431,16 @@ if('serviceWorker' in navigator&&location.protocol!=='file:'){
     reg.update().catch(()=>{});
     setInterval(()=>{try{reg.update()}catch(e){}},60*60*1000);
 
-    /* 새 SW 발견 → 즉시 활성화 명령 */
+    /* 새 SW 발견 → 배포 허용 여부 확인 후 활성화 */
     reg.addEventListener('updatefound',()=>{
       const nw=reg.installing;
       if(!nw)return;
       nw.addEventListener('statechange',()=>{
         if(nw.state==='installed'&&navigator.serviceWorker.controller){
-          // 기존 컨트롤러가 있다 = 업데이트 케이스. waiting SW에게 즉시 활성화 명령
-          nw.postMessage({type:'SKIP_WAITING'});
+          // 관리자면 즉시 활성화 (항상 최신 버전)
+          // 일반 이용자는 Supabase deploy_version 확인 후 허용 시에만 활성화
+          _swWaitingWorker=nw;
+          _checkAndApplySWUpdate();
         }
       });
     });
@@ -15365,8 +15593,21 @@ function uniSaveRoomName(){
    ============================================================ */
 function _wrap(name, makeWrapper){
   const orig=window[name];
-  if(typeof orig!=='function') return;
-  window[name]=makeWrapper(orig);
+  if(typeof orig!=='function'){
+    // 대상 함수가 아직 정의되지 않음 — 다음 틱에 1회 재시도 (스크립트 로드 순서 방어)
+    if(!_wrap._retried) _wrap._retried={};
+    if(!_wrap._retried[name]){
+      _wrap._retried[name]=1;
+      setTimeout(function(){ _wrap(name, makeWrapper); }, 0);
+    }else{
+      console.warn('[_wrap] 대상 함수 없음, 래핑 건너뜀:', name);
+    }
+    return;
+  }
+  if(orig.__wrapped){ return; } // 중복 래핑 방지
+  const wrapped=makeWrapper(orig);
+  try{ wrapped.__wrapped=true; }catch(e){}
+  window[name]=wrapped;
 }
 // showScreen → 탭바 동기화
 _wrap('showScreen', function(orig){
