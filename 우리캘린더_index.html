@@ -2814,6 +2814,7 @@ body.align-right .cal-evbar{text-align:right}
       <div class="uni-sec-label">🔧 관리자 전용</div>
       <button class="uni-nav" onclick="openAdminGrant()"><span>🎁 이용자 무료 부여</span><span class="chev">›</span></button>
       <button class="uni-nav" onclick="openOrderAdmin()"><span>📦 달력 주문 관리 (관리자 페이지)</span><span class="chev">›</span></button>
+      <button class="uni-nav" id="deployBtn" onclick="openDeploySheet()"><span id="deployBtnLabel">🚀 배포하기</span><span class="chev">›</span></button>
     </div>
 
     <div class="uni-divider"></div>
@@ -3137,6 +3138,27 @@ body.align-right .cal-evbar{text-align:right}
   <div id="myOrdersBody" style="padding:4px 0 4px"></div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeMyOrders()">닫기</button>
+  </div>
+</div>
+
+<!-- 배포하기 시트 (관리자 전용) -->
+<div class="mo-overlay" id="deployOverlay" onclick="closeDeploySheet()"></div>
+<div class="mo-card" id="deployCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">🚀 배포하기</div>
+  <div class="mo-sub">버튼을 누르면 현재 버전이 전체 이용자에게 배포됩니다.</div>
+  <div style="margin:20px 0 8px">
+    <div style="background:var(--bg);border:1px solid var(--borderL);border-radius:12px;padding:14px 16px;font-size:13px;line-height:1.7;color:var(--sub)">
+      <div style="margin-bottom:6px"><span style="font-weight:700;color:var(--text)">현재 배포 버전</span></div>
+      <div id="deployCurrentVersion" style="font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums">불러오는 중…</div>
+      <div style="margin-top:10px;margin-bottom:6px"><span style="font-weight:700;color:var(--text)">배포할 버전 (지금 이 화면)</span></div>
+      <div id="deployNewVersion" style="font-size:12px;color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums"></div>
+    </div>
+  </div>
+  <div id="deployStatusMsg" style="text-align:center;font-size:13px;color:var(--sub);min-height:20px;margin-bottom:8px"></div>
+  <div class="mo-actions" style="margin-top:4px">
+    <button class="mo-cancel" onclick="closeDeploySheet()">취소</button>
+    <button class="btn btn-primary" id="deployConfirmBtn" onclick="confirmDeploy()" style="flex:1">🚀 전체 배포</button>
   </div>
 </div>
 
@@ -5887,6 +5909,8 @@ async function init(){
       showScreen('roomsScreen');
       loadRooms();
       ensureKakaoProfile();  // 재실행 시에도 카카오 이름·사진 보강 (아바타 "?" 방지)
+      // 배포 버전 체크 — 관리자는 스킵, 일반 이용자는 새 버전 있으면 자동 새로고침
+      setTimeout(checkDeployVersionOnStart, 1500);
     }else{
       showScreen('welcomeScreen');
     }
@@ -12964,6 +12988,135 @@ let _adminGrantSelected=null;
 let _adminGrantTargetUnlocks={color:[], char:[]};
 let _adminGrantSearchTimer=null;
 
+/* ═══════════════════════════════════
+   배포 관리 시스템 (관리자 전용)
+   ─────────────────────────────────
+   구조:
+   · Supabase app_config 테이블: key='deploy_version', value='YYYY-MM-DD-HH-MM-SS'
+   · 앱 시작 시 버전 비교 → 다르면 SW 캐시 비우고 새로고침 (관리자는 스킵)
+   · "배포하기" 버튼 → 현재 타임스탬프를 deploy_version에 저장
+   · SW 업데이트도 배포 허용 전까지 대기
+   ═══════════════════════════════════ */
+
+/* 현재 앱 버전 — 배포 시 자동 생성 (빌드 타임스탬프) */
+const _APP_BUILD_TS = new Date().toISOString().slice(0,19).replace('T',' ');
+
+/* SW 대기 중인 워커 참조 */
+let _swWaitingWorker = null;
+
+/* 배포 허용 여부 확인 후 SW 활성화 — init에서 SW 발견 시 호출 */
+async function _checkAndApplySWUpdate(){
+  if(!_swWaitingWorker) return;
+  // 관리자는 항상 즉시 활성화 (최신 버전 유지)
+  if(isAdmin()){
+    _swWaitingWorker.postMessage({type:'SKIP_WAITING'});
+    return;
+  }
+  // 일반 이용자: 서버 deploy_version과 로컬 버전 비교
+  try{
+    const {data} = await supa.from('app_config')
+      .select('value').eq('key','deploy_version').maybeSingle();
+    if(!data) return; // 테이블 없으면 기존 동작 유지
+    const serverVer = data.value||'';
+    const localVer = localStorage.getItem('uricalv2.deployVersion')||'';
+    if(serverVer && serverVer !== localVer){
+      // 배포된 새 버전 → SW 활성화 허용
+      localStorage.setItem('uricalv2.deployVersion', serverVer);
+      _swWaitingWorker.postMessage({type:'SKIP_WAITING'});
+    }
+    // serverVer === localVer: 아직 배포 안 됨 → SW 대기 유지 (새로고침 없음)
+  }catch(e){
+    console.warn('버전 체크 실패, 기존 동작 유지:', e);
+  }
+}
+
+/* 앱 시작 시 버전 체크 (관리자 스킵) — init() 직후 호출 */
+async function checkDeployVersionOnStart(){
+  if(isAdmin()) return; // 관리자는 항상 최신 Vercel 버전 사용
+  try{
+    const {data} = await supa.from('app_config')
+      .select('value').eq('key','deploy_version').maybeSingle();
+    if(!data) return;
+    const serverVer = data.value||'';
+    const localVer = localStorage.getItem('uricalv2.deployVersion')||'';
+    if(serverVer && localVer && serverVer !== localVer){
+      // 배포된 버전이 다름 → 캐시 비우고 새로고침
+      localStorage.setItem('uricalv2.deployVersion', serverVer);
+      try{
+        if('serviceWorker' in navigator){
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r=>r.unregister()));
+        }
+        if(window.caches){
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k=>caches.delete(k)));
+        }
+      }catch(_){}
+      location.reload(true);
+    }else if(serverVer && !localVer){
+      // 첫 실행: 현재 서버 버전을 로컬에 저장
+      localStorage.setItem('uricalv2.deployVersion', serverVer);
+    }
+  }catch(e){
+    // 오프라인 등 실패 시 그냥 통과
+    console.warn('배포 버전 체크 실패:', e);
+  }
+}
+
+/* 배포하기 시트 */
+async function openDeploySheet(){
+  if(!isAdmin()){toast('권한이 없어요');return}
+  closeMainModals();
+  // 현재 배포 버전 로드
+  const verEl = document.getElementById('deployCurrentVersion');
+  const newEl = document.getElementById('deployNewVersion');
+  const msgEl = document.getElementById('deployStatusMsg');
+  const btn   = document.getElementById('deployConfirmBtn');
+  if(verEl) verEl.textContent = '불러오는 중…';
+  if(newEl) newEl.textContent = _APP_BUILD_TS;
+  if(msgEl) msgEl.textContent = '';
+  if(btn)   btn.disabled = false;
+  try{
+    const {data} = await supa.from('app_config')
+      .select('value').eq('key','deploy_version').maybeSingle();
+    if(verEl) verEl.textContent = data?.value || '(아직 배포된 버전 없음)';
+  }catch(e){
+    if(verEl) verEl.textContent = '불러오기 실패';
+  }
+  document.getElementById('deployOverlay').classList.add('on');
+  document.getElementById('deployCard').classList.add('on');
+}
+function closeDeploySheet(){
+  document.getElementById('deployOverlay').classList.remove('on');
+  document.getElementById('deployCard').classList.remove('on');
+}
+async function confirmDeploy(){
+  if(!isAdmin()){toast('권한이 없어요');return}
+  if(!await vConfirm('지금 버전을 전체 이용자에게 배포할까요?<br>이용자들이 다음 앱 실행 시 새 버전을 받습니다.'))return;
+  const btn   = document.getElementById('deployConfirmBtn');
+  const msgEl = document.getElementById('deployStatusMsg');
+  if(btn)   btn.disabled = true;
+  if(msgEl) msgEl.textContent = '배포 중…';
+  const newVer = _APP_BUILD_TS;
+  try{
+    // upsert: 없으면 insert, 있으면 update
+    const {error} = await supa.from('app_config')
+      .upsert({key:'deploy_version', value:newVer}, {onConflict:'key'});
+    if(error) throw error;
+    // 관리자 로컬도 동기화
+    localStorage.setItem('uricalv2.deployVersion', newVer);
+    if(msgEl) msgEl.textContent = '✅ 배포 완료!';
+    const verEl = document.getElementById('deployCurrentVersion');
+    if(verEl) verEl.textContent = newVer;
+    toast('🚀 배포 완료! 이용자들이 다음 실행 시 업데이트됩니다');
+    setTimeout(closeDeploySheet, 1500);
+  }catch(e){
+    if(msgEl) msgEl.textContent = '❌ 배포 실패: '+(e.message||'').slice(0,40);
+    if(btn)   btn.disabled = false;
+    toast('배포 실패: '+(e.message||'').slice(0,30));
+  }
+}
+
 function openAdminGrant(){
   if(!isAdmin()){toast('권한이 없어요');return}
   document.getElementById('adminGrantSearchView').style.display='';
@@ -14232,6 +14385,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   setupSheetSwipe('searchCard',closeSearch);
   setupSheetSwipe('notifCard',closeNotifs);
   setupSheetSwipe('myOrdersCard',closeMyOrders);
+  setupSheetSwipe('deployCard',closeDeploySheet);
   setupSheetSwipe('supportCard',closeSupport);
   setupSheetSwipe('termsCard',closeTerms);
   setupSheetSwipe('privacyCard',closePrivacy);
@@ -14277,14 +14431,16 @@ if('serviceWorker' in navigator&&location.protocol!=='file:'){
     reg.update().catch(()=>{});
     setInterval(()=>{try{reg.update()}catch(e){}},60*60*1000);
 
-    /* 새 SW 발견 → 즉시 활성화 명령 */
+    /* 새 SW 발견 → 배포 허용 여부 확인 후 활성화 */
     reg.addEventListener('updatefound',()=>{
       const nw=reg.installing;
       if(!nw)return;
       nw.addEventListener('statechange',()=>{
         if(nw.state==='installed'&&navigator.serviceWorker.controller){
-          // 기존 컨트롤러가 있다 = 업데이트 케이스. waiting SW에게 즉시 활성화 명령
-          nw.postMessage({type:'SKIP_WAITING'});
+          // 관리자면 즉시 활성화 (항상 최신 버전)
+          // 일반 이용자는 Supabase deploy_version 확인 후 허용 시에만 활성화
+          _swWaitingWorker=nw;
+          _checkAndApplySWUpdate();
         }
       });
     });
