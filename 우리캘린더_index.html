@@ -7758,7 +7758,7 @@ function _doSearch(){
     const sharedTag=e.shared_id?'<span class="search-row-tag">함께</span>':'';
     const _trng=fmtTimeRange(e.time,e.end_time);
     const timeText=_trng?`<div class="search-row-time">${escapeHtml(_trng)}</div>`:'';
-    return `<div class="search-row" onclick="jumpToSearch('${e.date}')">
+    return `<div class="search-row" onclick="jumpToSearch('${e.date}','${e.user_id||''}','${e.virtual_member_id||''}','${e.shared_id||''}')">
       <div class="search-row-bar" style="background:${hex}"></div>
       <div class="search-row-main">
         <div class="search-row-title">${escapeHtml(e.title||'')}</div>
@@ -7773,12 +7773,32 @@ function _dateDiff(a,b){
   const dA=parseDateKey(a),dB=parseDateKey(b);
   return Math.round((dA-dB)/86400000);
 }
-function jumpToSearch(date){
+function jumpToSearch(date,authorId,virtualMemberId,sharedId){
   const d=parseDateKey(date);
   closeSearch();
+  // 검색한 일정이 현재 보고 있는 멤버 뷰에서 안 보일 수 있으므로 작성자 탭으로 전환.
+  // 함께 일정(shared_id)은 모든 멤버에 보이므로 그대로 두고, 그 외엔 작성자/가상멤버 탭으로.
+  let targetView=_viewingMember;
+  if(!sharedId){
+    if(virtualMemberId){
+      targetView='v-'+virtualMemberId;
+    }else if(authorId){
+      targetView=authorId;
+    }
+    // 대상 탭이 실제 존재하는지 검증 — 없으면 '전체'로 fallback (일정이 반드시 보이도록)
+    const exists=(_myMembers||[]).some(function(m){
+      if(virtualMemberId) return m.is_virtual && ('v-'+m.member_id)===targetView;
+      return !m.is_virtual && m.user_id===targetView;
+    });
+    if(targetView!=='all' && !exists) targetView='all';
+  }
+  if(_viewingMember!==targetView){
+    _viewingMember=targetView;
+    try{ renderMemberTabs(); }catch(_){}
+  }
   fadeRender(()=>{
     _calYear=d.getFullYear();_calMonth=d.getMonth();
-  },()=>{ openDateSheet(date); });  // 렌더 완료 후 시트 열기 (고정 250ms 대신)
+  },()=>{ openDateSheet(date); });  // 렌더 완료 후 시트 열기
 }
 
 /* 오늘 버튼 — 다른 달에 있을 때만 표시 */
