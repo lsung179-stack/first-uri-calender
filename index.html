@@ -484,9 +484,9 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .cal-dow.sat{color:var(--sat)}
 
 /* 캘린더 그리드 */
-.cal-grid{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:minmax(88px,auto);align-content:start;padding:0 4px;gap:0;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(28px + env(safe-area-inset-bottom));transition:opacity .2s ease}
+.cal-grid{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:minmax(92px,auto);align-content:start;padding:0 4px;gap:0;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(28px + env(safe-area-inset-bottom));transition:opacity .2s ease}
 .cal-grid.fading{opacity:0}
-.cal-cell{min-height:88px;padding:2px 0;display:flex;flex-direction:column;cursor:pointer;border-radius:0;transition:background .12s;position:relative}
+.cal-cell{min-height:92px;padding:2px 0;display:flex;flex-direction:column;cursor:pointer;border-radius:0;transition:background .12s;position:relative}
 .cal-cell:active{background:rgba(139,58,42,.06)}
 .cal-cell.other{opacity:.35}
 .cal-day-num{text-align:center;font-size:13px;font-weight:500;color:var(--text);margin:2px 0 3px;line-height:20px;font-family:var(--ff-num,-apple-system,sans-serif);position:relative}
@@ -7177,6 +7177,7 @@ function renderMonthly(){
     nextD++;cellCount++;
   }
   grid.innerHTML=html;
+  requestAnimationFrame(adjustCalRowHeights);
   
   // 백그라운드: 공휴일 API 로드 후 다시 렌더
   const yearsToLoad=[_calYear];
@@ -7189,6 +7190,35 @@ function renderMonthly(){
   });
   updateTodayBtn();
 }
+
+/* 캘린더 행 높이 보정 — iOS WebKit에서 grid 트랙 auto가 셀 콘텐츠 높이를 못 읽어
+   일정이 많은 칸의 마지막 바가 격자선 밖으로 넘치는 문제를 우회한다.
+   각 주(행)에서 가장 일정 많은 칸 기준으로 행 높이를 직접 px로 잡아 격자선을 콘텐츠만큼 내린다. */
+function adjustCalRowHeights(){
+  const grid=document.getElementById('calGrid');
+  if(!grid)return;
+  const cells=grid.children;
+  if(cells.length<42)return;
+  // 날짜+라벨 영역 높이(모든 셀 동일 구조) — 첫 셀의 일정 목록 시작 위치로 측정
+  let headH=36;
+  const ev0=cells[0].querySelector('.cal-events');
+  if(ev0&&ev0.offsetTop>0)headH=ev0.offsetTop;
+  const rows=[];
+  for(let r=0;r<6;r++){
+    let maxH=92;
+    for(let c=0;c<7;c++){
+      const cell=cells[r*7+c];
+      if(!cell)continue;
+      const ev=cell.querySelector('.cal-events');
+      const need=headH+(ev?ev.scrollHeight:0)+4;
+      if(need>maxH)maxH=need;
+    }
+    rows.push(maxH+'px');
+  }
+  grid.style.gridTemplateRows=rows.join(' ');
+}
+window.addEventListener('resize',()=>requestAnimationFrame(adjustCalRowHeights));
+window.addEventListener('orientationchange',()=>setTimeout(adjustCalRowHeights,200));
 
 /* ===== 통합 레인 시스템: 일정 + 할일을 같은 순서 체계로 ===== */
 let _laneMap={};
