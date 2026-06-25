@@ -45,17 +45,6 @@
     }
   }catch(e){}
 })();
-/* 일정 세로 위치(상단/하단) 즉시 적용 */
-(function(){
-  try{
-    var ep=localStorage.getItem('uricalv2.evpos');
-    if(ep==='bottom'){
-      var apply=function(){if(document.body)document.body.classList.add('evpos-bottom')};
-      if(document.body)apply();
-      else document.addEventListener('DOMContentLoaded',apply,{once:true});
-    }
-  }catch(e){}
-})();
 /* 격자선(세로/가로) 즉시 적용 */
 (function(){
   try{
@@ -524,8 +513,6 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .cal-tdline-bar{position:absolute;top:6px;height:3px}
 .cal-tdline-dot{position:absolute;top:5px;width:5px;height:5px;border-radius:50%}
 .cal-tdline-lab{position:absolute;top:1px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:3px;white-space:nowrap;padding:0 4px;background:var(--bg);border-radius:4px;font-size:9px;line-height:1.3;color:var(--text);max-width:calc(100% - 4px);overflow:hidden}
-/* 일정 세로 위치: 하단 정렬 (기본은 상단부터 쌓임) */
-body.evpos-bottom .cal-events{justify-content:flex-end}
 /* 격자선 — 세로(우측)/가로(하단) 토글. box-shadow inset으로 레이아웃 안 밀리게 */
 /* 격자선 — 세로(우측)/가로(하단). 가상요소로 그려 일정바(자식) 아래에 둔다 → 기간 일정바가 선을 덮음 */
 body.grid-v .cal-cell::after{content:'';position:absolute;top:0;right:0;width:1px;height:100%;background:rgba(120,108,92,.16);z-index:0;pointer-events:none}
@@ -3707,15 +3694,6 @@ body.align-right .cal-evbar{text-align:right}
     </div>
 
     <div class="rs-section">
-      <div class="rs-section-title">일정 위치</div>
-      <div style="font-size:12px;color:var(--sub);margin-bottom:8px">달력 칸에서 일정이 붙는 위치예요</div>
-      <div class="dm-row" id="evPosRow">
-        <button class="dm-btn" data-evpos="top" onclick="onEvPosSelect('top')">상단</button>
-        <button class="dm-btn" data-evpos="bottom" onclick="onEvPosSelect('bottom')">하단</button>
-      </div>
-    </div>
-
-    <div class="rs-section">
       <div class="rs-section-title">격자선</div>
       <div style="font-size:12px;color:var(--sub);margin-bottom:8px">달력 칸 사이에 선을 표시해요</div>
       <div class="dm-row" id="gridVRow" style="margin-bottom:8px">
@@ -5744,7 +5722,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   try{ applyFontFamily(getFontFamilyPref()); }catch(e){}
   // 일정 텍스트 정렬 초기 적용
   try{ applyAlign(getAlignPref()); }catch(e){}
-  try{ applyEvPos(getEvPosPref()); }catch(e){}
   try{ applyGrid(); }catch(e){}
   // 주 시작 요일 헤더 초기 렌더
   try{ renderWeekHead(); }catch(e){}
@@ -6484,37 +6461,7 @@ function syncAlignButtons(){
   });
 }
 
-/* ── 일정 세로 위치 (top / bottom) ── */
-function getEvPosPref(){
-  try{
-    const v=localStorage.getItem('uricalv2.evpos');
-    return v==='bottom'?'bottom':'top';
-  }catch(e){ return 'top'; }
-}
-function setEvPosPref(value){
-  const v=(value==='bottom')?'bottom':'top';
-  try{ localStorage.setItem('uricalv2.evpos', v); }catch(e){}
-  applyEvPos(v);
-}
-function applyEvPos(v){
-  if(!document.body)return;
-  document.body.classList.remove('evpos-bottom');
-  if(v==='bottom')document.body.classList.add('evpos-bottom');
-}
-function onEvPosSelect(value){
-  if(!['top','bottom'].includes(value))return;
-  setEvPosPref(value);
-  syncEvPosButtons();
-}
-function syncEvPosButtons(){
-  const pref=getEvPosPref();
-  const row=document.getElementById('evPosRow');
-  if(!row)return;
-  row.querySelectorAll('.dm-btn').forEach(b=>{
-    if(b.dataset.evpos===pref)b.classList.add('on');
-    else b.classList.remove('on');
-  });
-}
+/* ── 일정 세로 위치 기능 제거됨 (항상 상단부터 쌓임) ── */
 
 /* ── 격자선(세로/가로) ── */
 function getGridPref(axis){
@@ -7214,7 +7161,9 @@ function _computeMonthLanes(gridDays){
   const occ={};
   items.forEach(function(it){
     const ds=Object.keys(it.dates);
-    let L=0;
+    // order_index를 '희망 레인'으로 사용 — 위에 항목이 없어도 빈 줄 아래로 배치 가능.
+    // 같은 레인 충돌 시에만 아래로 한 칸씩 밀어 겹침 방지(데이터 안전).
+    let L=it.virt?0:Math.max(0,(typeof it.order==='number'?it.order:0));
     for(;;){ let ok=true; for(let i=0;i<ds.length;i++){ const s=occ[ds[i]]; if(s&&s[L]){ ok=false; break; } } if(ok) break; L++; }
     _laneMap[it.k]=L;
     ds.forEach(function(dk){ (occ[dk]||(occ[dk]={}))[L]=true; });
@@ -7617,9 +7566,11 @@ function renderDateSheetList(){
     let orderHtml='';
     if(!item.virt){
       const idArg=(item.kind==='todo')?item.t.id:item.ev.id;
-      // 이 날짜에 보이는 항목들(combined) 기준으로 위/아래 — 보이는 그대로 한 번에 이동
-      const canUp=(i>0);
-      const canDown=(i<lastNormalIdx);
+      // 현재 레인(_laneMap) 기준 — 위아래에 다른 항목이 없어도 빈 줄로 이동 가능.
+      const _laneKey=(item.kind==='todo')?('t:'+item.t.id):_eventItemKey(item.ev);
+      const _curLane=(typeof _laneMap!=='undefined'&&_laneMap&&typeof _laneMap[_laneKey]==='number')?_laneMap[_laneKey]:0;
+      const canUp=(_curLane>0);
+      const canDown=(_curLane<3);
       orderHtml=`<div class="dp-order">
         <button class="dp-arrow" ${canUp?'':'disabled'} onclick="event.stopPropagation();moveItemInList('${item.kind}','${idArg}',-1)" aria-label="위로">▲</button>
         <button class="dp-arrow" ${canDown?'':'disabled'} onclick="event.stopPropagation();moveItemInList('${item.kind}','${idArg}',1)" aria-label="아래로">▼</button>
@@ -7638,7 +7589,7 @@ function renderDateSheetList(){
       html+=`<div class="dp-item todo${done?' tddone':''}">
         <div class="dp-tdchk" style="border-color:${hex};color:${hex}" onclick="event.stopPropagation();window.toggleTodoDone('${t.id}');setTimeout(renderDateSheetList,40)">${chk}</div>
         <div class="dp-info">
-          <div class="dp-title">${escapeHtml(t.title||'')} <span class="dp-shared-tag" style="background:#efe2c5;color:#6b4a35">${tag}</span></div>
+          <div class="dp-title">${escapeHtml(t.title||'')}</div>
           ${tr?`<div class="dp-meta">${tr}</div>`:''}
           ${memoHtml}
         </div>
@@ -7725,36 +7676,28 @@ function renderDateSheetList(){
 
 async function moveItemInList(kind, id, direction){
   if(!_selectedDate||!_currentRoom){return}
-  // 이 날짜에 "보이는" 항목들(일정+할일)을 day-sheet와 동일하게 구성/정렬 → 보이는 그대로 한 번에 이동
-  const evs=getDayEvents(_selectedDate);
-  const todos=(window.__getTodos?window.__getTodos():[]).filter(function(t){ return window.todoOccursOnDate&&window.todoOccursOnDate(t,_selectedDate); });
-  const combined=[];
-  evs.forEach(function(ev){ combined.push({kind:'event', ev:ev, virt:!!ev._isVirtual, order:(typeof ev.order_index==='number')?ev.order_index:0, tb:(ev.start_date||ev.date||'')+'|'+(ev.time||'')+'|'+(ev.created_at||'')}); });
-  todos.forEach(function(t){ combined.push({kind:'todo', t:t, virt:false, order:(typeof t.order_index==='number')?t.order_index:0, tb:'~td|'+(t.start_date||'')+'|'+(t.created_at||'')}); });
-  combined.sort(function(a,b){ if(a.virt!==b.virt) return a.virt?1:-1; if(a.order!==b.order) return a.order-b.order; return a.tb<b.tb?-1:(a.tb>b.tb?1:0); });
-  const idx=combined.findIndex(function(x){ return !x.virt && x.kind===kind && ((kind==='todo')?(x.t&&x.t.id===id):(x.ev&&x.ev.id===id)); });
-  if(idx<0) return;
-  const swapIdx=idx+direction;
-  if(swapIdx<0||swapIdx>=combined.length) return;
-  const A=combined[idx], B=combined[swapIdx];
-  if(A.virt||B.virt){ toast('순서 변경이 안 되는 항목이에요'); return; }
-  // 같은 order면 방향만큼 밀어 확실히 교차
-  let newA=B.order, newB=A.order;
-  if(A.order===B.order){ newA=A.order+direction; newB=A.order; }
-  // 그룹(기간/반복) 전체에 적용하기 위해 레인 항목(_laneItems)을 키로 찾아 넘김
-  function laneFor(item){
-    const k=(item.kind==='todo')?('t:'+item.t.id):_eventItemKey(item.ev);
-    const found=(typeof _laneItems!=='undefined'&&_laneItems)?_laneItems.find(function(it){ return it.k===k; }):null;
-    if(found) return found;
-    return (item.kind==='todo') ? {kind:'todo', todo:item.t, k:k, dates:{}} : {kind:'event', ev:item.ev, k:k, dates:{}};
+  // 항목의 레인 키
+  let key;
+  if(kind==='todo'){ key='t:'+id; }
+  else{ const r=(typeof _evFindRowById==='function')?_evFindRowById(id):null; if(!r)return; key=_eventItemKey(r); }
+  // 현재 레인 → 목표 레인(빈 줄이어도 이동). 0~3 범위로 클램프.
+  const curLane=(typeof _laneMap!=='undefined'&&_laneMap&&typeof _laneMap[key]==='number')?_laneMap[key]:0;
+  let target=curLane+direction;
+  if(target<0)target=0; if(target>3)target=3;
+  if(target===curLane){ return; }
+  // 그룹(기간/반복) 전체에 같은 order_index 적용 — _laneItems의 레인 항목을 키로 찾아 넘김
+  let laneItem=(typeof _laneItems!=='undefined'&&_laneItems)?_laneItems.find(function(it){ return it.k===key; }):null;
+  if(!laneItem){
+    laneItem=(kind==='todo')
+      ? {kind:'todo', todo:{id:id}, k:key, dates:{}}
+      : {kind:'event', ev:_evFindRowById(id), k:key, dates:{}};
   }
   try{
-    await _applyOrderIndex(laneFor(A),newA);
-    await _applyOrderIndex(laneFor(B),newB);
+    await _applyOrderIndex(laneItem,target);
     await loadEvents();
     if(window.loadTodos) await window.loadTodos();
-    renderMonthly();        // _laneItems 먼저 갱신
-    renderDateSheetList();  // 갱신된 데이터로 화살표/순서 재계산
+    renderMonthly();        // _laneMap/_laneItems 먼저 갱신
+    renderDateSheetList();  // 갱신된 레인으로 화살표 재계산
   }catch(e){ console.warn('순서 변경 실패:',e); toast('순서 변경 실패'); }
 }
 
@@ -11260,7 +11203,6 @@ function openAdvSettings(){
   try{ syncFontSizeButtons(); }catch(_){}
   try{ syncWeekStartButtons(); }catch(_){}
   try{ syncAlignButtons(); }catch(_){}
-  try{ syncEvPosButtons(); }catch(_){}
   try{ syncGridButtons(); }catch(_){}
   try{ syncDefaultViewButtons(); }catch(_){}
 }
