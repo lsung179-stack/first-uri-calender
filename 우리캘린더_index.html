@@ -5918,7 +5918,7 @@ async function init(){
     showScreen('welcomeScreen');
   }finally{
     setTimeout(()=>document.getElementById('loading').classList.add('hide'),200);
-    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 2026.06.01-A · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
+    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 2026.06.26-DEPLOY · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
     // in-app browser(카톡·네이버·페이스북 등)에서 열렸을 때 한 줄 안내
     setTimeout(maybeShowInAppBrowserHint,800);
   }
@@ -14403,8 +14403,8 @@ init();
 /* PWA Service Worker 등록 + 자동 업데이트 (사용자 개입 없이 새 버전 자동 적용) */
 if('serviceWorker' in navigator&&location.protocol!=='file:'){
   window.addEventListener('load', async ()=>{
-    /* 일회성: 옛 SW + 옛 캐시 강제 정리 (배포 후 사용자 폰 정상화용) — sw.js v7 전환에 맞춰 bump */
-    if(!localStorage.getItem('sw_clean_v5')){
+    /* 일회성: 옛 SW + 옛 캐시 강제 정리 (배포 후 사용자 폰 정상화용) — 배포 시스템 도입에 맞춰 v6 bump */
+    if(!localStorage.getItem('sw_clean_v6')){
       try{
         const regs=await navigator.serviceWorker.getRegistrations();
         await Promise.all(regs.map(r=>r.unregister()));
@@ -14412,7 +14412,7 @@ if('serviceWorker' in navigator&&location.protocol!=='file:'){
           const keys=await caches.keys();
           await Promise.all(keys.map(k=>caches.delete(k)));
         }
-        localStorage.setItem('sw_clean_v5','1');
+        localStorage.setItem('sw_clean_v6','1');
         location.reload();
         return;
       }catch(e){console.warn('SW 정리 실패:',e)}
