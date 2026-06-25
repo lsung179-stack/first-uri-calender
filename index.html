@@ -950,6 +950,34 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .ev-color.on::after{
   content:'';position:absolute;inset:-3px;border:2px solid var(--text);border-radius:50%;pointer-events:none;
 }
+/* ── 색상 라벨 (셀 아래 이름) ── */
+.ev-color-cell{display:flex;flex-direction:column;align-items:center;gap:5px}
+.ev-color-cell .ev-color{aspect-ratio:1}
+.ev-color-name{
+  font-size:9.5px;font-weight:600;color:var(--text);text-align:center;width:100%;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:14px;min-height:14px;
+}
+.ev-color-name-input{
+  width:100%;padding:3px 2px;border-radius:7px;border:1.5px solid var(--border);
+  font-size:9px;text-align:center;color:var(--text);background:#fff;outline:none;
+  font-family:inherit;min-height:22px;box-sizing:border-box;transition:border-color .15s;
+}
+.ev-color-name-input:focus{border-color:var(--accent)}
+/* 색상 라벨 헤더 (라벨 + 수정/완료 버튼) */
+.ev-color-head{display:flex;align-items:center;justify-content:space-between}
+.ev-color-edit-btn{
+  width:32px;height:32px;border-radius:9px;border:none;cursor:pointer;
+  background:var(--accent);display:flex;align-items:center;justify-content:center;padding:0;
+  box-shadow:0 2px 7px rgba(139,58,42,.24);transition:transform .12s;
+}
+.ev-color-edit-btn:active{transform:scale(.9)}
+.ev-color-edit-btn svg{width:15px;height:15px;fill:#fff}
+.ev-color-done-btn{
+  padding:6px 18px;border-radius:18px;border:none;cursor:pointer;
+  background:var(--accent);color:#fff;font-size:13px;font-weight:700;font-family:inherit;
+  letter-spacing:.3px;box-shadow:0 2px 8px rgba(139,58,42,.30);
+}
+.ev-color-done-btn:active{transform:scale(.96)}
 
 /* 매년 반복 토글 (생일/기념일 등) */
 .ev-yearly-row{flex-direction:row;align-items:center;justify-content:space-between;margin-top:4px}
@@ -1097,6 +1125,8 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .cal-evbar-marker{position:absolute;left:3px;top:50%;margin-top:-5.5px;width:3px;height:11px;background:var(--card);border-radius:1.5px}
 /* ── 드래그로 일정 이동 ── */
 .cal-evbar[data-drag="1"]{-webkit-touch-callout:none}
+/* 드래그 가능한 바는 터치 시작부터 세로 스크롤 제스처를 잡지 않도록 — iOS WKWebView에서 꾹 눌러 이동 시 캘린더 스크롤과의 충돌 방지 */
+.cal-evbar[data-drag="1"],.cal-tditem[data-tddrag="1"],.cal-tdline[data-tddrag="1"]{touch-action:none}
 body.ev-dragging{touch-action:none;-webkit-user-select:none;user-select:none}
 body.ev-dragging .cal-evbar,body.ev-dragging input,body.ev-dragging textarea{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 body.ev-dragging .cal-cell{cursor:grabbing}
@@ -2660,7 +2690,11 @@ body.align-right .cal-evbar{text-align:right}
     </div>
 
     <div class="ev-form-row">
-      <div class="ev-label">색상</div>
+      <div class="ev-color-head">
+        <div class="ev-label">색상</div>
+        <button type="button" class="ev-color-edit-btn" id="todoColorEditBtn" onclick="toggleColorLabelEdit('todo')" aria-label="색상 라벨 수정" title="색상 라벨 수정"><svg viewBox="0 0 24 24"><path d="M5 3h14a1 1 0 0 1 1 1v17l-8-4-8 4V4a1 1 0 0 1 1-1z"/></svg></button>
+        <button type="button" class="ev-color-done-btn" id="todoColorDoneBtn" onclick="commitColorLabelEdit('todo')" style="display:none">완료</button>
+      </div>
       <div class="ev-color-pager-wrap">
         <div class="ev-color-pager" id="todoColorPager"></div>
         <div class="ev-color-pager-foot">
@@ -2977,7 +3011,11 @@ body.align-right .cal-evbar{text-align:right}
       <div class="ev-members-display" id="evMembersDisplay" onclick="reopenMemberPick()"></div>
     </div>
     <div class="ev-form-row">
-      <div class="ev-label">색상</div>
+      <div class="ev-color-head">
+        <div class="ev-label">색상</div>
+        <button type="button" class="ev-color-edit-btn" id="evColorEditBtn" onclick="toggleColorLabelEdit('ev')" aria-label="색상 라벨 수정" title="색상 라벨 수정"><svg viewBox="0 0 24 24"><path d="M5 3h14a1 1 0 0 1 1 1v17l-8-4-8 4V4a1 1 0 0 1 1-1z"/></svg></button>
+        <button type="button" class="ev-color-done-btn" id="evColorDoneBtn" onclick="commitColorLabelEdit('ev')" style="display:none">완료</button>
+      </div>
       <div class="ev-color-pager-wrap">
         <div class="ev-color-pager" id="evColorPager"></div>
         <div class="ev-color-pager-foot">
@@ -6104,6 +6142,9 @@ let _calMonth=new Date().getMonth();
 let _selectedDate=null;   // 시트에서 선택한 날 (YYYY-MM-DD)
 let _editingEvent=null;   // 수정 중 일정 (null이면 추가 모드)
 let _selectedColor='c-vintage';
+let _colorLabels={};          // 색상 라벨 맵 { color_key: '이름' } — 방 공유
+let _colorLabelEditMode=false; // 일정 모달 색상 라벨 편집 모드
+let _todoColorLabelEditMode=false; // 할일 모달 색상 라벨 편집 모드
 let _selectedStyle='solid';   // 'solid' | 'outline' — 일정 바 스타일(테두리만 표시)
 let _eventAuthorKey=null; // 일정 명의: null=본인 / 'v-'+member_id=가상 멤버 (관리자 모드 방)
 
@@ -6894,6 +6935,7 @@ async function loadRoomMembers(){
     // joined_at 순으로 정렬 (본인이 항상 먼저 가입했으므로 첫 번째)
     _myMembers.sort((a,b)=>(a.joined_at||'').localeCompare(b.joined_at||''));
     renderMemberTabs();
+    loadColorLabels();  // 색상 라벨도 함께 로드 (방 공유)
   }catch(e){
     console.warn('멤버 로드 실패:',e);
     _myMembers=[];
@@ -6901,7 +6943,60 @@ async function loadRoomMembers(){
   }
 }
 
-/* 멤버 프로필 탭 렌더 — 전체 + 각 멤버 */
+/* 색상 라벨 로드 — 방 멤버 모두 공유 */
+async function loadColorLabels(){
+  _colorLabels={};
+  if(!_currentRoom){return}
+  try{
+    const {data,error}=await supa.from('room_color_labels')
+      .select('color_key,label')
+      .eq('room_id',_currentRoom.id);
+    if(error)throw error;
+    (data||[]).forEach(r=>{ if(r.label&&r.label.trim()) _colorLabels[r.color_key]=r.label; });
+  }catch(e){
+    console.warn('색상 라벨 로드 실패:',e);
+    _colorLabels={};
+  }
+}
+
+/* 색상 라벨 조회 (없으면 빈 문자열) */
+function colorLabelOf(key){
+  if(!key)return '';
+  return _colorLabels[key]||'';
+}
+
+/* 색상 라벨 일괄 저장 (편집 완료 시) — drafts: { color_key: '이름' } */
+async function saveColorLabels(drafts){
+  if(!_currentRoom)return false;
+  const rows=[];      // upsert 대상 (이름 있음)
+  const dels=[];      // 삭제 대상 (이름 비움)
+  Object.keys(drafts).forEach(k=>{
+    const v=(drafts[k]||'').trim().slice(0,8);
+    if(v) rows.push({room_id:_currentRoom.id, color_key:k, label:v, updated_at:new Date().toISOString()});
+    else if(_colorLabels[k]) dels.push(k); // 기존에 있었는데 비웠으면 삭제
+  });
+  try{
+    if(rows.length){
+      const {error}=await supa.from('room_color_labels')
+        .upsert(rows,{onConflict:'room_id,color_key'});
+      if(error)throw error;
+    }
+    if(dels.length){
+      const {error:e2}=await supa.from('room_color_labels')
+        .delete().eq('room_id',_currentRoom.id).in('color_key',dels);
+      if(e2)throw e2;
+    }
+    // 로컬 반영
+    Object.keys(drafts).forEach(k=>{
+      const v=(drafts[k]||'').trim().slice(0,8);
+      if(v) _colorLabels[k]=v; else delete _colorLabels[k];
+    });
+    return true;
+  }catch(e){
+    console.warn('색상 라벨 저장 실패:',e);
+    return false;
+  }
+}
 /* 관리자 모드 방 + 본인이 admin이면 → 본인(real user) 멤버는 모든 멤버 UI에서 숨김 */
 function _shouldHideSelfInAdminRoom(){
   return !!(_currentRoom&&_currentRoom.is_admin_mode&&typeof isAdmin==='function'&&isAdmin());
@@ -7987,7 +8082,15 @@ function renderColorPager(){
   pager.innerHTML=pages.map(p=>{
     const cells=p.colors.map(c=>{
       const on=(c.key===_selectedColor)?' on':'';
-      return `<button type="button" class="ev-color${on}" data-key="${escapeHtml(c.key)}" style="background:${c.hex}" onclick="selectColor('${escapeHtml(c.key)}')" title="${escapeHtml(c.name||'')}"></button>`;
+      const swatch=`<button type="button" class="ev-color${on}" data-key="${escapeHtml(c.key)}" style="background:${c.hex}" onclick="selectColor('${escapeHtml(c.key)}')" title="${escapeHtml(c.name||'')}"></button>`;
+      let nameHtml;
+      if(_colorLabelEditMode){
+        const v=escapeHtml(colorLabelOf(c.key));
+        nameHtml=`<input class="ev-color-name-input" type="text" maxlength="8" placeholder="이름" value="${v}" data-color-key="${escapeHtml(c.key)}" oninput="window._evLabelDraft&&(window._evLabelDraft['${escapeHtml(c.key)}']=this.value)">`;
+      }else{
+        nameHtml=`<div class="ev-color-name">${escapeHtml(colorLabelOf(c.key))}</div>`;
+      }
+      return `<div class="ev-color-cell">${swatch}${nameHtml}</div>`;
     }).join('');
     return `<div class="ev-color-page" data-key="${escapeHtml(p.key)}" data-name="${escapeHtml(p.name)}"><div class="ev-color-page-grid">${cells}</div></div>`;
   }).join('');
@@ -8029,6 +8132,58 @@ function selectColor(key){
   _selectedColor=key;
   renderColorPager();
 }
+
+/* ── 색상 라벨 편집 모드 (일정/할일 공용) ── */
+/* 모달 열 때 편집모드/버튼 상태 초기화 */
+function resetColorLabelEdit(mode){
+  if(mode==='ev'){
+    _colorLabelEditMode=false; window._evLabelDraft=null;
+    const eb=document.getElementById('evColorEditBtn'); if(eb)eb.style.display='';
+    const db=document.getElementById('evColorDoneBtn'); if(db)db.style.display='none';
+  }else{
+    _todoColorLabelEditMode=false; window._todoLabelDraft=null;
+    const eb=document.getElementById('todoColorEditBtn'); if(eb)eb.style.display='';
+    const db=document.getElementById('todoColorDoneBtn'); if(db)db.style.display='none';
+  }
+}
+/* mode: 'ev' | 'todo' */
+function toggleColorLabelEdit(mode){
+  if(mode==='ev'){
+    _colorLabelEditMode=true;
+    window._evLabelDraft=Object.assign({}, _colorLabels);
+    const eb=document.getElementById('evColorEditBtn'); if(eb)eb.style.display='none';
+    const db=document.getElementById('evColorDoneBtn'); if(db)db.style.display='';
+    renderColorPager();
+  }else{
+    _todoColorLabelEditMode=true;
+    window._todoLabelDraft=Object.assign({}, _colorLabels);
+    const eb=document.getElementById('todoColorEditBtn'); if(eb)eb.style.display='none';
+    const db=document.getElementById('todoColorDoneBtn'); if(db)db.style.display='';
+    if(typeof window.renderTodoColorPager==='function') window.renderTodoColorPager();
+  }
+}
+
+async function commitColorLabelEdit(mode){
+  const draft=(mode==='ev')?(window._evLabelDraft||{}):(window._todoLabelDraft||{});
+  const doneBtn=document.getElementById(mode==='ev'?'evColorDoneBtn':'todoColorDoneBtn');
+  if(doneBtn){ doneBtn.disabled=true; doneBtn.textContent='저장 중'; }
+  const ok=await saveColorLabels(draft);
+  if(doneBtn){ doneBtn.disabled=false; doneBtn.textContent='완료'; }
+  if(mode==='ev'){
+    _colorLabelEditMode=false;
+    window._evLabelDraft=null;
+    const eb=document.getElementById('evColorEditBtn'); if(eb)eb.style.display='';
+    const db=document.getElementById('evColorDoneBtn'); if(db)db.style.display='none';
+    renderColorPager();
+  }else{
+    _todoColorLabelEditMode=false;
+    window._todoLabelDraft=null;
+    const eb=document.getElementById('todoColorEditBtn'); if(eb)eb.style.display='';
+    const db=document.getElementById('todoColorDoneBtn'); if(db)db.style.display='none';
+    if(typeof window.renderTodoColorPager==='function') window.renderTodoColorPager();
+  }
+  if(typeof toast==='function') toast(ok?'색상 라벨을 저장했어요':'저장에 실패했어요');
+}
 /* ── 반복 설정 (안 함 / 매주 / 매월 / 매년) ── */
 /* 매주는 일정 날짜의 요일로 자동 반복 (별도 요일 선택 없음) */
 let _evRepeatType='none';
@@ -8060,6 +8215,7 @@ function openAddEvent(){
   closeMainModals();
   _editingEvent=null;
   _selectedColor='c-vintage';
+  resetColorLabelEdit('ev');
   _selectedStyle='solid';
   { const _ol=document.getElementById('evOutline'); if(_ol)_ol.checked=false; }
   _selectedTarget='self';
@@ -8122,6 +8278,7 @@ function openEditEvent(eventId){
   closeMainModals();
   _editingEvent=ev;
   _selectedColor=ev.color||'c-vintage';
+  resetColorLabelEdit('ev');
   _selectedStyle=ev.bar_style||'solid';
   { const _ol=document.getElementById('evOutline'); if(_ol)_ol.checked=(_selectedStyle==='outline'); }
   _selectedMode='day';
@@ -14510,7 +14667,7 @@ function buildTodoCard(t,multi){
       +'<span class="td-dday '+ddc+'">'+ddl+'</span>'
       +(author?('<span class="todo-card-author">'+escapeHtml(author)+'</span>'):'');
   }
-  const actionsHtml = done ? '' :
+  const actionsHtml =
     '<div class="td-card-actions">'
     +'<button class="td-act-btn" onclick="event.stopPropagation();window.openTodoEditSheet(\''+t.id+'\')" aria-label="수정">수정</button>'
     +'<button class="td-act-btn del" onclick="event.stopPropagation();window.deleteTodo(\''+t.id+'\')" aria-label="삭제">삭제</button>'
@@ -14637,6 +14794,7 @@ function openTodoAddSheet(dateKeyStr, opts){
   _setRepeatBtns('none');
   closeTodoTimePicker();
   setTodoTimeFields(_todoStartTime,_todoEndTime);
+  if(typeof resetColorLabelEdit==="function") resetColorLabelEdit("todo");
   buildTodoColorGrid();
   showEl('todoRangeDateRow',false);
   showEl('todoMultiDateRow',false);
@@ -14685,6 +14843,7 @@ function openTodoEditSheet(id, opts){
   _setRepeatBtns(_todoRepeat);
   closeTodoTimePicker();
   setTodoTimeFields(_todoStartTime,_todoEndTime);
+  if(typeof resetColorLabelEdit==="function") resetColorLabelEdit("todo");
   buildTodoColorGrid();
   showEl('todoRangeDateRow', type==='range');
   showEl('todoMultiDateRow', type==='multi');
@@ -14752,7 +14911,15 @@ function renderTodoColorPager(){
   pager.innerHTML=pages.map(p=>{
     const cells=p.colors.map(c=>{
       const on=(c.key===_todoColorKey)?' on':'';
-      return `<button type="button" class="ev-color${on}" data-key="${escapeHtml(c.key)}" style="background:${c.hex}" onclick="selectTodoColor('${escapeHtml(c.key)}')" title="${escapeHtml(c.name||'')}"></button>`;
+      const swatch=`<button type="button" class="ev-color${on}" data-key="${escapeHtml(c.key)}" style="background:${c.hex}" onclick="selectTodoColor('${escapeHtml(c.key)}')" title="${escapeHtml(c.name||'')}"></button>`;
+      let nameHtml;
+      if(_todoColorLabelEditMode){
+        const v=escapeHtml(colorLabelOf(c.key));
+        nameHtml=`<input class="ev-color-name-input" type="text" maxlength="8" placeholder="이름" value="${v}" data-color-key="${escapeHtml(c.key)}" oninput="window._todoLabelDraft&&(window._todoLabelDraft['${escapeHtml(c.key)}']=this.value)">`;
+      }else{
+        nameHtml=`<div class="ev-color-name">${escapeHtml(colorLabelOf(c.key))}</div>`;
+      }
+      return `<div class="ev-color-cell">${swatch}${nameHtml}</div>`;
     }).join('');
     return `<div class="ev-color-page" data-key="${escapeHtml(p.key)}" data-name="${escapeHtml(p.name)}"><div class="ev-color-page-grid">${cells}</div></div>`;
   }).join('');
@@ -15279,6 +15446,7 @@ window._todoMiniPick=todoMiniPick;
 window._todoRemoveMulti=removeTodoMultiDate;
 window.saveTodo=saveTodo;
 window.selectTodoColor=selectTodoColor;
+window.renderTodoColorPager=renderTodoColorPager;
 window._doSaveTodo=_doSaveTodo;
 window.bindTodoTimeInputs=bindTodoTimeInputs;
 window.safeRender=safeRender;
