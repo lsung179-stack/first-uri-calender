@@ -7272,7 +7272,13 @@ function _computeMonthLanes(gridDays){
   }
   // 완료 할일은 전역 레인 패킹에서 제외 — 셀 렌더 시 그 칸의 항목들 바로 아래(셀 로컬)에 배치한다.
   // (완료가 큰 레인 번호로 가서 칸이 과도하게 늘어나는 문제 방지)
-  const liveItems=items.filter(function(it){ return !(it.kind==='todo'&&it.todo&&it.todo.is_done); });
+  const liveItems=items.filter(function(it){
+    if(it.kind==='todo'&&it.todo&&it.todo.is_done){
+      // 완료 할일 중 기간(range)은 전역 레인 유지(가로 연결), 단일/반복/multi는 제외(셀 로컬)
+      return !!(it.todo.todo_type==='range'&&it.todo.end_date&&it.todo.end_date>it.todo.start_date);
+    }
+    return true;
+  });
   liveItems.sort(function(a,b){
     if(a.virt!==b.virt) return a.virt?-1:1; // virt(생일 등) 최상단 레인
     // 기간 항목 → 단일 항목 순으로 배치 (기간 상단 고정)
@@ -7411,9 +7417,9 @@ function cellHtml(y,m,d,isOther,todayKey){
     if(_occ){
       _td.forEach(function(t){
         if(!_occ(t,key)) return;
-        if(t.is_done){ _doneTd.push(t); return; }   // 완료는 셀 로컬 처리로 미룸
-        const th=window.__todoCellHTML?window.__todoCellHTML(t,key):'';
         const _isRangeTd=(t.todo_type==='range'&&t.end_date&&t.end_date>t.start_date);
+        if(t.is_done && !_isRangeTd){ _doneTd.push(t); return; }   // 단일 완료만 셀 로컬, 기간 완료는 전역 레인으로 연결
+        const th=window.__todoCellHTML?window.__todoCellHTML(t,key):'';
         const _spreadTd=(!_isRangeTd)&&((t.repeat_type&&t.repeat_type!=='none')||t.todo_type==='multi');
         const _lk=_spreadTd?('t:'+t.id+'@'+key):('t:'+t.id);
         if(th) place(_laneMap[_lk], th, false);
