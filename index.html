@@ -577,6 +577,8 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .dp-member-chip-av img{width:100%;height:100%;object-fit:cover;display:block}
 .dp-member-chip-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dp-member-chip-more{padding:3px 9px;background:rgba(139,58,42,.04);color:var(--sub);font-weight:600}
+.dp-author-chip{background:rgba(139,58,42,.12);border:1px solid rgba(139,58,42,.22)}
+.dp-author-chip .dp-member-chip-name{font-weight:600}
 .dp-time{font-size:11px;color:var(--sub)}
 .dp-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
 .dp-btn{background:rgba(139,58,42,.06);border:1px solid rgba(139,58,42,.18);cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;padding:9px 18px;color:var(--sub);border-radius:9px;line-height:1.2;white-space:nowrap;min-height:38px}
@@ -7692,6 +7694,16 @@ function openDateSheetForToday(){
   const t=new Date();
   openDateSheet(dateKey(t.getFullYear(),t.getMonth(),t.getDate()));
 }
+// 등록자(작성자) 프로필 칩 — 단독/함께 상관없이 누가 만들었는지 표시
+function _authorChipHtml(uid){
+  if(!uid) return '';
+  const m=(_myMembers||[]).find(function(mm){ return mm.user_id===uid; });
+  if(!m) return '';
+  const name=(m.name||'').trim();
+  const initial=escapeHtml(name.slice(0,1)||'·');
+  const avInner=m.avatar_url?avImg(m.avatar_url,initial):initial;
+  return '<span class="dp-member-chip dp-author-chip" title="'+escapeHtml(name)+'님이 등록"><span class="dp-member-chip-av" style="background:'+escapeHtml(m.color||'#8b3a2a')+'">'+avInner+'</span><span class="dp-member-chip-name">'+escapeHtml(name)+'</span></span>';
+}
 function renderDateSheetList(){
   const evs=getDayEvents(_selectedDate);
   const todos=(window.__getTodos?window.__getTodos():[]).filter(function(t){ return window.todoOccursOnDate&&window.todoOccursOnDate(t,_selectedDate); });
@@ -7757,6 +7769,7 @@ function renderDateSheetList(){
         <div class="dp-tdchk" style="border-color:${chkCol};color:${chkCol}" onclick="event.stopPropagation();window.toggleTodoDone('${t.id}');setTimeout(renderDateSheetList,40)">${chk}</div>
         <div class="dp-info">
           <div class="dp-title">${escapeHtml(t.title||'')}</div>
+          ${(function(){const c=_authorChipHtml(t.user_id);return c?`<div class="dp-members-chips">${c}</div>`:'';})()}
           ${tr?`<div class="dp-meta">${tr}</div>`:''}
           ${memoHtml}
         </div>
@@ -7772,9 +7785,10 @@ function renderDateSheetList(){
     const isVirtual=ev._isVirtual;
     const t=escapeHtml(ev.title||'');
     const tm=escapeHtml(fmtTimeRange(ev.time, ev.end_time));
+    const authorChip=_authorChipHtml(ev.user_id);
     let memberChipsHtml='';
     if(ev._isShared){
-      const ids=ev._memberIds||[];
+      const ids=(ev._memberIds||[]).filter(uid=>uid!==ev.user_id);
       const maxShow=4;
       const shown=ids.slice(0,maxShow);
       const remaining=ids.length-shown.length;
@@ -7787,9 +7801,9 @@ function renderDateSheetList(){
         return `<span class="dp-member-chip"><span class="dp-member-chip-av" style="background:${escapeHtml(m.color||'#8b3a2a')}">${avInner}</span><span class="dp-member-chip-name">${escapeHtml(name)}</span></span>`;
       }).join('');
       const moreChip=remaining>0?`<span class="dp-member-chip dp-member-chip-more">+${remaining}명</span>`:'';
-      if(chipParts||moreChip){
-        memberChipsHtml=`<div class="dp-members-chips">${chipParts}${moreChip}</div>`;
-      }
+      memberChipsHtml=`<div class="dp-members-chips">${authorChip}${chipParts}${moreChip}</div>`;
+    } else if(authorChip && !isVirtual){
+      memberChipsHtml=`<div class="dp-members-chips">${authorChip}</div>`;
     }
     const sharedCls=ev._isShared?' shared':'';
     const virtualTag=isVirtual?`<span class="dp-shared-tag" style="background:rgba(216,104,128,.18);color:#a83855">프로필</span>`:'';
@@ -7828,8 +7842,8 @@ function renderDateSheetList(){
       <div class="dp-bar" style="background:${hex}"></div>
       <div class="dp-info">
         <div class="dp-title">${t}${virtualTag}</div>
-        ${metaRow}
         ${memberChipsHtml}
+        ${metaRow}
         ${memoHtml}
         ${photoHtml}
         ${reactionRow}
