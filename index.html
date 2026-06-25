@@ -333,6 +333,15 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .r-bell:hover{background:rgba(139,58,42,.06)}
 .r-bell-badge{position:absolute;top:2px;right:2px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#e34a3a;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;border:1.5px solid var(--bg);box-sizing:border-box}
 .r-bell-badge[hidden]{display:none}
+.r-add-wrap{position:relative;display:inline-flex}
+.r-add-menu{position:absolute;top:calc(100% + 9px);left:0;min-width:190px;background:var(--card);border:1px solid var(--aP);border-radius:16px;box-shadow:0 14px 36px rgba(58,36,24,.20),0 2px 6px rgba(58,36,24,.08);padding:7px;z-index:240;transform-origin:top left;animation:rAddIn .17s cubic-bezier(.34,1.3,.5,1)}
+.r-add-menu[hidden]{display:none}
+@keyframes rAddIn{from{opacity:0;transform:translateY(-7px) scale(.95)}to{opacity:1;transform:none}}
+.r-add-item{display:flex;align-items:center;gap:11px;width:100%;padding:13px 15px;background:none;border:none;border-radius:11px;font-family:inherit;font-size:15.5px;font-weight:700;color:var(--text);cursor:pointer;text-align:left;transition:background .12s}
+.r-add-item:active{background:var(--aP)}
+.r-add-item svg{flex:0 0 auto;color:var(--accent)}
+.r-add-sep{height:1px;background:var(--aP);margin:1px 10px;opacity:.7}
+.r-add-btn.on{background:var(--accent);color:var(--card)}
 .r-content{flex:1;overflow-y:auto;padding:8px 24px 120px;-webkit-overflow-scrolling:touch}
 .r-section-row{display:flex;align-items:center;gap:8px;margin:14px 0 14px}
 .r-section-title{font-family:var(--ff-serif);font-size:14px;font-weight:700;color:var(--text);letter-spacing:.5px}
@@ -510,9 +519,11 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .cal-tdchk svg{width:11px;height:11px;display:block}
 .cal-tdtxt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cal-tdline{position:relative;min-height:15px;flex:none}
-.cal-tdline-bar{position:absolute;top:6px;height:3px}
-.cal-tdline-dot{position:absolute;top:5px;width:5px;height:5px;border-radius:50%}
+.cal-tdline-bar{position:absolute;top:6px;height:4px;box-shadow:0 .5px 1px rgba(58,36,24,.07)}
+.cal-tdline-dot{position:absolute;top:4.5px;width:7px;height:7px;border-radius:50%;box-shadow:0 0 0 1.4px var(--bg),0 1px 2px rgba(58,36,24,.18);z-index:1}
 .cal-tdline-lab{position:absolute;top:1px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:3px;white-space:nowrap;padding:0 4px;background:var(--bg);border-radius:4px;font-size:9px;line-height:1.3;color:var(--text);max-width:calc(100% - 4px);overflow:hidden}
+.cal-tdline.done .cal-tdline-lab{color:var(--mute)}
+.cal-tdline.done .cal-tdtxt{text-decoration:line-through;opacity:.6}
 /* 격자선 — 세로(우측)/가로(하단) 토글. box-shadow inset으로 레이아웃 안 밀리게 */
 /* 격자선 — 세로(우측)/가로(하단). 가상요소로 그려 일정바(자식) 아래에 둔다 → 기간 일정바가 선을 덮음 */
 body.grid-v .cal-cell::after{content:'';position:absolute;top:0;right:0;width:1px;height:100%;background:rgba(120,108,92,.16);z-index:0;pointer-events:none}
@@ -1086,6 +1097,8 @@ body.ev-dragging{touch-action:none;-webkit-user-select:none;user-select:none}
 body.ev-dragging .cal-evbar,body.ev-dragging input,body.ev-dragging textarea{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 body.ev-dragging .cal-cell{cursor:grabbing}
 .cal-evbar.ev-drag-src{opacity:.35}
+.cal-tditem.ev-drag-src,.cal-tdline.ev-drag-src{opacity:.35}
+.cal-tditem[data-tddrag="1"],.cal-tdline[data-tddrag="1"]{-webkit-touch-callout:none}
 .cal-cell.ev-drop-target{box-shadow:inset 0 0 0 2px var(--accent);border-radius:7px;background:rgba(0,0,0,.04)}
 .cal-cell.ev-drop-target .cal-day-num{font-weight:800}
 .ev-drag-ghost{position:fixed;z-index:9999;pointer-events:none;font-size:10px;font-weight:700;padding:4px 9px;border-radius:6px;color:#fff;box-shadow:0 8px 22px rgba(0,0,0,.30);white-space:nowrap;max-width:170px;overflow:hidden;text-overflow:ellipsis;transform:translate(-50%,-135%) scale(1.06);opacity:.97;will-change:left,top}
@@ -2354,6 +2367,24 @@ body.align-right .cal-evbar{text-align:right}
         <span class="r-logo-title">우리 캘린더</span>
       </div>
       <div class="r-header-actions">
+        <div class="r-add-wrap">
+          <button class="r-bell r-add-btn" id="roomAddBtn" onclick="toggleRoomAddMenu(event)" title="방 추가" aria-label="방 추가">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+          </button>
+          <div class="r-add-menu" id="roomAddMenu" hidden role="menu">
+            <button class="r-add-item" role="menuitem" onclick="closeRoomAddMenu();openCreateRoom()">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V9l9-6 9 6v12"/><path d="M9 21v-7h6v7"/></svg>
+              <span>방 만들기</span>
+            </button>
+            <div class="r-add-sep"></div>
+            <button class="r-add-item" role="menuitem" onclick="closeRoomAddMenu();openJoinRoom()">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg>
+              <span>코드로 입장</span>
+            </button>
+          </div>
+        </div>
         <button class="r-bell" id="notifBell" onclick="openNotifs()" title="알림" aria-label="알림">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
@@ -2367,11 +2398,6 @@ body.align-right .cal-evbar{text-align:right}
 
     <div class="r-content" id="roomsContent">
       <!-- loadRooms()가 여기 채움 -->
-    </div>
-
-    <div class="r-footer">
-      <button class="btn btn-primary" onclick="openCreateRoom()">+ 새 방 만들기</button>
-      <button class="btn btn-email" onclick="openJoinRoom()">코드로 입장</button>
     </div>
   </div>
 
@@ -5301,7 +5327,8 @@ function renderEmpty(){
         <div class="r-empty-icon-cross"></div>
       </div>
       <div class="r-empty-title">아직 방이 없어요</div>
-      <div class="r-empty-sub">새 방을 만들거나<br>받은 코드로 입장해보세요</div>
+      <div class="r-empty-sub">오른쪽 위 <b>+</b> 버튼을 눌러<br>방을 만들거나 코드로 입장해보세요</div>
+      <button class="btn btn-primary r-empty-cta" onclick="openCreateRoom()" style="margin-top:18px;max-width:240px">+ 방 만들기</button>
     </div>
   `;
 }
@@ -5450,6 +5477,30 @@ function exitRoom(){
   applyTheme(_myTheme||'vintage');  // 내 개인 테마 유지
   showScreen('roomsScreen');
   loadRooms();
+}
+
+/* ── 방 추가 팝오버 (+ 버튼) ── */
+function toggleRoomAddMenu(e){
+  if(e){ try{ e.stopPropagation(); }catch(_){} }
+  const m=document.getElementById('roomAddMenu');
+  if(!m) return;
+  if(m.hidden) openRoomAddMenu(); else closeRoomAddMenu();
+}
+function openRoomAddMenu(){
+  const m=document.getElementById('roomAddMenu'); if(!m) return;
+  m.hidden=false;
+  const btn=document.getElementById('roomAddBtn'); if(btn) btn.classList.add('on');
+  setTimeout(function(){ document.addEventListener('click', _roomAddOutside, true); }, 0);
+}
+function closeRoomAddMenu(){
+  const m=document.getElementById('roomAddMenu'); if(!m) return;
+  m.hidden=true;
+  const btn=document.getElementById('roomAddBtn'); if(btn) btn.classList.remove('on');
+  document.removeEventListener('click', _roomAddOutside, true);
+}
+function _roomAddOutside(e){
+  const wrap=document.querySelector('.r-add-wrap');
+  if(wrap && !wrap.contains(e.target)) closeRoomAddMenu();
 }
 
 /* ── 새 방 만들기 모달 ── */
@@ -13401,6 +13452,43 @@ async function _evMove(anchorRow,fromDate,toDate){
     try{await loadEvents()}catch(_){}
   }
 }
+function _tdFindById(id){ return (typeof _todos!=='undefined'&&_todos)?(_todos.find(function(t){return t.id===id;})||null):null; }
+function _tdGroupDates(t){
+  if(t.todo_type==='range' && t.end_date && t.end_date>t.start_date){
+    const out=[]; let d=t.start_date;
+    for(let i=0;i<400 && d && d<=t.end_date;i++){ out.push(d); d=shiftDateKey(d,1); }
+    return out;
+  }
+  if(t.todo_type==='multi' && Array.isArray(t.multi_dates)) return t.multi_dates.slice();
+  return [t.start_date];
+}
+async function _tdMove(todo,fromDate,toDate){
+  const diff=_evDayDiff(fromDate,toDate);
+  if(!diff)return;
+  const upd={};
+  if(todo.todo_type==='range' && todo.end_date && todo.end_date>todo.start_date){
+    upd.start_date=shiftDateKey(todo.start_date,diff);
+    upd.end_date=shiftDateKey(todo.end_date,diff);
+  }else if(todo.todo_type==='multi' && Array.isArray(todo.multi_dates)){
+    upd.multi_dates=todo.multi_dates.map(function(d){return shiftDateKey(d,diff);});
+    upd.start_date=shiftDateKey(todo.start_date,diff);
+  }else{
+    upd.start_date=shiftDateKey(todo.start_date,diff);
+  }
+  try{
+    const {error}=await supa.from('todos').update(upd).eq('id',todo.id);
+    if(error)throw error;
+    if(navigator.vibrate)navigator.vibrate(10);
+    if(window.loadTodos) await window.loadTodos();
+    safeRender();
+    toast((todo.todo_type==='range')?'기간 할 일을 옮겼어요':'할 일을 옮겼어요');
+  }catch(err){
+    console.error('move todo failed',err);
+    toast('할 일 이동에 실패했어요');
+    try{ if(window.loadTodos) await window.loadTodos(); }catch(_){}
+    safeRender();
+  }
+}
 function _evMakeGhost(srcBar,x,y,label){
   const g=document.createElement('div');
   g.className='ev-drag-ghost';
@@ -13431,6 +13519,22 @@ function setupEventDrag(){
 
   function _start(){
     if(!_evDrag)return;
+    if(_evDrag.kind==='todo'){
+      const todo=_tdFindById(_evDrag.tdid);
+      if(!todo){_evDrag=null;return}
+      _evDrag.anchorTodo=todo;
+      _evDrag.active=true;
+      _evDragging=true;
+      _swipeEnabled=false;
+      document.body.classList.add('ev-dragging');
+      _evDrag.groupDates=_tdGroupDates(todo);
+      _evDrag.bar.classList.add('ev-drag-src');
+      _evDrag.srcBars=[_evDrag.bar];
+      _evDrag.ghost=_evMakeGhost(_evDrag.bar,_evDrag.startX,_evDrag.startY,todo.title);
+      if(navigator.vibrate)navigator.vibrate(15);
+      try{_evDrag.bar.setPointerCapture(_evDrag.pid)}catch(_){}
+      return;
+    }
     const row=_evFindRowById(_evDrag.evid);
     if(!row){_evDrag=null;return}
     _evDrag.anchorRow=row;
@@ -13465,21 +13569,37 @@ function setupEventDrag(){
     _evDragging=false;
     _evDragSuppressClick=true;      // 드롭 직후 셀 click(날짜시트) 1회 차단
     setTimeout(()=>{_evDragSuppressClick=false},400);
-    if(commit&&d.dropDate&&d.anchorRow)_evMove(d.anchorRow,d.fromDate,d.dropDate);
+    if(commit&&d.dropDate){
+      if(d.kind==='todo'){ if(d.anchorTodo)_tdMove(d.anchorTodo,d.fromDate,d.dropDate); }
+      else if(d.anchorRow)_evMove(d.anchorRow,d.fromDate,d.dropDate);
+    }
   }
 
   grid.addEventListener('pointerdown',(e)=>{
     if(e.button!==undefined&&e.button!==0)return;
     if(_evDrag)_finish(false);
     const bar=e.target.closest&&e.target.closest('.cal-evbar[data-drag="1"]');
-    if(!bar)return;
-    const cell=bar.closest('.cal-cell');if(!cell)return;
-    const fromDate=cell.getAttribute('data-date');
-    const evid=bar.getAttribute('data-evid');
-    if(!fromDate||!evid)return;
-    _evDrag={bar,fromDate,evid,startX:e.clientX,startY:e.clientY,pid:e.pointerId,
-             active:false,ghost:null,lastCell:null,dropDate:null,
-             holdTimer:setTimeout(_start,EV_DRAG_HOLD)};
+    if(bar){
+      const cell=bar.closest('.cal-cell');if(!cell)return;
+      const fromDate=cell.getAttribute('data-date');
+      const evid=bar.getAttribute('data-evid');
+      if(!fromDate||!evid)return;
+      _evDrag={kind:'event',bar,fromDate,evid,startX:e.clientX,startY:e.clientY,pid:e.pointerId,
+               active:false,ghost:null,lastCell:null,dropDate:null,
+               holdTimer:setTimeout(_start,EV_DRAG_HOLD)};
+      return;
+    }
+    const tdbar=e.target.closest&&e.target.closest('.cal-tditem[data-tddrag="1"],.cal-tdline[data-tddrag="1"]');
+    if(tdbar){
+      const cell=tdbar.closest('.cal-cell');if(!cell)return;
+      const fromDate=cell.getAttribute('data-date');
+      const tdid=tdbar.getAttribute('data-tdid');
+      if(!fromDate||!tdid)return;
+      _evDrag={kind:'todo',bar:tdbar,fromDate,tdid,startX:e.clientX,startY:e.clientY,pid:e.pointerId,
+               active:false,ghost:null,lastCell:null,dropDate:null,
+               holdTimer:setTimeout(_start,EV_DRAG_HOLD)};
+      return;
+    }
   },{passive:true});
 
   window.addEventListener('pointermove',(e)=>{
@@ -14056,7 +14176,12 @@ function calTabSwitch(tab){
     // 방을 안 연 상태 — 마지막에 들어갔던 방으로 자동 입장
     let last=null; try{ last=localStorage.getItem('lastRoomId'); }catch(e){}
     const found = last && (_myRooms||[]).some(function(r){ return r.id===last; });
-    if(found){ enterRoom(last); }   // _currentRoom 동기 설정 + 캘린더 진입
+    if(found){
+      enterRoom(last);   // _currentRoom 동기 설정 + 캘린더 진입
+      // 캘린더가 아닌 탭을 눌렀으면 자동 입장 후 그 탭으로 이어서 전환
+      if(tab==='todo'){ openTodoScreen(); }
+      else if(tab==='settings'){ openUnifiedSettings(); }
+    }
     else { toast('방을 먼저 열어주세요'); }
     return;
   }
@@ -14811,8 +14936,10 @@ function __todoCellHTML(t,key){
   const CHK='<svg viewBox="0 0 24 24" fill="none" stroke="'+hex+'" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
   const chkSpan='<span class="cal-tdchk" style="border-color:'+hex+'">'+(done?CHK:'')+'</span>';
   const isRange=(t.todo_type==='range' && t.end_date && t.end_date>t.start_date);
+  const canTdDrag=(!t.repeat_type||t.repeat_type==='none') && (t.todo_type==='single' || isRange);
+  const tdDragAttr=' data-tddrag="'+(canTdDrag?'1':'0')+'"';
   if(!isRange){
-    return '<div class="cal-tditem'+(done?' done':'')+'" data-tdid="'+t.id+'">'
+    return '<div class="cal-tditem'+(done?' done':'')+'" data-tdid="'+t.id+'"'+tdDragAttr+'>'
       +chkSpan
       +'<span class="cal-tdtxt">'+escapeHtml(t.title||'')+'</span></div>';
   }
@@ -14821,15 +14948,16 @@ function __todoCellHTML(t,key){
   let n=0; try{ n=_dayDiff(t.start_date,t.end_date); }catch(e){ n=0; }
   const midKey=shiftDateKey(t.start_date, Math.floor(n/2));
   const isMid=(key===midKey);
+  const barCol=done?'var(--mute)':hex;
   // 선은 셀 경계에서 끊기지 않게 — 진짜 시작/끝에만 둥근 모서리, 내부는 각지게 이어붙임
   const radius=(isStart?'2px':'0')+' '+(isEnd?'2px':'0')+' '+(isEnd?'2px':'0')+' '+(isStart?'2px':'0');
-  let inner='<span class="cal-tdline-bar" style="left:'+(isStart?4:0)+'px;right:'+(isEnd?4:0)+'px;background:'+hex+';border-radius:'+radius+';"></span>';
-  if(isStart) inner+='<span class="cal-tdline-dot" style="left:1px;background:'+hex+';"></span>';
-  if(isEnd) inner+='<span class="cal-tdline-dot" style="right:1px;background:'+hex+';"></span>';
+  let inner='<span class="cal-tdline-bar" style="left:'+(isStart?4:0)+'px;right:'+(isEnd?4:0)+'px;background:'+barCol+';border-radius:'+radius+';"></span>';
+  if(isStart) inner+='<span class="cal-tdline-dot" style="left:1px;background:'+barCol+';"></span>';
+  if(isEnd) inner+='<span class="cal-tdline-dot" style="right:1px;background:'+barCol+';"></span>';
   if(isMid){
-    inner+='<span class="cal-tdline-lab'+(done?' done':'')+'">'+chkSpan+'<span class="cal-tdtxt">'+escapeHtml(t.title||'')+'</span></span>';
+    inner+='<span class="cal-tdline-lab">'+chkSpan+'<span class="cal-tdtxt">'+escapeHtml(t.title||'')+'</span></span>';
   }
-  return '<div class="cal-tdline" data-tdid="'+t.id+'">'+inner+'</div>';
+  return '<div class="cal-tdline'+(done?' done':'')+'" data-tdid="'+t.id+'"'+tdDragAttr+'>'+inner+'</div>';
 }
 function addTodoFromDay(){
   const d=(typeof _selectedDate!=='undefined'&&_selectedDate)?_selectedDate:null;
