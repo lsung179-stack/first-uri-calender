@@ -7278,34 +7278,41 @@ function _computeMonthLanes(gridDays){
   }
   // 완료 할일은 전역 레인 패킹에서 제외 — 셀 렌더 시 그 칸의 항목들 바로 아래(셀 로컬)에 배치한다.
   // (완료가 큰 레인 번호로 가서 칸이 과도하게 늘어나는 문제 방지)
-  const liveItems=items.filter(function(it){
-    if(it.kind==='todo'&&it.todo&&it.todo.is_done){
-      // 완료 할일 중 기간(range)은 전역 레인 유지(가로 연결), 단일/반복/multi는 제외(셀 로컬)
-      return !!(it.todo.todo_type==='range'&&it.todo.end_date&&it.todo.end_date>it.todo.start_date);
-    }
-    return true;
-  });
+  const liveItems=items.slice(); // 완료 단일/기간 모두 전역 레인 패킹 — 순서는 아래 정렬에서 제어
   liveItems.sort(function(a,b){
     if(a.virt!==b.virt) return a.virt?-1:1; // virt(생일 등) 최상단 레인
-    // 기간 항목 → 단일 항목 순으로 배치 (기간 상단 고정)
+    // 미완료 먼저(위), 완료 할일은 아래로
+    const aDone=(a.kind==='todo'&&a.todo&&a.todo.is_done)?1:0;
+    const bDone=(b.kind==='todo'&&b.todo&&b.todo.is_done)?1:0;
+    if(aDone!==bDone) return aDone-bDone;
     const aR=(a.kind==='event')?(a.ev&&a.ev._isRangeEvent):!!(a.todo&&a.todo.todo_type==='range'&&a.todo.end_date&&a.todo.end_date>a.todo.start_date);
     const bR=(b.kind==='event')?(b.ev&&b.ev._isRangeEvent):!!(b.todo&&b.todo.todo_type==='range'&&b.todo.end_date&&b.todo.end_date>b.todo.start_date);
-    if(!!aR!==!!bR) return aR?-1:1;
+    if(aDone===0){
+      if(!!aR!==!!bR) return aR?-1:1; // 미완료: 기간 상단 고정(기존)
+    } else {
+      if(!!aR!==!!bR) return aR?1:-1; // 완료: 단일 위 → 기간 맨 아래
+    }
     if(a.order!==b.order) return a.order-b.order;
     return a.tb<b.tb?-1:(a.tb>b.tb?1:0);
   });
   _laneItems=liveItems;
   const occ={};
-  liveItems.forEach(function(it){
+  const _pack=function(it,startL){
     const ds=Object.keys(it.dates);
-    // order_index를 '희망 레인'으로 사용 — 위에 항목이 없어도 빈 줄 아래로 배치 가능.
-    // 같은 레인 충돌 시에만 아래로 한 칸씩 밀어 겹침 방지(데이터 안전).
-    // 항상 위(0번 레인)에서부터 차례로 쌓기 — 빈 줄 없이 채움
-    let L=0;
+    let L=startL;
     for(;;){ let ok=true; for(let i=0;i<ds.length;i++){ const s=occ[ds[i]]; if(s&&s[L]){ ok=false; break; } } if(ok) break; L++; }
     _laneMap[it.k]=L;
     ds.forEach(function(dk){ (occ[dk]||(occ[dk]={}))[L]=true; });
-  });
+    return L;
+  };
+  // 1단계: 미완료(일정+미완료 할일)를 위(0번 레인)부터 채움
+  const _incomplete=liveItems.filter(function(it){ return !(it.kind==='todo'&&it.todo&&it.todo.is_done); });
+  const _complete=liveItems.filter(function(it){ return (it.kind==='todo'&&it.todo&&it.todo.is_done); });
+  let _maxLive=-1;
+  _incomplete.forEach(function(it){ const L=_pack(it,0); if(L>_maxLive)_maxLive=L; });
+  // 2단계: 완료 할일은 항상 세번째 칸(레인2) 이상, 미완료가 더 길면 그 아래부터. 단일(위)→기간(아래)는 정렬에서 확정
+  const _baseDone=Math.max(2,_maxLive+1);
+  _complete.forEach(function(it){ _pack(it,_baseDone); });
 }
 /* 순서변경 후보: 이동 대상과 하루라도 겹치는(같은 날 존재) 모든 항목 — 정렬 순서 유지, 가상 제외.
    기간 항목은 자기 기간 어디든 다른 항목과 겹치면 그 항목들과 순서를 바꿀 수 있음. */
@@ -7416,30 +7423,17 @@ function cellHtml(y,m,d,isOther,todayKey){
       const bar=_eventBarHTML(ev,key,y,m,d);
       place(_laneMap[_eventItemKey(ev)], bar.html, bar.hasRangeStart);
     });
-    // 할일 — 미완료는 전역 레인, 완료는 따로 모아 칸 맨 아래(셀 로컬)에 배치
+    // 할일 — 미완료/완료 모두 전역 레인. 정렬에서 미완료(위)→완료단일→완료기간(아래) 순서 확정됨
     const _td=(typeof window!=='undefined'&&window.__getTodos)?(window.__getTodos()||[]):[];
     const _occ=window.todoOccursOnDate;
-    const _doneTd=[];
     if(_occ){
       _td.forEach(function(t){
         if(!_occ(t,key)) return;
         const _isRangeTd=(t.todo_type==='range'&&t.end_date&&t.end_date>t.start_date);
-        if(t.is_done && !_isRangeTd){ _doneTd.push(t); return; }   // 단일 완료만 셀 로컬, 기간 완료는 전역 레인으로 연결
         const th=window.__todoCellHTML?window.__todoCellHTML(t,key):'';
         const _spreadTd=(!_isRangeTd)&&((t.repeat_type&&t.repeat_type!=='none')||t.todo_type==='multi');
         const _lk=_spreadTd?('t:'+t.id+'@'+key):('t:'+t.id);
         if(th) place(_laneMap[_lk], th, false);
-      });
-      // 완료 할일 — 그 칸의 항목들 바로 아래에 순서대로. 단일 완료(위) → 기간 완료(아래)
-      _doneTd.sort(function(a,b){
-        const aR=(a.todo_type==='range'&&a.end_date&&a.end_date>a.start_date)?1:0;
-        const bR=(b.todo_type==='range'&&b.end_date&&b.end_date>b.start_date)?1:0;
-        if(aR!==bR) return aR-bR; // 기간(1)이 더 아래
-        return ((a.order_index||0)-(b.order_index||0));
-      });
-      _doneTd.forEach(function(t){
-        const th=window.__todoCellHTML?window.__todoCellHTML(t,key):'';
-        if(th){ maxLane++; slots[maxLane]=th; }
       });
     }
     for(let L=0; L<=maxLane; L++){ evsHtml += (slots[L]!=null?slots[L]:'<div class="cal-evspacer"></div>'); }
