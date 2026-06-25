@@ -5918,7 +5918,7 @@ async function init(){
     showScreen('welcomeScreen');
   }finally{
     setTimeout(()=>document.getElementById('loading').classList.add('hide'),200);
-    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 2026.06.26-DEPLOY · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
+    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 2026.06.26-FIX2 · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
     // in-app browser(카톡·네이버·페이스북 등)에서 열렸을 때 한 줄 안내
     setTimeout(maybeShowInAppBrowserHint,800);
   }
@@ -6790,6 +6790,7 @@ async function loadEvents(){
     });
     // 이모지 반응도 같이 로드
     await loadReactions();
+    invalidateDayEventsCache();  // 데이터 로드 완료 → 캐시 비우고 실제 일정으로 다시 렌더
     renderMonthly();
     // 캘린더 진입 시 1회 — 반응 이모지가 등록된 날짜에 말풍선 통통튀기
     if(_pendingReactionAnim){
@@ -7255,11 +7256,12 @@ function _getDayEventsRaw(date){
    _events / _viewingMember 가 바뀌면 캐시 무효화. */
 let _gdeCache=new Map();
 let _gdeCacheToken=null;
+let _gdeDataVersion=0;  // 데이터가 바뀔 때마다 증가 → 토큰에 포함되어 캐시 자동 무효화
 function _gdeCurrentToken(){
-  // _events 객체 참조 + 보고 있는 멤버를 토큰으로 — 데이터가 바뀌면 자동 무효화
-  return (_viewingMember||'all');
+  // 데이터 버전 + 보고 있는 멤버 + 생일(프로필) — 어느 하나라도 바뀌면 캐시 무효화
+  return _gdeDataVersion+'|'+(_viewingMember||'all')+'|'+(_currentProfile?.birthday||'');
 }
-function invalidateDayEventsCache(){ _gdeCache.clear(); _gdeCacheToken=null; }
+function invalidateDayEventsCache(){ _gdeDataVersion++; _gdeCache.clear(); _gdeCacheToken=null; }
 function getDayEvents(date){
   const token=_gdeCurrentToken();
   if(token!==_gdeCacheToken){ _gdeCache.clear(); _gdeCacheToken=token; }
