@@ -483,7 +483,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .cal-dow.sat{color:var(--sat)}
 
 /* 캘린더 그리드 */
-.cal-grid{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-template-rows:repeat(6,minmax(64px,auto));align-content:stretch;padding:0 4px;gap:0;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(28px + env(safe-area-inset-bottom));transition:opacity .2s ease}
+.cal-grid{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-template-rows:repeat(6,minmax(64px,auto));align-content:start;padding:0 4px;gap:0;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(28px + env(safe-area-inset-bottom));transition:opacity .2s ease}
 .cal-grid.fading{opacity:0}
 .cal-cell{min-height:0;padding:2px 0;display:flex;flex-direction:column;cursor:pointer;border-radius:0;transition:background .12s;position:relative}
 .cal-cell:active{background:rgba(139,58,42,.06)}
@@ -7214,22 +7214,21 @@ function _computeMonthLanes(gridDays){
       if(any) items.push({k:'t:'+t.id, order:(typeof t.order_index==='number')?t.order_index:0, dates:dates, virt:false, kind:'todo', todo:t, tb:'~td|'+(t.start_date||'')+'|'+(t.created_at||'')+'|'+t.id});
     });
   }
-  items.sort(function(a,b){
+  // 완료 할일은 전역 레인 패킹에서 제외 — 셀 렌더 시 그 칸의 항목들 바로 아래(셀 로컬)에 배치한다.
+  // (완료가 큰 레인 번호로 가서 칸이 과도하게 늘어나는 문제 방지)
+  const liveItems=items.filter(function(it){ return !(it.kind==='todo'&&it.todo&&it.todo.is_done); });
+  liveItems.sort(function(a,b){
     if(a.virt!==b.virt) return a.virt?-1:1; // virt(생일 등) 최상단 레인
-    // 완료된 할일은 최하단 그룹으로
-    const aD=(a.kind==='todo'&&a.todo&&a.todo.is_done)?1:0;
-    const bD=(b.kind==='todo'&&b.todo&&b.todo.is_done)?1:0;
-    if(aD!==bD) return aD-bD;
-    // 기간 항목 → 단일 항목 순으로 배치 (기간 상단 고정, 미완료 그룹 안에서)
+    // 기간 항목 → 단일 항목 순으로 배치 (기간 상단 고정)
     const aR=(a.kind==='event')?(a.ev&&a.ev._isRangeEvent):!!(a.todo&&a.todo.todo_type==='range'&&a.todo.end_date&&a.todo.end_date>a.todo.start_date);
     const bR=(b.kind==='event')?(b.ev&&b.ev._isRangeEvent):!!(b.todo&&b.todo.todo_type==='range'&&b.todo.end_date&&b.todo.end_date>b.todo.start_date);
     if(!!aR!==!!bR) return aR?-1:1;
     if(a.order!==b.order) return a.order-b.order;
     return a.tb<b.tb?-1:(a.tb>b.tb?1:0);
   });
-  _laneItems=items;
+  _laneItems=liveItems;
   const occ={};
-  items.forEach(function(it){
+  liveItems.forEach(function(it){
     const ds=Object.keys(it.dates);
     // order_index를 '희망 레인'으로 사용 — 위에 항목이 없어도 빈 줄 아래로 배치 가능.
     // 같은 레인 충돌 시에만 아래로 한 칸씩 밀어 겹침 방지(데이터 안전).
@@ -7343,20 +7342,33 @@ function cellHtml(y,m,d,isOther,todayKey){
   let _hasRangeStart=false;
   {
     const slots=[]; let overflow=0; let maxLane=-1;
-    const place=function(lane,html,rs){ if(typeof lane!=='number'){return;} if(lane>3){ overflow++; return; } if(slots[lane]==null){ slots[lane]=html; if(lane>maxLane)maxLane=lane; if(rs)_hasRangeStart=true; } };
+    const place=function(lane,html,rs){ if(typeof lane!=='number'){return;} if(lane>49){ overflow++; return; } if(slots[lane]==null){ slots[lane]=html; if(lane>maxLane)maxLane=lane; if(rs)_hasRangeStart=true; } };
     // 일정
     evs.forEach(function(ev){
       const bar=_eventBarHTML(ev,key,y,m,d);
       place(_laneMap[_eventItemKey(ev)], bar.html, bar.hasRangeStart);
     });
-    // 할일
+    // 할일 — 미완료는 전역 레인, 완료는 따로 모아 칸 맨 아래(셀 로컬)에 배치
     const _td=(typeof window!=='undefined'&&window.__getTodos)?(window.__getTodos()||[]):[];
     const _occ=window.todoOccursOnDate;
+    const _doneTd=[];
     if(_occ){
       _td.forEach(function(t){
         if(!_occ(t,key)) return;
+        if(t.is_done){ _doneTd.push(t); return; }   // 완료는 셀 로컬 처리로 미룸
         const th=window.__todoCellHTML?window.__todoCellHTML(t,key):'';
         if(th) place(_laneMap['t:'+t.id], th, false);
+      });
+      // 완료 할일 — 그 칸의 항목들 바로 아래에 순서대로. 단일 완료(위) → 기간 완료(아래)
+      _doneTd.sort(function(a,b){
+        const aR=(a.todo_type==='range'&&a.end_date&&a.end_date>a.start_date)?1:0;
+        const bR=(b.todo_type==='range'&&b.end_date&&b.end_date>b.start_date)?1:0;
+        if(aR!==bR) return aR-bR; // 기간(1)이 더 아래
+        return ((a.order_index||0)-(b.order_index||0));
+      });
+      _doneTd.forEach(function(t){
+        const th=window.__todoCellHTML?window.__todoCellHTML(t,key):'';
+        if(th){ maxLane++; slots[maxLane]=th; }
       });
     }
     for(let L=0; L<=maxLane; L++){ evsHtml += (slots[L]!=null?slots[L]:'<div class="cal-evspacer"></div>'); }
@@ -9883,21 +9895,36 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
       toast('수정됐어요');
     }
   }else if(!wasShared&&isNowShared){
-    // Case 3: 혼자 → 함께 — 함께 변환 시 virtual_member_id 강제 NULL (함께 일정에 가상 멤버 못 들어감)
+    // Case 3: 혼자 → 함께 — 기간 그룹이면 전체 날짜에 함께 적용 (단일 날짜만 적용되던 버그 수정)
     const sharedId=genShared();
-    const {error:e1}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,shared_id:sharedId,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,reminder_sent_at:null,memo,photo_url:photoUrl,virtual_member_id:null}).eq('id',ev.id);
-    if(e1)throw e1;
-    const others=_selectedMembers.filter(u=>u!==_currentUser.id);
-    if(others.length){
-      const rows=others.map(key=>_buildCoEventRow(key, {
-        room_id:_currentRoom.id, date:(_dayDate||_selectedDate),
-        title,time,end_time:endTime,color,bar_style:barStyle,shared_id:sharedId,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
-        memo,photo_url:photoUrl,
-      }));
-      const {error:e2}=await supa.from('events').insert(_attachVirtualMember(rows));
-      if(e2)throw e2;
+    // 대상 날짜: range 모드면 입력 범위, 기간 그룹이면 그룹 전체 날짜, 아니면 단일
+    let coDates;
+    if(_selectedMode==='range'){
+      const s=document.getElementById('evStartDate').value, e=document.getElementById('evEndDate').value;
+      coDates=(s&&e)?daysBetween(s,e):[(_dayDate||_selectedDate)];
+    }else if(_editGroup&&_editGroup.length>1){
+      coDates=[...new Set(_editGroup.map(x=>x.date))].sort();
+    }else{
+      coDates=[(_dayDate||_selectedDate)];
     }
-    toast(`함께 일정으로 변경됨 (${_selectedMembers.length}명)`);
+    // 기존 단독 row 삭제 — 기간 그룹이면 전체, 아니면 자기 자신
+    const oldIds=(_editGroup&&_editGroup.length>1)?_editGroup.map(x=>x.id):[ev.id];
+    const {error:eDel}=await supa.from('events').delete().in('id',oldIds);
+    if(eDel)throw eDel;
+    // 각 날짜 × 각 멤버(본인 포함) 재생성 — 동일 shared_id로 묶음
+    const rows=[];
+    coDates.forEach(d=>{
+      _selectedMembers.forEach(key=>{
+        rows.push(_buildCoEventRow(key, {
+          room_id:_currentRoom.id, date:d,
+          title,time,end_time:endTime,color,bar_style:barStyle,shared_id:sharedId,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
+          memo,photo_url:photoUrl,
+        }));
+      });
+    });
+    const {error:eIns}=await supa.from('events').insert(_attachVirtualMember(rows));
+    if(eIns)throw eIns;
+    toast(coDates.length>1?`함께 기간 일정으로 변경됨 (${coDates.length}일 × ${_selectedMembers.length}명)`:`함께 일정으로 변경됨 (${_selectedMembers.length}명)`);
   }else if(wasShared&&!isNowShared){
     // Case 2: 함께 → 혼자 — RPC로 전체 shared row 삭제 (RLS 우회)
     const {error:e1}=await supa.rpc('delete_shared_event_rows',{p_shared_id:ev.shared_id});
@@ -13734,32 +13761,49 @@ function setupSwipe(){
 /* 시트 swipe-down (handle/card 위쪽 영역에서) */
 function setupSheetSwipe(cardId,closeFn){
   const card=document.getElementById(cardId);
-  if(!card)return;
-  let startY=0,curY=0,active=false;
-  card.addEventListener('touchstart',(e)=>{
-    if(e.touches.length!==1)return;
-    if(card.scrollTop>0)return;             // 스크롤 맨 위일 때만
-    // form 요소·버튼·일정드래그 핸들 위에선 swipe 비활성
+  if(!card||card._swipeBound)return;
+  card._swipeBound=true;
+  let sy=0,sx=0,cy=0,active=false,decided=false,drag=false;
+  const reset=function(){ active=false;decided=false;drag=false; card.style.touchAction=''; };
+  card.addEventListener('touchstart',function(e){
+    if(e.touches.length!==1){ active=false; return; }
     const t=e.target;
-    if(t&&t.closest&&t.closest('input,textarea,select,button,label,.ev-multi-day,.ev-color,.code-box,.tp-col,.tp-item,.time-picker,.time-input-box,.dp-order,.dp-actions,.dp-tdchk,.dp-reaction-row,.dp-photo-thumb'))return;
-    startY=e.touches[0].clientY;curY=e.touches[0].clientY;active=true;
+    if(t&&t.closest&&t.closest('input,textarea,select,button,label,a,.ev-multi-day,.ev-color,.code-box,.tp-col,.tp-item,.time-picker,.time-input-box,.dp-order,.dp-actions,.dp-tdchk,.dp-reaction-row,.dp-photo-thumb,.tmc-cell,.todo-mini,.cal-mini')){ active=false; return; }
+    sy=cy=e.touches[0].clientY; sx=e.touches[0].clientX;
+    active=true; decided=false; drag=false;
   },{passive:true});
-  card.addEventListener('touchmove',(e)=>{
+  card.addEventListener('touchmove',function(e){
     if(!active)return;
-    curY=e.touches[0].clientY;
-    const dy=curY-startY;
-    if(dy>0&&card.scrollTop===0){ card.style.transform=`translateY(${dy*0.6}px)`; }
-  },{passive:true});
-  card.addEventListener('touchend',()=>{
-    if(!active)return;
-    active=false;
-    const dy=curY-startY;
-    card.style.transition='transform .22s cubic-bezier(.32,.72,0,1)';
-    card.style.transform='';
-    setTimeout(()=>{ card.style.transition=''; },240);
-    if(dy>120)closeFn();
-  },{passive:true});
-  card.addEventListener('touchcancel',()=>{ if(active){active=false;card.style.transform='';} },{passive:true});
+    cy=e.touches[0].clientY;
+    const dy=cy-sy, dx=e.touches[0].clientX-sx;
+    if(!decided){
+      if(Math.abs(dy)<8&&Math.abs(dx)<8)return;       // 아직 방향 미정
+      // 아래로 + 세로 우세 + 카드 스크롤 맨 위 → 닫기 드래그, 그 외엔 스크롤에 양보
+      if(dy>0 && Math.abs(dy)>Math.abs(dx)*1.2 && card.scrollTop<=0){
+        drag=true; card.style.touchAction='none';
+      }else{ active=false; return; }
+      decided=true;
+    }
+    if(drag){
+      if(e.cancelable)e.preventDefault();             // 스크롤/바운스 차단
+      card.style.transition='';
+      card.style.transform='translateY('+(Math.max(0,dy)*0.72)+'px)';
+    }
+  },{passive:false});
+  const end=function(){
+    if(!active){ reset(); return; }
+    const dy=cy-sy;
+    if(drag){
+      card.style.transition='transform .24s cubic-bezier(.32,.72,0,1)';
+      const willClose=dy>110;
+      card.style.transform='';
+      setTimeout(function(){ card.style.transition=''; },260);
+      if(willClose)closeFn();
+    }
+    reset();
+  };
+  card.addEventListener('touchend',end,{passive:true});
+  card.addEventListener('touchcancel',end,{passive:true});
 }
 
 /* DOM 준비 후 핸들러 + 스와이프 셋업 */
@@ -14600,7 +14644,8 @@ function bindTodoTimeInputs(){
       let v=hEl.value.replace(/\D/g,''); if(v!==hEl.value)hEl.value=v;
       if(v.length>=2 && parseInt(v,10)>23){ hEl.value='23'; v='23'; }
       recomputeTodoTime();
-      if(v.length>=2)mEl.focus();
+      // 시 2자리 입력 시, 또는 첫 자리가 3~9라 더는 시가 늘어날 수 없을 때 분 칸으로 자동 이동
+      if(v.length>=2 || (v.length===1 && parseInt(v,10)>=3)) mEl.focus();
     });
     mEl.addEventListener('input',function(){
       let v=mEl.value.replace(/\D/g,''); if(v!==mEl.value)mEl.value=v;
