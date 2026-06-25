@@ -1862,8 +1862,10 @@ body.align-right .cal-evbar{text-align:right}
 }
 .pf-admin-btn:active{transform:scale(.97)}
 
-#adminGrantCard{max-height:88vh}
 .ag-results{max-height:50vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;-webkit-overflow-scrolling:touch}
+/* 약관·개인정보는 풀스크린 고객센터(z-index:1300) 위에 떠야 함 */
+#termsOverlay,#privacyOverlay{z-index:1390}
+#termsCard,#privacyCard{z-index:1400}
 .ag-empty{padding:30px 12px;text-align:center;color:var(--sub);font-size:13px}
 .ag-user-card{
   display:flex;align-items:center;gap:12px;padding:10px 12px;
@@ -3239,10 +3241,13 @@ body.align-right .cal-evbar{text-align:right}
 </div>
 
 <!-- 고객센터 시트 -->
-<div class="mo-overlay" id="csOverlay" onclick="closeCustomerSupport()"></div>
-<div class="mo-card" id="csCard">
-  <div class="mo-handle"></div>
-  <div class="mo-title">고객센터</div>
+<div class="ann-card" id="csCard">
+  <div class="ann-head">
+    <button class="ann-back" onclick="closeCustomerSupport()" aria-label="뒤로">‹</button>
+    <div class="ann-title">고객센터</div>
+    <button class="ann-head-btn" onclick="closeCustomerSupport()" aria-label="닫기">✕</button>
+  </div>
+  <div class="ann-body" style="padding:20px">
   <div class="mo-sub">궁금한 점이 있으시면 문의하기를 이용해주세요</div>
   <div class="cs-content">
     <button class="cs-primary-btn" onclick="openSupport()">
@@ -3272,8 +3277,6 @@ body.align-right .cal-evbar{text-align:right}
       </span>
     </button>
   </div>
-  <div class="mo-actions">
-    <button class="mo-cancel" onclick="closeCustomerSupport()">닫기</button>
   </div>
 </div>
 
@@ -3324,10 +3327,13 @@ body.align-right .cal-evbar{text-align:right}
 </div>
 
 <!-- admin: 이용자 무료 부여 모달 -->
-<div class="mo-overlay" id="adminGrantOverlay" onclick="closeAdminGrant()"></div>
-<div class="mo-card" id="adminGrantCard">
-  <div class="mo-handle"></div>
-  <div class="mo-title">이용자 무료 부여</div>
+<div class="ann-card" id="adminGrantCard">
+  <div class="ann-head">
+    <button class="ann-back" onclick="closeAdminGrant()" aria-label="뒤로">‹</button>
+    <div class="ann-title">이용자 무료 부여</div>
+    <button class="ann-head-btn" onclick="closeAdminGrant()" aria-label="닫기">✕</button>
+  </div>
+  <div class="ann-body" style="padding:20px">
   <div class="mo-sub" id="adminGrantSub">이름 또는 이메일로 검색</div>
   
   <!-- 검색 화면 -->
@@ -3347,9 +3353,6 @@ body.align-right .cal-evbar{text-align:right}
     <div class="ag-section-title">😊 이모지 팩</div>
     <div id="adminGrantCharList" class="ag-pack-list"></div>
   </div>
-  
-  <div class="mo-actions">
-    <button class="mo-cancel" onclick="closeAdminGrant()">닫기</button>
   </div>
 </div>
 
@@ -3624,13 +3627,14 @@ body.align-right .cal-evbar{text-align:right}
 </div>
 
 <!-- 달력 주문 관리 (관리자 전용) -->
-<div class="co-preview-modal" id="orderAdminModal">
-  <div class="co-preview-inner" style="max-width:680px">
-    <div class="co-preview-head">
-      <div class="co-preview-title">📦 달력 주문 관리</div>
-      <span class="co-event-count" id="orderAdminCount">0건</span>
-      <button onclick="closeOrderAdmin()" aria-label="닫기">✕</button>
-    </div>
+<div class="ann-card" id="orderAdminModal">
+  <div class="ann-head">
+    <button class="ann-back" onclick="closeOrderAdmin()" aria-label="뒤로">‹</button>
+    <div class="ann-title">📦 달력 주문 관리</div>
+    <span class="co-event-count" id="orderAdminCount" style="margin-right:6px">0건</span>
+    <button class="ann-head-btn" onclick="closeOrderAdmin()" aria-label="닫기">✕</button>
+  </div>
+  <div class="ann-body" style="padding:0;display:flex;flex-direction:column;overflow:hidden">
     <div class="oa-openfull-bar">
       <button class="oa-openfull" onclick="openAdminFullPage()">🖥 관리자 페이지 전체화면으로 열기</button>
     </div>
@@ -4070,7 +4074,7 @@ function closeMainModals(){
    'storeCard','advCard','annCard','annComposeOverlay','annComposeCard',
    'annMenuOverlay','annMenuCard','annPopupOverlay','annPopup',
    'datePickerOverlay','datePickerCard','searchOverlay','searchCard',
-   'csOverlay','csCard','leaveAccountOverlay','leaveAccountCard',
+   'csCard','leaveAccountOverlay','leaveAccountCard',
    'termsOverlay','termsCard','privacyOverlay','privacyCard']
     .forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on')});
 }
@@ -12478,11 +12482,9 @@ function openAdminGrant(){
   document.getElementById('adminGrantUserView').style.display='none';
   document.getElementById('adminGrantSearchInput').value='';
   document.getElementById('adminGrantResults').innerHTML='<div class="ag-empty">이름 또는 이메일로 검색해주세요</div>';
-  document.getElementById('adminGrantOverlay').classList.add('on');
   document.getElementById('adminGrantCard').classList.add('on');
 }
 function closeAdminGrant(){
-  document.getElementById('adminGrantOverlay').classList.remove('on');
   document.getElementById('adminGrantCard').classList.remove('on');
   _adminGrantSelected=null;
 }
@@ -13179,11 +13181,9 @@ async function onLockCharFromDetail(key){
 const KAKAO_CHANNEL_URL='https://pf.kakao.com/_xoTkxbX';
 function openCustomerSupport(){
   closeMainModals();
-  document.getElementById('csOverlay').classList.add('on');
   document.getElementById('csCard').classList.add('on');
 }
 function closeCustomerSupport(){
-  document.getElementById('csOverlay').classList.remove('on');
   document.getElementById('csCard').classList.remove('on');
 }
 function openKakaoChannel(){
@@ -13571,31 +13571,32 @@ function setupSwipe(){
 function setupSheetSwipe(cardId,closeFn){
   const card=document.getElementById(cardId);
   if(!card)return;
-  let startY=0,curY=0,active=false;
-  card.addEventListener('touchstart',(e)=>{
-    if(e.touches.length!==1)return;
-    if(card.scrollTop>0)return;  // 스크롤 위치 위쪽일 때만
-    // form 요소(input, textarea, select, button, label) 위에선 swipe 비활성 (모바일 input 닫힘 방지)
+  let startY=0,curY=0,active=false,pid=null;
+  card.addEventListener('pointerdown',(e)=>{
+    if(e.pointerType==='mouse')return;      // 터치/펜만
+    if(card.scrollTop>0)return;             // 스크롤 위쪽일 때만
+    // form 요소·버튼·일정드래그 핸들 위에선 swipe 비활성
     const t=e.target;
-    if(t&&t.closest&&t.closest('input,textarea,select,button,label,.ev-multi-day,.ev-color,.code-box,.tp-col,.tp-item,.time-picker,.time-input-box'))return;
-    startY=e.touches[0].clientY;
-    active=true;
+    if(t&&t.closest&&t.closest('input,textarea,select,button,label,.ev-multi-day,.ev-color,.code-box,.tp-col,.tp-item,.time-picker,.time-input-box,.dp-order,.dp-actions,.dp-tdchk,.dp-reaction-row,.dp-photo-thumb'))return;
+    startY=e.clientY;curY=e.clientY;active=true;pid=e.pointerId;
   },{passive:true});
-  card.addEventListener('touchmove',(e)=>{
-    if(!active)return;
-    curY=e.touches[0].clientY;
+  card.addEventListener('pointermove',(e)=>{
+    if(!active||e.pointerId!==pid)return;
+    curY=e.clientY;
     const dy=curY-startY;
-    if(dy>0&&card.scrollTop===0){
-      card.style.transform=`translateY(${dy*0.6}px)`;
-    }
+    if(dy>0&&card.scrollTop===0){ card.style.transform=`translateY(${dy*0.6}px)`; }
   },{passive:true});
-  card.addEventListener('touchend',()=>{
-    if(!active)return;
-    active=false;
+  const end=(e)=>{
+    if(!active||(e&&e.pointerId!==pid))return;
+    active=false;pid=null;
     const dy=curY-startY;
+    card.style.transition='transform .22s cubic-bezier(.32,.72,0,1)';
     card.style.transform='';
+    setTimeout(()=>{ card.style.transition=''; },240);
     if(dy>120)closeFn();
-  },{passive:true});
+  };
+  card.addEventListener('pointerup',end,{passive:true});
+  card.addEventListener('pointercancel',end,{passive:true});
 }
 
 /* DOM 준비 후 핸들러 + 스와이프 셋업 */
@@ -13635,9 +13636,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   setupSheetSwipe('termsCard',closeTerms);
   setupSheetSwipe('privacyCard',closePrivacy);
   setupSheetSwipe('leaveAccountCard',closeLeaveAccount);
-  setupSheetSwipe('csCard',closeCustomerSupport);
   setupSheetSwipe('vMemberCard',closeVMember);
-  setupSheetSwipe('adminGrantCard',closeAdminGrant);
   setupSheetSwipe('roomPickCard',cancelRoomPick);
   setupSheetSwipe('charDetailCard',closeCharDetail);
   setupSheetSwipe('inviteConfirmCard',cancelInviteConfirm);
@@ -14212,7 +14211,7 @@ function openTodoAddSheet(dateKeyStr, opts){
   renderTodoMiniCal();
   updateTodoMiniSummary();
   if($('todoAddOverlay')) $('todoAddOverlay').classList.add('on');
-  if($('todoAddCard')) $('todoAddCard').classList.add('on');
+  if($('todoAddCard')){ var _tac=$('todoAddCard'); _tac.style.transform=''; _tac.classList.add('on'); _tac.scrollTop=0; requestAnimationFrame(function(){ if(_tac)_tac.scrollTop=0; }); }
 }
 // 기존 할일을 수정 모드로 열기 (추가 시트 재사용)
 function _hexToColorKey(hex){
@@ -14256,7 +14255,7 @@ function openTodoEditSheet(id, opts){
   renderTodoMiniCal();
   updateTodoMiniSummary();
   if($('todoAddOverlay')) $('todoAddOverlay').classList.add('on');
-  if($('todoAddCard')) $('todoAddCard').classList.add('on');
+  if($('todoAddCard')){ var _tac=$('todoAddCard'); _tac.style.transform=''; _tac.classList.add('on'); _tac.scrollTop=0; requestAnimationFrame(function(){ if(_tac)_tac.scrollTop=0; }); }
 }
 // 데이시트(dpCard)에서 수정 열기 — dpCard가 DOM상 뒤라 먼저 닫고 열어야 시트가 위로 뜸
 function editTodoFromDay(id){
@@ -14534,6 +14533,7 @@ function updateTodoMiniSummary(){
 }
 async function saveTodo(){
   if(!_currentRoom||!_currentUser){ toast('로그인이 필요해요'); return; }
+  try{ recomputeTodoTime(); }catch(_){}  // 저장 직전 시간 입력칸 최신값 반영
   const title=(($('todoTitleInput')||{}).value||'').trim();
   if(!title){ toast('제목을 입력해주세요'); return; }
   let start_date=null,end_date=null,multi_dates=null,todo_type=_todoType;
