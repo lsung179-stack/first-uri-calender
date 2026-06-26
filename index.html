@@ -8966,7 +8966,20 @@ function updateMultiRoomVisibility(){
 }
 function updateMultiRoomCountLabel(){ /* no-op (UI 제거됨) */ }
 /* 일정 바 스타일 토글 — 켜면 테두리만(외곽선), 끄면 채움 */
-function onOutlineToggle(checked){
+async function onOutlineToggle(checked){
+  // 프리미엄 차별화 — 테두리만 표시는 Pro 전용 (켜기만 막음, 끄기는 자유)
+  if(checked){
+    await ensurePremiumLoaded();
+    if(!isEffectivePremium()){
+      const cb=document.getElementById('evOutline'); if(cb) cb.checked=false;
+      _selectedStyle='solid';
+      showUpgradeModal({
+        message:'테두리만 표시는 프리미엄 전용이에요.',
+        feature:'프리미엄으로 업그레이드하면 일정을 색 채움 없이 깔끔한 외곽선으로 표시할 수 있어요.'
+      });
+      return;
+    }
+  }
   _selectedStyle = checked ? 'outline' : 'solid';
 }
 /* ── 저장 시 방 선택 모달 ──
