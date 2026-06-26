@@ -9354,8 +9354,8 @@ function pickEventPhoto(){
   if(_evPhotos.length>=lim){
     if(!isEffectivePremium()){
       showUpgradeModal({
-        message:'무료 플랜은 일정당 사진을 1장까지 넣을 수 있어요.',
-        feature:'프리미엄으로 업그레이드하면 일정마다 사진을 5장까지 넣을 수 있어요.'
+        message:'무료 플랜은 일정당 사진을 1장만 넣을 수 있어요.',
+        feature:'⭐ 프리미엄 구독 시 일정마다 사진을 최대 5장까지! 추억을 더 풍성하게 담아보세요.'
       });
     }else{ toast('사진은 최대 '+lim+'장까지 넣을 수 있어요'); }
     return;
@@ -9396,8 +9396,8 @@ async function onEventPhotoSelected(e){
     renderPhotoStrip();
     if(blockedByLimit){
       if(!isEffectivePremium()) showUpgradeModal({
-        message:'무료 플랜은 일정당 사진을 1장까지 넣을 수 있어요.',
-        feature:'프리미엄으로 업그레이드하면 일정마다 사진을 5장까지 넣을 수 있어요.'
+        message:'무료 플랜은 일정당 사진을 1장만 넣을 수 있어요.',
+        feature:'⭐ 프리미엄 구독 시 일정마다 사진을 최대 5장까지! 추억을 더 풍성하게 담아보세요.'
       });
       else toast('사진은 최대 '+lim+'장까지 넣을 수 있어요');
     }
@@ -13065,13 +13065,13 @@ function _saveUnlocks(u){
 }
 /* 특정 팩 unlock (체험 버튼 — 사용자 본인 액션) */
 function unlockColorPack(key){
-  if(!FREE_TRIAL_MODE)return false;
+  if(!isEffectivePremium())return false; // 프리미엄만 팩 사용 설정 가능
   const u=_getUnlocks();
   if(!u.color.includes(key)){u.color.push(key);_saveUnlocks(u)}
   return true;
 }
 function unlockCharPack(key){
-  if(!FREE_TRIAL_MODE)return false;
+  if(!isEffectivePremium())return false; // 프리미엄만 팩 사용 설정 가능
   const u=_getUnlocks();
   if(!u.char.includes(key)){u.char.push(key);_saveUnlocks(u)}
   return true;
@@ -13085,28 +13085,28 @@ function lockCharPack(key){
 }
 /* 사용 가능 여부 — 무료 체험(localStorage) + admin 부여(DB) 둘 다 확인 */
 function hasColorPack(key){
-  if(isEffectivePremium())return true; // 프리미엄: 스토어 전체 해제
-  if(FREE_TRIAL_MODE && _getUnlocks().color.includes(key))return true;
+  if(!isEffectivePremium())return false;             // 무료: 기본 컬러만 (팩 잠김)
+  if(_getUnlocks().color.includes(key))return true;  // 프리미엄: 본인이 사용 설정한 팩만
   if(_dbUnlocks.color.includes(key))return true;
   return false;
 }
 function hasCharPack(key){
-  if(isEffectivePremium())return true; // 프리미엄: 스토어 전체 해제
-  if(FREE_TRIAL_MODE && _getUnlocks().char.includes(key))return true;
+  if(!isEffectivePremium())return false;             // 무료: 기본만 (팩 잠김)
+  if(_getUnlocks().char.includes(key))return true;   // 프리미엄: 본인이 사용 설정한 팩만
   if(_dbUnlocks.char.includes(key))return true;
   return false;
 }
 function getUnlockedColorPacks(){
-  if(isEffectivePremium())return STORE_COLORS.map(c=>c.key); // 프리미엄: 전체 팩
+  if(!isEffectivePremium())return [];                // 무료: 기본 컬러만
   const set=new Set();
-  if(FREE_TRIAL_MODE)_getUnlocks().color.forEach(k=>set.add(k));
+  _getUnlocks().color.forEach(k=>set.add(k));        // 프리미엄: 사용 설정한 팩만 팔레트에
   _dbUnlocks.color.forEach(k=>set.add(k));
   return [...set];
 }
 function getUnlockedCharPacks(){
-  if(isEffectivePremium())return STORE_EMOJI.map(c=>c.key); // 프리미엄: 전체 팩
+  if(!isEffectivePremium())return [];                // 무료: 기본만
   const set=new Set();
-  if(FREE_TRIAL_MODE)_getUnlocks().char.forEach(k=>set.add(k));
+  _getUnlocks().char.forEach(k=>set.add(k));         // 프리미엄: 사용 설정한 팩만
   _dbUnlocks.char.forEach(k=>set.add(k));
   return [...set];
 }
@@ -13692,16 +13692,23 @@ function setStoreTab(tab){
   if(body)body.scrollTop=0;
 }
 
-/* 무료 체험 배너 — 짧은 안내문 (개별 unlock 시스템) */
+/* 스토어 안내 배너 — 프리미엄 여부에 맞춰 안내 */
 function renderTrialBanner(){
   const banner=document.getElementById('storeTrialBanner');
   if(!banner)return;
-  if(!FREE_TRIAL_MODE){banner.innerHTML='';return}
-  banner.innerHTML=`
+  if(isEffectivePremium()){
+    banner.innerHTML=`
+    <div class="store-trial-notice">
+      <span class="trial-icon">⭐</span>
+      <span class="trial-text">프리미엄 이용 중 — 원하는 팩을 골라 사용해보세요</span>
+    </div>`;
+  }else{
+    banner.innerHTML=`
     <div class="store-trial-notice">
       <span class="trial-icon">💡</span>
-      <span class="trial-text">테스트 기간 — 마음에 드는 팩만 골라 사용해보세요</span>
+      <span class="trial-text">프리미엄 구독 시 모든 컬러·캐릭터 팩을 골라 쓸 수 있어요</span>
     </div>`;
+  }
 }
 /* (구) onActivateTrialClick — 호환성 위해 남겨둠 (이제 호출되지 않음) */
 function onActivateTrialClick(){/* deprecated */}
@@ -13716,7 +13723,7 @@ function renderStoreThemes(){
       <div class="store-pick-label">우리 캘린더 PICK</div>
       <div class="store-pick-title">빈티지 감성으로<br>오래도록 함께</div>
       <div class="store-pick-sub">크림빛 종이 위에 갈색 잉크로 적는 우리 가족의 시간</div>
-      <button class="store-pick-cta" onclick="applyStoreTheme('vintage')">기본 적용</button>
+      <button class="store-pick-cta" onclick="applyStoreTheme('vintage')">사용하기</button>
       <div class="store-pick-deco">
         <div class="store-pick-deco-dot" style="background:#fbf2e0"></div>
         <div class="store-pick-deco-dot" style="background:#8b3a2a;border-color:#8b3a2a"></div>
@@ -13767,7 +13774,9 @@ function renderStoreColors(){
     const swatches=item.colors.map(c=>`<span class="color-swatch" style="background:${c}"></span>`).join('');
     const btn=unlocked
       ? `<button class="pack-btn pack-btn-using" onclick="onLockColorClick('${escapeHtml(item.key)}')">사용 중</button>`
-      : `<button class="pack-btn pack-btn-try" onclick="onUnlockColorClick('${escapeHtml(item.key)}')">체험하기</button>`;
+      : (isEffectivePremium()
+          ? `<button class="pack-btn pack-btn-try" onclick="onUnlockColorClick('${escapeHtml(item.key)}')">사용하기</button>`
+          : `<button class="pack-btn pack-btn-try" onclick="onUnlockColorClick('${escapeHtml(item.key)}')">🔒 프리미엄</button>`);
     html+=`
       <div class="theme-card${unlocked?' unlocked':''}">
         <div class="theme-preview color-pack-preview">
@@ -13786,8 +13795,15 @@ function renderStoreColors(){
 function onUnlockColorClick(key){
   const pack=STORE_COLORS.find(p=>p.key===key);
   if(!pack)return;
+  if(!isEffectivePremium()){
+    showUpgradeModal({
+      message:'컬러 팩은 프리미엄 전용이에요.',
+      feature:'⭐ 프리미엄 구독하면 모든 컬러 팩에서 원하는 것만 골라 쓸 수 있어요.'
+    });
+    return;
+  }
   unlockColorPack(key);
-  toast(`"${pack.name}" 컬러 팩이 추가되었어요`);
+  toast(`"${pack.name}" 컬러 팩을 사용해요`);
   renderStoreColors();
 }
 async function onLockColorClick(key){
@@ -13855,7 +13871,7 @@ function renderStoreText(){
     const s1=en?'Lunch':'약속', s2=en?'Meeting':'회의';
     const btn=applied
       ? `<button class="tt-apply using" onclick="event.stopPropagation();applyTextTheme('default')">사용 중</button>`
-      : `<button class="tt-apply" onclick="event.stopPropagation();applyTextTheme('${item.key}')">적용</button>`;
+      : `<button class="tt-apply" onclick="event.stopPropagation();applyTextTheme('${item.key}')">사용하기</button>`;
     return `<div class="tt-card${applied?' on':''}" onclick="applyTextTheme('${applied?'default':item.key}')">
       <div class="tt-preview" style="font-family:${fam}">
         <div class="tt-date">15</div>
@@ -13897,7 +13913,9 @@ function renderStoreEmoji(){
     const cells=item.preview.map(k=>`<span class="emoji-cell">${svgEmoji(k)}</span>`).join('');
     const btn=unlocked
       ? `<button class="pack-btn pack-btn-using" onclick="event.stopPropagation();onLockCharClick('${escapeHtml(item.key)}')">사용 중</button>`
-      : `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();onUnlockCharClick('${escapeHtml(item.key)}')">체험하기</button>`;
+      : (isEffectivePremium()
+          ? `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();onUnlockCharClick('${escapeHtml(item.key)}')">사용하기</button>`
+          : `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();onUnlockCharClick('${escapeHtml(item.key)}')">🔒 프리미엄</button>`);
     html+=`
       <div class="theme-card${unlocked?' unlocked':''}" onclick="openCharDetail('${escapeHtml(item.key)}')">
         <div class="theme-preview emoji-pack-preview">
@@ -13916,8 +13934,15 @@ function renderStoreEmoji(){
 function onUnlockCharClick(key){
   const pack=STORE_EMOJI.find(p=>p.key===key);
   if(!pack)return;
+  if(!isEffectivePremium()){
+    showUpgradeModal({
+      message:'캐릭터 팩은 프리미엄 전용이에요.',
+      feature:'⭐ 프리미엄 구독하면 모든 캐릭터 팩에서 원하는 것만 골라 쓸 수 있어요.'
+    });
+    return;
+  }
   unlockCharPack(key);
-  toast(`"${pack.name}" 캐릭터 팩이 추가되었어요`);
+  toast(`"${pack.name}" 캐릭터 팩을 사용해요`);
   renderStoreEmoji();
 }
 async function onLockCharClick(key){
@@ -13975,7 +14000,9 @@ function openCharDetail(charKey){
     const unlocked=hasCharPack(charKey);
     btnEl.innerHTML=unlocked
       ? `<button class="pack-btn pack-btn-using pack-btn-lg" onclick="onLockCharFromDetail('${escapeHtml(charKey)}')">사용 중</button>`
-      : `<button class="pack-btn pack-btn-try pack-btn-lg" onclick="onUnlockCharFromDetail('${escapeHtml(charKey)}')">체험하기</button>`;
+      : (isEffectivePremium()
+          ? `<button class="pack-btn pack-btn-try pack-btn-lg" onclick="onUnlockCharFromDetail('${escapeHtml(charKey)}')">사용하기</button>`
+          : `<button class="pack-btn pack-btn-try pack-btn-lg" onclick="onUnlockCharFromDetail('${escapeHtml(charKey)}')">🔒 프리미엄</button>`);
   }
   document.getElementById('charDetailOverlay').classList.add('on');
   document.getElementById('charDetailCard').classList.add('on');
@@ -13987,8 +14014,15 @@ function closeCharDetail(){
 function onUnlockCharFromDetail(key){
   const pack=STORE_EMOJI.find(p=>p.key===key);
   if(!pack)return;
+  if(!isEffectivePremium()){
+    showUpgradeModal({
+      message:'캐릭터 팩은 프리미엄 전용이에요.',
+      feature:'⭐ 프리미엄 구독하면 모든 캐릭터 팩에서 원하는 것만 골라 쓸 수 있어요.'
+    });
+    return;
+  }
   unlockCharPack(key);
-  toast(`"${pack.name}" 캐릭터 팩이 추가되었어요`);
+  toast(`"${pack.name}" 캐릭터 팩을 사용해요`);
   closeCharDetail();
   if(_storeCurrentTab==='emoji')renderStoreEmoji();
 }
