@@ -2259,6 +2259,12 @@ body.align-right .cal-evbar{text-align:right}
 .uni-row-grow{flex:1;min-width:0}
 .uni-nav{display:flex;align-items:center;justify-content:space-between;width:100%;background:var(--card);border:1px solid var(--borderL);border-radius:12px;padding:14px 14px;margin-bottom:9px;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;font-family:inherit}
 .uni-nav .chev{color:var(--mute);font-size:18px}
+.plan-toggle{transition:background .15s ease,border-color .15s ease,color .15s ease}
+.plan-toggle.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.plan-toggle.off{background:var(--bg);border-color:var(--mute);color:var(--sub)}
+.plan-switch{font-size:12px;font-weight:800;letter-spacing:.6px;padding:3px 11px;border-radius:999px}
+.plan-toggle.on .plan-switch{background:rgba(255,255,255,.28);color:#fff}
+.plan-toggle.off .plan-switch{background:var(--mute);color:#fff}
 .uni-mini-btn{background:var(--aP);border:none;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:600;color:var(--accent);cursor:pointer;font-family:inherit;flex-shrink:0}
 .uni-member-list{margin-top:2px}
 .uni-bottom{padding:8px 2px max(14px,env(safe-area-inset-bottom))}
@@ -2832,7 +2838,7 @@ body.align-right .cal-evbar{text-align:right}
       <div class="uni-divider"></div>
       <div class="uni-sec-label">🔧 관리자 전용</div>
       <button class="uni-nav" onclick="openAdminFullPage()"><span>🛠 관리자 페이지 열기</span><span class="chev">›</span></button>
-      <button class="uni-nav" id="planToggleBtn" onclick="toggleAdminPlan()"><span id="planToggleBtnLabel">🧪 플랜 체험: 유료</span><span class="chev">›</span></button>
+      <button class="uni-nav plan-toggle on" id="planToggleBtn" onclick="toggleAdminPlan()"><span id="planToggleBtnLabel">🔓 유료 플랜 (체험)</span><span class="plan-switch" id="planSwitch">ON</span></button>
       <button class="uni-nav" id="deployBtn" onclick="openDeploySheet()"><span id="deployBtnLabel">🚀 배포하기</span><span class="chev">›</span></button>
     </div>
 
@@ -4873,8 +4879,12 @@ function showUpgradeModal(opts){
 /* 관리자 전용 — 플랜 체험 토글(유료 ↔ 무료). 화면 표시용이라 DB·실제 구독은 안 건드림 */
 function toggleAdminPlan(){
   _adminPlanOverride=!_adminPlanOverride;
+  const btn=document.getElementById('planToggleBtn');
   const lab=document.getElementById('planToggleBtnLabel');
-  if(lab) lab.textContent = _adminPlanOverride ? '🧪 플랜 체험: 유료' : '🧪 플랜 체험: 무료';
+  const sw=document.getElementById('planSwitch');
+  if(btn){ btn.classList.toggle('on',_adminPlanOverride); btn.classList.toggle('off',!_adminPlanOverride); }
+  if(lab) lab.textContent = _adminPlanOverride ? '🔓 유료 플랜 (체험)' : '🔒 무료 플랜 (체험)';
+  if(sw) sw.textContent = _adminPlanOverride ? 'ON' : 'OFF';
   try{ if(typeof renderColorPager==='function') renderColorPager(); }catch(_){}
   try{ if(typeof window.renderTodoColorPager==='function') window.renderTodoColorPager(); }catch(_){}
   toast(_adminPlanOverride ? '유료 플랜으로 체험 중이에요' : '무료 플랜으로 체험 중이에요 (편집 시 안내 모달)');
