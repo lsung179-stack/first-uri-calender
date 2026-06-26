@@ -424,7 +424,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .upg-feature{margin:14px 0 4px;padding:12px 14px;background:var(--bg);border:1px solid var(--mute);border-radius:12px;font-size:13px;color:var(--text);line-height:1.6}
 .upg-note{margin-top:12px;font-size:12px;color:var(--gold);font-weight:600;letter-spacing:.3px}
 /* 프리미엄 구독 안내 시트 */
-.uni-nav-prem{background:linear-gradient(135deg,#fbf2e0,#f3e4c4);border-color:var(--gold)}
+.uni-nav-prem{background:linear-gradient(135deg,#fbf2e0,#f3e4c4);border-color:var(--gold);color:var(--accent);font-weight:700}
 .prem-hero{text-align:center;padding:6px 0 4px}
 .prem-crown{font-size:34px;line-height:1}
 .prem-title{font-family:var(--ff-serif);font-size:20px;font-weight:800;color:var(--text);margin-top:6px}
@@ -440,6 +440,38 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .pmf-desc b{color:var(--accent);font-weight:700}
 .pmf-free{display:inline-block;margin-left:4px;padding:1px 7px;border-radius:6px;background:rgba(0,0,0,.05);color:var(--mute);font-size:11px;font-weight:600}
 .prem-note{text-align:center;font-size:12px;color:var(--gold);font-weight:600;margin:14px 0 4px}
+/* 프리미엄 풀스크린 화면 */
+.prem-pricebar{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;background:linear-gradient(135deg,var(--accent),#a8472f);color:#fff;flex-shrink:0}
+.prem-pricebar-label{font-size:13px;font-weight:600;opacity:.92}
+.prem-pricebar-amount{font-family:var(--ff-serif);font-size:23px;font-weight:800;letter-spacing:.3px}
+.prem-headline{padding:18px 18px 6px}
+.prem-headline .prem-status{margin-bottom:12px}
+.ph-sub{font-size:13px;color:var(--sub);font-weight:600;margin-bottom:6px}
+.ph-main{font-size:21px;font-weight:800;color:var(--text);line-height:1.42;font-family:var(--ff-serif)}
+.ph-main b{color:var(--accent)}
+.prem-planbox{margin:10px 18px;background:var(--card);border:1.5px solid var(--gold);border-radius:16px;padding:16px}
+.pb-head{margin-bottom:13px}
+.pb-title{font-size:17px;font-weight:800;color:var(--text);font-family:var(--ff-serif)}
+.pb-sub{font-size:12px;color:var(--sub);margin-top:3px}
+.prem-plan{display:flex;align-items:center;gap:12px;width:100%;background:var(--bg);border:1px solid var(--borderL);border-radius:12px;padding:14px;margin-bottom:8px;cursor:pointer;font-family:inherit;text-align:left}
+.prem-plan:last-child{margin-bottom:0}
+.prem-plan.selected{background:#fbeee6;border-color:var(--accent);border-width:1.5px}
+.pp-radio{width:22px;height:22px;border-radius:50%;border:2px solid var(--mute);flex-shrink:0;position:relative}
+.prem-plan.selected .pp-radio{border-color:var(--accent)}
+.prem-plan.selected .pp-radio::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--accent)}
+.pp-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.pp-name{font-size:15px;font-weight:700;color:var(--text)}
+.pp-desc{font-size:12px;color:var(--sub)}
+.pp-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.pp-tags{display:flex;gap:5px}
+.pp-best{background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pp-trial{border:1px solid var(--accent);color:var(--accent);font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pp-price{font-size:16px;font-weight:800;color:var(--text);font-family:var(--ff-serif);white-space:nowrap}
+.prem-featbox{margin:16px 18px 10px;background:var(--card);border:1px solid var(--borderL);border-radius:16px;padding:16px}
+.prem-ctabar{flex-shrink:0;padding:10px 18px max(14px,env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--borderL)}
+.prem-ctanote{text-align:center;font-size:12px;color:var(--gold);font-weight:600;margin-bottom:8px}
+.prem-ctabtn{width:100%;padding:15px;background:linear-gradient(135deg,var(--accent),#b8512f);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:800;font-family:var(--ff-serif);cursor:pointer;letter-spacing:.5px}
+.prem-ctabtn:active{opacity:.9}
 .vc-card .mo-sub{margin-bottom:6px;white-space:pre-line}
 
 /* 6자리 코드 박스 */
@@ -3189,29 +3221,62 @@ body.align-right .cal-evbar{text-align:right}
 </div>
 
 <!-- 프리미엄 구독 안내 시트 -->
-<div class="mo-overlay" id="premiumOverlay" onclick="closePremiumSheet()"></div>
-<div class="mo-card mo-card-tall" id="premiumCard">
-  <div class="mo-handle"></div>
-  <div class="prem-hero">
-    <div class="prem-crown">⭐</div>
-    <div class="prem-title">우리 캘린더 프리미엄</div>
-    <div class="prem-status" id="premStatus">—</div>
+<!-- 프리미엄 구독 (풀스크린, 고급설정 패턴) -->
+<div class="ann-card prem-screen" id="premiumCard">
+  <div class="ann-head">
+    <button class="ann-back" onclick="closePremiumSheet()" aria-label="뒤로">‹</button>
+    <div class="ann-title">프리미엄 구독</div>
+    <button class="ann-head-btn" onclick="closePremiumSheet()" aria-label="닫기">✕</button>
   </div>
-  <div class="prem-tagline">구독하면 이런 기능이 열려요</div>
-  <div class="prem-feature-list">
-    <div class="prem-feature"><span class="pmf-ic">📷</span><div class="pmf-body"><div class="pmf-name">일정 사진</div><div class="pmf-desc">한 일정에 <b>최대 5장</b> <span class="pmf-free">무료 1장</span></div></div></div>
-    <div class="prem-feature"><span class="pmf-ic">✅</span><div class="pmf-body"><div class="pmf-name">진행 중 할일</div><div class="pmf-desc"><b>무제한</b>으로 추가 <span class="pmf-free">무료 5개</span></div></div></div>
-    <div class="prem-feature"><span class="pmf-ic">🗂️</span><div class="pmf-body"><div class="pmf-name">완료 할일 보관</div><div class="pmf-desc"><b>30일</b> 보관 <span class="pmf-free">무료 7일</span></div></div></div>
-    <div class="prem-feature"><span class="pmf-ic">🏷️</span><div class="pmf-body"><div class="pmf-name">색상 라벨 이름</div><div class="pmf-desc">색마다 <b>이름 붙이기</b></div></div></div>
-    <div class="prem-feature"><span class="pmf-ic">🔲</span><div class="pmf-body"><div class="pmf-name">테두리 일정</div><div class="pmf-desc">색 채움 없이 <b>외곽선 스타일</b></div></div></div>
-    <div class="prem-feature"><span class="pmf-ic">🎨</span><div class="pmf-body"><div class="pmf-name">스토어 팩</div><div class="pmf-desc"><b>모든 컬러·캐릭터 팩</b> 사용</div></div></div>
+  <div class="prem-pricebar">
+    <span class="prem-pricebar-label" id="premPriceLabel">3개월 구독</span>
+    <span class="prem-pricebar-amount" id="premPriceAmount">₩10,900</span>
   </div>
-  <div class="prem-note">결제 기능은 준비 중이에요. 곧 만나요!</div>
-  <div class="mo-actions" style="margin-top:4px">
-    <button class="mo-cancel" onclick="closePremiumSheet()">닫기</button>
-    <button class="btn btn-primary" id="premSubBtn" onclick="onPremiumSubscribe()" style="flex:1">구독하기</button>
+  <div class="ann-body">
+    <div class="prem-headline">
+      <span class="prem-status" id="premStatus">—</span>
+      <div class="ph-sub">결제는 한 번, 혜택은 가득</div>
+      <div class="ph-main">지금 <b>프리미엄 구독</b>하고<br>모든 기능을 누려보세요</div>
+    </div>
+    <div class="prem-planbox">
+      <div class="pb-head">
+        <div class="pb-title">프리미엄 플랜</div>
+        <div class="pb-sub">구독하면 기간 종료 후 자동으로 연장돼요</div>
+      </div>
+      <button class="prem-plan" data-plan="1m" onclick="selectPlan('1m')">
+        <span class="pp-radio"></span>
+        <span class="pp-body"><span class="pp-name">1개월 구독</span><span class="pp-desc">매월 결제</span></span>
+        <span class="pp-right"><span class="pp-price">₩3,900</span></span>
+      </button>
+      <button class="prem-plan selected" data-plan="3m" onclick="selectPlan('3m')">
+        <span class="pp-radio"></span>
+        <span class="pp-body"><span class="pp-name">3개월 구독</span><span class="pp-desc">월 3,633원 꼴</span></span>
+        <span class="pp-right"><span class="pp-tags"><span class="pp-best">Best</span><span class="pp-trial">7일 무료체험</span></span><span class="pp-price">₩10,900</span></span>
+      </button>
+      <button class="prem-plan" data-plan="12m" onclick="selectPlan('12m')">
+        <span class="pp-radio"></span>
+        <span class="pp-body"><span class="pp-name">12개월 구독</span><span class="pp-desc">월 3,325원 꼴</span></span>
+        <span class="pp-right"><span class="pp-tags"><span class="pp-trial">7일 무료체험</span></span><span class="pp-price">₩39,900</span></span>
+      </button>
+    </div>
+    <div class="prem-featbox">
+      <div class="pb-title" style="margin-bottom:12px">프리미엄 기능</div>
+      <div class="prem-feature-list">
+        <div class="prem-feature"><span class="pmf-ic">📷</span><div class="pmf-body"><div class="pmf-name">일정 사진</div><div class="pmf-desc">한 일정에 <b>최대 5장</b> <span class="pmf-free">무료 1장</span></div></div></div>
+        <div class="prem-feature"><span class="pmf-ic">✅</span><div class="pmf-body"><div class="pmf-name">진행 중 할일</div><div class="pmf-desc"><b>무제한</b>으로 추가 <span class="pmf-free">무료 5개</span></div></div></div>
+        <div class="prem-feature"><span class="pmf-ic">🗂️</span><div class="pmf-body"><div class="pmf-name">완료 할일 보관</div><div class="pmf-desc"><b>30일</b> 보관 <span class="pmf-free">무료 7일</span></div></div></div>
+        <div class="prem-feature"><span class="pmf-ic">🏷️</span><div class="pmf-body"><div class="pmf-name">색상 라벨 이름</div><div class="pmf-desc">색마다 <b>이름 붙이기</b></div></div></div>
+        <div class="prem-feature"><span class="pmf-ic">🔲</span><div class="pmf-body"><div class="pmf-name">테두리 일정</div><div class="pmf-desc">색 채움 없이 <b>외곽선 스타일</b></div></div></div>
+        <div class="prem-feature"><span class="pmf-ic">🎨</span><div class="pmf-body"><div class="pmf-name">스토어 팩</div><div class="pmf-desc"><b>모든 컬러·캐릭터 팩</b> 사용</div></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="prem-ctabar">
+    <div class="prem-ctanote">결제 기능은 준비 중이에요. 곧 만나요!</div>
+    <button class="prem-ctabtn" id="premSubBtn" onclick="onPremiumSubscribe()">프리미엄 구독하기</button>
   </div>
 </div>
+
 
 <!-- 배포하기 시트 (관리자 전용) -->
 <div class="mo-overlay" id="deployOverlay" onclick="closeDeploySheet()"></div>
@@ -13275,7 +13340,22 @@ function closeDeploySheet(){
   document.getElementById('deployCard').classList.remove('on');
 }
 
-/* 프리미엄 구독 안내 시트 */
+/* 프리미엄 구독 (풀스크린) — 가격은 임시값, 결제 연동 시 실제 상품가로 교체 */
+const PREM_PLANS={
+  '1m':{label:'1개월 구독',price:'₩3,900'},
+  '3m':{label:'3개월 구독',price:'₩10,900'},
+  '12m':{label:'12개월 구독',price:'₩39,900'}
+};
+let _premSelectedPlan='3m';
+function selectPlan(p){
+  if(!PREM_PLANS[p])return;
+  _premSelectedPlan=p;
+  const plans=document.querySelectorAll('#premiumCard .prem-plan');
+  plans.forEach(function(el){ el.classList.toggle('selected', el.getAttribute('data-plan')===p); });
+  const pl=PREM_PLANS[p];
+  const lab=document.getElementById('premPriceLabel'); if(lab)lab.textContent=pl.label;
+  const amt=document.getElementById('premPriceAmount'); if(amt)amt.textContent=pl.price;
+}
 function openPremiumSheet(){
   closeMainModals();
   const prem=isEffectivePremium();
@@ -13295,15 +13375,15 @@ function openPremiumSheet(){
       st.classList.remove('on');
     }
   }
-  if(btn) btn.style.display=prem?'none':'';
-  document.getElementById('premiumOverlay').classList.add('on');
+  if(btn) btn.textContent = prem ? '이미 이용 중이에요' : '프리미엄 구독하기';
+  selectPlan(_premSelectedPlan);
   document.getElementById('premiumCard').classList.add('on');
 }
 function closePremiumSheet(){
-  document.getElementById('premiumOverlay').classList.remove('on');
   document.getElementById('premiumCard').classList.remove('on');
 }
 function onPremiumSubscribe(){
+  if(isEffectivePremium()){ toast('이미 프리미엄을 이용 중이에요'); return; }
   showUpgradeModal({
     message:'프리미엄 결제는 준비 중이에요.',
     feature:'곧 구독 기능이 열릴 예정이에요. 조금만 기다려주세요!'
