@@ -423,6 +423,23 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .upg-badge{display:inline-block;margin:0 auto 12px;padding:4px 16px;border-radius:999px;background:linear-gradient(135deg,var(--gold),#caa15c);color:#fff;font-family:var(--ff-serif);font-size:12px;font-weight:700;letter-spacing:3px}
 .upg-feature{margin:14px 0 4px;padding:12px 14px;background:var(--bg);border:1px solid var(--mute);border-radius:12px;font-size:13px;color:var(--text);line-height:1.6}
 .upg-note{margin-top:12px;font-size:12px;color:var(--gold);font-weight:600;letter-spacing:.3px}
+/* 프리미엄 구독 안내 시트 */
+.uni-nav-prem{background:linear-gradient(135deg,#fbf2e0,#f3e4c4);border-color:var(--gold)}
+.prem-hero{text-align:center;padding:6px 0 4px}
+.prem-crown{font-size:34px;line-height:1}
+.prem-title{font-family:var(--ff-serif);font-size:20px;font-weight:800;color:var(--text);margin-top:6px}
+.prem-status{display:inline-block;margin-top:8px;padding:4px 14px;border-radius:999px;background:var(--bg);border:1px solid var(--borderL);font-size:12px;font-weight:700;color:var(--sub)}
+.prem-status.on{background:linear-gradient(135deg,var(--gold),#caa15c);border-color:transparent;color:#fff}
+.prem-tagline{text-align:center;font-size:13px;color:var(--sub);font-weight:600;margin:16px 0 12px}
+.prem-feature-list{display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow-y:auto;padding:2px}
+.prem-feature{display:flex;align-items:center;gap:12px;background:var(--bg);border:1px solid var(--borderL);border-radius:12px;padding:12px 14px;text-align:left}
+.pmf-ic{font-size:22px;flex-shrink:0;width:30px;text-align:center}
+.pmf-body{flex:1;min-width:0;text-align:left}
+.pmf-name{font-size:14px;font-weight:700;color:var(--text)}
+.pmf-desc{font-size:12px;color:var(--sub);margin-top:2px;line-height:1.5}
+.pmf-desc b{color:var(--accent);font-weight:700}
+.pmf-free{display:inline-block;margin-left:4px;padding:1px 7px;border-radius:6px;background:rgba(0,0,0,.05);color:var(--mute);font-size:11px;font-weight:600}
+.prem-note{text-align:center;font-size:12px;color:var(--gold);font-weight:600;margin:14px 0 4px}
 .vc-card .mo-sub{margin-bottom:6px;white-space:pre-line}
 
 /* 6자리 코드 박스 */
@@ -2820,7 +2837,10 @@ body.align-right .cal-evbar{text-align:right}
 
     <div class="uni-divider"></div>
 
-    <div class="uni-sec-label">꾸미기</div>
+    <div class="uni-sec-label">프리미엄</div>
+    <button class="uni-nav uni-nav-prem" onclick="openPremiumSheet()"><span>⭐ 프리미엄 구독</span><span class="chev">›</span></button>
+
+    <div class="uni-sec-label" style="margin-top:14px">꾸미기</div>
     <button class="uni-nav" onclick="openStore()"><span>🛍️ 스토어</span><span class="chev">›</span></button>
     <button class="uni-nav" onclick="openMyOrders('settings')"><span>📦 내 주문 내역 · 배송 조회</span><span class="chev">›</span></button>
 
@@ -3165,6 +3185,31 @@ body.align-right .cal-evbar{text-align:right}
   <div id="myOrdersBody" style="padding:4px 0 4px"></div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeMyOrders()">닫기</button>
+  </div>
+</div>
+
+<!-- 프리미엄 구독 안내 시트 -->
+<div class="mo-overlay" id="premiumOverlay" onclick="closePremiumSheet()"></div>
+<div class="mo-card mo-card-tall" id="premiumCard">
+  <div class="mo-handle"></div>
+  <div class="prem-hero">
+    <div class="prem-crown">⭐</div>
+    <div class="prem-title">우리 캘린더 프리미엄</div>
+    <div class="prem-status" id="premStatus">—</div>
+  </div>
+  <div class="prem-tagline">구독하면 이런 기능이 열려요</div>
+  <div class="prem-feature-list">
+    <div class="prem-feature"><span class="pmf-ic">📷</span><div class="pmf-body"><div class="pmf-name">일정 사진</div><div class="pmf-desc">한 일정에 <b>최대 5장</b> <span class="pmf-free">무료 1장</span></div></div></div>
+    <div class="prem-feature"><span class="pmf-ic">✅</span><div class="pmf-body"><div class="pmf-name">진행 중 할일</div><div class="pmf-desc"><b>무제한</b>으로 추가 <span class="pmf-free">무료 5개</span></div></div></div>
+    <div class="prem-feature"><span class="pmf-ic">🗂️</span><div class="pmf-body"><div class="pmf-name">완료 할일 보관</div><div class="pmf-desc"><b>30일</b> 보관 <span class="pmf-free">무료 7일</span></div></div></div>
+    <div class="prem-feature"><span class="pmf-ic">🏷️</span><div class="pmf-body"><div class="pmf-name">색상 라벨 이름</div><div class="pmf-desc">색마다 <b>이름 붙이기</b></div></div></div>
+    <div class="prem-feature"><span class="pmf-ic">🔲</span><div class="pmf-body"><div class="pmf-name">테두리 일정</div><div class="pmf-desc">색 채움 없이 <b>외곽선 스타일</b></div></div></div>
+    <div class="prem-feature"><span class="pmf-ic">🎨</span><div class="pmf-body"><div class="pmf-name">스토어 팩</div><div class="pmf-desc"><b>모든 컬러·캐릭터 팩</b> 사용</div></div></div>
+  </div>
+  <div class="prem-note">결제 기능은 준비 중이에요. 곧 만나요!</div>
+  <div class="mo-actions" style="margin-top:4px">
+    <button class="mo-cancel" onclick="closePremiumSheet()">닫기</button>
+    <button class="btn btn-primary" id="premSubBtn" onclick="onPremiumSubscribe()" style="flex:1">구독하기</button>
   </div>
 </div>
 
@@ -13228,6 +13273,41 @@ async function openDeploySheet(){
 function closeDeploySheet(){
   document.getElementById('deployOverlay').classList.remove('on');
   document.getElementById('deployCard').classList.remove('on');
+}
+
+/* 프리미엄 구독 안내 시트 */
+function openPremiumSheet(){
+  closeMainModals();
+  const prem=isEffectivePremium();
+  const st=document.getElementById('premStatus');
+  const btn=document.getElementById('premSubBtn');
+  if(st){
+    if(prem){
+      let until='';
+      if(_premiumInfo&&_premiumInfo.expires_at){
+        const d=new Date(_premiumInfo.expires_at);
+        if(!isNaN(d.getTime())) until=' · '+d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0')+'까지';
+      }
+      st.textContent='프리미엄 이용 중'+until;
+      st.classList.add('on');
+    }else{
+      st.textContent='무료 플랜 이용 중';
+      st.classList.remove('on');
+    }
+  }
+  if(btn) btn.style.display=prem?'none':'';
+  document.getElementById('premiumOverlay').classList.add('on');
+  document.getElementById('premiumCard').classList.add('on');
+}
+function closePremiumSheet(){
+  document.getElementById('premiumOverlay').classList.remove('on');
+  document.getElementById('premiumCard').classList.remove('on');
+}
+function onPremiumSubscribe(){
+  showUpgradeModal({
+    message:'프리미엄 결제는 준비 중이에요.',
+    feature:'곧 구독 기능이 열릴 예정이에요. 조금만 기다려주세요!'
+  });
 }
 
 /* 배포 이력 로드/렌더 — 최근 50건, 날짜·시간 목록 (관리자 전용) */
