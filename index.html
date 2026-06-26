@@ -418,6 +418,11 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .vc-overlay.on{opacity:1;pointer-events:auto}
 .vc-card{background:var(--card);border-radius:22px;max-width:330px;width:100%;padding:28px 24px 14px;box-shadow:0 16px 48px rgba(30,28,24,.3);transform:scale(.94) translateY(8px);opacity:0;transition:transform .22s cubic-bezier(.32,.72,0,1),opacity .2s ease}
 .vc-overlay.on .vc-card{transform:scale(1) translateY(0);opacity:1}
+.upg-card{text-align:center}
+.upg-card .mo-sub{margin-bottom:4px}
+.upg-badge{display:inline-block;margin:0 auto 12px;padding:4px 16px;border-radius:999px;background:linear-gradient(135deg,var(--gold),#caa15c);color:#fff;font-family:var(--ff-serif);font-size:12px;font-weight:700;letter-spacing:3px}
+.upg-feature{margin:14px 0 4px;padding:12px 14px;background:var(--bg);border:1px solid var(--mute);border-radius:12px;font-size:13px;color:var(--text);line-height:1.6}
+.upg-note{margin-top:12px;font-size:12px;color:var(--gold);font-weight:600;letter-spacing:.3px}
 .vc-card .mo-sub{margin-bottom:6px;white-space:pre-line}
 
 /* 6자리 코드 박스 */
@@ -2495,6 +2500,20 @@ body.align-right .cal-evbar{text-align:right}
     <div class="mo-actions">
       <button class="btn btn-primary" id="vcOk">확인</button>
       <button class="mo-cancel" id="vcCancel">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- 프리미엄 업그레이드 안내 모달 -->
+<div class="vc-overlay" id="upgOverlay">
+  <div class="vc-card upg-card">
+    <div class="upg-badge">PREMIUM</div>
+    <div class="mo-title" id="upgTitle">프리미엄 안내</div>
+    <div class="mo-sub" id="upgMsg"></div>
+    <div class="upg-feature" id="upgFeature"></div>
+    <div class="upg-note">프리미엄 결제는 준비 중입니다</div>
+    <div class="mo-actions">
+      <button class="btn btn-primary" id="upgOk">확인</button>
     </div>
   </div>
 </div>
@@ -4834,6 +4853,22 @@ function vConfirm(message,opts){
   });
 }
 
+/* 프리미엄 업그레이드 안내 모달 (제한 도달 시) — 결제 준비 전이라 '준비 중' 수준 */
+function showUpgradeModal(opts){
+  opts=opts||{};
+  const ov=document.getElementById('upgOverlay');
+  if(!ov){ toast(opts.message||'프리미엄 전용 기능이에요'); return; }
+  document.getElementById('upgTitle').textContent=opts.title||'프리미엄 안내';
+  document.getElementById('upgMsg').textContent=opts.message||'';
+  document.getElementById('upgFeature').textContent=opts.feature||'프리미엄으로 업그레이드하면 무제한으로 이용할 수 있어요.';
+  const okBtn=document.getElementById('upgOk');
+  document.body.appendChild(ov); // 시트 위로 올림
+  ov.classList.add('on');
+  const finish=()=>{ ov.classList.remove('on'); okBtn.onclick=null; ov.onclick=null; };
+  okBtn.onclick=finish;
+  ov.onclick=(e)=>{ if(e.target===ov) finish(); };
+}
+
 /* 반복 일정 삭제 선택 — 'one'(이 날짜만) | 'all'(모두) | null(취소) */
 function askRecurringDelete(msg){
   return new Promise(resolve=>{
@@ -5175,6 +5210,28 @@ async function ensureKakaoProfile(){
       if(_currentRoom&&typeof loadRoomMembers==='function'){ try{ await loadRoomMembers(); if(typeof renderMemberTabs==='function') renderMemberTabs(); }catch(_){} }
     }
   }catch(_){}
+}
+
+/* ── 프리미엄 상태 ── 로그인 시 1회 로드, 모든 제한 체크는 _isPremium 하나로 판단 */
+let _isPremium=false;        // 현재 유저 프리미엄 여부
+let _premiumInfo=null;       // {is_premium, expires_at, plan_type, is_manual}
+let _premiumLoaded=false;    // 세션당 로드 가드
+const FREE_LIMITS={ rooms:2, invitePerRoom:4, photosPerEvent:3, activeTodos:5, doneTodoDays:7 };
+
+async function loadPremiumStatus(){
+  try{
+    if(!_currentUser){ _isPremium=false; _premiumInfo=null; _premiumLoaded=false; return; }
+    const {data,error}=await supa.rpc('my_premium_status');
+    if(error){ console.warn('프리미엄 상태 로드 실패:',error.message||error); return; }
+    _premiumInfo=data||null;
+    _isPremium=!!(data&&data.is_premium);
+    _premiumLoaded=true;
+  }catch(e){ console.warn('프리미엄 상태 오류:',e); }
+}
+/* 제한 체크 직전 호출 — 아직 로드 안 됐으면 1회 로드 (진입 경로 누락 대비) */
+async function ensurePremiumLoaded(){
+  if(_premiumLoaded) return;
+  await loadPremiumStatus();
 }
 
 /* 사용자 정보 표시 (헤더 아바타) */
@@ -5653,6 +5710,19 @@ async function createRoom(){
   if(!name){toast('방 이름을 입력해주세요');return}
   if(name.length>20){toast('방 이름은 20자 이내로');return}
 
+  // 프리미엄 차별화 — 무료 플랜은 생성(소유) 방 2개까지 (관리자 통과)
+  await ensurePremiumLoaded();
+  if(!_isPremium && !isAdmin()){
+    const ownedCount=(_myRooms||[]).filter(r=>r.owner_id===_currentUser.id).length;
+    if(ownedCount>=FREE_LIMITS.rooms){
+      showUpgradeModal({
+        message:'무료 플랜은 방을 2개까지 만들 수 있어요.',
+        feature:'프리미엄으로 업그레이드하면 방을 무제한으로 만들 수 있어요.'
+      });
+      return;
+    }
+  }
+
   const btn=document.getElementById('createBtn');
   btn.disabled=true;btn.textContent='만드는 중...';
 
@@ -5906,6 +5976,7 @@ async function init(){
       renderUser(session.user);
       showScreen('roomsScreen');
       loadRooms();
+      loadPremiumStatus();   // 프리미엄 상태 1회 로드
       ensureKakaoProfile();  // 재실행 시에도 카카오 이름·사진 보강 (아바타 "?" 방지)
       // 배포 버전 체크 — 관리자는 스킵, 일반 이용자는 새 버전 있으면 자동 새로고침
       setTimeout(checkDeployVersionOnStart, 1500);
@@ -5996,9 +6067,11 @@ supa.auth.onAuthStateChange((event,session)=>{
       showScreen('roomsScreen');
     }
     loadRooms();
+    loadPremiumStatus();   // 프리미엄 상태 1회 로드
     document.getElementById('loading').classList.add('hide');
   }else if(event==='SIGNED_OUT'){
     _currentUser=null;
+    _isPremium=false;_premiumInfo=null;_premiumLoaded=false;  // 프리미엄 상태 리셋
     showScreen('welcomeScreen');
   }
 });
