@@ -147,6 +147,11 @@ tbody tr:hover{background:rgba(139,58,42,.025)}
 .sg-preset{padding:9px 16px;border-radius:9px;border:1px solid var(--line);background:#fff;font-size:13.5px;font-weight:700;color:var(--sub);cursor:pointer}
 .sg-preset.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .sg-summary{margin-top:16px;padding:12px 14px;background:rgba(139,58,42,.08);border-radius:10px;font-size:13.5px;font-weight:700;color:var(--accent);text-align:center}
+/* 페이지네이션 */
+.pager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:14px;padding:4px 0}
+.pg-btn{padding:8px 16px;border-radius:9px;border:1px solid var(--line);background:var(--card);font-size:13px;font-weight:700;color:var(--accent)}
+.pg-btn:disabled{opacity:.4;color:var(--mute);cursor:default}
+.pg-info{font-size:13px;font-weight:700;color:var(--ink)}
 
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:30px;font-size:14px;font-weight:600;opacity:0;transition:.25s;z-index:100;box-shadow:0 6px 20px rgba(0,0,0,.2)}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
@@ -632,45 +637,61 @@ let _subDays=7;             // 부여 일수
 let _subExtend=true;        // true=연장, false=새로 시작
 let _subSearch='';          // 구독자 검색어
 let _subFilter='all';       // 전체 구독자 필터: all|yearly|monthly|manual
+const SUB_PAGE_SIZE=20;     // 전체 구독자 페이지 크기
+const SUB_SIDE_SIZE=10;     // 수동/만료 페이지 크기
+let _subPage=0;             // 전체 구독자 현재 페이지
+let _manualPage=0;          // 수동 멤버 현재 페이지
+let _expiredPage=0;         // 만료자 현재 페이지
+let _subStatsCache=null;    // 상단 카드 통계 캐시
+let _subReasonsCache=[];    // 사유 통계 캐시
 
 async function renderSubs(m){
-  let stats, rows, expired, reasons;
+  // 첫 진입 시 페이지 초기화
+  _subPage=0;_manualPage=0;_expiredPage=0;
+  m.innerHTML='<div class="loading">불러오는 중…</div>';
+  // 통계·사유는 한 번만 로드, 나머지는 페이지별 로드
   try{
-    const [st,ls,ex,rs]=await Promise.all([
+    const [st,rs]=await Promise.all([
       supa.rpc('admin_subscription_stats'),
-      supa.rpc('admin_subscription_list'),
-      supa.rpc('admin_expired_list',{p_days:30}),
       supa.rpc('admin_reason_stats')
     ]);
     if(st.error)throw st.error;
-    if(ls.error)throw ls.error;
-    stats=st.data; rows=(ls.data&&ls.data.rows)||[];
-    expired=(ex.data&&ex.data.rows)||[];
-    reasons=(rs.data&&rs.data.rows)||[];
+    _subStatsCache=st.data;
+    _subReasonsCache=(rs.data&&rs.data.rows)||[];
   }catch(e){ m.innerHTML=errBox(e); return; }
-  _cache.subs=rows;
-  _cache.subsExpired=expired;
-  _cache.subsReasons=reasons;
-  drawSubs(m);
+  await drawSubs(m);
 }
 
-function drawSubs(m){
-  const stats={
-    total_active:new Set(_cache.subs.map(r=>r.user_id)).size,
-    monthly:_cache.subs.filter(r=>r.plan_type==='monthly').length,
-    yearly:_cache.subs.filter(r=>r.plan_type==='yearly').length,
-    manual:_cache.subs.filter(r=>r.is_manual).length,
-    expiring_7d:_cache.subs.filter(r=>r.days_left<=7).length,
-  };
-  const manual=_cache.subs.filter(r=>r.is_manual);
-  const q=_subSearch.toLowerCase();
-  let all=_cache.subs;
-  if(_subFilter==='yearly')all=all.filter(r=>!r.is_manual&&r.plan_type==='yearly');
-  else if(_subFilter==='monthly')all=all.filter(r=>!r.is_manual&&r.plan_type==='monthly');
-  else if(_subFilter==='manual')all=all.filter(r=>r.is_manual);
-  if(q)all=all.filter(r=>(r.name||'').toLowerCase().includes(q)||(r.email||'').toLowerCase().includes(q));
-  const expired=_cache.subsExpired||[];
-  const reasons=_cache.subsReasons||[];
+// 페이지네이션 컨트롤 HTML
+function pager(id,page,total,size){
+  const pages=Math.max(1,Math.ceil(total/size));
+  const cur=page+1;
+  if(total<=size)return '';
+  return `<div class="pager">
+    <button class="pg-btn" ${page<=0?'disabled':''} onclick="${id}(${page-1})">← 이전</button>
+    <span class="pg-info">${cur} / ${pages} <span class="t-dim">(${total}명)</span></span>
+    <button class="pg-btn" ${cur>=pages?'disabled':''} onclick="${id}(${page+1})">다음 →</button>
+  </div>`;
+}
+
+async function drawSubs(m){
+  const stats=_subStatsCache||{};
+  const reasons=_subReasonsCache||[];
+  // 세 목록을 병렬 로드
+  let manualRes, expiredRes, pageRes;
+  try{
+    [manualRes,expiredRes,pageRes]=await Promise.all([
+      supa.rpc('admin_manual_page',{p_limit:SUB_SIDE_SIZE,p_offset:_manualPage*SUB_SIDE_SIZE}),
+      supa.rpc('admin_expired_page',{p_days:30,p_limit:SUB_SIDE_SIZE,p_offset:_expiredPage*SUB_SIDE_SIZE}),
+      supa.rpc('admin_subscription_page',{p_filter:_subFilter,p_search:_subSearch,p_limit:SUB_PAGE_SIZE,p_offset:_subPage*SUB_PAGE_SIZE})
+    ]);
+  }catch(e){ m.innerHTML=errBox(e); return; }
+  const manual=(manualRes.data&&manualRes.data.rows)||[];
+  const manualTotal=(manualRes.data&&manualRes.data.total)||0;
+  const expired=(expiredRes.data&&expiredRes.data.rows)||[];
+  const expiredTotal=(expiredRes.data&&expiredRes.data.total)||0;
+  const all=(pageRes.data&&pageRes.data.rows)||[];
+  const allTotal=(pageRes.data&&pageRes.data.total)||0;
 
   const cards=[
     {l:'활성 구독자',v:stats.total_active,e:'중복 제거 인원'},
@@ -678,7 +699,7 @@ function drawSubs(m){
     {l:'연간',v:stats.yearly,e:'yearly 플랜'},
     {l:'수동 부여',v:stats.manual,e:'관리자 지급'},
     {l:'만료 임박',v:stats.expiring_7d,e:'7일 이내',alert:stats.expiring_7d>0},
-    {l:'최근 만료',v:expired.length,e:'30일 내',alert:expired.length>0},
+    {l:'최근 만료',v:expiredTotal,e:'30일 내',alert:expiredTotal>0},
   ];
 
   m.innerHTML=`
@@ -688,7 +709,7 @@ function drawSubs(m){
     <div class="stat-grid">
       ${cards.map(c=>`<div class="stat-card${c.alert?' alert':''}">
         <div class="sc-label">${c.l}</div>
-        <div class="sc-val">${c.v}</div>
+        <div class="sc-val">${c.v==null?'-':c.v}</div>
         <div class="sc-extra">${c.e}</div>
       </div>`).join('')}
     </div>
@@ -699,7 +720,6 @@ function drawSubs(m){
       <button class="btn-line" onclick="exportSubsCsv()">⬇ CSV 내보내기</button>
     </div>
 
-    <!-- 부여 사유 통계 -->
     ${reasons.length?`
     <div class="page-sub" style="margin-top:14px;font-weight:700">📊 부여 사유 통계</div>
     <div class="chips" style="flex-wrap:wrap">
@@ -707,31 +727,44 @@ function drawSubs(m){
     </div>`:''}
 
     <!-- 🎁 수동 구독 멤버 -->
-    <div class="page-sub" style="margin-top:18px;font-weight:700;color:var(--accent)">🎁 수동 구독 멤버 (${manual.length})</div>
-    ${!manual.length?`<div class="empty" style="padding:24px"><div class="e-emoji">🎁</div>수동 부여한 멤버가 없어요</div>`:`
-    <div class="clist">${manual.map(r=>subCard(r,true)).join('')}</div>`}
+    <div class="page-sub" style="margin-top:18px;font-weight:700;color:var(--accent)">🎁 수동 구독 멤버 (${manualTotal})</div>
+    ${!manualTotal?`<div class="empty" style="padding:24px"><div class="e-emoji">🎁</div>수동 부여한 멤버가 없어요</div>`:`
+    <div class="clist">${manual.map(r=>subCard(r,true)).join('')}</div>
+    ${pager('goManualPage',_manualPage,manualTotal,SUB_SIDE_SIZE)}`}
 
-    <!-- 최근 만료자 (재구독 유도) -->
-    <div class="page-sub" style="margin-top:20px;font-weight:700;color:var(--st-pending)">⏰ 최근 만료자 (${expired.length}) · 재구독 유도 대상</div>
-    ${!expired.length?`<div class="empty" style="padding:24px"><div class="e-emoji">✅</div>최근 30일 내 만료자가 없어요</div>`:`
-    <div class="clist">${expired.map(r=>expiredCard(r)).join('')}</div>`}
+    <!-- 최근 만료자 -->
+    <div class="page-sub" style="margin-top:20px;font-weight:700;color:var(--st-pending)">⏰ 최근 만료자 (${expiredTotal}) · 재구독 유도 대상</div>
+    ${!expiredTotal?`<div class="empty" style="padding:24px"><div class="e-emoji">✅</div>최근 30일 내 만료자가 없어요</div>`:`
+    <div class="clist">${expired.map(r=>expiredCard(r)).join('')}</div>
+    ${pager('goExpiredPage',_expiredPage,expiredTotal,SUB_SIDE_SIZE)}`}
 
     <!-- 전체 구독자 + 필터 + 검색 -->
-    <div class="page-sub" style="margin-top:20px;font-weight:700">전체 구독자 (${_cache.subs.length})</div>
+    <div class="page-sub" style="margin-top:20px;font-weight:700">전체 구독자 (${allTotal})</div>
     <div class="chips">
-      ${[['all','전체',_cache.subs.length],
-         ['yearly','연간',_cache.subs.filter(r=>!r.is_manual&&r.plan_type==='yearly').length],
-         ['monthly','월간',_cache.subs.filter(r=>!r.is_manual&&r.plan_type==='monthly').length],
-         ['manual','수동',_cache.subs.filter(r=>r.is_manual).length]
-        ].map(([k,l,n])=>`<button class="chip${k===_subFilter?' on':''}" onclick="subFilter('${k}')">${l} ${n}</button>`).join('')}
+      ${[['all','전체'],['yearly','연간'],['monthly','월간'],['manual','수동']
+        ].map(([k,l])=>`<button class="chip${k===_subFilter?' on':''}" onclick="subFilter('${k}')">${l}</button>`).join('')}
     </div>
     <div class="head-row"><div class="search" style="flex:1"><input id="subSearch" placeholder="이름·이메일 검색" value="${esc(_subSearch)}"></div></div>
     ${!all.length?`<div class="empty" style="padding:24px"><div class="e-emoji">💳</div>${_subSearch||_subFilter!=='all'?'해당하는 구독자가 없어요':'구독자가 없어요'}</div>`:`
-    <div class="clist">${all.map(r=>subCard(r,false)).join('')}</div>`}
+    <div class="clist">${all.map(r=>subCard(r,false)).join('')}</div>
+    ${pager('goSubPage',_subPage,allTotal,SUB_PAGE_SIZE)}`}
   `;
   const si=document.getElementById('subSearch');
-  if(si)si.oninput=e=>{_subSearch=e.target.value.trim();drawSubs(m);const el=document.getElementById('subSearch');if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}};
+  if(si)si.oninput=e=>{
+    _subSearch=e.target.value.trim();
+    _subPage=0; // 검색 시 1페이지로
+    clearTimeout(_subSearchPageTm);
+    _subSearchPageTm=setTimeout(()=>{
+      drawSubs(m).then(()=>{const el=document.getElementById('subSearch');if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}});
+    },300);
+  };
 }
+let _subSearchPageTm=null;
+
+// 페이지 이동 함수들
+function goSubPage(p){_subPage=Math.max(0,p);drawSubs(document.getElementById('main'));}
+function goManualPage(p){_manualPage=Math.max(0,p);drawSubs(document.getElementById('main'));}
+function goExpiredPage(p){_expiredPage=Math.max(0,p);drawSubs(document.getElementById('main'));}
 
 function expiredCard(r){
   return `<div class="ccard">
@@ -909,9 +942,15 @@ async function revokeSub(id){
   renderSubs(document.getElementById('main'));
 }
 
-/* CSV 내보내기 */
-function exportSubsCsv(){
-  const rows=_cache.subs||[];
+/* CSV 내보내기 (현재 필터 기준 전체 조회) */
+async function exportSubsCsv(){
+  toast('내보내는 중…');
+  // 현재 필터·검색 기준 전체를 큰 limit으로 한 번에 조회
+  const {data,error}=await supa.rpc('admin_subscription_page',{
+    p_filter:_subFilter, p_search:_subSearch, p_limit:100000, p_offset:0
+  });
+  if(error||!data||!data.ok){toast('내보내기 실패');return;}
+  const rows=data.rows||[];
   if(!rows.length){toast('내보낼 구독자가 없어요');return;}
   const head=['이름','이메일','플랜','수동여부','시작일','만료일','남은일수','부여사유'];
   const lines=[head.join(',')];
@@ -925,15 +964,15 @@ function exportSubsCsv(){
     ].map(v=>`"${String(v).replace(/"/g,'""')}"`);
     lines.push(cell.join(','));
   });
-  const csv='\uFEFF'+lines.join('\n'); // BOM (엑셀 한글)
+  const csv='\uFEFF'+lines.join('\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=url;
-  a.download=`구독자_${new Date().toISOString().slice(0,10)}.csv`;
+  a.download=`구독자_${_subFilter}_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
-  toast('CSV를 내보냈어요');
+  toast(`CSV ${rows.length}건 내보냈어요`);
 }
 
 /* 구독 이력 보기 모달 */
@@ -962,7 +1001,7 @@ async function showSubHistory(userId,name){
   }).join('')}</div>`;
 }
 function closeSubHist(){document.getElementById('subHistModal').classList.remove('on');}
-function subFilter(k){_subFilter=k;drawSubs(document.getElementById('main'));}
+function subFilter(k){_subFilter=k;_subPage=0;drawSubs(document.getElementById('main'));}
 
 applyBrandLogos();
 checkSession();
