@@ -5245,6 +5245,7 @@ let _isPremium=false;        // 현재 유저 프리미엄 여부
 let _premiumInfo=null;       // {is_premium, expires_at, plan_type, is_manual}
 let _premiumLoaded=false;    // 세션당 로드 가드
 const FREE_LIMITS={ photosPerEvent:3, activeTodos:5, doneTodoDays:7 };  // 방·인원은 무제한(제한 없음)
+const PREMIUM_DONE_DAYS=30;  // 프리미엄: 완료 할일 30일 보관 (무료는 FREE_LIMITS.doneTodoDays=7)
 
 async function loadPremiumStatus(){
   try{
@@ -14931,7 +14932,7 @@ function getDdayLabel(t){
 async function toggleTodoDone(id){
   const t=_todos.find(x=>x.id===id); if(!t) return;
   const turningOn=!t.is_done;
-  const retentionDays=7; // 무료: 7일 (프리미엄 추후)
+  const retentionDays = isEffectivePremium() ? PREMIUM_DONE_DAYS : FREE_LIMITS.doneTodoDays; // 프리미엄 30일 / 무료 7일
   const prev={ is_done:t.is_done, done_by:t.done_by, done_at:t.done_at, expires_at:t.expires_at };
   const updates={
     is_done:turningOn,
