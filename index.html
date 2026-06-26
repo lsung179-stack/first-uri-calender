@@ -3179,6 +3179,13 @@ body.align-right .cal-evbar{text-align:right}
       <div id="deployNewVersion" style="font-size:12px;color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums"></div>
     </div>
   </div>
+  <div style="margin:4px 0 12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <span style="font-weight:700;color:var(--text);font-size:13px">📋 배포 이력</span>
+      <span id="deployHistoryCount" style="color:var(--mute);font-weight:600;font-size:12px"></span>
+    </div>
+    <div id="deployHistoryList" style="max-height:200px;overflow-y:auto;background:var(--bg);border:1px solid var(--borderL);border-radius:12px;padding:4px"></div>
+  </div>
   <div id="deployStatusMsg" style="text-align:center;font-size:13px;color:var(--sub);min-height:20px;margin-bottom:8px"></div>
   <div class="mo-actions" style="margin-top:4px">
     <button class="mo-cancel" onclick="closeDeploySheet()">취소</button>
@@ -5237,7 +5244,7 @@ async function ensureKakaoProfile(){
 let _isPremium=false;        // 현재 유저 프리미엄 여부
 let _premiumInfo=null;       // {is_premium, expires_at, plan_type, is_manual}
 let _premiumLoaded=false;    // 세션당 로드 가드
-const FREE_LIMITS={ rooms:2, invitePerRoom:4, photosPerEvent:3, activeTodos:5, doneTodoDays:7 };
+const FREE_LIMITS={ photosPerEvent:3, activeTodos:5, doneTodoDays:7 };  // 방·인원은 무제한(제한 없음)
 
 async function loadPremiumStatus(){
   try{
@@ -5738,19 +5745,6 @@ async function createRoom(){
   const name=document.getElementById('newRoomName').value.trim();
   if(!name){toast('방 이름을 입력해주세요');return}
   if(name.length>20){toast('방 이름은 20자 이내로');return}
-
-  // 프리미엄 차별화 — 무료 플랜은 생성(소유) 방 2개까지 (관리자 통과)
-  await ensurePremiumLoaded();
-  if(!isEffectivePremium()){
-    const ownedCount=(_myRooms||[]).filter(r=>r.owner_id===_currentUser.id).length;
-    if(ownedCount>=FREE_LIMITS.rooms){
-      showUpgradeModal({
-        message:'무료 플랜은 방을 2개까지 만들 수 있어요.',
-        feature:'프리미엄으로 업그레이드하면 방을 무제한으로 만들 수 있어요.'
-      });
-      return;
-    }
-  }
 
   const btn=document.getElementById('createBtn');
   btn.disabled=true;btn.textContent='만드는 중...';
@@ -13200,12 +13194,57 @@ async function openDeploySheet(){
   }catch(e){
     if(verEl) verEl.textContent = '불러오기 실패';
   }
+  loadDeployHistory();
   document.getElementById('deployOverlay').classList.add('on');
   document.getElementById('deployCard').classList.add('on');
 }
 function closeDeploySheet(){
   document.getElementById('deployOverlay').classList.remove('on');
   document.getElementById('deployCard').classList.remove('on');
+}
+
+/* 배포 이력 로드/렌더 — 최근 50건, 날짜·시간 목록 (관리자 전용) */
+async function loadDeployHistory(){
+  const listEl = document.getElementById('deployHistoryList');
+  const cntEl  = document.getElementById('deployHistoryCount');
+  if(!listEl) return;
+  listEl.innerHTML = '<div style="padding:14px;text-align:center;color:var(--mute);font-size:12px">불러오는 중…</div>';
+  try{
+    const {data,error} = await supa.from('deploy_history')
+      .select('version,deployed_at')
+      .order('deployed_at',{ascending:false})
+      .limit(50);
+    if(error) throw error;
+    const rows = data||[];
+    if(cntEl) cntEl.textContent = rows.length ? `총 ${rows.length}회` : '';
+    if(!rows.length){
+      listEl.innerHTML = '<div style="padding:14px;text-align:center;color:var(--mute);font-size:12px">배포 이력이 없어요</div>';
+      return;
+    }
+    listEl.innerHTML = rows.map((r,i)=>{
+      const latest = i===0;
+      const rel = _deployRelTime(r.deployed_at);
+      const tag = latest ? ' <span style="color:var(--accent);font-size:11px;font-weight:700">· 최신</span>' : '';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 10px;border-radius:8px;${latest?'background:var(--card)':''}">`
+        + `<span style="font-size:13px;color:var(--text);font-variant-numeric:tabular-nums;font-weight:${latest?'700':'500'}">${escapeHtml(r.version||'')}${tag}</span>`
+        + `<span style="font-size:11px;color:var(--mute);white-space:nowrap;margin-left:10px">${rel}</span>`
+        + `</div>`;
+    }).join('');
+  }catch(e){
+    listEl.innerHTML = '<div style="padding:14px;text-align:center;color:var(--mute);font-size:12px">불러오기 실패</div>';
+  }
+}
+/* 배포 시각 상대 표시 (방금/N분 전/N시간 전/N일 전) */
+function _deployRelTime(iso){
+  try{
+    const diff = Date.now() - new Date(iso).getTime();
+    const m = Math.floor(diff/60000);
+    if(m < 1) return '방금';
+    if(m < 60) return `${m}분 전`;
+    const h = Math.floor(m/60);
+    if(h < 24) return `${h}시간 전`;
+    return `${Math.floor(h/24)}일 전`;
+  }catch(_){ return ''; }
 }
 async function confirmDeploy(){
   if(!isAdmin()){toast('권한이 없어요');return}
@@ -13220,11 +13259,14 @@ async function confirmDeploy(){
     const {error} = await supa.from('app_config')
       .upsert({key:'deploy_version', value:newVer}, {onConflict:'key'});
     if(error) throw error;
+    // 배포 이력 기록 (실패해도 배포 자체는 성공 처리)
+    try{ await supa.from('deploy_history').insert({version:newVer, deployed_by:_currentUser?.id||null}); }catch(_){}
     // 관리자 로컬도 동기화
     localStorage.setItem('uricalv2.deployVersion', newVer);
     if(msgEl) msgEl.textContent = '✅ 배포 완료!';
     const verEl = document.getElementById('deployCurrentVersion');
     if(verEl) verEl.textContent = newVer;
+    loadDeployHistory();
     toast('🚀 배포 완료! 이용자들이 다음 실행 시 업데이트됩니다');
     setTimeout(closeDeploySheet, 1500);
   }catch(e){
