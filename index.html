@@ -2812,8 +2812,7 @@ body.align-right .cal-evbar{text-align:right}
     <div id="uniAdminSection" style="display:none">
       <div class="uni-divider"></div>
       <div class="uni-sec-label">🔧 관리자 전용</div>
-      <button class="uni-nav" onclick="openAdminGrant()"><span>🎁 이용자 무료 부여</span><span class="chev">›</span></button>
-      <button class="uni-nav" onclick="openOrderAdmin()"><span>📦 달력 주문 관리 (관리자 페이지)</span><span class="chev">›</span></button>
+      <button class="uni-nav" onclick="openAdminFullPage()"><span>🛠 관리자 페이지 열기</span><span class="chev">›</span></button>
       <button class="uni-nav" id="deployBtn" onclick="openDeploySheet()"><span id="deployBtnLabel">🚀 배포하기</span><span class="chev">›</span></button>
     </div>
 
@@ -3116,10 +3115,9 @@ body.align-right .cal-evbar{text-align:right}
   <div class="pf-edit-row" id="profileOrdersRow" style="cursor:pointer" onclick="openMyOrders(true)">
     <button class="pf-admin-btn" style="background:rgba(139,58,42,.08);color:var(--accent)">📦 내 주문 내역 · 배송 조회</button>
   </div>
-  <!-- admin 전용: 이용자 무료 부여 -->
+  <!-- admin 전용: 관리자 페이지 -->
   <div class="pf-edit-row" id="profileAdminRow" style="display:none">
-    <button class="pf-admin-btn" onclick="openAdminGrant()">🎁 이용자 무료 부여 (관리자)</button>
-    <button class="pf-admin-btn" style="margin-top:8px" onclick="openOrderAdmin()">📦 달력 주문 관리 (관리자)</button>
+    <button class="pf-admin-btn" onclick="openAdminFullPage()">🛠 관리자 페이지</button>
   </div>
   <div class="mo-actions">
     <button class="btn btn-danger" onclick="doLogout()">로그아웃</button>
