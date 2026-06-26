@@ -754,13 +754,30 @@ function _subCustomVal(){
   const presets=_subUnit==='day'?DAY_PRESETS:MONTH_PRESETS;
   return presets.includes(_subDays)?'':_subDays;
 }
+/* 부여 시 실제 만료 시각 계산 (연장이면 기존 만료일 기준) */
+function _subCalcExpiry(){
+  const total=_subDaysTotal();
+  let base=new Date();
+  if(_subExtend && _subGrantUser && _cache.subs){
+    // 해당 유저의 활성 구독 중 가장 늦은 만료일 찾기
+    const now=Date.now();
+    const mine=_cache.subs.filter(r=>r.user_id===_subGrantUser.id && new Date(r.expires_at).getTime()>now);
+    if(mine.length){
+      const latest=Math.max(...mine.map(r=>new Date(r.expires_at).getTime()));
+      base=new Date(latest);
+    }
+  }
+  return new Date(base.getTime()+total*86400*1000);
+}
 function subSummaryText(){
   const total=_subDaysTotal();
-  return `약 ${total}일 ${_subExtend?'연장':'부여'} → ${_subGrantUser?esc(_subGrantUser.name||''):''}`;
+  const expiry=_subCalcExpiry();
+  const who=_subGrantUser?esc(_subGrantUser.name||''):'';
+  return `${who} · 약 ${total}일 ${_subExtend?'연장':'부여'}<br><span style="font-weight:800;color:var(--accent)">만료: ${fmtDate(expiry.toISOString())}</span>`;
 }
 function setSubUnit(u){ _subUnit=u; _subDays=(u==='day'?7:1); drawSubGrantModal(); }
 function setSubPreset(n){ _subDays=n; drawSubGrantModal(); }
-function onSubCustom(v){ const n=parseInt(v,10); if(n>0){_subDays=n; const s=document.getElementById('subSummary'); if(s)s.textContent=subSummaryText(); document.querySelectorAll('.sg-preset').forEach(b=>b.classList.remove('on'));} }
+function onSubCustom(v){ const n=parseInt(v,10); if(n>0){_subDays=n; const s=document.getElementById('subSummary'); if(s)s.innerHTML=subSummaryText(); document.querySelectorAll('.sg-preset').forEach(b=>b.classList.remove('on'));} }
 function setSubExtend(v){ _subExtend=v; drawSubGrantModal(); }
 function resetSubUser(){ _subGrantUser=null; drawSubGrantModal(); }
 
