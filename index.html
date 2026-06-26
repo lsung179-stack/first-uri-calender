@@ -5918,7 +5918,7 @@ async function init(){
     showScreen('welcomeScreen');
   }finally{
     setTimeout(()=>document.getElementById('loading').classList.add('hide'),200);
-    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 2026.06.26-FIX2 · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
+    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 2026.06.26-FIX3 · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
     // in-app browser(카톡·네이버·페이스북 등)에서 열렸을 때 한 줄 안내
     setTimeout(maybeShowInAppBrowserHint,800);
   }
@@ -13001,7 +13001,11 @@ let _adminGrantSearchTimer=null;
    ═══════════════════════════════════ */
 
 /* 현재 앱 버전 — 배포 시 자동 생성 (빌드 타임스탬프) */
-const _APP_BUILD_TS = new Date().toISOString().slice(0,19).replace('T',' ');
+const _APP_BUILD_TS = (function(){
+  // 한국시간(KST, UTC+9) 기준 타임스탬프 — Supabase의 deploy_version과 시간대 통일
+  const kst = new Date(Date.now() + 9*60*60*1000);
+  return kst.toISOString().slice(0,19).replace('T',' ');
+})();
 
 /* SW 대기 중인 워커 참조 */
 let _swWaitingWorker = null;
