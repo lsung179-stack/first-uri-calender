@@ -14695,6 +14695,17 @@ async function loadTodos(){
     _todos=(data||[]).filter(t=> !(t.is_done && t.expires_at && t.expires_at < nowIso));
   }catch(e){ console.warn('todos load ex',e); _todos=[]; }
 }
+/* 내 전체 활성(미완료) 할일 개수 — 모든 방 합산 (프리미엄 제한 판단용) */
+async function countMyActiveTodos(){
+  try{
+    const { count, error } = await supa.from('todos')
+      .select('id',{count:'exact',head:true})
+      .eq('user_id',_currentUser.id)
+      .eq('is_done',false);
+    if(error){ console.warn('활성 할일 카운트 실패:',error.message||error); return 0; }
+    return count||0;
+  }catch(e){ console.warn('활성 할일 카운트 오류:',e); return 0; }
+}
 function todoAuthorName(t){
   const m=(_myMembers||[]).find(mm=>mm.user_id===t.user_id);
   return m?((m.name||'').trim()):'';
@@ -14920,6 +14931,20 @@ function getDdayLabel(t){
 async function toggleTodoDone(id){
   const t=_todos.find(x=>x.id===id); if(!t) return;
   const turningOn=!t.is_done;
+  // 프리미엄 차별화 — 완료 해제(활성 복귀) 시 내 전체 활성 5개 초과면 차단
+  if(!turningOn){
+    await ensurePremiumLoaded();
+    if(!isEffectivePremium()){
+      const cnt=await countMyActiveTodos();
+      if(cnt>=FREE_LIMITS.activeTodos){
+        showUpgradeModal({
+          message:'진행 중인 할일이 이미 5개예요. 다른 할일을 완료하거나 지운 뒤 다시 시도해주세요.',
+          feature:'프리미엄으로 업그레이드하면 완료한 할일도 무제한으로 되돌릴 수 있어요.'
+        });
+        return;
+      }
+    }
+  }
   const retentionDays=7; // 무료: 7일 (프리미엄 추후)
   const updates={
     is_done:turningOn,
@@ -15574,6 +15599,20 @@ async function saveTodo(){
   if(!_currentRoom||!_currentUser){ toast('로그인이 필요해요'); return; }
   const title=(($('todoTitleInput')||{}).value||'').trim();
   if(!title){ toast('제목을 입력해주세요'); return; }
+  // 프리미엄 차별화 — 무료는 내 전체 활성 할일 5개까지 (신규 추가만, 수정 제외)
+  if(!_editingTodoId){
+    await ensurePremiumLoaded();
+    if(!isEffectivePremium()){
+      const cnt=await countMyActiveTodos();
+      if(cnt>=FREE_LIMITS.activeTodos){
+        showUpgradeModal({
+          message:'무료 플랜은 진행 중인 할일을 5개까지 만들 수 있어요.',
+          feature:'프리미엄으로 업그레이드하면 할일을 무제한으로 만들 수 있어요.'
+        });
+        return;
+      }
+    }
+  }
   // 방 선택 모달 노출 조건: 신규 + 단독(함께 아님) + 다른 방이 1개 이상
   const isCo=(_todoTarget==='all'&&_todoMembers&&_todoMembers.length>=2);
   const others=(_myRooms||[]).filter(r=>r.id!==_currentRoom?.id);
