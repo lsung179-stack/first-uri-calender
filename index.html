@@ -14931,12 +14931,25 @@ function getDdayLabel(t){
 async function toggleTodoDone(id){
   const t=_todos.find(x=>x.id===id); if(!t) return;
   const turningOn=!t.is_done;
-  // 프리미엄 차별화 — 완료 해제(활성 복귀) 시 내 전체 활성 5개 초과면 차단
+  const retentionDays=7; // 무료: 7일 (프리미엄 추후)
+  const prev={ is_done:t.is_done, done_by:t.done_by, done_at:t.done_at, expires_at:t.expires_at };
+  const updates={
+    is_done:turningOn,
+    done_by:turningOn?((_currentUser&&_currentUser.id)||null):null,
+    done_at:turningOn?new Date().toISOString():null,
+    expires_at:turningOn?new Date(Date.now()+retentionDays*86400000).toISOString():null
+  };
+  // UI 즉시 반영 (재렌더 타이밍 안 깨지게 — 비동기 제한 검사보다 먼저)
+  Object.assign(t,updates);
+  safeRender();
+  // 완료 해제(활성 복귀) 시에만 내 전체 활성 5개 제한 — 초과면 되돌리기 + 안내
   if(!turningOn){
     await ensurePremiumLoaded();
     if(!isEffectivePremium()){
-      const cnt=await countMyActiveTodos();
+      const cnt=await countMyActiveTodos();  // 방금 푼 건 아직 DB 미반영 → 이 할일 제외 활성 수
       if(cnt>=FREE_LIMITS.activeTodos){
+        Object.assign(t,prev); safeRender();
+        try{ renderDateSheetList(); }catch(_){}
         showUpgradeModal({
           message:'진행 중인 할일이 이미 5개예요. 다른 할일을 완료하거나 지운 뒤 다시 시도해주세요.',
           feature:'프리미엄으로 업그레이드하면 완료한 할일도 무제한으로 되돌릴 수 있어요.'
@@ -14945,15 +14958,6 @@ async function toggleTodoDone(id){
       }
     }
   }
-  const retentionDays=7; // 무료: 7일 (프리미엄 추후)
-  const updates={
-    is_done:turningOn,
-    done_by:turningOn?((_currentUser&&_currentUser.id)||null):null,
-    done_at:turningOn?new Date().toISOString():null,
-    expires_at:turningOn?new Date(Date.now()+retentionDays*86400000).toISOString():null
-  };
-  Object.assign(t,updates);
-  safeRender();
   try{
     const { error } = await supa.from('todos').update(updates).eq('id',id);
     if(error){ toast('변경 실패: '+((error.message||'').slice(0,30))); await loadTodos(); safeRender(); }
