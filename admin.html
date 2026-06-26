@@ -127,6 +127,27 @@ tbody tr:hover{background:rgba(139,58,42,.025)}
 .mf-cancel{background:#f0eadf;color:var(--sub)}
 .mf-save{background:var(--accent);color:#fff}
 
+/* 구독 탭 — 수동 부여 모달 */
+.x-btn{background:none;border:none;font-size:18px;color:var(--sub);cursor:pointer;padding:4px 8px}
+.sg-label{display:block;font-size:12.5px;font-weight:700;color:var(--sub);margin:16px 0 7px}
+.sg-label:first-child{margin-top:0}
+.sg-results{margin-top:8px;display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto}
+.sg-result{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;text-align:left}
+.sg-result:hover{border-color:var(--accent);background:var(--bg)}
+.sg-result-name{font-size:14px;font-weight:700;color:var(--ink)}
+.sg-result-email{font-size:12px;color:var(--sub)}
+.sg-noresult{padding:12px;text-align:center;color:var(--mute);font-size:13px}
+.sg-user{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:var(--bg);border-radius:12px}
+.sg-user-name{font-size:15px;font-weight:700;color:var(--ink)}
+.sg-user-email{font-size:12.5px;color:var(--sub);margin-top:2px}
+.sg-seg{display:flex;gap:8px}
+.sg-seg-btn{flex:1;padding:11px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:13.5px;font-weight:700;color:var(--sub);cursor:pointer}
+.sg-seg-btn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.sg-presets{display:flex;flex-wrap:wrap;gap:8px}
+.sg-preset{padding:9px 16px;border-radius:9px;border:1px solid var(--line);background:#fff;font-size:13.5px;font-weight:700;color:var(--sub);cursor:pointer}
+.sg-preset.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.sg-summary{margin-top:16px;padding:12px 14px;background:rgba(139,58,42,.08);border-radius:10px;font-size:13.5px;font-weight:700;color:var(--accent);text-align:center}
+
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:30px;font-size:14px;font-weight:600;opacity:0;transition:.25s;z-index:100;box-shadow:0 6px 20px rgba(0,0,0,.2)}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 
@@ -207,6 +228,21 @@ tbody tr:hover{background:rgba(139,58,42,.025)}
   </div>
 </div>
 
+<!-- 수동 구독 부여 모달 -->
+<div class="modal" id="subGrantModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div class="mt">🎁 수동 구독 부여</div>
+      <button class="x-btn" onclick="closeSubGrant()" aria-label="닫기">✕</button>
+    </div>
+    <div class="modal-body" id="subGrantBody"></div>
+    <div class="modal-foot">
+      <button class="mf-cancel" onclick="closeSubGrant()">취소</button>
+      <button class="mf-save" id="subGrantSubmit" onclick="submitSubGrant()">구독 부여</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -223,6 +259,7 @@ const ORDER_FLOW=['pending','paid','making','shipped','done'];
 
 const TABS=[
   {k:'dash',icon:'📊',label:'대시보드'},
+  {k:'subs',icon:'💳',label:'구독'},
   {k:'orders',icon:'📦',label:'주문'},
   {k:'announce',icon:'📢',label:'공지'},
   {k:'users',icon:'👥',label:'회원'},
@@ -293,6 +330,7 @@ function switchTab(k){
   const m=document.getElementById('main');
   m.innerHTML='<div class="loading">불러오는 중…</div>';
   if(k==='dash')renderDash(m);
+  else if(k==='subs')renderSubs(m);
   else if(k==='orders')renderOrders(m);
   else if(k==='announce')renderAnnounce(m);
   else if(k==='users')renderUsers(m);
@@ -567,6 +605,207 @@ async function fbStatus(id,st){
   const f=_cache.fb.find(x=>x.id===id);if(f)f.status=st;
   setBadge('feedback',_cache.fb.filter(x=>x.status==='new').length);
   drawFeedback(document.getElementById('main'));toast('처리했어요');
+}
+
+/* ═══════════════════════════════════
+   구독 관리 탭
+   ═══════════════════════════════════ */
+let _subGrantUser=null;     // 수동 부여 대상 {id,name,email}
+let _subUnit='day';         // 'day' | 'month'
+let _subDays=7;             // 부여 일수
+let _subExtend=true;        // true=연장, false=새로 시작
+
+async function renderSubs(m){
+  let stats, rows;
+  try{
+    const [st,ls]=await Promise.all([
+      supa.rpc('admin_subscription_stats'),
+      supa.rpc('admin_subscription_list')
+    ]);
+    if(st.error)throw st.error;
+    if(ls.error)throw ls.error;
+    stats=st.data; rows=(ls.data&&ls.data.rows)||[];
+  }catch(e){ m.innerHTML=errBox(e); return; }
+  _cache.subs=rows;
+
+  const manual=rows.filter(r=>r.is_manual);
+  const paid=rows.filter(r=>!r.is_manual);
+
+  const cards=[
+    {l:'활성 구독자',v:stats.total_active,e:'중복 제거 인원'},
+    {l:'월간',v:stats.monthly,e:'monthly 플랜'},
+    {l:'연간',v:stats.yearly,e:'yearly 플랜'},
+    {l:'수동 부여',v:stats.manual,e:'관리자 지급'},
+    {l:'만료 임박',v:stats.expiring_7d,e:'7일 이내',alert:stats.expiring_7d>0},
+  ];
+
+  m.innerHTML=`
+    <div class="page-title">구독 관리</div>
+    <div class="page-sub">${fmtDate(new Date().toISOString())} 기준</div>
+
+    <div class="stat-grid">
+      ${cards.map(c=>`<div class="stat-card${c.alert?' alert':''}">
+        <div class="sc-label">${c.l}</div>
+        <div class="sc-val">${c.v}</div>
+        <div class="sc-extra">${c.e}</div>
+      </div>`).join('')}
+    </div>
+
+    <div class="head-row" style="margin-top:18px">
+      <button class="btn-line" onclick="openSubGrant()">＋ 수동 구독 부여</button>
+    </div>
+
+    <!-- 🎁 수동 구독 멤버 -->
+    <div class="page-sub" style="margin-top:14px;font-weight:700;color:var(--accent)">🎁 수동 구독 멤버 (${manual.length})</div>
+    ${!manual.length?`<div class="empty" style="padding:24px"><div class="e-emoji">🎁</div>수동 부여한 멤버가 없어요</div>`:`
+    <div class="clist">${manual.map(r=>subCard(r,true)).join('')}</div>`}
+
+    <!-- 전체 구독자 -->
+    <div class="page-sub" style="margin-top:20px;font-weight:700">전체 구독자 (${rows.length})</div>
+    ${!rows.length?`<div class="empty" style="padding:24px"><div class="e-emoji">💳</div>구독자가 없어요</div>`:`
+    <div class="clist">${rows.map(r=>subCard(r,false)).join('')}</div>`}
+  `;
+}
+
+function subCard(r,withRevoke){
+  const left=r.days_left;
+  const urgent=left<=3;
+  const planLabel=r.is_manual?'수동':(r.plan_type==='yearly'?'연간':r.plan_type==='monthly'?'월간':r.plan_type);
+  const planColor=r.is_manual?'var(--gold)':(r.plan_type==='yearly'?'var(--st-done)':'var(--accent)');
+  return `<div class="ccard">
+    <div class="ccard-top">
+      <span><span class="status-badge" style="background:${planColor}">${planLabel}</span> <span class="ccard-title" style="font-size:14px">${esc(r.name||'(이름 없음)')}</span></span>
+      <span class="ccard-date" style="${urgent?'color:var(--st-pending);font-weight:700':''}">D-${left}</span>
+    </div>
+    <div class="ccard-body" style="font-size:13px">${esc(r.email||'-')}</div>
+    <div class="ccard-meta">만료 ${fmtDay(r.expires_at)}${r.manual_reason?' · 사유: '+esc(r.manual_reason):''}</div>
+    ${withRevoke?`<div class="ccard-actions">
+      <button class="mini-btn mb-accent" onclick="quickExtend('${r.user_id}','${esc(r.name||'')}')">＋연장</button>
+      <button class="mini-btn mb-gray" onclick="revokeSub('${r.id}')">회수</button>
+    </div>`:''}
+  </div>`;
+}
+
+/* 수동 부여 모달 열기 */
+function openSubGrant(preUser){
+  _subGrantUser=preUser||null;
+  _subUnit='day';_subDays=7;_subExtend=true;
+  drawSubGrantModal();
+  document.getElementById('subGrantModal').classList.add('on');
+}
+function closeSubGrant(){
+  document.getElementById('subGrantModal').classList.remove('on');
+  _subGrantUser=null;
+}
+function quickExtend(uid,name){ openSubGrant({id:uid,name:name,email:''}); }
+
+const DAY_PRESETS=[1,3,7,14,30];
+const MONTH_PRESETS=[1,3,6,12];
+function drawSubGrantModal(){
+  const body=document.getElementById('subGrantBody');
+  const presets=_subUnit==='day'?DAY_PRESETS:MONTH_PRESETS;
+  const unitLabel=_subUnit==='day'?'일':'개월';
+  body.innerHTML=`
+    ${!_subGrantUser?`
+      <div class="sg-label">1. 대상 검색</div>
+      <input id="subUserSearch" placeholder="이름 또는 이메일 (2글자 이상)" autocomplete="off">
+      <div id="subUserResults" class="sg-results"></div>
+    `:`
+      <div class="sg-user">
+        <div>
+          <div class="sg-user-name">${esc(_subGrantUser.name||'(이름 없음)')}</div>
+          <div class="sg-user-email">${esc(_subGrantUser.email||'')}</div>
+        </div>
+        <button class="mini-btn mb-gray" onclick="resetSubUser()">변경</button>
+      </div>
+
+      <div class="sg-label">2. 기간 단위</div>
+      <div class="sg-seg">
+        <button class="sg-seg-btn${_subUnit==='day'?' on':''}" onclick="setSubUnit('day')">일 단위</button>
+        <button class="sg-seg-btn${_subUnit==='month'?' on':''}" onclick="setSubUnit('month')">월 단위</button>
+      </div>
+
+      <div class="sg-label">3. 기간 선택</div>
+      <div class="sg-presets">
+        ${presets.map(n=>`<button class="sg-preset${_subPresetMatch(n)?' on':''}" onclick="setSubPreset(${n})">${n}${unitLabel}</button>`).join('')}
+      </div>
+      <input id="subCustomInput" type="number" min="1" placeholder="직접 입력 (${unitLabel})" value="${_subCustomVal()}" oninput="onSubCustom(this.value)" style="margin-top:8px">
+
+      <div class="sg-label">4. 부여 사유 (직접 입력)</div>
+      <input id="subReason" placeholder="예) 이벤트 당첨, 버그 보상, 베타 테스터" autocomplete="off">
+
+      <div class="sg-label">5. 기존 구독 처리</div>
+      <div class="sg-seg">
+        <button class="sg-seg-btn${_subExtend?' on':''}" onclick="setSubExtend(true)">만료일에서 연장</button>
+        <button class="sg-seg-btn${!_subExtend?' on':''}" onclick="setSubExtend(false)">지금부터 새로</button>
+      </div>
+
+      <div class="sg-summary" id="subSummary">${subSummaryText()}</div>
+    `}
+  `;
+  if(!_subGrantUser){
+    const si=document.getElementById('subUserSearch');
+    if(si)si.oninput=onSubUserSearch;
+  }
+}
+function _subDaysTotal(){ return _subUnit==='day'?_subDays:_subDays*30; }
+function _subPresetMatch(n){ return _subDays===n; }
+function _subCustomVal(){
+  const presets=_subUnit==='day'?DAY_PRESETS:MONTH_PRESETS;
+  return presets.includes(_subDays)?'':_subDays;
+}
+function subSummaryText(){
+  const total=_subDaysTotal();
+  return `약 ${total}일 ${_subExtend?'연장':'부여'} → ${_subGrantUser?esc(_subGrantUser.name||''):''}`;
+}
+function setSubUnit(u){ _subUnit=u; _subDays=(u==='day'?7:1); drawSubGrantModal(); }
+function setSubPreset(n){ _subDays=n; drawSubGrantModal(); }
+function onSubCustom(v){ const n=parseInt(v,10); if(n>0){_subDays=n; const s=document.getElementById('subSummary'); if(s)s.textContent=subSummaryText(); document.querySelectorAll('.sg-preset').forEach(b=>b.classList.remove('on'));} }
+function setSubExtend(v){ _subExtend=v; drawSubGrantModal(); }
+function resetSubUser(){ _subGrantUser=null; drawSubGrantModal(); }
+
+let _subSearchTm=null;
+function onSubUserSearch(e){
+  const q=e.target.value.trim();
+  clearTimeout(_subSearchTm);
+  if(q.length<2){document.getElementById('subUserResults').innerHTML='';return;}
+  _subSearchTm=setTimeout(async()=>{
+    const {data,error}=await supa.from('profiles').select('id,name,email')
+      .or(`name.ilike.%${q}%,email.ilike.%${q}%`).limit(10);
+    const box=document.getElementById('subUserResults');
+    if(error){box.innerHTML='<div class="sg-noresult">검색 실패</div>';return;}
+    if(!data||!data.length){box.innerHTML='<div class="sg-noresult">결과 없음</div>';return;}
+    box.innerHTML=data.map(u=>`<button class="sg-result" onclick='pickSubUser(${JSON.stringify(u).replace(/'/g,"&#39;")})'>
+      <span class="sg-result-name">${esc(u.name||'(이름 없음)')}</span>
+      <span class="sg-result-email">${esc(u.email||'')}</span>
+    </button>`).join('');
+  },300);
+}
+function pickSubUser(u){ _subGrantUser=u; drawSubGrantModal(); }
+
+async function submitSubGrant(){
+  if(!_subGrantUser){toast('대상을 선택해 주세요');return;}
+  const reason=(document.getElementById('subReason')||{}).value||'';
+  const days=_subDaysTotal();
+  if(!days||days<=0){toast('기간을 입력해 주세요');return;}
+  const btn=document.getElementById('subGrantSubmit');
+  btn.disabled=true;btn.textContent='부여 중…';
+  const {data,error}=await supa.rpc('admin_grant_subscription',{
+    p_user_id:_subGrantUser.id, p_days:days, p_reason:reason.trim(), p_extend:_subExtend
+  });
+  btn.disabled=false;btn.textContent='구독 부여';
+  if(error||!data||!data.ok){toast((data&&data.error)||'부여 실패');return;}
+  toast('구독을 부여했어요');
+  closeSubGrant();
+  renderSubs(document.getElementById('main'));
+}
+
+async function revokeSub(id){
+  if(!confirm('이 수동 구독을 회수할까요? 즉시 만료됩니다.'))return;
+  const {data,error}=await supa.rpc('admin_revoke_subscription',{p_sub_id:id});
+  if(error||!data||!data.ok){toast('회수 실패');return;}
+  toast('회수했어요');
+  renderSubs(document.getElementById('main'));
 }
 
 applyBrandLogos();
