@@ -2832,6 +2832,7 @@ body.align-right .cal-evbar{text-align:right}
       <div class="uni-divider"></div>
       <div class="uni-sec-label">🔧 관리자 전용</div>
       <button class="uni-nav" onclick="openAdminFullPage()"><span>🛠 관리자 페이지 열기</span><span class="chev">›</span></button>
+      <button class="uni-nav" id="planToggleBtn" onclick="toggleAdminPlan()"><span id="planToggleBtnLabel">🧪 플랜 체험: 유료</span><span class="chev">›</span></button>
       <button class="uni-nav" id="deployBtn" onclick="openDeploySheet()"><span id="deployBtnLabel">🚀 배포하기</span><span class="chev">›</span></button>
     </div>
 
@@ -4869,6 +4870,16 @@ function showUpgradeModal(opts){
   ov.onclick=(e)=>{ if(e.target===ov) finish(); };
 }
 
+/* 관리자 전용 — 플랜 체험 토글(유료 ↔ 무료). 화면 표시용이라 DB·실제 구독은 안 건드림 */
+function toggleAdminPlan(){
+  _adminPlanOverride=!_adminPlanOverride;
+  const lab=document.getElementById('planToggleBtnLabel');
+  if(lab) lab.textContent = _adminPlanOverride ? '🧪 플랜 체험: 유료' : '🧪 플랜 체험: 무료';
+  try{ if(typeof renderColorPager==='function') renderColorPager(); }catch(_){}
+  try{ if(typeof window.renderTodoColorPager==='function') window.renderTodoColorPager(); }catch(_){}
+  toast(_adminPlanOverride ? '유료 플랜으로 체험 중이에요' : '무료 플랜으로 체험 중이에요 (편집 시 안내 모달)');
+}
+
 /* 반복 일정 삭제 선택 — 'one'(이 날짜만) | 'all'(모두) | null(취소) */
 function askRecurringDelete(msg){
   return new Promise(resolve=>{
@@ -5232,6 +5243,14 @@ async function loadPremiumStatus(){
 async function ensurePremiumLoaded(){
   if(_premiumLoaded) return;
   await loadPremiumStatus();
+}
+
+/* 관리자 플랜 체험 토글 — true=유료, false=무료 (화면 표시용, DB·실제 구독 무관) */
+let _adminPlanOverride=true;
+/* 유효 프리미엄: 관리자는 토글 값을 따르고(유료/무료 체험), 일반 유저는 실제 프리미엄 여부 */
+function isEffectivePremium(){
+  if(isAdmin()) return _adminPlanOverride;
+  return _isPremium;
 }
 
 /* 사용자 정보 표시 (헤더 아바타) */
@@ -5712,7 +5731,7 @@ async function createRoom(){
 
   // 프리미엄 차별화 — 무료 플랜은 생성(소유) 방 2개까지 (관리자 통과)
   await ensurePremiumLoaded();
-  if(!_isPremium && !isAdmin()){
+  if(!isEffectivePremium()){
     const ownedCount=(_myRooms||[]).filter(r=>r.owner_id===_currentUser.id).length;
     if(ownedCount>=FREE_LIMITS.rooms){
       showUpgradeModal({
@@ -7044,14 +7063,15 @@ async function loadRoomMembers(){
   }
 }
 
-/* 색상 라벨 로드 — 방 멤버 모두 공유 */
+/* 색상 라벨 로드 — 사람별 개인 데이터(내 것만) */
 async function loadColorLabels(){
   _colorLabels={};
-  if(!_currentRoom){return}
+  if(!_currentRoom||!_currentUser){return}
   try{
     const {data,error}=await supa.from('room_color_labels')
       .select('color_key,label')
-      .eq('room_id',_currentRoom.id);
+      .eq('room_id',_currentRoom.id)
+      .eq('user_id',_currentUser.id);
     if(error)throw error;
     (data||[]).forEach(r=>{ if(r.label&&r.label.trim()) _colorLabels[r.color_key]=r.label; });
   }catch(e){
@@ -7063,28 +7083,29 @@ async function loadColorLabels(){
 /* 색상 라벨 조회 (없으면 빈 문자열) */
 function colorLabelOf(key){
   if(!key)return '';
+  if(!isEffectivePremium()) return '';   // 무료(체험 포함)면 라벨 숨김
   return _colorLabels[key]||'';
 }
 
-/* 색상 라벨 일괄 저장 (편집 완료 시) — drafts: { color_key: '이름' } */
+/* 색상 라벨 일괄 저장 (편집 완료 시) — drafts: { color_key: '이름' }, 사람별 개인 데이터 */
 async function saveColorLabels(drafts){
-  if(!_currentRoom)return false;
+  if(!_currentRoom||!_currentUser)return false;
   const rows=[];      // upsert 대상 (이름 있음)
   const dels=[];      // 삭제 대상 (이름 비움)
   Object.keys(drafts).forEach(k=>{
     const v=(drafts[k]||'').trim().slice(0,8);
-    if(v) rows.push({room_id:_currentRoom.id, color_key:k, label:v, updated_at:new Date().toISOString()});
+    if(v) rows.push({room_id:_currentRoom.id, user_id:_currentUser.id, color_key:k, label:v, updated_at:new Date().toISOString()});
     else if(_colorLabels[k]) dels.push(k); // 기존에 있었는데 비웠으면 삭제
   });
   try{
     if(rows.length){
       const {error}=await supa.from('room_color_labels')
-        .upsert(rows,{onConflict:'room_id,color_key'});
+        .upsert(rows,{onConflict:'room_id,user_id,color_key'});
       if(error)throw error;
     }
     if(dels.length){
       const {error:e2}=await supa.from('room_color_labels')
-        .delete().eq('room_id',_currentRoom.id).in('color_key',dels);
+        .delete().eq('room_id',_currentRoom.id).eq('user_id',_currentUser.id).in('color_key',dels);
       if(e2)throw e2;
     }
     // 로컬 반영
@@ -8294,7 +8315,16 @@ function resetColorLabelEdit(mode){
   }
 }
 /* mode: 'ev' | 'todo' */
-function toggleColorLabelEdit(mode){
+async function toggleColorLabelEdit(mode){
+  // 프리미엄 차별화 — 라벨 이름 편집은 Pro 전용 (보기는 자유)
+  await ensurePremiumLoaded();
+  if(!isEffectivePremium()){
+    showUpgradeModal({
+      message:'색상 라벨 이름 편집은 프리미엄 전용이에요.',
+      feature:'프리미엄으로 업그레이드하면 색상마다 원하는 이름을 붙일 수 있어요.'
+    });
+    return;
+  }
   if(mode==='ev'){
     _colorLabelEditMode=true;
     window._evLabelDraft=Object.assign({}, _colorLabels);
