@@ -243,6 +243,20 @@ tbody tr:hover{background:rgba(139,58,42,.025)}
   </div>
 </div>
 
+<!-- 구독 이력 모달 -->
+<div class="modal" id="subHistModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div class="mt">📜 <span id="subHistName"></span> 님 구독 이력</div>
+      <button class="x-btn" onclick="closeSubHist()" aria-label="닫기">✕</button>
+    </div>
+    <div class="modal-body" id="subHistBody"></div>
+    <div class="modal-foot">
+      <button class="mf-cancel" onclick="closeSubHist()">닫기</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -519,23 +533,25 @@ async function delAnn(id){
 }
 
 async function renderUsers(m){
-  const {data,error}=await supa.from('profiles').select('*').order('created_at',{ascending:false});
+  const {data,error}=await supa.rpc('admin_users_with_premium');
   if(error){m.innerHTML=errBox(error);return;}
-  _cache.users=data||[];
+  _cache.users=(data&&data.rows)||[];
   drawUsers(m);
 }
 function drawUsers(m){
   let list=_cache.users;
   if(_usrSearch)list=list.filter(u=>(u.name||'').toLowerCase().includes(_usrSearch)||(u.email||'').toLowerCase().includes(_usrSearch));
+  const premBadge=u=>u.is_premium?' <span class="status-badge" style="background:var(--gold)">💎 구독</span>':'';
+  const premCount=_cache.users.filter(u=>u.is_premium).length;
   m.innerHTML=`
     <div class="page-title">회원 관리</div>
-    <div class="page-sub">총 ${_cache.users.length}명</div>
+    <div class="page-sub">총 ${_cache.users.length}명 · 구독자 ${premCount}명</div>
     <div class="head-row"><div class="search"><input id="usrSearch" placeholder="이름·이메일 검색" value="${esc(_usrSearch)}"></div></div>
     ${!list.length?`<div class="empty"><div class="e-emoji">👥</div>${_usrSearch?'검색 결과가 없어요':'회원이 없어요'}</div>`:`
     <div class="table-wrap only-pc"><table>
       <thead><tr><th>이름</th><th>이메일</th><th>가입 경로</th><th>생일</th><th>가입일</th></tr></thead>
       <tbody>${list.map(u=>`<tr>
-        <td class="t-strong">${esc(u.name||'(이름 없음)')}</td>
+        <td class="t-strong">${esc(u.name||'(이름 없음)')}${premBadge(u)}</td>
         <td class="t-dim">${esc(u.email||'-')}</td>
         <td class="t-dim">${esc(u.provider||'-')}</td>
         <td class="t-dim">${esc(u.birthday||'-')}</td>
@@ -543,7 +559,7 @@ function drawUsers(m){
       </tr>`).join('')}</tbody>
     </table></div>
     <div class="clist only-mobile">${list.map(u=>`<div class="ccard">
-      <div class="ccard-top"><span class="ccard-title">${esc(u.name||'(이름 없음)')}</span><span class="ccard-date">${fmtDay(u.created_at)}</span></div>
+      <div class="ccard-top"><span class="ccard-title">${esc(u.name||'(이름 없음)')}${premBadge(u)}</span><span class="ccard-date">${fmtDay(u.created_at)}</span></div>
       <div class="ccard-body" style="font-size:13px">${esc(u.email||'-')}</div>
       <div class="ccard-meta">가입 ${esc(u.provider||'-')}${u.birthday?' · 생일 '+esc(u.birthday):''}</div>
     </div>`).join('')}</div>`}`;
@@ -614,22 +630,47 @@ let _subGrantUser=null;     // 수동 부여 대상 {id,name,email}
 let _subUnit='day';         // 'day' | 'month'
 let _subDays=7;             // 부여 일수
 let _subExtend=true;        // true=연장, false=새로 시작
+let _subSearch='';          // 구독자 검색어
+let _subFilter='all';       // 전체 구독자 필터: all|yearly|monthly|manual
 
 async function renderSubs(m){
-  let stats, rows;
+  let stats, rows, expired, reasons;
   try{
-    const [st,ls]=await Promise.all([
+    const [st,ls,ex,rs]=await Promise.all([
       supa.rpc('admin_subscription_stats'),
-      supa.rpc('admin_subscription_list')
+      supa.rpc('admin_subscription_list'),
+      supa.rpc('admin_expired_list',{p_days:30}),
+      supa.rpc('admin_reason_stats')
     ]);
     if(st.error)throw st.error;
     if(ls.error)throw ls.error;
     stats=st.data; rows=(ls.data&&ls.data.rows)||[];
+    expired=(ex.data&&ex.data.rows)||[];
+    reasons=(rs.data&&rs.data.rows)||[];
   }catch(e){ m.innerHTML=errBox(e); return; }
   _cache.subs=rows;
+  _cache.subsExpired=expired;
+  _cache.subsReasons=reasons;
+  drawSubs(m);
+}
 
-  const manual=rows.filter(r=>r.is_manual);
-  const paid=rows.filter(r=>!r.is_manual);
+function drawSubs(m){
+  const stats={
+    total_active:new Set(_cache.subs.map(r=>r.user_id)).size,
+    monthly:_cache.subs.filter(r=>r.plan_type==='monthly').length,
+    yearly:_cache.subs.filter(r=>r.plan_type==='yearly').length,
+    manual:_cache.subs.filter(r=>r.is_manual).length,
+    expiring_7d:_cache.subs.filter(r=>r.days_left<=7).length,
+  };
+  const manual=_cache.subs.filter(r=>r.is_manual);
+  const q=_subSearch.toLowerCase();
+  let all=_cache.subs;
+  if(_subFilter==='yearly')all=all.filter(r=>!r.is_manual&&r.plan_type==='yearly');
+  else if(_subFilter==='monthly')all=all.filter(r=>!r.is_manual&&r.plan_type==='monthly');
+  else if(_subFilter==='manual')all=all.filter(r=>r.is_manual);
+  if(q)all=all.filter(r=>(r.name||'').toLowerCase().includes(q)||(r.email||'').toLowerCase().includes(q));
+  const expired=_cache.subsExpired||[];
+  const reasons=_cache.subsReasons||[];
 
   const cards=[
     {l:'활성 구독자',v:stats.total_active,e:'중복 제거 인원'},
@@ -637,6 +678,7 @@ async function renderSubs(m){
     {l:'연간',v:stats.yearly,e:'yearly 플랜'},
     {l:'수동 부여',v:stats.manual,e:'관리자 지급'},
     {l:'만료 임박',v:stats.expiring_7d,e:'7일 이내',alert:stats.expiring_7d>0},
+    {l:'최근 만료',v:expired.length,e:'30일 내',alert:expired.length>0},
   ];
 
   m.innerHTML=`
@@ -653,18 +695,57 @@ async function renderSubs(m){
 
     <div class="head-row" style="margin-top:18px">
       <button class="btn-line" onclick="openSubGrant()">＋ 수동 구독 부여</button>
+      <div class="spacer"></div>
+      <button class="btn-line" onclick="exportSubsCsv()">⬇ CSV 내보내기</button>
     </div>
 
+    <!-- 부여 사유 통계 -->
+    ${reasons.length?`
+    <div class="page-sub" style="margin-top:14px;font-weight:700">📊 부여 사유 통계</div>
+    <div class="chips" style="flex-wrap:wrap">
+      ${reasons.map(r=>`<span class="chip" style="cursor:default">${esc(r.reason)} <b style="color:var(--accent)">${r.cnt}</b></span>`).join('')}
+    </div>`:''}
+
     <!-- 🎁 수동 구독 멤버 -->
-    <div class="page-sub" style="margin-top:14px;font-weight:700;color:var(--accent)">🎁 수동 구독 멤버 (${manual.length})</div>
+    <div class="page-sub" style="margin-top:18px;font-weight:700;color:var(--accent)">🎁 수동 구독 멤버 (${manual.length})</div>
     ${!manual.length?`<div class="empty" style="padding:24px"><div class="e-emoji">🎁</div>수동 부여한 멤버가 없어요</div>`:`
     <div class="clist">${manual.map(r=>subCard(r,true)).join('')}</div>`}
 
-    <!-- 전체 구독자 -->
-    <div class="page-sub" style="margin-top:20px;font-weight:700">전체 구독자 (${rows.length})</div>
-    ${!rows.length?`<div class="empty" style="padding:24px"><div class="e-emoji">💳</div>구독자가 없어요</div>`:`
-    <div class="clist">${rows.map(r=>subCard(r,false)).join('')}</div>`}
+    <!-- 최근 만료자 (재구독 유도) -->
+    <div class="page-sub" style="margin-top:20px;font-weight:700;color:var(--st-pending)">⏰ 최근 만료자 (${expired.length}) · 재구독 유도 대상</div>
+    ${!expired.length?`<div class="empty" style="padding:24px"><div class="e-emoji">✅</div>최근 30일 내 만료자가 없어요</div>`:`
+    <div class="clist">${expired.map(r=>expiredCard(r)).join('')}</div>`}
+
+    <!-- 전체 구독자 + 필터 + 검색 -->
+    <div class="page-sub" style="margin-top:20px;font-weight:700">전체 구독자 (${_cache.subs.length})</div>
+    <div class="chips">
+      ${[['all','전체',_cache.subs.length],
+         ['yearly','연간',_cache.subs.filter(r=>!r.is_manual&&r.plan_type==='yearly').length],
+         ['monthly','월간',_cache.subs.filter(r=>!r.is_manual&&r.plan_type==='monthly').length],
+         ['manual','수동',_cache.subs.filter(r=>r.is_manual).length]
+        ].map(([k,l,n])=>`<button class="chip${k===_subFilter?' on':''}" onclick="subFilter('${k}')">${l} ${n}</button>`).join('')}
+    </div>
+    <div class="head-row"><div class="search" style="flex:1"><input id="subSearch" placeholder="이름·이메일 검색" value="${esc(_subSearch)}"></div></div>
+    ${!all.length?`<div class="empty" style="padding:24px"><div class="e-emoji">💳</div>${_subSearch||_subFilter!=='all'?'해당하는 구독자가 없어요':'구독자가 없어요'}</div>`:`
+    <div class="clist">${all.map(r=>subCard(r,false)).join('')}</div>`}
   `;
+  const si=document.getElementById('subSearch');
+  if(si)si.oninput=e=>{_subSearch=e.target.value.trim();drawSubs(m);const el=document.getElementById('subSearch');if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}};
+}
+
+function expiredCard(r){
+  return `<div class="ccard">
+    <div class="ccard-top">
+      <span><span class="status-badge" style="background:var(--st-canceled)">만료</span> <span class="ccard-title" style="font-size:14px">${esc(r.name||'(이름 없음)')}</span></span>
+      <span class="ccard-date">${r.days_ago}일 전 만료</span>
+    </div>
+    <div class="ccard-body" style="font-size:13px">${esc(r.email||'-')}</div>
+    <div class="ccard-meta">만료일 ${fmtDay(r.expires_at)}${r.is_manual?' · 수동':''}</div>
+    <div class="ccard-actions">
+      <button class="mini-btn mb-accent" onclick="quickExtend('${r.user_id}','${esc(r.name||'')}')">＋ 재부여</button>
+      <button class="mini-btn mb-gray" onclick="showSubHistory('${r.user_id}','${esc(r.name||'')}')">이력</button>
+    </div>
+  </div>`;
 }
 
 function subCard(r,withRevoke){
@@ -681,8 +762,11 @@ function subCard(r,withRevoke){
     <div class="ccard-meta">만료 ${fmtDay(r.expires_at)}${r.manual_reason?' · 사유: '+esc(r.manual_reason):''}</div>
     ${withRevoke?`<div class="ccard-actions">
       <button class="mini-btn mb-accent" onclick="quickExtend('${r.user_id}','${esc(r.name||'')}')">＋연장</button>
+      <button class="mini-btn mb-solid" onclick="showSubHistory('${r.user_id}','${esc(r.name||'')}')">이력</button>
       <button class="mini-btn mb-gray" onclick="revokeSub('${r.id}')">회수</button>
-    </div>`:''}
+    </div>`:`<div class="ccard-actions">
+      <button class="mini-btn mb-accent" onclick="showSubHistory('${r.user_id}','${esc(r.name||'')}')">이력 보기</button>
+    </div>`}
   </div>`;
 }
 
@@ -824,6 +908,61 @@ async function revokeSub(id){
   toast('회수했어요');
   renderSubs(document.getElementById('main'));
 }
+
+/* CSV 내보내기 */
+function exportSubsCsv(){
+  const rows=_cache.subs||[];
+  if(!rows.length){toast('내보낼 구독자가 없어요');return;}
+  const head=['이름','이메일','플랜','수동여부','시작일','만료일','남은일수','부여사유'];
+  const lines=[head.join(',')];
+  rows.forEach(r=>{
+    const cell=[
+      r.name||'', r.email||'',
+      r.is_manual?'수동':(r.plan_type||''),
+      r.is_manual?'Y':'N',
+      fmtDay(r.started_at), fmtDay(r.expires_at),
+      r.days_left, (r.manual_reason||'').replace(/[,\n]/g,' ')
+    ].map(v=>`"${String(v).replace(/"/g,'""')}"`);
+    lines.push(cell.join(','));
+  });
+  const csv='\uFEFF'+lines.join('\n'); // BOM (엑셀 한글)
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`구독자_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('CSV를 내보냈어요');
+}
+
+/* 구독 이력 보기 모달 */
+async function showSubHistory(userId,name){
+  document.getElementById('subHistModal').classList.add('on');
+  document.getElementById('subHistName').textContent=name||'(이름 없음)';
+  const body=document.getElementById('subHistBody');
+  body.innerHTML='<div class="loading">불러오는 중…</div>';
+  const {data,error}=await supa.rpc('admin_subscription_history',{p_user_id:userId});
+  if(error||!data||!data.ok){body.innerHTML=errBox(error||{message:'권한 오류'});return;}
+  const rows=data.rows||[];
+  if(!rows.length){body.innerHTML='<div class="empty" style="padding:30px"><div class="e-emoji">📭</div>구독 이력이 없어요</div>';return;}
+  const STATUS={active:'활성',expired:'만료',cancelled:'취소'};
+  const SCOLOR={active:'var(--st-paid)',expired:'var(--st-canceled)',cancelled:'var(--st-pending)'};
+  body.innerHTML=`<div class="clist">${rows.map(r=>{
+    const stLabel=r.is_current?'현재 활성':(STATUS[r.status]||r.status);
+    const stColor=r.is_current?'var(--st-paid)':(SCOLOR[r.status]||'#777');
+    const plan=r.is_manual?'수동':(r.plan_type==='yearly'?'연간':r.plan_type==='monthly'?'월간':r.plan_type);
+    return `<div class="ccard" style="${r.is_current?'border-color:var(--st-paid);border-width:2px':''}">
+      <div class="ccard-top">
+        <span><span class="status-badge" style="background:${stColor}">${stLabel}</span> <span class="t-dim" style="font-size:12px">${plan}</span></span>
+        <span class="ccard-date">${fmtDate(r.created_at)}</span>
+      </div>
+      <div class="ccard-meta" style="border-top:none;padding-top:4px">시작 ${fmtDay(r.started_at)} → 만료 ${fmtDate(r.expires_at)}${r.manual_reason?'<br>사유: '+esc(r.manual_reason):''}</div>
+    </div>`;
+  }).join('')}</div>`;
+}
+function closeSubHist(){document.getElementById('subHistModal').classList.remove('on');}
+function subFilter(k){_subFilter=k;drawSubs(document.getElementById('main'));}
 
 applyBrandLogos();
 checkSession();
