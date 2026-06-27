@@ -1363,6 +1363,11 @@ body.ev-dragging .cal-cell{cursor:grabbing}
 }
 .dp-photo-thumb:active{transform:scale(.96)}
 .dp-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+/* 무료 30일 만료 사진 — 잠금 표시 */
+.dp-photo-thumb.dp-photo-locked{cursor:pointer;display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(45deg,#efe3cd,#efe3cd 8px,#e8d9bf 8px,#e8d9bf 16px);border:1px dashed var(--mute)}
+.dp-photo-lock-ic{font-size:26px;opacity:.55}
+.dp-photo-expired-note{margin-top:7px;font-size:11.5px;line-height:1.5;color:var(--sub);background:rgba(176,135,66,.1);border:1px solid rgba(176,135,66,.22);border-radius:9px;padding:8px 10px;cursor:pointer}
+.dp-photo-expired-note b{color:var(--accent);font-weight:700}
 
 /* 사진 큰 보기 모달 */
 .photoview-overlay{
@@ -2093,47 +2098,67 @@ body.align-right .cal-evbar{text-align:right}
 .pf-stamp.has-photo img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 .pf-stamp.has-photo::before{display:none}
 .pf-photo-btn{display:block;font-size:11px;color:var(--sub);background:transparent;border:none;cursor:pointer;margin-top:4px;padding:4px 0;font-family:inherit;text-decoration:underline}
-/* ===== 신규 가입 온보딩 슬라이드 ===== */
-.onb-overlay{position:fixed;inset:0;background:rgba(30,28,24,.55);z-index:95;display:none;align-items:center;justify-content:center;padding:22px;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
-.onb-overlay.on{display:flex}
-.onb-card{background:var(--bg);border-radius:24px;width:100%;max-width:350px;padding:30px 24px 20px;box-shadow:0 24px 70px rgba(0,0,0,.35);text-align:center;animation:onbIn .3s ease}
-@keyframes onbIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+/* ===== 신규 가입 온보딩 슬라이드 (V2 업그레이드) ===== */
+.onb-overlay{position:fixed;inset:0;background:rgba(30,24,18,.62);z-index:95;display:none;align-items:center;justify-content:center;padding:22px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.onb-overlay.on{display:flex;animation:onbFade .35s ease}
+@keyframes onbFade{from{opacity:0}to{opacity:1}}
+.onb-card{position:relative;background:linear-gradient(168deg,#fdf6e9 0%,var(--bg) 100%);border:1px solid rgba(176,135,66,.28);border-radius:26px;width:100%;max-width:352px;padding:30px 24px 20px;box-shadow:0 28px 80px rgba(40,24,12,.4),0 1px 0 rgba(255,255,255,.6) inset;text-align:center;animation:onbIn .4s cubic-bezier(.2,.8,.3,1);overflow:hidden}
+/* 카드 상단 골드 헤어라인 장식 */
+.onb-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--gold) 30%,var(--accent) 50%,var(--gold) 70%,transparent);opacity:.55}
+@keyframes onbIn{from{opacity:0;transform:translateY(20px) scale(.96)}to{opacity:1;transform:none}}
 .onb-viewport{overflow:hidden;width:100%}
-.onb-track{display:flex;transition:transform .3s ease}
-.onb-slide{flex:0 0 100%;max-width:100%;box-sizing:border-box;padding:0 2px;min-height:344px;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.onb-logo{width:96px;height:96px;border-radius:22px;margin-bottom:18px;box-shadow:0 6px 20px rgba(139,58,42,.18)}
-.onb-title{font-size:21px;font-weight:800;color:var(--text);line-height:1.42;margin-bottom:12px}
-.onb-desc{font-size:13.5px;color:var(--sub);line-height:1.65}
-.onb-cal{width:100%;background:var(--card);border-radius:14px;padding:11px 9px;margin-bottom:16px;box-shadow:0 3px 12px rgba(0,0,0,.06)}
-.onb-cal-tabs{display:flex;justify-content:center;gap:6px;margin-bottom:8px}
-.onb-cal-tab{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:6.5px;color:var(--sub);white-space:nowrap}
-.onb-tab-av{width:21px;height:21px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff}
-.onb-tab-av.all{background:transparent;border:1.5px solid var(--mute);color:var(--mute);font-size:10px;letter-spacing:-1px}
-.onb-cal-head{text-align:center;margin-bottom:7px;line-height:1.1}
-.onb-cal-yr{display:block;font-size:8px;color:var(--mute);margin-bottom:1px}
-.onb-cal-mon{font-size:15px;font-weight:800;color:var(--text)}
+.onb-track{display:flex;transition:transform .38s cubic-bezier(.3,.7,.2,1)}
+.onb-slide{flex:0 0 100%;max-width:100%;box-sizing:border-box;padding:0 2px;min-height:356px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+/* 로고: 골드 링 + 은은한 글로우 */
+.onb-logo{width:100px;height:100px;border-radius:26px;margin-bottom:20px;box-shadow:0 10px 30px rgba(139,58,42,.28),0 0 0 4px rgba(176,135,66,.16),0 0 0 1px rgba(176,135,66,.3);animation:onbLogoFloat 3.5s ease-in-out infinite}
+@keyframes onbLogoFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+/* 슬라이드 상단 장식 디바이더 */
+.onb-deco{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px}
+.onb-deco-line{height:1px;width:34px;background:linear-gradient(90deg,transparent,var(--gold))}
+.onb-deco-line.r{background:linear-gradient(90deg,var(--gold),transparent)}
+.onb-deco-dia{width:5px;height:5px;background:var(--gold);transform:rotate(45deg);opacity:.85}
+/* 슬라이드 상단 작은 챕터 라벨 */
+.onb-kicker{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:1.5px;color:var(--accent);background:rgba(139,58,42,.08);border:1px solid rgba(139,58,42,.16);border-radius:99px;padding:4px 12px;margin-bottom:14px;text-transform:uppercase}
+.onb-title{font-size:22px;font-weight:800;color:var(--text);line-height:1.42;margin-bottom:12px;letter-spacing:-.3px}
+.onb-desc{font-size:13.5px;color:var(--sub);line-height:1.7}
+/* 미니 캘린더 카드 — 그림자/테두리 강화 */
+.onb-cal{width:100%;background:var(--card);border:1px solid rgba(176,135,66,.2);border-radius:16px;padding:12px 10px;margin-bottom:18px;box-shadow:0 6px 20px rgba(58,36,24,.1),0 1px 0 rgba(255,255,255,.5) inset}
+.onb-cal-tabs{display:flex;justify-content:center;gap:7px;margin-bottom:9px}
+.onb-cal-tab{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:6.5px;color:var(--sub);white-space:nowrap}
+.onb-tab-av{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.onb-tab-av.all{background:transparent;border:1.5px solid var(--mute);color:var(--mute);font-size:10px;letter-spacing:-1px;box-shadow:none}
+.onb-cal-head{text-align:center;margin-bottom:8px;line-height:1.1}
+.onb-cal-yr{display:block;font-size:8px;color:var(--mute);margin-bottom:1px;letter-spacing:.5px}
+.onb-cal-mon{font-size:16px;font-weight:800;color:var(--text)}
 .onb-cal-week .sun{color:var(--sun)}
 .onb-cal-week .sat{color:var(--sat)}
 .onb-c i.sun{color:var(--sun)}
 .onb-c i.sat{color:var(--sat)}
-.onb-cal-week{display:grid;grid-template-columns:repeat(7,1fr);font-size:8px;color:var(--mute);margin-bottom:3px;text-align:center}
+.onb-cal-week{display:grid;grid-template-columns:repeat(7,1fr);font-size:8px;color:var(--mute);margin-bottom:4px;text-align:center;font-weight:600}
 .onb-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
-.onb-c{min-height:21px;display:flex;flex-direction:column;align-items:center;gap:1px;padding-top:1px}
+.onb-c{min-height:22px;display:flex;flex-direction:column;align-items:center;gap:1px;padding-top:1px}
 .onb-c.off{opacity:0}
 .onb-c i{font-size:7.5px;color:var(--sub);font-style:normal;line-height:1}
-.onb-c b{font-size:6px;font-weight:700;color:#3a2a1a;width:93%;border-radius:2px;padding:1px 0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;line-height:1.3}
-.onb-feats{display:flex;flex-direction:column;gap:13px;width:100%}
-.onb-feat{display:flex;gap:13px;align-items:flex-start;text-align:left}
-.onb-fic{font-size:23px;flex-shrink:0;line-height:1.2}
-.onb-ft{flex:1;min-width:0;font-size:12.5px;color:var(--sub);line-height:1.5}
-.onb-ft b{display:block;color:var(--text);font-size:14px;margin-bottom:2px}
-.onb-dots{display:flex;justify-content:center;gap:7px;margin:24px 0 16px}
-.onb-dot{width:7px;height:7px;border-radius:50%;background:var(--mute);opacity:.4;transition:.25s}
-.onb-dot.on{background:var(--accent);opacity:1;width:22px;border-radius:4px}
-.onb-next{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;transition:transform .12s}
-.onb-next:active{transform:scale(.98)}
+.onb-c b{font-size:6px;font-weight:700;color:#3a2a1a;width:93%;border-radius:3px;padding:1px 0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;line-height:1.3}
+/* 기능 리스트 — 카드형 행으로 업그레이드 */
+.onb-feats{display:flex;flex-direction:column;gap:10px;width:100%}
+.onb-feat{display:flex;gap:12px;align-items:flex-start;text-align:left;background:rgba(251,242,224,.55);border:1px solid rgba(176,135,66,.16);border-radius:13px;padding:11px 13px;transition:transform .15s}
+.onb-fic{font-size:21px;flex-shrink:0;line-height:1.2;width:30px;text-align:center}
+.onb-ft{flex:1;min-width:0;font-size:12px;color:var(--sub);line-height:1.5}
+.onb-ft b{display:block;color:var(--text);font-size:13.5px;margin-bottom:2px;font-weight:700}
+.onb-ft b.acc{color:var(--accent);display:inline;font-size:inherit;margin:0}
+/* 진행 dots */
+.onb-dots{display:flex;justify-content:center;gap:7px;margin:22px 0 16px}
+.onb-dot{width:7px;height:7px;border-radius:50%;background:var(--mute);opacity:.35;transition:.3s cubic-bezier(.3,.7,.2,1)}
+.onb-dot.on{background:var(--accent);opacity:1;width:24px;border-radius:4px}
+/* 다음/시작 버튼 — 그라데이션 + 그림자 */
+.onb-next{width:100%;padding:15px;background:linear-gradient(135deg,var(--accent),#7a3020);color:#fff;border:none;border-radius:15px;font-size:15.5px;font-weight:800;cursor:pointer;letter-spacing:.3px;box-shadow:0 6px 18px rgba(139,58,42,.32);transition:transform .12s,box-shadow .12s}
+.onb-next:active{transform:scale(.97);box-shadow:0 3px 10px rgba(139,58,42,.28)}
 .onb-dismiss{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;color:var(--sub);margin-bottom:14px;cursor:pointer;-webkit-user-select:none;user-select:none}
 .onb-dismiss input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;margin:0}
+/* 건너뛰기 (우상단) */
+.onb-skip{position:absolute;top:16px;right:18px;font-size:12px;color:var(--mute);background:none;border:none;cursor:pointer;font-family:inherit;z-index:2;padding:4px 6px;transition:color .15s}
+.onb-skip:active{color:var(--sub)}
 /* ============================================================
    V2 대규모 업데이트: 탭바 / 우리할일 / 통합설정 / 데이시트 탭
    (기존 스타일 뒤에 추가 — 동일 선택자는 이 규칙이 우선)
@@ -2169,6 +2194,11 @@ body.align-right .cal-evbar{text-align:right}
 }
 .cal-tabbar.tabbar-gone{opacity:0;pointer-events:none;transform:translateX(-50%) translateY(14px)}
 .cal-tabbar[hidden]{display:none}
+/* ── 광고 공간 확보 ── body.has-ad일 때만 적용 (유료/광고없음 시 자동 복원) ──
+   AdMob 배너(약 56px)를 화면 맨 아래에 깔고, 탭바를 그만큼 위로 올려 안 겹치게 함.
+   광고가 사라지면(유료 전환·만료 복원) 클래스 제거로 원래대로 복원됨. */
+body.has-ad .cal-tabbar{ bottom:calc(10px + 56px + env(safe-area-inset-bottom)) !important; }
+body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)) !important; }
 .cal-tab{
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   border:none;background:transparent;cursor:pointer;color:var(--mute);font-family:inherit;
@@ -2917,7 +2947,9 @@ body.align-right .cal-evbar{text-align:right}
       <div class="uni-divider"></div>
       <div class="uni-sec-label">🔧 관리자 전용</div>
       <button class="uni-nav" onclick="openAdminFullPage()"><span>🛠 관리자 페이지 열기</span><span class="chev">›</span></button>
-      <button class="uni-nav plan-toggle on" id="planToggleBtn" onclick="toggleAdminPlan()"><span id="planToggleBtnLabel">🔓 유료 플랜 (체험)</span><span class="plan-switch" id="planSwitch">ON</span></button>
+      <button class="uni-nav" onclick="previewOnboarding()"><span>👋 온보딩 미리보기</span><span class="chev">›</span></button>
+      <button class="uni-nav plan-toggle off" id="planToggleBtn" onclick="toggleAdminPlan()"><span id="planToggleBtnLabel">🔒 무료 플랜 (체험)</span><span class="plan-switch" id="planSwitch">OFF</span></button>
+      <button class="uni-nav" id="globalTrialBtn" onclick="toggleGlobalTrial()"><span id="globalTrialLabel">👥 전체 이용자 프리미엄</span><span class="plan-switch off" id="globalTrialSwitch">OFF</span></button>
       <button class="uni-nav" id="deployBtn" onclick="openDeploySheet()"><span id="deployBtnLabel">🚀 배포하기</span><span class="chev">›</span></button>
     </div>
 
@@ -3282,6 +3314,7 @@ body.align-right .cal-evbar{text-align:right}
       <div class="pb-title" style="margin-bottom:12px">프리미엄 기능</div>
       <div class="prem-feature-list">
         <div class="prem-feature"><span class="pmf-ic">📷</span><div class="pmf-body"><div class="pmf-name">일정 사진</div><div class="pmf-desc">한 일정에 <b>최대 5장</b> <span class="pmf-free">무료 1장</span></div></div></div>
+        <div class="prem-feature"><span class="pmf-ic">♾️</span><div class="pmf-body"><div class="pmf-name">사진 평생 보관</div><div class="pmf-desc">올린 사진이 <b>사라지지 않고 영구 보관</b> <span class="pmf-free">무료 30일 후 잠김</span></div></div></div>
         <div class="prem-feature"><span class="pmf-ic">✅</span><div class="pmf-body"><div class="pmf-name">진행 중 할일</div><div class="pmf-desc"><b>무제한</b>으로 추가 <span class="pmf-free">무료 5개</span></div></div></div>
         <div class="prem-feature"><span class="pmf-ic">🗂️</span><div class="pmf-body"><div class="pmf-name">완료 할일 보관</div><div class="pmf-desc"><b>30일</b> 보관 <span class="pmf-free">무료 7일</span></div></div></div>
         <div class="prem-feature"><span class="pmf-ic">🏷️</span><div class="pmf-body"><div class="pmf-name">색상 라벨 이름</div><div class="pmf-desc">색마다 <b>이름 붙이기</b></div></div></div>
@@ -4087,16 +4120,26 @@ body.align-right .cal-evbar{text-align:right}
   </div>
 </div>
 
-<!-- 신규 가입 온보딩 (슬라이드 3장) -->
+<!-- 신규 가입 온보딩 (슬라이드 5장) -->
 <div class="onb-overlay" id="onbOverlay" role="dialog" aria-modal="true">
   <div class="onb-card">
+    <button class="onb-skip" id="onbSkipBtn" onclick="closeOnboarding()">건너뛰기</button>
     <div class="onb-viewport" ontouchstart="onbTouchStart(event)" ontouchend="onbTouchEnd(event)">
       <div class="onb-track" id="onbTrack">
+
+        <!-- 슬라이드 1: 환영 -->
         <div class="onb-slide" data-onb="0">
           <img src="icon-192.png" alt="우리 캘린더" class="onb-logo">
+          <div class="onb-deco">
+            <span class="onb-deco-line"></span>
+            <span class="onb-deco-dia"></span>
+            <span class="onb-deco-line r"></span>
+          </div>
           <div class="onb-title">우리 캘린더에<br>오신 것을 환영해요</div>
           <div class="onb-desc">소중한 사람들과 일정을 함께 나누는<br>따뜻한 공유 캘린더예요.<br>서로의 하루를 한눈에 확인해요.</div>
         </div>
+
+        <!-- 슬라이드 2: 캘린더 미리보기 -->
         <div class="onb-slide" data-onb="1">
           <div class="onb-cal">
             <div class="onb-cal-tabs">
@@ -4147,19 +4190,75 @@ body.align-right .cal-evbar{text-align:right}
           <div class="onb-title">이제 일정, 묻지 말고<br>직접 확인하세요!</div>
           <div class="onb-desc">친구·가족·동료와 일정을 공유하면,<br>약속 전 "그날 뭐해?" 물어볼 필요 없어요.</div>
         </div>
+
+        <!-- 슬라이드 3: 일정 추가 방법 -->
         <div class="onb-slide" data-onb="2">
-          <div class="onb-title" style="margin-bottom:16px">이렇게 사용해요</div>
+          <span class="onb-kicker">STEP 1</span>
+          <div class="onb-title" style="margin-bottom:20px">✏️ 일정 추가하는 방법</div>
           <div class="onb-feats">
-            <div class="onb-feat"><span class="onb-fic">🏠</span><div class="onb-ft"><b>방 만들기 · 초대</b>가족·친구·동료와 함께할 방을 만들고, 초대코드나 카카오톡으로 초대해요.</div></div>
-            <div class="onb-feat"><span class="onb-fic">✏️</span><div class="onb-ft"><b>간편한 일정 등록</b>날짜를 탭해 추가하고, 하루·기간·매년 반복까지 자유롭게 설정해요.</div></div>
-            <div class="onb-feat"><span class="onb-fic">👥</span><div class="onb-ft"><b>함께 일정</b>여러 멤버가 참여하는 약속을 만들고, 멤버별 색으로 한눈에 구분해요.</div></div>
+            <div class="onb-feat">
+              <span class="onb-fic">1️⃣</span>
+              <div class="onb-ft"><b>캘린더에서 날짜 탭</b>원하는 날짜를 손가락으로 탭하면 일정 추가 창이 열려요.</div>
+            </div>
+            <div class="onb-feat">
+              <span class="onb-fic">2️⃣</span>
+              <div class="onb-ft"><b>제목 입력 후 저장</b>일정 이름을 적고 색상·시간·반복을 선택한 뒤 저장해요.</div>
+            </div>
+            <div class="onb-feat">
+              <span class="onb-fic">3️⃣</span>
+              <div class="onb-ft"><b>함께하는 일정 설정</b>같은 방 멤버를 선택하면 모두의 캘린더에 함께 표시돼요.</div>
+            </div>
+            <div class="onb-feat">
+              <span class="onb-fic">💡</span>
+              <div class="onb-ft"><b>오른쪽 아래 + 버튼</b>캘린더 화면 오른쪽 아래 + 버튼을 눌러도 바로 추가할 수 있어요.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 슬라이드 4: 초대코드 입장 방법 -->
+        <div class="onb-slide" data-onb="3">
+          <span class="onb-kicker">STEP 2</span>
+          <div class="onb-title" style="margin-bottom:20px">🏠 초대코드로 방 입장하기</div>
+          <div class="onb-feats">
+            <div class="onb-feat">
+              <span class="onb-fic">1️⃣</span>
+              <div class="onb-ft"><b>방 목록 화면으로 이동</b>방 목록 화면 오른쪽 아래 <b class="acc">+ 버튼</b>을 눌러요.</div>
+            </div>
+            <div class="onb-feat">
+              <span class="onb-fic">2️⃣</span>
+              <div class="onb-ft"><b>'초대코드로 입장' 선택</b>메뉴에서 <b class="acc">초대코드로 입장</b>을 탭해요.</div>
+            </div>
+            <div class="onb-feat">
+              <span class="onb-fic">3️⃣</span>
+              <div class="onb-ft"><b>6자리 코드 입력</b>상대방에게 받은 6자리 초대코드를 입력하면 방에 바로 들어갈 수 있어요.</div>
+            </div>
+            <div class="onb-feat">
+              <span class="onb-fic">🔗</span>
+              <div class="onb-ft"><b>링크로도 입장 가능</b>카카오톡 등으로 받은 초대 링크를 탭하면 코드 없이 자동으로 입장돼요.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 슬라이드 5: 기능 요약 -->
+        <div class="onb-slide" data-onb="4">
+          <span class="onb-kicker">MORE</span>
+          <div class="onb-title" style="margin-bottom:16px">이런 기능도 있어요</div>
+          <div class="onb-feats">
+            <div class="onb-feat"><span class="onb-fic">👥</span><div class="onb-ft"><b>멤버별 색 구분</b>멤버마다 다른 색으로 표시돼 한눈에 누구 일정인지 알 수 있어요.</div></div>
             <div class="onb-feat"><span class="onb-fic">🔔</span><div class="onb-ft"><b>알림 받기</b>새 일정과 다가오는 약속을 푸시 알림으로 놓치지 않아요.</div></div>
             <div class="onb-feat"><span class="onb-fic">😊</span><div class="onb-ft"><b>이모지 반응</b>서로의 일정에 이모지로 마음을 표현하며 소통해요.</div></div>
           </div>
         </div>
+
       </div>
     </div>
-    <div class="onb-dots" id="onbDots"><span class="onb-dot on"></span><span class="onb-dot"></span><span class="onb-dot"></span></div>
+    <div class="onb-dots" id="onbDots">
+      <span class="onb-dot on"></span>
+      <span class="onb-dot"></span>
+      <span class="onb-dot"></span>
+      <span class="onb-dot"></span>
+      <span class="onb-dot"></span>
+    </div>
     <label class="onb-dismiss"><input type="checkbox" id="onbDismiss">다음부터 보지 않기</label>
     <button class="onb-next" id="onbNextBtn" onclick="onbNext()">다음</button>
   </div>
@@ -5032,7 +5131,44 @@ function toggleAdminPlan(){
   if(sw) sw.textContent = _adminPlanOverride ? 'ON' : 'OFF';
   try{ if(typeof renderColorPager==='function') renderColorPager(); }catch(_){}
   try{ if(typeof window.renderTodoColorPager==='function') window.renderTodoColorPager(); }catch(_){}
+  // 광고 갱신: 유료면 숨기고, 무료면 표시
+  try{ if(_adminPlanOverride){ hideAdBanner(); } else { showAdBannerIfNeeded(); } }catch(_){}
   toast(_adminPlanOverride ? '유료 플랜으로 체험 중이에요' : '무료 플랜으로 체험 중이에요 (편집 시 안내 모달)');
+}
+
+/* ── 전체 이용자 프리미엄 체험 토글 (관리자 전용) ── */
+let _globalTrialState = false;
+
+async function loadGlobalTrialState(){
+  try{
+    const {data} = await supa.rpc('get_global_premium_trial');
+    _globalTrialState = !!data;
+    const sw = document.getElementById('globalTrialSwitch');
+    const btn = document.getElementById('globalTrialBtn');
+    if(sw) sw.textContent = _globalTrialState ? 'ON' : 'OFF';
+    if(btn){ btn.classList.toggle('on', _globalTrialState); btn.classList.toggle('off', !_globalTrialState); }
+  }catch(e){ console.warn('전체 체험 상태 로드 실패:', e); }
+}
+
+async function toggleGlobalTrial(){
+  try{
+    const next = !_globalTrialState;
+    const confirmed = await vConfirm(
+      next
+        ? '전체 이용자를 프리미엄으로 전환할까요?\n앱을 재시작하면 모든 이용자에게 적용돼요.'
+        : '전체 이용자 프리미엄 체험을 종료할까요?\n무료 플랜으로 돌아가요.'
+    );
+    if(!confirmed) return;
+    await supa.rpc('set_global_premium_trial', { enabled: next });
+    _globalTrialState = next;
+    const sw = document.getElementById('globalTrialSwitch');
+    const btn = document.getElementById('globalTrialBtn');
+    if(sw) sw.textContent = next ? 'ON' : 'OFF';
+    if(btn){ btn.classList.toggle('on', next); btn.classList.toggle('off', !next); }
+    toast(next ? '전체 이용자 프리미엄 체험이 시작됐어요' : '전체 이용자 프리미엄 체험이 종료됐어요');
+  }catch(e){
+    toast('오류: '+(e.message||'').slice(0,40));
+  }
 }
 
 /* 반복 일정 삭제 선택 — 'one'(이 날짜만) | 'all'(모두) | null(취소) */
@@ -5378,6 +5514,81 @@ async function ensureKakaoProfile(){
   }catch(_){}
 }
 
+/* ── AdMob 광고 ──────────────────────────────────────────────────────────────
+   - Capacitor 네이티브(iOS/Android)에서만 작동, 웹/PWA는 무시
+   - 프리미엄 구독 시 showAdBanner()가 아무것도 안 함 (isEffectivePremium 체크)
+   - iOS/Android 광고 단위 ID는 각각 별도
+   ─────────────────────────────────────────────────────────────────────────── */
+const ADMOB_IDS = {
+  ios:     { app: 'ca-app-pub-2305246987819297~4146324211', banner: 'ca-app-pub-2305246987819297/5218330363' },
+  android: { app: 'ca-app-pub-2305246987819297~5315935656', banner: 'ca-app-pub-2305246987819297/7078206945' },
+  // 테스트용 ID (개발/샌드박스에서 사용, 실제 배포 전 위 ID로 교체됨)
+  test: {
+    ios_banner:     'ca-app-pub-3940256099942544/2934735716',
+    android_banner: 'ca-app-pub-3940256099942544/6300978111',
+  }
+};
+let _admobReady = false;
+let _admobBannerShowing = false;
+let _admobDebug = 'init안됨'; // 디버깅용 상태 문자열
+
+function _admobPlatform() {
+  try {
+    const C = window.Capacitor;
+    if (!C || !C.isNativePlatform || !C.isNativePlatform()) return null;
+    const ua = navigator.userAgent.toLowerCase();
+    return ua.includes('android') ? 'android' : 'ios';
+  } catch(_) { return null; }
+}
+
+async function initAdMob() {
+  try {
+    const plat = _admobPlatform();
+    if (!plat) { _admobDebug='웹(네이티브아님)'; return; } // 웹/TWA면 무시
+    const { AdMob } = window.Capacitor.Plugins;
+    if (!AdMob) { _admobDebug='AdMob플러그인없음'; return; }
+    await AdMob.initialize({ requestTrackingAuthorization: true });
+    _admobReady = true;
+    _admobDebug = 'init완료('+plat+')';
+    // 초기화 완료 직후 배너 표시 시도 (로그인+프리미엄 로드가 먼저 끝났을 수 있으므로)
+    showAdBannerIfNeeded();
+  } catch(e) { _admobDebug='init오류:'+(e&&e.message||e); console.warn('AdMob init:', e); }
+}
+
+async function showAdBannerIfNeeded() {
+  try {
+    if (!_admobReady) { _admobDebug='ready안됨'; return; }
+    if (isEffectivePremium()) { _admobDebug='프리미엄(광고없음)'; hideAdBanner(); return; } // 프리미엄이면 광고 없음
+    if (_admobBannerShowing) { _admobDebug='이미표시중'; return; }
+    const plat = _admobPlatform();
+    if (!plat) return;
+    const { AdMob } = window.Capacitor.Plugins;
+    if (!AdMob) return;
+    const adId = ADMOB_IDS[plat].banner;
+    await AdMob.showBanner({
+      adId,
+      adSize: 'BANNER',
+      position: 'BOTTOM_CENTER',
+      margin: 0, // 화면 맨 아래에 배너 배치 (탭바는 has-ad로 위로 올라감)
+      isTesting: true, // 테스트 모드 — App Store 제출 전 false로 변경 필수
+    });
+    _admobBannerShowing = true;
+    _admobDebug = '배너표시됨';
+    try{ document.body.classList.add('has-ad'); }catch(_){} // 콘텐츠 하단 여백 + 탭바 올림
+  } catch(e) { _admobDebug='banner오류:'+(e&&e.message||e); console.warn('AdMob showBanner:', e); }
+}
+
+async function hideAdBanner() {
+  try {
+    try{ document.body.classList.remove('has-ad'); }catch(_){} // 광고 공간 복원 (콘텐츠 끝까지, 탭바 원위치)
+    if (!_admobBannerShowing) return;
+    const { AdMob } = window.Capacitor.Plugins;
+    if (!AdMob) return;
+    await AdMob.hideBanner();
+    _admobBannerShowing = false;
+  } catch(e) { _admobDebug='banner숨김오류:'+(e&&e.message||e); console.warn('AdMob hideBanner:', e); }
+}
+
 /* ── 프리미엄 상태 ── 로그인 시 1회 로드, 모든 제한 체크는 _isPremium 하나로 판단 */
 let _isPremium=false;        // 현재 유저 프리미엄 여부
 let _premiumInfo=null;       // {is_premium, expires_at, plan_type, is_manual}
@@ -5403,7 +5614,7 @@ async function ensurePremiumLoaded(){
 }
 
 /* 관리자 플랜 체험 토글 — true=유료, false=무료 (화면 표시용, DB·실제 구독 무관) */
-let _adminPlanOverride=true;
+let _adminPlanOverride=false;
 /* 유효 프리미엄: 관리자는 토글 값을 따르고(유료/무료 체험), 일반 유저는 실제 프리미엄 여부 */
 function isEffectivePremium(){
   if(isAdmin()) return _adminPlanOverride;
@@ -6139,7 +6350,7 @@ async function init(){
       renderUser(session.user);
       showScreen('roomsScreen');
       loadRooms();
-      loadPremiumStatus();   // 프리미엄 상태 1회 로드
+      loadPremiumStatus().then(()=>showAdBannerIfNeeded()); // 프리미엄 확인 후 광고 표시
       ensureKakaoProfile();  // 재실행 시에도 카카오 이름·사진 보강 (아바타 "?" 방지)
       // 배포 버전 체크 — 관리자는 스킵, 일반 이용자는 새 버전 있으면 자동 새로고침
       setTimeout(checkDeployVersionOnStart, 1500);
@@ -6149,6 +6360,7 @@ async function init(){
   }catch(e){
     showScreen('welcomeScreen');
   }finally{
+    initAdMob(); // AdMob 초기화 (네이티브에서만 동작)
     setTimeout(()=>document.getElementById('loading').classList.add('hide'),200);
     try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 2026.06.26-FIX3 · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
     // in-app browser(카톡·네이버·페이스북 등)에서 열렸을 때 한 줄 안내
@@ -6230,11 +6442,12 @@ supa.auth.onAuthStateChange((event,session)=>{
       showScreen('roomsScreen');
     }
     loadRooms();
-    loadPremiumStatus();   // 프리미엄 상태 1회 로드
+    loadPremiumStatus().then(()=>showAdBannerIfNeeded()); // 프리미엄 확인 후 광고 표시
     document.getElementById('loading').classList.add('hide');
   }else if(event==='SIGNED_OUT'){
     _currentUser=null;
     _isPremium=false;_premiumInfo=null;_premiumLoaded=false;  // 프리미엄 상태 리셋
+    hideAdBanner(); // 로그아웃 시 광고 숨김
     showScreen('welcomeScreen');
   }
 });
@@ -8237,8 +8450,17 @@ function renderDateSheetList(){
     const metaRow=tm?`<div class="dp-meta">${tm}</div>`:'';
     const memoHtml=(!isVirtual&&ev.memo)?`<div class="dp-memo">${escapeHtml(ev.memo)}</div>`:'';
     const _evPhotoList = (!isVirtual) ? ((Array.isArray(ev.photo_urls)&&ev.photo_urls.length)?ev.photo_urls.filter(Boolean):(ev.photo_url?[ev.photo_url]:[])) : [];
+    // 무료 플랜: 업로드 30일 지난 사진은 잠금 처리(표시만 가림). 유료는 그대로.
+    let _expiredPhotoCount = 0;
     const photoHtml = _evPhotoList.length
-      ? `<div class="dp-photo-strip">`+_evPhotoList.map(u=>`<div class="dp-photo-thumb" onclick="event.stopPropagation();openPhotoView('${escapeHtml(u)}')"><img src="${escapeHtml(u)}" alt="첨부 사진" loading="lazy"></div>`).join('')+`</div>`
+      ? `<div class="dp-photo-strip">`+_evPhotoList.map(u=>{
+          if(isPhotoExpiredForFree(u)){
+            _expiredPhotoCount++;
+            return `<div class="dp-photo-thumb dp-photo-locked" onclick="event.stopPropagation();openPremiumSheet()" title="보관 기간 만료"><span class="dp-photo-lock-ic">🔒</span></div>`;
+          }
+          return `<div class="dp-photo-thumb" onclick="event.stopPropagation();openPhotoView('${escapeHtml(u)}')"><img src="${escapeHtml(u)}" alt="첨부 사진" loading="lazy"></div>`;
+        }).join('')+`</div>`
+        + (_expiredPhotoCount ? `<div class="dp-photo-expired-note" onclick="event.stopPropagation();openPremiumSheet()">🔒 보관 기간(30일)이 지난 사진 ${_expiredPhotoCount}장이에요. <b>프리미엄</b>으로 평생 보관하세요.</div>` : '')
       : '';
 
     const _evRt2=ev.repeat_type||(ev.recurring_yearly?'yearly':'none');
@@ -9459,6 +9681,27 @@ async function _doSaveEvent(){
 
 /* 현재 플랜의 사진 장수 제한 */
 function photoLimit(){ return isEffectivePremium() ? PREMIUM_PHOTOS : FREE_LIMITS.photosPerEvent; }
+
+/* ── 무료 플랜 사진 보관 기간: 업로드일 기준 30일 (유료는 무제한 보관) ──
+   파일 경로에 박힌 타임스탬프({roomId}/{uid}_{ts}_{rand}.jpg)로 업로드 시각을 추정.
+   30일이 지난 무료 유저 사진은 "표시만" 가린다(파일은 Storage에 그대로 보관).
+   유료로 전환하면 즉시 다시 보인다. */
+const FREE_PHOTO_KEEP_DAYS = 30;
+function photoUploadedAt(url){
+  // .../event-photos/{roomId}/{uid}_{timestamp}_{rand}.jpg  → timestamp(ms) 추출
+  try{
+    const m = String(url||'').match(/\/event-photos\/[^/]+\/[^_]+_(\d{10,})_/);
+    if(m && m[1]) return parseInt(m[1],10);
+  }catch(_){}
+  return null; // 알 수 없으면 null (가리지 않음 — 안전하게 보여줌)
+}
+function isPhotoExpiredForFree(url){
+  if(isEffectivePremium()) return false;          // 유료: 영구 보관
+  const ts = photoUploadedAt(url);
+  if(!ts) return false;                            // 업로드 시각 모르면 가리지 않음
+  const ageDays = (Date.now() - ts) / 86400000;
+  return ageDays > FREE_PHOTO_KEEP_DAYS;
+}
 
 /* _evPhotos의 미리보기 ObjectURL 정리 */
 function _revokeEvPhotoUrls(){
@@ -11869,10 +12112,10 @@ function closeAnnouncementPopup(){
   if(_agreeAfterAnnPopup){_agreeAfterAnnPopup=false;checkAgreement();}
 }
 
-/* ===== 신규 가입 온보딩 (슬라이드 3장, 첫 가입자에게 1회) ===== */
+/* ===== 신규 가입 온보딩 (슬라이드 5장, 첫 가입자에게 1회) ===== */
 let _onbIdx=0;
 let _onbShownThisSession=false;
-const _ONB_LAST=2;
+const _ONB_LAST=4;
 function maybeShowOnboarding(){
   try{
     if(localStorage.getItem('uricalv2.onboarded'))return;        // '그만 보기' 선택한 사람
@@ -11893,6 +12136,8 @@ function renderOnb(){
   if(track)track.style.transform='translateX(-'+(_onbIdx*100)+'%)';
   document.querySelectorAll('#onbDots .onb-dot').forEach((d,i)=>d.classList.toggle('on',i===_onbIdx));
   const btn=document.getElementById('onbNextBtn'); if(btn)btn.textContent=(_onbIdx===_ONB_LAST)?'시작하기':'다음';
+  // 마지막 슬라이드에선 '건너뛰기' 숨김 (시작하기로 유도)
+  const skip=document.getElementById('onbSkipBtn'); if(skip)skip.style.visibility=(_onbIdx===_ONB_LAST)?'hidden':'visible';
 }
 let _onbTX=null;
 function onbTouchStart(e){ _onbTX=e.touches[0].clientX; }
@@ -11906,11 +12151,24 @@ function onbTouchEnd(e){
 function onbNext(){ if(_onbIdx<_ONB_LAST){_onbIdx++;renderOnb();} else closeOnboarding(); }
 function closeOnboarding(){
   const chk=document.getElementById('onbDismiss');
-  try{
-    if(chk&&chk.checked)localStorage.setItem('uricalv2.onboarded','1'); // '그만 보기' 체크 시만 영구 차단
-    localStorage.removeItem('uricalv2.pendingOnboard');
-  }catch(_){}
+  if(!_onbPreviewMode){
+    try{
+      if(chk&&chk.checked)localStorage.setItem('uricalv2.onboarded','1'); // '그만 보기' 체크 시만 영구 차단
+      localStorage.removeItem('uricalv2.pendingOnboard');
+    }catch(_){}
+  }
   const ov=document.getElementById('onbOverlay'); if(ov)ov.classList.remove('on');
+  // 미리보기 모드면 화면 이동 없이 종료만
+  if(_onbPreviewMode){ _onbPreviewMode=false; return; }
+  // 시작하기(마지막 슬라이드) → 방 목록으로 이동
+  if(typeof showScreen==='function') showScreen('roomsScreen');
+}
+/* 관리자 미리보기: 저장값 무시하고 온보딩 강제로 띄움 (종료해도 화면 이동·기록 안 함) */
+let _onbPreviewMode=false;
+function previewOnboarding(){
+  _onbPreviewMode=true;
+  const dis=document.getElementById('onbDismiss'); if(dis)dis.checked=false;
+  showOnboarding();
 }
 
 function annPopupSeeAll(){
@@ -12990,9 +13248,37 @@ async function openOrderAdmin(){
 }
 function closeOrderAdmin(){ document.getElementById('orderAdminModal').classList.remove('on'); }
 /* 관리자 전용 웹페이지(admin.html)를 새 탭으로 — 같은 도메인 기준 */
-function openAdminFullPage(){
-  try{ window.open(window.location.origin+'/admin.html','_blank'); }
-  catch(e){ window.location.href='/admin.html'; }
+async function openAdminFullPage(){
+  // 관리자 페이지 실제 웹 주소 (네이티브 앱은 번들에 admin.html이 없으므로 웹 URL로 열어야 함)
+  const ADMIN_BASE = 'https://first-uri-calender.vercel.app/admin.html';
+  // ── 방법 A: 현재 로그인 세션 토큰을 admin.html에 넘겨 자동 로그인시킴 ──
+  // (메인 앱은 카카오 로그인이라 admin에서 다시 이메일/비번 입력할 필요 없도록,
+  //  현재 세션의 access/refresh 토큰을 URL 해시로 전달 → admin이 받아서 세션 복원)
+  let authHash = '';
+  try{
+    const { data } = await supa.auth.getSession();
+    const s = data?.session;
+    if(s?.access_token && s?.refresh_token){
+      authHash = '#at=' + encodeURIComponent(s.access_token) + '&rt=' + encodeURIComponent(s.refresh_token);
+    }
+  }catch(_){}
+
+  try{
+    // 네이티브(Capacitor): 외부 브라우저(또는 인앱 브라우저)로 열기
+    if(isNativeApp() && window.Capacitor?.Plugins?.Browser){
+      window.Capacitor.Plugins.Browser.open({ url: ADMIN_BASE + authHash });
+      return;
+    }
+    // 웹/PWA: 같은 출처면 상대경로, 아니면 새 탭
+    const origin = window.location.origin;
+    if(origin && origin.startsWith('http')){
+      window.open(origin + '/admin.html' + authHash, '_blank');
+    } else {
+      window.open(ADMIN_BASE + authHash, '_blank');
+    }
+  }catch(e){
+    try{ window.location.href = ADMIN_BASE + authHash; }catch(_){}
+  }
 }
 function oaFilter(st){
   _oaFilter=st;
@@ -15991,9 +16277,10 @@ function openUnifiedSettings(){
   const rnb=$('uniRoomNameBtn'); if(rnb) rnb.style.display=canManage?'':'none';
   let adminOn=false; try{ adminOn=isAdmin(); }catch(e){}
   const vbtn=$('uniAddVMemberBtn'); if(vbtn) vbtn.style.display=(_currentRoom.is_admin_mode&&adminOn)?'inline-block':'none';
-  const bi=$('buildInfo'), ub=$('uniBuildInfo'); if(bi&&ub) ub.textContent=bi.textContent;
+  const bi=$('buildInfo'), ub=$('uniBuildInfo'); if(bi&&ub) ub.textContent=(bi.textContent||'')+' · 광고:'+(typeof _admobDebug!=='undefined'?_admobDebug:'?');
   let adminUser=false; try{ adminUser=isAdmin(); }catch(e){}
   showEl('uniAdminSection',adminUser);
+  if(adminUser) loadGlobalTrialState(); // 전체 체험 상태 동기화
   showScreen('settingsScreen');
   _setActiveTab(3);
 }
