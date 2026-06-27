@@ -384,8 +384,9 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .pg-keep-badge{position:absolute;right:5px;bottom:5px;background:rgba(40,24,12,.72);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;line-height:1.4;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
 .pg-keep-badge.urgent{background:rgba(196,57,43,.9)}
 /* 만료된 사진(무료 30일 경과) */
-.pg-cell.pg-expired img{filter:grayscale(.7) brightness(.85)}
-.pg-cell .pg-lock{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;background:rgba(40,24,12,.32)}
+.pg-cell.pg-expired img{filter:grayscale(.8) brightness(.7)}
+.pg-cell .pg-lock{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(30,20,12,.5)}
+.pg-cell .pg-lock svg{width:30px;height:30px;color:#fff;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6))}
 /* 빈 상태 */
 .pg-empty{text-align:center;padding:64px 24px;color:var(--sub)}
 .pg-empty-ic{font-size:48px;margin-bottom:14px;opacity:.55}
@@ -3030,7 +3031,7 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)) !im
     <button class="uni-nav" onclick="openAdvSettings()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>고급 설정</span><span class="chev">›</span></button>
 
     <div class="uni-sec-label" style="margin-top:14px">지원</div>
-    <button class="uni-nav" onclick="openAnnouncements()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l3.5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M14 8a4 4 0 0 1 0 8"/><path d="M17 5a8 8 0 0 1 0 14"/></svg>공지사항</span><span class="chev">›</span></button>
+    <button class="uni-nav" onclick="openAnnouncements()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l9 5V5L6 10H4a1 1 0 0 0-1 1z"/><path d="M18 8a4 4 0 0 1 0 8"/><path d="M7 14v4a1.5 1.5 0 0 0 3 0v-2.5"/></svg>공지사항</span><span class="chev">›</span></button>
     <button class="uni-nav" onclick="openCustomerSupport()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>고객센터</span><span class="chev">›</span></button>
 
     <div id="uniOwnerSection" style="display:none">
@@ -3048,8 +3049,8 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)) !im
       <div class="uni-sec-label">🔧 관리자 전용</div>
       <button class="uni-nav" onclick="openAdminFullPage()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 1 5.4-5.4l-2.5 2.5-2-2z"/></svg>관리자 페이지 열기</span><span class="chev">›</span></button>
       <button class="uni-nav" onclick="previewOnboarding()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>온보딩 미리보기</span><span class="chev">›</span></button>
-      <button class="uni-nav plan-toggle off" id="planToggleBtn" onclick="toggleAdminPlan()"><span id="planToggleBtnLabel">🔒 무료 플랜 (체험)</span><span class="plan-switch" id="planSwitch">OFF</span></button>
-      <button class="uni-nav" id="globalTrialBtn" onclick="toggleGlobalTrial()"><span id="globalTrialLabel">👥 전체 이용자 프리미엄</span><span class="plan-switch off" id="globalTrialSwitch">OFF</span></button>
+      <button class="uni-nav plan-toggle off" id="planToggleBtn" onclick="toggleAdminPlan()"><span class="uni-nav-l"><span id="planToggleIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg></span><span id="planToggleText">무료 플랜 (체험)</span></span><span class="plan-switch" id="planSwitch">OFF</span></button>
+      <button class="uni-nav" id="globalTrialBtn" onclick="toggleGlobalTrial()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 19v-2a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v2"/><circle cx="9.5" cy="8" r="3"/><path d="M21 19v-2a3 3 0 0 0-2.2-2.9"/><path d="M15.5 5.1a3 3 0 0 1 0 5.8"/></svg>전체 이용자 프리미엄</span><span class="plan-switch off" id="globalTrialSwitch">OFF</span></button>
       <button class="uni-nav" id="deployBtn" onclick="openDeploySheet()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l-2 4 4-2 8-8a2.8 2.8 0 0 0-4-4z"/><path d="M12 6l6 6"/><path d="M15 3l6 6"/></svg><span id="deployBtnLabel">배포하기</span></span><span class="chev">›</span></button>
     </div>
 
@@ -5224,10 +5225,14 @@ function showUpgradeModal(opts){
 function toggleAdminPlan(){
   _adminPlanOverride=!_adminPlanOverride;
   const btn=document.getElementById('planToggleBtn');
-  const lab=document.getElementById('planToggleBtnLabel');
+  const lab=document.getElementById('planToggleText');
   const sw=document.getElementById('planSwitch');
   if(btn){ btn.classList.toggle('on',_adminPlanOverride); btn.classList.toggle('off',!_adminPlanOverride); }
-  if(lab) lab.textContent = _adminPlanOverride ? '🔓 유료 플랜 (체험)' : '🔒 무료 플랜 (체험)';
+  if(lab) lab.textContent = _adminPlanOverride ? '유료 플랜 (체험)' : '무료 플랜 (체험)';
+  const picon=document.getElementById('planToggleIcon');
+  if(picon) picon.innerHTML = _adminPlanOverride
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 7.5-1.8"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>';
   if(sw) sw.textContent = _adminPlanOverride ? 'ON' : 'OFF';
   try{ if(typeof renderColorPager==='function') renderColorPager(); }catch(_){}
   try{ if(typeof window.renderTodoColorPager==='function') window.renderTodoColorPager(); }catch(_){}
