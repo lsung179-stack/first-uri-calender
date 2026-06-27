@@ -816,6 +816,7 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .notif-clear-btn:active{background:rgba(139,58,42,.1)}
 .notif-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding-bottom:8px;margin-top:4px}
 .notif-row{display:flex;align-items:flex-start;gap:10px;padding:12px 12px 12px 14px;border-radius:12px;background:rgba(0,0,0,.025);cursor:pointer;border:1px solid var(--borderL);transition:background .12s,opacity .15s;position:relative;opacity:.55}
+.notif-row-ic{width:32px;height:32px;border-radius:50%;background:rgba(139,58,42,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent)}
 .notif-row:active{background:rgba(139,58,42,.08)}
 .notif-row.unread{background:rgba(139,58,42,.07);opacity:1;border-color:rgba(139,58,42,.18)}
 .notif-row.unread::before{content:'';position:absolute;left:6px;top:50%;transform:translateY(-50%);width:6px;height:6px;border-radius:50%;background:var(--accent)}
@@ -6403,6 +6404,24 @@ async function joinRoom(){
     });
     if(e2)throw e2;
 
+    // 기존 멤버들에게 입장 알림 발송 (fire-and-forget)
+    try{
+      const {data:existMems}=await supa.from('members')
+        .select('user_id')
+        .eq('room_id',room.id)
+        .neq('user_id',_currentUser.id);
+      const joinTargetIds=(existMems||[]).map(m=>m.user_id).filter(Boolean);
+      if(joinTargetIds.length){
+        const jName=(_currentProfile&&_currentProfile.name)||'새 멤버';
+        const jTitle=`${room.name||'방'}에 새 멤버`;
+        const jBody=`${jName}님이 방에 들어왔어요`;
+        supa.functions.invoke('send-push',{
+          body:{user_ids:joinTargetIds,title:jTitle,body:jBody,url:`/?room=${room.id}`,tag:`join-${room.id}-${_currentUser.id}`}
+        }).catch(e=>console.warn('입장 알림 실패:',e));
+        _insertNotificationRows(joinTargetIds,room.id,null,jTitle,jBody,'member_join');
+      }
+    }catch(eN){console.warn('멤버 입장 알림 에러:',eN)}
+
     // 일정 복사 처리 (옵션 켜져있고 소스 선택됐을 때)
     let copiedCount=0;
     if(_joinCopyOn&&_joinCopySource){
@@ -10471,6 +10490,76 @@ function formatShortDate(s){
   return `${parseInt(m,10)}월 ${parseInt(d,10)}일`;
 }
 
+/* ── 멤버 방 입장 알림 ──
+   새로 들어온 사람 제외, 기존 멤버 전체에게 발송 */
+function notifyMemberJoined(room, newUserId){
+  try{
+    if(!_currentUser||!room)return;
+    const joinerName=(_currentProfile&&_currentProfile.name)||'새 멤버';
+    const targetIds=(_myMembers||[])
+      .filter(m=>m.user_id&&m.user_id!==newUserId&&!m.is_virtual)
+      .map(m=>m.user_id);
+    if(!targetIds.length)return;
+    const title=`${room.name||'방'}에 새 멤버`;
+    const body=`${joinerName}님이 방에 들어왔어요`;
+    supa.functions.invoke('send-push',{
+      body:{
+        user_ids:targetIds,
+        title,body,
+        url:`/?room=${room.id}`,
+        tag:`join-${room.id}-${newUserId}`,
+      }
+    }).catch(e=>console.warn('입장 알림 실패:',e));
+    _insertNotificationRows(targetIds,room.id,null,title,body,'member_join');
+  }catch(e){console.warn('notifyMemberJoined 에러:',e)}
+}
+
+/* ── 할일 공통 알림 헬퍼 ──
+   함께 할일(member_keys 2명 이상)일 때만 발송; 혼자 할일은 무음 */
+function _notifyTodo(action, todo, overrideTitle){
+  try{
+    if(!_currentUser||!_currentRoom)return;
+    // 함께 할일 여부 — 현재 입력 컨텍스트(_todoMembers) 또는 저장된 member_keys
+    const keys=todo?todo.member_keys:null;
+    const isCo = (keys&&keys.length>=2)||(action==='add'&&_todoTarget==='all'&&_todoMembers&&_todoMembers.length>=2);
+    if(!isCo)return;  // 혼자 할일은 알림 없음
+
+    // 대상 user_id 추출 (member_keys는 user_id 배열)
+    const memberUserIds = todo
+      ? (Array.isArray(todo.member_keys)?todo.member_keys:[])
+      : (_todoMembers||[]);
+    const targetIds = memberUserIds.filter(uid=>uid&&uid!==_currentUser.id);
+    if(!targetIds.length)return;
+
+    const senderName=(_currentProfile&&_currentProfile.name)||'멤버';
+    const t=overrideTitle||(todo?todo.title:'')||'';
+    const startDate=todo?todo.start_date:(_todoSingleDate||null);
+    const dateLabel=startDate?formatShortDate(startDate):'';
+
+    const bodyMap={
+      add:`할 일 추가됨${dateLabel?' · '+dateLabel:''}`,
+      update:`할 일 수정됨${dateLabel?' · '+dateLabel:''}`,
+      delete:`할 일 삭제됨${dateLabel?' · '+dateLabel:''}`,
+      done:`완료 ✓${dateLabel?' · '+dateLabel:''}`,
+      undone:`완료 취소${dateLabel?' · '+dateLabel:''}`,
+    };
+    const body=bodyMap[action]||'';
+    const notifType='todo_'+action;
+    const title=`${senderName} · ${t}`;
+    const jumpDate=startDate||null;
+
+    supa.functions.invoke('send-push',{
+      body:{
+        user_ids:targetIds,
+        title,body,
+        url:`/?room=${_currentRoom.id}${jumpDate?'&date='+jumpDate:''}`,
+        tag:`todo-${action}-${todo?todo.id:Date.now()}`,
+      }
+    }).catch(e=>console.warn('할일 알림 실패:',e));
+    _insertNotificationRows(targetIds,_currentRoom.id,jumpDate,title,body,notifType);
+  }catch(e){console.warn('_notifyTodo 에러:',e)}
+}
+
 /* ─────────────────────────────────────
  * 알림 시트 (인앱 알림 목록)
  * ───────────────────────────────────── */
@@ -10620,7 +10709,24 @@ function renderNotifs(){
     const safeTitle=escapeHtml(n.title||'');
     const safeBody=escapeHtml(n.body||'');
     const roomBadge=roomName?`<span class="notif-row-room">${escapeHtml(roomName)}</span>`:'';
+    const A='fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
+    const iconMap={
+      event_created:`<svg width="18" height="18" viewBox="0 0 24 24" ${A}><rect x="3" y="4" width="18" height="17" rx="2.4"/><path d="M3 9h18"/><path d="M8 2.5v3M16 2.5v3"/><path d="M12 13v4M10 15h4"/></svg>`,
+      event_updated:`<svg width="18" height="18" viewBox="0 0 24 24" ${A}><rect x="3" y="4" width="18" height="17" rx="2.4"/><path d="M3 9h18"/><path d="M8 2.5v3M16 2.5v3"/><path d="M8 14l2 2 4-4"/></svg>`,
+      event_deleted:`<svg width="18" height="18" viewBox="0 0 24 24" ${A}><rect x="3" y="4" width="18" height="17" rx="2.4"/><path d="M3 9h18"/><path d="M8 2.5v3M16 2.5v3"/><path d="M9.5 14.5l5 3M14.5 14.5l-5 3"/></svg>`,
+      event_left:`<svg width="18" height="18" viewBox="0 0 24 24" ${A}><rect x="3" y="4" width="18" height="17" rx="2.4"/><path d="M3 9h18"/><path d="M8 2.5v3M16 2.5v3"/><path d="M15 14l-3 3-3-3"/></svg>`,
+      digest:`<svg width="18" height="18" viewBox="0 0 24 24" ${A}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`,
+      reminder:`<svg width="18" height="18" viewBox="0 0 24 24" ${A}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`,
+      member_join:`<svg width="18" height="18" viewBox="0 0 24 24" ${A}><path d="M16 19v-2a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v2"/><circle cx="9.5" cy="8" r="3"/><path d="M19 8v6M22 11h-6"/></svg>`,
+      todo_add:`<svg width="18" height="18" viewBox="0 0 24 24" ${A}><path d="M9 11l2 2 4-4"/><rect x="3" y="3" width="18" height="18" rx="2.4"/><path d="M15 3v4H9V3"/></svg>`,
+      todo_update:`<svg width="18" height="18" viewBox="0 0 24 24" ${A}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>`,
+      todo_delete:`<svg width="18" height="18" viewBox="0 0 24 24" ${A}><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>`,
+      todo_done:`<svg width="18" height="18" viewBox="0 0 24 24" ${A}><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-5"/></svg>`,
+      todo_undone:`<svg width="18" height="18" viewBox="0 0 24 24" ${A}><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>`,
+    };
+    const icon=iconMap[n.type]||iconMap.event_created;
     return `<div class="${cls.join(' ')}" onclick="onNotifClick('${n.id}')">
+      <div class="notif-row-ic">${icon}</div>
       <div class="notif-row-main">
         <div class="notif-row-title">${safeTitle}</div>
         ${safeBody?`<div class="notif-row-body">${safeBody}</div>`:''}
@@ -15921,6 +16027,10 @@ async function toggleTodoDone(id){
   try{
     const { error } = await supa.from('todos').update(updates).eq('id',id);
     if(error){ toast('변경 실패: '+((error.message||'').slice(0,30))); await loadTodos(); safeRender(); }
+    else {
+      // 함께 할일 완료/취소 알림
+      try{ _notifyTodo(turningOn?'done':'undone',t,t.title); }catch(_){}
+    }
   }catch(e){ toast('변경 실패'); await loadTodos(); safeRender(); }
 }
 async function deleteTodo(id){
@@ -15930,6 +16040,8 @@ async function deleteTodo(id){
   try{
     const { error } = await supa.from('todos').delete().eq('id',id);
     if(error){ toast('삭제 실패'); return; }
+    // 함께 할일 삭제 알림 (삭제 전 t 객체로 발송)
+    try{ _notifyTodo('delete',t,t.title); }catch(_){}
     toast('삭제됐어요');
     await loadTodos(); safeRender();
   }catch(e){ toast('삭제 실패'); }
@@ -16630,6 +16742,8 @@ async function _doSaveTodo(){
       const { error } = await supa.from('todos').update(fields).eq('id',_editingTodoId);
       if(error){ toast('수정 실패: '+((error.message||'').slice(0,40))); _showTodoSheetFromSub(); return; }
       toast('할 일이 수정됐어요');
+      // 함께 할일 수정 알림
+      try{ _notifyTodo('update',Object.assign({},fields,{id:_editingTodoId}),fields.title); }catch(_){}
     } else {
       fields.room_id=_currentRoom.id;
       fields.user_id=_currentUser.id;
@@ -16646,6 +16760,8 @@ async function _doSaveTodo(){
       } else {
         toast('할 일이 추가됐어요');
       }
+      // 함께 할일 추가 알림
+      try{ _notifyTodo('add',fields,fields.title); }catch(_){}
     }
     _editingTodoId=null;
     _roomPickMode='event';
