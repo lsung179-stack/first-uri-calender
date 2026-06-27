@@ -2106,9 +2106,9 @@ body.align-right .cal-evbar{text-align:right}
 /* 카드 상단 골드 헤어라인 장식 */
 .onb-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--gold) 30%,var(--accent) 50%,var(--gold) 70%,transparent);opacity:.55}
 @keyframes onbIn{from{opacity:0;transform:translateY(20px) scale(.96)}to{opacity:1;transform:none}}
-.onb-viewport{overflow:hidden;width:100%}
+.onb-viewport{overflow:hidden;width:100%;border-radius:14px}
 .onb-track{display:flex;transition:transform .38s cubic-bezier(.3,.7,.2,1)}
-.onb-slide{flex:0 0 100%;max-width:100%;box-sizing:border-box;padding:0 2px;min-height:356px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.onb-slide{flex:0 0 100%;max-width:100%;box-sizing:border-box;padding:0 6px;min-height:356px;display:flex;flex-direction:column;align-items:center;justify-content:center}
 /* 로고: 골드 링 + 은은한 글로우 */
 .onb-logo{width:100px;height:100px;border-radius:26px;margin-bottom:20px;box-shadow:0 10px 30px rgba(139,58,42,.28),0 0 0 4px rgba(176,135,66,.16),0 0 0 1px rgba(176,135,66,.3);animation:onbLogoFloat 3.5s ease-in-out infinite}
 @keyframes onbLogoFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
@@ -2157,8 +2157,8 @@ body.align-right .cal-evbar{text-align:right}
 .onb-dismiss{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;color:var(--sub);margin-bottom:14px;cursor:pointer;-webkit-user-select:none;user-select:none}
 .onb-dismiss input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;margin:0}
 /* 건너뛰기 (우상단) */
-.onb-skip{position:absolute;top:16px;right:18px;font-size:12px;color:var(--mute);background:none;border:none;cursor:pointer;font-family:inherit;z-index:2;padding:4px 6px;transition:color .15s}
-.onb-skip:active{color:var(--sub)}
+.onb-skip{position:absolute;top:14px;right:14px;font-size:14px;font-weight:600;color:var(--sub);background:rgba(176,135,66,.1);border:1px solid rgba(176,135,66,.2);border-radius:99px;cursor:pointer;font-family:inherit;z-index:2;padding:7px 16px;transition:background .15s,color .15s}
+.onb-skip:active{background:rgba(176,135,66,.2)}
 /* ============================================================
    V2 대규모 업데이트: 탭바 / 우리할일 / 통합설정 / 데이시트 탭
    (기존 스타일 뒤에 추가 — 동일 선택자는 이 규칙이 우선)
@@ -4222,7 +4222,7 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)) !im
           <div class="onb-feats">
             <div class="onb-feat">
               <span class="onb-fic">1️⃣</span>
-              <div class="onb-ft"><b>방 목록 화면으로 이동</b>방 목록 화면 오른쪽 아래 <b class="acc">+ 버튼</b>을 눌러요.</div>
+              <div class="onb-ft"><b>방 목록 화면으로 이동</b>방 목록 화면 오른쪽 위 <b class="acc">+ 버튼</b>을 눌러요.</div>
             </div>
             <div class="onb-feat">
               <span class="onb-fic">2️⃣</span>
