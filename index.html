@@ -360,9 +360,13 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .pg-back:active{background:rgba(139,58,42,.1)}
 .pg-title{flex:1;text-align:center;font-size:17px;font-weight:800;color:var(--text);letter-spacing:-.3px}
 .pg-header-spacer{width:38px;flex-shrink:0}
-.pg-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 14px calc(28px + env(safe-area-inset-bottom))}
+.pg-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 14px calc(28px + env(safe-area-inset-bottom));transition:opacity .2s ease}
+.pg-content.fading{opacity:0}
 /* 월 네비게이션 (캘린더처럼 좌우 이동) */
-.pg-monthnav{display:flex;align-items:center;justify-content:center;gap:18px;padding:12px 14px 10px;flex-shrink:0;border-bottom:1px solid var(--borderL)}
+.pg-monthnav{position:relative;display:flex;align-items:center;justify-content:center;gap:18px;padding:12px 14px 10px;flex-shrink:0;border-bottom:1px solid var(--borderL)}
+.pg-today-btn{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:var(--accent);color:#fff;border:none;border-radius:99px;font-family:inherit;font-size:12.5px;font-weight:700;padding:6px 13px;cursor:pointer;box-shadow:0 3px 10px rgba(139,58,42,.28);transition:transform .12s,opacity .2s}
+.pg-today-btn:active{transform:translateY(-50%) scale(.94)}
+.pg-today-btn[hidden]{display:none}
 .pg-monthnav[hidden]{display:none}
 .pg-mn-arrow{width:36px;height:36px;border-radius:50%;background:transparent;border:none;display:flex;align-items:center;justify-content:center;color:var(--accent);cursor:pointer;flex-shrink:0;transition:background .15s,opacity .15s}
 .pg-mn-arrow:active{background:rgba(139,58,42,.1)}
@@ -370,10 +374,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .pg-mn-label{min-width:130px;text-align:center;font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.2px;background:none;border:none;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:6px 8px;border-radius:8px;transition:background .15s}
 .pg-mn-label:active{background:rgba(139,58,42,.08)}
 /* 월 전환 슬라이드 인 애니메이션 */
-.pg-slide-in-left{animation:pgSlideL .28s cubic-bezier(.3,.7,.2,1)}
-.pg-slide-in-right{animation:pgSlideR .28s cubic-bezier(.3,.7,.2,1)}
-@keyframes pgSlideL{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
-@keyframes pgSlideR{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}
+
 /* 날짜 그룹 */
 .pg-group{margin-bottom:22px}
 .pg-group-date{font-size:13px;font-weight:700;color:var(--sub);margin-bottom:10px;padding-left:2px}
@@ -385,9 +386,10 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .pg-keep-badge{position:absolute;right:5px;bottom:5px;background:rgba(40,24,12,.72);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;line-height:1.4;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
 .pg-keep-badge.urgent{background:rgba(196,57,43,.9)}
 /* 만료된 사진(무료 30일 경과) */
-.pg-cell.pg-expired img{filter:grayscale(.8) brightness(.7)}
-.pg-cell .pg-lock{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(30,20,12,.5)}
-.pg-cell .pg-lock svg{width:30px;height:30px;color:#fff;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6))}
+.pg-cell.pg-expired img{filter:grayscale(.55) brightness(.62) contrast(1.02)}
+.pg-cell .pg-lock{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,rgba(40,28,16,.32),rgba(20,14,8,.52))}
+.pg-cell .pg-lock-badge{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,250,240,.14);border:1px solid rgba(255,245,225,.4);-webkit-backdrop-filter:blur(6px) saturate(1.2);backdrop-filter:blur(6px) saturate(1.2);box-shadow:0 4px 16px rgba(0,0,0,.3),0 0 0 1px rgba(176,135,66,.25) inset}
+.pg-cell .pg-lock-badge svg{width:22px;height:22px;color:#f6ead2;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
 /* 빈 상태 */
 .pg-empty{text-align:center;padding:64px 24px;color:var(--sub)}
 .pg-empty-ic{font-size:48px;margin-bottom:14px;opacity:.55}
@@ -396,7 +398,8 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 /* 사진 상세 모달 */
 .pgd-overlay{position:fixed;inset:0;background:rgba(30,24,18,.62);z-index:120;display:none;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
 .pgd-overlay.on{display:block;animation:onbFade .25s ease}
-.pgd-card{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:121;width:calc(100% - 44px);max-width:360px;background:var(--bg);border:1px solid rgba(176,135,66,.25);border-radius:22px;box-shadow:0 24px 70px rgba(40,24,12,.4);padding:0 0 18px;display:none;overflow:hidden;animation:onbIn .3s cubic-bezier(.2,.8,.3,1)}
+.pgd-card{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:121;width:calc(100% - 44px);max-width:360px;background:var(--bg);border:1px solid rgba(176,135,66,.25);border-radius:22px;box-shadow:0 24px 70px rgba(40,24,12,.4);padding:0 0 18px;display:none;overflow:hidden}
+.pgd-card.on{animation:pgmpIn .26s cubic-bezier(.2,.8,.3,1)}
 .pgd-card.on{display:block}
 .pgd-close{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;background:rgba(40,24,12,.5);border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2}
 .pgd-img-wrap{width:100%;max-height:46vh;overflow:hidden;background:var(--card);display:flex;align-items:center;justify-content:center}
@@ -410,8 +413,9 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 /* 년·월 선택 피커 */
 .pgmp-overlay{position:fixed;inset:0;background:rgba(30,24,18,.62);z-index:122;display:none;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
 .pgmp-overlay.on{display:block;animation:onbFade .25s ease}
-.pgmp-card{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:123;width:calc(100% - 60px);max-width:330px;background:var(--bg);border:1px solid rgba(176,135,66,.25);border-radius:22px;box-shadow:0 24px 70px rgba(40,24,12,.4);padding:18px 18px 22px;display:none;animation:onbIn .3s cubic-bezier(.2,.8,.3,1)}
-.pgmp-card.on{display:block}
+.pgmp-card{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:123;width:calc(100% - 60px);max-width:330px;background:var(--bg);border:1px solid rgba(176,135,66,.25);border-radius:22px;box-shadow:0 24px 70px rgba(40,24,12,.4);padding:18px 18px 22px;display:none}
+.pgmp-card.on{display:block;animation:pgmpIn .26s cubic-bezier(.2,.8,.3,1)}
+@keyframes pgmpIn{from{opacity:0;transform:translate(-50%,-46%) scale(.96)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
 .pgmp-head{display:flex;align-items:center;justify-content:center;gap:24px;margin-bottom:16px}
 .pgmp-yr-arrow{width:36px;height:36px;border-radius:50%;background:transparent;border:none;display:flex;align-items:center;justify-content:center;color:var(--accent);cursor:pointer;transition:background .15s}
 .pgmp-yr-arrow:active{background:rgba(139,58,42,.1)}
@@ -2657,6 +2661,7 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)) !im
       <button class="pg-mn-arrow" id="pgNextBtn" onclick="pgMonthStep(1)" aria-label="다음 달">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
       </button>
+      <button class="pg-today-btn" id="pgTodayBtn" onclick="pgGoThisMonth()" hidden>이번 달</button>
     </div>
     <div class="pg-content" id="pgContent" ontouchstart="pgTouchStart(event)" ontouchend="pgTouchEnd(event)">
       <!-- openPhotoGallery()가 채움 -->
@@ -9935,6 +9940,13 @@ function renderPgMonth(dir){
   // 화살표는 항상 활성 (모든 달 자유 이동) — 단, 너무 먼 미래/과거 제한
   if(prevBtn)prevBtn.disabled=false;
   if(nextBtn)nextBtn.disabled=false;
+  // 이번 달이 아니면 '이번 달' 버튼 표시
+  const todayBtn=document.getElementById('pgTodayBtn');
+  if(todayBtn){
+    const now=new Date();
+    const thisYM=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    todayBtn.hidden=(_pgCurYM===thisYM);
+  }
 
   const free=!isEffectivePremium();
   const monthItems=_pgByMonth[_pgCurYM]||[];
@@ -9960,7 +9972,7 @@ function renderPgMonth(dir){
         const safe=escapeHtml(it.url);
         const payload=escapeHtml(JSON.stringify({u:it.url,r:it.roomId,rn:it.roomName,d:it.date,t:it.title}));
         if(expired){
-          html+=`<div class="pg-cell pg-expired" onclick="openPremiumSheet()"><img src="${safe}" alt="" loading="lazy"><div class="pg-lock"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg></div></div>`;
+          html+=`<div class="pg-cell pg-expired" onclick="openPremiumSheet()"><img src="${safe}" alt="" loading="lazy"><div class="pg-lock"><div class="pg-lock-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"><rect x="4.5" y="10.5" width="15" height="10" rx="2.2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/><circle cx="12" cy="15.5" r="1.3"/></svg></div></div></div>`;
         }else{
           html+=`<div class="pg-cell" data-pg='${payload}' onclick="openPhotoDetailFromEl(this)"><img src="${safe}" alt="일정 사진" loading="lazy">${badge}</div>`;
         }
@@ -9968,13 +9980,20 @@ function renderPgMonth(dir){
       html+='</div></div>';
     });
   }
-  // 슬라이드 인 애니메이션
-  box.classList.remove('pg-slide-in-left','pg-slide-in-right');
-  void box.offsetWidth; // reflow로 애니메이션 재시작
-  if(dir==='next') box.classList.add('pg-slide-in-left');
-  else if(dir==='prev') box.classList.add('pg-slide-in-right');
   box.innerHTML=html;
   box.scrollTop=0;
+}
+
+/* 캘린더와 동일한 페이드 전환 — 페이드아웃 → 달 변경 → 렌더 → 페이드인 */
+function pgFadeRender(updateState){
+  const box=document.getElementById('pgContent');
+  if(!box){ updateState(); renderPgMonth(); return; }
+  box.classList.add('fading');
+  setTimeout(()=>{
+    updateState();
+    renderPgMonth();
+    requestAnimationFrame(()=>box.classList.remove('fading'));
+  },180);
 }
 
 /* YYYY-MM 한 칸 이동 (step -1=과거◁, +1=최신▷) — 모든 달 자유 이동 */
@@ -9987,9 +10006,14 @@ function pgShiftYM(ym, delta){
 }
 function pgMonthStep(step){
   if(!_pgCurYM) return;
-  // step -1 = 과거(◁), +1 = 최신(▷)
-  _pgCurYM = pgShiftYM(_pgCurYM, step);
-  renderPgMonth(step<0?'prev':'next');
+  pgFadeRender(()=>{ _pgCurYM = pgShiftYM(_pgCurYM, step); });
+}
+/* '이번 달' 버튼 — 현재 달로 페이드 이동 */
+function pgGoThisMonth(){
+  const now=new Date();
+  const thisYM=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  if(_pgCurYM===thisYM) return;
+  pgFadeRender(()=>{ _pgCurYM=thisYM; });
 }
 
 /* 스와이프로 월 이동 */
@@ -10039,9 +10063,8 @@ function renderPgMonthPicker(){
   grid.innerHTML=html;
 }
 function pgPickMonth(ym){
-  _pgCurYM=ym;
   closePgMonthPicker();
-  renderPgMonth();
+  pgFadeRender(()=>{ _pgCurYM=ym; });
 }
 function pgFmtDate(d){
   // 'YYYY-MM-DD' → 'YYYY년 M월 D일 (요일)'
