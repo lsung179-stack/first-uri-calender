@@ -352,6 +352,47 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .r-bell:hover{background:rgba(139,58,42,.06)}
 .r-bell-badge{position:absolute;top:2px;right:2px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#e34a3a;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;border:1.5px solid var(--bg);box-sizing:border-box}
 .r-bell-badge[hidden]{display:none}
+
+/* ═══ 사진 모아보기 화면 ═══ */
+.screen.pg-screen{padding:0;justify-content:flex-start;align-items:stretch;background:var(--bg);z-index:60}
+.pg-header{display:flex;align-items:center;gap:6px;padding:max(14px,env(safe-area-inset-top)) 14px 12px;flex-shrink:0;border-bottom:1px solid var(--borderL)}
+.pg-back{width:38px;height:38px;border-radius:50%;background:transparent;border:none;display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;flex-shrink:0;transition:background .15s}
+.pg-back:active{background:rgba(139,58,42,.1)}
+.pg-title{flex:1;text-align:center;font-size:17px;font-weight:800;color:var(--text);letter-spacing:-.3px}
+.pg-header-spacer{width:38px;flex-shrink:0}
+.pg-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 14px calc(28px + env(safe-area-inset-bottom))}
+/* 날짜 그룹 */
+.pg-group{margin-bottom:22px}
+.pg-group-date{font-size:13px;font-weight:700;color:var(--sub);margin-bottom:10px;padding-left:2px}
+.pg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.pg-cell{position:relative;aspect-ratio:1;border-radius:11px;overflow:hidden;background:var(--card);border:1px solid var(--borderL);cursor:pointer;transition:transform .12s}
+.pg-cell:active{transform:scale(.96)}
+.pg-cell img{width:100%;height:100%;object-fit:cover;display:block}
+/* 무료: 남은 보관일 배지 (우하단) */
+.pg-keep-badge{position:absolute;right:5px;bottom:5px;background:rgba(40,24,12,.72);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;line-height:1.4;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+.pg-keep-badge.urgent{background:rgba(196,57,43,.9)}
+/* 만료된 사진(무료 30일 경과) */
+.pg-cell.pg-expired img{filter:grayscale(.7) brightness(.85)}
+.pg-cell .pg-lock{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;background:rgba(40,24,12,.32)}
+/* 빈 상태 */
+.pg-empty{text-align:center;padding:64px 24px;color:var(--sub)}
+.pg-empty-ic{font-size:48px;margin-bottom:14px;opacity:.55}
+.pg-empty-t{font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px}
+.pg-empty-s{font-size:13px;line-height:1.6}
+/* 사진 상세 모달 */
+.pgd-overlay{position:fixed;inset:0;background:rgba(30,24,18,.62);z-index:120;display:none;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.pgd-overlay.on{display:block;animation:onbFade .25s ease}
+.pgd-card{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:121;width:calc(100% - 44px);max-width:360px;background:var(--bg);border:1px solid rgba(176,135,66,.25);border-radius:22px;box-shadow:0 24px 70px rgba(40,24,12,.4);padding:0 0 18px;display:none;overflow:hidden;animation:onbIn .3s cubic-bezier(.2,.8,.3,1)}
+.pgd-card.on{display:block}
+.pgd-close{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;background:rgba(40,24,12,.5);border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2}
+.pgd-img-wrap{width:100%;max-height:46vh;overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center}
+.pgd-img-wrap img{width:100%;height:auto;max-height:46vh;object-fit:contain;display:block}
+.pgd-info{padding:16px 20px 6px;text-align:center}
+.pgd-date{font-size:15px;font-weight:800;color:var(--accent);margin-bottom:4px}
+.pgd-evtitle{font-size:16px;font-weight:700;color:var(--text);line-height:1.4;word-break:break-word}
+.pgd-room{font-size:12.5px;color:var(--sub);margin-top:5px}
+.pgd-goto{display:block;width:calc(100% - 40px);margin:14px auto 0;padding:14px;background:linear-gradient(135deg,var(--accent),#7a3020);color:#fff;border:none;border-radius:13px;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 6px 16px rgba(139,58,42,.3);transition:transform .12s}
+.pgd-goto:active{transform:scale(.98)}
 .r-add-wrap{position:relative;display:inline-flex}
 .r-add-menu{position:absolute;top:calc(100% + 9px);right:0;left:auto;min-width:200px;max-width:calc(100vw - 32px);background:var(--card);border:1px solid var(--aP);border-radius:16px;box-shadow:0 14px 36px rgba(58,36,24,.20),0 2px 6px rgba(58,36,24,.08);padding:7px;z-index:240;transform-origin:top right;animation:rAddIn .17s cubic-bezier(.34,1.3,.5,1)}
 .r-add-menu[hidden]{display:none}
@@ -2524,6 +2565,20 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)) !im
         <span class="r-logo-title">우리 캘린더</span>
       </div>
       <div class="r-header-actions">
+        <button class="r-bell" id="notifBell" onclick="openNotifs()" title="알림" aria-label="알림">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+          </svg>
+          <span class="r-bell-badge" id="notifBadge" hidden>0</span>
+        </button>
+        <button class="r-bell" id="photoGalleryBtn" onclick="openPhotoGallery()" title="사진 모아보기" aria-label="사진 모아보기">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2.4"/>
+            <circle cx="8.5" cy="8.5" r="1.6"/>
+            <path d="M21 15l-5-5L5 21"/>
+          </svg>
+        </button>
         <div class="r-add-wrap">
           <button class="r-bell r-add-btn" id="roomAddBtn" onclick="toggleRoomAddMenu(event)" title="방 추가" aria-label="방 추가">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
@@ -2542,20 +2597,41 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)) !im
             </button>
           </div>
         </div>
-        <button class="r-bell" id="notifBell" onclick="openNotifs()" title="알림" aria-label="알림">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
-            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
-          </svg>
-          <span class="r-bell-badge" id="notifBadge" hidden>0</span>
-        </button>
-        <button class="r-avatar" id="userAvatar" onclick="openProfile()" title="프로필">—</button>
       </div>
     </div>
 
     <div class="r-content" id="roomsContent">
       <!-- loadRooms()가 여기 채움 -->
     </div>
+  </div>
+
+  <!-- ═══ 사진 모아보기 화면 ═══ -->
+  <div class="screen pg-screen" id="photoGalleryScreen">
+    <div class="pg-header">
+      <button class="pg-back" onclick="closePhotoGallery()" aria-label="뒤로">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="pg-title">사진 모아보기</div>
+      <div class="pg-header-spacer"></div>
+    </div>
+    <div class="pg-content" id="pgContent">
+      <!-- openPhotoGallery()가 채움 -->
+    </div>
+  </div>
+
+  <!-- 사진 상세 모달 -->
+  <div class="pgd-overlay" id="pgDetailOverlay" onclick="closePhotoDetail()"></div>
+  <div class="pgd-card" id="pgDetailCard" role="dialog" aria-modal="true">
+    <button class="pgd-close" onclick="closePhotoDetail()" aria-label="닫기">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="pgd-img-wrap"><img id="pgDetailImg" src="" alt="일정 사진"></div>
+    <div class="pgd-info">
+      <div class="pgd-date" id="pgDetailDate"></div>
+      <div class="pgd-evtitle" id="pgDetailTitle"></div>
+      <div class="pgd-room" id="pgDetailRoom"></div>
+    </div>
+    <button class="pgd-goto" id="pgDetailGoto" onclick="pgGotoEvent()">일정 확인하기</button>
   </div>
 
 <!-- 새 방 만들기 모달 -->
@@ -9701,6 +9777,144 @@ function isPhotoExpiredForFree(url){
   if(!ts) return false;                            // 업로드 시각 모르면 가리지 않음
   const ageDays = (Date.now() - ts) / 86400000;
   return ageDays > FREE_PHOTO_KEEP_DAYS;
+}
+
+/* ═══════════════════════════════════
+   사진 모아보기 (홈 우측 상단 버튼)
+   내가 속한 방(들)의 일정 사진을 모두 모아 날짜순으로 보여줌.
+   사진 탭 → 상세(날짜·일정명·방) → '일정 확인하기'로 해당 일정 이동.
+   무료 플랜은 사진마다 남은 보관일(D-n) 표시.
+   ═══════════════════════════════════ */
+let _pgDetail=null;   // 현재 상세 모달에 띄운 사진 {roomId, date, title}
+
+/* 업로드 후 남은 보관일 (무료) — 0 이하면 만료 */
+function photoKeepDaysLeft(url){
+  const ts = photoUploadedAt(url);
+  if(!ts) return null;                              // 업로드 시각 모름 → 표시 안 함
+  const used = (Date.now() - ts) / 86400000;
+  return Math.ceil(FREE_PHOTO_KEEP_DAYS - used);
+}
+
+async function openPhotoGallery(){
+  showScreen('photoGalleryScreen');
+  const box=document.getElementById('pgContent');
+  box.innerHTML='<div style="padding:60px 0;text-align:center"><div class="spinner" style="margin:0 auto"></div></div>';
+  try{
+    // 내가 속한 방 id들
+    if(!_currentUser){ box.innerHTML=''; return; }
+    const {data:mems,error:e1}=await supa.from('members').select('room_id').eq('user_id',_currentUser.id);
+    if(e1)throw e1;
+    const roomIds=(mems||[]).map(m=>m.room_id);
+    if(!roomIds.length){ renderPgEmpty(box); return; }
+
+    // 방 이름 매핑
+    const {data:rooms}=await supa.from('rooms').select('id,name').in('id',roomIds);
+    const roomNameMap={}; (rooms||[]).forEach(r=>{roomNameMap[r.id]=r.name||'(이름 없음)';});
+
+    // 사진 있는 일정만 — date, title, photo_urls, room_id
+    const {data:evs,error:e2}=await supa.from('events')
+      .select('id,room_id,date,title,photo_url,photo_urls')
+      .in('room_id',roomIds);
+    if(e2)throw e2;
+
+    // 사진 항목 평탄화
+    const items=[];
+    (evs||[]).forEach(ev=>{
+      const urls = (Array.isArray(ev.photo_urls)&&ev.photo_urls.length) ? ev.photo_urls.filter(Boolean)
+                 : (ev.photo_url ? [ev.photo_url] : []);
+      urls.forEach(u=>{
+        items.push({ url:u, roomId:ev.room_id, roomName:roomNameMap[ev.room_id]||'', date:ev.date||'', title:ev.title||'(제목 없음)' });
+      });
+    });
+
+    if(!items.length){ renderPgEmpty(box); return; }
+
+    // 날짜 내림차순(최신 먼저) 정렬
+    items.sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+
+    // 날짜별 그룹화
+    const groups={};
+    items.forEach(it=>{ (groups[it.date]=groups[it.date]||[]).push(it); });
+    const dates=Object.keys(groups).sort((a,b)=>b.localeCompare(a));
+
+    const free=!isEffectivePremium();
+    let html='';
+    dates.forEach(d=>{
+      html+=`<div class="pg-group"><div class="pg-group-date">${pgFmtDate(d)}</div><div class="pg-grid">`;
+      groups[d].forEach(it=>{
+        const expired = free && isPhotoExpiredForFree(it.url);
+        let badge='';
+        if(free && !expired){
+          const left=photoKeepDaysLeft(it.url);
+          if(left!==null) badge=`<span class="pg-keep-badge${left<=3?' urgent':''}">D-${Math.max(left,0)}</span>`;
+        }
+        const safe=escapeHtml(it.url);
+        const payload=escapeHtml(JSON.stringify({u:it.url,r:it.roomId,rn:it.roomName,d:it.date,t:it.title}));
+        if(expired){
+          html+=`<div class="pg-cell pg-expired" onclick="openPremiumSheet()"><img src="${safe}" alt="" loading="lazy"><div class="pg-lock">🔒</div></div>`;
+        }else{
+          html+=`<div class="pg-cell" data-pg='${payload}' onclick="openPhotoDetailFromEl(this)"><img src="${safe}" alt="일정 사진" loading="lazy">${badge}</div>`;
+        }
+      });
+      html+='</div></div>';
+    });
+    box.innerHTML=html;
+  }catch(e){
+    console.error('사진 모아보기 실패',e);
+    box.innerHTML='<div class="pg-empty"><div class="pg-empty-ic">⚠️</div><div class="pg-empty-t">불러오지 못했어요</div><div class="pg-empty-s">잠시 후 다시 시도해주세요</div></div>';
+  }
+}
+function renderPgEmpty(box){
+  box.innerHTML='<div class="pg-empty"><div class="pg-empty-ic">🖼️</div><div class="pg-empty-t">아직 사진이 없어요</div><div class="pg-empty-s">일정에 사진을 첨부하면<br>여기에 모아서 볼 수 있어요</div></div>';
+}
+function closePhotoGallery(){ showScreen('roomsScreen'); }
+function pgFmtDate(d){
+  // 'YYYY-MM-DD' → 'YYYY년 M월 D일 (요일)'
+  if(!d||d.length<10) return d||'';
+  try{
+    const dt=parseDateKey(d);
+    const wd=['일','월','화','수','목','금','토'][dt.getDay()];
+    return `${dt.getFullYear()}년 ${dt.getMonth()+1}월 ${dt.getDate()}일 (${wd})`;
+  }catch(_){ return d; }
+}
+
+function openPhotoDetailFromEl(el){
+  try{ openPhotoDetail(JSON.parse(el.getAttribute('data-pg'))); }catch(_){}
+}
+function openPhotoDetail(item){
+  _pgDetail=item;
+  document.getElementById('pgDetailImg').src=item.u;
+  document.getElementById('pgDetailDate').textContent=pgFmtDate(item.d);
+  document.getElementById('pgDetailTitle').textContent=item.t||'(제목 없음)';
+  document.getElementById('pgDetailRoom').textContent=item.rn?('📍 '+item.rn):'';
+  document.getElementById('pgDetailOverlay').classList.add('on');
+  document.getElementById('pgDetailCard').classList.add('on');
+}
+function closePhotoDetail(){
+  document.getElementById('pgDetailOverlay').classList.remove('on');
+  document.getElementById('pgDetailCard').classList.remove('on');
+  _pgDetail=null;
+}
+/* '일정 확인하기' → 해당 방·날짜로 이동 (알림 점프 메커니즘 재사용) */
+function pgGotoEvent(){
+  if(!_pgDetail) return;
+  const { r:roomId, d:date } = _pgDetail;
+  closePhotoDetail();
+  if(!roomId){ toast('일정 정보를 찾지 못했어요'); return; }
+  // 내 방 목록이 아직 없으면 채운 뒤 진입
+  const go=()=>{
+    if(date && /^\d{4}-\d{2}-\d{2}$/.test(date)) _pendingJumpDate=date;
+    enterRoom(roomId);
+  };
+  if(_myRooms && _myRooms.some(rm=>rm.id===roomId)){
+    go();
+  }else{
+    // _myRooms 미로딩 상태 — pending 세팅 후 loadRooms가 자동 진입 처리
+    _pendingRoomId=roomId;
+    if(date && /^\d{4}-\d{2}-\d{2}$/.test(date)) _pendingJumpDate=date;
+    showScreen('roomsScreen');
+    loadRooms();
+  }
 }
 
 /* _evPhotos의 미리보기 ObjectURL 정리 */
