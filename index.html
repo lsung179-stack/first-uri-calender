@@ -361,6 +361,18 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .pg-title{flex:1;text-align:center;font-size:17px;font-weight:800;color:var(--text);letter-spacing:-.3px}
 .pg-header-spacer{width:38px;flex-shrink:0}
 .pg-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 14px calc(28px + env(safe-area-inset-bottom))}
+/* 월 네비게이션 (캘린더처럼 좌우 이동) */
+.pg-monthnav{display:flex;align-items:center;justify-content:center;gap:18px;padding:12px 14px 10px;flex-shrink:0;border-bottom:1px solid var(--borderL)}
+.pg-monthnav[hidden]{display:none}
+.pg-mn-arrow{width:36px;height:36px;border-radius:50%;background:transparent;border:none;display:flex;align-items:center;justify-content:center;color:var(--accent);cursor:pointer;flex-shrink:0;transition:background .15s,opacity .15s}
+.pg-mn-arrow:active{background:rgba(139,58,42,.1)}
+.pg-mn-arrow:disabled{opacity:.25;cursor:default}
+.pg-mn-label{min-width:130px;text-align:center;font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.2px}
+/* 월 전환 슬라이드 인 애니메이션 */
+.pg-slide-in-left{animation:pgSlideL .28s cubic-bezier(.3,.7,.2,1)}
+.pg-slide-in-right{animation:pgSlideR .28s cubic-bezier(.3,.7,.2,1)}
+@keyframes pgSlideL{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+@keyframes pgSlideR{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}
 /* 날짜 그룹 */
 .pg-group{margin-bottom:22px}
 .pg-group-date{font-size:13px;font-weight:700;color:var(--sub);margin-bottom:10px;padding-left:2px}
@@ -385,7 +397,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .pgd-card{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:121;width:calc(100% - 44px);max-width:360px;background:var(--bg);border:1px solid rgba(176,135,66,.25);border-radius:22px;box-shadow:0 24px 70px rgba(40,24,12,.4);padding:0 0 18px;display:none;overflow:hidden;animation:onbIn .3s cubic-bezier(.2,.8,.3,1)}
 .pgd-card.on{display:block}
 .pgd-close{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;background:rgba(40,24,12,.5);border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2}
-.pgd-img-wrap{width:100%;max-height:46vh;overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center}
+.pgd-img-wrap{width:100%;max-height:46vh;overflow:hidden;background:var(--card);display:flex;align-items:center;justify-content:center}
 .pgd-img-wrap img{width:100%;height:auto;max-height:46vh;object-fit:contain;display:block}
 .pgd-info{padding:16px 20px 6px;text-align:center}
 .pgd-date{font-size:15px;font-weight:800;color:var(--accent);margin-bottom:4px}
@@ -1406,7 +1418,7 @@ body.ev-dragging .cal-cell{cursor:grabbing}
 .dp-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
 /* 무료 30일 만료 사진 — 잠금 표시 */
 .dp-photo-thumb.dp-photo-locked{cursor:pointer;display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(45deg,#efe3cd,#efe3cd 8px,#e8d9bf 8px,#e8d9bf 16px);border:1px dashed var(--mute)}
-.dp-photo-lock-ic{font-size:26px;opacity:.55}
+.dp-photo-lock-ic{opacity:.55;display:flex;align-items:center;justify-content:center;color:var(--sub)}
 .dp-photo-expired-note{margin-top:7px;font-size:11.5px;line-height:1.5;color:var(--sub);background:rgba(176,135,66,.1);border:1px solid rgba(176,135,66,.22);border-radius:9px;padding:8px 10px;cursor:pointer}
 .dp-photo-expired-note b{color:var(--accent);font-weight:700}
 
@@ -2406,6 +2418,9 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)) !im
 .uni-row-grow{flex:1;min-width:0}
 .uni-nav{display:flex;align-items:center;justify-content:space-between;width:100%;background:var(--card);border:1px solid var(--borderL);border-radius:12px;padding:14px 14px;margin-bottom:9px;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;font-family:inherit}
 .uni-nav .chev{color:var(--mute);font-size:18px}
+/* uni-nav 좌측 라벨 + SVG 아이콘 (탭바와 동일 stroke 스타일) */
+.uni-nav-l{display:flex;align-items:center;gap:11px}
+.uni-nav-l svg{width:20px;height:20px;flex-shrink:0;display:block}
 .plan-toggle{transition:background .15s ease,border-color .15s ease,color .15s ease}
 .plan-toggle.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .plan-toggle.off{background:var(--bg);border-color:var(--mute);color:var(--sub)}
@@ -2614,7 +2629,16 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)) !im
       <div class="pg-title">사진 모아보기</div>
       <div class="pg-header-spacer"></div>
     </div>
-    <div class="pg-content" id="pgContent">
+    <div class="pg-monthnav" id="pgMonthNav" hidden>
+      <button class="pg-mn-arrow" id="pgPrevBtn" onclick="pgMonthStep(-1)" aria-label="이전 달">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="pg-mn-label" id="pgMonthLabel">—</div>
+      <button class="pg-mn-arrow" id="pgNextBtn" onclick="pgMonthStep(1)" aria-label="다음 달">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    </div>
+    <div class="pg-content" id="pgContent" ontouchstart="pgTouchStart(event)" ontouchend="pgTouchEnd(event)">
       <!-- openPhotoGallery()가 채움 -->
     </div>
   </div>
@@ -2985,7 +3009,7 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)) !im
       <div class="uni-row-grow"><div class="lbl">코드</div><div class="val" id="uniRoomCode">—</div></div>
       <button class="uni-mini-btn" onclick="copyRoomCode()">복사</button>
     </div>
-    <button class="uni-nav" style="background:var(--kakao);color:var(--kakaoText)" onclick="shareKakao()"><span>💬 카카오톡으로 초대</span><span class="chev">›</span></button>
+    <button class="uni-nav" style="background:var(--kakao);color:var(--kakaoText)" onclick="shareKakao()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.6-.8L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 8.5-8.5 8.38 8.38 0 0 1 8.5 8.5z"/></svg>카카오톡으로 초대</span><span class="chev">›</span></button>
 
     <div class="uni-divider"></div>
 
@@ -2996,37 +3020,37 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)) !im
     <div class="uni-divider"></div>
 
     <div class="uni-sec-label">프리미엄</div>
-    <button class="uni-nav uni-nav-prem" onclick="openPremiumSheet()"><span>⭐ 프리미엄 구독</span><span class="chev">›</span></button>
+    <button class="uni-nav uni-nav-prem" onclick="openPremiumSheet()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.3 6.6.7-4.9 4.5 1.4 6.5L12 17l-5.9 3.5 1.4-6.5L2.6 9l6.6-.7z"/></svg>프리미엄 구독</span><span class="chev">›</span></button>
 
     <div class="uni-sec-label" style="margin-top:14px">꾸미기</div>
-    <button class="uni-nav" onclick="openStore()"><span>🛍️ 스토어</span><span class="chev">›</span></button>
-    <button class="uni-nav" onclick="openMyOrders('settings')"><span>📦 내 주문 내역 · 배송 조회</span><span class="chev">›</span></button>
+    <button class="uni-nav" onclick="openStore()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v13a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>스토어</span><span class="chev">›</span></button>
+    <button class="uni-nav" onclick="openMyOrders('settings')"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>내 주문 내역 · 배송 조회</span><span class="chev">›</span></button>
 
     <div class="uni-sec-label" style="margin-top:14px">기타</div>
-    <button class="uni-nav" onclick="openAdvSettings()"><span>⚙️ 고급 설정</span><span class="chev">›</span></button>
+    <button class="uni-nav" onclick="openAdvSettings()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>고급 설정</span><span class="chev">›</span></button>
 
     <div class="uni-sec-label" style="margin-top:14px">지원</div>
-    <button class="uni-nav" onclick="openAnnouncements()"><span>📢 공지사항</span><span class="chev">›</span></button>
-    <button class="uni-nav" onclick="openCustomerSupport()"><span>💬 고객센터</span><span class="chev">›</span></button>
+    <button class="uni-nav" onclick="openAnnouncements()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l3.5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M14 8a4 4 0 0 1 0 8"/><path d="M17 5a8 8 0 0 1 0 14"/></svg>공지사항</span><span class="chev">›</span></button>
+    <button class="uni-nav" onclick="openCustomerSupport()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>고객센터</span><span class="chev">›</span></button>
 
     <div id="uniOwnerSection" style="display:none">
       <div class="uni-divider"></div>
       <div class="uni-sec-label">방장 메뉴</div>
-      <button class="uni-nav" style="color:#c0392b" onclick="deleteRoomConfirm()"><span>🗑️ 방 삭제 (영구)</span><span class="chev">›</span></button>
+      <button class="uni-nav" style="color:#c0392b" onclick="deleteRoomConfirm()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>방 삭제 (영구)</span><span class="chev">›</span></button>
     </div>
     <div id="uniLeaveSection" style="display:none">
       <div class="uni-divider"></div>
-      <button class="uni-nav" style="color:#c0392b" onclick="leaveRoomConfirm()"><span>🚪 이 방 나가기</span><span class="chev">›</span></button>
+      <button class="uni-nav" style="color:#c0392b" onclick="leaveRoomConfirm()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>이 방 나가기</span><span class="chev">›</span></button>
     </div>
 
     <div id="uniAdminSection" style="display:none">
       <div class="uni-divider"></div>
       <div class="uni-sec-label">🔧 관리자 전용</div>
-      <button class="uni-nav" onclick="openAdminFullPage()"><span>🛠 관리자 페이지 열기</span><span class="chev">›</span></button>
-      <button class="uni-nav" onclick="previewOnboarding()"><span>👋 온보딩 미리보기</span><span class="chev">›</span></button>
+      <button class="uni-nav" onclick="openAdminFullPage()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 1 5.4-5.4l-2.5 2.5-2-2z"/></svg>관리자 페이지 열기</span><span class="chev">›</span></button>
+      <button class="uni-nav" onclick="previewOnboarding()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>온보딩 미리보기</span><span class="chev">›</span></button>
       <button class="uni-nav plan-toggle off" id="planToggleBtn" onclick="toggleAdminPlan()"><span id="planToggleBtnLabel">🔒 무료 플랜 (체험)</span><span class="plan-switch" id="planSwitch">OFF</span></button>
       <button class="uni-nav" id="globalTrialBtn" onclick="toggleGlobalTrial()"><span id="globalTrialLabel">👥 전체 이용자 프리미엄</span><span class="plan-switch off" id="globalTrialSwitch">OFF</span></button>
-      <button class="uni-nav" id="deployBtn" onclick="openDeploySheet()"><span id="deployBtnLabel">🚀 배포하기</span><span class="chev">›</span></button>
+      <button class="uni-nav" id="deployBtn" onclick="openDeploySheet()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l-2 4 4-2 8-8a2.8 2.8 0 0 0-4-4z"/><path d="M12 6l6 6"/><path d="M15 3l6 6"/></svg><span id="deployBtnLabel">배포하기</span></span><span class="chev">›</span></button>
     </div>
 
     <div class="uni-divider"></div>
@@ -8532,11 +8556,11 @@ function renderDateSheetList(){
       ? `<div class="dp-photo-strip">`+_evPhotoList.map(u=>{
           if(isPhotoExpiredForFree(u)){
             _expiredPhotoCount++;
-            return `<div class="dp-photo-thumb dp-photo-locked" onclick="event.stopPropagation();openPremiumSheet()" title="보관 기간 만료"><span class="dp-photo-lock-ic">🔒</span></div>`;
+            return `<div class="dp-photo-thumb dp-photo-locked" onclick="event.stopPropagation();openPremiumSheet()" title="보관 기간 만료"><span class="dp-photo-lock-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg></span></div>`;
           }
           return `<div class="dp-photo-thumb" onclick="event.stopPropagation();openPhotoView('${escapeHtml(u)}')"><img src="${escapeHtml(u)}" alt="첨부 사진" loading="lazy"></div>`;
         }).join('')+`</div>`
-        + (_expiredPhotoCount ? `<div class="dp-photo-expired-note" onclick="event.stopPropagation();openPremiumSheet()">🔒 보관 기간(30일)이 지난 사진 ${_expiredPhotoCount}장이에요. <b>프리미엄</b>으로 평생 보관하세요.</div>` : '')
+        + (_expiredPhotoCount ? `<div class="dp-photo-expired-note" onclick="event.stopPropagation();openPremiumSheet()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" style="vertical-align:-1px;margin-right:3px"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>보관 기간(30일)이 지난 사진 ${_expiredPhotoCount}장이에요. <b>프리미엄</b>으로 평생 보관하세요.</div>` : '')
       : '';
 
     const _evRt2=ev.repeat_type||(ev.recurring_yearly?'yearly':'none');
@@ -9795,9 +9819,15 @@ function photoKeepDaysLeft(url){
   return Math.ceil(FREE_PHOTO_KEEP_DAYS - used);
 }
 
+let _pgMonths=[];     // 사진이 있는 'YYYY-MM' 목록 (최신 먼저)
+let _pgByMonth={};    // { 'YYYY-MM': [items...] }  (각 월의 사진들, 날짜 내림차순)
+let _pgMonthIdx=0;    // 현재 보고 있는 월 인덱스 (_pgMonths 기준)
+
 async function openPhotoGallery(){
   showScreen('photoGalleryScreen');
   const box=document.getElementById('pgContent');
+  const nav=document.getElementById('pgMonthNav');
+  if(nav)nav.hidden=true;
   box.innerHTML='<div style="padding:60px 0;text-align:center"><div class="spinner" style="margin:0 auto"></div></div>';
   try{
     // 내가 속한 방 id들
@@ -9829,43 +9859,105 @@ async function openPhotoGallery(){
 
     if(!items.length){ renderPgEmpty(box); return; }
 
-    // 날짜 내림차순(최신 먼저) 정렬
-    items.sort((a,b)=> (b.date||'').localeCompare(a.date||''));
-
-    // 날짜별 그룹화
-    const groups={};
-    items.forEach(it=>{ (groups[it.date]=groups[it.date]||[]).push(it); });
-    const dates=Object.keys(groups).sort((a,b)=>b.localeCompare(a));
-
-    const free=!isEffectivePremium();
-    let html='';
-    dates.forEach(d=>{
-      html+=`<div class="pg-group"><div class="pg-group-date">${pgFmtDate(d)}</div><div class="pg-grid">`;
-      groups[d].forEach(it=>{
-        const expired = free && isPhotoExpiredForFree(it.url);
-        let badge='';
-        if(free && !expired){
-          const left=photoKeepDaysLeft(it.url);
-          if(left!==null) badge=`<span class="pg-keep-badge${left<=3?' urgent':''}">D-${Math.max(left,0)}</span>`;
-        }
-        const safe=escapeHtml(it.url);
-        const payload=escapeHtml(JSON.stringify({u:it.url,r:it.roomId,rn:it.roomName,d:it.date,t:it.title}));
-        if(expired){
-          html+=`<div class="pg-cell pg-expired" onclick="openPremiumSheet()"><img src="${safe}" alt="" loading="lazy"><div class="pg-lock">🔒</div></div>`;
-        }else{
-          html+=`<div class="pg-cell" data-pg='${payload}' onclick="openPhotoDetailFromEl(this)"><img src="${safe}" alt="일정 사진" loading="lazy">${badge}</div>`;
-        }
-      });
-      html+='</div></div>';
+    // 월별 그룹화 (YYYY-MM 기준)
+    _pgByMonth={};
+    items.forEach(it=>{
+      const ym=(it.date||'').slice(0,7);   // 'YYYY-MM'
+      if(ym.length!==7) return;
+      (_pgByMonth[ym]=_pgByMonth[ym]||[]).push(it);
     });
-    box.innerHTML=html;
+    // 각 월 안에서는 날짜 내림차순
+    Object.keys(_pgByMonth).forEach(ym=>{ _pgByMonth[ym].sort((a,b)=>(b.date||'').localeCompare(a.date||'')); });
+    // 사진 있는 월 목록 (최신 먼저)
+    _pgMonths=Object.keys(_pgByMonth).sort((a,b)=>b.localeCompare(a));
+    if(!_pgMonths.length){ renderPgEmpty(box); return; }
+
+    _pgMonthIdx=0;   // 가장 최신 달부터
+    renderPgMonth();
   }catch(e){
     console.error('사진 모아보기 실패',e);
-    box.innerHTML='<div class="pg-empty"><div class="pg-empty-ic">⚠️</div><div class="pg-empty-t">불러오지 못했어요</div><div class="pg-empty-s">잠시 후 다시 시도해주세요</div></div>';
+    if(nav)nav.hidden=true;
+    box.innerHTML='<div class="pg-empty"><div class="pg-empty-ic"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></div><div class="pg-empty-t">불러오지 못했어요</div><div class="pg-empty-s">잠시 후 다시 시도해주세요</div></div>';
   }
 }
+
+/* 현재 _pgMonthIdx 월의 사진을 렌더 */
+function renderPgMonth(dir){
+  const box=document.getElementById('pgContent');
+  const nav=document.getElementById('pgMonthNav');
+  const label=document.getElementById('pgMonthLabel');
+  const prevBtn=document.getElementById('pgPrevBtn');
+  const nextBtn=document.getElementById('pgNextBtn');
+  if(!_pgMonths.length){ if(nav)nav.hidden=true; renderPgEmpty(box); return; }
+  if(nav)nav.hidden=false;
+
+  const ym=_pgMonths[_pgMonthIdx];
+  const [yy,mm]=ym.split('-');
+  if(label)label.textContent=`${yy}년 ${parseInt(mm,10)}월`;
+  // 더 과거(다음 인덱스)·더 최신(이전 인덱스) 존재 여부로 화살표 활성화
+  if(prevBtn)prevBtn.disabled=(_pgMonthIdx>=_pgMonths.length-1); // ◁ = 더 과거
+  if(nextBtn)nextBtn.disabled=(_pgMonthIdx<=0);                  // ▷ = 더 최신
+
+  const free=!isEffectivePremium();
+  // 날짜별 그룹화 (해당 월 안)
+  const monthItems=_pgByMonth[ym]||[];
+  const groups={};
+  monthItems.forEach(it=>{ (groups[it.date]=groups[it.date]||[]).push(it); });
+  const dates=Object.keys(groups).sort((a,b)=>b.localeCompare(a));
+
+  let html='';
+  dates.forEach(d=>{
+    html+=`<div class="pg-group"><div class="pg-group-date">${pgFmtDate(d)}</div><div class="pg-grid">`;
+    groups[d].forEach(it=>{
+      const expired = free && isPhotoExpiredForFree(it.url);
+      let badge='';
+      if(free && !expired){
+        const left=photoKeepDaysLeft(it.url);
+        if(left!==null) badge=`<span class="pg-keep-badge${left<=3?' urgent':''}">D-${Math.max(left,0)}</span>`;
+      }
+      const safe=escapeHtml(it.url);
+      const payload=escapeHtml(JSON.stringify({u:it.url,r:it.roomId,rn:it.roomName,d:it.date,t:it.title}));
+      if(expired){
+        html+=`<div class="pg-cell pg-expired" onclick="openPremiumSheet()"><img src="${safe}" alt="" loading="lazy"><div class="pg-lock"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg></div></div>`;
+      }else{
+        html+=`<div class="pg-cell" data-pg='${payload}' onclick="openPhotoDetailFromEl(this)"><img src="${safe}" alt="일정 사진" loading="lazy">${badge}</div>`;
+      }
+    });
+    html+='</div></div>';
+  });
+  // 슬라이드 인 애니메이션
+  box.classList.remove('pg-slide-in-left','pg-slide-in-right');
+  void box.offsetWidth; // reflow로 애니메이션 재시작
+  if(dir==='next') box.classList.add('pg-slide-in-left');
+  else if(dir==='prev') box.classList.add('pg-slide-in-right');
+  box.innerHTML=html;
+  box.scrollTop=0;
+}
+
+/* 월 이동: step -1 = 더 과거(◁), +1 = 더 최신(▷) */
+function pgMonthStep(step){
+  if(!_pgMonths.length) return;
+  // _pgMonths는 최신이 인덱스 0 → 과거로 갈수록 인덱스 증가
+  const newIdx=_pgMonthIdx - step;  // ◁(과거)=step-1 → idx+1
+  if(newIdx<0 || newIdx>=_pgMonths.length) return;
+  _pgMonthIdx=newIdx;
+  renderPgMonth(step<0?'prev':'next');
+}
+
+/* 스와이프로 월 이동 */
+let _pgTX=null;
+function pgTouchStart(e){ _pgTX=e.touches[0].clientX; }
+function pgTouchEnd(e){
+  if(_pgTX===null)return;
+  const dx=e.changedTouches[0].clientX-_pgTX; _pgTX=null;
+  if(Math.abs(dx)<50)return;          // 작은 움직임 무시
+  if(dx<0) pgMonthStep(-1);           // 왼쪽으로 밀기 → 과거(◁)
+  else     pgMonthStep(1);            // 오른쪽으로 밀기 → 최신(▷)
+}
+
 function renderPgEmpty(box){
-  box.innerHTML='<div class="pg-empty"><div class="pg-empty-ic">🖼️</div><div class="pg-empty-t">아직 사진이 없어요</div><div class="pg-empty-s">일정에 사진을 첨부하면<br>여기에 모아서 볼 수 있어요</div></div>';
+  const nav=document.getElementById('pgMonthNav'); if(nav)nav.hidden=true;
+  box.innerHTML='<div class="pg-empty"><div class="pg-empty-ic"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2.4"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg></div><div class="pg-empty-t">아직 사진이 없어요</div><div class="pg-empty-s">일정에 사진을 첨부하면<br>여기에 모아서 볼 수 있어요</div></div>';
 }
 function closePhotoGallery(){ showScreen('roomsScreen'); }
 function pgFmtDate(d){
@@ -9886,7 +9978,7 @@ function openPhotoDetail(item){
   document.getElementById('pgDetailImg').src=item.u;
   document.getElementById('pgDetailDate').textContent=pgFmtDate(item.d);
   document.getElementById('pgDetailTitle').textContent=item.t||'(제목 없음)';
-  document.getElementById('pgDetailRoom').textContent=item.rn?('📍 '+item.rn):'';
+  document.getElementById('pgDetailRoom').innerHTML=item.rn?('<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="2.6"/></svg>'+escapeHtml(item.rn)):'';
   document.getElementById('pgDetailOverlay').classList.add('on');
   document.getElementById('pgDetailCard').classList.add('on');
 }
@@ -13262,7 +13354,26 @@ function coBuildBackPage(month, W, yearOverride){
 }
 
 /* ───── 주문 폼 ───── */
+/* ⚠️ 달력 주문 일시 중단 — '주문하기' 클릭 시 준비중 안내만 표시 (미리보기는 정상 이용 가능) */
 function openCalOrderForm(){
+  {
+    const body=document.getElementById('coPreviewBody');
+    document.getElementById('coPreviewModal').classList.add('on');
+    document.querySelector('#coPreviewModal .co-preview-title').textContent='주문하기';
+    document.querySelector('#coPreviewModal .co-preview-nav').style.display='none';
+    body.innerHTML=`
+      <div class="co-form" style="text-align:center;padding:24px 8px 8px">
+        <div style="display:flex;align-items:center;justify-content:center;margin-bottom:16px;color:var(--accent)">
+          <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2.4"/><path d="M3 9h18"/><path d="M8 2.5v3M16 2.5v3"/><path d="M9 14l2 2 4-4"/></svg>
+        </div>
+        <div class="co-form-title" style="margin-bottom:8px">주문 기능 준비 중이에요</div>
+        <div class="co-summary" style="margin-left:0;text-align:center">
+          더 좋은 품질로 찾아뵙기 위해<br>달력 주문 기능을 준비하고 있어요.<br>조금만 기다려 주세요.
+        </div>
+        <div style="text-align:center;margin-top:20px"><span class="co-back-link" onclick="closeCalPreview()">‹ 돌아가기</span></div>
+      </div>`;
+    return;
+  }
   const cnt=Object.keys(_coSelectedEvents).length;
   const coverName=CO_COVERS.find(c=>c.key===_coCover).name;
   const body=document.getElementById('coPreviewBody');
