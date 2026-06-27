@@ -297,6 +297,28 @@ function fmtDay(s){if(!s)return '-';const d=new Date(s);const p=n=>String(n).pad
 function errBox(e){return `<div class="empty"><div class="e-emoji">⚠️</div>불러오기 실패<br><span style="font-size:12px">${esc(e.message||'')}</span></div>`;}
 
 async function checkSession(){
+  // ── 방법 A: 메인 앱(우리 캘린더)에서 넘겨준 세션 토큰이 URL 해시에 있으면 자동 로그인 ──
+  // index.html의 openAdminFullPage()가 #at=<access>&rt=<refresh> 형태로 토큰을 실어 보냄.
+  // 카카오 로그인이라 admin에서 이메일/비번을 다시 칠 필요가 없도록 세션을 그대로 복원한다.
+  try{
+    const h = location.hash || '';
+    if(h.indexOf('at=')!==-1 && h.indexOf('rt=')!==-1){
+      const params = new URLSearchParams(h.replace(/^#/,''));
+      const at = params.get('at');
+      const rt = params.get('rt');
+      // 주소창/히스토리에서 토큰 흔적 즉시 제거 (노출 최소화)
+      try{ history.replaceState(null,'',location.pathname+location.search); }catch(_){ location.hash=''; }
+      if(at && rt){
+        const { data:sd, error:se } = await supa.auth.setSession({ access_token:at, refresh_token:rt });
+        if(!se && sd?.user){
+          if(sd.user.id===ADMIN_USER_ID){ enterApp(sd.user); return; }
+          // 관리자 계정이 아니면 정리 후 로그인 화면
+          await supa.auth.signOut(); showLogin('관리자 계정이 아니에요'); return;
+        }
+      }
+    }
+  }catch(_){}
+
   const {data}=await supa.auth.getSession();
   const s=data.session;
   if(s&&s.user&&s.user.id===ADMIN_USER_ID)enterApp(s.user);
