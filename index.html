@@ -579,7 +579,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .prem-pricebar-label{font-size:13px;font-weight:600;opacity:.92}
 .prem-pricebar-amount{font-family:var(--ff-serif);font-size:23px;font-weight:800;letter-spacing:.3px}
 /* 럭셔리 히어로 */
-.prem-hero-lux{position:relative;overflow:hidden;text-align:center;padding:14px 22px 14px;background:linear-gradient(165deg,#1c1200 0%,#2e1f00 45%,#3d2a00 100%);border-radius:0 0 28px 28px;margin-bottom:8px}
+.prem-hero-lux{position:relative;overflow:hidden;text-align:center;padding:14px 22px 14px;background:linear-gradient(165deg,#3a2800 0%,#5a3e00 45%,#6e4e00 100%);border-radius:0 0 28px 28px;margin-bottom:8px}
 .phl-glow{position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:280px;height:280px;background:radial-gradient(circle,rgba(220,175,60,.55),transparent 68%);pointer-events:none}
 .phl-logo{position:relative;width:52px;height:52px;border-radius:50%;border:2px solid rgba(212,175,106,.5);box-shadow:0 3px 14px rgba(0,0,0,.35);}
 .phl-eyebrow{position:relative;margin-top:6px;font-size:11px;font-weight:800;letter-spacing:4px;color:#f0d060;font-family:var(--ff-serif);text-shadow:0 0 12px rgba(240,200,60,.5)}
@@ -2837,7 +2837,7 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)) !im
     <div class="upg-fs-bottom">
       <!-- 플랜 선택 -->
       <div class="upg-fs-planrow" id="upgFsPlanRow">
-        <button class="upg-fs-plan" data-plan="1m" onclick="upgSelectPlan('1m')">
+        <button class="upg-fs-plan sel" data-plan="1m" onclick="upgSelectPlan('1m')">
           <span class="up-price">₩3,900</span>
           <span class="up-label">1개월</span>
         </button>
@@ -2845,13 +2845,13 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)) !im
           <span class="up-price">₩10,900</span>
           <span class="up-label">3개월</span>
         </button>
-        <button class="upg-fs-plan sel" data-plan="12m" onclick="upgSelectPlan('12m')">
+        <button class="upg-fs-plan" data-plan="12m" onclick="upgSelectPlan('12m')">
           <span class="up-best">인기</span>
           <span class="up-price">₩39,900</span>
           <span class="up-label">12개월</span>
         </button>
       </div>
-      <div class="upg-fs-trial-note">7일 무료 체험 · 이후 <b id="upgFsTrialPrice">₩39,900</b>/년</div>
+      <div class="upg-fs-trial-note">7일 무료 체험 · 이후 <b id="upgFsTrialPrice">₩3,900</b>/월</div>
       <button class="upg-fs-ctabtn" onclick="onPremiumSubscribe()">7일 무료 체험 시작하기</button>
       <div class="upg-fs-links">
         <button onclick="onPremiumSubscribe()">구매 복원하기</button>
@@ -3528,7 +3528,7 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)) !im
         <div class="pb-title">프리미엄 플랜</div>
         <div class="pb-sub">구독하면 기간 종료 후 자동으로 연장돼요</div>
       </div>
-      <button class="prem-plan" data-plan="1m" onclick="selectPlan('1m')">
+      <button class="prem-plan selected" data-plan="1m" onclick="selectPlan('1m')">
         <span class="pp-radio"></span>
         <span class="pp-body"><span class="pp-name">1개월 구독</span><span class="pp-desc">매월 결제</span></span>
         <span class="pp-right"><span class="pp-price">₩3,900</span></span>
@@ -3538,7 +3538,7 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)) !im
         <span class="pp-body"><span class="pp-name">3개월 구독</span><span class="pp-desc">월 3,633원 <span class="pp-save">7% 절약</span></span></span>
         <span class="pp-right"><span class="pp-price">₩10,900</span></span>
       </button>
-      <button class="prem-plan selected" data-plan="12m" onclick="selectPlan('12m')">
+      <button class="prem-plan" data-plan="12m" onclick="selectPlan('12m')">
         <span class="pp-radio"></span>
         <span class="pp-body"><span class="pp-name">12개월 구독</span><span class="pp-desc">월 3,325원 <span class="pp-save">15% 절약</span></span></span>
         <span class="pp-right"><span class="pp-tags"><span class="pp-best">가장 인기</span></span><span class="pp-price">₩39,900</span></span>
@@ -3559,7 +3559,7 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)) !im
     </div>
   </div>
   <div class="prem-ctabar">
-    <div class="prem-cta-value" id="premCtaValue">7일 무료 · 이후 ₩39,900/년 자동 갱신</div>
+    <div class="prem-cta-value" id="premCtaValue">7일 무료 체험 · 이후 ₩3,900/월부터</div>
     <button class="prem-ctabtn" id="premSubBtn" onclick="onPremiumSubscribe()">7일 무료 체험 시작하기</button>
     <div class="prem-ctanote">결제 기능은 준비 중이에요 · 곧 만나요</div>
   </div>
@@ -5355,14 +5355,14 @@ function closeUpgradeModal(){
   const ov=document.getElementById('upgOverlay');
   if(ov) ov.classList.remove('on');
 }
-let _upgSelPlan='12m';
+let _upgSelPlan='1m';
 function upgSelectPlan(plan){
   _upgSelPlan=plan;
   document.querySelectorAll('.upg-fs-plan').forEach(b=>{
     b.classList.toggle('sel', b.dataset.plan===plan);
   });
   // trial note 가격 업데이트
-  const priceMap={'1m':'₩3,900/월','3m':'₩10,900/3개월','12m':'₩39,900/년'};
+  const priceMap={'1m':'₩3,900','3m':'₩10,900','12m':'₩39,900'};
   const el=document.getElementById('upgFsTrialPrice');
   if(el) el.textContent=priceMap[plan]||'';
 }
@@ -14344,14 +14344,14 @@ const PREM_PLANS={
   '3m':{label:'3개월 구독',price:'₩10,900'},
   '12m':{label:'12개월 구독',price:'₩39,900'}
 };
-let _premSelectedPlan='12m';
+let _premSelectedPlan='1m';
 function selectPlan(p){
   if(!PREM_PLANS[p])return;
   _premSelectedPlan=p;
   const plans=document.querySelectorAll('#premiumCard .prem-plan');
   plans.forEach(function(el){ el.classList.toggle('selected', el.getAttribute('data-plan')===p); });
   // trial note 업데이트
-  const trialMap={'1m':'7일 무료 · 이후 ₩3,900/월 자동 갱신','3m':'7일 무료 · 이후 ₩10,900/3개월 자동 갱신','12m':'7일 무료 · 이후 ₩39,900/년 자동 갱신'};
+  const trialMap={'1m':'7일 무료 체험 · 이후 ₩3,900/월','3m':'7일 무료 체험 · 이후 ₩10,900/3개월','12m':'7일 무료 체험 · 이후 ₩39,900/년'};
   const cvEl=document.getElementById('premCtaValue');
   if(cvEl) cvEl.textContent=trialMap[p]||'';
 }
