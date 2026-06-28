@@ -2327,6 +2327,7 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)); }
 .todo-card-date{font-size:12px;color:var(--sub);font-weight:600}
 .todo-card-done{font-size:11.5px;color:var(--sub);font-weight:600}
 .todo-card-keep{font-size:11px;color:#b08742;font-weight:700;background:rgba(176,135,66,.1);padding:1px 7px;border-radius:6px}
+.todo-card-body .dp-members-chips{margin:5px 0 2px}
 .todo-card-author{font-size:11px;color:var(--mute)}
 .todo-card-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:6px}
 .todo-empty{text-align:center;color:var(--mute);font-size:14px;padding:60px 20px;line-height:1.7}
@@ -15117,6 +15118,38 @@ function todoMembersLabel(t){
   }
   return todoAuthorName(t);
 }
+/* 멤버 키 → 멤버 객체 (일반/가상 모두) */
+function _todoMemberByKey(key){
+  if(typeof key==='string' && key.indexOf('v-')===0){
+    const vmId=key.slice(2);
+    return (_myMembers||[]).find(function(mm){return mm.is_virtual&&mm.member_id===vmId;});
+  }
+  return (_myMembers||[]).find(function(mm){return !mm.is_virtual&&mm.user_id===key;});
+}
+/* 멤버 객체 → 프로필칩 HTML (일정 멤버칩과 동일한 디자인: 아바타+색상+이름) */
+function _todoMemberChip(m){
+  if(!m) return '';
+  const name=(m.name||'').trim();
+  const initial=escapeHtml(name.slice(0,1)||'·');
+  const avInner=m.avatar_url?avImg(m.avatar_url,initial):initial;
+  return '<span class="dp-member-chip"><span class="dp-member-chip-av" style="background:'+escapeHtml(m.color||'#8b3a2a')+'">'+avInner+'</span><span class="dp-member-chip-name">'+escapeHtml(name)+'</span></span>';
+}
+/* 할일 카드용 멤버 칩들 — 함께면 전원, 혼자면 작성자 */
+function todoMemberChipsHtml(t){
+  let keys=[];
+  if(Array.isArray(t.member_keys) && t.member_keys.length>=2){
+    keys=t.member_keys.slice();
+  }else if(t.user_id){
+    keys=[t.user_id];
+  }
+  const maxShow=4;
+  const shown=keys.slice(0,maxShow);
+  const remaining=keys.length-shown.length;
+  const chips=shown.map(function(k){ return _todoMemberChip(_todoMemberByKey(k)); }).filter(Boolean).join('');
+  if(!chips) return '';
+  const moreChip=remaining>0?('<span class="dp-member-chip dp-member-chip-more">+'+remaining+'명</span>'):'';
+  return '<div class="dp-members-chips">'+chips+moreChip+'</div>';
+}
 /* 현재 보고 있는 멤버 기준 표시 여부 — 함께면 멤버 포함, 혼자면 작성자 */
 function _todoVisibleForView(t){
   if(!_viewingMember || _viewingMember==='all') return true;
@@ -15488,12 +15521,12 @@ function buildTodoCard(t,multi){
   const done=t.is_done;
   const ddc=getDdayClass(t), ddl=getDdayLabel(t);
   let tr=''; try{ tr=fmtTimeRange(t.start_time,t.end_time); }catch(e){ tr=(t.start_time||''); }
-  const author=multi?todoMembersLabel(t):'';
+  const memberChips=todoMemberChipsHtml(t);
   let metaInner='';
   if(done){
     const doneLab=_tdDoneLabel(t.done_at);
     let keepLab='';
-    // 무료 이용자: 완료 할일 보관 잔여일 안내 (프리미엄은 30일이라 생략)
+    // 무료 이용자: 완료 할일 보관 잔여일 안내 (프리미엄은 평생 보관이라 생략)
     if(!isEffectivePremium() && t.expires_at){
       try{
         const ms=new Date(t.expires_at).getTime()-Date.now();
@@ -15505,15 +15538,13 @@ function buildTodoCard(t,multi){
     metaInner=
       '<span class="td-dday done">완료</span>'
       +(doneLab?('<span class="todo-card-done">'+escapeHtml(doneLab)+' 완료</span>'):'')
-      +(keepLab?('<span class="todo-card-keep">'+escapeHtml(keepLab)+'</span>'):'')
-      +(author?('<span class="todo-card-author">'+escapeHtml(author)+'</span>'):'');
+      +(keepLab?('<span class="todo-card-keep">'+escapeHtml(keepLab)+'</span>'):'');
   }else{
     const dateLab=_tdDateLabel(t);
     metaInner=
       (dateLab?('<span class="todo-card-date">'+escapeHtml(dateLab)+'</span>'):'')
       +(tr?('<span class="todo-card-time">'+escapeHtml(tr)+'</span>'):'')
-      +'<span class="td-dday '+ddc+'">'+ddl+'</span>'
-      +(author?('<span class="todo-card-author">'+escapeHtml(author)+'</span>'):'');
+      +'<span class="td-dday '+ddc+'">'+ddl+'</span>';
   }
   const actionsHtml =
     '<div class="td-card-actions">'
@@ -15524,6 +15555,7 @@ function buildTodoCard(t,multi){
     +'<div class="todo-chk '+(done?'on':'')+'" style="border-color:'+hex+';'+(done?'background:'+hex:'')+'" onclick="event.stopPropagation();window.toggleTodoDone(\''+t.id+'\')"></div>'
     +'<div class="todo-card-body">'
       +'<div class="todo-card-title '+(done?'done':'')+'">'+escapeHtml(t.title||'')+'</div>'
+      +(memberChips||'')
       +'<div class="todo-card-meta">'+metaInner+'</div>'
     +'</div>'
     +actionsHtml
