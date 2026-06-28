@@ -1370,6 +1370,46 @@ body.ev-dragging .cal-cell{cursor:grabbing}
   display:none;align-items:center;justify-content:center;
   -webkit-tap-highlight-color:transparent;
 }
+/* ── 사진 모아보기 (월별 갤러리) ── */
+.pg-screen{position:fixed;inset:0;background:var(--bg);z-index:60;display:none;flex-direction:column}
+.pg-screen.on{display:flex}
+.pg-header{display:flex;align-items:center;justify-content:space-between;padding:max(14px,env(safe-area-inset-top)) 16px 10px;flex-shrink:0}
+.pg-back{width:36px;height:36px;border:none;background:none;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.pg-back svg{width:24px;height:24px}
+.pg-title{font-size:17px;font-weight:700;color:var(--text)}
+.pg-month-row{display:flex;align-items:center;justify-content:center;gap:14px;padding:4px 16px 12px;flex-shrink:0}
+.pg-mn-arrow{width:34px;height:34px;border:1px solid var(--border);background:var(--card);border-radius:50%;font-size:18px;color:var(--sub);cursor:pointer;font-family:inherit;line-height:1}
+.pg-mn-label{font-size:15px;font-weight:700;color:var(--text);cursor:pointer;padding:7px 16px;border-radius:10px;background:var(--card);border:1px solid var(--border);min-width:120px;text-align:center}
+.pg-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 14px calc(28px + env(safe-area-inset-bottom))}
+.pg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.pg-cell{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--card);cursor:pointer}
+.pg-cell img{width:100%;height:100%;object-fit:cover;display:block}
+.pg-cell-date{position:absolute;left:0;right:0;bottom:0;padding:10px 6px 5px;font-size:10px;font-weight:600;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.55))}
+.pg-empty{text-align:center;padding:70px 20px;color:var(--mute)}
+.pg-empty svg{width:48px;height:48px;opacity:.5;margin-bottom:14px}
+.pg-empty-t{font-size:15px;font-weight:600;color:var(--sub);margin-bottom:5px}
+.pg-empty-s{font-size:13px;color:var(--mute)}
+.pg-fade{animation:pgFade .22s ease}
+@keyframes pgFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* 년·월 피커 */
+.pgmp-card{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%) scale(.96);width:min(340px,88vw);background:var(--card);border-radius:20px;padding:18px 20px max(20px,env(safe-area-inset-bottom));z-index:1601;opacity:0;pointer-events:none;transition:transform .24s cubic-bezier(.32,.72,0,1),opacity .2s ease;max-height:85vh;overflow-y:auto}
+.pgmp-card.on{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto;animation:pgmpIn .26s cubic-bezier(.32,.72,0,1)}
+@keyframes pgmpIn{from{transform:translate(-50%,-46%) scale(.96);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+.pgmp-row{display:flex;align-items:center;justify-content:center;gap:16px;margin:12px 0 14px}
+.pgmp-nav{width:34px;height:34px;border:1px solid var(--border);background:var(--bg);border-radius:50%;font-size:18px;color:var(--sub);cursor:pointer;font-family:inherit}
+.pgmp-year{font-size:18px;font-weight:700;color:var(--text);min-width:70px;text-align:center}
+.pgmp-months{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.pgmp-mbtn{padding:11px 0;border:1px solid var(--border);background:var(--bg);border-radius:10px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;font-family:inherit}
+.pgmp-mbtn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.pgmp-mbtn.has{border-color:var(--gold);color:var(--accent);font-weight:700}
+.pgmp-today{width:100%;margin-top:14px;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer}
+/* 사진 정보 시트 */
+.pgi-photo{width:100%;border-radius:14px;overflow:hidden;margin:6px 0 14px;cursor:pointer;background:var(--bg);max-height:46vh;display:flex;justify-content:center}
+.pgi-photo img{max-width:100%;max-height:46vh;object-fit:contain;display:block}
+.pgi-date{font-size:13px;font-weight:600;color:var(--sub);margin-bottom:4px}
+.pgi-room{color:var(--mute);font-weight:500;font-size:12px}
+.pgi-title{font-size:17px;font-weight:700;color:var(--text);margin-bottom:16px}
+.pgi-go{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer}
 .photoview-overlay.on{display:flex}
 .photoview-img{max-width:94vw;max-height:88vh;object-fit:contain;border-radius:6px}
 .photoview-close{
@@ -2312,6 +2352,8 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)); }
 .todo-filter-btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .todo-month-filter{display:flex;gap:8px;padding:0 24px 8px;flex-shrink:0}
 .todo-month-select{flex:1;padding:8px 12px;border:1px solid var(--border);background:var(--card);border-radius:10px;font-size:13px;font-weight:600;color:var(--text);font-family:inherit;cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px}
+.todo-month-btn{flex:1;display:flex;align-items:center;justify-content:space-between;gap:6px;padding:8px 12px;border:1px solid var(--border);background:var(--card);border-radius:10px;font-size:13px;font-weight:600;color:var(--text);font-family:inherit;cursor:pointer}
+.todo-month-btn svg{width:13px;height:13px;color:var(--mute);flex-shrink:0}
 .todo-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 18px calc(96px + env(safe-area-inset-bottom))}
 .todo-sec-label{font-size:12px;font-weight:700;color:var(--mute);padding:12px 6px 6px;letter-spacing:.3px}
 .todo-card{display:flex;align-items:flex-start;gap:12px;background:var(--card);border-radius:14px;padding:14px 14px;margin-bottom:9px;box-shadow:var(--shadow);position:relative}
@@ -2537,7 +2579,9 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)); }
           </svg>
           <span class="r-bell-badge" id="notifBadge" hidden>0</span>
         </button>
-        <button class="r-avatar" id="userAvatar" onclick="openProfile()" title="프로필">—</button>
+        <button class="r-bell" id="photoGalleryBtn" onclick="openPhotoGallery()" title="사진 모아보기" aria-label="사진 모아보기">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </button>
       </div>
     </div>
 
@@ -2710,8 +2754,8 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)); }
       <button class="todo-filter-btn" id="todoFilterDone" onclick="setTodoFilter('done',this)">완료</button>
     </div>
     <div class="todo-month-filter" id="todoMonthFilter" style="display:none">
-      <select class="todo-month-select" id="todoDoneYear" onchange="onTodoDoneFilterChange()"></select>
-      <select class="todo-month-select" id="todoDoneMonth" onchange="onTodoDoneFilterChange()"></select>
+      <button class="todo-month-btn" id="todoDoneYearBtn" onclick="openTodoDonePicker()"><span id="todoDoneYearLabel">전체 연도</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+      <button class="todo-month-btn" id="todoDoneMonthBtn" onclick="openTodoDonePicker()"><span id="todoDoneMonthLabel">전체 월</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
     </div>
     <div class="todo-list" id="todoList"></div>
   </div>
@@ -2973,6 +3017,24 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)); }
   </div>
 </div>
 
+<!-- 할일 완료 필터 — 년/월 휠 피커 (일정 '날짜로 이동'과 동일 방식) -->
+<div class="mo-overlay" id="todoDpOverlay" onclick="closeTodoDonePicker()"></div>
+<div class="mo-card date-picker-card" id="todoDpCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">완료 기간 선택</div>
+  <div class="date-picker-cols">
+    <div class="tp-cols">
+      <div class="tp-col" id="todoDpYearCol"></div>
+      <div class="tp-col" id="todoDpMonthCol"></div>
+      <div class="tp-mid"></div>
+    </div>
+  </div>
+  <div class="mo-actions">
+    <button class="mo-cancel" onclick="closeTodoDonePicker()">취소</button>
+    <button class="btn btn-primary" onclick="applyTodoDonePicker()">적용</button>
+  </div>
+</div>
+
 <!-- 검색 모달 -->
 <div class="mo-overlay" id="searchOverlay" onclick="closeSearch()"></div>
 <div class="mo-card search-card" id="searchCard">
@@ -3201,6 +3263,45 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)); }
 <div class="photoview-overlay" id="photoViewOverlay" onclick="closePhotoView()">
   <button class="photoview-close" onclick="event.stopPropagation();closePhotoView()" aria-label="닫기">✕</button>
   <img class="photoview-img" id="photoViewImg" alt="">
+</div>
+
+<!-- 사진 모아보기 (월별 갤러리) -->
+<div class="screen pg-screen" id="photoGalleryScreen">
+  <div class="pg-header">
+    <button class="pg-back" onclick="closePhotoGallery()" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <div class="pg-title">사진 모아보기</div>
+    <div style="width:36px"></div>
+  </div>
+  <div class="pg-month-row">
+    <button class="pg-mn-arrow" onclick="pgMonthStep(-1)" aria-label="이전 달">‹</button>
+    <div class="pg-mn-label" id="pgMnLabel" onclick="openPgMonthPicker()">2026년 6월</div>
+    <button class="pg-mn-arrow" onclick="pgMonthStep(1)" aria-label="다음 달">›</button>
+  </div>
+  <div class="pg-body" id="pgBody"></div>
+</div>
+
+<!-- 사진모아보기 년·월 피커 모달 -->
+<div class="mo-overlay" id="pgMpOverlay" onclick="closePgMonthPicker()"></div>
+<div class="pgmp-card" id="pgMpCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">년 · 월 선택</div>
+  <div class="pgmp-row">
+    <button class="pgmp-nav" onclick="pgMpYearStep(-1)">‹</button>
+    <div class="pgmp-year" id="pgMpYear">2026</div>
+    <button class="pgmp-nav" onclick="pgMpYearStep(1)">›</button>
+  </div>
+  <div class="pgmp-months" id="pgMpMonths"></div>
+  <button class="pgmp-today" onclick="pgGoThisMonth()">이번 달로</button>
+</div>
+
+<!-- 사진 정보 시트 (며칠/무슨 일정 + 일정 확인하기) -->
+<div class="mo-overlay" id="pgInfoOverlay" onclick="closePgPhotoInfo()"></div>
+<div class="mo-card" id="pgInfoCard">
+  <div class="mo-handle"></div>
+  <div class="pgi-photo" onclick="pgViewPhotoLarge()"><img id="pgInfoImg" alt=""></div>
+  <div class="pgi-date"><span id="pgInfoDate">—</span> <span class="pgi-room" id="pgInfoRoom"></span></div>
+  <div class="pgi-title" id="pgInfoTitle">—</div>
+  <button class="pgi-go" onclick="pgGoToEvent()">일정 확인하기</button>
 </div>
 
 <!-- 프로필 시트 (방 목록·캘린더 우측 상단 아바타 클릭) -->
@@ -6208,6 +6309,7 @@ async function joinRoom(){
     closeJoinRoom();
     const srcName=(_joinCopyOn&&_joinCopySource)?(_myRooms.find(r=>r.id===_joinCopySource)?.name||''):'';
     toast(copiedCount>0?`"${room.name||'방'}" 입장 ("${srcName}"에서 ${copiedCount}개 복사됨)`:`"${room.name||'방'}"에 입장했어요`);
+    _notifyMemberJoined(room);  // 기존 멤버 전체에게 입장 알림
     await loadRooms();
   }catch(e){
     toast('실패: '+(e.message||'').slice(0,40));
@@ -9809,6 +9911,198 @@ function closePhotoView(){
   if(img)img.removeAttribute('src');
 }
 
+/* ───────── 사진 모아보기 (월별 갤러리) — 내가 속한 모든 방의 사진 ───────── */
+let _pgByMonth={};   // { 'YYYY-MM': [{url,date,roomId,roomName,title,shared_id,id}, ...] }
+let _pgMonths=[];    // 사진이 있는 'YYYY-MM' 목록 (최신 먼저)
+let _pgCurYM='';     // 현재 보고 있는 'YYYY-MM' (사진 유무 무관 — 자유 이동)
+let _pgMpYear=0;     // 피커에서 보고 있는 연도
+let _pgLoaded=false;
+
+/* 내가 속한 모든 방의 일정에서 사진 수집 → 월별 그룹화 */
+async function loadAllPhotos(){
+  _pgByMonth={}; _pgMonths=[];
+  if(!_currentUser) return;
+  let roomIds=[];
+  if(_myRooms&&_myRooms.length){ roomIds=_myRooms.map(r=>r.id); }
+  else{
+    try{
+      const {data:mems}=await supa.from('members').select('room_id').eq('user_id',_currentUser.id);
+      roomIds=[...new Set((mems||[]).map(m=>m.room_id))];
+    }catch(e){ return; }
+  }
+  if(!roomIds.length) return;
+  // 방 이름 맵
+  const roomNameMap={};
+  (_myRooms||[]).forEach(r=>{ roomNameMap[r.id]=r.name||''; });
+  let rows=[];
+  try{
+    const {data,error}=await supa.from('events')
+      .select('id,date,title,photo_url,photo_urls,room_id,shared_id')
+      .in('room_id',roomIds);
+    if(error)throw error;
+    rows=data||[];
+  }catch(e){ console.error('사진 로드 실패',e); return; }
+  const seen=new Set();
+  rows.forEach(function(ev){
+    if(!ev.date||ev.date.length<7)return;
+    const ym=ev.date.slice(0,7);
+    let urls=[];
+    if(Array.isArray(ev.photo_urls)&&ev.photo_urls.length) urls=ev.photo_urls.filter(Boolean);
+    else if(ev.photo_url) urls=[ev.photo_url];
+    urls.forEach(function(u){
+      const key=u;  // 같은 사진 URL은 한 번만 (함께 일정 중복 제거)
+      if(seen.has(key))return;
+      seen.add(key);
+      (_pgByMonth[ym]=_pgByMonth[ym]||[]).push({
+        url:u, date:ev.date, roomId:ev.room_id,
+        roomName:roomNameMap[ev.room_id]||'', title:ev.title||'',
+        shared_id:ev.shared_id||null, id:ev.id
+      });
+    });
+  });
+  Object.keys(_pgByMonth).forEach(function(ym){
+    _pgByMonth[ym].sort(function(a,b){ return b.date.localeCompare(a.date); });
+  });
+  _pgMonths=Object.keys(_pgByMonth).sort().reverse();
+  _pgLoaded=true;
+}
+
+async function openPhotoGallery(){
+  const sc=document.getElementById('photoGalleryScreen');
+  if(sc)sc.classList.add('on');
+  const body=document.getElementById('pgBody');
+  if(body)body.innerHTML='<div style="padding:70px 0;text-align:center"><div class="spinner" style="margin:0 auto"></div></div>';
+  await loadAllPhotos();
+  if(_pgMonths.length){ _pgCurYM=_pgMonths[0]; }
+  else{ const n=new Date(); _pgCurYM=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0'); }
+  renderPgMonth();
+}
+function closePhotoGallery(){
+  const sc=document.getElementById('photoGalleryScreen');
+  if(sc)sc.classList.remove('on');
+  closePgMonthPicker();
+  closePgPhotoInfo();
+}
+window.openPhotoGallery=openPhotoGallery;
+window.closePhotoGallery=closePhotoGallery;
+
+function _pgYmLabel(ym){ const [y,m]=ym.split('-'); return y+'년 '+Number(m)+'월'; }
+function pgMonthStep(dir){
+  const [y,m]=_pgCurYM.split('-').map(Number);
+  const d=new Date(y,m-1+dir,1);
+  _pgCurYM=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  renderPgMonth();
+}
+function renderPgMonth(){
+  const lab=document.getElementById('pgMnLabel');
+  if(lab)lab.textContent=_pgYmLabel(_pgCurYM);
+  const body=document.getElementById('pgBody');
+  if(!body)return;
+  const items=_pgByMonth[_pgCurYM]||[];
+  if(!items.length){
+    body.innerHTML='<div class="pg-empty pg-fade">'
+      +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>'
+      +'<div class="pg-empty-t">이 달은 사진이 없어요</div>'
+      +'<div class="pg-empty-s">일정에 사진을 추가하면 여기 모여요</div>'
+      +'</div>';
+    return;
+  }
+  let html='<div class="pg-grid pg-fade">';
+  items.forEach(function(it,idx){
+    const dd=Number(it.date.slice(8,10)), mm=Number(it.date.slice(5,7));
+    html+='<div class="pg-cell" onclick="openPgPhotoInfo(\''+_pgCurYM+'\','+idx+')">'
+      +'<img src="'+escapeHtml(it.url)+'" loading="lazy" alt="">'
+      +'<div class="pg-cell-date">'+mm+'/'+dd+'</div>'
+      +'</div>';
+  });
+  html+='</div>';
+  body.innerHTML=html;
+}
+
+/* 사진 탭 → 일정 정보 시트 (며칠 / 무슨 일정 / 일정 확인하기) */
+let _pgInfoTarget=null;
+function openPgPhotoInfo(ym,idx){
+  const it=(_pgByMonth[ym]||[])[idx];
+  if(!it)return;
+  _pgInfoTarget=it;
+  const img=document.getElementById('pgInfoImg'); if(img)img.src=it.url;
+  const d=parseDateKey(it.date);
+  const dateStr=d?((d.getMonth()+1)+'월 '+d.getDate()+'일 '+DOW_NAMES[d.getDay()]+'요일'):it.date;
+  setText('pgInfoDate',dateStr);
+  setText('pgInfoTitle',it.title||'(제목 없음)');
+  const rn=document.getElementById('pgInfoRoom');
+  if(rn) rn.textContent=it.roomName?('· '+it.roomName):'';
+  document.getElementById('pgInfoOverlay').classList.add('on');
+  document.getElementById('pgInfoCard').classList.add('on');
+}
+function closePgPhotoInfo(){
+  const ov=document.getElementById('pgInfoOverlay'), c=document.getElementById('pgInfoCard');
+  if(ov)ov.classList.remove('on');
+  if(c)c.classList.remove('on');
+  _pgInfoTarget=null;
+}
+window.closePgPhotoInfo=closePgPhotoInfo;
+window.openPgPhotoInfo=openPgPhotoInfo;
+/* 사진 크게 보기 (정보 시트에서) */
+function pgViewPhotoLarge(){ if(_pgInfoTarget) openPhotoView(_pgInfoTarget.url); }
+window.pgViewPhotoLarge=pgViewPhotoLarge;
+/* 일정 확인하기 → 해당 방 + 날짜로 점프 (enterRoom이 _pendingJumpDate 자동 처리) */
+function pgGoToEvent(){
+  if(!_pgInfoTarget)return;
+  const it=_pgInfoTarget;
+  closePgPhotoInfo();
+  closePhotoGallery();
+  _pendingJumpDate=it.date;
+  if(typeof enterRoom==='function') enterRoom(it.roomId);
+}
+window.pgGoToEvent=pgGoToEvent;
+
+/* 년·월 피커 */
+function openPgMonthPicker(){
+  _pgMpYear=Number(_pgCurYM.split('-')[0]);
+  renderPgMpMonths();
+  document.getElementById('pgMpOverlay').classList.add('on');
+  document.getElementById('pgMpCard').classList.add('on');
+}
+function closePgMonthPicker(){
+  const ov=document.getElementById('pgMpOverlay'), c=document.getElementById('pgMpCard');
+  if(ov)ov.classList.remove('on');
+  if(c)c.classList.remove('on');
+}
+window.closePgMonthPicker=closePgMonthPicker;
+function pgMpYearStep(dir){ _pgMpYear+=dir; renderPgMpMonths(); }
+function renderPgMpMonths(){
+  document.getElementById('pgMpYear').textContent=_pgMpYear;
+  const wrap=document.getElementById('pgMpMonths');
+  if(!wrap)return;
+  const [curY,curM]=_pgCurYM.split('-').map(Number);
+  let html='';
+  for(let m=1;m<=12;m++){
+    const ym=_pgMpYear+'-'+String(m).padStart(2,'0');
+    const has=!!(_pgByMonth[ym]&&_pgByMonth[ym].length);
+    const isCur=(_pgMpYear===curY&&m===curM);
+    html+='<button class="pgmp-mbtn'+(isCur?' on':'')+(has&&!isCur?' has':'')+'" onclick="pgPickMonth('+m+')">'+m+'월</button>';
+  }
+  wrap.innerHTML=html;
+}
+function pgPickMonth(m){
+  _pgCurYM=_pgMpYear+'-'+String(m).padStart(2,'0');
+  closePgMonthPicker();
+  renderPgMonth();
+}
+window.pgPickMonth=pgPickMonth;
+window.pgMpYearStep=pgMpYearStep;
+window.openPgMonthPicker=openPgMonthPicker;
+window.pgMonthStep=pgMonthStep;
+function pgGoThisMonth(){
+  const n=new Date();
+  _pgCurYM=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');
+  closePgMonthPicker();
+  renderPgMonth();
+}
+window.pgGoThisMonth=pgGoThisMonth;
+
+
 /* 일정 생성 시 같은 방 다른 멤버에게 푸시 알림 (fire-and-forget) */
 function notifyEventCreated(title, time){
   _notifyEventChange('create', title, time);
@@ -9951,6 +10245,93 @@ function _notifyEventChange(action, title, time){
       action==='update'?'event_updated':'event_created'
     );
   }catch(e){console.warn('_notifyEventChange 에러:',e)}
+}
+
+/* ── 멤버 방 입장 알림 — 기존 멤버 전체에게 ── */
+async function _notifyMemberJoined(room){
+  try{
+    if(!_currentUser||!room)return;
+    const {data:mems}=await supa.from('members')
+      .select('user_id,notifications_enabled')
+      .eq('room_id',room.id);
+    const targetIds=(mems||[])
+      .filter(m=>m.user_id&&m.user_id!==_currentUser.id&&m.notifications_enabled!==false)
+      .map(m=>m.user_id);
+    if(!targetIds.length)return;
+    const myName=(_currentProfile&&_currentProfile.name)||'새 멤버';
+    const title=`${room.name||'방'}에 새 멤버`;
+    const body=`${myName}님이 방에 들어왔어요`;
+    supa.functions.invoke('send-push',{
+      body:{ user_ids:targetIds, title, body, url:`/?room=${room.id}`, tag:`join-${room.id}` }
+    }).catch(e=>console.warn('입장 알림 발송 실패:',e));
+    _insertNotificationRows(targetIds, room.id, null, title, body, 'member_joined');
+  }catch(e){console.warn('_notifyMemberJoined 에러:',e)}
+}
+
+/* ── 함께 할일 알림 — member_keys 2명 이상일 때만, 나 제외 멤버에게 ──
+   action: 'create' | 'update' | 'delete' | 'done' | 'undone' */
+function _notifyTodo(action, todo){
+  try{
+    if(!_currentUser||!_currentRoom||!todo)return;
+    // 함께 할일만 (member_keys 2명 이상)
+    const keys=Array.isArray(todo.member_keys)?todo.member_keys:[];
+    if(keys.length<2)return;
+    // 실제 user_id만 추려서 나 제외
+    const targetIds=(_myMembers||[])
+      .filter(m=>m.user_id&&m.user_id!==_currentUser.id&&m.notifications_enabled!==false&&keys.includes(m.user_id))
+      .map(m=>m.user_id);
+    if(!targetIds.length)return;
+    const myName=(_currentProfile&&_currentProfile.name)||'멤버';
+    const dateLabel=todo.start_date?formatShortDate(todo.start_date):'';
+    let actionLabel='';
+    if(action==='create')actionLabel='할 일 추가됨';
+    else if(action==='update')actionLabel='할 일 수정됨';
+    else if(action==='delete')actionLabel='할 일 삭제됨';
+    else if(action==='done')actionLabel='완료 ✓';
+    else if(action==='undone')actionLabel='완료 취소';
+    const title=`${myName} · ${todo.title||''}`;
+    const body=dateLabel?`${actionLabel} · ${dateLabel}`:actionLabel;
+    const jumpDate=todo.start_date||'';
+    supa.functions.invoke('send-push',{
+      body:{ user_ids:targetIds, title, body,
+        url:jumpDate?`/?room=${_currentRoom.id}&date=${jumpDate}`:`/?room=${_currentRoom.id}`,
+        tag:`todo-${todo.id||todo.title||''}` }
+    }).catch(e=>console.warn('할일 알림 발송 실패:',e));
+    _insertNotificationRows(targetIds, _currentRoom.id, jumpDate||null, title, body, 'todo_'+action);
+  }catch(e){console.warn('_notifyTodo 에러:',e)}
+}
+
+/* ── 이모지 반응 알림 — 함께 일정은 참여자 전원, 단독은 작성자에게. 본인 일정에 본인 반응은 무음 ── */
+function _notifyEmojiReaction(ev, emoji){
+  try{
+    if(!_currentUser||!_currentRoom||!ev||!emoji)return;
+    let targetIds=[];
+    const isShared=ev.shared_id||(Array.isArray(ev.member_ids)&&ev.member_ids.length>=2);
+    if(isShared){
+      // 함께 일정: 같은 방 멤버 전원(나 제외)
+      targetIds=(_myMembers||[])
+        .filter(m=>m.user_id&&m.user_id!==_currentUser.id&&m.notifications_enabled!==false)
+        .map(m=>m.user_id);
+    }else{
+      // 단독 일정: 작성자에게만 (본인 일정이면 무음)
+      const owner=ev.user_id;
+      if(owner&&owner!==_currentUser.id){
+        const m=(_myMembers||[]).find(mm=>mm.user_id===owner&&mm.notifications_enabled!==false);
+        if(m)targetIds=[owner];
+      }
+    }
+    if(!targetIds.length)return;
+    const myName=(_currentProfile&&_currentProfile.name)||'멤버';
+    const dateLabel=ev.date?formatShortDate(ev.date):'';
+    const title=`${myName} ${emoji}`;
+    const body=`${ev.title||'일정'}에 반응 · ${dateLabel}`;
+    supa.functions.invoke('send-push',{
+      body:{ user_ids:targetIds, title, body,
+        url:`/?room=${_currentRoom.id}&date=${ev.date}`,
+        tag:`reaction-${ev.date}-${ev.id||''}` }
+    }).catch(e=>console.warn('반응 알림 발송 실패:',e));
+    _insertNotificationRows(targetIds, _currentRoom.id, ev.date, title, body, 'emoji_reaction');
+  }catch(e){console.warn('_notifyEmojiReaction 에러:',e)}
 }
 
 /* 'YYYY-MM-DD' → 'M월 D일' (요일 없이 간결하게) */
@@ -11006,6 +11387,7 @@ async function setMyReaction(emoji){
     },{onConflict:'target_id,user_id'});
     if(error)throw error;
     toast(`${emojiDisplayName(emoji)} 반응을 남겼어요`);
+    _notifyEmojiReaction(_emojiTargetEvent, emoji);
     closeEmojiPick();
     await loadEvents();
     if(_selectedDate)openDateSheet(_selectedDate);
@@ -14941,6 +15323,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   setupSheetSwipe('profileCard',closeProfile);
   // 나머지 바텀시트 모달도 위→아래 스와이프로 닫기 (닫기 함수 없으면 setupSheetSwipe가 무시)
   setupSheetSwipe('datePickerCard',closeDatePicker);
+  setupSheetSwipe('todoDpCard',closeTodoDonePicker);
   setupSheetSwipe('searchCard',closeSearch);
   setupSheetSwipe('notifCard',closeNotifs);
   setupSheetSwipe('myOrdersCard',closeMyOrders);
@@ -15394,15 +15777,18 @@ async function toggleTodoDone(id){
   try{
     const { error } = await supa.from('todos').update(updates).eq('id',id);
     if(error){ toast('변경 실패: '+((error.message||'').slice(0,30))); await loadTodos(); safeRender(); }
+    else{ _notifyTodo(turningOn?'done':'undone', t); }
   }catch(e){ toast('변경 실패'); await loadTodos(); safeRender(); }
 }
 async function deleteTodo(id){
   const t=_todos.find(x=>x.id===id); if(!t) return;
   const ok=await vConfirm('이 할 일을 삭제할까요?');
   if(!ok) return;
+  const todoSnapshot=Object.assign({},t);  // 삭제 전 스냅샷 (알림용)
   try{
     const { error } = await supa.from('todos').delete().eq('id',id);
     if(error){ toast('삭제 실패'); return; }
+    _notifyTodo('delete', todoSnapshot);
     toast('삭제됐어요');
     await loadTodos(); safeRender();
   }catch(e){ toast('삭제 실패'); }
@@ -15479,37 +15865,89 @@ function setTodoFilter(f,btn){
   _todoFilter=f;
   document.querySelectorAll('.todo-filter-btn').forEach(function(b){ b.classList.remove('on'); });
   if(btn) btn.classList.add('on');
-  // 완료 필터일 때만 년/월 드롭다운 표시
+  // 완료 필터일 때만 년/월 버튼 표시
   const mf=document.getElementById('todoMonthFilter');
   if(mf) mf.style.display=(f==='done')?'flex':'none';
-  if(f==='done') buildTodoDoneFilterOptions();
+  if(f==='done') syncTodoDoneFilterLabels();
   renderTodoScreen();
 }
-/* 완료 할일의 done_at 기준으로 년/월 드롭다운 옵션 구성 */
-function buildTodoDoneFilterOptions(){
-  const ySel=document.getElementById('todoDoneYear');
-  const mSel=document.getElementById('todoDoneMonth');
-  if(!ySel||!mSel) return;
-  const doneList=(_todos||[]).filter(t=>t.is_done&&t.done_at);
+/* 버튼 라벨 갱신 */
+function syncTodoDoneFilterLabels(){
+  const yl=document.getElementById('todoDoneYearLabel');
+  const ml=document.getElementById('todoDoneMonthLabel');
+  if(yl) yl.textContent=(_todoDoneYear==='all')?'전체 연도':(_todoDoneYear+'년');
+  if(ml) ml.textContent=(_todoDoneMonth==='all')?'전체 월':(Number(_todoDoneMonth)+'월');
+}
+/* ── 완료 필터 휠 피커 (일정 '날짜로 이동'과 동일 방식) ── */
+let _tdpYear='all', _tdpMonth='all';
+function buildTodoDonePicker(){
+  const yCol=document.getElementById('todoDpYearCol');
+  const mCol=document.getElementById('todoDpMonthCol');
+  if(!yCol||!mCol)return;
+  if(yCol.children.length>0)return;
+  const pad='<div class="tp-pad"></div><div class="tp-pad"></div>';
+  // 완료된 할일이 있는 연도 수집
   const years=new Set();
-  doneList.forEach(function(t){ try{ years.add(new Date(t.done_at).getFullYear()); }catch(e){} });
-  const yArr=[...years].sort(function(a,b){ return b-a; });
-  // 현재 선택값이 더 이상 없으면 전체로 리셋
-  if(_todoDoneYear!=='all' && !years.has(Number(_todoDoneYear))) _todoDoneYear='all';
-  let yHtml='<option value="all">전체 연도</option>';
-  yArr.forEach(function(y){ yHtml+='<option value="'+y+'"'+(String(_todoDoneYear)===String(y)?' selected':'')+'>'+y+'년</option>'; });
-  ySel.innerHTML=yHtml;
-  let mHtml='<option value="all">전체 월</option>';
-  for(let m=1;m<=12;m++){ mHtml+='<option value="'+m+'"'+(String(_todoDoneMonth)===String(m)?' selected':'')+'>'+m+'월</option>'; }
-  mSel.innerHTML=mHtml;
+  (_todos||[]).filter(t=>t.is_done&&t.done_at).forEach(function(t){ try{ years.add(new Date(t.done_at).getFullYear()); }catch(e){} });
+  let yArr=[...years].sort(function(a,b){ return b-a; });
+  if(!yArr.length) yArr=[new Date().getFullYear()];
+  let yh=pad+'<div class="tp-item" data-val="all">전체 연도</div>';
+  yArr.forEach(function(y){ yh+='<div class="tp-item" data-val="'+y+'">'+y+'년</div>'; });
+  yCol.innerHTML=yh+pad;
+  let mh=pad+'<div class="tp-item" data-val="all">전체 월</div>';
+  for(let m=1;m<=12;m++)mh+='<div class="tp-item" data-val="'+m+'">'+m+'월</div>';
+  mCol.innerHTML=mh+pad;
+  yCol.addEventListener('scroll',()=>onTodoDpScroll(yCol,'y'),{passive:true});
+  mCol.addEventListener('scroll',()=>onTodoDpScroll(mCol,'m'),{passive:true});
 }
-function onTodoDoneFilterChange(){
-  const ySel=document.getElementById('todoDoneYear');
-  const mSel=document.getElementById('todoDoneMonth');
-  _todoDoneYear=ySel?ySel.value:'all';
-  _todoDoneMonth=mSel?mSel.value:'all';
+function onTodoDpScroll(col,kind){
+  clearTimeout(col._tdpTimer);
+  col._tdpTimer=setTimeout(()=>{
+    let idx=Math.round((col.scrollTop-60)/40);
+    if(idx<0)idx=0;
+    const items=col.querySelectorAll('.tp-item');
+    if(idx>=items.length)idx=items.length-1;
+    items.forEach((el,i)=>el.classList.toggle('active',i===idx));
+    const v=items[idx]?.dataset.val??'all';
+    if(kind==='y')_tdpYear=v;else _tdpMonth=v;
+    const target=idx*40+60;
+    if(Math.abs(col.scrollTop-target)>1)col.scrollTop=target;
+  },80);
+}
+function openTodoDonePicker(){
+  buildTodoDonePicker();
+  _tdpYear=_todoDoneYear; _tdpMonth=_todoDoneMonth;
+  document.getElementById('todoDpOverlay').classList.add('on');
+  document.getElementById('todoDpCard').classList.add('on');
+  setTimeout(function(){
+    const yCol=document.getElementById('todoDpYearCol');
+    const mCol=document.getElementById('todoDpMonthCol');
+    _scrollTodoDpTo(yCol,_todoDoneYear);
+    _scrollTodoDpTo(mCol,_todoDoneMonth);
+  },50);
+}
+function _scrollTodoDpTo(col,val){
+  if(!col)return;
+  const items=col.querySelectorAll('.tp-item');
+  let idx=0;
+  items.forEach((el,i)=>{ if(String(el.dataset.val)===String(val)) idx=i; });
+  col.scrollTop=idx*40+60;
+  items.forEach((el,i)=>el.classList.toggle('active',i===idx));
+}
+function closeTodoDonePicker(){
+  document.getElementById('todoDpOverlay').classList.remove('on');
+  document.getElementById('todoDpCard').classList.remove('on');
+}
+window.closeTodoDonePicker=closeTodoDonePicker;
+window.openTodoDonePicker=openTodoDonePicker;
+function applyTodoDonePicker(){
+  _todoDoneYear=_tdpYear||'all';
+  _todoDoneMonth=_tdpMonth||'all';
+  closeTodoDonePicker();
+  syncTodoDoneFilterLabels();
   renderTodoScreen();
 }
+window.applyTodoDonePicker=applyTodoDonePicker;
 function _fmtDow(key){
   if(!key) return '';
   try{ const d=parseDateKey(key); return (d.getMonth()+1)+'/'+d.getDate()+' ('+DOW_NAMES[d.getDay()]+')'; }catch(e){ return ''; }
@@ -16157,11 +16595,13 @@ async function _doSaveTodo(){
       const { error } = await supa.from('todos').update(fields).eq('id',_editingTodoId);
       if(error){ toast('수정 실패: '+((error.message||'').slice(0,40))); _showTodoSheetFromSub(); return; }
       toast('할 일이 수정됐어요');
+      _notifyTodo('update', Object.assign({id:_editingTodoId}, fields));
     } else {
       fields.room_id=_currentRoom.id;
       fields.user_id=_currentUser.id;
       const { error } = await supa.from('todos').insert(fields);
       if(error){ toast('저장 실패: '+((error.message||'').slice(0,40))); _showTodoSheetFromSub(); return; }
+      _notifyTodo('create', fields);
       // 다른 방에도 추가 (단독만, 본인 작성)
       if(!isCo && _selectedExtraRooms && _selectedExtraRooms.length){
         const exRows=_selectedExtraRooms.map(function(rid){
