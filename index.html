@@ -2350,6 +2350,9 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)); }
 .uni-row-grow{flex:1;min-width:0}
 .uni-nav{display:flex;align-items:center;justify-content:space-between;width:100%;background:var(--card);border:1px solid var(--borderL);border-radius:12px;padding:14px 14px;margin-bottom:9px;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;font-family:inherit}
 .uni-nav .chev{color:var(--mute);font-size:18px}
+/* uni-nav 좌측 라벨 + SVG 아이콘 (탭바와 동일 stroke 스타일) */
+.uni-nav-l{display:flex;align-items:center;gap:11px}
+.uni-nav-l svg{width:20px;height:20px;flex-shrink:0;display:block}
 .plan-toggle{transition:background .15s ease,border-color .15s ease,color .15s ease}
 .plan-toggle.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .plan-toggle.off{background:var(--bg);border-color:var(--mute);color:var(--sub)}
@@ -2898,7 +2901,7 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)); }
       <div class="uni-row-grow"><div class="lbl">코드</div><div class="val" id="uniRoomCode">—</div></div>
       <button class="uni-mini-btn" onclick="copyRoomCode()">복사</button>
     </div>
-    <button class="uni-nav" style="background:var(--kakao);color:var(--kakaoText)" onclick="shareKakao()"><span>💬 카카오톡으로 초대</span><span class="chev">›</span></button>
+    <button class="uni-nav" style="background:var(--kakao);color:var(--kakaoText)" onclick="shareKakao()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 9.06 9.06 0 0 1-3.6-.7L3 21l1.7-5.4A8.38 8.38 0 0 1 4 11.5 8.5 8.5 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5z"/></svg>카카오톡으로 초대</span><span class="chev">›</span></button>
 
     <div class="uni-divider"></div>
 
@@ -2909,36 +2912,36 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)); }
     <div class="uni-divider"></div>
 
     <div class="uni-sec-label">프리미엄</div>
-    <button class="uni-nav uni-nav-prem" onclick="openPremiumSheet()"><span>⭐ 프리미엄 구독</span><span class="chev">›</span></button>
+    <button class="uni-nav uni-nav-prem" onclick="openPremiumSheet()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>프리미엄 구독</span><span class="chev">›</span></button>
 
     <div class="uni-sec-label" style="margin-top:14px">꾸미기</div>
-    <button class="uni-nav" onclick="openStore()"><span>🛍️ 스토어</span><span class="chev">›</span></button>
-    <button class="uni-nav" onclick="openMyOrders('settings')"><span>📦 내 주문 내역 · 배송 조회</span><span class="chev">›</span></button>
+    <button class="uni-nav" onclick="openStore()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>스토어</span><span class="chev">›</span></button>
+    <button class="uni-nav" onclick="openMyOrders('settings')"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>내 주문 내역 · 배송 조회</span><span class="chev">›</span></button>
 
     <div class="uni-sec-label" style="margin-top:14px">기타</div>
-    <button class="uni-nav" onclick="openAdvSettings()"><span>⚙️ 고급 설정</span><span class="chev">›</span></button>
+    <button class="uni-nav" onclick="openAdvSettings()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>고급 설정</span><span class="chev">›</span></button>
 
     <div class="uni-sec-label" style="margin-top:14px">지원</div>
-    <button class="uni-nav" onclick="openAnnouncements()"><span>📢 공지사항</span><span class="chev">›</span></button>
-    <button class="uni-nav" onclick="openCustomerSupport()"><span>💬 고객센터</span><span class="chev">›</span></button>
+    <button class="uni-nav" onclick="openAnnouncements()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l9 5V5L6 10H4a1 1 0 0 0-1 1z"/><path d="M18 8a4 4 0 0 1 0 8"/><path d="M7 14v4a1.5 1.5 0 0 0 3 0v-2.5"/></svg>공지사항</span><span class="chev">›</span></button>
+    <button class="uni-nav" onclick="openCustomerSupport()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>고객센터</span><span class="chev">›</span></button>
 
     <div id="uniOwnerSection" style="display:none">
       <div class="uni-divider"></div>
       <div class="uni-sec-label">방장 메뉴</div>
-      <button class="uni-nav" style="color:#c0392b" onclick="deleteRoomConfirm()"><span>🗑️ 방 삭제 (영구)</span><span class="chev">›</span></button>
+      <button class="uni-nav" style="color:#c0392b" onclick="deleteRoomConfirm()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>방 삭제 (영구)</span><span class="chev">›</span></button>
     </div>
     <div id="uniLeaveSection" style="display:none">
       <div class="uni-divider"></div>
-      <button class="uni-nav" style="color:#c0392b" onclick="leaveRoomConfirm()"><span>🚪 이 방 나가기</span><span class="chev">›</span></button>
+      <button class="uni-nav" style="color:#c0392b" onclick="leaveRoomConfirm()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>이 방 나가기</span><span class="chev">›</span></button>
     </div>
 
     <div id="uniAdminSection" style="display:none">
       <div class="uni-divider"></div>
       <div class="uni-sec-label">🔧 관리자 전용</div>
-      <button class="uni-nav" onclick="openAdminFullPage()"><span>🛠 관리자 페이지 열기</span><span class="chev">›</span></button>
-      <button class="uni-nav plan-toggle off" id="planToggleBtn" onclick="toggleAdminPlan()"><span id="planToggleBtnLabel">🔒 무료 플랜 (체험)</span><span class="plan-switch" id="planSwitch">OFF</span></button>
-      <button class="uni-nav" id="globalTrialBtn" onclick="toggleGlobalTrial()"><span id="globalTrialLabel">👥 전체 이용자 프리미엄</span><span class="plan-switch off" id="globalTrialSwitch">OFF</span></button>
-      <button class="uni-nav" id="deployBtn" onclick="openDeploySheet()"><span id="deployBtnLabel">🚀 배포하기</span><span class="chev">›</span></button>
+      <button class="uni-nav" onclick="openAdminFullPage()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>관리자 페이지 열기</span><span class="chev">›</span></button>
+      <button class="uni-nav plan-toggle off" id="planToggleBtn" onclick="toggleAdminPlan()"><span class="uni-nav-l" id="planToggleBtnLabel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>무료 플랜 (체험)</span><span class="plan-switch" id="planSwitch">OFF</span></button>
+      <button class="uni-nav" id="globalTrialBtn" onclick="toggleGlobalTrial()"><span class="uni-nav-l" id="globalTrialLabel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>전체 이용자 프리미엄</span><span class="plan-switch off" id="globalTrialSwitch">OFF</span></button>
+      <button class="uni-nav" id="deployBtn" onclick="openDeploySheet()"><span class="uni-nav-l" id="deployBtnLabel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91 0z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>배포하기</span><span class="chev">›</span></button>
     </div>
 
     <div class="uni-divider"></div>
@@ -5048,7 +5051,12 @@ function toggleAdminPlan(){
   const lab=document.getElementById('planToggleBtnLabel');
   const sw=document.getElementById('planSwitch');
   if(btn){ btn.classList.toggle('on',_adminPlanOverride); btn.classList.toggle('off',!_adminPlanOverride); }
-  if(lab) lab.textContent = _adminPlanOverride ? '🔓 유료 플랜 (체험)' : '🔒 무료 플랜 (체험)';
+  if(lab){
+    const lockSvg = _adminPlanOverride
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+    lab.innerHTML = lockSvg + (_adminPlanOverride ? '유료 플랜 (체험)' : '무료 플랜 (체험)');
+  }
   if(sw) sw.textContent = _adminPlanOverride ? 'ON' : 'OFF';
   try{ if(typeof renderColorPager==='function') renderColorPager(); }catch(_){}
   try{ if(typeof window.renderTodoColorPager==='function') window.renderTodoColorPager(); }catch(_){}
@@ -5595,7 +5603,7 @@ function pickMemberColor(){return MEMBER_COLORS[Math.floor(Math.random()*MEMBER_
 /* 방 목록 로드 + 렌더 */
 async function loadRooms(){
   if(!_currentUser)return;
-  try{ await loadMyTheme(); }catch(_){}  // 내 개인 테마 적용 (세션당 1회)
+  loadMyTheme().catch(function(){});  // 내 개인 테마 적용 — 백그라운드(방 목록 표시를 막지 않음)
   const content=document.getElementById('roomsContent');
   content.innerHTML='<div style="padding:60px 0;text-align:center"><div class="spinner" style="margin:0 auto"></div></div>';
 
@@ -5621,18 +5629,15 @@ async function loadRooms(){
 
     const roomIds=myMems.map(m=>m.room_id);
 
-    // 방 정보 가져오기
-    const {data:rooms,error:e2}=await supa
-      .from('rooms').select('*')
-      .in('id',roomIds)
-      .order('created_at',{ascending:false});
-    if(e2)throw e2;
-
-    // 방별 멤버 수 가져오기
-    const {data:allMems,error:e3}=await supa
-      .from('members').select('room_id')
-      .in('room_id',roomIds);
-    if(e3)throw e3;
+    // 방 정보 + 방별 멤버 수 — 병렬 조회 (순차 대비 약 2배 빠름)
+    const [roomsRes, memsRes] = await Promise.all([
+      supa.from('rooms').select('*').in('id',roomIds).order('created_at',{ascending:false}),
+      supa.from('members').select('room_id').in('room_id',roomIds)
+    ]);
+    if(roomsRes.error)throw roomsRes.error;
+    if(memsRes.error)throw memsRes.error;
+    const rooms=roomsRes.data;
+    const allMems=memsRes.data;
     const countMap={};
     (allMems||[]).forEach(m=>{countMap[m.room_id]=(countMap[m.room_id]||0)+1});
 
@@ -7154,15 +7159,17 @@ async function loadEvents(){
         }
       }
     });
-    // 이모지 반응도 같이 로드
-    await loadReactions();
-    invalidateDayEventsCache();  // 데이터 로드 완료 → 캐시 비우고 실제 일정으로 다시 렌더
+    // 일정 먼저 렌더 (반응 로딩을 기다리지 않음 → 체감 속도 ↑)
+    invalidateDayEventsCache();
     renderMonthly();
-    // 캘린더 진입 시 1회 — 반응 이모지가 등록된 날짜에 말풍선 통통튀기
-    if(_pendingReactionAnim){
-      _pendingReactionAnim=false;
-      setTimeout(showReactionAnimation,250);
-    }
+    // 이모지 반응은 백그라운드로 로드 후 다시 렌더
+    loadReactions().then(()=>{
+      renderMonthly();
+      if(_pendingReactionAnim){
+        _pendingReactionAnim=false;
+        setTimeout(showReactionAnimation,250);
+      }
+    }).catch(()=>{});
   }catch(e){
     console.error(e);
     toast('일정 불러오기 실패');
@@ -8714,6 +8721,7 @@ function openAddEvent(){
   closeDateSheet();
   document.getElementById('evOverlay').classList.add('on');
   document.getElementById('evCard').classList.add('on');
+  requestAnimationFrame(function(){ var _ec=document.getElementById('evCard'); if(_ec)_ec.scrollTop=0; });
   setTimeout(()=>{const i=document.getElementById('evTitle');if(i)i.focus()},320);
 }
 function openEditEvent(eventId){
@@ -8821,6 +8829,7 @@ function openEditEvent(eventId){
   closeDateSheet();
   document.getElementById('evOverlay').classList.add('on');
   document.getElementById('evCard').classList.add('on');
+  requestAnimationFrame(function(){ var _ec=document.getElementById('evCard'); if(_ec)_ec.scrollTop=0; });
 }
 function closeEventModal(){
   document.getElementById('evOverlay').classList.remove('on');
@@ -8841,6 +8850,7 @@ function _hideEvCardForSub(){
 function _showEvCardFromSub(){
   document.getElementById('evOverlay').classList.add('on');
   document.getElementById('evCard').classList.add('on');
+  requestAnimationFrame(function(){ var _ec=document.getElementById('evCard'); if(_ec)_ec.scrollTop=0; });
 }
 /* 시간 휠 picker (iOS 시스템 picker 대체) */
 let _tpHour=9,_tpMin=0,_tpScrollT=null;
