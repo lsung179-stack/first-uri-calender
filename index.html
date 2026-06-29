@@ -1398,7 +1398,6 @@ body.ev-dragging .cal-cell{cursor:grabbing}
 .pg-day-group{margin-bottom:22px}
 .pg-day-head{display:flex;align-items:baseline;justify-content:space-between;padding:0 2px 9px}
 .pg-day-label{font-size:15px;font-weight:600;color:var(--mute);letter-spacing:.3px}
-.pg-day-count{font-size:11px;font-weight:600;color:var(--mute);opacity:.7}
 .pg-cell{position:relative;aspect-ratio:1;border-radius:9px;overflow:hidden;background:var(--card);cursor:pointer}
 .pg-cell img{width:100%;height:100%;object-fit:cover;display:block}
 .pg-cell-date{position:absolute;left:0;right:0;bottom:0;padding:10px 6px 5px;font-size:10px;font-weight:600;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.55))}
@@ -3437,6 +3436,7 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)); }
       <div class="pb-title" style="margin-bottom:12px">프리미엄 기능</div>
       <div class="prem-feature-list">
         <div class="prem-feature"><span class="pmf-ic">📷</span><div class="pmf-body"><div class="pmf-name">일정 사진</div><div class="pmf-desc">한 일정에 <b>최대 5장</b> <span class="pmf-free">무료 1장</span></div></div></div>
+        <div class="prem-feature"><span class="pmf-ic">🖼️</span><div class="pmf-body"><div class="pmf-name">사진 평생 보관</div><div class="pmf-desc">올린 사진 <b>영구 보관</b> <span class="pmf-free">무료 30일</span></div></div></div>
         <div class="prem-feature"><span class="pmf-ic">✅</span><div class="pmf-body"><div class="pmf-name">진행 중 할일</div><div class="pmf-desc"><b>무제한</b>으로 추가 <span class="pmf-free">무료 5개</span></div></div></div>
         <div class="prem-feature"><span class="pmf-ic">🗂️</span><div class="pmf-body"><div class="pmf-name">완료 할일 보관</div><div class="pmf-desc"><b>평생</b> 보관 <span class="pmf-free">무료 7일</span></div></div></div>
         <div class="prem-feature"><span class="pmf-ic">🏷️</span><div class="pmf-body"><div class="pmf-name">색상 라벨 이름</div><div class="pmf-desc">색마다 <b>이름 붙이기</b></div></div></div>
@@ -10089,13 +10089,13 @@ function renderPgMonth(){
     const expired=isPhotoExpiredForFree(evLike);
     const keepLeft=photoKeepDaysLeft(evLike);
     if(expired){
-      return '<div class="pg-cell pg-cell-locked" onclick="openPremiumSheet()">'
+      return '<div class="pg-cell pg-cell-locked" data-pglock="1">'
         +'<img src="'+escapeHtml(it.url)+'" loading="lazy" alt="">'
         +'<div class="pg-lock-overlay"><span class="pg-lock-ic">'+LOCK_SVG+'</span></div>'
         +'<span class="pg-cell-keep pg-cell-expired">보관 만료</span>'
         +'</div>';
     }
-    return '<div class="pg-cell" onclick="openPgPhotoInfo(\''+_pgCurYM+'\','+it._idx+')">'
+    return '<div class="pg-cell" data-pgidx="'+it._idx+'">'
       +'<img src="'+escapeHtml(it.url)+'" loading="lazy" alt="">'
       +((keepLeft!==null)?('<span class="pg-cell-keep">D-'+keepLeft+'</span>'):'')
       +'</div>';
@@ -10105,12 +10105,23 @@ function renderPgMonth(){
     const d=parseDateKey(g.date);
     const label=d?(String(d.getMonth()+1).padStart(2,'0')+'월 '+String(d.getDate()).padStart(2,'0')+'일('+DOW_NAMES[d.getDay()]+')'):g.date;
     html+='<div class="pg-day-group">'
-      +'<div class="pg-day-head"><span class="pg-day-label">'+label+'</span><span class="pg-day-count">'+g.arr.length+'장</span></div>'
+      +'<div class="pg-day-head"><span class="pg-day-label">'+label+'</span></div>'
       +'<div class="pg-grid">'+g.arr.map(cellHtml).join('')+'</div>'
       +'</div>';
   });
   html+='</div>';
   body.innerHTML=html;
+  // 이벤트 위임: 셀 클릭 처리 (inline onclick보다 iOS WKWebView에서 안정적)
+  if(!body._pgBound){
+    body._pgBound=true;
+    body.addEventListener('click',function(e){
+      const cell=e.target.closest('.pg-cell');
+      if(!cell)return;
+      if(cell.getAttribute('data-pglock')==='1'){ openPremiumSheet(); return; }
+      const idx=cell.getAttribute('data-pgidx');
+      if(idx!==null&&idx!==undefined) openPgPhotoInfo(_pgCurYM, Number(idx));
+    });
+  }
 }
 
 /* 사진 탭 → 일정 정보 시트 (며칠 / 무슨 일정 / 일정 확인하기) */
