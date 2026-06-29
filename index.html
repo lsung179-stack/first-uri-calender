@@ -1394,21 +1394,21 @@ body.ev-dragging .cal-cell{cursor:grabbing}
 .pg-mn-arrow{width:34px;height:34px;border:1px solid var(--border);background:var(--card);border-radius:50%;font-size:18px;color:var(--sub);cursor:pointer;font-family:inherit;line-height:1}
 .pg-mn-label{font-size:15px;font-weight:700;color:var(--text);cursor:pointer;padding:7px 16px;border-radius:10px;background:var(--card);border:1px solid var(--border);min-width:120px;text-align:center}
 .pg-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 14px calc(28px + env(safe-area-inset-bottom))}
-.pg-grid{display:flex;flex-direction:column;gap:0}
-.pg-day-group{margin-bottom:30px}
-.pg-day-head{display:flex;align-items:baseline;justify-content:space-between;padding:0 2px 12px}
-.pg-day-label{font-size:17px;font-weight:600;color:var(--mute);letter-spacing:.3px}
-.pg-day-count{font-size:12px;font-weight:600;color:var(--mute);opacity:.7}
-.pg-cell{position:relative;border-radius:12px;overflow:hidden;background:var(--card);cursor:pointer;margin-bottom:10px}
-.pg-cell:last-child{margin-bottom:0}
-.pg-cell img{width:100%;height:auto;max-height:72vh;object-fit:cover;display:block}
+.pg-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.pg-day-group{margin-bottom:22px}
+.pg-day-head{display:flex;align-items:baseline;justify-content:space-between;padding:0 2px 9px}
+.pg-day-label{font-size:15px;font-weight:600;color:var(--mute);letter-spacing:.3px}
+.pg-day-count{font-size:11px;font-weight:600;color:var(--mute);opacity:.7}
+.pg-cell{position:relative;aspect-ratio:1;border-radius:9px;overflow:hidden;background:var(--card);cursor:pointer}
+.pg-cell img{width:100%;height:100%;object-fit:cover;display:block}
 .pg-cell-date{position:absolute;left:0;right:0;bottom:0;padding:10px 6px 5px;font-size:10px;font-weight:600;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.55))}
 .pg-cell-locked{cursor:pointer;position:relative}
 .pg-cell-locked img{filter:brightness(.42)}
 .pg-lock-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
 .pg-lock-ic{color:#fff;opacity:.95;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
-.pg-lock-ic svg{width:42px;height:42px;display:block}
-.pg-cell-keep{position:absolute;right:8px;bottom:8px;font-size:11px;font-weight:700;color:#fff;background:rgba(176,135,66,.92);padding:2px 8px;border-radius:7px;line-height:1.4}
+.pg-lock-ic svg{width:24px;height:24px;display:block}
+.pg-cell-keep{position:absolute;right:4px;bottom:4px;font-size:9px;font-weight:700;color:#fff;background:rgba(176,135,66,.92);padding:1px 5px;border-radius:5px;line-height:1.4}
+.pg-cell-keep.pg-cell-expired{background:rgba(60,50,45,.82);left:4px;right:auto}
 .pg-cell-keep.pg-cell-expired{background:rgba(60,50,45,.82)}
 .pg-empty{text-align:center;padding:70px 20px;color:var(--mute)}
 .pg-empty svg{width:48px;height:48px;opacity:.5;margin-bottom:14px}
@@ -1430,6 +1430,10 @@ body.ev-dragging .cal-cell{cursor:grabbing}
 .pgmp-today{width:100%;margin-top:14px;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer}
 /* 사진 정보 시트 */
 .pgi-photo{width:100%;border-radius:14px;overflow:hidden;margin:6px 0 14px;cursor:pointer;background:var(--bg);max-height:46vh;display:flex;justify-content:center}
+/* 사진 정보 시트는 갤러리 화면(z-index:60) 위에 떠야 함 */
+#pgInfoOverlay{z-index:70}
+#pgInfoCard{z-index:71}
+#pgMpOverlay{z-index:1600}
 .pgi-photo img{max-width:100%;max-height:46vh;object-fit:contain;display:block}
 .pgi-date{font-size:13px;font-weight:600;color:var(--sub);margin-bottom:4px}
 .pgi-room{color:var(--mute);font-weight:500;font-size:12px}
@@ -10093,7 +10097,7 @@ function renderPgMonth(){
     }
     return '<div class="pg-cell" onclick="openPgPhotoInfo(\''+_pgCurYM+'\','+it._idx+')">'
       +'<img src="'+escapeHtml(it.url)+'" loading="lazy" alt="">'
-      +((keepLeft!==null&&keepLeft<=7)?('<span class="pg-cell-keep">'+(keepLeft>0?('D-'+keepLeft):'만료')+'</span>'):'')
+      +((keepLeft!==null)?('<span class="pg-cell-keep">D-'+keepLeft+'</span>'):'')
       +'</div>';
   }
   let html='<div class="pg-fade">';
