@@ -3324,7 +3324,7 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)); }
 </div>
 
 <!-- 사진 정보 시트 (며칠/무슨 일정 + 일정 확인하기) -->
-<div class="mo-overlay" id="pgInfoOverlay" onclick="closePgPhotoInfo()"></div>
+<div class="mo-overlay" id="pgInfoOverlay" onclick="pgInfoOverlayTap()"></div>
 <div class="mo-card" id="pgInfoCard">
   <div class="mo-handle"></div>
   <div class="pgi-photo" onclick="pgViewPhotoLarge()"><img id="pgInfoImg" alt=""></div>
@@ -10146,6 +10146,7 @@ function renderPgMonth(){
 
 /* 사진 탭 → 일정 정보 시트 (며칠 / 무슨 일정 / 일정 확인하기) */
 let _pgInfoTarget=null;
+let _pgInfoOpenedAt=0;   // iOS WKWebView 고스트 클릭 방지용: 시트가 열린 시각
 function openPgPhotoInfo(ym,idx,url){
   const arr=_pgByMonth[ym]||[];
   let it=(idx>=0)?arr[idx]:null;
@@ -10171,6 +10172,7 @@ function openPgPhotoInfo(ym,idx,url){
   }
   document.getElementById('pgInfoOverlay').classList.add('on');
   document.getElementById('pgInfoCard').classList.add('on');
+  _pgInfoOpenedAt=Date.now();
 }
 function closePgPhotoInfo(){
   const ov=document.getElementById('pgInfoOverlay'), c=document.getElementById('pgInfoCard');
@@ -10178,6 +10180,16 @@ function closePgPhotoInfo(){
   if(c)c.classList.remove('on');
   _pgInfoTarget=null;
 }
+/* iOS WKWebView: 셀을 탭하면 touchend로 시트가 먼저 열린 뒤, 약 300ms 늦게 합성(ghost) click이
+   '갓 열린 오버레이' 좌표로 떨어져 즉시 닫혀버린다(→ 사용자에겐 "안 열림"으로 보임).
+   touchend의 preventDefault가 WKWebView에서 항상 합성 click을 막아주진 않으므로,
+   열린 직후 짧은 구간(500ms) 동안의 오버레이 탭은 무시해 첫 합성 click만 흘려보낸다.
+   실제 사용자가 닫으려는 탭은 그 이후에 발생하므로 영향받지 않는다. */
+function pgInfoOverlayTap(){
+  if(Date.now()-_pgInfoOpenedAt < 500) return;
+  closePgPhotoInfo();
+}
+window.pgInfoOverlayTap=pgInfoOverlayTap;
 window.closePgPhotoInfo=closePgPhotoInfo;
 window.openPgPhotoInfo=openPgPhotoInfo;
 /* 사진 크게 보기 (정보 시트에서) */
