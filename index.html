@@ -3324,7 +3324,7 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)); }
 </div>
 
 <!-- 사진 정보 시트 (며칠/무슨 일정 + 일정 확인하기) -->
-<div class="mo-overlay" id="pgInfoOverlay" onclick="pgInfoOverlayTap()"></div>
+<div class="mo-overlay" id="pgInfoOverlay" onclick="closePgPhotoInfo()"></div>
 <div class="mo-card" id="pgInfoCard">
   <div class="mo-handle"></div>
   <div class="pgi-photo" onclick="pgViewPhotoLarge()"><img id="pgInfoImg" alt=""></div>
@@ -9979,6 +9979,34 @@ function closePhotoView(){
 }
 
 /* ───────── 사진 모아보기 (월별 갤러리) — 내가 속한 모든 방의 사진 ───────── */
+/* ===== [임시 디버그] 기기 화면 로그 — 원인 확인 후 제거 예정. 패널 탭하면 비움 ===== */
+function pgDbg(msg){
+  try{
+    let p=document.getElementById('pgDbgPanel');
+    if(!p){
+      p=document.createElement('div');
+      p.id='pgDbgPanel';
+      p.style.cssText='position:fixed;left:6px;right:6px;top:6px;z-index:2147483647;max-height:46vh;overflow:auto;background:rgba(0,0,0,.88);color:#39ff5e;font:11px/1.45 monospace;padding:8px 10px;border-radius:8px;white-space:pre-wrap;';
+      p.addEventListener('click',function(){ p.textContent=''; });
+      document.body.appendChild(p);
+    }
+    const t=new Date();
+    const ts=String(t.getMinutes()).padStart(2,'0')+':'+String(t.getSeconds()).padStart(2,'0')+'.'+String(t.getMilliseconds()).padStart(3,'0');
+    p.textContent += '['+ts+'] '+msg+'\n';
+    p.scrollTop=p.scrollHeight;
+  }catch(e){}
+}
+function pgDbgCardState(tag){
+  try{
+    function st(el){
+      if(!el)return 'null';
+      const cs=getComputedStyle(el);
+      return 'on='+el.classList.contains('on')+' disp='+cs.display+' op='+cs.opacity+' tf='+String(cs.transform||'').slice(0,16)+' z='+cs.zIndex+' vis='+cs.visibility;
+    }
+    pgDbg(tag+' OV {'+st(document.getElementById('pgInfoOverlay'))+'}');
+    pgDbg(tag+' CARD {'+st(document.getElementById('pgInfoCard'))+'}');
+  }catch(e){ pgDbg('state ERR '+e.message); }
+}
 let _pgByMonth={};   // { 'YYYY-MM': [{url,date,roomId,roomName,title,shared_id,id}, ...] }
 let _pgMonths=[];    // 사진이 있는 'YYYY-MM' 목록 (최신 먼저)
 let _pgCurYM='';     // 현재 보고 있는 'YYYY-MM' (사진 유무 무관 — 자유 이동)
@@ -10115,15 +10143,23 @@ function renderPgMonth(){
   if(!body._pgBound){
     body._pgBound=true;
     function _pgHandleTap(cell){
+      pgDbg('TAP cell='+(cell?'YES':'NO'));
       if(!cell)return;
-      if(cell.getAttribute('data-pglock')==='1'){ openPremiumSheet(); return; }
+      if(cell.getAttribute('data-pglock')==='1'){ pgDbg('-> LOCKED openPremiumSheet'); openPremiumSheet(); return; }
       const idx=cell.getAttribute('data-pgidx');
       const url=cell.getAttribute('data-pgurl');
+      pgDbg('-> idx='+idx+' urlLen='+((url||'').length));
       openPgPhotoInfo(_pgCurYM, (idx!==null&&idx!=='')?Number(idx):-1, url||'');
     }
     body.addEventListener('click',function(e){
+      pgDbg('EVT click tgt='+(e.target.id||e.target.className||e.target.tagName));
       _pgHandleTap(e.target.closest('.pg-cell'));
     });
+    // 갤러리 열린 동안 문서 전역 클릭 추적 (오버레이로 떨어지는 합성 click 포착용)
+    document.addEventListener('click',function(e){
+      const sc=document.getElementById('photoGalleryScreen');
+      if(sc&&sc.classList.contains('on')) pgDbg('DOC click tgt='+(e.target.id||e.target.className||e.target.tagName));
+    },true);
     // iOS WKWebView click 누락 대비: 탭(이동거리 작음)이면 touchend로도 처리
     let _tsx=0,_tsy=0,_tmoved=false;
     body.addEventListener('touchstart',function(e){
@@ -10135,6 +10171,7 @@ function renderPgMonth(){
       if(Math.abs(t.clientX-_tsx)>8||Math.abs(t.clientY-_tsy)>8) _tmoved=true;
     },{passive:true});
     body.addEventListener('touchend',function(e){
+      pgDbg('EVT touchend moved='+_tmoved);
       if(_tmoved)return;  // 스크롤이면 무시
       const cell=e.target.closest('.pg-cell');
       if(!cell)return;
@@ -10146,12 +10183,14 @@ function renderPgMonth(){
 
 /* 사진 탭 → 일정 정보 시트 (며칠 / 무슨 일정 / 일정 확인하기) */
 let _pgInfoTarget=null;
-let _pgInfoOpenedAt=0;   // iOS WKWebView 고스트 클릭 방지용: 시트가 열린 시각
 function openPgPhotoInfo(ym,idx,url){
+  pgDbg('openInfo ym='+ym+' idx='+idx);
   const arr=_pgByMonth[ym]||[];
+  pgDbg('arr.len='+arr.length);
   let it=(idx>=0)?arr[idx]:null;
-  if(!it && url){ it=arr.find(function(x){ return x.url===url; }); }
-  if(!it)return;
+  if(!it && url){ it=arr.find(function(x){ return x.url===url; }); pgDbg('byUrl='+(it?'FOUND':'NO')); }
+  if(!it){ pgDbg('!! it NOT found -> return'); return; }
+  pgDbg('it OK');
   _pgInfoTarget=it;
   const img=document.getElementById('pgInfoImg'); if(img)img.src=it.url;
   const d=parseDateKey(it.date);
@@ -10172,24 +10211,18 @@ function openPgPhotoInfo(ym,idx,url){
   }
   document.getElementById('pgInfoOverlay').classList.add('on');
   document.getElementById('pgInfoCard').classList.add('on');
-  _pgInfoOpenedAt=Date.now();
+  pgDbg('.on ADDED');
+  pgDbgCardState('t0');
+  setTimeout(function(){ pgDbgCardState('t60'); },60);
+  setTimeout(function(){ pgDbgCardState('t450'); },450);
 }
 function closePgPhotoInfo(){
+  pgDbg('CLOSE called <- '+String((new Error()).stack||'').replace(/\s+/g,' ').slice(0,160));
   const ov=document.getElementById('pgInfoOverlay'), c=document.getElementById('pgInfoCard');
   if(ov)ov.classList.remove('on');
   if(c)c.classList.remove('on');
   _pgInfoTarget=null;
 }
-/* iOS WKWebView: 셀을 탭하면 touchend로 시트가 먼저 열린 뒤, 약 300ms 늦게 합성(ghost) click이
-   '갓 열린 오버레이' 좌표로 떨어져 즉시 닫혀버린다(→ 사용자에겐 "안 열림"으로 보임).
-   touchend의 preventDefault가 WKWebView에서 항상 합성 click을 막아주진 않으므로,
-   열린 직후 짧은 구간(500ms) 동안의 오버레이 탭은 무시해 첫 합성 click만 흘려보낸다.
-   실제 사용자가 닫으려는 탭은 그 이후에 발생하므로 영향받지 않는다. */
-function pgInfoOverlayTap(){
-  if(Date.now()-_pgInfoOpenedAt < 500) return;
-  closePgPhotoInfo();
-}
-window.pgInfoOverlayTap=pgInfoOverlayTap;
 window.closePgPhotoInfo=closePgPhotoInfo;
 window.openPgPhotoInfo=openPgPhotoInfo;
 /* 사진 크게 보기 (정보 시트에서) */
