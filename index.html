@@ -9979,34 +9979,6 @@ function closePhotoView(){
 }
 
 /* ───────── 사진 모아보기 (월별 갤러리) — 내가 속한 모든 방의 사진 ───────── */
-/* ===== [임시 디버그] 기기 화면 로그 — 원인 확인 후 제거 예정. 패널 탭하면 비움 ===== */
-function pgDbg(msg){
-  try{
-    let p=document.getElementById('pgDbgPanel');
-    if(!p){
-      p=document.createElement('div');
-      p.id='pgDbgPanel';
-      p.style.cssText='position:fixed;left:6px;right:6px;top:6px;z-index:2147483647;max-height:46vh;overflow:auto;background:rgba(0,0,0,.88);color:#39ff5e;font:11px/1.45 monospace;padding:8px 10px;border-radius:8px;white-space:pre-wrap;';
-      p.addEventListener('click',function(){ p.textContent=''; });
-      document.body.appendChild(p);
-    }
-    const t=new Date();
-    const ts=String(t.getMinutes()).padStart(2,'0')+':'+String(t.getSeconds()).padStart(2,'0')+'.'+String(t.getMilliseconds()).padStart(3,'0');
-    p.textContent += '['+ts+'] '+msg+'\n';
-    p.scrollTop=p.scrollHeight;
-  }catch(e){}
-}
-function pgDbgCardState(tag){
-  try{
-    function st(el){
-      if(!el)return 'null';
-      const cs=getComputedStyle(el);
-      return 'on='+el.classList.contains('on')+' disp='+cs.display+' op='+cs.opacity+' tf='+String(cs.transform||'').slice(0,16)+' z='+cs.zIndex+' vis='+cs.visibility;
-    }
-    pgDbg(tag+' OV {'+st(document.getElementById('pgInfoOverlay'))+'}');
-    pgDbg(tag+' CARD {'+st(document.getElementById('pgInfoCard'))+'}');
-  }catch(e){ pgDbg('state ERR '+e.message); }
-}
 let _pgByMonth={};   // { 'YYYY-MM': [{url,date,roomId,roomName,title,shared_id,id}, ...] }
 let _pgMonths=[];    // 사진이 있는 'YYYY-MM' 목록 (최신 먼저)
 let _pgCurYM='';     // 현재 보고 있는 'YYYY-MM' (사진 유무 무관 — 자유 이동)
@@ -10143,23 +10115,15 @@ function renderPgMonth(){
   if(!body._pgBound){
     body._pgBound=true;
     function _pgHandleTap(cell){
-      pgDbg('TAP cell='+(cell?'YES':'NO'));
       if(!cell)return;
-      if(cell.getAttribute('data-pglock')==='1'){ pgDbg('-> LOCKED openPremiumSheet'); openPremiumSheet(); return; }
+      if(cell.getAttribute('data-pglock')==='1'){ openPremiumSheet(); return; }
       const idx=cell.getAttribute('data-pgidx');
       const url=cell.getAttribute('data-pgurl');
-      pgDbg('-> idx='+idx+' urlLen='+((url||'').length));
       openPgPhotoInfo(_pgCurYM, (idx!==null&&idx!=='')?Number(idx):-1, url||'');
     }
     body.addEventListener('click',function(e){
-      pgDbg('EVT click tgt='+(e.target.id||e.target.className||e.target.tagName));
       _pgHandleTap(e.target.closest('.pg-cell'));
     });
-    // 갤러리 열린 동안 문서 전역 클릭 추적 (오버레이로 떨어지는 합성 click 포착용)
-    document.addEventListener('click',function(e){
-      const sc=document.getElementById('photoGalleryScreen');
-      if(sc&&sc.classList.contains('on')) pgDbg('DOC click tgt='+(e.target.id||e.target.className||e.target.tagName));
-    },true);
     // iOS WKWebView click 누락 대비: 탭(이동거리 작음)이면 touchend로도 처리
     let _tsx=0,_tsy=0,_tmoved=false;
     body.addEventListener('touchstart',function(e){
@@ -10171,7 +10135,6 @@ function renderPgMonth(){
       if(Math.abs(t.clientX-_tsx)>8||Math.abs(t.clientY-_tsy)>8) _tmoved=true;
     },{passive:true});
     body.addEventListener('touchend',function(e){
-      pgDbg('EVT touchend moved='+_tmoved);
       if(_tmoved)return;  // 스크롤이면 무시
       const cell=e.target.closest('.pg-cell');
       if(!cell)return;
@@ -10184,26 +10147,20 @@ function renderPgMonth(){
 /* 사진 탭 → 일정 정보 시트 (며칠 / 무슨 일정 / 일정 확인하기) */
 let _pgInfoTarget=null;
 function openPgPhotoInfo(ym,idx,url){
- try{
-  pgDbg('openInfo ym='+ym+' idx='+idx);
   const arr=_pgByMonth[ym]||[];
-  pgDbg('arr.len='+arr.length);
   let it=(idx>=0)?arr[idx]:null;
-  if(!it && url){ it=arr.find(function(x){ return x.url===url; }); pgDbg('byUrl='+(it?'FOUND':'NO')); }
-  if(!it){ pgDbg('!! it NOT found -> return'); return; }
-  pgDbg('it OK');
+  if(!it && url){ it=arr.find(function(x){ return x.url===url; }); }
+  if(!it)return;
   _pgInfoTarget=it;
-  pgDbg('A imgEl='+(!!document.getElementById('pgInfoImg')));
   const img=document.getElementById('pgInfoImg'); if(img)img.src=it.url;
-  pgDbg('B date='+it.date);
   const d=parseDateKey(it.date);
   const dateStr=d?((d.getMonth()+1)+'월 '+d.getDate()+'일 '+DOW_NAMES[d.getDay()]+'요일'):it.date;
-  pgDbg('C dateStr='+dateStr);
-  setText('pgInfoDate',dateStr);
-  setText('pgInfoTitle',it.title||'(제목 없음)');
-  pgDbg('D setText done');
+  // setText는 하단 IIFE 내부 private 헬퍼라 이 전역 함수 스코프에선 보이지 않음 → 직접 DOM 쓰기
+  const _de=document.getElementById('pgInfoDate'); if(_de)_de.textContent=dateStr;
+  const _te=document.getElementById('pgInfoTitle'); if(_te)_te.textContent=(it.title||'(제목 없음)');
   const rn=document.getElementById('pgInfoRoom');
   if(rn) rn.textContent=it.roomName?('· '+it.roomName):'';
+  // 등록일 (사진이 일정에 올라온 날)
   const reg=document.getElementById('pgInfoReg');
   if(reg){
     let regStr='';
@@ -10213,19 +10170,10 @@ function openPgPhotoInfo(ym,idx,url){
     }
     reg.textContent=regStr;
   }
-  pgDbg('E ovEl='+(!!document.getElementById('pgInfoOverlay'))+' cardEl='+(!!document.getElementById('pgInfoCard')));
   document.getElementById('pgInfoOverlay').classList.add('on');
   document.getElementById('pgInfoCard').classList.add('on');
-  pgDbg('.on ADDED');
-  pgDbgCardState('t0');
-  setTimeout(function(){ pgDbgCardState('t60'); },60);
-  setTimeout(function(){ pgDbgCardState('t450'); },450);
- }catch(err){
-  pgDbg('!!! THROW: '+(err&&err.message?err.message:String(err)));
- }
 }
 function closePgPhotoInfo(){
-  pgDbg('CLOSE called <- '+String((new Error()).stack||'').replace(/\s+/g,' ').slice(0,160));
   const ov=document.getElementById('pgInfoOverlay'), c=document.getElementById('pgInfoCard');
   if(ov)ov.classList.remove('on');
   if(c)c.classList.remove('on');
