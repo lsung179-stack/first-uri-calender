@@ -487,12 +487,6 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .pp-trial{border:1px solid var(--accent);color:var(--accent);font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap}
 .pp-price{font-size:16px;font-weight:800;color:var(--text);font-family:var(--ff-serif);white-space:nowrap}
 .prem-featbox{margin:16px 18px 10px;background:var(--card);border:1px solid var(--borderL);border-radius:16px;padding:16px}
-.prem-noticebox{margin:10px 18px 16px;background:var(--card);border:1px solid var(--borderL);border-radius:16px;padding:16px}
-.prem-noticebox .pb-title{font-size:15px;margin-bottom:11px}
-.prem-notice-list{display:flex;flex-direction:column;gap:9px}
-.prem-notice-item{display:flex;gap:8px;font-size:11.5px;line-height:1.55;color:var(--sub);text-align:left}
-.prem-notice-item::before{content:"•";color:var(--mute);flex-shrink:0;font-weight:700}
-.prem-notice-item b{color:var(--text);font-weight:700}
 .prem-ctabar{flex-shrink:0;padding:10px 18px max(14px,env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--borderL)}
 .prem-ctanote{text-align:center;font-size:12px;color:var(--gold);font-weight:600;margin-top:9px}
 .prem-cta-value{text-align:center;font-size:13px;color:var(--accent);font-weight:700;margin-bottom:9px}
@@ -2495,7 +2489,7 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)); }
       <div class="welcome-deco-line"></div>
     </div>
     <div class="btn-stack">
-      <button class="btn btn-apple" onclick="loginApple()">
+      <button id="appleLoginBtn" class="btn btn-apple" onclick="loginApple()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M17.05 12.04c-.03-2.6 2.13-3.85 2.22-3.91-1.21-1.77-3.1-2.01-3.77-2.04-1.6-.16-3.13.94-3.94.94-.81 0-2.07-.92-3.4-.89-1.75.03-3.36 1.02-4.26 2.58-1.82 3.16-.47 7.84 1.3 10.41.86 1.26 1.89 2.67 3.24 2.62 1.3-.05 1.79-.84 3.36-.84 1.57 0 2.01.84 3.39.81 1.4-.02 2.29-1.28 3.15-2.55.99-1.46 1.4-2.87 1.42-2.94-.03-.01-2.73-1.05-2.76-4.16zM14.5 4.5c.72-.87 1.2-2.08 1.07-3.28-1.03.04-2.28.69-3.02 1.56-.66.77-1.24 2-1.08 3.18 1.15.09 2.32-.59 3.03-1.46z"/></svg>
         Apple로 시작하기
       </button>
@@ -3449,22 +3443,6 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)); }
         <div class="prem-feature"><span class="pmf-ic">🔲</span><div class="pmf-body"><div class="pmf-name">테두리 일정</div><div class="pmf-desc">색 채움 없이 <b>외곽선 스타일</b></div></div></div>
         <div class="prem-feature"><span class="pmf-ic">🎨</span><div class="pmf-body"><div class="pmf-name">스토어 팩</div><div class="pmf-desc"><b>모든 컬러·캐릭터 팩</b> 사용</div></div></div>
         <div class="prem-feature"><span class="pmf-ic">🚫</span><div class="pmf-body"><div class="pmf-name">광고 제거</div><div class="pmf-desc">배너 광고 없이 <b>깔끔하게</b></div></div></div>
-      </div>
-    </div>
-    <div class="prem-noticebox">
-      <div class="pb-title">유의사항</div>
-      <div class="prem-notice-list">
-        <div class="prem-notice-item">프리미엄 혜택은 결제하신 본인 계정에 적용됩니다. 함께 방을 사용하는 다른 멤버에게는 자동으로 적용되지 않습니다.</div>
-        <div class="prem-notice-item">7일 무료 체험 기간 중 언제든 구독을 취소할 수 있으며, 체험 종료 시 선택하신 구독 상품의 금액이 자동으로 청구됩니다.</div>
-        <div class="prem-notice-item">무료 체험의 남은 기간은 유료 구독을 결제하는 즉시 소멸됩니다.</div>
-        <div class="prem-notice-item">사용 중인 기기에 로그인된 Apple 또는 Google 계정으로 비용이 청구됩니다.</div>
-        <div class="prem-notice-item">구독 상품은 정기 결제이며, 다음 결제일의 24시간 이전까지 해지하지 않으면 구독이 자동으로 갱신됩니다.</div>
-        <div class="prem-notice-item">현재 이용 중인 구독 상품 종료 24시간 전까지 언제든 구독 갱신을 중지할 수 있습니다.</div>
-        <div class="prem-notice-item">구독 갱신 중지 및 해지는 기기의 계정 설정(App Store / Google Play)에서 직접 관리하실 수 있습니다.</div>
-        <div class="prem-notice-item">구독을 해지해도 남은 이용 기간 동안은 프리미엄 기능이 유지되며, 다음 결제일부터 비용이 청구되지 않습니다.</div>
-        <div class="prem-notice-item">회원 탈퇴나 방 나가기를 하더라도 구독(정기 결제)은 자동으로 취소되지 않습니다. 서비스 이용을 원하지 않으실 경우 기기의 계정 설정에서 직접 구독을 해지해 주세요.</div>
-        <div class="prem-notice-item">구독 결제 후 프리미엄 기능을 이용하신 경우, 환불이 제한될 수 있습니다. 환불은 App Store / Google Play 정책 및 관련 법령에 따릅니다.</div>
-        <div class="prem-notice-item">결제를 진행하실 경우 이용약관 및 결제 관련 약관에 동의하신 것으로 간주됩니다.</div>
       </div>
     </div>
   </div>
@@ -4671,6 +4649,24 @@ async function _doKakaoOAuth(){
     toast('카카오 로그인 오류');
   }
 }
+
+/* ─── Apple 로그인 버튼 노출 제어 ───
+   안드로이드(앱·웹)에서는 Apple 로그인 버튼을 숨김.
+   iOS·기타 웹에서는 그대로 노출(애플 정책상 iOS 필수). */
+function _applyAppleLoginVisibility(){
+  try{
+    var isAndroid=/Android/i.test(navigator.userAgent||'');
+    var btn=document.getElementById('appleLoginBtn');
+    if(btn) btn.style.display = isAndroid ? 'none' : '';
+  }catch(_){}
+}
+try{
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', _applyAppleLoginVisibility);
+  }else{
+    _applyAppleLoginVisibility();
+  }
+}catch(_){}
 
 /* ─── Apple 로그인 ─── */
 /* 안전한 랜덤 nonce 생성 */
