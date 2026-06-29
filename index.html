@@ -10184,6 +10184,7 @@ function renderPgMonth(){
 /* 사진 탭 → 일정 정보 시트 (며칠 / 무슨 일정 / 일정 확인하기) */
 let _pgInfoTarget=null;
 function openPgPhotoInfo(ym,idx,url){
+ try{
   pgDbg('openInfo ym='+ym+' idx='+idx);
   const arr=_pgByMonth[ym]||[];
   pgDbg('arr.len='+arr.length);
@@ -10192,14 +10193,17 @@ function openPgPhotoInfo(ym,idx,url){
   if(!it){ pgDbg('!! it NOT found -> return'); return; }
   pgDbg('it OK');
   _pgInfoTarget=it;
+  pgDbg('A imgEl='+(!!document.getElementById('pgInfoImg')));
   const img=document.getElementById('pgInfoImg'); if(img)img.src=it.url;
+  pgDbg('B date='+it.date);
   const d=parseDateKey(it.date);
   const dateStr=d?((d.getMonth()+1)+'월 '+d.getDate()+'일 '+DOW_NAMES[d.getDay()]+'요일'):it.date;
+  pgDbg('C dateStr='+dateStr);
   setText('pgInfoDate',dateStr);
   setText('pgInfoTitle',it.title||'(제목 없음)');
+  pgDbg('D setText done');
   const rn=document.getElementById('pgInfoRoom');
   if(rn) rn.textContent=it.roomName?('· '+it.roomName):'';
-  // 등록일 (사진이 일정에 올라온 날)
   const reg=document.getElementById('pgInfoReg');
   if(reg){
     let regStr='';
@@ -10209,12 +10213,16 @@ function openPgPhotoInfo(ym,idx,url){
     }
     reg.textContent=regStr;
   }
+  pgDbg('E ovEl='+(!!document.getElementById('pgInfoOverlay'))+' cardEl='+(!!document.getElementById('pgInfoCard')));
   document.getElementById('pgInfoOverlay').classList.add('on');
   document.getElementById('pgInfoCard').classList.add('on');
   pgDbg('.on ADDED');
   pgDbgCardState('t0');
   setTimeout(function(){ pgDbgCardState('t60'); },60);
   setTimeout(function(){ pgDbgCardState('t450'); },450);
+ }catch(err){
+  pgDbg('!!! THROW: '+(err&&err.message?err.message:String(err)));
+ }
 }
 function closePgPhotoInfo(){
   pgDbg('CLOSE called <- '+String((new Error()).stack||'').replace(/\s+/g,' ').slice(0,160));
