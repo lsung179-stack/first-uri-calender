@@ -1394,7 +1394,7 @@ body.ev-dragging .cal-cell{cursor:grabbing}
 .pg-mn-arrow{width:34px;height:34px;border:1px solid var(--border);background:var(--card);border-radius:50%;font-size:18px;color:var(--sub);cursor:pointer;font-family:inherit;line-height:1}
 .pg-mn-label{font-size:15px;font-weight:700;color:var(--text);cursor:pointer;padding:7px 16px;border-radius:10px;background:var(--card);border:1px solid var(--border);min-width:120px;text-align:center}
 .pg-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 14px calc(28px + env(safe-area-inset-bottom))}
-.pg-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.pg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .pg-day-group{margin-bottom:22px}
 .pg-day-head{display:flex;align-items:baseline;justify-content:space-between;padding:0 2px 9px}
 .pg-day-label{font-size:15px;font-weight:600;color:var(--mute);letter-spacing:.3px}
@@ -10095,7 +10095,7 @@ function renderPgMonth(){
         +'<span class="pg-cell-keep pg-cell-expired">보관 만료</span>'
         +'</div>';
     }
-    return '<div class="pg-cell" data-pgidx="'+it._idx+'">'
+    return '<div class="pg-cell" data-pgidx="'+it._idx+'" data-pgurl="'+escapeHtml(it.url)+'">'
       +'<img src="'+escapeHtml(it.url)+'" loading="lazy" alt="">'
       +((keepLeft!==null)?('<span class="pg-cell-keep">D-'+keepLeft+'</span>'):'')
       +'</div>';
@@ -10114,20 +10114,42 @@ function renderPgMonth(){
   // 이벤트 위임: 셀 클릭 처리 (inline onclick보다 iOS WKWebView에서 안정적)
   if(!body._pgBound){
     body._pgBound=true;
-    body.addEventListener('click',function(e){
-      const cell=e.target.closest('.pg-cell');
+    function _pgHandleTap(cell){
       if(!cell)return;
       if(cell.getAttribute('data-pglock')==='1'){ openPremiumSheet(); return; }
       const idx=cell.getAttribute('data-pgidx');
-      if(idx!==null&&idx!==undefined) openPgPhotoInfo(_pgCurYM, Number(idx));
+      const url=cell.getAttribute('data-pgurl');
+      openPgPhotoInfo(_pgCurYM, (idx!==null&&idx!=='')?Number(idx):-1, url||'');
+    }
+    body.addEventListener('click',function(e){
+      _pgHandleTap(e.target.closest('.pg-cell'));
+    });
+    // iOS WKWebView click 누락 대비: 탭(이동거리 작음)이면 touchend로도 처리
+    let _tsx=0,_tsy=0,_tmoved=false;
+    body.addEventListener('touchstart',function(e){
+      const t=e.touches&&e.touches[0]; if(!t)return;
+      _tsx=t.clientX; _tsy=t.clientY; _tmoved=false;
+    },{passive:true});
+    body.addEventListener('touchmove',function(e){
+      const t=e.touches&&e.touches[0]; if(!t)return;
+      if(Math.abs(t.clientX-_tsx)>8||Math.abs(t.clientY-_tsy)>8) _tmoved=true;
+    },{passive:true});
+    body.addEventListener('touchend',function(e){
+      if(_tmoved)return;  // 스크롤이면 무시
+      const cell=e.target.closest('.pg-cell');
+      if(!cell)return;
+      e.preventDefault();  // 뒤이은 click 중복 방지
+      _pgHandleTap(cell);
     });
   }
 }
 
 /* 사진 탭 → 일정 정보 시트 (며칠 / 무슨 일정 / 일정 확인하기) */
 let _pgInfoTarget=null;
-function openPgPhotoInfo(ym,idx){
-  const it=(_pgByMonth[ym]||[])[idx];
+function openPgPhotoInfo(ym,idx,url){
+  const arr=_pgByMonth[ym]||[];
+  let it=(idx>=0)?arr[idx]:null;
+  if(!it && url){ it=arr.find(function(x){ return x.url===url; }); }
   if(!it)return;
   _pgInfoTarget=it;
   const img=document.getElementById('pgInfoImg'); if(img)img.src=it.url;
