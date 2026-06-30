@@ -5675,7 +5675,7 @@ async function hideAdBanner() {
    AdMob 배너는 OS 별도 레이어라 서브 화면 위에도 떠서 버튼/콘텐츠를 가린다.
    서브 시트가 열려 있으면 광고를 숨기고, 모두 닫히면 다시 표시한다.
    DOM의 .on 상태를 직접 보므로 닫는 경로가 어디든(닫기버튼·탭전환·뒤로) 항상 정합. */
-const _AD_HIDE_SHEET_IDS = ['premiumCard','storeCard','advCard','annCard','csCard','evCard','todoAddCard'];
+const _AD_HIDE_SHEET_IDS = ['premiumCard','storeCard','advCard','annCard','csCard','evCard','todoAddCard','dpCard'];
 function _anySubSheetOpen(){
   for(const id of _AD_HIDE_SHEET_IDS){
     const el = document.getElementById(id);
@@ -8429,6 +8429,7 @@ function openDateSheet(key){
   renderDateSheetList();
   document.getElementById('dpOverlay').classList.add('on');
   document.getElementById('dpCard').classList.add('on');
+  _subScreenEnter();
 }
 
 /* 멤버 섹션 — 날짜 시트에선 더 이상 표시하지 않음 (제거됨)
@@ -8437,6 +8438,7 @@ function closeDateSheet(){
   document.getElementById('dpOverlay').classList.remove('on');
   document.getElementById('dpCard').classList.remove('on');
   setTimeout(showReactionAnimation,250);
+  _subScreenExit();
 }
 function openDateSheetForToday(){
   const t=new Date();
