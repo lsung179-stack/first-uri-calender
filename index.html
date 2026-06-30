@@ -5638,6 +5638,9 @@ async function showAdBannerIfNeeded() {
   try {
     if (!_admobReady) { _admobDebug='ready안됨'; return; }
     if (isEffectivePremium()) { _admobDebug='프리미엄(광고없음)'; hideAdBanner(); return; } // 프리미엄이면 광고 없음
+    // 풀스크린 시트/모달(일정·할일 추가수정, 스토어, 프리미엄, 고급설정, 공지, 고객센터)이
+    // 하나라도 열려 있으면 광고를 띄우지 않는다 → 캘린더/방목록/우리할일/설정 메인 화면에서만 표시
+    if (_anySubSheetOpen()) { _admobDebug='모달열림(광고숨김)'; hideAdBanner(); return; }
     if (_admobBannerShowing) { _admobDebug='이미표시중'; return; }
     const plat = _admobPlatform();
     if (!plat) return;
@@ -5666,6 +5669,30 @@ async function hideAdBanner() {
     await AdMob.hideBanner();
     _admobBannerShowing = false;
   } catch(e) { _admobDebug='banner숨김오류:'+(e&&e.message||e); console.warn('AdMob hideBanner:', e); }
+}
+
+/* ── 풀스크린 서브 시트(스토어/프리미엄/고급설정 등) 진입 시 배너 광고 가림 방지 ──
+   AdMob 배너는 OS 별도 레이어라 서브 화면 위에도 떠서 버튼/콘텐츠를 가린다.
+   서브 시트가 열려 있으면 광고를 숨기고, 모두 닫히면 다시 표시한다.
+   DOM의 .on 상태를 직접 보므로 닫는 경로가 어디든(닫기버튼·탭전환·뒤로) 항상 정합. */
+const _AD_HIDE_SHEET_IDS = ['premiumCard','storeCard','advCard','annCard','csCard','evCard','todoAddCard'];
+function _anySubSheetOpen(){
+  for(const id of _AD_HIDE_SHEET_IDS){
+    const el = document.getElementById(id);
+    if(el && el.classList.contains('on')) return true;
+  }
+  return false;
+}
+function _subScreenEnter(){
+  try{ hideAdBanner(); }catch(_){}
+}
+function _subScreenExit(){
+  // 닫은 직후엔 아직 .on이 남아있을 수 있어 한 틱 뒤에 검사
+  setTimeout(function(){
+    if(!_anySubSheetOpen()){
+      try{ showAdBannerIfNeeded(); }catch(_){}  // 프리미엄이면 함수 내부에서 알아서 표시 안 함
+    }
+  }, 0);
 }
 
 /* ── 프리미엄 상태 ── 로그인 시 1회 로드, 모든 제한 체크는 _isPremium 하나로 판단 */
@@ -8908,6 +8935,7 @@ function openAddEvent(){
   closeDateSheet();
   document.getElementById('evOverlay').classList.add('on');
   document.getElementById('evCard').classList.add('on');
+  _subScreenEnter();
   requestAnimationFrame(function(){ var _ec=document.getElementById('evCard'); if(_ec)_ec.scrollTop=0; });
   setTimeout(()=>{const i=document.getElementById('evTitle');if(i)i.focus()},320);
 }
@@ -9016,12 +9044,14 @@ function openEditEvent(eventId){
   closeDateSheet();
   document.getElementById('evOverlay').classList.add('on');
   document.getElementById('evCard').classList.add('on');
+  _subScreenEnter();
   requestAnimationFrame(function(){ var _ec=document.getElementById('evCard'); if(_ec)_ec.scrollTop=0; });
 }
 function closeEventModal(){
   document.getElementById('evOverlay').classList.remove('on');
   document.getElementById('evCard').classList.remove('on');
   _editingEvent=null;
+  _subScreenExit();
 }
 /* 취소/스와이프/오버레이 — 캘린더가 아니라 이전 단계(날짜 시트)로 복귀 */
 function cancelEventModal(){
@@ -9037,6 +9067,7 @@ function _hideEvCardForSub(){
 function _showEvCardFromSub(){
   document.getElementById('evOverlay').classList.add('on');
   document.getElementById('evCard').classList.add('on');
+  _subScreenEnter();
   requestAnimationFrame(function(){ var _ec=document.getElementById('evCard'); if(_ec)_ec.scrollTop=0; });
 }
 /* 시간 휠 picker (iOS 시스템 picker 대체) */
@@ -12187,6 +12218,7 @@ async function openAnnouncements(){
   renderAnnouncementList();
   document.getElementById('annCard').classList.add('on');
   syncAnnouncementBadge();
+  _subScreenEnter();
 }
 function closeAnnouncements(){
   document.getElementById('annCard').classList.remove('on');
@@ -12194,6 +12226,7 @@ function closeAnnouncements(){
   // 다음 진입 시 목록으로 시작하도록 헤더 초기화
   document.getElementById('annHeadList').style.display='';
   document.getElementById('annHeadDetail').style.display='none';
+  _subScreenExit();
 }
 function renderAnnouncementList(){
   // 헤더 모드 전환
@@ -12697,9 +12730,11 @@ function openAdvSettings(){
   try{ syncAlignButtons(); }catch(_){}
   try{ syncGridButtons(); }catch(_){}
   try{ syncDefaultViewButtons(); }catch(_){}
+  _subScreenEnter();
 }
 function closeAdvSettings(){
   document.getElementById('advCard').classList.remove('on');
+  _subScreenExit();
 }
 
 /* ── 뒤로가기: 스토어/고급설정/공지사항 → 통합 설정 화면으로 복귀 ──
@@ -14125,9 +14160,11 @@ function openPremiumSheet(){
   if(btn) btn.textContent = prem ? '이미 이용 중이에요' : '프리미엄 시작하기';
   selectPlan(_premSelectedPlan);
   document.getElementById('premiumCard').classList.add('on');
+  _subScreenEnter();
 }
 function closePremiumSheet(){
   document.getElementById('premiumCard').classList.remove('on');
+  _subScreenExit();
 }
 function onPremiumSubscribe(){
   if(isEffectivePremium()){ toast('이미 프리미엄을 이용 중이에요'); return; }
@@ -14578,9 +14615,11 @@ function openStore(){
   renderTrialBanner();
   setStoreTab('theme');
   document.getElementById('storeCard').classList.add('on');
+  _subScreenEnter();
 }
 function closeStore(){
   document.getElementById('storeCard').classList.remove('on');
+  _subScreenExit();
 }
 function setStoreTab(tab){
   const tabs=document.querySelectorAll('#storeTabs .store-tab');
@@ -14947,9 +14986,11 @@ const KAKAO_CHANNEL_URL='https://pf.kakao.com/_xoTkxbX';
 function openCustomerSupport(){
   closeMainModals();
   document.getElementById('csCard').classList.add('on');
+  _subScreenEnter();
 }
 function closeCustomerSupport(){
   document.getElementById('csCard').classList.remove('on');
+  _subScreenExit();
 }
 function openKakaoChannel(){
   // 카카오톡 채널 채팅 열기 — TWA/Safari 모두 외부로 열림
@@ -15986,6 +16027,12 @@ function safeRender(){
    탭바
    ============================================================ */
 function calTabSwitch(tab){
+  // 서브 시트(스토어/프리미엄/고급설정)를 열어둔 채 탭으로 빠져나가는 경우,
+  // 시트는 화면 전환 로직이 닫지만 광고 복원이 누락되므로 여기서 복원을 예약한다.
+  if(_anySubSheetOpen()){
+    _AD_HIDE_SHEET_IDS.forEach(function(id){ const el=document.getElementById(id); if(el) el.classList.remove('on'); });
+    _subScreenExit();
+  }
   if(tab==='rooms'){ exitRoom(); return; }
   if(!_currentRoom){
     // 방을 안 연 상태 — 마지막에 들어갔던 방으로 자동 입장
@@ -16301,6 +16348,7 @@ function openTodoAddSheet(dateKeyStr, opts){
   const start=dateKeyStr||_selectedDate||_todayKeyStr();
   _todoReturnDate=(opts&&opts.fromDay)?start:null;
   hideTabbar();
+  _subScreenEnter();
   _editingTodoId=null;
   setText('todoAddTitle','새 할 일 추가');
   _todoType='single';
@@ -16342,6 +16390,7 @@ function openTodoEditSheet(id, opts){
   if(!t){ toast('할 일을 찾을 수 없어요'); return; }
   _todoReturnDate=(opts&&opts.fromDay)?opts.fromDay:null;
   hideTabbar();
+  _subScreenEnter();
   _editingTodoId=id;
   setText('todoAddTitle','할 일 수정');
   // 타입 판별
@@ -16392,6 +16441,7 @@ function closeTodoAddSheet(){
   showTabbar();
   if($('todoAddOverlay')) $('todoAddOverlay').classList.remove('on');
   if($('todoAddCard')) $('todoAddCard').classList.remove('on');
+  _subScreenExit();
 }
 function cancelTodoAddSheet(){
   const d=_todoReturnDate;
