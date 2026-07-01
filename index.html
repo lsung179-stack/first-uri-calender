@@ -184,6 +184,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 
 /* 로고 */
 /* ── 빈티지 도장 마크 (환영 화면) ── */
+.welcome-logo-img{width:170px;height:170px;object-fit:contain;display:block}
 .stamp{
   width:170px;height:170px;border-radius:50%;
   border:5px solid var(--accent);
@@ -2483,12 +2484,7 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)); }
     <div class="welcome-invite-banner" id="welcomeInviteBanner" style="display:none">
       초대받은 방이 있어요<span class="wib-dot"></span>로그인 후 자동 입장
     </div>
-    <div class="stamp">
-      <div class="stamp-our">OUR</div>
-      <div class="stamp-line"></div>
-      <div class="stamp-cal">CALENDAR</div>
-      <div class="stamp-est">EST · 2026</div>
-    </div>
+    <img class="welcome-logo-img" src="welcome-logo.png" alt="우리 캘린더">
     <div class="welcome-name-kr">우리 캘린더</div>
     <div class="welcome-tagline">오래도록 함께 기록하는 시간</div>
     <div class="welcome-deco">
@@ -9772,7 +9768,8 @@ async function _doSaveEvent(){
     if(_editingEvent){
       // 수정 — saveEditedEvent 내부에서 그룹 일괄수정/방선택 처리 (다른 방 '추가'는 하지 않음)
       const oldPhotoUrls = (Array.isArray(_editingEvent.photo_urls)&&_editingEvent.photo_urls.length) ? _editingEvent.photo_urls.filter(Boolean) : (_editingEvent.photo_url?[_editingEvent.photo_url]:[]);
-      await saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly,memo,photoUrls);
+      const _editRes=await saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly,memo,photoUrls);
+      if(_editRes==='cancelled'){ return; }  // 방 적용범위 선택에서 취소 → 수정 모달 그대로 유지 (finally에서 버튼 복원)
       // 옛 사진 정리 — 새 목록에 없는 사진은 Storage에서 삭제 (fire-and-forget)
       oldPhotoUrls.forEach(u=>{ if(u && !photoUrls.includes(u)) deletePhotoFromStorage(u); });
     }else{
@@ -11351,7 +11348,7 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
         const gids=[...new Set((grp||[]).map(g=>g.room_id))];
         groupRooms=gids.map(id=>({id,name:((_myRooms||[]).find(r=>r.id===id)?.name)||'방',isCurrent:id===_currentRoom.id}));
         const scope=await askMultiRoomScope('이 일정은 여러 방에 등록돼 있어요.<br>어느 방에 수정 내용을 적용할까요?',false,groupRooms);
-        if(scope===null)return;  // 취소 — 아무것도 삭제/수정하지 않음
+        if(scope===null)return 'cancelled';  // 취소 → 수정 모달 유지
         if(scope==='all') targetRooms=gids.length?gids:[_currentRoom.id];
         else if(Array.isArray(scope)) targetRooms=[...new Set([...scope,_currentRoom.id])];
         else targetRooms=[_currentRoom.id];
@@ -11412,7 +11409,7 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
         groupRooms=gids.map(id=>({id,name:((_myRooms||[]).find(r=>r.id===id)?.name)||'방',isCurrent:id===_currentRoom.id}));
       }catch(_){}
       const scope=await askMultiRoomScope('이 일정은 여러 방에 등록돼 있어요.<br>어느 방에 수정 내용을 적용할까요?',false,groupRooms);
-      if(scope===null)return;  // 취소
+      if(scope===null)return 'cancelled';  // 취소 → 수정 모달 유지
       const _f2={date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls};
       if(scope==='all'){
         // 그룹 전체(모든 방의 내 복사본) 일괄 수정
