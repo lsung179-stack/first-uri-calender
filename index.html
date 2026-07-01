@@ -1932,6 +1932,14 @@ body.align-right .cal-evbar{text-align:right}
 
 /* 테마 선택 그리드 */
 .theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px}
+.uni-room-theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.urt-item{display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 4px;background:var(--card);border:1.5px solid rgba(139,58,42,.15);border-radius:12px;cursor:pointer;position:relative;font-family:inherit}
+.urt-item:active{transform:scale(.97)}
+.urt-item.on{border-color:var(--accent);border-width:2px}
+.urt-sw{width:34px;height:34px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.urt-dot{width:12px;height:12px;border-radius:50%}
+.urt-name{font-size:11px;font-weight:700;color:var(--text);letter-spacing:-.2px}
+.urt-check{position:absolute;top:4px;right:6px;font-size:11px;color:var(--accent);font-weight:800}
 .theme-item{cursor:pointer;text-align:center;transition:transform .12s}
 .theme-item:active{transform:scale(.96)}
 .theme-stamp{
@@ -2974,6 +2982,10 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)); }
       <div class="uni-row-grow"><div class="lbl">코드</div><div class="val" id="uniRoomCode">—</div></div>
       <button class="uni-mini-btn" onclick="copyRoomCode()">복사</button>
     </div>
+    <div class="uni-row" style="display:block;padding-top:2px">
+      <div class="lbl" style="margin-bottom:8px">이 방 테마 <span style="font-size:11px;color:var(--sub);font-weight:600">· 나에게만 적용돼요</span></div>
+      <div id="uniRoomThemeGrid" class="uni-room-theme-grid"></div>
+    </div>
     <button class="uni-nav" style="background:var(--kakao);color:var(--kakaoText)" onclick="shareKakao()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 9.06 9.06 0 0 1-3.6-.7L3 21l1.7-5.4A8.38 8.38 0 0 1 4 11.5 8.5 8.5 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5z"/></svg>카카오톡으로 초대</span><span class="chev">›</span></button>
 
     <div class="uni-divider"></div>
@@ -3821,8 +3833,10 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)); }
   <div class="vc-card">
     <div class="mo-title" id="mrsTitle">다른 방에도 등록된 일정</div>
     <div class="mo-sub" id="mrsMsg">여러 방에 등록된 일정이에요.<br>어떻게 적용할까요?</div>
+    <div id="mrsRoomList" style="display:none;max-height:240px;overflow-y:auto;margin:2px 0 12px;border:1px solid rgba(139,58,42,.18);border-radius:10px;padding:4px"></div>
     <div class="mo-actions">
       <button class="btn btn-primary" id="mrsAll">전체 방에 적용</button>
+      <button class="btn" id="mrsPick" style="background:#fff;color:var(--accent);border:1.5px solid var(--accent)">방 선택해서 적용</button>
       <button class="btn" id="mrsOne" style="background:#fff;color:var(--accent);border:1.5px solid var(--accent)">이 방만</button>
       <button class="mo-cancel" id="mrsCancel">취소</button>
     </div>
@@ -4520,6 +4534,12 @@ function showScreen(id){
   if(el)el.classList.add('show');
   // 환영 화면에 보여줄 때 초대 안내 배너 갱신
   if(id==='welcomeScreen'&&typeof updateWelcomeInviteBanner==='function')updateWelcomeInviteBanner();
+  // 인증 화면(로그인 전)에선 광고 숨김, 메인 화면이면 정상 판정에 맡김
+  try{
+    const _authScreens=['welcomeScreen','emailScreen','otpScreen','resetScreen'];
+    if(_authScreens.indexOf(id)>=0){ if(typeof hideAdBanner==='function') hideAdBanner(); }
+    else { if(typeof showAdBannerIfNeeded==='function') showAdBannerIfNeeded(); }
+  }catch(_){}
 }
 function goEmail(){setAuthMode('login');['pwInput','pwConfirmInput'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});showScreen('emailScreen');setTimeout(()=>{const i=document.getElementById('emailInput');if(i)i.focus()},350)}
 function goBack(){showScreen('welcomeScreen')}
@@ -5637,6 +5657,8 @@ async function initAdMob() {
 async function showAdBannerIfNeeded() {
   try {
     if (!_admobReady) { _admobDebug='ready안됨'; return; }
+    // 로그인 전(welcome/email 화면)에는 광고를 띄우지 않는다
+    if (!_currentUser) { _admobDebug='로그인전(광고숨김)'; hideAdBanner(); return; }
     if (isEffectivePremium()) { _admobDebug='프리미엄(광고없음)'; hideAdBanner(); return; } // 프리미엄이면 광고 없음
     // 풀스크린 시트/모달(일정·할일 추가수정, 스토어, 프리미엄, 고급설정, 공지, 고객센터)이
     // 하나라도 열려 있으면 광고를 띄우지 않는다 → 캘린더/방목록/우리할일/설정 메인 화면에서만 표시
@@ -6077,7 +6099,7 @@ function enterRoom(roomId){
     renderMemberTabs();
   });
   updateCalAvatar();
-  applyTheme(_myTheme||'vintage');  // 방 테마가 아니라 내 개인 테마 적용
+  applyRoomThemeFor(_currentRoom&&_currentRoom.id);  // 이 방의 내 테마 적용 (없으면 개인 기본)
   const t=new Date();
   _calYear=t.getFullYear();
   _calMonth=t.getMonth();
@@ -8558,7 +8580,9 @@ function renderDateSheetList(){
     const sharedCls=ev._isShared?' shared':'';
     const virtualTag=isVirtual?`<span class="dp-shared-tag" style="background:rgba(216,104,128,.18);color:#a83855">프로필</span>`:'';
     const canEdit=!isVirtual&&(isMine||ev._isShared||_adminBypass());
-    const actions=canEdit?`<div class="dp-actions"><button class="dp-btn" onclick="event.stopPropagation();openEditEvent('${ev.id}')">수정</button><button class="dp-btn del" onclick="event.stopPropagation();deleteEvent('${ev.id}')">삭제</button></div>`:'';
+    const canCopy=canEdit&&!ev.shared_id&&!ev._isShared;
+    const copyBtn=canCopy?`<button class="dp-btn" onclick="event.stopPropagation();copyEventToRooms('${ev.id}')">복사</button>`:'';
+    const actions=canEdit?`<div class="dp-actions"><button class="dp-btn" onclick="event.stopPropagation();openEditEvent('${ev.id}')">수정</button>${copyBtn}<button class="dp-btn del" onclick="event.stopPropagation();deleteEvent('${ev.id}')">삭제</button></div>`:'';
 
     let reactionHtml='';
     if(!isVirtual){
@@ -9488,6 +9512,7 @@ async function onOutlineToggle(checked){
    현재 방은 기본 포함(고정), 다른 방은 선택. 확인 시 _doSaveEvent() 실행, 취소 시 저장 중단 */
 function openRoomPick(){
   if(_roomPickMode==='todo'){ _hideTodoSheetForSub(); }
+  else if(_roomPickMode==='copy'){ /* 복사: 상세(dp)는 copyEventToRooms에서 이미 닫음 */ }
   else { _hideEvCardForSub(); }  // 모달 감춤 (이중 모달 방지)
   document.getElementById('roomPickOverlay').classList.add('on');
   document.getElementById('roomPickCard').classList.add('on');
@@ -9522,6 +9547,7 @@ function confirmRoomPick(){
   _selectedExtraRooms=Array.from(checks).map(c=>c.value);
   closeRoomPick();
   if(_roomPickMode==='todo'){ _doSaveTodo(); }
+  else if(_roomPickMode==='copy'){ _doCopyEvent(); }
   else { _doSaveEvent(); }  // 모달은 숨겨둔 채 저장 — 실패 시 내부에서 복원
 }
 function cancelRoomPick(){
@@ -9529,32 +9555,147 @@ function cancelRoomPick(){
   _selectedExtraRooms=[];
   closeRoomPick();
   if(_roomPickMode==='todo'){ _roomPickMode='event'; _showTodoSheetFromSub(); }
+  else if(_roomPickMode==='copy'){ _roomPickMode='event'; _copySourceEventId=null; }
   else { _showEvCardFromSub(); }
+}
+
+/* ───────── 일정 복사 (다른 방으로) — 상세 모달의 복사 버튼 ───────── */
+let _copySourceEventId=null;
+function copyEventToRooms(eventId){
+  const others=(_myRooms||[]).filter(r=>r.id!==_currentRoom?.id);
+  if(!others.length){ toast('복사할 다른 방이 없어요'); return; }
+  const ev=Object.values(_events).flat().find(e=>e.id===eventId);
+  if(!ev){ toast('일정을 찾을 수 없어요'); return; }
+  if(ev.shared_id||ev._isShared){ toast('함께 일정은 복사할 수 없어요'); return; }
+  _copySourceEventId=eventId;
+  // 상세(dp) 닫고 방 선택 모달 열기
+  const dc=document.getElementById('dpCard'); if(dc)dc.classList.remove('on');
+  const dov=document.getElementById('dpOverlay'); if(dov)dov.classList.remove('on');
+  _selectedExtraRooms=[];
+  _roomPickMode='copy';
+  openRoomPick();
+}
+async function _doCopyEvent(){
+  const rooms=(_selectedExtraRooms||[]).slice();
+  _roomPickMode='event';
+  _selectedExtraRooms=[];
+  const eventId=_copySourceEventId; _copySourceEventId=null;
+  if(!rooms.length){ toast('복사할 방을 선택해주세요'); return; }
+  if(!eventId){ return; }
+  const ev=Object.values(_events).flat().find(e=>e.id===eventId);
+  if(!ev){ toast('일정을 찾을 수 없어요'); return; }
+  try{
+    // 복사할 날짜 묶음 계산 — 기간(연속)은 findEventGroup, 여러 날(is_multi)은 동일 속성 묶음
+    let group;
+    if(ev.is_multi){
+      const allEvents=Object.values(_events).flat();
+      group=allEvents.filter(e=>e.is_multi&&!e.shared_id&&e.user_id===ev.user_id
+        &&(e.title||'').trim()===(ev.title||'').trim()&&(e.time||'')===(ev.time||'')&&e.color===ev.color);
+    }else{
+      group=findEventGroup(ev);
+    }
+    if(!group||!group.length)group=[ev];
+    const dates=[...new Set(group.map(e=>e.date))].sort();
+    // 그룹 ID: 원본에 있으면 재사용, 없으면 새로 만들어 원본 그룹에도 부여(→ 어느 방에서 수정해도 동기화)
+    let mgid=ev.multi_group_id||null;
+    if(!mgid){
+      mgid=genShared();
+      const gids=group.map(e=>e.id).filter(Boolean);
+      if(gids.length){
+        const {error:eU}=await supa.from('events').update({multi_group_id:mgid}).in('id',gids);
+        if(eU)throw eU;
+      }
+    }
+    // 대상 방들 × 날짜들로 복사 (동일 mgid로 묶음)
+    const isMulti=!!ev.is_multi;
+    const rows=[];
+    rooms.forEach(rid=>{
+      dates.forEach(d=>{
+        rows.push({
+          room_id:rid,user_id:_currentUser.id,date:d,
+          title:ev.title,time:ev.time||null,end_time:ev.end_time||null,
+          color:ev.color||'c-vintage',bar_style:ev.bar_style||'solid',
+          multi_group_id:mgid,
+          recurring_yearly:!!ev.recurring_yearly,repeat_type:ev.repeat_type||'none',repeat_weekdays:ev.repeat_weekdays||null,
+          memo:ev.memo||null,photo_url:ev.photo_url||null,photo_urls:ev.photo_urls||null,
+          is_multi:isMulti,
+        });
+      });
+    });
+    const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
+    if(error)throw error;
+    toast(rooms.length+'개 방에 복사됐어요');
+    await loadEvents();
+  }catch(e){ console.error(e); toast('복사 실패: '+((e.message||'').slice(0,40))); }
 }
 function closeRoomPick(){
   document.getElementById('roomPickOverlay').classList.remove('on');
   document.getElementById('roomPickCard').classList.remove('on');
 }
-/* 다른 방 연동 일정 — 수정/삭제 범위 선택 ('all' 전체 방 | 'one' 이 방만 | null 취소) */
-function askMultiRoomScope(msg, isDelete){
+/* 다른 방 연동 일정 — 수정/삭제 범위 선택
+   반환: 'all'(전체 방) | [room_id...](선택 방) | 'one'(이 방만) | null(취소)
+   groupRooms: [{id,name,isCurrent}] 그룹에 속한 방 목록 (방 선택 UI용) */
+function askMultiRoomScope(msg, isDelete, groupRooms){
   return new Promise(resolve=>{
     const ov=document.getElementById('mrsOverlay');
     if(!ov){resolve('one');return;}
     const allBtn=document.getElementById('mrsAll');
+    const pickBtn=document.getElementById('mrsPick');
     const oneBtn=document.getElementById('mrsOne');
     const cancelBtn=document.getElementById('mrsCancel');
+    const roomListEl=document.getElementById('mrsRoomList');
+    const rooms=Array.isArray(groupRooms)?groupRooms:[];
     if(msg)document.getElementById('mrsMsg').innerHTML=msg;
     document.getElementById('mrsTitle').textContent=isDelete?'다른 방에도 등록된 일정 삭제':'다른 방에도 등록된 일정 수정';
-    allBtn.textContent=isDelete?'전체 방에서 삭제':'전체 방에 적용';
+    const allLabel=isDelete?'전체 방에서 삭제':'전체 방에 적용';
+    allBtn.textContent=allLabel;
     oneBtn.textContent='이 방만';
+    let pickMode=false;
+    if(pickBtn){
+      pickBtn.style.display=(rooms.length>=2)?'':'none';
+      pickBtn.textContent=isDelete?'방 선택해서 삭제':'방 선택해서 적용';
+    }
+    if(roomListEl){ roomListEl.style.display='none'; roomListEl.innerHTML=''; }
     document.body.appendChild(ov);
     ov.classList.add('on');
     const finish=(val)=>{
       ov.classList.remove('on');
-      allBtn.onclick=null;oneBtn.onclick=null;cancelBtn.onclick=null;ov.onclick=null;
+      if(roomListEl){ roomListEl.style.display='none'; roomListEl.innerHTML=''; }
+      // 버튼 상태 원복 (다음 호출 대비)
+      allBtn.textContent=allLabel;
+      if(oneBtn)oneBtn.style.display='';
+      if(pickBtn)pickBtn.style.display='';
+      allBtn.onclick=null; if(pickBtn)pickBtn.onclick=null; oneBtn.onclick=null; cancelBtn.onclick=null; ov.onclick=null;
       resolve(val);
     };
-    allBtn.onclick=()=>finish('all');
+    const renderRoomList=()=>{
+      if(!roomListEl)return;
+      roomListEl.innerHTML='';
+      rooms.forEach(r=>{
+        const isCur=!!r.isCurrent;
+        const row=document.createElement('label');
+        row.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 8px;cursor:pointer';
+        row.innerHTML='<input type="checkbox" value="'+r.id+'" '+(isCur?'checked disabled':'checked')+' style="width:18px;height:18px;flex-shrink:0"><span style="flex:1;font-size:14px;color:var(--text)">'+escapeHtml(r.name||'방')+(isCur?' <span style="font-size:11px;color:var(--sub)">(현재 방)</span>':'')+'</span>';
+        roomListEl.appendChild(row);
+      });
+      roomListEl.style.display='';
+    };
+    allBtn.onclick=()=>{
+      if(pickMode){
+        const checks=roomListEl.querySelectorAll('input[type="checkbox"]:checked');
+        const ids=Array.from(checks).map(c=>c.value);
+        finish(ids.length?ids:'one');
+      }else{
+        finish('all');
+      }
+    };
+    if(pickBtn)pickBtn.onclick=()=>{
+      pickMode=true;
+      renderRoomList();
+      allBtn.textContent=isDelete?'선택한 방에서 삭제':'선택한 방에 적용';
+      pickBtn.style.display='none';
+      oneBtn.style.display='none';
+    };
     oneBtn.onclick=()=>finish('one');
     cancelBtn.onclick=()=>finish(null);
     ov.onclick=(e)=>{if(e.target===ov)finish(null);};
@@ -9575,10 +9716,11 @@ async function saveEvent(){
   if(_sTime && _eTime && _eTime < _sTime && _selectedMode!=='range'){
     toast('종료가 시작보다 빨라요');return;
   }
-  // 방 선택 모달 노출 조건: 단독(함께 아님) + 다른 방이 1개 이상 (신규·수정 모두)
+  // 방 선택 모달 노출 조건: 신규 추가 + 단독(함께 아님) + 다른 방이 1개 이상
+  // (수정일 때는 openRoomPick을 띄우지 않음 — 수정은 '추가'가 아니라 saveEditedEvent의 그룹 일괄수정으로 처리)
   const isCoEvent=(_selectedTarget==='all'&&_selectedMembers&&_selectedMembers.length>=2);
   const others=(_myRooms||[]).filter(r=>r.id!==_currentRoom?.id);
-  if(!isCoEvent && others.length>=1){
+  if(!_editingEvent && !isCoEvent && others.length>=1){
     _selectedExtraRooms=[];
     openRoomPick();   // 확인 → _doSaveEvent(), 취소 → 중단
     return;
@@ -9628,44 +9770,11 @@ async function _doSaveEvent(){
   
   try{
     if(_editingEvent){
-      // 수정 — 6가지 케이스 분기
+      // 수정 — saveEditedEvent 내부에서 그룹 일괄수정/방선택 처리 (다른 방 '추가'는 하지 않음)
       const oldPhotoUrls = (Array.isArray(_editingEvent.photo_urls)&&_editingEvent.photo_urls.length) ? _editingEvent.photo_urls.filter(Boolean) : (_editingEvent.photo_url?[_editingEvent.photo_url]:[]);
       await saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly,memo,photoUrls);
       // 옛 사진 정리 — 새 목록에 없는 사진은 Storage에서 삭제 (fire-and-forget)
       oldPhotoUrls.forEach(u=>{ if(u && !photoUrls.includes(u)) deletePhotoFromStorage(u); });
-      // 수정 화면에서 '다른 방에도 추가' 선택 시 — 현재 편집값으로 다른 방에 복사 (단독만)
-      const _isCoNow=(_selectedTarget==='all'&&_selectedMembers.length>=2);
-      if(_selectedExtraRooms&&_selectedExtraRooms.length>0&&!_isCoNow){
-        let _exDates=[];
-        if(_selectedMode==='multi'){
-          _exDates=[..._multiSelected].sort();
-        }else if(_selectedMode==='range'){
-          const s=document.getElementById('evStartDate').value;
-          const e=document.getElementById('evEndDate').value;
-          if(s&&e)_exDates=daysBetween(s,e);
-        }else{
-          _exDates=[(_dayDate||_selectedDate)];
-        }
-        if(_exDates.length){
-          const _exRows=[];
-          _selectedExtraRooms.forEach(rid=>{
-            _exDates.forEach(d=>{
-              _exRows.push({
-                room_id:rid,user_id:_currentUser.id,date:d,
-                title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
-                recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
-                memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
-                is_multi:(_selectedMode==='multi'),
-              });
-            });
-          });
-          if(_exRows.length){
-            const {error:eEx}=await supa.from('events').insert(_attachVirtualMember(_exRows));
-            if(eEx)console.warn('다른 방 추가 일부 실패:',eEx);
-            else toast(`다른 방에도 추가됨 (${_selectedExtraRooms.length}개 방)`);
-          }
-        }
-      }
     }else{
       // 추가 — 기간/여러 날/함께 모드 처리
       // 다른 방에도 추가할지: 단독 일정만 (함께는 제외). 본인 row만 복사
@@ -11214,42 +11323,72 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
     return;
   }
 
-  // 단독 일정 + 모드가 range/multi로 변경된 경우 — 기존 그룹 모두 삭제 + 새 모드대로 INSERT
-  // (단독 일정만 처리; 함께 일정의 range는 위에서 별도 처리)
+  // 단독 일정 + 모드가 range/multi — 기존 그룹 삭제 후 새 모드대로 재생성
+  // (다른 방에도 등록된 그룹(multi_group_id)이면 적용 범위 선택: 전체 방 / 선택 방 / 이 방만)
   if(!wasShared&&!isNowShared&&(_selectedMode==='range'||_selectedMode==='multi')){
-    // 기존 row들 삭제 — 단일이면 자기 자신, 기간이면 그룹 전체
-    const oldIds=(_editGroup&&_editGroup.length>1)?_editGroup.map(e=>e.id):[ev.id];
-    const {error:eDel}=await supa.from('events').delete().in('id',oldIds);
-    if(eDel)throw eDel;
-
-    if(_selectedMode==='range'){
+    // 1) 새 날짜 목록 계산 + 검증 — 반드시 삭제보다 먼저 (검증 실패 시 기존 데이터 보존)
+    const isMultiMode=(_selectedMode==='multi');
+    let newDates=[];
+    if(isMultiMode){
+      newDates=[..._multiSelected].sort();
+      if(!newDates.length){toast('날짜를 하나 이상 선택해주세요');return}
+      if(newDates.length>31){toast('한 번에 최대 31일까지');return}
+    }else{
       const startStr=document.getElementById('evStartDate').value;
       const endStr=document.getElementById('evEndDate').value;
       if(!startStr||!endStr){toast('시작/종료 날짜를 입력해주세요');return}
-      const dates=daysBetween(startStr,endStr);
-      if(dates.length>180){toast('기간이 너무 길어요 (최대 6개월)');return}
-      const rows=dates.map(d=>({
-        room_id:_currentRoom.id,user_id:_currentUser.id,date:d,
-        title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
-        memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
-      }));
-      const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
-      if(error)throw error;
-      toast(`기간 일정으로 변경됨 (${dates.length}일)`);
+      newDates=daysBetween(startStr,endStr);
+      if(newDates.length>180){toast('기간이 너무 길어요 (최대 6개월)');return}
+    }
+
+    // 2) 방 간 그룹(multi_group_id)이면 적용 범위 선택
+    const mgid=ev.multi_group_id||null;
+    let targetRooms=[_currentRoom.id];
+    if(mgid){
+      let groupRooms=[];
+      try{
+        const {data:grp}=await supa.from('events').select('room_id').eq('multi_group_id',mgid).eq('user_id',_currentUser.id);
+        const gids=[...new Set((grp||[]).map(g=>g.room_id))];
+        groupRooms=gids.map(id=>({id,name:((_myRooms||[]).find(r=>r.id===id)?.name)||'방',isCurrent:id===_currentRoom.id}));
+        const scope=await askMultiRoomScope('이 일정은 여러 방에 등록돼 있어요.<br>어느 방에 수정 내용을 적용할까요?',false,groupRooms);
+        if(scope===null)return;  // 취소 — 아무것도 삭제/수정하지 않음
+        if(scope==='all') targetRooms=gids.length?gids:[_currentRoom.id];
+        else if(Array.isArray(scope)) targetRooms=[...new Set([...scope,_currentRoom.id])];
+        else targetRooms=[_currentRoom.id];
+      }catch(_){ targetRooms=[_currentRoom.id]; }
+    }
+
+    // 3) 대상 방들의 기존 그룹 row 삭제 (내 것 + 대상 방으로만 제한)
+    if(mgid){
+      const {error:eDel}=await supa.from('events').delete()
+        .eq('multi_group_id',mgid).eq('user_id',_currentUser.id).in('room_id',targetRooms);
+      if(eDel)throw eDel;
     }else{
-      // multi
-      const dates=[..._multiSelected].sort();
-      if(!dates.length){toast('날짜를 하나 이상 선택해주세요');return}
-      if(dates.length>31){toast('한 번에 최대 31일까지');return}
-      const rows=dates.map(d=>({
-        room_id:_currentRoom.id,user_id:_currentUser.id,date:d,
-        title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
-        memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
-        is_multi:true,
-      }));
-      const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
-      if(error)throw error;
-      toast(`여러 날 일정으로 변경됨 (${dates.length}일)`);
+      const oldIds=(_editGroup&&_editGroup.length>1)?_editGroup.map(e=>e.id):[ev.id];
+      const {error:eDel}=await supa.from('events').delete().in('id',oldIds);
+      if(eDel)throw eDel;
+    }
+
+    // 4) 대상 방들 × 새 날짜로 재생성 (그룹이면 multi_group_id 유지 → 그룹 연결 보존)
+    const rows=[];
+    targetRooms.forEach(rid=>{
+      newDates.forEach(d=>{
+        rows.push({
+          room_id:rid,user_id:_currentUser.id,date:d,
+          title,time,end_time:endTime,color,bar_style:barStyle,
+          multi_group_id:mgid,
+          recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,
+          memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
+          is_multi:isMultiMode,
+        });
+      });
+    });
+    const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
+    if(error)throw error;
+    if(mgid&&targetRooms.length>1){
+      toast(isMultiMode?`여러 날 일정 수정됨 (${targetRooms.length}개 방)`:`기간 일정 수정됨 (${newDates.length}일 × ${targetRooms.length}개 방)`);
+    }else{
+      toast(isMultiMode?`여러 날 일정으로 변경됨 (${newDates.length}일)`:`기간 일정으로 변경됨 (${newDates.length}일)`);
     }
     return;
   }
@@ -11264,15 +11403,30 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
     // 다른 방에도 등록된 일정(multi_group_id 존재)이면 적용 범위 선택
     const _fields={date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls};
     if(ev.multi_group_id){
-      const scope=await askMultiRoomScope('이 일정은 여러 방에 함께 등록돼 있어요.<br>전체 방에 수정 내용을 적용할까요,<br>아니면 이 방에만 적용할까요?',false);
-      if(!scope)return;  // 취소
+      // 그룹(다른 방에도 등록된 동일 일정)에 속한 방 목록 조회 — 방 선택 UI용
+      let groupRooms=[];
+      try{
+        const {data:grp}=await supa.from('events').select('room_id')
+          .eq('multi_group_id',ev.multi_group_id).eq('user_id',_currentUser.id);
+        const gids=[...new Set((grp||[]).map(g=>g.room_id))];
+        groupRooms=gids.map(id=>({id,name:((_myRooms||[]).find(r=>r.id===id)?.name)||'방',isCurrent:id===_currentRoom.id}));
+      }catch(_){}
+      const scope=await askMultiRoomScope('이 일정은 여러 방에 등록돼 있어요.<br>어느 방에 수정 내용을 적용할까요?',false,groupRooms);
+      if(scope===null)return;  // 취소
+      const _f2={date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls};
       if(scope==='all'){
-        // 그룹 전체(모든 방의 내 복사본) 일괄 수정 — 날짜 포함(단일 일정이라 방마다 같은 날)
-        const _f2={date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls};
+        // 그룹 전체(모든 방의 내 복사본) 일괄 수정
         const {error}=await supa.from('events').update(_f2)
           .eq('multi_group_id',ev.multi_group_id).eq('user_id',_currentUser.id);
         if(error)throw error;
         toast('전체 방의 일정이 수정됐어요');
+      }else if(Array.isArray(scope)){
+        // 선택한 방들만 일괄 수정 (현재 방은 항상 포함)
+        const roomsSel=[...new Set([...scope,_currentRoom.id])];
+        const {error}=await supa.from('events').update(_f2)
+          .eq('multi_group_id',ev.multi_group_id).eq('user_id',_currentUser.id).in('room_id',roomsSel);
+        if(error)throw error;
+        toast('선택한 '+roomsSel.length+'개 방의 일정이 수정됐어요');
       }else{
         // 이 방만 수정 (그룹에서 분리하지 않고 내용만 변경)
         const {error}=await supa.from('events').update(_withVirtualMemberForUpdate(_fields)).eq('id',ev.id);
@@ -15096,6 +15250,57 @@ async function changeRoomTheme(themeKey){
     toast('테마 변경 실패');
   }
 }
+/* ───────── 방별 테마 (개인 설정 — user_room_themes, 나에게만 적용) ───────── */
+let _currentRoomTheme=null;
+async function applyRoomThemeFor(roomId){
+  let theme=_myTheme||'vintage';
+  try{
+    if(_currentUser&&roomId){
+      const {data}=await supa.from('user_room_themes').select('theme').eq('user_id',_currentUser.id).eq('room_id',roomId).maybeSingle();
+      if(data&&data.theme&&THEMES[data.theme])theme=data.theme;
+    }
+  }catch(_){}
+  _currentRoomTheme=theme;
+  applyTheme(theme);
+  try{ renderRoomThemeGrid(); }catch(_){}
+}
+function renderRoomThemeGrid(){
+  const el=document.getElementById('uniRoomThemeGrid');
+  if(!el)return;
+  const cur=_currentRoomTheme||_myTheme||'vintage';
+  el.innerHTML=STORE_THEMES.map(function(item){
+    const t=THEMES[item.key]; if(!t)return '';
+    const on=item.key===cur;
+    return '<button class="urt-item'+(on?' on':'')+'" onclick="setThisRoomTheme(\''+item.key+'\')" title="'+escapeHtml(item.name)+'">'
+      +'<span class="urt-sw" style="background:'+t.bg+';border-color:'+t.accent+'"><span class="urt-dot" style="background:'+t.accent+'"></span></span>'
+      +'<span class="urt-name">'+escapeHtml(item.name)+'</span>'
+      +(on?'<span class="urt-check">✓</span>':'')
+      +'</button>';
+  }).join('');
+}
+async function setThisRoomTheme(themeKey){
+  if(!_currentRoom||!_currentUser){ toast('로그인이 필요해요'); return; }
+  if(!THEMES[themeKey]){ toast('테마를 찾을 수 없어요'); return; }
+  const old=_currentRoomTheme||_myTheme||'vintage';
+  if(themeKey===old){ return; }
+  // 즉시 내 화면에만 적용 (다른 멤버에겐 영향 없음)
+  _currentRoomTheme=themeKey;
+  applyTheme(themeKey);
+  renderRoomThemeGrid();
+  try{
+    const {error}=await supa.from('user_room_themes').upsert(
+      {user_id:_currentUser.id,room_id:_currentRoom.id,theme:themeKey,updated_at:new Date().toISOString()},
+      {onConflict:'user_id,room_id'}
+    );
+    if(error)throw error;
+    toast('이 방 테마: '+themeName(themeKey));
+  }catch(e){
+    _currentRoomTheme=old;
+    applyTheme(old);
+    renderRoomThemeGrid();
+    toast('테마 저장 실패');
+  }
+}
 function copyRoomCode(){
   const code=_currentRoom?.code;
   if(!code)return;
@@ -16827,20 +17032,54 @@ async function _doSaveTodo(){
   };
   try{
     if(_editingTodoId){
-      const { error } = await supa.from('todos').update(fields).eq('id',_editingTodoId);
-      if(error){ toast('수정 실패: '+((error.message||'').slice(0,40))); _showTodoSheetFromSub(); return; }
-      toast('할 일이 수정됐어요');
+      // 편집 대상 할일이 여러 방에 묶여 있으면(multi_group_id) 적용 범위 선택
+      let _tmgid=null;
+      try{
+        const {data:cur}=await supa.from('todos').select('multi_group_id').eq('id',_editingTodoId).maybeSingle();
+        _tmgid=cur&&cur.multi_group_id;
+      }catch(_){}
+      if(_tmgid){
+        let groupRooms=[];
+        try{
+          const {data:grp}=await supa.from('todos').select('room_id').eq('multi_group_id',_tmgid).eq('user_id',_currentUser.id);
+          const gids=[...new Set((grp||[]).map(function(g){return g.room_id;}))];
+          groupRooms=gids.map(function(id){return {id:id,name:((_myRooms||[]).find(function(r){return r.id===id;})||{}).name||'방',isCurrent:id===_currentRoom.id};});
+        }catch(_){}
+        const scope=await askMultiRoomScope('이 할일은 여러 방에 등록돼 있어요.<br>어느 방에 수정 내용을 적용할까요?',false,groupRooms);
+        if(scope===null){ _showTodoSheetFromSub(); return; }  // 취소 → 수정 시트 복귀
+        if(scope==='all'){
+          const { error } = await supa.from('todos').update(fields).eq('multi_group_id',_tmgid).eq('user_id',_currentUser.id);
+          if(error){ toast('수정 실패: '+((error.message||'').slice(0,40))); _showTodoSheetFromSub(); return; }
+          toast('전체 방의 할일이 수정됐어요');
+        } else if(Array.isArray(scope)){
+          const roomsSel=[...new Set([...scope,_currentRoom.id])];
+          const { error } = await supa.from('todos').update(fields).eq('multi_group_id',_tmgid).eq('user_id',_currentUser.id).in('room_id',roomsSel);
+          if(error){ toast('수정 실패: '+((error.message||'').slice(0,40))); _showTodoSheetFromSub(); return; }
+          toast('선택한 '+roomsSel.length+'개 방의 할일이 수정됐어요');
+        } else {
+          const { error } = await supa.from('todos').update(fields).eq('id',_editingTodoId);
+          if(error){ toast('수정 실패: '+((error.message||'').slice(0,40))); _showTodoSheetFromSub(); return; }
+          toast('이 방의 할일만 수정됐어요');
+        }
+      } else {
+        const { error } = await supa.from('todos').update(fields).eq('id',_editingTodoId);
+        if(error){ toast('수정 실패: '+((error.message||'').slice(0,40))); _showTodoSheetFromSub(); return; }
+        toast('할 일이 수정됐어요');
+      }
       _notifyTodo('update', Object.assign({id:_editingTodoId}, fields));
     } else {
+      // 다른 방에도 추가할 때만 그룹으로 묶어 이후 '모든 방 수정'이 가능하게 함
+      const _tmgid=(!isCo && _selectedExtraRooms && _selectedExtraRooms.length)?genShared():null;
       fields.room_id=_currentRoom.id;
       fields.user_id=_currentUser.id;
+      fields.multi_group_id=_tmgid;
       const { error } = await supa.from('todos').insert(fields);
       if(error){ toast('저장 실패: '+((error.message||'').slice(0,40))); _showTodoSheetFromSub(); return; }
       _notifyTodo('create', fields);
-      // 다른 방에도 추가 (단독만, 본인 작성)
+      // 다른 방에도 추가 (단독만, 본인 작성) — 같은 multi_group_id로 묶음
       if(!isCo && _selectedExtraRooms && _selectedExtraRooms.length){
         const exRows=_selectedExtraRooms.map(function(rid){
-          return Object.assign({},fields,{room_id:rid,member_keys:null});
+          return Object.assign({},fields,{room_id:rid,member_keys:null,multi_group_id:_tmgid});
         });
         const { error:eX } = await supa.from('todos').insert(exRows);
         if(eX) console.warn('다른 방 할일 추가 일부 실패:',eX);
@@ -16898,6 +17137,7 @@ function openUnifiedSettings(){
   setText('uniRoomSub',_currentRoom.name||'—');
   setText('uniRoomName',_currentRoom.name||'—');
   setText('uniRoomCode',_currentRoom.code||'—');
+  try{ renderRoomThemeGrid(); }catch(e){}
   showEl('uniRoomNameEditRow',false);
   try{ renderRoomMemberList(); }catch(e){}
   syncUniMemberList();
