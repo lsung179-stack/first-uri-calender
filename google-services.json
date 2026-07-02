@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "367173600390",
+    "project_id": "uri-calendar",
+    "storage_bucket": "uri-calendar.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:367173600390:android:2763f92d15d9aad60cbd07",
+        "android_client_info": {
+          "package_name": "app.vercel.first_uri_calender.twa"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBcTFyleegfTt26Qw80ixN_TWmXtgZ0fYs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
