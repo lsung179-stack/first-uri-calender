@@ -320,7 +320,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .welcome-note{font-size:12px;color:var(--mute);margin-top:18px;line-height:1.6}
 
 /* 토스트 */
-.toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%) translateY(20px);background:var(--card);color:var(--text);padding:12px 20px;border:1.5px solid var(--accent);border-radius:99px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s ease;z-index:999;box-shadow:0 6px 18px rgba(58,36,24,.18);max-width:84vw;text-align:center;letter-spacing:.2px}
+.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--card);color:var(--text);padding:12px 20px;border:1.5px solid var(--accent);border-radius:99px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s ease;z-index:2147483000;box-shadow:0 6px 18px rgba(58,36,24,.18);max-width:84vw;text-align:center;letter-spacing:.2px}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* 로딩 (초기 세션 확인) */
@@ -2260,7 +2260,7 @@ body.has-ad .cal-tabbar{ bottom:calc(10px + 56px + env(safe-area-inset-bottom));
 body.has-ad .cal-fab{ bottom:calc(136px + env(safe-area-inset-bottom)) !important; }
 body.has-ad .cal-today-btn{ bottom:calc(136px + env(safe-area-inset-bottom)) !important; }
 /* 토스트 안내도 광고+탭바 위로 올림 (안 올리면 탭바에 가림) */
-body.has-ad .toast{ bottom:calc(140px + env(safe-area-inset-bottom)) !important; }
+body.has-ad .toast{ bottom:calc(150px + env(safe-area-inset-bottom)) !important; }
 .cal-tab{
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   border:none;background:transparent;cursor:pointer;color:var(--mute);font-family:inherit;
@@ -4389,6 +4389,14 @@ function urlBase64ToUint8Array(base64String){
 
 /* 현재 푸시 상태 확인 */
 async function getPushStatus(){
+  // 안드로이드 네이티브 앱: 웹푸시가 아닌 FCM 권한 기준으로 판정 (iOS는 아래 웹푸시 경로 유지)
+  if(isAndroidNative()){
+    const perm=await getNativePushPerm();
+    if(perm==='denied')return 'denied';
+    if(perm==='prompt'||perm==='prompt-with-rationale')return 'default';
+    if(perm==='granted')return _nativePushToken?'subscribed':'granted';
+    return 'unsupported';  // 플러그인 미탑재(구버전 앱) 등
+  }
   if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)){
     return 'unsupported';
   }
@@ -4457,6 +4465,19 @@ async function registerPushNotification(silent){
 async function autoRegisterPush(){
   if(!_currentUser)return;
 
+  // ── 안드로이드 네이티브 앱: FCM 경로 (iOS 네이티브는 아래 웹푸시 경로 유지) ──
+  if(isAndroidNative()){
+    const perm=await getNativePushPerm();
+    if(perm==='denied'||perm==='unsupported'||perm==='error')return;
+    // 아직 선택 안 함(prompt): 첫 진입에 1회만 자동 권한 요청 (팝업 무시 시 반복 방지)
+    if(perm==='prompt'||perm==='prompt-with-rationale'){
+      if(localStorage.getItem('pushPrompted')==='1')return;
+      localStorage.setItem('pushPrompted','1');
+    }
+    await registerNativePush(true);
+    return;
+  }
+
   // 같은 user_id의 다른 endpoint를 정리 — 현재 브라우저 endpoint만 남기기
   // (한 폰에서 여러 브라우저로 사이트 방문해 endpoint가 누적되는 케이스 방지)
   try{
@@ -4508,6 +4529,96 @@ async function unregisterPushNotification(){
 
 /* (V1.2에서 프로필 시트 푸시 토글 UI 제거됨 — 자동 등록 방식으로 전환.
    togglePushNotification / syncPushButton / sendTestPush 함수는 호출처가 없어 dead code였음. 청소됨) */
+
+/* ═══════════ 네이티브(Capacitor) FCM 푸시 ═══════════
+   안드로이드 Play스토어 앱은 WebView라 웹푸시(PushManager)를 지원하지 않는다.
+   → @capacitor/push-notifications 플러그인으로 FCM 토큰을 받아 fcm_tokens 테이블에 저장하고,
+     send-push Edge Function이 그 토큰으로 FCM 발송한다. (웹/PWA는 기존 웹푸시 경로 그대로) */
+let _nativePushToken=null;
+let _nativePushListenersReady=false;
+
+function _getPushPlugin(){
+  try{return (window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.PushNotifications)||null;}catch(_){return null;}
+}
+function _nativePlatform(){
+  try{return (window.Capacitor&&window.Capacitor.getPlatform&&window.Capacitor.getPlatform())||'android';}catch(_){return 'android';}
+}
+/* FCM 네이티브 푸시 대상 = 안드로이드 네이티브 앱만.
+   (iOS는 기존 웹푸시 경로를 그대로 유지 — 아이폰은 이미 알림이 정상 동작하므로 건드리지 않는다) */
+function isAndroidNative(){
+  try{return isNativeApp()&&_nativePlatform()==='android';}catch(_){return false;}
+}
+
+/* 현재 기기 FCM 토큰을 DB에 저장 + 같은 user_id의 옛 토큰 정리 */
+async function _saveFcmToken(token){
+  try{
+    if(!token||!_currentUser)return;
+    _nativePushToken=token;
+    const {error}=await supa.from('fcm_tokens').upsert({
+      user_id:_currentUser.id,
+      token,
+      platform:_nativePlatform(),
+      user_agent:navigator.userAgent.slice(0,200),
+      last_used_at:new Date().toISOString(),
+    },{onConflict:'token'});
+    if(error){console.warn('FCM 토큰 저장 실패:',error);return;}
+    // 한 기기가 재설치 등으로 토큰이 바뀌면 옛 토큰이 남아 중복 발송되므로 현재 토큰만 남긴다
+    await supa.from('fcm_tokens').delete().eq('user_id',_currentUser.id).neq('token',token);
+  }catch(e){console.warn('FCM 토큰 처리 실패:',e);}
+}
+
+/* 네이티브 푸시 리스너 1회 등록 (토큰 수신 → 저장, 알림 탭 → 딥링크 이동) */
+function _setupNativePushListeners(){
+  if(_nativePushListenersReady)return;
+  const PN=_getPushPlugin();
+  if(!PN)return;
+  _nativePushListenersReady=true;
+  try{
+    PN.addListener('registration',(t)=>{ _saveFcmToken(t&&t.value); });
+    PN.addListener('registrationError',(e)=>{ console.warn('FCM 등록 오류:',e); });
+    // 알림 탭 → data.url로 이동 (send-push가 /?room=..&date=.. 형태로 넣어줌)
+    PN.addListener('pushNotificationActionPerformed',(a)=>{
+      try{
+        const url=a&&a.notification&&a.notification.data&&a.notification.data.url;
+        if(url&&typeof url==='string'&&url.charAt(0)==='/'){ location.assign(url); }
+      }catch(_){}
+    });
+  }catch(e){ _nativePushListenersReady=false; console.warn('네이티브 푸시 리스너 등록 실패:',e); }
+}
+
+/* 네이티브 푸시 권한 상태: 'granted' | 'denied' | 'prompt' | 'unsupported' | 'error' */
+async function getNativePushPerm(){
+  const PN=_getPushPlugin();
+  if(!PN)return 'unsupported';
+  try{ const p=await PN.checkPermissions(); return p.receive; }
+  catch(_){ return 'error'; }
+}
+
+/* 네이티브 푸시 등록 (권한 요청 + 토큰 등록). 반환: 권한 granted 성공 여부.
+   Android 13+ 는 requestPermissions()가 POST_NOTIFICATIONS 시스템 팝업을 띄운다 → 설정 토글이 켜짐. */
+async function registerNativePush(silent){
+  const PN=_getPushPlugin();
+  if(!PN){ if(!silent)toast('이 앱 버전은 알림을 지원하지 않아요. 최신 버전으로 업데이트해 주세요'); return false; }
+  if(!_currentUser){ if(!silent)toast('로그인이 필요해요'); return false; }
+  try{
+    _setupNativePushListeners();
+    let perm=await PN.checkPermissions();
+    if(perm.receive==='prompt'||perm.receive==='prompt-with-rationale'){
+      perm=await PN.requestPermissions();
+    }
+    if(perm.receive!=='granted'){
+      if(!silent)toast('휴대폰 설정 › 앱 › 우리 캘린더 › 알림에서 허용해 주세요');
+      return false;
+    }
+    await PN.register();  // → 'registration' 이벤트에서 토큰 저장
+    if(!silent)toast('알림을 켰어요');
+    return true;
+  }catch(e){
+    console.warn('네이티브 푸시 등록 실패:',e);
+    if(!silent)toast('알림 설정 실패');
+    return false;
+  }
+}
 
 /* 화면 전환 */
 /* 모든 모달 닫기 (화면 전환 시 / 새 모달 열기 시) */
@@ -11882,8 +11993,20 @@ async function toggleRoomNotification(){
     if(next){
       const st=await getPushStatus();
       if(st!=='granted'&&st!=='subscribed'){
-        const ok=await registerPushNotification(true);
-        if(!ok){toast('알림 권한을 허용해야 켤 수 있어요');btn.disabled=false;return;}
+        // 네이티브: FCM 등록(권한 팝업 포함). 실패 시 registerNativePush가 구체적 안내 toast를 직접 띄움.
+        // 웹/PWA: 기존 웹푸시 등록. 실패 시 상태에 맞는 안내.
+        let ok;
+        if(isAndroidNative()){
+          ok=await registerNativePush(false);
+        }else{
+          ok=await registerPushNotification(true);
+          if(!ok){
+            toast(st==='denied'
+              ? '휴대폰 설정에서 이 앱의 알림을 허용해 주세요'
+              : (st==='unsupported' ? '이 브라우저는 알림을 지원하지 않아요' : '알림 권한을 허용해야 켤 수 있어요'));
+          }
+        }
+        if(!ok){btn.disabled=false;return;}
       }
     }
     // 내가 속한 모든 방의 멤버 row를 한 번에 갱신.
