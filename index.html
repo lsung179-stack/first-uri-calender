@@ -320,7 +320,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .welcome-note{font-size:12px;color:var(--mute);margin-top:18px;line-height:1.6}
 
 /* 토스트 */
-.toast{position:fixed;left:50%;bottom:64px;transform:translateX(-50%) translateY(20px);background:var(--card);color:var(--text);padding:12px 20px;border:1.5px solid var(--accent);border-radius:99px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s ease;z-index:999;box-shadow:0 6px 18px rgba(58,36,24,.18);max-width:84vw;text-align:center;letter-spacing:.2px}
+.toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%) translateY(20px);background:var(--card);color:var(--text);padding:12px 20px;border:1.5px solid var(--accent);border-radius:99px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s ease;z-index:999;box-shadow:0 6px 18px rgba(58,36,24,.18);max-width:84vw;text-align:center;letter-spacing:.2px}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* 로딩 (초기 세션 확인) */
@@ -2250,14 +2250,17 @@ body.align-right .cal-evbar{text-align:right}
 /* ── 광고 공간 확보 ── body.has-ad일 때만 적용 (유료/광고없음 시 자동 복원) ──
    AdMob 배너(약 50px)가 탭바 위에 뜨므로, 콘텐츠 스크롤 영역 하단에 그만큼 여백 추가.
    광고가 사라지면(유료 전환·만료 복원) 클래스 제거로 원래대로 복원됨. */
-body.has-ad .cal-grid{ padding-bottom:calc(28px + 56px + env(safe-area-inset-bottom)) !important; }
-body.has-ad .todo-list{ padding-bottom:calc(56px + env(safe-area-inset-bottom)) !important; }
-body.has-ad #roomsContent{ padding-bottom:calc(56px + env(safe-area-inset-bottom)) !important; }
-body.has-ad .uni-scroll{ padding-bottom:calc(56px + env(safe-area-inset-bottom)) !important; }
+body.has-ad .cal-grid{ padding-bottom:calc(120px + env(safe-area-inset-bottom)) !important; }
+body.has-ad .todo-list{ padding-bottom:calc(120px + env(safe-area-inset-bottom)) !important; }
+body.has-ad #roomsContent{ padding-bottom:calc(120px + env(safe-area-inset-bottom)) !important; }
+body.has-ad .uni-scroll{ padding-bottom:calc(120px + env(safe-area-inset-bottom)) !important; }
 /* 탭바도 광고 높이만큼 위로 올림 */
 body.has-ad .cal-tabbar{ bottom:calc(10px + 56px + env(safe-area-inset-bottom)); }
-/* FAB(+버튼)도 광고 위로 올림 */
-body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)); }
+/* FAB(+버튼)·오늘버튼을 탭바 위로 확실히 올림 (탭바 상단보다 높게) */
+body.has-ad .cal-fab{ bottom:calc(136px + env(safe-area-inset-bottom)) !important; }
+body.has-ad .cal-today-btn{ bottom:calc(136px + env(safe-area-inset-bottom)) !important; }
+/* 토스트 안내도 광고+탭바 위로 올림 (안 올리면 탭바에 가림) */
+body.has-ad .toast{ bottom:calc(140px + env(safe-area-inset-bottom)) !important; }
 .cal-tab{
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   border:none;background:transparent;cursor:pointer;color:var(--mute);font-family:inherit;
@@ -2978,7 +2981,7 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)); }
       <div class="uni-row-grow"><div class="lbl">코드</div><div class="val" id="uniRoomCode">—</div></div>
       <button class="uni-mini-btn" onclick="copyRoomCode()">복사</button>
     </div>
-    <div class="uni-row" style="display:block;padding-top:2px">
+    <div class="uni-row" id="uniRoomThemeRow" style="display:block;padding-top:2px">
       <div class="lbl" style="margin-bottom:8px">이 방 테마 <span style="font-size:11px;color:var(--sub);font-weight:600">· 나에게만 적용돼요</span></div>
       <div id="uniRoomThemeGrid" class="uni-room-theme-grid"></div>
     </div>
@@ -3457,7 +3460,7 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)); }
   <div class="prem-ctabar">
     <div class="prem-cta-value">✨ 선택한 순간, 모든 기능이 열려요</div>
     <button class="prem-ctabtn" id="premSubBtn" onclick="onPremiumSubscribe()">프리미엄 시작하기</button>
-    <div class="prem-ctanote">결제 기능은 준비 중이에요 · 곧 만나요</div>
+    <div class="prem-ctanote"><button type="button" onclick="onRestorePurchases()" style="background:none;border:none;color:inherit;font:inherit;text-decoration:underline;cursor:pointer;padding:2px 6px">구매 복원</button></div>
   </div>
 </div>
 
@@ -5183,9 +5186,11 @@ function vConfirm(message,opts){
     cancelBtn.textContent=opts.cancelText||'취소';
     document.body.appendChild(ov); // DOM 최하단으로 이동 → 시트(변형 레이어) 위에 확실히 표시 (네이티브 겹침 방지)
     ov.classList.add('on');
+    try{ if(typeof hideAdBanner==='function') hideAdBanner(); }catch(_){} // 확인 모달 위에 광고 겹침 방지
     const finish=(val)=>{
       ov.classList.remove('on');
       okBtn.onclick=null;cancelBtn.onclick=null;ov.onclick=null;
+      try{ if(typeof _subScreenExit==='function') _subScreenExit(); }catch(_){} // 닫히면 광고 복원(메인 화면이면)
       resolve(val);
     };
     okBtn.onclick=()=>finish(true);
@@ -5277,9 +5282,11 @@ function askRecurringDelete(msg){
     if(msg)document.getElementById('rdMsg').innerHTML=msg;
     document.body.appendChild(ov);  // 시트 위로 올림
     ov.classList.add('on');
+    try{ if(typeof hideAdBanner==='function') hideAdBanner(); }catch(_){} // 모달 위 광고 겹침 방지
     const finish=(val)=>{
       ov.classList.remove('on');
       oneBtn.onclick=null;allBtn.onclick=null;cancelBtn.onclick=null;ov.onclick=null;
+      try{ if(typeof _subScreenExit==='function') _subScreenExit(); }catch(_){} // 닫히면 광고 복원(메인 화면이면)
       resolve(val);
     };
     oneBtn.onclick=()=>finish('one');
@@ -5625,6 +5632,7 @@ const ADMOB_IDS = {
 };
 let _admobReady = false;
 let _admobBannerShowing = false;
+let _adLoading = false; // showBanner 로딩(비동기) 진행 중 여부 — 중복 호출·타이밍 경쟁 방지
 let _admobDebug = 'init안됨'; // 디버깅용 상태 문자열
 
 function _admobPlatform() {
@@ -5645,6 +5653,24 @@ async function initAdMob() {
     await AdMob.initialize({ requestTrackingAuthorization: true });
     _admobReady = true;
     _admobDebug = 'init완료('+plat+')';
+    // ★ 배너가 "실제로 로드/표시되는 순간"을 이벤트로 잡아, 그때 시트가 열려 있으면(또는 로그아웃/프리미엄) 즉시 숨김.
+    //   showBanner의 Promise는 로딩 시작에서 끝나므로, 지연 로딩된 배너가 시트 위로 뜨는 걸 이 리스너로 막는다.
+    //   플러그인 버전마다 이벤트명이 달라 후보를 모두 등록한다.
+    try{
+      const _adLoadEvents=['bannerAdLoaded','bannerViewDidReceiveAd','onBannerAdLoaded','bannerAdOpened','bannerAdSizeChanged','onAdLoaded'];
+      _adLoadEvents.forEach(function(ev){
+        try{
+          AdMob.addListener(ev, function(){
+            if(_anySubSheetOpen() || !_currentUser || isEffectivePremium()){
+              try{ AdMob.hideBanner(); }catch(_){}
+              _admobBannerShowing=false;
+              try{ document.body.classList.remove('has-ad'); }catch(_){}
+              _admobDebug='로드이벤트_시트열림_숨김';
+            }
+          });
+        }catch(_){}
+      });
+    }catch(_){}
     // 초기화 완료 직후 배너 표시 시도 (로그인+프리미엄 로드가 먼저 끝났을 수 있으므로)
     showAdBannerIfNeeded();
   } catch(e) { _admobDebug='init오류:'+(e&&e.message||e); console.warn('AdMob init:', e); }
@@ -5660,18 +5686,32 @@ async function showAdBannerIfNeeded() {
     // 하나라도 열려 있으면 광고를 띄우지 않는다 → 캘린더/방목록/우리할일/설정 메인 화면에서만 표시
     if (_anySubSheetOpen()) { _admobDebug='모달열림(광고숨김)'; hideAdBanner(); return; }
     if (_admobBannerShowing) { _admobDebug='이미표시중'; return; }
+    if (_adLoading) { _admobDebug='로딩중(중복방지)'; return; } // 이미 배너 로딩 중이면 중복 showBanner 방지
     const plat = _admobPlatform();
     if (!plat) return;
     const { AdMob } = window.Capacitor.Plugins;
     if (!AdMob) return;
     const adId = ADMOB_IDS[plat].banner;
-    await AdMob.showBanner({
-      adId,
-      adSize: 'BANNER',
-      position: 'BOTTOM_CENTER',
-      margin: 10, // 탭바가 has-ad로 위로 올라가므로 광고는 그 아래 빈 자리(하단)에 표시
-      isTesting: false, // 프로덕션 모드 (실광고)
-    });
+    _adLoading = true;
+    try {
+      await AdMob.showBanner({
+        adId,
+        adSize: 'BANNER',
+        position: 'BOTTOM_CENTER',
+        margin: 10, // 탭바가 has-ad로 위로 올라가므로 광고는 그 아래 빈 자리(하단)에 표시
+        isTesting: false, // 프로덕션 모드 (실광고)
+      });
+    } finally {
+      _adLoading = false;
+    }
+    // ★ 배너 로딩(await)이 끝나는 사이에 시트가 열렸거나 프리미엄/로그아웃 됐을 수 있음 → 재확인 후 즉시 숨김
+    if (!_currentUser || isEffectivePremium() || _anySubSheetOpen()) {
+      try { await AdMob.hideBanner(); } catch(_){}
+      _admobBannerShowing = false;
+      try{ document.body.classList.remove('has-ad'); }catch(_){}
+      _admobDebug = '표시직후_모달감지_숨김';
+      return;
+    }
     _admobBannerShowing = true;
     _admobDebug = '배너표시됨';
     try{ document.body.classList.add('has-ad'); }catch(_){} // 콘텐츠 하단 여백 + 탭바 올림
@@ -5681,10 +5721,11 @@ async function showAdBannerIfNeeded() {
 async function hideAdBanner() {
   try {
     try{ document.body.classList.remove('has-ad'); }catch(_){} // 광고 공간 복원 (콘텐츠 끝까지, 탭바 원위치)
-    if (!_admobBannerShowing) return;
     const { AdMob } = window.Capacitor.Plugins;
-    if (!AdMob) return;
-    await AdMob.hideBanner();
+    if (!AdMob) { _admobBannerShowing = false; return; }
+    // ★ _admobBannerShowing 여부와 무관하게 무조건 hideBanner 호출 —
+    //   배너가 아직 로딩 중이어도 숨김 명령을 보내 "로딩 끝나고 시트 위로 뜨는" 현상을 막는다.
+    try { await AdMob.hideBanner(); } catch(_){}
     _admobBannerShowing = false;
   } catch(e) { _admobDebug='banner숨김오류:'+(e&&e.message||e); console.warn('AdMob hideBanner:', e); }
 }
@@ -5693,7 +5734,7 @@ async function hideAdBanner() {
    AdMob 배너는 OS 별도 레이어라 서브 화면 위에도 떠서 버튼/콘텐츠를 가린다.
    서브 시트가 열려 있으면 광고를 숨기고, 모두 닫히면 다시 표시한다.
    DOM의 .on 상태를 직접 보므로 닫는 경로가 어디든(닫기버튼·탭전환·뒤로) 항상 정합. */
-const _AD_HIDE_SHEET_IDS = ['premiumCard','storeCard','advCard','annCard','csCard','evCard','todoAddCard','dpCard'];
+const _AD_HIDE_SHEET_IDS = ['premiumCard','storeCard','advCard','annCard','csCard','evCard','todoAddCard','dpCard','myOrdersCard','vcOverlay','upgOverlay','rdOverlay'];
 function _anySubSheetOpen(){
   for(const id of _AD_HIDE_SHEET_IDS){
     const el = document.getElementById(id);
@@ -5703,6 +5744,10 @@ function _anySubSheetOpen(){
 }
 function _subScreenEnter(){
   try{ hideAdBanner(); }catch(_){}
+  // ★ 배너가 지연 로딩돼 시트를 연 "직후"에 뜨는 경우 대비 — 잠시 동안 반복 숨김(시트가 아직 열려 있을 때만)
+  [150,400,800,1300].forEach(function(ms){
+    setTimeout(function(){ if(_anySubSheetOpen()){ try{ hideAdBanner(); }catch(_){} } }, ms);
+  });
 }
 function _subScreenExit(){
   // 닫은 직후엔 아직 .on이 남아있을 수 있어 한 틱 뒤에 검사
@@ -5753,6 +5798,7 @@ async function loadPremiumStatus(){
     _premiumInfo=data||null;
     _isPremium=!!(data&&data.is_premium);
     _premiumLoaded=true;
+    try{ renderRoomThemeGrid(); }catch(_){} // 프리미엄 확정 후 이 방 테마 섹션 표시/숨김 갱신
   }catch(e){ console.warn('프리미엄 상태 오류:',e); }
 }
 /* 제한 체크 직전 호출 — 아직 로드 안 됐으면 1회 로드 (진입 경로 누락 대비) */
@@ -6494,6 +6540,7 @@ async function init(){
     const {data:{session}}=await supa.auth.getSession();
     if(session){
       renderUser(session.user);
+      initRevenueCat(session.user.id); // RevenueCat: Supabase user_id 연결 (결제 식별용)
       showScreen('roomsScreen');
       loadRooms();
       loadPremiumStatus().then(()=>showAdBannerIfNeeded()); // 프리미엄 확인 후 광고 표시
@@ -6579,6 +6626,7 @@ supa.auth.onAuthStateChange((event,session)=>{
       return;
     }
     renderUser(session.user);
+    initRevenueCat(session.user.id); // RevenueCat: Supabase user_id 연결 (결제 식별용)
     // 마지막 방 ID가 있으면 방 목록 깜빡임 없이 바로 캘린더 화면으로 (loadRooms 후 enterRoom이 데이터 채움)
     let hasLastRoom=false;
     try{hasLastRoom=!!localStorage.getItem('lastRoomId')}catch(_){}
@@ -6593,6 +6641,7 @@ supa.auth.onAuthStateChange((event,session)=>{
   }else if(event==='SIGNED_OUT'){
     _currentUser=null;
     _isPremium=false;_premiumInfo=null;_premiumLoaded=false;  // 프리미엄 상태 리셋
+    try{ const P=_rcPlugin(); if(P&&_rcConfigured){ P.logOut(); } }catch(_){} // RevenueCat 로그아웃 (다음 유저와 구독 섞임 방지)
     hideAdBanner(); // 로그아웃 시 광고 숨김
     showScreen('welcomeScreen');
   }
@@ -6866,6 +6915,7 @@ let _editSharedMemberIds=[]; // 수정 시 원래 함께였던 멤버
 let _pickContext='add';      // 'add' | 'edit' | 'todo' | 'todoEdit' (멤버 선택 모달 컨텍스트)
 let _todoTarget='self';      // 할일 대상: 'self' | 'all'
 let _todoMembers=[];         // 함께 할일 멤버 키 배열 (본인 포함)
+let _editingTodoId=null;     // 수정 중인 할일 id (사용처가 앞에 있어 여기서 선언 — TDZ 방지)
 let _tempPickedMembers=[];   // 모달에서 임시 선택
 let _selectedExtraRooms=[];  // 다른 방에도 추가 — 선택된 방 ID 배열 (현재 방 제외)
 let _roomPickMode='event';   // 방 선택 모달 모드: 'event' | 'todo'
@@ -13986,6 +14036,7 @@ async function openMyOrders(origin){
   if(_moOrigin==='profile') closeProfile&&closeProfile();
   document.getElementById('myOrdersOverlay').classList.add('on');
   document.getElementById('myOrdersCard').classList.add('on');
+  try{ _subScreenEnter(); }catch(_){} // 주문내역 시트에는 광고 숨김
   const body=document.getElementById('myOrdersBody');
   body.innerHTML=`<div style="text-align:center;padding:40px 0;color:var(--sub)">주문 내역을 불러오는 중…</div>`;
   try{
@@ -14003,6 +14054,7 @@ function closeMyOrders(){
   const o=_moOrigin; _moOrigin=null;
   if(o==='settings'){ showScreen('settingsScreen'); }
   else if(o==='profile'){ openProfile&&openProfile(); }
+  try{ _subScreenExit(); }catch(_){} // 주문내역 닫히면 광고 복원(메인 화면이면)
 }
 function myFmtDate(s){ if(!s)return '-'; const d=new Date(s); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }
 function myTracker(status){
@@ -14319,9 +14371,108 @@ function closePremiumSheet(){
   document.getElementById('premiumCard').classList.remove('on');
   _subScreenExit();
 }
-function onPremiumSubscribe(){
+/* ═══ RevenueCat 인앱 결제 ═══
+   - 네이티브(Capacitor)에서만 동작. 웹/PWA는 안내만.
+   - configure 시 appUserID를 Supabase user_id로 세팅 → webhook이 누가 결제했는지 식별.
+   - 실제 프리미엄 판단은 서버(my_premium_status ← subscriptions ← webhook)가 진실의 원천.
+     결제 직후엔 customerInfo로 즉시 반영하고, 잠시 뒤 서버 상태를 재로드해 정합성을 맞춘다. */
+const RC_APPLE_KEY='appl_eLvnMoNYisEdMXwVCZixTtOqMHB';  // App Store용 공개 키 (노출돼도 안전)
+const RC_ENTITLEMENT='premium';                          // RevenueCat entitlement id (대시보드와 일치)
+let _rcConfigured=false;
+function _rcPlugin(){
+  try{ return (window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Purchases)||null; }catch(_){ return null; }
+}
+/* 로그인 직후·앱 재실행 시 호출. userId가 있으면 그 유저로 로그인까지. (세션당 안전하게 반복 호출 가능) */
+async function initRevenueCat(userId){
+  try{
+    if(!isNativeApp()) return;
+    const P=_rcPlugin();
+    if(!P) return;
+    if(!_rcConfigured){
+      await P.configure({ apiKey:RC_APPLE_KEY, appUserID:userId||undefined });
+      _rcConfigured=true;
+    }else if(userId){
+      try{ await P.logIn({ appUserID:userId }); }catch(_){}
+    }
+  }catch(e){ console.warn('RevenueCat init 실패:', e); }
+}
+/* 결제 성공/복원 시 customerInfo로 프리미엄 즉시 반영 + 서버 상태 재로드 예약 */
+function _applyRcEntitlement(customerInfo, planLabel){
+  try{
+    const active=(customerInfo&&customerInfo.entitlements&&customerInfo.entitlements.active)||{};
+    const ent=active[RC_ENTITLEMENT];
+    if(!ent) return false;
+    _isPremium=true;
+    _premiumInfo={ is_premium:true, expires_at:ent.expirationDate||ent.expiresDate||null, plan_type:planLabel||'premium', is_manual:false };
+    _premiumLoaded=true;
+    try{ hideAdBanner(); document.body.classList.remove('has-ad'); }catch(_){}
+    try{ if(typeof openPremiumSheet==='function' && document.getElementById('premiumCard') && document.getElementById('premiumCard').classList.contains('on')) openPremiumSheet(); }catch(_){}
+    // webhook이 subscriptions를 채우도록 잠시 뒤 서버 상태로 재동기화
+    setTimeout(()=>{ _premiumLoaded=false; loadPremiumStatus().then(()=>{ try{ showAdBannerIfNeeded(); }catch(_){}}); }, 4000);
+    return true;
+  }catch(_){ return false; }
+}
+async function onPremiumSubscribe(){
   if(isEffectivePremium()){ toast('이미 프리미엄을 이용 중이에요'); return; }
-  toast('프리미엄 결제는 준비 중이에요. 곧 열릴 예정이에요!');
+  if(!isNativeApp()){ toast('구독은 앱에서 진행하실 수 있어요'); return; }
+  const P=_rcPlugin();
+  if(!P){ toast('결제 모듈을 불러오지 못했어요. 앱을 최신 버전으로 업데이트해주세요.'); return; }
+  const btn=document.getElementById('premSubBtn');
+  const orig=btn?btn.textContent:'';
+  try{
+    if(btn){ btn.disabled=true; btn.textContent='처리 중...'; }
+    await initRevenueCat(_currentUser&&_currentUser.id);
+    const res=await P.getOfferings();
+    const cur=(res&&res.current)||(res&&res.offerings&&res.offerings.current)||null;
+    if(!cur){ toast('상품 정보를 불러오지 못했어요. 잠시 후 다시 시도해주세요.'); return; }
+    // 선택 플랜 → 패키지 (표준 접근자 우선, 없으면 상품 id로 매칭)
+    let pkg=null;
+    if(_premSelectedPlan==='1m') pkg=cur.monthly;
+    else if(_premSelectedPlan==='3m') pkg=cur.threeMonth;
+    else if(_premSelectedPlan==='12m') pkg=cur.annual;
+    if(!pkg && Array.isArray(cur.availablePackages)){
+      const wantPid=_premSelectedPlan==='1m'?'premium_1m':(_premSelectedPlan==='3m'?'premium_3m':'premium_12m');
+      pkg=cur.availablePackages.find(p=>p&&p.product&&p.product.identifier===wantPid)||null;
+    }
+    if(!pkg){ toast('선택하신 상품을 찾지 못했어요.'); return; }
+    const planLabel=_premSelectedPlan;
+    const buy=await P.purchasePackage({ aPackage:pkg });
+    const ci=buy&&buy.customerInfo;
+    if(_applyRcEntitlement(ci, planLabel)){
+      toast('프리미엄 구독이 시작됐어요! 감사합니다 🎉');
+    }else{
+      toast('구독 확인에 시간이 걸리고 있어요. 잠시 후 새로고침하거나 구매 복원을 눌러주세요.');
+    }
+  }catch(e){
+    if(e&&(e.userCancelled||/cancel/i.test(String(e.code||''))||/cancel/i.test(String(e.message||'')))){
+      // 사용자가 결제 취소 — 조용히 넘어감
+    }else{
+      console.warn('구독 실패:', e);
+      toast('결제에 실패했어요. 잠시 후 다시 시도해주세요.');
+    }
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent=orig||'프리미엄 시작하기'; }
+  }
+}
+/* 구매 복원 (Apple 심사 필수) — 기기 변경·재설치 후 기존 구독 되살리기 */
+async function onRestorePurchases(){
+  if(!isNativeApp()){ toast('구매 복원은 앱에서 진행하실 수 있어요'); return; }
+  const P=_rcPlugin();
+  if(!P){ toast('결제 모듈을 불러오지 못했어요. 앱을 최신 버전으로 업데이트해주세요.'); return; }
+  try{
+    toast('구매 내역을 확인하고 있어요...');
+    await initRevenueCat(_currentUser&&_currentUser.id);
+    const res=await P.restorePurchases();
+    const ci=res&&res.customerInfo;
+    if(_applyRcEntitlement(ci, 'restored')){
+      toast('프리미엄이 복원됐어요! 🎉');
+    }else{
+      toast('복원할 구독 내역이 없어요.');
+    }
+  }catch(e){
+    console.warn('복원 실패:', e);
+    toast('복원에 실패했어요. 잠시 후 다시 시도해주세요.');
+  }
 }
 
 /* 배포 이력 로드/렌더 — 최근 50건, 날짜·시간 목록 (관리자 전용) */
@@ -15262,7 +15413,12 @@ async function applyRoomThemeFor(roomId){
   try{ renderRoomThemeGrid(); }catch(_){}
 }
 function renderRoomThemeGrid(){
+  // 이 방 테마(=스토어 테마)는 프리미엄 전용. 무료 유저는 섹션 자체를 숨김.
+  const row=document.getElementById('uniRoomThemeRow');
   const el=document.getElementById('uniRoomThemeGrid');
+  const isPrem=(typeof isEffectivePremium==='function')?isEffectivePremium():false;
+  if(row) row.style.display = isPrem ? 'block' : 'none';
+  if(!isPrem){ if(el) el.innerHTML=''; return; }
   if(!el)return;
   const cur=_currentRoomTheme||_myTheme||'vintage';
   el.innerHTML=STORE_THEMES.map(function(item){
@@ -15892,7 +16048,6 @@ let _todoRepeat='none';
 let _todoMiniY=2026, _todoMiniM=0;
 let _uniAwaitPhoto=false;
 let _todoReturnDate=null;   // 할일 시트를 데이 시트에서 열었을 때만 설정 (취소 시 그 날짜 시트로 복귀)
-let _editingTodoId=null;
 
 /* ============================================================
    데이터 로드
