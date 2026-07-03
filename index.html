@@ -489,6 +489,13 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .pp-price{font-size:16px;font-weight:800;color:var(--text);font-family:var(--ff-serif);white-space:nowrap}
 .prem-featbox{margin:16px 18px 10px;background:var(--card);border:1px solid var(--borderL);border-radius:16px;padding:16px}
 .prem-ctabar{flex-shrink:0;padding:10px 18px max(14px,env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--borderL)}
+.prem-notice{margin:6px 18px 16px;background:var(--card);border:1px solid var(--borderL);border-radius:16px;padding:16px}
+.prem-notice .pn-title{font-size:14px;font-weight:800;color:var(--text);margin-bottom:10px}
+.prem-notice-list{margin:0;padding:0;list-style:none}
+.prem-notice-list li{position:relative;padding-left:11px;margin-bottom:8px;font-size:12px;line-height:1.55;color:var(--sub)}
+.prem-notice-list li:before{content:'·';position:absolute;left:2px;color:var(--sub)}
+.prem-notice-list li:last-child{margin-bottom:0}
+.prem-notice-list a{color:var(--accent);text-decoration:underline;font-weight:600}
 .prem-ctanote{text-align:center;font-size:12px;color:var(--gold);font-weight:600;margin-top:9px}
 .prem-cta-value{text-align:center;font-size:13px;color:var(--accent);font-weight:700;margin-bottom:9px}
 .prem-ctabtn{width:100%;padding:16px;background:linear-gradient(135deg,#d4af6a,#b08742);color:#43271a;border:none;border-radius:14px;font-size:16px;font-weight:800;font-family:var(--ff-serif);cursor:pointer;letter-spacing:.5px;box-shadow:0 6px 20px rgba(176,135,66,.38)}
@@ -2248,19 +2255,20 @@ body.align-right .cal-evbar{text-align:right}
 .cal-tabbar.tabbar-gone{opacity:0;pointer-events:none;transform:translateX(-50%) translateY(14px)}
 .cal-tabbar[hidden]{display:none}
 /* ── 광고 공간 확보 ── body.has-ad일 때만 적용 (유료/광고없음 시 자동 복원) ──
-   AdMob 배너(약 50px)가 탭바 위에 뜨므로, 콘텐츠 스크롤 영역 하단에 그만큼 여백 추가.
-   광고가 사라지면(유료 전환·만료 복원) 클래스 제거로 원래대로 복원됨. */
-body.has-ad .cal-grid{ padding-bottom:calc(120px + env(safe-area-inset-bottom)) !important; }
-body.has-ad .todo-list{ padding-bottom:calc(120px + env(safe-area-inset-bottom)) !important; }
-body.has-ad #roomsContent{ padding-bottom:calc(120px + env(safe-area-inset-bottom)) !important; }
-body.has-ad .uni-scroll{ padding-bottom:calc(120px + env(safe-area-inset-bottom)) !important; }
-/* 탭바도 광고 높이만큼 위로 올림 */
-body.has-ad .cal-tabbar{ bottom:calc(10px + 56px + env(safe-area-inset-bottom)); }
-/* FAB(+버튼)·오늘버튼을 탭바 위로 확실히 올림 (탭바 상단보다 높게) */
-body.has-ad .cal-fab{ bottom:calc(136px + env(safe-area-inset-bottom)) !important; }
-body.has-ad .cal-today-btn{ bottom:calc(136px + env(safe-area-inset-bottom)) !important; }
-/* 토스트 안내도 광고+탭바 위로 올림 (안 올리면 탭바에 가림) */
-body.has-ad .toast{ bottom:calc(150px + env(safe-area-inset-bottom)) !important; }
+   AdMob 배너의 실제 높이를 --ad-h(JS가 배너 로드 시 측정해 갱신)에 담아,
+   사용자 기기 크기에 맞춰 자동 조정. 탭바는 배너 바로 위에 딱 붙고(여백 없음),
+   콘텐츠·FAB는 배너+탭바 높이만큼만 확보. 광고 사라지면 클래스 제거로 원복. */
+:root{ --ad-h:56px; } /* AdMob 배너 기본 높이 (배너 로드 시 실제 값으로 갱신됨) */
+body.has-ad .cal-grid{ padding-bottom:calc(var(--ad-h) + 64px + env(safe-area-inset-bottom)) !important; }
+body.has-ad .todo-list{ padding-bottom:calc(var(--ad-h) + 64px + env(safe-area-inset-bottom)) !important; }
+body.has-ad #roomsContent{ padding-bottom:calc(var(--ad-h) + 64px + env(safe-area-inset-bottom)) !important; }
+body.has-ad .uni-scroll{ padding-bottom:calc(var(--ad-h) + 64px + env(safe-area-inset-bottom)) !important; }
+/* 탭바를 배너 바로 위에 딱 붙임 (배너 실제 높이만큼만 올림 → 사이 여백 없음) */
+body.has-ad .cal-tabbar{ bottom:calc(var(--ad-h) + env(safe-area-inset-bottom)) !important; }
+/* FAB(+버튼)·오늘버튼·토스트는 탭바 위로 (배너+탭바 높이, 여유 확보) */
+body.has-ad .cal-fab{ bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)) !important; }
+body.has-ad .cal-today-btn{ bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)) !important; }
+body.has-ad .toast{ bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)) !important; }
 .cal-tab{
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   border:none;background:transparent;cursor:pointer;color:var(--mute);font-family:inherit;
@@ -3025,6 +3033,7 @@ body.has-ad .toast{ bottom:calc(150px + env(safe-area-inset-bottom)) !important;
       <button class="uni-nav" onclick="openAdminFullPage()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>관리자 페이지 열기</span><span class="chev">›</span></button>
       <button class="uni-nav plan-toggle off" id="planToggleBtn" onclick="toggleAdminPlan()"><span class="uni-nav-l" id="planToggleBtnLabel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>무료 플랜 (체험)</span><span class="plan-switch" id="planSwitch">OFF</span></button>
       <button class="uni-nav" id="globalTrialBtn" onclick="toggleGlobalTrial()"><span class="uni-nav-l" id="globalTrialLabel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>전체 이용자 프리미엄</span><span class="plan-switch off" id="globalTrialSwitch">OFF</span></button>
+      <button class="uni-nav" id="premMgmtBtn" onclick="openPremiumManage()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h1"/><circle cx="18" cy="17" r="3"/><path d="M18 14v1.5M18 18.5V20M14.5 17H16M20 17h1.5"/></svg>프리미엄 개별 관리</span><span class="chev">›</span></button>
       <button class="uni-nav" id="deployBtn" onclick="openDeploySheet()"><span class="uni-nav-l" id="deployBtnLabel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91 0z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>배포하기</span><span class="chev">›</span></button>
     </div>
 
@@ -3038,6 +3047,21 @@ body.has-ad .toast{ bottom:calc(150px + env(safe-area-inset-bottom)) !important;
   </div>
 </div>
 
+
+<!-- 프리미엄 개별 관리 (관리자 전용) -->
+<div class="mo-overlay" id="premMgmtOverlay" onclick="closePremiumManage()"></div>
+<div class="mo-card" id="premMgmtCard" style="max-width:460px">
+  <div class="mo-handle"></div>
+  <div style="font-weight:800;font-size:16px;margin:2px 0 10px;text-align:center">프리미엄 개별 관리</div>
+  <div style="display:flex;gap:8px;margin-bottom:10px">
+    <input id="premSearchInput" type="text" placeholder="이름 또는 이메일 검색" style="flex:1;padding:11px 13px;border:1.5px solid var(--line,#e5e0d5);border-radius:11px;font-size:14px;font-family:inherit;background:var(--card,#fff);color:inherit" onkeydown="if(event.key==='Enter')premSearchUsers()">
+    <button onclick="premSearchUsers()" style="padding:0 16px;border:none;background:var(--accent,#b08d57);color:#fff;border-radius:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">검색</button>
+  </div>
+  <div id="premResults" style="max-height:52vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px">
+    <div style="text-align:center;color:var(--mute,#999);font-size:13px;padding:18px 0">이름이나 이메일로 검색하세요</div>
+  </div>
+  <button class="mo-cancel" style="width:100%;margin-top:12px" onclick="closePremiumManage()">닫기</button>
+</div>
 
 <!-- 날짜로 이동 picker (휠 두 컬럼) -->
 <div class="mo-overlay" id="datePickerOverlay" onclick="closeDatePicker()"></div>
@@ -3456,6 +3480,18 @@ body.has-ad .toast{ bottom:calc(150px + env(safe-area-inset-bottom)) !important;
         <div class="prem-feature"><span class="pmf-ic">🚫</span><div class="pmf-body"><div class="pmf-name">광고 제거</div><div class="pmf-desc">배너 광고 없이 <b>깔끔하게</b></div></div></div>
       </div>
     </div>
+    <div class="prem-notice">
+      <div class="pn-title">유의사항</div>
+      <ul class="prem-notice-list">
+        <li>구독은 선택한 기간이 종료되기 24시간 전에 자동으로 갱신되며 해당 금액이 청구됩니다.</li>
+        <li>결제는 기기에 로그인된 Apple 계정(iOS) 또는 Google 계정(Android)으로 청구됩니다.</li>
+        <li>자동 갱신은 기간 종료 24시간 전까지 각 스토어의 계정 설정에서 언제든 해지할 수 있습니다.</li>
+        <li>구독을 해지해도 이미 결제된 기간이 끝날 때까지는 프리미엄 기능을 계속 이용할 수 있습니다.</li>
+        <li>구독 상품 결제 후 제공되는 기능을 이용한 경우, 관련 법령에 따라 환불이 제한될 수 있습니다.</li>
+        <li>무료 체험이 제공되는 경우, 체험 종료 24시간 전까지 해지하지 않으면 선택한 구독 상품의 금액이 청구됩니다.</li>
+        <li>구독을 진행하면 <a href="javascript:void(0)" onclick="openTerms()">이용약관</a> 및 <a href="javascript:void(0)" onclick="openPrivacy()">개인정보처리방침</a>에 동의하는 것으로 간주됩니다.</li>
+      </ul>
+    </div>
   </div>
   <div class="prem-ctabar">
     <div class="prem-cta-value">✨ 선택한 순간, 모든 기능이 열려요</div>
@@ -3581,7 +3617,7 @@ body.has-ad .toast{ bottom:calc(150px + env(safe-area-inset-bottom)) !important;
     <p>① 만 14세 이상부터 가입할 수 있습니다.<br>② 가입은 이메일·비밀번호 또는 카카오 계정으로 가능하며, 이메일 가입 시 이메일로 발송되는 인증번호 입력이 필요합니다.<br>③ 서비스의 기본 기능은 무료로 제공되며, 일부 기능은 프리미엄 구독을 통해 이용할 수 있습니다.</p>
 
     <h3>제5조 (유료 서비스 및 결제)</h3>
-    <p>① <b>구독 플랜 및 가격</b><br>· 1개월: ₩3,900 / 3개월: ₩10,900 / 12개월: ₩39,900<br>· 가격은 부가세 포함이며, 사전 공지 후 변경될 수 있습니다.<br><br>② <b>결제 방식</b><br>결제는 App Store(Apple) 또는 Google Play Store를 통해 이루어지며, 각 플랫폼의 결제 정책 및 이용약관이 함께 적용됩니다. 회사는 결제 정보(카드번호 등)를 직접 저장하지 않습니다.<br><br>③ <b>구독 해지 및 자동 갱신 취소</b><br>구독은 선택한 기간이 종료되기 최소 24시간 전 자동으로 갱신됩니다. 자동 갱신을 원하지 않는 경우 만료 24시간 전까지 각 스토어에서 직접 해지하셔야 합니다.<br>· <b>iPhone(iOS)</b>: 설정 앱 → 상단 Apple 계정 → 구독 → 우리 캘린더 → 구독 취소<br>· <b>Android</b>: Google Play 스토어 앱 → 프로필 아이콘 → 결제 및 구독 → 구독 → 우리 캘린더 → 구독 취소<br>해지 후에도 현재 구독 기간이 끝날 때까지는 프리미엄 기능을 계속 이용하실 수 있습니다.<br><br>④ <b>청약철회 및 환불</b><br>인앱 구독은 「전자상거래 등에서의 소비자보호에 관한 법률」 제17조 제2항 제5호에 따라, 즉시 제공이 개시된 디지털 콘텐츠에 해당하여 청약철회가 제한될 수 있습니다. 환불은 결제가 이루어진 App Store 또는 Google Play Store의 환불 정책에 따라 각 플랫폼을 통해 신청하실 수 있습니다.<br><br>⑤ <b>구독 혜택 소멸</b><br>구독이 만료되거나 해지된 경우, 프리미엄 기능(추가 사진, 무제한 할일, 완료 할일 평생 보관 등)은 즉시 제한됩니다.</p>
+    <p>① <b>구독 플랜 및 가격</b><br>· 1개월: ₩3,900 / 3개월: ₩10,900 / 12개월: ₩39,900<br>· 가격은 부가세 포함이며, 사전 공지 후 변경될 수 있습니다.<br><br>② <b>결제 방식</b><br>결제는 App Store(Apple) 또는 Google Play Store를 통해 이루어지며, 각 플랫폼의 결제 정책 및 이용약관이 함께 적용됩니다. 회사는 결제 정보(카드번호 등)를 직접 저장하지 않습니다.<br><br>③ <b>구독 해지 및 자동 갱신 취소</b><br>구독은 선택한 기간이 종료되기 최소 24시간 전 자동으로 갱신됩니다. 자동 갱신을 원하지 않는 경우 만료 24시간 전까지 각 스토어에서 직접 해지하셔야 합니다.<br>· <b>iPhone(iOS)</b>: 설정 앱 → 상단 Apple 계정 → 구독 → 우리 캘린더 → 구독 취소<br>· <b>Android</b>: Google Play 스토어 앱 → 프로필 아이콘 → 결제 및 구독 → 구독 → 우리 캘린더 → 구독 취소<br>해지 후에도 현재 구독 기간이 끝날 때까지는 프리미엄 기능을 계속 이용하실 수 있습니다.<br><br>④ <b>청약철회 및 환불</b><br>회원은 결제일로부터 7일 이내에 청약철회를 요청할 수 있습니다. 다만 프리미엄 기능을 이미 사용하는 등 「전자상거래 등에서의 소비자보호에 관한 법률」 제17조 제2항 각 호에 해당하는 경우 청약철회가 제한될 수 있습니다. 환불은 결제가 이루어진 App Store 또는 Google Play Store의 환불 정책에 따라 각 플랫폼을 통해 신청하실 수 있습니다.<br><br>⑤ <b>구독 혜택 소멸</b><br>구독이 만료되거나 해지된 경우, 프리미엄 기능(추가 사진, 무제한 할일, 완료 할일 평생 보관 등)은 즉시 제한됩니다.</p>
 
     <h3>제6조 (회원의 의무)</h3>
     <p>회원은 다음 행위를 해서는 안 됩니다.<br>① 타인의 정보를 도용하는 행위<br>② 욕설, 혐오, 차별적 표현을 사용하는 행위<br>③ 저작권 등 타인의 권리를 침해하는 행위<br>④ 서비스의 정상적인 운영을 방해하는 행위<br>⑤ 관련 법령에 위배되는 행위</p>
@@ -3634,16 +3670,22 @@ body.has-ad .toast{ bottom:calc(150px + env(safe-area-inset-bottom)) !important;
     <h3>5. 처리 위탁</h3>
     <p>서비스 제공을 위해 다음 업체에 일부 업무를 위탁합니다.<br>· <b>Supabase</b> (데이터베이스·인증·인프라)<br>· <b>Vercel</b> (웹 호스팅)<br>· <b>RevenueCat</b> (인앱 구독 결제 처리 및 구독 상태 관리)<br>· <b>Apple / Google</b> (App Store·Play Store 인앱 결제 처리)<br>· <b>Kakao</b> (카카오 로그인 — 카카오 이용 시)<br>· <b>Apple/Google/Mozilla</b> (웹 푸시 알림 전송)</p>
 
-    <h3>6. 회원의 권리</h3>
+    <h3>6. 개인정보 국외 이전</h3>
+    <p>서비스는 아래 해외 사업자의 인프라를 이용하며, 이 과정에서 개인정보가 국외로 이전·처리될 수 있습니다.<br>· <b>Supabase Inc.</b> (미국) — 데이터베이스·인증, 가입·이용 정보 전체, 서비스 이용 기간 동안 보유·이용<br>· <b>Vercel Inc.</b> (미국) — 웹 호스팅, 접속 정보, 서비스 이용 기간 동안<br>· <b>RevenueCat, Inc.</b> (미국) — 구독 결제 처리, 구독 식별자·영수증 정보, 구독 이용 기간 동안<br>· <b>Apple Inc. / Google LLC</b> (미국) — 인앱 결제·푸시 알림 전송, 결제 영수증·알림 토큰, 서비스 이용 기간 동안<br>이전 방법: 서비스 이용 시 정보통신망을 통한 전송. 회원은 개인정보의 국외 이전을 거부할 수 있으나, 이 경우 서비스 이용이 제한될 수 있습니다.</p>
+
+    <h3>7. 회원의 권리</h3>
     <p>회원은 다음 권리를 행사할 수 있습니다.<br>· 개인정보 조회/수정: 앱 내 프로필 화면<br>· 개인정보 삭제: 회원탈퇴 기능 (단, 전자상거래법에 따른 결제 기록은 법정 보존 기간 동안 보관)<br>· 처리 정지 요청: 고객센터 또는 이메일로 접수</p>
 
-    <h3>7. 개인정보 안전성 확보 조치</h3>
+    <h3>8. 개인정보 안전성 확보 조치</h3>
     <p>· 전송 구간 암호화 (HTTPS/TLS)<br>· 데이터베이스 접근 제어 (Row Level Security)<br>· 접속 로그 변조 방지<br>· 비밀번호 단방향 암호화(해시) 저장 (Supabase Auth) — 회사는 비밀번호 원문을 보관하지 않습니다.<br>· 결제 카드 정보는 회사 서버에 저장되지 않으며 각 스토어 보안 정책에 따라 처리됩니다.</p>
 
-    <h3>8. 개인정보 보호책임자</h3>
+    <h3>9. 만 14세 미만 아동의 개인정보</h3>
+    <p>서비스는 만 14세 이상만 가입할 수 있으며, 만 14세 미만 아동의 개인정보를 수집하지 않습니다. 만 14세 미만임이 확인되는 경우 해당 회원의 개인정보는 지체 없이 삭제됩니다.</p>
+
+    <h3>10. 개인정보 보호책임자</h3>
     <p>이름: 이원석<br>문의: lsung179@naver.com 또는 앱 내 고객센터(카카오톡 채널)</p>
 
-    <h3>9. 변경 고지</h3>
+    <h3>11. 변경 고지</h3>
     <p>본 방침이 변경되는 경우, 변경 사항을 적용일 7일 전부터 앱 내 공지 또는 본 페이지를 통해 안내합니다.</p>
   </div>
   <div class="mo-actions">
@@ -4583,6 +4625,16 @@ function _setupNativePushListeners(){
         if(url&&typeof url==='string'&&url.charAt(0)==='/'){ location.assign(url); }
       }catch(_){}
     });
+    // 앱이 켜져 있을 때(포그라운드) 도착한 알림 — 안드로이드는 트레이에 자동 표시하지 않으므로
+    // 화면에 토스트로 직접 안내한다. (앱이 닫혀 있으면 이 리스너는 안 타고 시스템이 트레이에 표시)
+    PN.addListener('pushNotificationReceived',(n)=>{
+      try{
+        const t=(n&&n.title)||(n&&n.notification&&n.notification.title)||'';
+        const b=(n&&n.body)||(n&&n.notification&&n.notification.body)||'';
+        const msg=[t,b].filter(Boolean).join(' · ');
+        if(msg && typeof toast==='function') toast(msg);
+      }catch(_){}
+    });
   }catch(e){ _nativePushListenersReady=false; console.warn('네이티브 푸시 리스너 등록 실패:',e); }
 }
 
@@ -4637,11 +4689,27 @@ function closeMainModals(){
     .forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on')});
 }
 
+/* ── 뒤로가기 히스토리 (네이티브 하단 뒤로가기 버튼용) ── */
+let _screenHistory=[];
+let _navBack=false;
+const _AUTH_SCREENS=['welcomeScreen','emailScreen','otpScreen','resetScreen'];
 function showScreen(id){
+  // 화면 전환 기록: 뒤로가기 전환은 제외, 인증↔메인 경계를 넘으면 스택 리셋
+  const _curScr=document.querySelector('.screen.show');
+  if(_navBack){ _navBack=false; }
+  else if(_curScr && _curScr.id!==id){
+    const _ca=_AUTH_SCREENS.indexOf(_curScr.id)>=0, _ta=_AUTH_SCREENS.indexOf(id)>=0;
+    if(_ca!==_ta){ _screenHistory=[]; } else { _screenHistory.push(_curScr.id); }
+  }
   closeAllModals();  // 화면 전환 시 모든 모달 정리
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
   const el=document.getElementById(id);
   if(el)el.classList.add('show');
+  // iOS 암호 자동완성 오작동 방지 — 로그인 화면이 아닐 때 로그인 입력창 비활성화
+  const _authOn=_AUTH_SCREENS.indexOf(id)>=0;
+  ['emailInput','pwInput','pwConfirmInput','resetEmail','resetPw','resetPwConfirm'].forEach(function(fid){
+    var f=document.getElementById(fid); if(f) f.disabled=!_authOn;
+  });
   // 환영 화면에 보여줄 때 초대 안내 배너 갱신
   if(id==='welcomeScreen'&&typeof updateWelcomeInviteBanner==='function')updateWelcomeInviteBanner();
   // 인증 화면(로그인 전)에선 광고 숨김, 메인 화면이면 정상 판정에 맡김
@@ -5382,6 +5450,78 @@ async function toggleGlobalTrial(){
   }
 }
 
+/* ── 프리미엄 개별 관리 (관리자 전용) ── */
+function openPremiumManage(){
+  if(!isAdmin()){ toast('권한 없음'); return; }
+  document.getElementById('premMgmtOverlay').classList.add('on');
+  document.getElementById('premMgmtCard').classList.add('on');
+  _subScreenEnter();  // 관리자 시트 열림 → 광고 숨김
+  const inp=document.getElementById('premSearchInput');
+  if(inp){ inp.value=''; setTimeout(()=>inp.focus(),300); }
+  const res=document.getElementById('premResults');
+  if(res) res.innerHTML='<div style="text-align:center;color:var(--mute,#999);font-size:13px;padding:18px 0">이름이나 이메일로 검색하세요</div>';
+}
+function closePremiumManage(){
+  document.getElementById('premMgmtOverlay').classList.remove('on');
+  document.getElementById('premMgmtCard').classList.remove('on');
+  _subScreenExit();  // 닫힘 → 조건 되면 광고 복원
+}
+async function premSearchUsers(){
+  if(!isAdmin()){ toast('권한 없음'); return; }
+  const q=(document.getElementById('premSearchInput').value||'').trim();
+  const res=document.getElementById('premResults');
+  if(!q){ res.innerHTML='<div style="text-align:center;color:var(--mute,#999);font-size:13px;padding:18px 0">검색어를 입력하세요</div>'; return; }
+  res.innerHTML='<div style="text-align:center;color:var(--mute,#999);font-size:13px;padding:18px 0">검색 중...</div>';
+  try{
+    const {data,error}=await supa.rpc('admin_search_users',{ q });
+    if(error) throw error;
+    const list=Array.isArray(data)?data:(data?JSON.parse(data):[]);
+    premRenderResults(list);
+  }catch(e){
+    res.innerHTML='<div style="text-align:center;color:#c0392b;font-size:13px;padding:18px 0">검색 실패: '+((e.message||'')+'').slice(0,60)+'</div>';
+  }
+}
+function _premStateLabel(state){
+  if(state==='force_premium') return '<span style="color:#2e7d32;font-weight:700">강제 프리미엄</span>';
+  if(state==='force_free') return '<span style="color:#c0392b;font-weight:700">강제 무료</span>';
+  return '<span style="color:var(--mute,#999)">기본값</span>';
+}
+function premRenderResults(list){
+  const res=document.getElementById('premResults');
+  if(!list||list.length===0){ res.innerHTML='<div style="text-align:center;color:var(--mute,#999);font-size:13px;padding:18px 0">검색 결과가 없어요</div>'; return; }
+  res.innerHTML=list.map(u=>{
+    const uid=u.user_id;
+    const name=(u.display_name||'(이름없음)');
+    const email=(u.email||'');
+    const prov=(u.provider||'');
+    const st=u.override_state||null;
+    return '<div style="border:1.5px solid var(--line,#e5e0d5);border-radius:12px;padding:11px 12px;background:var(--card,#fff)">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px">'
+        +'<div style="min-width:0"><div style="font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escapeHtml(name)+'</div>'
+        +'<div style="font-size:11px;color:var(--mute,#999);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escapeHtml(email)+(prov?' · '+escapeHtml(prov):'')+'</div></div>'
+        +'<div style="font-size:12px;white-space:nowrap">'+_premStateLabel(st)+'</div>'
+      +'</div>'
+      +'<div style="display:flex;gap:6px">'
+        +'<button onclick="premSetOverride(\''+uid+'\',\'force_free\')" style="flex:1;padding:8px;border:1.5px solid #c0392b;background:'+(st==='force_free'?'#c0392b':'transparent')+';color:'+(st==='force_free'?'#fff':'#c0392b')+';border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">프리미엄 해제</button>'
+        +'<button onclick="premSetOverride(\''+uid+'\',\'force_premium\')" style="flex:1;padding:8px;border:1.5px solid #2e7d32;background:'+(st==='force_premium'?'#2e7d32':'transparent')+';color:'+(st==='force_premium'?'#fff':'#2e7d32')+';border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">프리미엄 적용</button>'
+        +'<button onclick="premSetOverride(\''+uid+'\',\'default\')" style="flex:1;padding:8px;border:1.5px solid var(--line,#ccc);background:'+(!st?'#eee':'transparent')+';color:var(--mute,#777);border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">기본값</button>'
+      +'</div>'
+    +'</div>';
+  }).join('');
+}
+async function premSetOverride(userId, state){
+  if(!isAdmin()){ toast('권한 없음'); return; }
+  try{
+    const {error}=await supa.rpc('admin_set_premium_override',{ target:userId, new_state:state });
+    if(error) throw error;
+    toast(state==='force_free'?'프리미엄을 해제했어요':(state==='force_premium'?'프리미엄을 적용했어요':'기본값으로 되돌렸어요'));
+    await premSearchUsers();  // 목록 새로고침 (상태 배지 갱신)
+  }catch(e){
+    toast('설정 실패: '+((e.message||'')+'').slice(0,50));
+  }
+}
+
+
 /* 반복 일정 삭제 선택 — 'one'(이 날짜만) | 'all'(모두) | null(취소) */
 function askRecurringDelete(msg){
   return new Promise(resolve=>{
@@ -5782,6 +5922,16 @@ async function initAdMob() {
         }catch(_){}
       });
     }catch(_){}
+    // ★ 배너 실제 높이를 받아 CSS 변수(--ad-h)에 반영 → 탭바/콘텐츠 여백을 기기 크기에 맞춰 자동 조정
+    try{
+      AdMob.addListener('bannerAdSizeChanged', function(size){
+        try{
+          var h = size && (size.height!=null ? size.height : (size.size && size.size.height));
+          h = parseFloat(h);
+          if(h && h>0){ document.documentElement.style.setProperty('--ad-h', Math.round(h)+'px'); }
+        }catch(_){}
+      });
+    }catch(_){}
     // 초기화 완료 직후 배너 표시 시도 (로그인+프리미엄 로드가 먼저 끝났을 수 있으므로)
     showAdBannerIfNeeded();
   } catch(e) { _admobDebug='init오류:'+(e&&e.message||e); console.warn('AdMob init:', e); }
@@ -5795,6 +5945,10 @@ async function showAdBannerIfNeeded() {
     if (isEffectivePremium()) { _admobDebug='프리미엄(광고없음)'; hideAdBanner(); return; } // 프리미엄이면 광고 없음
     // 풀스크린 시트/모달(일정·할일 추가수정, 스토어, 프리미엄, 고급설정, 공지, 고객센터)이
     // 하나라도 열려 있으면 광고를 띄우지 않는다 → 캘린더/방목록/우리할일/설정 메인 화면에서만 표시
+    // 광고는 지정된 메인 화면(방목록·캘린더·우리할일·설정)에서만 표시 — 그 외 화면(사진갤러리 등)은 숨김
+    const _AD_ALLOWED_SCREENS=['roomsScreen','calendarScreen','todoScreen','settingsScreen'];
+    const _curScreen=document.querySelector('.screen.show');
+    if(!_curScreen || _AD_ALLOWED_SCREENS.indexOf(_curScreen.id)<0){ _admobDebug='허용화면아님(광고숨김)'; hideAdBanner(); return; }
     if (_anySubSheetOpen()) { _admobDebug='모달열림(광고숨김)'; hideAdBanner(); return; }
     if (_admobBannerShowing) { _admobDebug='이미표시중'; return; }
     if (_adLoading) { _admobDebug='로딩중(중복방지)'; return; } // 이미 배너 로딩 중이면 중복 showBanner 방지
@@ -5809,7 +5963,7 @@ async function showAdBannerIfNeeded() {
         adId,
         adSize: 'BANNER',
         position: 'BOTTOM_CENTER',
-        margin: 10, // 탭바가 has-ad로 위로 올라가므로 광고는 그 아래 빈 자리(하단)에 표시
+        margin: 0, // 화면 최하단에 붙임 — 탭바는 --ad-h(배너 실제 높이)만큼만 올라가 딱 붙음 (여백 없음)
         isTesting: false, // 프로덕션 모드 (실광고)
       });
     } finally {
@@ -5847,6 +6001,8 @@ async function hideAdBanner() {
    DOM의 .on 상태를 직접 보므로 닫는 경로가 어디든(닫기버튼·탭전환·뒤로) 항상 정합. */
 const _AD_HIDE_SHEET_IDS = ['premiumCard','storeCard','advCard','annCard','csCard','evCard','todoAddCard','dpCard','myOrdersCard','vcOverlay','upgOverlay','rdOverlay'];
 function _anySubSheetOpen(){
+  // 어떤 모달·오버레이·풀스크린 시트라도 열려 있으면 true (관리자 개별관리 등 전부 포함)
+  if(document.querySelector('.mo-overlay.on, .mo-card.on, .dp-card.on, .dp-overlay.on, .vc-overlay.on, .vc-card.on, .store-card.on, .ann-card.on')) return true;
   for(const id of _AD_HIDE_SHEET_IDS){
     const el = document.getElementById(id);
     if(el && el.classList.contains('on')) return true;
@@ -6809,6 +6965,49 @@ supa.auth.onAuthStateChange((event,session)=>{
     });
   }catch(e){ /* noop */ }
 })();
+
+/* ═══ 네이티브 하단 뒤로가기 버튼 → 직전 화면으로 (분해는 조립의 역순) ═══
+   웹/PWA 무관, isNativeApp일 때만 동작. 우선순위: 자식모달 > 메인모달 > 화면히스토리 > 루트(종료). */
+(function setupNativeBackButton(){
+  if(!isNativeApp()) return;
+  try{
+    var App=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.App;
+    if(!App||!App.addListener) return;
+    var _backExitTimer=null;
+    // 부모 모달 위에 겹쳐 뜨는 자식 모달 (멤버/이모지 선택) — 얘부터 닫아야 역순이 맞음
+    var _childModalIds=['memberPickOverlay','memberPickCard','emojiPickOverlay','emojiPickCard'];
+    // 메인 모달 목록 (closeMainModals와 동일)
+    var _mainModalIds=['createOverlay','createCard','joinOverlay','joinCard','evOverlay','evCard',
+      'dpOverlay','dpCard','profileOverlay','profileCard','roomSetOverlay','roomSetCard',
+      'storeCard','advCard','annCard','annComposeOverlay','annComposeCard',
+      'annMenuOverlay','annMenuCard','annPopupOverlay','annPopup',
+      'datePickerOverlay','datePickerCard','searchOverlay','searchCard',
+      'csCard','leaveAccountOverlay','leaveAccountCard',
+      'termsOverlay','termsCard','privacyOverlay','privacyCard'];
+    function _anyOn(ids){ for(var i=0;i<ids.length;i++){ var el=document.getElementById(ids[i]); if(el&&el.classList.contains('on')) return true; } return false; }
+    function _closeIds(ids){ ids.forEach(function(id){ var el=document.getElementById(id); if(el)el.classList.remove('on'); }); }
+    App.addListener('backButton', function(){
+      // 1) 부모 위에 뜬 자식 모달(멤버/이모지 선택)부터 닫기
+      if(_anyOn(_childModalIds)){ _closeIds(_childModalIds); return; }
+      // 2) 클래스 기반 모달(.mo-overlay/.mo-card/.dp-card) 또는 메인 모달이 열려 있으면 닫기
+      if(document.querySelector('.mo-overlay.on, .mo-card.on, .dp-card.on') || _anyOn(_mainModalIds)){
+        if(typeof closeAllModals==='function') closeAllModals();
+        if(typeof closeMainModals==='function') closeMainModals();
+        return;
+      }
+      // 3) 화면 히스토리가 있으면 직전 화면으로 (역순 복귀)
+      if(typeof _screenHistory!=='undefined' && _screenHistory.length>0){
+        _navBack=true;
+        showScreen(_screenHistory.pop());
+        return;
+      }
+      // 4) 루트 화면 → 한 번 더 누르면 종료
+      if(_backExitTimer){ clearTimeout(_backExitTimer); _backExitTimer=null; try{ App.exitApp(); }catch(_){} }
+      else { if(typeof toast==='function') toast('한 번 더 누르면 종료됩니다'); _backExitTimer=setTimeout(function(){ _backExitTimer=null; },2000); }
+    });
+  }catch(e){ /* noop */ }
+})();
+
 
 /* ═══════════════════════════════════
    3-A: 테마 시스템 + 캘린더 + 일정
@@ -12394,6 +12593,10 @@ document.addEventListener('visibilitychange',async()=>{
   if(document.visibilityState==='visible'){
     const awayMs=Date.now()-_lastVisibleAt;
     _lastVisibleAt=Date.now();
+    // 포그라운드 복귀 시 프리미엄 상태 재확인 (전체 이용자 프리미엄 토글 등 즉시 반영) → 광고 갱신
+    if(_currentUser){
+      loadPremiumStatus().then(()=>{ try{ showAdBannerIfNeeded(); }catch(_){} }).catch(()=>{});
+    }
     if(awayMs>30*60*1000){
       try{
         const {data:{session}}=await supa.auth.getSession();
@@ -14500,6 +14703,7 @@ function closePremiumSheet(){
    - 실제 프리미엄 판단은 서버(my_premium_status ← subscriptions ← webhook)가 진실의 원천.
      결제 직후엔 customerInfo로 즉시 반영하고, 잠시 뒤 서버 상태를 재로드해 정합성을 맞춘다. */
 const RC_APPLE_KEY='appl_eLvnMoNYisEdMXwVCZixTtOqMHB';  // App Store용 공개 키 (노출돼도 안전)
+const RC_GOOGLE_KEY='goog_TGTMLdPiLYCvULGLqutYhxttGdF'; // Play Store용 공개 키 (노출돼도 안전)
 const RC_ENTITLEMENT='premium';                          // RevenueCat entitlement id (대시보드와 일치)
 let _rcConfigured=false;
 function _rcPlugin(){
@@ -14512,7 +14716,9 @@ async function initRevenueCat(userId){
     const P=_rcPlugin();
     if(!P) return;
     if(!_rcConfigured){
-      await P.configure({ apiKey:RC_APPLE_KEY, appUserID:userId||undefined });
+      // 플랫폼별 공개 키 선택 (iOS=App Store, Android=Play Store). getPlatform()이 'ios'/'android' 반환
+      const rcKey = (_nativePlatform()==='ios') ? RC_APPLE_KEY : RC_GOOGLE_KEY;
+      await P.configure({ apiKey:rcKey, appUserID:userId||undefined });
       _rcConfigured=true;
     }else if(userId){
       try{ await P.logIn({ appUserID:userId }); }catch(_){}
