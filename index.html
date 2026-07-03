@@ -320,7 +320,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .welcome-note{font-size:12px;color:var(--mute);margin-top:18px;line-height:1.6}
 
 /* 토스트 */
-.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--card);color:var(--text);padding:12px 20px;border:1.5px solid var(--accent);border-radius:99px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s ease;z-index:2147483000;box-shadow:0 6px 18px rgba(58,36,24,.18);max-width:84vw;text-align:center;letter-spacing:.2px}
+.toast{position:fixed;left:50%;bottom:64px;transform:translateX(-50%) translateY(20px);background:var(--card);color:var(--text);padding:12px 20px;border:1.5px solid var(--accent);border-radius:99px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s ease;z-index:999;box-shadow:0 6px 18px rgba(58,36,24,.18);max-width:84vw;text-align:center;letter-spacing:.2px}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* 로딩 (초기 세션 확인) */
@@ -488,6 +488,13 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .pp-trial{border:1px solid var(--accent);color:var(--accent);font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap}
 .pp-price{font-size:16px;font-weight:800;color:var(--text);font-family:var(--ff-serif);white-space:nowrap}
 .prem-featbox{margin:16px 18px 10px;background:var(--card);border:1px solid var(--borderL);border-radius:16px;padding:16px}
+.prem-notice{margin:6px 18px 16px;background:var(--card);border:1px solid var(--borderL);border-radius:16px;padding:16px}
+.prem-notice .pn-title{font-size:14px;font-weight:800;color:var(--text);margin-bottom:10px}
+.prem-notice-list{margin:0;padding:0;list-style:none}
+.prem-notice-list li{position:relative;padding-left:11px;margin-bottom:8px;font-size:12px;line-height:1.55;color:var(--sub)}
+.prem-notice-list li:before{content:'·';position:absolute;left:2px;color:var(--sub)}
+.prem-notice-list li:last-child{margin-bottom:0}
+.prem-notice-list a{color:var(--accent);text-decoration:underline;font-weight:600}
 .prem-ctabar{flex-shrink:0;padding:10px 18px max(14px,env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--borderL)}
 .prem-ctanote{text-align:center;font-size:12px;color:var(--gold);font-weight:600;margin-top:9px}
 .prem-cta-value{text-align:center;font-size:13px;color:var(--accent);font-weight:700;margin-bottom:9px}
@@ -2250,17 +2257,14 @@ body.align-right .cal-evbar{text-align:right}
 /* ── 광고 공간 확보 ── body.has-ad일 때만 적용 (유료/광고없음 시 자동 복원) ──
    AdMob 배너(약 50px)가 탭바 위에 뜨므로, 콘텐츠 스크롤 영역 하단에 그만큼 여백 추가.
    광고가 사라지면(유료 전환·만료 복원) 클래스 제거로 원래대로 복원됨. */
-body.has-ad .cal-grid{ padding-bottom:calc(120px + env(safe-area-inset-bottom)) !important; }
-body.has-ad .todo-list{ padding-bottom:calc(120px + env(safe-area-inset-bottom)) !important; }
-body.has-ad #roomsContent{ padding-bottom:calc(120px + env(safe-area-inset-bottom)) !important; }
-body.has-ad .uni-scroll{ padding-bottom:calc(120px + env(safe-area-inset-bottom)) !important; }
+body.has-ad .cal-grid{ padding-bottom:calc(28px + 56px + env(safe-area-inset-bottom)) !important; }
+body.has-ad .todo-list{ padding-bottom:calc(56px + env(safe-area-inset-bottom)) !important; }
+body.has-ad #roomsContent{ padding-bottom:calc(56px + env(safe-area-inset-bottom)) !important; }
+body.has-ad .uni-scroll{ padding-bottom:calc(56px + env(safe-area-inset-bottom)) !important; }
 /* 탭바도 광고 높이만큼 위로 올림 */
 body.has-ad .cal-tabbar{ bottom:calc(10px + 56px + env(safe-area-inset-bottom)); }
-/* FAB(+버튼)·오늘버튼을 탭바 위로 확실히 올림 (탭바 상단보다 높게) */
-body.has-ad .cal-fab{ bottom:calc(136px + env(safe-area-inset-bottom)) !important; }
-body.has-ad .cal-today-btn{ bottom:calc(136px + env(safe-area-inset-bottom)) !important; }
-/* 토스트 안내도 광고+탭바 위로 올림 (안 올리면 탭바에 가림) */
-body.has-ad .toast{ bottom:calc(150px + env(safe-area-inset-bottom)) !important; }
+/* FAB(+버튼)도 광고 위로 올림 */
+body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)); }
 .cal-tab{
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   border:none;background:transparent;cursor:pointer;color:var(--mute);font-family:inherit;
@@ -2981,7 +2985,7 @@ body.has-ad .toast{ bottom:calc(150px + env(safe-area-inset-bottom)) !important;
       <div class="uni-row-grow"><div class="lbl">코드</div><div class="val" id="uniRoomCode">—</div></div>
       <button class="uni-mini-btn" onclick="copyRoomCode()">복사</button>
     </div>
-    <div class="uni-row" id="uniRoomThemeRow" style="display:block;padding-top:2px">
+    <div class="uni-row" style="display:block;padding-top:2px">
       <div class="lbl" style="margin-bottom:8px">이 방 테마 <span style="font-size:11px;color:var(--sub);font-weight:600">· 나에게만 적용돼요</span></div>
       <div id="uniRoomThemeGrid" class="uni-room-theme-grid"></div>
     </div>
@@ -3456,11 +3460,23 @@ body.has-ad .toast{ bottom:calc(150px + env(safe-area-inset-bottom)) !important;
         <div class="prem-feature"><span class="pmf-ic">🚫</span><div class="pmf-body"><div class="pmf-name">광고 제거</div><div class="pmf-desc">배너 광고 없이 <b>깔끔하게</b></div></div></div>
       </div>
     </div>
+    <div class="prem-notice">
+      <div class="pn-title">유의사항</div>
+      <ul class="prem-notice-list">
+        <li>구독은 선택한 기간이 종료되기 24시간 전에 자동으로 갱신되며 해당 금액이 청구됩니다.</li>
+        <li>결제는 기기에 로그인된 Apple 계정(iOS) 또는 Google 계정(Android)으로 청구됩니다.</li>
+        <li>자동 갱신은 기간 종료 24시간 전까지 각 스토어의 계정 설정에서 언제든 해지할 수 있습니다.</li>
+        <li>구독을 해지해도 이미 결제된 기간이 끝날 때까지는 프리미엄 기능을 계속 이용할 수 있습니다.</li>
+        <li>구독 상품 결제 후 제공되는 기능을 이용한 경우, 관련 법령에 따라 환불이 제한될 수 있습니다.</li>
+        <li>무료 체험이 제공되는 경우, 체험 종료 24시간 전까지 해지하지 않으면 선택한 구독 상품의 금액이 청구됩니다.</li>
+        <li>구독을 진행하면 <a href="javascript:void(0)" onclick="openTerms()">이용약관</a> 및 <a href="javascript:void(0)" onclick="openPrivacy()">개인정보처리방침</a>에 동의하는 것으로 간주됩니다.</li>
+      </ul>
+    </div>
   </div>
   <div class="prem-ctabar">
     <div class="prem-cta-value">✨ 선택한 순간, 모든 기능이 열려요</div>
     <button class="prem-ctabtn" id="premSubBtn" onclick="onPremiumSubscribe()">프리미엄 시작하기</button>
-    <div class="prem-ctanote"><button type="button" onclick="onRestorePurchases()" style="background:none;border:none;color:inherit;font:inherit;text-decoration:underline;cursor:pointer;padding:2px 6px">구매 복원</button></div>
+    <div class="prem-ctanote">결제 기능은 준비 중이에요 · 곧 만나요</div>
   </div>
 </div>
 
@@ -3581,7 +3597,7 @@ body.has-ad .toast{ bottom:calc(150px + env(safe-area-inset-bottom)) !important;
     <p>① 만 14세 이상부터 가입할 수 있습니다.<br>② 가입은 이메일·비밀번호 또는 카카오 계정으로 가능하며, 이메일 가입 시 이메일로 발송되는 인증번호 입력이 필요합니다.<br>③ 서비스의 기본 기능은 무료로 제공되며, 일부 기능은 프리미엄 구독을 통해 이용할 수 있습니다.</p>
 
     <h3>제5조 (유료 서비스 및 결제)</h3>
-    <p>① <b>구독 플랜 및 가격</b><br>· 1개월: ₩3,900 / 3개월: ₩10,900 / 12개월: ₩39,900<br>· 가격은 부가세 포함이며, 사전 공지 후 변경될 수 있습니다.<br><br>② <b>결제 방식</b><br>결제는 App Store(Apple) 또는 Google Play Store를 통해 이루어지며, 각 플랫폼의 결제 정책 및 이용약관이 함께 적용됩니다. 회사는 결제 정보(카드번호 등)를 직접 저장하지 않습니다.<br><br>③ <b>구독 해지 및 자동 갱신 취소</b><br>구독은 선택한 기간이 종료되기 최소 24시간 전 자동으로 갱신됩니다. 자동 갱신을 원하지 않는 경우 만료 24시간 전까지 각 스토어에서 직접 해지하셔야 합니다.<br>· <b>iPhone(iOS)</b>: 설정 앱 → 상단 Apple 계정 → 구독 → 우리 캘린더 → 구독 취소<br>· <b>Android</b>: Google Play 스토어 앱 → 프로필 아이콘 → 결제 및 구독 → 구독 → 우리 캘린더 → 구독 취소<br>해지 후에도 현재 구독 기간이 끝날 때까지는 프리미엄 기능을 계속 이용하실 수 있습니다.<br><br>④ <b>청약철회 및 환불</b><br>인앱 구독은 「전자상거래 등에서의 소비자보호에 관한 법률」 제17조 제2항 제5호에 따라, 즉시 제공이 개시된 디지털 콘텐츠에 해당하여 청약철회가 제한될 수 있습니다. 환불은 결제가 이루어진 App Store 또는 Google Play Store의 환불 정책에 따라 각 플랫폼을 통해 신청하실 수 있습니다.<br><br>⑤ <b>구독 혜택 소멸</b><br>구독이 만료되거나 해지된 경우, 프리미엄 기능(추가 사진, 무제한 할일, 완료 할일 평생 보관 등)은 즉시 제한됩니다.</p>
+    <p>① <b>구독 플랜 및 가격</b><br>· 1개월: ₩3,900 / 3개월: ₩10,900 / 12개월: ₩39,900<br>· 가격은 부가세 포함이며, 사전 공지 후 변경될 수 있습니다.<br><br>② <b>결제 방식</b><br>결제는 App Store(Apple) 또는 Google Play Store를 통해 이루어지며, 각 플랫폼의 결제 정책 및 이용약관이 함께 적용됩니다. 회사는 결제 정보(카드번호 등)를 직접 저장하지 않습니다.<br><br>③ <b>구독 해지 및 자동 갱신 취소</b><br>구독은 선택한 기간이 종료되기 최소 24시간 전 자동으로 갱신됩니다. 자동 갱신을 원하지 않는 경우 만료 24시간 전까지 각 스토어에서 직접 해지하셔야 합니다.<br>· <b>iPhone(iOS)</b>: 설정 앱 → 상단 Apple 계정 → 구독 → 우리 캘린더 → 구독 취소<br>· <b>Android</b>: Google Play 스토어 앱 → 프로필 아이콘 → 결제 및 구독 → 구독 → 우리 캘린더 → 구독 취소<br>해지 후에도 현재 구독 기간이 끝날 때까지는 프리미엄 기능을 계속 이용하실 수 있습니다.<br><br>④ <b>청약철회 및 환불</b><br>회원은 결제일로부터 7일 이내에 청약철회를 요청할 수 있습니다. 다만 프리미엄 기능을 이미 사용하는 등 「전자상거래 등에서의 소비자보호에 관한 법률」 제17조 제2항 각 호에 해당하는 경우 청약철회가 제한될 수 있습니다. 환불은 결제가 이루어진 App Store 또는 Google Play Store의 환불 정책에 따라 각 플랫폼을 통해 신청하실 수 있습니다.<br><br>⑤ <b>구독 혜택 소멸</b><br>구독이 만료되거나 해지된 경우, 프리미엄 기능(추가 사진, 무제한 할일, 완료 할일 평생 보관 등)은 즉시 제한됩니다.</p>
 
     <h3>제6조 (회원의 의무)</h3>
     <p>회원은 다음 행위를 해서는 안 됩니다.<br>① 타인의 정보를 도용하는 행위<br>② 욕설, 혐오, 차별적 표현을 사용하는 행위<br>③ 저작권 등 타인의 권리를 침해하는 행위<br>④ 서비스의 정상적인 운영을 방해하는 행위<br>⑤ 관련 법령에 위배되는 행위</p>
@@ -3634,16 +3650,22 @@ body.has-ad .toast{ bottom:calc(150px + env(safe-area-inset-bottom)) !important;
     <h3>5. 처리 위탁</h3>
     <p>서비스 제공을 위해 다음 업체에 일부 업무를 위탁합니다.<br>· <b>Supabase</b> (데이터베이스·인증·인프라)<br>· <b>Vercel</b> (웹 호스팅)<br>· <b>RevenueCat</b> (인앱 구독 결제 처리 및 구독 상태 관리)<br>· <b>Apple / Google</b> (App Store·Play Store 인앱 결제 처리)<br>· <b>Kakao</b> (카카오 로그인 — 카카오 이용 시)<br>· <b>Apple/Google/Mozilla</b> (웹 푸시 알림 전송)</p>
 
-    <h3>6. 회원의 권리</h3>
+    <h3>6. 개인정보 국외 이전</h3>
+    <p>서비스는 아래 해외 사업자의 인프라를 이용하며, 이 과정에서 개인정보가 국외로 이전·처리될 수 있습니다.<br>· <b>Supabase Inc.</b> (미국) — 데이터베이스·인증, 가입·이용 정보 전체, 서비스 이용 기간 동안 보유·이용<br>· <b>Vercel Inc.</b> (미국) — 웹 호스팅, 접속 정보, 서비스 이용 기간 동안<br>· <b>RevenueCat, Inc.</b> (미국) — 구독 결제 처리, 구독 식별자·영수증 정보, 구독 이용 기간 동안<br>· <b>Apple Inc. / Google LLC</b> (미국) — 인앱 결제·푸시 알림 전송, 결제 영수증·알림 토큰, 서비스 이용 기간 동안<br>이전 방법: 서비스 이용 시 정보통신망을 통한 전송. 회원은 개인정보의 국외 이전을 거부할 수 있으나, 이 경우 서비스 이용이 제한될 수 있습니다.</p>
+
+    <h3>7. 회원의 권리</h3>
     <p>회원은 다음 권리를 행사할 수 있습니다.<br>· 개인정보 조회/수정: 앱 내 프로필 화면<br>· 개인정보 삭제: 회원탈퇴 기능 (단, 전자상거래법에 따른 결제 기록은 법정 보존 기간 동안 보관)<br>· 처리 정지 요청: 고객센터 또는 이메일로 접수</p>
 
-    <h3>7. 개인정보 안전성 확보 조치</h3>
+    <h3>8. 개인정보 안전성 확보 조치</h3>
     <p>· 전송 구간 암호화 (HTTPS/TLS)<br>· 데이터베이스 접근 제어 (Row Level Security)<br>· 접속 로그 변조 방지<br>· 비밀번호 단방향 암호화(해시) 저장 (Supabase Auth) — 회사는 비밀번호 원문을 보관하지 않습니다.<br>· 결제 카드 정보는 회사 서버에 저장되지 않으며 각 스토어 보안 정책에 따라 처리됩니다.</p>
 
-    <h3>8. 개인정보 보호책임자</h3>
+    <h3>9. 만 14세 미만 아동의 개인정보</h3>
+    <p>서비스는 만 14세 이상만 가입할 수 있으며, 만 14세 미만 아동의 개인정보를 수집하지 않습니다. 만 14세 미만임이 확인되는 경우 해당 회원의 개인정보는 지체 없이 삭제됩니다.</p>
+
+    <h3>10. 개인정보 보호책임자</h3>
     <p>이름: 이원석<br>문의: lsung179@naver.com 또는 앱 내 고객센터(카카오톡 채널)</p>
 
-    <h3>9. 변경 고지</h3>
+    <h3>11. 변경 고지</h3>
     <p>본 방침이 변경되는 경우, 변경 사항을 적용일 7일 전부터 앱 내 공지 또는 본 페이지를 통해 안내합니다.</p>
   </div>
   <div class="mo-actions">
@@ -4389,14 +4411,6 @@ function urlBase64ToUint8Array(base64String){
 
 /* 현재 푸시 상태 확인 */
 async function getPushStatus(){
-  // 안드로이드 네이티브 앱: 웹푸시가 아닌 FCM 권한 기준으로 판정 (iOS는 아래 웹푸시 경로 유지)
-  if(isAndroidNative()){
-    const perm=await getNativePushPerm();
-    if(perm==='denied')return 'denied';
-    if(perm==='prompt'||perm==='prompt-with-rationale')return 'default';
-    if(perm==='granted')return _nativePushToken?'subscribed':'granted';
-    return 'unsupported';  // 플러그인 미탑재(구버전 앱) 등
-  }
   if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)){
     return 'unsupported';
   }
@@ -4465,19 +4479,6 @@ async function registerPushNotification(silent){
 async function autoRegisterPush(){
   if(!_currentUser)return;
 
-  // ── 안드로이드 네이티브 앱: FCM 경로 (iOS 네이티브는 아래 웹푸시 경로 유지) ──
-  if(isAndroidNative()){
-    const perm=await getNativePushPerm();
-    if(perm==='denied'||perm==='unsupported'||perm==='error')return;
-    // 아직 선택 안 함(prompt): 첫 진입에 1회만 자동 권한 요청 (팝업 무시 시 반복 방지)
-    if(perm==='prompt'||perm==='prompt-with-rationale'){
-      if(localStorage.getItem('pushPrompted')==='1')return;
-      localStorage.setItem('pushPrompted','1');
-    }
-    await registerNativePush(true);
-    return;
-  }
-
   // 같은 user_id의 다른 endpoint를 정리 — 현재 브라우저 endpoint만 남기기
   // (한 폰에서 여러 브라우저로 사이트 방문해 endpoint가 누적되는 케이스 방지)
   try{
@@ -4530,96 +4531,6 @@ async function unregisterPushNotification(){
 /* (V1.2에서 프로필 시트 푸시 토글 UI 제거됨 — 자동 등록 방식으로 전환.
    togglePushNotification / syncPushButton / sendTestPush 함수는 호출처가 없어 dead code였음. 청소됨) */
 
-/* ═══════════ 네이티브(Capacitor) FCM 푸시 ═══════════
-   안드로이드 Play스토어 앱은 WebView라 웹푸시(PushManager)를 지원하지 않는다.
-   → @capacitor/push-notifications 플러그인으로 FCM 토큰을 받아 fcm_tokens 테이블에 저장하고,
-     send-push Edge Function이 그 토큰으로 FCM 발송한다. (웹/PWA는 기존 웹푸시 경로 그대로) */
-let _nativePushToken=null;
-let _nativePushListenersReady=false;
-
-function _getPushPlugin(){
-  try{return (window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.PushNotifications)||null;}catch(_){return null;}
-}
-function _nativePlatform(){
-  try{return (window.Capacitor&&window.Capacitor.getPlatform&&window.Capacitor.getPlatform())||'android';}catch(_){return 'android';}
-}
-/* FCM 네이티브 푸시 대상 = 안드로이드 네이티브 앱만.
-   (iOS는 기존 웹푸시 경로를 그대로 유지 — 아이폰은 이미 알림이 정상 동작하므로 건드리지 않는다) */
-function isAndroidNative(){
-  try{return isNativeApp()&&_nativePlatform()==='android';}catch(_){return false;}
-}
-
-/* 현재 기기 FCM 토큰을 DB에 저장 + 같은 user_id의 옛 토큰 정리 */
-async function _saveFcmToken(token){
-  try{
-    if(!token||!_currentUser)return;
-    _nativePushToken=token;
-    const {error}=await supa.from('fcm_tokens').upsert({
-      user_id:_currentUser.id,
-      token,
-      platform:_nativePlatform(),
-      user_agent:navigator.userAgent.slice(0,200),
-      last_used_at:new Date().toISOString(),
-    },{onConflict:'token'});
-    if(error){console.warn('FCM 토큰 저장 실패:',error);return;}
-    // 한 기기가 재설치 등으로 토큰이 바뀌면 옛 토큰이 남아 중복 발송되므로 현재 토큰만 남긴다
-    await supa.from('fcm_tokens').delete().eq('user_id',_currentUser.id).neq('token',token);
-  }catch(e){console.warn('FCM 토큰 처리 실패:',e);}
-}
-
-/* 네이티브 푸시 리스너 1회 등록 (토큰 수신 → 저장, 알림 탭 → 딥링크 이동) */
-function _setupNativePushListeners(){
-  if(_nativePushListenersReady)return;
-  const PN=_getPushPlugin();
-  if(!PN)return;
-  _nativePushListenersReady=true;
-  try{
-    PN.addListener('registration',(t)=>{ _saveFcmToken(t&&t.value); });
-    PN.addListener('registrationError',(e)=>{ console.warn('FCM 등록 오류:',e); });
-    // 알림 탭 → data.url로 이동 (send-push가 /?room=..&date=.. 형태로 넣어줌)
-    PN.addListener('pushNotificationActionPerformed',(a)=>{
-      try{
-        const url=a&&a.notification&&a.notification.data&&a.notification.data.url;
-        if(url&&typeof url==='string'&&url.charAt(0)==='/'){ location.assign(url); }
-      }catch(_){}
-    });
-  }catch(e){ _nativePushListenersReady=false; console.warn('네이티브 푸시 리스너 등록 실패:',e); }
-}
-
-/* 네이티브 푸시 권한 상태: 'granted' | 'denied' | 'prompt' | 'unsupported' | 'error' */
-async function getNativePushPerm(){
-  const PN=_getPushPlugin();
-  if(!PN)return 'unsupported';
-  try{ const p=await PN.checkPermissions(); return p.receive; }
-  catch(_){ return 'error'; }
-}
-
-/* 네이티브 푸시 등록 (권한 요청 + 토큰 등록). 반환: 권한 granted 성공 여부.
-   Android 13+ 는 requestPermissions()가 POST_NOTIFICATIONS 시스템 팝업을 띄운다 → 설정 토글이 켜짐. */
-async function registerNativePush(silent){
-  const PN=_getPushPlugin();
-  if(!PN){ if(!silent)toast('이 앱 버전은 알림을 지원하지 않아요. 최신 버전으로 업데이트해 주세요'); return false; }
-  if(!_currentUser){ if(!silent)toast('로그인이 필요해요'); return false; }
-  try{
-    _setupNativePushListeners();
-    let perm=await PN.checkPermissions();
-    if(perm.receive==='prompt'||perm.receive==='prompt-with-rationale'){
-      perm=await PN.requestPermissions();
-    }
-    if(perm.receive!=='granted'){
-      if(!silent)toast('휴대폰 설정 › 앱 › 우리 캘린더 › 알림에서 허용해 주세요');
-      return false;
-    }
-    await PN.register();  // → 'registration' 이벤트에서 토큰 저장
-    if(!silent)toast('알림을 켰어요');
-    return true;
-  }catch(e){
-    console.warn('네이티브 푸시 등록 실패:',e);
-    if(!silent)toast('알림 설정 실패');
-    return false;
-  }
-}
-
 /* 화면 전환 */
 /* 모든 모달 닫기 (화면 전환 시 / 새 모달 열기 시) */
 function closeAllModals(){
@@ -4637,11 +4548,28 @@ function closeMainModals(){
     .forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on')});
 }
 
+/* ── 뒤로가기 히스토리 (네이티브 하단 뒤로가기 버튼용) ── */
+let _screenHistory=[];
+let _navBack=false;
+const _AUTH_SCREENS=['welcomeScreen','emailScreen','otpScreen','resetScreen'];
 function showScreen(id){
+  // 화면 전환 기록: 뒤로가기 전환은 제외, 인증↔메인 경계를 넘으면 스택 리셋
+  const _curScr=document.querySelector('.screen.show');
+  if(_navBack){ _navBack=false; }
+  else if(_curScr && _curScr.id!==id){
+    const _ca=_AUTH_SCREENS.indexOf(_curScr.id)>=0, _ta=_AUTH_SCREENS.indexOf(id)>=0;
+    if(_ca!==_ta){ _screenHistory=[]; } else { _screenHistory.push(_curScr.id); }
+  }
   closeAllModals();  // 화면 전환 시 모든 모달 정리
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
   const el=document.getElementById(id);
   if(el)el.classList.add('show');
+  // iOS 암호 자동완성 오작동 방지 — 로그인 화면이 아닐 때 로그인 입력창을 비활성화하여
+  // 숨은 입력창이 focus/자동완성 대상이 되지 않게 함
+  const _authOn=_AUTH_SCREENS.indexOf(id)>=0;
+  ['emailInput','pwInput','pwConfirmInput','resetEmail','resetPw','resetPwConfirm'].forEach(function(fid){
+    var f=document.getElementById(fid); if(f) f.disabled=!_authOn;
+  });
   // 환영 화면에 보여줄 때 초대 안내 배너 갱신
   if(id==='welcomeScreen'&&typeof updateWelcomeInviteBanner==='function')updateWelcomeInviteBanner();
   // 인증 화면(로그인 전)에선 광고 숨김, 메인 화면이면 정상 판정에 맡김
@@ -5297,11 +5225,9 @@ function vConfirm(message,opts){
     cancelBtn.textContent=opts.cancelText||'취소';
     document.body.appendChild(ov); // DOM 최하단으로 이동 → 시트(변형 레이어) 위에 확실히 표시 (네이티브 겹침 방지)
     ov.classList.add('on');
-    try{ if(typeof hideAdBanner==='function') hideAdBanner(); }catch(_){} // 확인 모달 위에 광고 겹침 방지
     const finish=(val)=>{
       ov.classList.remove('on');
       okBtn.onclick=null;cancelBtn.onclick=null;ov.onclick=null;
-      try{ if(typeof _subScreenExit==='function') _subScreenExit(); }catch(_){} // 닫히면 광고 복원(메인 화면이면)
       resolve(val);
     };
     okBtn.onclick=()=>finish(true);
@@ -5393,11 +5319,9 @@ function askRecurringDelete(msg){
     if(msg)document.getElementById('rdMsg').innerHTML=msg;
     document.body.appendChild(ov);  // 시트 위로 올림
     ov.classList.add('on');
-    try{ if(typeof hideAdBanner==='function') hideAdBanner(); }catch(_){} // 모달 위 광고 겹침 방지
     const finish=(val)=>{
       ov.classList.remove('on');
       oneBtn.onclick=null;allBtn.onclick=null;cancelBtn.onclick=null;ov.onclick=null;
-      try{ if(typeof _subScreenExit==='function') _subScreenExit(); }catch(_){} // 닫히면 광고 복원(메인 화면이면)
       resolve(val);
     };
     oneBtn.onclick=()=>finish('one');
@@ -5743,7 +5667,6 @@ const ADMOB_IDS = {
 };
 let _admobReady = false;
 let _admobBannerShowing = false;
-let _adLoading = false; // showBanner 로딩(비동기) 진행 중 여부 — 중복 호출·타이밍 경쟁 방지
 let _admobDebug = 'init안됨'; // 디버깅용 상태 문자열
 
 function _admobPlatform() {
@@ -5764,24 +5687,6 @@ async function initAdMob() {
     await AdMob.initialize({ requestTrackingAuthorization: true });
     _admobReady = true;
     _admobDebug = 'init완료('+plat+')';
-    // ★ 배너가 "실제로 로드/표시되는 순간"을 이벤트로 잡아, 그때 시트가 열려 있으면(또는 로그아웃/프리미엄) 즉시 숨김.
-    //   showBanner의 Promise는 로딩 시작에서 끝나므로, 지연 로딩된 배너가 시트 위로 뜨는 걸 이 리스너로 막는다.
-    //   플러그인 버전마다 이벤트명이 달라 후보를 모두 등록한다.
-    try{
-      const _adLoadEvents=['bannerAdLoaded','bannerViewDidReceiveAd','onBannerAdLoaded','bannerAdOpened','bannerAdSizeChanged','onAdLoaded'];
-      _adLoadEvents.forEach(function(ev){
-        try{
-          AdMob.addListener(ev, function(){
-            if(_anySubSheetOpen() || !_currentUser || isEffectivePremium()){
-              try{ AdMob.hideBanner(); }catch(_){}
-              _admobBannerShowing=false;
-              try{ document.body.classList.remove('has-ad'); }catch(_){}
-              _admobDebug='로드이벤트_시트열림_숨김';
-            }
-          });
-        }catch(_){}
-      });
-    }catch(_){}
     // 초기화 완료 직후 배너 표시 시도 (로그인+프리미엄 로드가 먼저 끝났을 수 있으므로)
     showAdBannerIfNeeded();
   } catch(e) { _admobDebug='init오류:'+(e&&e.message||e); console.warn('AdMob init:', e); }
@@ -5795,34 +5700,24 @@ async function showAdBannerIfNeeded() {
     if (isEffectivePremium()) { _admobDebug='프리미엄(광고없음)'; hideAdBanner(); return; } // 프리미엄이면 광고 없음
     // 풀스크린 시트/모달(일정·할일 추가수정, 스토어, 프리미엄, 고급설정, 공지, 고객센터)이
     // 하나라도 열려 있으면 광고를 띄우지 않는다 → 캘린더/방목록/우리할일/설정 메인 화면에서만 표시
+    // 광고는 지정된 메인 화면(방목록·캘린더·우리할일·설정)에서만 표시 — 그 외 화면(사진갤러리 등)은 숨김
+    const _AD_ALLOWED_SCREENS=['roomsScreen','calendarScreen','todoScreen','settingsScreen'];
+    const _curScreen=document.querySelector('.screen.show');
+    if(!_curScreen || _AD_ALLOWED_SCREENS.indexOf(_curScreen.id)<0){ _admobDebug='허용화면아님(광고숨김)'; hideAdBanner(); return; }
     if (_anySubSheetOpen()) { _admobDebug='모달열림(광고숨김)'; hideAdBanner(); return; }
     if (_admobBannerShowing) { _admobDebug='이미표시중'; return; }
-    if (_adLoading) { _admobDebug='로딩중(중복방지)'; return; } // 이미 배너 로딩 중이면 중복 showBanner 방지
     const plat = _admobPlatform();
     if (!plat) return;
     const { AdMob } = window.Capacitor.Plugins;
     if (!AdMob) return;
     const adId = ADMOB_IDS[plat].banner;
-    _adLoading = true;
-    try {
-      await AdMob.showBanner({
-        adId,
-        adSize: 'BANNER',
-        position: 'BOTTOM_CENTER',
-        margin: 10, // 탭바가 has-ad로 위로 올라가므로 광고는 그 아래 빈 자리(하단)에 표시
-        isTesting: false, // 프로덕션 모드 (실광고)
-      });
-    } finally {
-      _adLoading = false;
-    }
-    // ★ 배너 로딩(await)이 끝나는 사이에 시트가 열렸거나 프리미엄/로그아웃 됐을 수 있음 → 재확인 후 즉시 숨김
-    if (!_currentUser || isEffectivePremium() || _anySubSheetOpen()) {
-      try { await AdMob.hideBanner(); } catch(_){}
-      _admobBannerShowing = false;
-      try{ document.body.classList.remove('has-ad'); }catch(_){}
-      _admobDebug = '표시직후_모달감지_숨김';
-      return;
-    }
+    await AdMob.showBanner({
+      adId,
+      adSize: 'BANNER',
+      position: 'BOTTOM_CENTER',
+      margin: 10, // 탭바가 has-ad로 위로 올라가므로 광고는 그 아래 빈 자리(하단)에 표시
+      isTesting: false, // 프로덕션 모드 (실광고)
+    });
     _admobBannerShowing = true;
     _admobDebug = '배너표시됨';
     try{ document.body.classList.add('has-ad'); }catch(_){} // 콘텐츠 하단 여백 + 탭바 올림
@@ -5832,11 +5727,10 @@ async function showAdBannerIfNeeded() {
 async function hideAdBanner() {
   try {
     try{ document.body.classList.remove('has-ad'); }catch(_){} // 광고 공간 복원 (콘텐츠 끝까지, 탭바 원위치)
+    if (!_admobBannerShowing) return;
     const { AdMob } = window.Capacitor.Plugins;
-    if (!AdMob) { _admobBannerShowing = false; return; }
-    // ★ _admobBannerShowing 여부와 무관하게 무조건 hideBanner 호출 —
-    //   배너가 아직 로딩 중이어도 숨김 명령을 보내 "로딩 끝나고 시트 위로 뜨는" 현상을 막는다.
-    try { await AdMob.hideBanner(); } catch(_){}
+    if (!AdMob) return;
+    await AdMob.hideBanner();
     _admobBannerShowing = false;
   } catch(e) { _admobDebug='banner숨김오류:'+(e&&e.message||e); console.warn('AdMob hideBanner:', e); }
 }
@@ -5845,8 +5739,10 @@ async function hideAdBanner() {
    AdMob 배너는 OS 별도 레이어라 서브 화면 위에도 떠서 버튼/콘텐츠를 가린다.
    서브 시트가 열려 있으면 광고를 숨기고, 모두 닫히면 다시 표시한다.
    DOM의 .on 상태를 직접 보므로 닫는 경로가 어디든(닫기버튼·탭전환·뒤로) 항상 정합. */
-const _AD_HIDE_SHEET_IDS = ['premiumCard','storeCard','advCard','annCard','csCard','evCard','todoAddCard','dpCard','myOrdersCard','vcOverlay','upgOverlay','rdOverlay'];
+const _AD_HIDE_SHEET_IDS = ['premiumCard','storeCard','advCard','annCard','csCard','evCard','todoAddCard','dpCard'];
 function _anySubSheetOpen(){
+  // 어떤 모달·오버레이·풀스크린 시트라도 열려 있으면 true (관리자 개별관리 등 전부 포함)
+  if(document.querySelector('.mo-overlay.on, .mo-card.on, .dp-card.on, .dp-overlay.on, .vc-overlay.on, .vc-card.on, .store-card.on, .ann-card.on')) return true;
   for(const id of _AD_HIDE_SHEET_IDS){
     const el = document.getElementById(id);
     if(el && el.classList.contains('on')) return true;
@@ -5855,10 +5751,6 @@ function _anySubSheetOpen(){
 }
 function _subScreenEnter(){
   try{ hideAdBanner(); }catch(_){}
-  // ★ 배너가 지연 로딩돼 시트를 연 "직후"에 뜨는 경우 대비 — 잠시 동안 반복 숨김(시트가 아직 열려 있을 때만)
-  [150,400,800,1300].forEach(function(ms){
-    setTimeout(function(){ if(_anySubSheetOpen()){ try{ hideAdBanner(); }catch(_){} } }, ms);
-  });
 }
 function _subScreenExit(){
   // 닫은 직후엔 아직 .on이 남아있을 수 있어 한 틱 뒤에 검사
@@ -5909,7 +5801,6 @@ async function loadPremiumStatus(){
     _premiumInfo=data||null;
     _isPremium=!!(data&&data.is_premium);
     _premiumLoaded=true;
-    try{ renderRoomThemeGrid(); }catch(_){} // 프리미엄 확정 후 이 방 테마 섹션 표시/숨김 갱신
   }catch(e){ console.warn('프리미엄 상태 오류:',e); }
 }
 /* 제한 체크 직전 호출 — 아직 로드 안 됐으면 1회 로드 (진입 경로 누락 대비) */
@@ -6651,7 +6542,6 @@ async function init(){
     const {data:{session}}=await supa.auth.getSession();
     if(session){
       renderUser(session.user);
-      initRevenueCat(session.user.id); // RevenueCat: Supabase user_id 연결 (결제 식별용)
       showScreen('roomsScreen');
       loadRooms();
       loadPremiumStatus().then(()=>showAdBannerIfNeeded()); // 프리미엄 확인 후 광고 표시
@@ -6737,7 +6627,6 @@ supa.auth.onAuthStateChange((event,session)=>{
       return;
     }
     renderUser(session.user);
-    initRevenueCat(session.user.id); // RevenueCat: Supabase user_id 연결 (결제 식별용)
     // 마지막 방 ID가 있으면 방 목록 깜빡임 없이 바로 캘린더 화면으로 (loadRooms 후 enterRoom이 데이터 채움)
     let hasLastRoom=false;
     try{hasLastRoom=!!localStorage.getItem('lastRoomId')}catch(_){}
@@ -6752,7 +6641,6 @@ supa.auth.onAuthStateChange((event,session)=>{
   }else if(event==='SIGNED_OUT'){
     _currentUser=null;
     _isPremium=false;_premiumInfo=null;_premiumLoaded=false;  // 프리미엄 상태 리셋
-    try{ const P=_rcPlugin(); if(P&&_rcConfigured){ P.logOut(); } }catch(_){} // RevenueCat 로그아웃 (다음 유저와 구독 섞임 방지)
     hideAdBanner(); // 로그아웃 시 광고 숨김
     showScreen('welcomeScreen');
   }
@@ -6809,6 +6697,49 @@ supa.auth.onAuthStateChange((event,session)=>{
     });
   }catch(e){ /* noop */ }
 })();
+
+/* ═══ 네이티브 하단 뒤로가기 버튼 → 직전 화면으로 (분해는 조립의 역순) ═══
+   웹/PWA 무관, isNativeApp일 때만 동작. 우선순위: 자식모달 > 메인모달 > 화면히스토리 > 루트(종료). */
+(function setupNativeBackButton(){
+  if(!isNativeApp()) return;
+  try{
+    var App=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.App;
+    if(!App||!App.addListener) return;
+    var _backExitTimer=null;
+    // 부모 모달 위에 겹쳐 뜨는 자식 모달 (멤버/이모지 선택) — 얘부터 닫아야 역순이 맞음
+    var _childModalIds=['memberPickOverlay','memberPickCard','emojiPickOverlay','emojiPickCard'];
+    // 메인 모달 목록 (closeMainModals와 동일)
+    var _mainModalIds=['createOverlay','createCard','joinOverlay','joinCard','evOverlay','evCard',
+      'dpOverlay','dpCard','profileOverlay','profileCard','roomSetOverlay','roomSetCard',
+      'storeCard','advCard','annCard','annComposeOverlay','annComposeCard',
+      'annMenuOverlay','annMenuCard','annPopupOverlay','annPopup',
+      'datePickerOverlay','datePickerCard','searchOverlay','searchCard',
+      'csCard','leaveAccountOverlay','leaveAccountCard',
+      'termsOverlay','termsCard','privacyOverlay','privacyCard'];
+    function _anyOn(ids){ for(var i=0;i<ids.length;i++){ var el=document.getElementById(ids[i]); if(el&&el.classList.contains('on')) return true; } return false; }
+    function _closeIds(ids){ ids.forEach(function(id){ var el=document.getElementById(id); if(el)el.classList.remove('on'); }); }
+    App.addListener('backButton', function(){
+      // 1) 부모 위에 뜬 자식 모달(멤버/이모지 선택)부터 닫기
+      if(_anyOn(_childModalIds)){ _closeIds(_childModalIds); return; }
+      // 2) 클래스 기반 모달(.mo-overlay/.mo-card/.dp-card) 또는 메인 모달이 열려 있으면 닫기
+      if(document.querySelector('.mo-overlay.on, .mo-card.on, .dp-card.on') || _anyOn(_mainModalIds)){
+        if(typeof closeAllModals==='function') closeAllModals();
+        if(typeof closeMainModals==='function') closeMainModals();
+        return;
+      }
+      // 3) 화면 히스토리가 있으면 직전 화면으로 (역순 복귀)
+      if(typeof _screenHistory!=='undefined' && _screenHistory.length>0){
+        _navBack=true;
+        showScreen(_screenHistory.pop());
+        return;
+      }
+      // 4) 루트 화면 → 한 번 더 누르면 종료
+      if(_backExitTimer){ clearTimeout(_backExitTimer); _backExitTimer=null; try{ App.exitApp(); }catch(_){} }
+      else { if(typeof toast==='function') toast('한 번 더 누르면 종료됩니다'); _backExitTimer=setTimeout(function(){ _backExitTimer=null; },2000); }
+    });
+  }catch(e){ /* noop */ }
+})();
+
 
 /* ═══════════════════════════════════
    3-A: 테마 시스템 + 캘린더 + 일정
@@ -7026,7 +6957,6 @@ let _editSharedMemberIds=[]; // 수정 시 원래 함께였던 멤버
 let _pickContext='add';      // 'add' | 'edit' | 'todo' | 'todoEdit' (멤버 선택 모달 컨텍스트)
 let _todoTarget='self';      // 할일 대상: 'self' | 'all'
 let _todoMembers=[];         // 함께 할일 멤버 키 배열 (본인 포함)
-let _editingTodoId=null;     // 수정 중인 할일 id (사용처가 앞에 있어 여기서 선언 — TDZ 방지)
 let _tempPickedMembers=[];   // 모달에서 임시 선택
 let _selectedExtraRooms=[];  // 다른 방에도 추가 — 선택된 방 ID 배열 (현재 방 제외)
 let _roomPickMode='event';   // 방 선택 모달 모드: 'event' | 'todo'
@@ -11993,20 +11923,8 @@ async function toggleRoomNotification(){
     if(next){
       const st=await getPushStatus();
       if(st!=='granted'&&st!=='subscribed'){
-        // 네이티브: FCM 등록(권한 팝업 포함). 실패 시 registerNativePush가 구체적 안내 toast를 직접 띄움.
-        // 웹/PWA: 기존 웹푸시 등록. 실패 시 상태에 맞는 안내.
-        let ok;
-        if(isAndroidNative()){
-          ok=await registerNativePush(false);
-        }else{
-          ok=await registerPushNotification(true);
-          if(!ok){
-            toast(st==='denied'
-              ? '휴대폰 설정에서 이 앱의 알림을 허용해 주세요'
-              : (st==='unsupported' ? '이 브라우저는 알림을 지원하지 않아요' : '알림 권한을 허용해야 켤 수 있어요'));
-          }
-        }
-        if(!ok){btn.disabled=false;return;}
+        const ok=await registerPushNotification(true);
+        if(!ok){toast('알림 권한을 허용해야 켤 수 있어요');btn.disabled=false;return;}
       }
     }
     // 내가 속한 모든 방의 멤버 row를 한 번에 갱신.
@@ -14159,7 +14077,6 @@ async function openMyOrders(origin){
   if(_moOrigin==='profile') closeProfile&&closeProfile();
   document.getElementById('myOrdersOverlay').classList.add('on');
   document.getElementById('myOrdersCard').classList.add('on');
-  try{ _subScreenEnter(); }catch(_){} // 주문내역 시트에는 광고 숨김
   const body=document.getElementById('myOrdersBody');
   body.innerHTML=`<div style="text-align:center;padding:40px 0;color:var(--sub)">주문 내역을 불러오는 중…</div>`;
   try{
@@ -14177,7 +14094,6 @@ function closeMyOrders(){
   const o=_moOrigin; _moOrigin=null;
   if(o==='settings'){ showScreen('settingsScreen'); }
   else if(o==='profile'){ openProfile&&openProfile(); }
-  try{ _subScreenExit(); }catch(_){} // 주문내역 닫히면 광고 복원(메인 화면이면)
 }
 function myFmtDate(s){ if(!s)return '-'; const d=new Date(s); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }
 function myTracker(status){
@@ -14447,10 +14363,12 @@ async function openDeploySheet(){
   loadDeployHistory();
   document.getElementById('deployOverlay').classList.add('on');
   document.getElementById('deployCard').classList.add('on');
+  _subScreenEnter();  // 배포 시트 열림 → 광고 숨김
 }
 function closeDeploySheet(){
   document.getElementById('deployOverlay').classList.remove('on');
   document.getElementById('deployCard').classList.remove('on');
+  _subScreenExit();  // 닫힘 → 조건 되면 광고 복원
 }
 
 /* 프리미엄 구독 (풀스크린) — 가격은 임시값, 결제 연동 시 실제 상품가로 교체 */
@@ -14494,108 +14412,9 @@ function closePremiumSheet(){
   document.getElementById('premiumCard').classList.remove('on');
   _subScreenExit();
 }
-/* ═══ RevenueCat 인앱 결제 ═══
-   - 네이티브(Capacitor)에서만 동작. 웹/PWA는 안내만.
-   - configure 시 appUserID를 Supabase user_id로 세팅 → webhook이 누가 결제했는지 식별.
-   - 실제 프리미엄 판단은 서버(my_premium_status ← subscriptions ← webhook)가 진실의 원천.
-     결제 직후엔 customerInfo로 즉시 반영하고, 잠시 뒤 서버 상태를 재로드해 정합성을 맞춘다. */
-const RC_APPLE_KEY='appl_eLvnMoNYisEdMXwVCZixTtOqMHB';  // App Store용 공개 키 (노출돼도 안전)
-const RC_ENTITLEMENT='premium';                          // RevenueCat entitlement id (대시보드와 일치)
-let _rcConfigured=false;
-function _rcPlugin(){
-  try{ return (window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Purchases)||null; }catch(_){ return null; }
-}
-/* 로그인 직후·앱 재실행 시 호출. userId가 있으면 그 유저로 로그인까지. (세션당 안전하게 반복 호출 가능) */
-async function initRevenueCat(userId){
-  try{
-    if(!isNativeApp()) return;
-    const P=_rcPlugin();
-    if(!P) return;
-    if(!_rcConfigured){
-      await P.configure({ apiKey:RC_APPLE_KEY, appUserID:userId||undefined });
-      _rcConfigured=true;
-    }else if(userId){
-      try{ await P.logIn({ appUserID:userId }); }catch(_){}
-    }
-  }catch(e){ console.warn('RevenueCat init 실패:', e); }
-}
-/* 결제 성공/복원 시 customerInfo로 프리미엄 즉시 반영 + 서버 상태 재로드 예약 */
-function _applyRcEntitlement(customerInfo, planLabel){
-  try{
-    const active=(customerInfo&&customerInfo.entitlements&&customerInfo.entitlements.active)||{};
-    const ent=active[RC_ENTITLEMENT];
-    if(!ent) return false;
-    _isPremium=true;
-    _premiumInfo={ is_premium:true, expires_at:ent.expirationDate||ent.expiresDate||null, plan_type:planLabel||'premium', is_manual:false };
-    _premiumLoaded=true;
-    try{ hideAdBanner(); document.body.classList.remove('has-ad'); }catch(_){}
-    try{ if(typeof openPremiumSheet==='function' && document.getElementById('premiumCard') && document.getElementById('premiumCard').classList.contains('on')) openPremiumSheet(); }catch(_){}
-    // webhook이 subscriptions를 채우도록 잠시 뒤 서버 상태로 재동기화
-    setTimeout(()=>{ _premiumLoaded=false; loadPremiumStatus().then(()=>{ try{ showAdBannerIfNeeded(); }catch(_){}}); }, 4000);
-    return true;
-  }catch(_){ return false; }
-}
-async function onPremiumSubscribe(){
+function onPremiumSubscribe(){
   if(isEffectivePremium()){ toast('이미 프리미엄을 이용 중이에요'); return; }
-  if(!isNativeApp()){ toast('구독은 앱에서 진행하실 수 있어요'); return; }
-  const P=_rcPlugin();
-  if(!P){ toast('결제 모듈을 불러오지 못했어요. 앱을 최신 버전으로 업데이트해주세요.'); return; }
-  const btn=document.getElementById('premSubBtn');
-  const orig=btn?btn.textContent:'';
-  try{
-    if(btn){ btn.disabled=true; btn.textContent='처리 중...'; }
-    await initRevenueCat(_currentUser&&_currentUser.id);
-    const res=await P.getOfferings();
-    const cur=(res&&res.current)||(res&&res.offerings&&res.offerings.current)||null;
-    if(!cur){ toast('상품 정보를 불러오지 못했어요. 잠시 후 다시 시도해주세요.'); return; }
-    // 선택 플랜 → 패키지 (표준 접근자 우선, 없으면 상품 id로 매칭)
-    let pkg=null;
-    if(_premSelectedPlan==='1m') pkg=cur.monthly;
-    else if(_premSelectedPlan==='3m') pkg=cur.threeMonth;
-    else if(_premSelectedPlan==='12m') pkg=cur.annual;
-    if(!pkg && Array.isArray(cur.availablePackages)){
-      const wantPid=_premSelectedPlan==='1m'?'premium_1m':(_premSelectedPlan==='3m'?'premium_3m':'premium_12m');
-      pkg=cur.availablePackages.find(p=>p&&p.product&&p.product.identifier===wantPid)||null;
-    }
-    if(!pkg){ toast('선택하신 상품을 찾지 못했어요.'); return; }
-    const planLabel=_premSelectedPlan;
-    const buy=await P.purchasePackage({ aPackage:pkg });
-    const ci=buy&&buy.customerInfo;
-    if(_applyRcEntitlement(ci, planLabel)){
-      toast('프리미엄 구독이 시작됐어요! 감사합니다 🎉');
-    }else{
-      toast('구독 확인에 시간이 걸리고 있어요. 잠시 후 새로고침하거나 구매 복원을 눌러주세요.');
-    }
-  }catch(e){
-    if(e&&(e.userCancelled||/cancel/i.test(String(e.code||''))||/cancel/i.test(String(e.message||'')))){
-      // 사용자가 결제 취소 — 조용히 넘어감
-    }else{
-      console.warn('구독 실패:', e);
-      toast('결제에 실패했어요. 잠시 후 다시 시도해주세요.');
-    }
-  }finally{
-    if(btn){ btn.disabled=false; btn.textContent=orig||'프리미엄 시작하기'; }
-  }
-}
-/* 구매 복원 (Apple 심사 필수) — 기기 변경·재설치 후 기존 구독 되살리기 */
-async function onRestorePurchases(){
-  if(!isNativeApp()){ toast('구매 복원은 앱에서 진행하실 수 있어요'); return; }
-  const P=_rcPlugin();
-  if(!P){ toast('결제 모듈을 불러오지 못했어요. 앱을 최신 버전으로 업데이트해주세요.'); return; }
-  try{
-    toast('구매 내역을 확인하고 있어요...');
-    await initRevenueCat(_currentUser&&_currentUser.id);
-    const res=await P.restorePurchases();
-    const ci=res&&res.customerInfo;
-    if(_applyRcEntitlement(ci, 'restored')){
-      toast('프리미엄이 복원됐어요! 🎉');
-    }else{
-      toast('복원할 구독 내역이 없어요.');
-    }
-  }catch(e){
-    console.warn('복원 실패:', e);
-    toast('복원에 실패했어요. 잠시 후 다시 시도해주세요.');
-  }
+  toast('프리미엄 결제는 준비 중이에요. 곧 열릴 예정이에요!');
 }
 
 /* 배포 이력 로드/렌더 — 최근 50건, 날짜·시간 목록 (관리자 전용) */
@@ -14678,10 +14497,12 @@ function openAdminGrant(){
   document.getElementById('adminGrantSearchInput').value='';
   document.getElementById('adminGrantResults').innerHTML='<div class="ag-empty">이름 또는 이메일로 검색해주세요</div>';
   document.getElementById('adminGrantCard').classList.add('on');
+  _subScreenEnter();  // 관리자 시트 열림 → 광고 숨김
 }
 function closeAdminGrant(){
   document.getElementById('adminGrantCard').classList.remove('on');
   _adminGrantSelected=null;
+  _subScreenExit();  // 닫힘 → 조건 되면 광고 복원
 }
 function onAdminGrantInput(){
   if(_adminGrantSearchTimer)clearTimeout(_adminGrantSearchTimer);
@@ -15536,12 +15357,7 @@ async function applyRoomThemeFor(roomId){
   try{ renderRoomThemeGrid(); }catch(_){}
 }
 function renderRoomThemeGrid(){
-  // 이 방 테마(=스토어 테마)는 프리미엄 전용. 무료 유저는 섹션 자체를 숨김.
-  const row=document.getElementById('uniRoomThemeRow');
   const el=document.getElementById('uniRoomThemeGrid');
-  const isPrem=(typeof isEffectivePremium==='function')?isEffectivePremium():false;
-  if(row) row.style.display = isPrem ? 'block' : 'none';
-  if(!isPrem){ if(el) el.innerHTML=''; return; }
   if(!el)return;
   const cur=_currentRoomTheme||_myTheme||'vintage';
   el.innerHTML=STORE_THEMES.map(function(item){
@@ -16171,6 +15987,7 @@ let _todoRepeat='none';
 let _todoMiniY=2026, _todoMiniM=0;
 let _uniAwaitPhoto=false;
 let _todoReturnDate=null;   // 할일 시트를 데이 시트에서 열었을 때만 설정 (취소 시 그 날짜 시트로 복귀)
+let _editingTodoId=null;
 
 /* ============================================================
    데이터 로드
