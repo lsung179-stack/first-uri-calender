@@ -5996,11 +5996,15 @@ async function showAdBannerIfNeeded() {
     const { AdMob } = window.Capacitor.Plugins;
     if (!AdMob) return;
     const adId = ADMOB_IDS[plat].banner;
+    // 배너 크기: 안드로이드는 ADAPTIVE_BANNER(화면 폭 전체) — 고정 BANNER(320px)는
+    // 넓은 갤럭시 화면에서 좌측에 붙어 보이던 문제가 있어 전체 폭 배너로 중앙 정렬한다.
+    // iOS는 기존처럼 정상 중앙 정렬되므로 BANNER 유지.
+    const adSize = (plat === 'android') ? 'ADAPTIVE_BANNER' : 'BANNER';
     _adLoading = true;
     try {
       await AdMob.showBanner({
         adId,
-        adSize: 'BANNER',
+        adSize,
         position: 'BOTTOM_CENTER',
         margin: 0, // 화면 최하단에 붙임 — 탭바는 --ad-h(배너 실제 높이)만큼만 올라가 딱 붙음 (여백 없음)
         isTesting: false, // 프로덕션 모드 (실광고)
