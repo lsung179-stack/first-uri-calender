@@ -2111,6 +2111,17 @@ body.align-right .cal-evbar{text-align:right}
   background:var(--bg);border-radius:12px;margin-bottom:14px;
   border:1px solid var(--border);
 }
+.ag-prem-ctrl{margin:0 0 14px;padding:14px;background:var(--card);border:1px solid var(--borderL);border-radius:14px}
+.ag-pc-head{font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.ag-pc-badge{font-size:12px;font-weight:800;padding:3px 10px;border-radius:20px;background:var(--aP);color:var(--sub)}
+.ag-pc-badge.free{background:#fdecea;color:#c0392b}
+.ag-pc-badge.prem{background:#eafaf1;color:#1e8449}
+.ag-pc-btns{display:flex;gap:8px}
+.ag-pc-btn{flex:1;padding:11px 6px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;border:1.5px solid transparent;transition:transform .05s}
+.ag-pc-btn:active{transform:scale(.97)}
+.ag-pc-btn.pc-free{background:#e74c3c;color:#fff}
+.ag-pc-btn.pc-prem{background:#fff;color:#1e8449;border-color:#1e8449}
+.ag-pc-btn.pc-reset{background:#fff;color:var(--sub);border-color:var(--borderL)}
 .ag-section-title{
   font-size:12px;font-weight:700;color:var(--sub);
   margin:14px 0 8px;letter-spacing:.3px;
@@ -3816,6 +3827,14 @@ body.has-ad .cal-fab{ bottom:calc(32px + 56px + env(safe-area-inset-bottom)); }
   <div id="adminGrantUserView" style="display:none">
     <button class="ag-back-btn" onclick="backToAdminGrantSearch()">← 다른 사용자 선택</button>
     <div class="ag-user-info" id="adminGrantUserInfo"></div>
+    <div class="ag-prem-ctrl">
+      <div class="ag-pc-head">프리미엄 상태<span class="ag-pc-badge" id="adminGrantPremBadge">—</span></div>
+      <div class="ag-pc-btns">
+        <button class="ag-pc-btn pc-free" onclick="setPremiumOverride('force_free')">프리미엄 해제</button>
+        <button class="ag-pc-btn pc-prem" onclick="setPremiumOverride('force_premium')">프리미엄 적용</button>
+        <button class="ag-pc-btn pc-reset" onclick="setPremiumOverride('default')">기본값</button>
+      </div>
+    </div>
     <div class="ag-section-title">🎨 컬러 팩</div>
     <div id="adminGrantColorList" class="ag-pack-list"></div>
     <div class="ag-section-title">😊 이모지 팩</div>
@@ -14545,6 +14564,26 @@ async function doAdminGrantSearch(){
     el.innerHTML=`<div class="ag-empty">검색 실패: ${escapeHtml((e.message||'').slice(0,50))}</div>`;
   }
 }
+let _adminGrantOverride=null;
+function renderAdminGrantPremBadge(){
+  const el=document.getElementById('adminGrantPremBadge');
+  if(!el)return;
+  const s=_adminGrantOverride;
+  if(s==='force_premium'){ el.textContent='강제 프리미엄'; el.className='ag-pc-badge prem'; }
+  else if(s==='force_free'){ el.textContent='강제 무료'; el.className='ag-pc-badge free'; }
+  else{ el.textContent='기본값'; el.className='ag-pc-badge'; }
+}
+async function setPremiumOverride(state){
+  const uid=_adminGrantSelected&&_adminGrantSelected.id;
+  if(!uid){ toast('사용자를 먼저 선택해주세요'); return; }
+  try{
+    const {error}=await supa.rpc('admin_set_premium_override',{target:uid,new_state:state});
+    if(error)throw error;
+    _adminGrantOverride=(state==='default'||!state)?null:state;
+    renderAdminGrantPremBadge();
+    toast(state==='force_premium'?'프리미엄이 적용됐어요':state==='force_free'?'프리미엄이 해제됐어요':'기본값으로 변경됐어요');
+  }catch(e){ toast('변경 실패: '+((e.message||'').slice(0,40))); }
+}
 async function selectAdminGrantUser(userId, meta){
   _adminGrantSelected={id:userId,...meta};
   document.getElementById('adminGrantSearchView').style.display='none';
@@ -14572,6 +14611,12 @@ async function selectAdminGrantUser(userId, meta){
   }catch(e){
     _adminGrantTargetUnlocks={color:[], char:[]};
   }
+  // 프리미엄 강제 상태(override) 조회 → 배지
+  try{
+    const {data:ov}=await supa.from('premium_overrides').select('state').eq('user_id',userId).maybeSingle();
+    _adminGrantOverride=ov?ov.state:null;
+  }catch(_){ _adminGrantOverride=null; }
+  renderAdminGrantPremBadge();
   renderAdminGrantPacks();
 }
 function renderAdminGrantPacks(){
