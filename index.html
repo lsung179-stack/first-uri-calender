@@ -1581,6 +1581,12 @@ body.ff-jua{letter-spacing:-.2px}
   color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;
   letter-spacing:.3px;
 }
+/* 프리미엄 잠금 배지 (테마 카드 우상단) — 무료 유저에게 표시 */
+.theme-card-lock-tag{
+  position:absolute;top:8px;right:8px;background:var(--gold);
+  color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;
+  letter-spacing:.3px;z-index:1;
+}
 .store-empty{text-align:center;padding:30px 20px;color:var(--mute);font-size:12px}
 
 /* 컬러 팩 미리보기 — 8색 그리드 (2×4) */
@@ -5417,15 +5423,23 @@ function vConfirm(message,opts){
   });
 }
 
-/* 프리미엄 제한 도달 시 — 골드 안내 모달 대신 설정탭 프리미엄 구독 화면으로 바로 이동.
+/* 프리미엄 제한 도달 시 — "프리미엄 구독이 필요해요" 안내 모달을 띄우고,
+   [구독하기]를 누르면 설정탭 프리미엄 구독 화면으로 이동한다. [닫기]면 그대로 유지.
    단, 구독 화면이 이미 열려 있으면(=결제 준비중 등 내부 호출) 토스트만 띄워 무한루프 방지. */
-function showUpgradeModal(opts){
+async function showUpgradeModal(opts){
   opts=opts||{};
   const premCard=document.getElementById('premiumCard');
   if(premCard&&premCard.classList.contains('on')){
     toast(opts.message||'프리미엄 전용 기능이에요');
     return;
   }
+  const msg=(opts.message||'프리미엄 구독이 필요한 기능이에요.')
+    + (opts.feature?(' '+opts.feature):'');
+  let goSub=false;
+  try{
+    goSub=await vConfirm(msg,{title:'프리미엄 기능',okText:'구독하기',cancelText:'닫기'});
+  }catch(_){ goSub=true; }
+  if(!goSub) return;
   if(typeof openPremiumSheet==='function'){
     openPremiumSheet();
   }else{
@@ -7022,42 +7036,106 @@ supa.auth.onAuthStateChange((event,session)=>{
   }catch(e){ /* noop */ }
 })();
 
-/* ═══ 네이티브 하단 뒤로가기 버튼 → 직전 화면으로 (분해는 조립의 역순) ═══
-   웹/PWA 무관, isNativeApp일 때만 동작. 우선순위: 자식모달 > 메인모달 > 화면히스토리 > 루트(종료). */
+/* ═══ 네이티브 하단 뒤로가기 버튼 (분해는 조립의 역순) ═══
+   웹/PWA 무관, isNativeApp일 때만 동작.
+   우선순위:
+     1) 자식 모달(멤버/이모지 선택 등 부모 위에 겹친 것) 닫기
+     2) 열린 서브 시트/모달을 '정식 닫기 함수'로 한 단계 닫기 (→ 탭바·광고 자동 복원)
+     3) 메인 탭(방목록·캘린더·우리할일·설정): 히스토리 이동 없이 종료 안내 → 한 번 더 누르면 종료
+        (인증 화면은 히스토리로 한 단계 복귀 후, 없으면 종료 안내)
+   ※ 기존 버그:
+     - 2단계에서 .on 클래스만 지워 탭바가 tabbar-gone 상태로 남아 사라짐 → 정식 닫기 함수 호출로 수정
+     - premiumCard 등이 목록에 없어 무반응 → 아래 시트 목록에 포함
+     - 메인 탭끼리 화면 히스토리가 쌓여 뒤로가기가 계속 왔다갔다 → 메인 탭은 히스토리 이동 금지 */
 (function setupNativeBackButton(){
   if(!isNativeApp()) return;
   try{
     var App=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.App;
     if(!App||!App.addListener) return;
     var _backExitTimer=null;
+    var _MAIN_SCREENS=['roomsScreen','calendarScreen','todoScreen','settingsScreen'];
     // 부모 모달 위에 겹쳐 뜨는 자식 모달 (멤버/이모지 선택) — 얘부터 닫아야 역순이 맞음
     var _childModalIds=['memberPickOverlay','memberPickCard','emojiPickOverlay','emojiPickCard'];
-    // 메인 모달 목록 (closeMainModals와 동일)
-    var _mainModalIds=['createOverlay','createCard','joinOverlay','joinCard','evOverlay','evCard',
-      'dpOverlay','dpCard','profileOverlay','profileCard','roomSetOverlay','roomSetCard',
-      'storeCard','advCard','annCard','annComposeOverlay','annComposeCard',
-      'annMenuOverlay','annMenuCard','annPopupOverlay','annPopup',
-      'datePickerOverlay','datePickerCard','searchOverlay','searchCard',
-      'csCard','leaveAccountOverlay','leaveAccountCard',
-      'termsOverlay','termsCard','privacyOverlay','privacyCard'];
+    // 열린 시트/모달 → 정식 닫기 함수 (위에 겹치는 순서대로: 자식 시트가 부모보다 먼저)
+    var _sheetCloseOrder=[
+      ['termsCard', function(){ closeTerms(); }],
+      ['privacyCard', function(){ closePrivacy(); }],
+      ['leaveAccountCard', function(){ closeLeaveAccount(); }],
+      ['supportCard', function(){ closeSupport(); }],
+      ['datePickerCard', function(){ closeDatePicker(); }],
+      ['searchCard', function(){ closeSearch(); }],
+      ['annPopup', function(){ closeAnnouncementPopup(); }],
+      ['annMenuCard', function(){ closeAnnouncementMenu(); }],
+      ['annComposeCard', function(){ closeAnnouncementCompose(); }],
+      ['evCard', function(){ closeEventModal(); }],          // 일정 추가/수정 → 탭바 복원됨
+      ['todoAddCard', function(){ closeTodoAddSheet(); }],   // 할일 추가/수정 → 탭바 복원됨
+      ['premiumCard', function(){ closePremiumSheet(); }],   // 프리미엄 구독 (기존 무반응 버그 수정)
+      ['storeCard', function(){ closeStore(); }],
+      ['advCard', function(){ closeAdvSettings(); }],
+      ['myOrdersCard', function(){ closeMyOrders(); }],
+      ['profileCard', function(){ closeProfile(); }],
+      ['roomSetCard', function(){ closeRoomSettings(); }],
+      ['annCard', function(){ closeAnnouncements(); }],
+      ['csCard', function(){ closeCustomerSupport(); }],
+      ['dpCard', function(){ closeDateSheet(); }],
+      ['joinCard', function(){ closeJoinRoom(); }],
+      ['createCard', function(){ closeCreateRoom(); }]
+    ];
     function _anyOn(ids){ for(var i=0;i<ids.length;i++){ var el=document.getElementById(ids[i]); if(el&&el.classList.contains('on')) return true; } return false; }
     function _closeIds(ids){ ids.forEach(function(id){ var el=document.getElementById(id); if(el)el.classList.remove('on'); }); }
+    // 시트 닫은 뒤 화면 크롬(탭바·광고) 상태를 현재 화면 기준으로 복원
+    function _restoreChrome(){
+      try{ if(typeof _syncTabbarNow==='function') _syncTabbarNow(); else if(typeof showTabbar==='function') showTabbar(); }catch(_){}
+      try{ if(typeof _subScreenExit==='function') _subScreenExit(); }catch(_){}
+    }
+    // 열린 최상위 시트 하나만 정식 닫기 함수로 닫는다. 닫았으면 true.
+    function _closeTopSheet(){
+      // 확인 다이얼로그(vc/upg/rd 오버레이) — 항상 최상위.
+      // Promise가 정상 resolve되도록 '취소' 버튼(없으면 확인 버튼)을 눌러서 닫는다.
+      var vc=document.querySelector('.vc-overlay.on');
+      if(vc){
+        var cancelBtn=vc.querySelector('.mo-cancel')||vc.querySelector('.btn-primary')||vc.querySelector('button');
+        if(cancelBtn){ try{ cancelBtn.click(); }catch(_){ vc.classList.remove('on'); } }
+        else { vc.classList.remove('on'); }
+        _restoreChrome();
+        return true;
+      }
+      for(var i=0;i<_sheetCloseOrder.length;i++){
+        var id=_sheetCloseOrder[i][0], fn=_sheetCloseOrder[i][1];
+        var el=document.getElementById(id);
+        if(el && el.classList.contains('on')){
+          try{ fn(); }catch(e){
+            // 닫기 함수 실패 시 안전망: 카드+오버레이 직접 닫기
+            try{ el.classList.remove('on'); var ov=document.getElementById(id.replace('Card','Overlay')); if(ov)ov.classList.remove('on'); }catch(_){}
+          }
+          _restoreChrome();
+          return true;
+        }
+      }
+      // 목록에 없는 일반 모달 안전망
+      if(document.querySelector('.mo-card.on, .mo-overlay.on, .dp-card.on')){
+        try{ if(typeof closeMainModals==='function') closeMainModals(); if(typeof closeAllModals==='function') closeAllModals(); }catch(_){}
+        _restoreChrome();
+        return true;
+      }
+      return false;
+    }
     App.addListener('backButton', function(){
       // 1) 부모 위에 뜬 자식 모달(멤버/이모지 선택)부터 닫기
       if(_anyOn(_childModalIds)){ _closeIds(_childModalIds); return; }
-      // 2) 클래스 기반 모달(.mo-overlay/.mo-card/.dp-card) 또는 메인 모달이 열려 있으면 닫기
-      if(document.querySelector('.mo-overlay.on, .mo-card.on, .dp-card.on') || _anyOn(_mainModalIds)){
-        if(typeof closeAllModals==='function') closeAllModals();
-        if(typeof closeMainModals==='function') closeMainModals();
-        return;
-      }
-      // 3) 화면 히스토리가 있으면 직전 화면으로 (역순 복귀)
-      if(typeof _screenHistory!=='undefined' && _screenHistory.length>0){
+      // 2) 열린 서브 시트/모달을 한 단계 닫기 (탭바·광고 복원 포함)
+      if(_closeTopSheet()){ return; }
+      // 3) 화면 레벨
+      var cur=document.querySelector('.screen.show');
+      var curId=cur?cur.id:'';
+      var isMain=_MAIN_SCREENS.indexOf(curId)>=0;
+      // 인증 화면(로그인 전) 등 메인이 아니면 히스토리로 한 단계 복귀
+      if(!isMain && typeof _screenHistory!=='undefined' && _screenHistory.length>0){
         _navBack=true;
         showScreen(_screenHistory.pop());
         return;
       }
-      // 4) 루트 화면 → 한 번 더 누르면 종료
+      // 메인 탭(또는 더 뒤로 갈 곳 없음) → 한 번 더 누르면 종료
       if(_backExitTimer){ clearTimeout(_backExitTimer); _backExitTimer=null; try{ App.exitApp(); }catch(_){} }
       else { if(typeof toast==='function') toast('한 번 더 누르면 종료됩니다'); _backExitTimer=setTimeout(function(){ _backExitTimer=null; },2000); }
     });
@@ -15328,7 +15406,7 @@ function renderTrialBanner(){
     banner.innerHTML=`
     <div class="store-trial-notice">
       <span class="trial-icon">💡</span>
-      <span class="trial-text">프리미엄 구독 시 모든 컬러·캐릭터 팩을 골라 쓸 수 있어요</span>
+      <span class="trial-text">프리미엄 구독 시 모든 테마·컬러·글꼴·캐릭터 팩을 골라 쓸 수 있어요</span>
     </div>`;
   }
 }
@@ -15354,17 +15432,21 @@ function renderStoreThemes(){
     </div>
   `;
   
-  // 무료 테마 섹션
-  html+=`<div class="store-section-title">무료 테마 <small>NOW AVAILABLE</small></div>`;
+  // 테마 섹션 — 무료는 기본(빈티지)만, 나머지는 프리미엄 잠금
+  const _premTheme=isEffectivePremium();
+  html+=`<div class="store-section-title">테마 <small>THEME</small></div>`;
   html+=`<div class="theme-grid-store">`;
   STORE_THEMES.forEach(item=>{
     const t=THEMES[item.key];
     if(!t)return;
     const applied=item.key===curTheme;
+    const isFreeTheme=item.key==='vintage';           // 빈티지=무료 기본
+    const locked=!_premTheme && !isFreeTheme && !applied;
     const handler=`onclick="applyStoreTheme('${item.key}')"`;
     html+=`
-      <div class="theme-card${applied?' on':''}" ${handler}>
+      <div class="theme-card${applied?' on':''}${locked?' locked':''}" ${handler}>
         ${applied?'<div class="theme-card-applied-tag">사용 중</div>':''}
+        ${locked?'<div class="theme-card-lock-tag">🔒 프리미엄</div>':''}
         <div class="theme-preview" style="background:${t.bg}">
           <div class="theme-preview-circle" style="border-color:${t.accent};background:${t.card}">
             <svg class="theme-preview-logo" viewBox="0 0 24 24" fill="none" stroke="${t.accent}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -15485,16 +15567,21 @@ function renderStoreText(){
   const body=document.getElementById('storeBody');
   if(!body)return;
   const cur=getFontFamilyPref();
+  const _premText=isEffectivePremium();
   const card=(item)=>{
     const applied=item.key===cur;
+    const isFreeFont=item.key==='default';            // 기본 글꼴=무료
+    const locked=!_premText && !isFreeFont && !applied;
     // 인라인 style 속성 충돌 방지 — 폰트명 큰따옴표를 작은따옴표로
     const fam=(TEXT_THEME_FONT[item.key]||'inherit').replace(/"/g,"'");
     const en=item.cat==='en';
     const s1=en?'Lunch':'약속', s2=en?'Meeting':'회의';
     const btn=applied
       ? `<button class="tt-apply using" onclick="event.stopPropagation();applyTextTheme('default')">사용 중</button>`
-      : `<button class="tt-apply" onclick="event.stopPropagation();applyTextTheme('${item.key}')">사용하기</button>`;
-    return `<div class="tt-card${applied?' on':''}" onclick="applyTextTheme('${applied?'default':item.key}')">
+      : (locked
+          ? `<button class="tt-apply" onclick="event.stopPropagation();applyTextTheme('${item.key}')">🔒 프리미엄</button>`
+          : `<button class="tt-apply" onclick="event.stopPropagation();applyTextTheme('${item.key}')">사용하기</button>`);
+    return `<div class="tt-card${applied?' on':''}${locked?' locked':''}" onclick="applyTextTheme('${applied?'default':item.key}')">
       <div class="tt-preview" style="font-family:${fam}">
         <div class="tt-date">15</div>
         <div class="tt-evbar">${s1}</div>
@@ -15516,7 +15603,18 @@ function renderStoreText(){
     }
   });
 }
-function applyTextTheme(key){
+async function applyTextTheme(key){
+  // 프리미엄 잠금 — 무료는 기본 글꼴만. 그 외 글꼴은 구독 유도.
+  if(key!=='default'){
+    await ensurePremiumLoaded();
+    if(!isEffectivePremium()){
+      showUpgradeModal({
+        message:'글꼴 변경은 프리미엄 전용이에요.',
+        feature:'⭐ 프리미엄 구독하면 모든 글꼴을 자유롭게 쓸 수 있어요.'
+      });
+      return;
+    }
+  }
   setFontFamilyPref(key);
   const t=TEXT_THEMES.find(x=>x.key===key);
   toast(key==='default'?'기본 글꼴로 돌아왔어요':(t?`"${t.name}" 글꼴이 적용됐어요`:'적용됐어요'));
@@ -15580,6 +15678,17 @@ function onLockedEmojiTap(name){toast(`"${name}"`)}
 function onCharacterPackTap(name){toast(`"${name}"`)}
 
 async function applyStoreTheme(themeKey){
+  // 프리미엄 잠금 — 무료는 기본(빈티지)만 사용 가능. 그 외 테마는 구독 유도.
+  if(themeKey!=='vintage'){
+    await ensurePremiumLoaded();
+    if(!isEffectivePremium()){
+      showUpgradeModal({
+        message:'테마 변경은 프리미엄 전용이에요.',
+        feature:'⭐ 프리미엄 구독하면 모든 테마를 자유롭게 바꿀 수 있어요.'
+      });
+      return;
+    }
+  }
   await changeRoomTheme(themeKey);
   renderStoreThemes();  // "사용 중" 태그 갱신
 }
@@ -16199,10 +16308,13 @@ function setupSwipe(){
 
 /* 시트 swipe-down (handle/card 위쪽 영역에서) */
 const _swipeBoundSet=new WeakSet();
-function setupSheetSwipe(cardId,closeFn){
+function setupSheetSwipe(cardId,closeFn,handleOnly){
   const card=document.getElementById(cardId);
   if(!card||_swipeBoundSet.has(card))return;
   _swipeBoundSet.add(card);
+  // handleOnly=true: 상단 핸들(- 바)/제목에서 시작한 드래그로만 닫힘.
+  //   본문(긴 약관·개인정보 등)을 위→아래로 드래그해도 닫히지 않게 해서, 맨 위에서 다시
+  //   위로 올려 읽을 수 있도록 한다. (기존엔 스크롤 맨 위에서 아래로 당기면 그냥 닫혀버림)
   let sy=0,sx=0,cy=0,active=false,decided=false,drag=false,fromHandle=false;
   // 헤더/핸들 영역 — 여기서 시작한 드래그는 스크롤 위치와 무관하게 무조건 닫기 드래그
   const HANDLE_SEL='.mo-handle,.mo-title,.mo-sub,.dp-head,.dp-sub,.dp-members-section';
@@ -16225,7 +16337,9 @@ function setupSheetSwipe(cardId,closeFn){
       if(Math.abs(dy)<6&&Math.abs(dx)<6)return;             // 방향 미정
       const downOK = dy>0 && Math.abs(dy)>=Math.abs(dx);    // 아래로 + 세로 우세
       // 헤더/핸들에서 시작 → 무조건 닫기 드래그 / 본문에서 시작 → 스크롤 맨 위일 때만
-      if(downOK && (fromHandle || card.scrollTop<=0)){
+      //   (handleOnly면 본문 드래그로는 절대 안 닫힘 — 핸들에서만)
+      const bodyTopClose = !handleOnly && card.scrollTop<=0;
+      if(downOK && (fromHandle || bodyTopClose)){
         drag=true; card.style.touchAction='none';
       }else{ active=false; return; }                        // 스크롤·가로는 양보
       decided=true;
@@ -16287,9 +16401,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   setupSheetSwipe('notifCard',closeNotifs);
   setupSheetSwipe('myOrdersCard',closeMyOrders);
   setupSheetSwipe('deployCard',closeDeploySheet);
-  setupSheetSwipe('supportCard',closeSupport);
-  setupSheetSwipe('termsCard',closeTerms);
-  setupSheetSwipe('privacyCard',closePrivacy);
+  setupSheetSwipe('supportCard',closeSupport,true);   // 핸들에서만 닫기 (긴 문서 스크롤 보호)
+  setupSheetSwipe('termsCard',closeTerms,true);        // 이용약관 — 핸들에서만 닫기
+  setupSheetSwipe('privacyCard',closePrivacy,true);    // 개인정보처리방침 — 핸들에서만 닫기
   setupSheetSwipe('leaveAccountCard',closeLeaveAccount);
   setupSheetSwipe('vMemberCard',closeVMember);
   setupSheetSwipe('roomPickCard',cancelRoomPick);
