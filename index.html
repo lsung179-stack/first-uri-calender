@@ -17610,13 +17610,18 @@ async function saveTodo(){
   const title=(($('todoTitleInput')||{}).value||'').trim();
   if(!title){ toast('제목을 입력해주세요'); return; }
   // 프리미엄 차별화 — 무료는 내 전체 활성 할일 5개까지 (신규 추가만, 수정 제외)
+  // 여러 날 모드는 선택한 날짜 수만큼 개별 할일이 생성되므로, 그 개수를 미리 반영해 판정하고
+  // 초과하면 생성을 통째로 취소한다. (예: 현재 0개 + 6일 선택 = 6개 > 5개 → 취소)
   if(!_editingTodoId){
     await ensurePremiumLoaded();
     if(!isEffectivePremium()){
       const cnt=await countMyActiveTodos();
-      if(cnt>=FREE_LIMITS.activeTodos){
+      const addN=(_todoType==='multi'&&Array.isArray(_todoMultiDates))?Math.max(1,_todoMultiDates.length):1;
+      if(cnt+addN>FREE_LIMITS.activeTodos){
         showUpgradeModal({
-          message:'무료 플랜은 진행 중인 할일을 5개까지 만들 수 있어요.',
+          message: addN>1
+            ? `무료 플랜은 진행 중인 할일을 5개까지 만들 수 있어요. (현재 ${cnt}개, ${addN}일 선택 시 초과돼요)`
+            : '무료 플랜은 진행 중인 할일을 5개까지 만들 수 있어요.',
           feature:'프리미엄으로 업그레이드하면 할일을 무제한으로 만들 수 있어요.'
         });
         return;
@@ -17714,19 +17719,39 @@ async function _doSaveTodo(){
       fields.room_id=_currentRoom.id;
       fields.user_id=_currentUser.id;
       fields.multi_group_id=_tmgid;
-      const { error } = await supa.from('todos').insert(fields);
-      if(error){ toast('저장 실패: '+((error.message||'').slice(0,40))); _showTodoSheetFromSub(); return; }
-      _notifyTodo('create', fields);
-      // 다른 방에도 추가 (단독만, 본인 작성) — 같은 multi_group_id로 묶음
-      if(!isCo && _selectedExtraRooms && _selectedExtraRooms.length){
-        const exRows=_selectedExtraRooms.map(function(rid){
-          return Object.assign({},fields,{room_id:rid,member_keys:null,multi_group_id:_tmgid});
-        });
-        const { error:eX } = await supa.from('todos').insert(exRows);
-        if(eX) console.warn('다른 방 할일 추가 일부 실패:',eX);
-        else toast('다른 방에도 추가됨 ('+_selectedExtraRooms.length+'개 방)');
+      // ★ 여러 날(multi) → 선택한 날짜마다 '개별 single 할일'로 생성한다.
+      //   (예전엔 multi_dates를 가진 한 개 row로 저장돼 목록에 "외 N일"로 1개만 보였음)
+      if(todo_type==='multi' && Array.isArray(multi_dates) && multi_dates.length){
+        const mkSingle=(base,d)=>Object.assign({},base,{todo_type:'single',start_date:d,end_date:null,multi_dates:null});
+        const rows=multi_dates.map(d=>mkSingle(fields,d));
+        const { error } = await supa.from('todos').insert(rows);
+        if(error){ toast('저장 실패: '+((error.message||'').slice(0,40))); _showTodoSheetFromSub(); return; }
+        // 다른 방에도 (단독만) — 방×날짜 개별 single
+        if(!isCo && _selectedExtraRooms && _selectedExtraRooms.length){
+          const exRows=[];
+          _selectedExtraRooms.forEach(function(rid){
+            multi_dates.forEach(function(d){ exRows.push(mkSingle(Object.assign({},fields,{room_id:rid,member_keys:null,multi_group_id:_tmgid}),d)); });
+          });
+          const { error:eX } = await supa.from('todos').insert(exRows);
+          if(eX) console.warn('다른 방 할일 추가 일부 실패:',eX);
+        }
+        _notifyTodo('create', mkSingle(fields,multi_dates[0]));
+        toast(multi_dates.length+'개의 할 일이 추가됐어요');
       } else {
-        toast('할 일이 추가됐어요');
+        const { error } = await supa.from('todos').insert(fields);
+        if(error){ toast('저장 실패: '+((error.message||'').slice(0,40))); _showTodoSheetFromSub(); return; }
+        _notifyTodo('create', fields);
+        // 다른 방에도 추가 (단독만, 본인 작성) — 같은 multi_group_id로 묶음
+        if(!isCo && _selectedExtraRooms && _selectedExtraRooms.length){
+          const exRows=_selectedExtraRooms.map(function(rid){
+            return Object.assign({},fields,{room_id:rid,member_keys:null,multi_group_id:_tmgid});
+          });
+          const { error:eX } = await supa.from('todos').insert(exRows);
+          if(eX) console.warn('다른 방 할일 추가 일부 실패:',eX);
+          else toast('다른 방에도 추가됨 ('+_selectedExtraRooms.length+'개 방)');
+        } else {
+          toast('할 일이 추가됐어요');
+        }
       }
     }
     _editingTodoId=null;
