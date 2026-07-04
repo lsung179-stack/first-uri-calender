@@ -6083,9 +6083,21 @@ function _subScreenExit(){
 }
 
 /* ── 프리미엄 상태 ── 로그인 시 1회 로드, 모든 제한 체크는 _isPremium 하나로 판단 */
-let _isPremium=false;        // 현재 유저 프리미엄 여부
+let _isPremium=false;        // 현재 유저 프리미엄 여부(서버+기기 병합 결과)
 let _premiumInfo=null;       // {is_premium, expires_at, plan_type, is_manual}
 let _premiumLoaded=false;    // 세션당 로드 가드
+/* 프리미엄 진실의 원천은 둘: (1) 서버(my_premium_status ← RevenueCat webhook),
+   (2) 기기(RevenueCat 구독 그 자체). 웹훅이 지연·누락돼 서버가 '무료'로 응답해도
+   기기에 활성 구독이 있으면 프리미엄을 유지한다. → 앱을 껐다 켤 때마다 무료로
+   떨어지던 버그의 근본 수정. 두 소스를 OR로 병합한다. */
+let _serverPremium=false, _serverPremiumInfo=null;   // 서버(webhook) 기준
+let _rcPremiumActive=false, _rcPremiumInfo=null;      // 기기(RevenueCat) 기준
+function _recomputePremium(){
+  _isPremium = _serverPremium || _rcPremiumActive;
+  if(_serverPremium) _premiumInfo=_serverPremiumInfo;
+  else if(_rcPremiumActive) _premiumInfo=_rcPremiumInfo;
+  else _premiumInfo=_serverPremiumInfo||null;
+}
 const FREE_LIMITS={ photosPerEvent:1, activeTodos:5, doneTodoDays:7 };  // 방·인원은 무제한(제한 없음)
 const PREMIUM_DONE_DAYS=0;  // 프리미엄: 완료 할일 평생 보관(만료 없음). 무료는 FREE_LIMITS.doneTodoDays=7
 const PREMIUM_PHOTOS=5;  // 프리미엄: 일정당 사진 5장 (무료는 FREE_LIMITS.photosPerEvent=1)
@@ -6116,12 +6128,13 @@ function photoKeepDaysLeft(ev){
 
 async function loadPremiumStatus(){
   try{
-    if(!_currentUser){ _isPremium=false; _premiumInfo=null; _premiumLoaded=false; return; }
+    if(!_currentUser){ _isPremium=false; _premiumInfo=null; _premiumLoaded=false; _serverPremium=false; _serverPremiumInfo=null; _rcPremiumActive=false; _rcPremiumInfo=null; return; }
     const {data,error}=await supa.rpc('my_premium_status');
-    if(error){ console.warn('프리미엄 상태 로드 실패:',error.message||error); return; }
-    _premiumInfo=data||null;
-    _isPremium=!!(data&&data.is_premium);
+    if(error){ console.warn('프리미엄 상태 로드 실패:',error.message||error); _recomputePremium(); return; } // 서버 실패해도 기기(RC) 상태는 유지
+    _serverPremium=!!(data&&data.is_premium);
+    _serverPremiumInfo=data||null;
     _premiumLoaded=true;
+    _recomputePremium();  // 서버가 '무료'라도 기기에 활성 구독 있으면 프리미엄 유지 (덮어쓰기 금지)
     try{ renderRoomThemeGrid(); }catch(_){} // 프리미엄 확정 후 이 방 테마 섹션 표시/숨김 갱신
   }catch(e){ console.warn('프리미엄 상태 오류:',e); }
 }
@@ -6881,6 +6894,7 @@ async function init(){
       showScreen('roomsScreen');
       loadRooms();
       loadPremiumStatus().then(()=>showAdBannerIfNeeded()); // 프리미엄 확인 후 광고 표시
+      syncPremiumFromRevenueCat(); // 기기 RevenueCat 구독으로 프리미엄 자동 복원 (웹훅 지연/누락 대비)
       ensureKakaoProfile();  // 재실행 시에도 카카오 이름·사진 보강 (아바타 "?" 방지)
       // 배포 버전 체크 — 관리자는 스킵, 일반 이용자는 새 버전 있으면 자동 새로고침
       setTimeout(checkDeployVersionOnStart, 1500);
@@ -6974,10 +6988,12 @@ supa.auth.onAuthStateChange((event,session)=>{
     }
     loadRooms();
     loadPremiumStatus().then(()=>showAdBannerIfNeeded()); // 프리미엄 확인 후 광고 표시
+    syncPremiumFromRevenueCat(); // 기기 RevenueCat 구독으로 프리미엄 자동 복원 (웹훅 지연/누락 대비)
     document.getElementById('loading').classList.add('hide');
   }else if(event==='SIGNED_OUT'){
     _currentUser=null;
     _isPremium=false;_premiumInfo=null;_premiumLoaded=false;  // 프리미엄 상태 리셋
+    _serverPremium=false;_serverPremiumInfo=null;_rcPremiumActive=false;_rcPremiumInfo=null;  // 서버·기기 병합 상태도 리셋
     try{ const P=_rcPlugin(); if(P&&_rcConfigured){ P.logOut(); } }catch(_){} // RevenueCat 로그아웃 (다음 유저와 구독 섞임 방지)
     hideAdBanner(); // 로그아웃 시 광고 숨김
     showScreen('welcomeScreen');
@@ -14855,15 +14871,41 @@ function _applyRcEntitlement(customerInfo, planLabel){
     const active=(customerInfo&&customerInfo.entitlements&&customerInfo.entitlements.active)||{};
     const ent=active[RC_ENTITLEMENT];
     if(!ent) return false;
-    _isPremium=true;
-    _premiumInfo={ is_premium:true, expires_at:ent.expirationDate||ent.expiresDate||null, plan_type:planLabel||'premium', is_manual:false };
+    _rcPremiumActive=true;
+    _rcPremiumInfo={ is_premium:true, expires_at:ent.expirationDate||ent.expiresDate||null, plan_type:planLabel||'premium', is_manual:false };
     _premiumLoaded=true;
+    _recomputePremium();
     try{ hideAdBanner(); document.body.classList.remove('has-ad'); }catch(_){}
     try{ if(typeof openPremiumSheet==='function' && document.getElementById('premiumCard') && document.getElementById('premiumCard').classList.contains('on')) openPremiumSheet(); }catch(_){}
     // webhook이 subscriptions를 채우도록 잠시 뒤 서버 상태로 재동기화
     setTimeout(()=>{ _premiumLoaded=false; loadPremiumStatus().then(()=>{ try{ showAdBannerIfNeeded(); }catch(_){}}); }, 4000);
     return true;
   }catch(_){ return false; }
+}
+/* 앱 시작·로그인 시 호출 — 기기의 RevenueCat 구독을 직접 읽어 프리미엄을 자동 복원한다.
+   서버 웹훅이 지연·누락돼도 이걸로 '껐다 켤 때마다 무료로 떨어지는' 현상을 막는다.
+   활성 구독이 없으면 기기 기준(_rcPremiumActive)만 내리고, 서버/관리자 부여 프리미엄은 건드리지 않는다. */
+async function syncPremiumFromRevenueCat(){
+  try{
+    if(!isNativeApp()) return false;
+    const P=_rcPlugin(); if(!P) return false;
+    await initRevenueCat(_currentUser&&_currentUser.id); // configure 보장
+    const res=await P.getCustomerInfo();
+    const ci=(res&&(res.customerInfo||res))||null;
+    const active=(ci&&ci.entitlements&&ci.entitlements.active)||{};
+    const ent=active[RC_ENTITLEMENT];
+    if(ent){
+      _rcPremiumActive=true;
+      _rcPremiumInfo={ is_premium:true, expires_at:ent.expirationDate||ent.expiresDate||null, plan_type:'premium', is_manual:false };
+      _premiumLoaded=true;
+    }else{
+      _rcPremiumActive=false; _rcPremiumInfo=null;   // 기기에 활성 구독 없음 (만료·미구독)
+    }
+    _recomputePremium();
+    try{ showAdBannerIfNeeded(); }catch(_){}
+    try{ renderRoomThemeGrid(); }catch(_){}
+    return _rcPremiumActive;
+  }catch(e){ console.warn('RC 프리미엄 동기화 실패:', e); return false; }
 }
 async function onPremiumSubscribe(){
   if(isEffectivePremium()){ toast('이미 프리미엄을 이용 중이에요'); return; }
