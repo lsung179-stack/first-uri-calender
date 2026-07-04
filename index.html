@@ -7860,6 +7860,35 @@ function daysInMonth(y,m){return new Date(y,m+1,0).getDate()}
 function firstDow(y,m){return new Date(y,m,1).getDay()}
 
 /* ── 일정 로드 (방의 모든 일정) ── */
+/* ── 홈화면 위젯 데이터 브리지 ──
+   앱이 "오늘 일정"을 네이티브 공유 저장소(@capacitor/preferences → Android의
+   CapacitorStorage SharedPreferences)에 기록한다. 위젯은 이 값을 읽어 표시한다.
+   Preferences 플러그인이 없거나 웹이면 조용히 no-op (앱 동작에 영향 없음). */
+async function syncWidgetData(){
+  try{
+    if(!isNativeApp()) return;
+    const P = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Preferences;
+    if(!P) return;
+    const key = _todayKeyStr();
+    let evs=[]; try{ evs=getDayEvents(key)||[]; }catch(_){ evs=[]; }
+    const items = evs
+      .filter(e=>e && e.title)
+      .map(e=>({ time:String(e.time||'').trim(), title:String(e.title).slice(0,60), color:e.color||'' }))
+      .sort((a,b)=>{
+        if(!a.time && b.time) return -1;   // 종일(시간 없음) 먼저
+        if(a.time && !b.time) return 1;
+        return a.time.localeCompare(b.time);
+      })
+      .slice(0,10);
+    const payload = {
+      updatedAt: Date.now(),
+      roomName: (_currentRoom && _currentRoom.name) ? String(_currentRoom.name) : '우리 캘린더',
+      dateLabel: key,
+      today: items
+    };
+    await P.set({ key:'widget_today', value: JSON.stringify(payload) });
+  }catch(_){ /* 위젯 동기화 실패는 무시 */ }
+}
 async function loadEvents(){
   if(!_currentRoom)return;
   _events={};
@@ -7892,6 +7921,7 @@ async function loadEvents(){
     // 일정 먼저 렌더 (반응 로딩을 기다리지 않음 → 체감 속도 ↑)
     invalidateDayEventsCache();
     renderMonthly();
+    syncWidgetData();  // 홈화면 위젯에 오늘 일정 반영 (로드·추가·수정·삭제 후 loadEvents가 다시 호출됨)
     // 이모지 반응은 백그라운드로 로드 후 다시 렌더
     loadReactions().then(()=>{
       renderMonthly();
