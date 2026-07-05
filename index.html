@@ -432,7 +432,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .mo-cancel{font-size:13px;color:var(--sub);text-align:center;background:none;border:none;padding:14px;cursor:pointer;font-family:inherit}
 .vc-overlay{position:fixed;inset:0;background:rgba(30,28,24,.5);z-index:2000;opacity:0;pointer-events:none;transition:opacity .2s ease;display:flex;align-items:center;justify-content:center;padding:28px;box-sizing:border-box;transform:translateZ(0)}
 .vc-overlay.on{opacity:1;pointer-events:auto}
-.vc-card{background:var(--card);border-radius:22px;max-width:330px;width:100%;padding:28px 24px 14px;box-shadow:0 16px 48px rgba(30,28,24,.3);transform:scale(.94) translateY(8px);opacity:0;transition:transform .22s cubic-bezier(.32,.72,0,1),opacity .2s ease}
+.vc-card{background:var(--card);border-radius:22px;max-width:330px;width:100%;padding:28px 24px 14px;box-shadow:0 16px 48px rgba(30,28,24,.3);transform:scale(.94) translateY(8px);opacity:0;transition:transform .22s cubic-bezier(.32,.72,0,1),opacity .2s ease;max-height:calc(100vh - 56px);max-height:calc(100dvh - 56px);overflow-y:auto}
 .vc-overlay.on .vc-card{transform:scale(1) translateY(0);opacity:1}
 .upg-card{text-align:center}
 .upg-card .mo-sub{margin-bottom:4px}
@@ -1152,7 +1152,7 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 /* 약관 동의 시트 (카카오/이메일가입/기존사용자 공용) */
 .agree-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:90;opacity:0;pointer-events:none;transition:opacity .2s}
 .agree-overlay.on{opacity:1;pointer-events:auto}
-.agree-sheet{position:fixed;left:0;right:0;bottom:0;z-index:91;background:var(--card);border-radius:20px 20px 0 0;padding:24px 22px calc(24px + env(safe-area-inset-bottom));transform:translateY(110%);transition:transform .25s ease;max-width:480px;margin:0 auto}
+.agree-sheet{position:fixed;left:0;right:0;bottom:0;z-index:91;background:var(--card);border-radius:20px 20px 0 0;padding:24px 22px calc(24px + env(safe-area-inset-bottom));transform:translateY(110%);transition:transform .25s ease;max-width:480px;margin:0 auto;max-height:88vh;max-height:88dvh;overflow-y:auto}
 .agree-sheet.on{transform:translateY(0)}
 .agree-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:18px;color:var(--text);margin-bottom:14px;text-align:center}
 .agree-row{display:flex;align-items:center;gap:9px;padding:11px 4px;font-size:14px;color:var(--text);cursor:pointer}
