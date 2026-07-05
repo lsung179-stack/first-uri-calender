@@ -2186,13 +2186,15 @@ body.align-right .cal-evbar{text-align:right}
 .pf-stamp.has-photo::before{display:none}
 .pf-photo-btn{display:block;font-size:11px;color:var(--sub);background:transparent;border:none;cursor:pointer;margin-top:4px;padding:4px 0;font-family:inherit;text-decoration:underline}
 /* ===== 신규 가입 온보딩 슬라이드 ===== */
-.onb-overlay{position:fixed;inset:0;background:rgba(30,28,24,.55);z-index:95;display:none;align-items:center;justify-content:center;padding:22px;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+.onb-overlay{position:fixed;inset:0;background:rgba(30,28,24,.55);z-index:95;display:none;align-items:center;justify-content:center;padding:16px;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
 .onb-overlay.on{display:flex}
-.onb-card{background:var(--bg);border-radius:24px;width:100%;max-width:350px;padding:30px 24px 20px;box-shadow:0 24px 70px rgba(0,0,0,.35);text-align:center;animation:onbIn .3s ease}
+/* ★ 화면 크기 대응: 카드가 뷰포트 높이를 넘지 않게 제한(폰마다 화면·글꼴 크기 달라도 잘림 방지).
+   내용이 길면 가운데(슬라이드)만 스크롤되고, 점·"다음"·"닫기"는 항상 아래에 고정 노출. */
+.onb-card{background:var(--bg);border-radius:24px;width:100%;max-width:350px;padding:26px 24px 18px;box-shadow:0 24px 70px rgba(0,0,0,.35);text-align:center;animation:onbIn .3s ease;display:flex;flex-direction:column;max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px)}
 @keyframes onbIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
-.onb-viewport{overflow:hidden;width:100%}
+.onb-viewport{overflow-x:hidden;overflow-y:auto;width:100%;flex:1 1 auto;min-height:0;-webkit-overflow-scrolling:touch}
 .onb-track{display:flex;transition:transform .3s ease}
-.onb-slide{flex:0 0 100%;max-width:100%;box-sizing:border-box;padding:0 2px;min-height:344px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.onb-slide{flex:0 0 100%;max-width:100%;box-sizing:border-box;padding:0 2px;min-height:min(344px,50vh);display:flex;flex-direction:column;align-items:center;justify-content:center}
 .onb-logo{width:96px;height:96px;border-radius:22px;margin-bottom:18px;box-shadow:0 6px 20px rgba(139,58,42,.18)}
 .onb-title{font-size:21px;font-weight:800;color:var(--text);line-height:1.42;margin-bottom:12px}
 .onb-desc{font-size:13.5px;color:var(--sub);line-height:1.65}
@@ -2219,12 +2221,12 @@ body.align-right .cal-evbar{text-align:right}
 .onb-fic{font-size:23px;flex-shrink:0;line-height:1.2}
 .onb-ft{flex:1;min-width:0;font-size:12.5px;color:var(--sub);line-height:1.5}
 .onb-ft b{display:block;color:var(--text);font-size:14px;margin-bottom:2px}
-.onb-dots{display:flex;justify-content:center;gap:7px;margin:24px 0 16px}
+.onb-dots{display:flex;justify-content:center;gap:7px;margin:16px 0 12px;flex:none}
 .onb-dot{width:7px;height:7px;border-radius:50%;background:var(--mute);opacity:.4;transition:.25s}
 .onb-dot.on{background:var(--accent);opacity:1;width:22px;border-radius:4px}
-.onb-next{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;transition:transform .12s}
+.onb-next{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;transition:transform .12s;flex:none}
 .onb-next:active{transform:scale(.98)}
-.onb-dismiss{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;color:var(--sub);margin-bottom:14px;cursor:pointer;-webkit-user-select:none;user-select:none}
+.onb-dismiss{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;color:var(--sub);margin-bottom:14px;cursor:pointer;-webkit-user-select:none;user-select:none;flex:none}
 .onb-dismiss input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;margin:0}
 /* ============================================================
    V2 대규모 업데이트: 탭바 / 우리할일 / 통합설정 / 데이시트 탭
