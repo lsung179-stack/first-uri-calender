@@ -179,7 +179,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
   }
   .cal-tabbar{max-width:398px!important;bottom:calc(50vh - 422px + 16px)!important}
 }
-.screen{position:absolute;inset:0;padding:0 28px;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .35s ease}
+.screen{position:absolute;inset:0;padding:0 28px;display:flex;flex-direction:column;align-items:center;justify-content:safe center;overflow-y:auto;-webkit-overflow-scrolling:touch;opacity:0;pointer-events:none;transition:opacity .35s ease}
 .screen.show{opacity:1;pointer-events:auto}
 
 /* 로고 */
