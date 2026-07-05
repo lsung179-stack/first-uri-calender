@@ -4657,6 +4657,27 @@ async function getNativePushPerm(){
   catch(_){ return 'error'; }
 }
 
+/* 고중요도 알림 채널 생성 (Android 8+ 헤드업 팝업의 핵심).
+   Android는 채널 importance로 헤드업(상단 팝업)이 결정된다. importance:5=HIGH → 팝업.
+   ★ 채널 importance는 '생성 후 변경 불가'라, 기존에 없던 새 id(uri_high)로 만들어야
+     보통 중요도로 굳지 않고 HIGH로 뜬다. FCM 발송 메시지도 이 채널 id를 지정한다. */
+async function _ensurePushChannel(){
+  try{
+    const PN=_getPushPlugin();
+    if(!PN || typeof PN.createChannel!=='function') return;   // iOS 등 미지원 시 skip
+    if(_nativePlatform()!=='android') return;
+    await PN.createChannel({
+      id:'uri_high',
+      name:'우리 캘린더 알림',
+      description:'일정 리마인더 및 방 알림',
+      importance:5,      // HIGH → 헤드업 팝업
+      visibility:1,      // 잠금화면에 내용 표시(public)
+      vibration:true,
+      lights:true,
+    });
+  }catch(e){ console.warn('알림 채널 생성 실패(무시):',e); }
+}
+
 /* 네이티브 푸시 등록 (권한 요청 + 토큰 등록). 반환: 권한 granted 성공 여부.
    Android 13+ 는 requestPermissions()가 POST_NOTIFICATIONS 시스템 팝업을 띄운다 → 설정 토글이 켜짐. */
 async function registerNativePush(silent){
@@ -4665,6 +4686,7 @@ async function registerNativePush(silent){
   if(!_currentUser){ if(!silent)toast('로그인이 필요해요'); return false; }
   try{
     _setupNativePushListeners();
+    await _ensurePushChannel();  // 고중요도 채널 생성 (헤드업 팝업 필수 — Android 8+)
     let perm=await PN.checkPermissions();
     if(perm.receive==='prompt'||perm.receive==='prompt-with-rationale'){
       perm=await PN.requestPermissions();
