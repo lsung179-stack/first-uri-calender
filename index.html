@@ -5265,7 +5265,7 @@ function openProfile(){
   const restoreBtn=document.querySelector('.pf-restore-btn');
   if(restoreBtn){
     const kakaoUrl=meta.avatar_url||meta.picture||meta.profile_image||meta.profile_image_url;
-    restoreBtn.style.display=kakaoUrl?'block':'none';
+    restoreBtn.style.display=(_isKakaoLogin()&&kakaoUrl)?'block':'none';  // 카카오 로그인 유저만
   }
   document.getElementById('profileOverlay').classList.add('on');
   document.getElementById('profileCard').classList.add('on');
@@ -5766,6 +5766,17 @@ function compressImage(file,maxSize,quality){
   });
 }
 
+/* 카카오 로그인 유저인지 판별 — 구글도 avatar_url/picture를 메타데이터에 넣으므로
+   "사진 URL 유무"가 아니라 로그인 provider로 구분해야 카카오 복구 버튼이 엉뚱하게 안 뜬다. */
+function _isKakaoLogin(){
+  try{
+    var am=_currentUser&&_currentUser.app_metadata;
+    if(!am) return false;
+    if(am.provider==='kakao') return true;
+    if(Array.isArray(am.providers)&&am.providers.indexOf('kakao')>=0) return true;
+    return false;
+  }catch(_){ return false; }
+}
 /* 카카오톡 원래 프로필 사진으로 복구 */
 async function restoreKakaoPhoto(){
   if(!_currentUser){toast('로그인이 필요해요');return}
@@ -17878,7 +17889,7 @@ function uniSyncProfileDisplay(){
   if($('uniNameInput')) $('uniNameInput').value=name;
   // 카카오 로그인 사용자(메타데이터에 카카오 사진 URL이 있을 때)만 복구 버튼 노출
   const rb=$('uniRestoreBtn');
-  if(rb){ const kakaoUrl=meta.avatar_url||meta.picture||meta.profile_image||meta.profile_image_url; rb.style.display=kakaoUrl?'':'none'; }
+  if(rb){ const kakaoUrl=meta.avatar_url||meta.picture||meta.profile_image||meta.profile_image_url; rb.style.display=(_isKakaoLogin()&&kakaoUrl)?'':'none'; }
 }
 function _copyBdSelects(){
   ['Type','Month','Day'].forEach(function(k){
