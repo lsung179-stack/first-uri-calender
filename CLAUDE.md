@@ -48,6 +48,7 @@
 5. ✅ 관리자 버튼 `전체 이용자 프리미엄`(globalTrialBtn)·`프리미엄 개별 관리`(premMgmtBtn) UI 삭제(충돌 우려). 함수/모달 마크업은 잔존(무해).
 6. ✅ **7일 무료체험 노출(전환)** — 전 플랜 첫 결제 무료체험이 UI에 안 보이던 문제. `showUpgradeModal`(잠금 안내: "무료로 체험하기"), `openPremiumSheet`/CTA 버튼("7일 무료로 시작하기"), `_updateTrialCta()`(선택 플랜 가격 기준 "첫 7일 무료·이후 자동결제" 캡션 `#premTrialNote`), `renderTrialBanner`("첫 7일 무료")에 반영.
 7. ✅ **혼자 방 초대 넛지(바이럴)** — 실멤버 1명인 방 캘린더 상단(`#calInviteNudge`)에 초대 배너 표시. `renderInviteNudge()`가 `_myMembers` 실멤버<2일 때 노출, `shareKakao()` 호출. `renderMemberTabs()` 시작부에서 호출.
+8. ✅ **프리미엄 시트 탭바 숨김 버그** — 일정추가(탭바 숨김)→프리미엄 시트 진입 후 닫으면 하단 탭바가 안 돌아오던 문제. `openPremiumSheet`에 `hideTabbar()`, `closePremiumSheet`에 `showTabbar()` 추가(다른 풀스크린 시트와 대칭). 겸사겸사 프리미엄 안내 모달(`showUpgradeModal`의 `vConfirm`) 타이틀의 ✨ 제거.
 
 ## 주의사항 / 함정
 - 저장소 `main`의 `index.html`은 최신 배포본과 동기화됨 (**build 1.1.2 / 코드 26**, 위 1~7번 전부 반영). 단 개발자가 이후 로컬에서 다시 수정·업로드하면 main보다 앞설 수 있으니, 새 세션은 항상 현재 배포/로컬 버전을 확인할 것.
