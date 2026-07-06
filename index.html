@@ -6057,12 +6057,27 @@ async function hideAdBanner() {
    서브 시트가 열려 있으면 광고를 숨기고, 모두 닫히면 다시 표시한다.
    DOM의 .on 상태를 직접 보므로 닫는 경로가 어디든(닫기버튼·탭전환·뒤로) 항상 정합. */
 const _AD_HIDE_SHEET_IDS = ['premiumCard','storeCard','advCard','annCard','csCard','evCard','todoAddCard','dpCard','myOrdersCard','vcOverlay','upgOverlay','rdOverlay'];
+/* 요소가 실제로 화면에 보이는지 — .on 클래스가 남아 있어도 display:none·투명·0크기면 false.
+   (닫은 시트의 .on 잔여 클래스가 배너를 계속 숨기던 문제 방지: closeAllModals가 풀스크린 시트의 .on을
+    지우지 않아, 탭 전환으로 시트를 벗어나면 안 보이는데도 '모달 열림'으로 오판돼 무료 유저 광고가 안 뜸) */
+function _elVisible(el){
+  if(!el) return false;
+  try{
+    const cs=getComputedStyle(el);
+    if(cs.display==='none' || cs.visibility==='hidden' || parseFloat(cs.opacity||'1')===0) return false;
+    const r=el.getBoundingClientRect();
+    return r.width>0 && r.height>0;
+  }catch(_){ return true; } // 판단 불가 시엔 안전하게 '열림'으로 간주(콘텐츠 가림 방지)
+}
 function _anySubSheetOpen(){
-  // 어떤 모달·오버레이·풀스크린 시트라도 열려 있으면 true (관리자 개별관리 등 전부 포함)
-  if(document.querySelector('.mo-overlay.on, .mo-card.on, .dp-card.on, .dp-overlay.on, .vc-overlay.on, .vc-card.on, .store-card.on, .ann-card.on')) return true;
+  // 어떤 모달·오버레이·풀스크린 시트라도 "실제로 보이면" true (관리자 개별관리 등 전부 포함).
+  // .on 클래스만 남고 화면엔 안 보이는 잔여 시트는 제외한다.
+  for(const el of document.querySelectorAll('.mo-overlay.on, .mo-card.on, .dp-card.on, .dp-overlay.on, .vc-overlay.on, .vc-card.on, .store-card.on, .ann-card.on')){
+    if(_elVisible(el)) return true;
+  }
   for(const id of _AD_HIDE_SHEET_IDS){
     const el = document.getElementById(id);
-    if(el && el.classList.contains('on')) return true;
+    if(el && el.classList.contains('on') && _elVisible(el)) return true;
   }
   return false;
 }
