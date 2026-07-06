@@ -6092,12 +6092,19 @@ async function hideAdBanner() {
    서브 시트가 열려 있으면 광고를 숨기고, 모두 닫히면 다시 표시한다.
    DOM의 .on 상태를 직접 보므로 닫는 경로가 어디든(닫기버튼·탭전환·뒤로) 항상 정합. */
 const _AD_HIDE_SHEET_IDS = ['premiumCard','storeCard','advCard','annCard','csCard','evCard','todoAddCard','dpCard','myOrdersCard','vcOverlay','upgOverlay','rdOverlay'];
+/* 요소가 실제로 화면에 보이는지(display:none이 아닌지) — 잔여 .on 클래스 오판 방지 */
+function _elVisible(el){
+  try{ return !!(el && (el.offsetWidth>0 || el.offsetHeight>0 || el.getClientRects().length>0)); }catch(_){ return true; }
+}
 function _anySubSheetOpen(){
-  // 어떤 모달·오버레이·풀스크린 시트라도 열려 있으면 true (관리자 개별관리 등 전부 포함)
-  if(document.querySelector('.mo-overlay.on, .mo-card.on, .dp-card.on, .dp-overlay.on, .vc-overlay.on, .vc-card.on, .store-card.on, .ann-card.on')) return true;
+  // ★ 실제로 '보이는' 모달/시트만 열림으로 카운트한다.
+  //   (닫혔는데 .on 클래스만 남은 잔여 요소가 광고를 영구히 숨기던 버그 방지 —
+  //    광고는 로드됐지만 매번 '시트 열림'으로 오판돼 숨겨지던 문제)
+  const els=document.querySelectorAll('.mo-overlay.on, .mo-card.on, .dp-card.on, .dp-overlay.on, .vc-overlay.on, .vc-card.on, .store-card.on, .ann-card.on');
+  for(let i=0;i<els.length;i++){ if(_elVisible(els[i])) return true; }
   for(const id of _AD_HIDE_SHEET_IDS){
     const el = document.getElementById(id);
-    if(el && el.classList.contains('on')) return true;
+    if(el && el.classList.contains('on') && _elVisible(el)) return true;
   }
   return false;
 }
