@@ -1,0 +1,59 @@
+# 우리 캘린더 (Our Calendar) — 프로젝트 인수인계 노트
+
+> 이 파일은 새 세션이 시작될 때 자동으로 읽힙니다. 매번 설명하지 않아도 됩니다.
+> 새 대화를 열면 먼저 이 파일 + 관련 코드/DB를 확인한 뒤 작업하세요.
+
+## ⚠️ 유지보수 규칙 (Claude에게 — 반드시 지킬 것)
+**이 저장소의 파일(특히 `index.html`)이나 DB(RPC/마이그레이션)를 변경할 때마다, 같은 커밋에서 이 `CLAUDE.md`도 갱신한다.**
+- 무엇을 바꿨는지 아래 “이미 완료된 수정” 목록에 한 줄로 추가(또는 기존 항목 수정).
+- 프리미엄/광고/결제 로직, 함수명, 계정, DB 스키마, 워크플로우가 바뀌면 해당 섹션도 함께 고친다.
+- 날짜/버전 기준이 바뀌면 “이미 완료된 수정”의 날짜 표기도 갱신한다.
+- 즉 코드 변경과 이 문서를 **항상 함께 커밋**한다 (문서가 뒤처지지 않게).
+
+## 프로젝트 개요
+- 한국어 공유 캘린더 앱. **단일 `index.html` SPA**를 Capacitor 8(WebView)로 감싼 구조. 모든 JS/CSS/HTML이 이 한 파일 안에 있음.
+- 백엔드: **Supabase** (Auth, Postgres, RPC). 구독 결제: **RevenueCat** (@revenuecat/purchases-capacitor). 광고: **AdMob** (@capacitor-community/admob) — 하단 배너 1개.
+- 빌드: **Codemagic**이 매 빌드마다 네이티브 프로젝트 재생성 → 실기기(iOS + Android) 설치.
+
+## 배포 워크플로우 (중요)
+- 개발자는 보통 **`index.html`을 GitHub에 직접 업로드**(“Add files via upload”)하는 방식으로 작업. 그래서 **로컬 최신본이 저장소(main)보다 앞서 있을 수 있음** — 새 세션은 반드시 현재 배포/로컬 버전이 무엇인지 확인할 것.
+- 클라이언트 코드 변경은 **Codemagic 재빌드** 후에야 기기에 반영됨.
+- **DB(RPC/마이그레이션) 변경은 재빌드와 무관하게 즉시 라이브.**
+- ⚠️ 광고(AdMob)는 **네이티브 앱에서만** 동작. 웹/PWA에서는 절대 안 뜸(정상). 광고 확인은 반드시 네이티브 앱에서. 앱 설정 화면 하단 푸터에 `네이티브`/`웹` 및 `광고:<_admobDebug>` 문자열이 표시됨.
+
+## Supabase
+- 프로젝트 id: **`bgqzkkaslqchbovzrkao`**
+- 핵심 테이블: `public.subscriptions` (user_id, status, expires_at, plan_type, is_manual)
+- 핵심 RPC: `my_premium_status()` — SECURITY DEFINER. `status='active' AND expires_at>now()` 인 구독이 있을 때만 `is_premium=true` 반환.
+  - ⚠️ 과거 버그: 집계함수(max/array_agg/bool_or)를 GROUP BY 없이 써서 구독 0건이어도 항상 1행+상수 `is_premium:true`를 반환 → **모든 유저가 프리미엄으로 오판**. `HAVING count(*)>0` 추가로 수정 완료(라이브).
+
+## 계정
+- 관리자: `lsung179@naver.com` — `ANN_ADMIN_USER_ID = '3bc13a8b-618d-4d47-abea-1eec4d682ec0'`. 실구독 보유. 앱에선 `_adminPlanOverride`(무료/유료 플랜 체험 토글)로 프리미엄 표시를 제어(실구독과 무관).
+- 무료 테스트: `lsung179@gmail.com` — `64c6502a-6365-40cb-ad05-49ec8cb6439e`. 구독 없음 → 무료여야 정상(광고O, 유료기능X).
+
+## 프리미엄 / 광고 로직 지도 (index.html 함수명)
+- 상태: `_isPremium`(= `_serverPremium`), `_serverPremium`/`_serverPremiumInfo`(서버 기준), `_rcPremiumActive`(기기 RevenueCat 기준 — 판정엔 미사용).
+- `_recomputePremium()` → `_isPremium = _serverPremium` (**서버가 유일한 진실**). 기기 엔타이틀먼트로 프리미엄 부여 금지.
+- `loadPremiumStatus()` → RPC `my_premium_status` 호출 → `_serverPremium` 설정.
+- `isEffectivePremium()` → 관리자는 `_adminPlanOverride`, 일반 유저는 `_isPremium`.
+- 결제: `onPremiumSubscribe()` → `_applyRcEntitlement()`(구매 직후 낙관 반영 후 서버 재동기화). **구매 복원 `onRestorePurchases()`는 `_applyRcEntitlement` 안 씀** — `loadPremiumStatus()` 후 `_serverPremium`일 때만 프리미엄(기기 Apple ID 구독 신뢰 금지 → 계정 간 프리미엄 누수 방지).
+- `syncPremiumFromRevenueCat()` — **자동 호출 금지**(기기 구독을 직접 읽어 누수 위험). 정의만 두고 호출하지 않음.
+- 광고: `showAdBannerIfNeeded()`, `hideAdBanner()`, `_anySubSheetOpen()`(열린 시트 있으면 광고 숨김), `_elVisible(el)`(실제 보이는 요소만 카운트 — 잔여 `.on` 오판 방지), `_admobDebug`(설정 화면 푸터에 노출).
+
+## 이미 완료된 수정 (2026-07 기준)
+1. ✅ **RPC `my_premium_status()` 수정** — `HAVING count(*)>0` 추가. DB 라이브. (무료 유저가 프리미엄으로 뜨던 근본 원인)
+2. ✅ **광고 게이팅** — `_anySubSheetOpen()`이 `_elVisible()`로 실제 보이는 시트만 카운트(닫힌 시트 잔여 `.on`이 광고를 영구히 숨기던 버그).
+3. ✅ **구매 복원 누수** — `onRestorePurchases()` 서버 단일 기준. 기기 엔타이틀먼트로 프리미엄 안 켜짐.
+4. ✅ **멤버 없을 때 캘린더가 위로 올라가던 현상** — 노치 여백(`env(safe-area-inset-top)`)을 조건부로 표시되던 `.cal-member-tabs`에서 항상 존재하는 부모 `.screen.cal`로 이동.
+5. ✅ 관리자 버튼 `전체 이용자 프리미엄`(globalTrialBtn)·`프리미엄 개별 관리`(premMgmtBtn) UI 삭제(충돌 우려). 함수/모달 마크업은 잔존(무해).
+
+## 주의사항 / 함정
+- 위 2~5번은 개발자의 **로컬 최신 `index.html`**에 반영돼 있으나, 저장소 `main`은 더 옛 버전일 수 있음. 새 세션은 “현재 배포/로컬 버전”을 개발자에게 확인하거나 최신 파일을 받아 작업할 것.
+- 옛 버전 기반 브랜치/PR(예: `claude/calendar-ads-free-users-l7jsbt`의 PR #2)은 **머지 금지** — 삭제한 관리자 버튼 부활 + 최신 리팩터 덮어쓰기 위험.
+- 배포 버전 확인: 앱 설정 화면 푸터의 `build ...` 문자열(런타임에 JS가 세팅, HTML 정적값과 다를 수 있음).
+
+## 새 세션 체크리스트
+1. 이 `CLAUDE.md` 읽기.
+2. 작업 대상이 프리미엄/광고면: `my_premium_status()` 정의 + `subscriptions` 조회로 DB 진실 먼저 확인(추측 금지).
+3. 클라이언트 코드는 개발자의 최신 `index.html` 기준으로 작업(저장소 main이 뒤처졌을 수 있음).
+4. 광고 관련이면 네이티브 여부와 `_admobDebug` 값부터 확인.
