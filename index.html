@@ -5471,7 +5471,7 @@ async function showUpgradeModal(opts){
     + ' 지금 시작하면 첫 7일은 무료로 모든 프리미엄 기능을 써볼 수 있어요.';
   let goSub=false;
   try{
-    goSub=await vConfirm(msg,{title:'✨ 7일 무료 체험',okText:'무료로 체험하기',cancelText:'다음에'});
+    goSub=await vConfirm(msg,{title:'7일 무료 체험',okText:'무료로 체험하기',cancelText:'다음에'});
   }catch(_){ goSub=true; }
   if(!goSub) return;
   if(typeof openPremiumSheet==='function'){
@@ -14984,11 +14984,13 @@ function openPremiumSheet(){
   if(btn) btn.textContent = prem ? '이미 이용 중이에요' : '7일 무료로 시작하기';
   try{ _updateTrialCta(); }catch(_){}
   selectPlan(_premSelectedPlan);
+  try{ hideTabbar(); }catch(_){}
   document.getElementById('premiumCard').classList.add('on');
   _subScreenEnter();
 }
 function closePremiumSheet(){
   document.getElementById('premiumCard').classList.remove('on');
+  try{ showTabbar(); }catch(_){}
   _subScreenExit();
 }
 /* ═══ RevenueCat 인앱 결제 ═══
