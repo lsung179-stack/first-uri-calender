@@ -179,7 +179,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
   }
   .cal-tabbar{max-width:398px!important;bottom:calc(50vh - 422px + 16px)!important}
 }
-.screen{position:absolute;inset:0;padding:0 28px;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .35s ease}
+.screen{position:absolute;inset:0;padding:0 28px;display:flex;flex-direction:column;align-items:center;justify-content:safe center;overflow-y:auto;-webkit-overflow-scrolling:touch;opacity:0;pointer-events:none;transition:opacity .35s ease}
 .screen.show{opacity:1;pointer-events:auto}
 
 /* 로고 */
@@ -432,7 +432,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .mo-cancel{font-size:13px;color:var(--sub);text-align:center;background:none;border:none;padding:14px;cursor:pointer;font-family:inherit}
 .vc-overlay{position:fixed;inset:0;background:rgba(30,28,24,.5);z-index:2000;opacity:0;pointer-events:none;transition:opacity .2s ease;display:flex;align-items:center;justify-content:center;padding:28px;box-sizing:border-box;transform:translateZ(0)}
 .vc-overlay.on{opacity:1;pointer-events:auto}
-.vc-card{background:var(--card);border-radius:22px;max-width:330px;width:100%;padding:28px 24px 14px;box-shadow:0 16px 48px rgba(30,28,24,.3);transform:scale(.94) translateY(8px);opacity:0;transition:transform .22s cubic-bezier(.32,.72,0,1),opacity .2s ease}
+.vc-card{background:var(--card);border-radius:22px;max-width:330px;width:100%;padding:28px 24px 14px;box-shadow:0 16px 48px rgba(30,28,24,.3);transform:scale(.94) translateY(8px);opacity:0;transition:transform .22s cubic-bezier(.32,.72,0,1),opacity .2s ease;max-height:calc(100vh - 56px);max-height:calc(100dvh - 56px);overflow-y:auto}
 .vc-overlay.on .vc-card{transform:scale(1) translateY(0);opacity:1}
 .upg-card{text-align:center}
 .upg-card .mo-sub{margin-bottom:4px}
@@ -512,7 +512,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 /* ═══════════════════════════════════
    3-A: 캘린더 + 일정
    ═══════════════════════════════════ */
-.screen.cal{padding:0;justify-content:flex-start;align-items:stretch}
+.screen.cal{padding:max(8px,env(safe-area-inset-top)) 0 0;justify-content:flex-start;align-items:stretch}
 .cal-header{display:flex;align-items:center;justify-content:space-between;padding:max(16px,env(safe-area-inset-top)) 20px 8px;flex-shrink:0;gap:10px}
 .cal-back{background:none;border:none;cursor:pointer;padding:6px 10px;font-size:24px;color:var(--text);font-family:inherit;line-height:1;font-weight:300}
 .cal-back:active{opacity:.6}
@@ -1152,7 +1152,7 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 /* 약관 동의 시트 (카카오/이메일가입/기존사용자 공용) */
 .agree-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:90;opacity:0;pointer-events:none;transition:opacity .2s}
 .agree-overlay.on{opacity:1;pointer-events:auto}
-.agree-sheet{position:fixed;left:0;right:0;bottom:0;z-index:91;background:var(--card);border-radius:20px 20px 0 0;padding:24px 22px calc(24px + env(safe-area-inset-bottom));transform:translateY(110%);transition:transform .25s ease;max-width:480px;margin:0 auto}
+.agree-sheet{position:fixed;left:0;right:0;bottom:0;z-index:91;background:var(--card);border-radius:20px 20px 0 0;padding:24px 22px calc(24px + env(safe-area-inset-bottom));transform:translateY(110%);transition:transform .25s ease;max-width:480px;margin:0 auto;max-height:88vh;max-height:88dvh;overflow-y:auto}
 .agree-sheet.on{transform:translateY(0)}
 .agree-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:18px;color:var(--text);margin-bottom:14px;text-align:center}
 .agree-row{display:flex;align-items:center;gap:9px;padding:11px 4px;font-size:14px;color:var(--text);cursor:pointer}
@@ -2186,13 +2186,15 @@ body.align-right .cal-evbar{text-align:right}
 .pf-stamp.has-photo::before{display:none}
 .pf-photo-btn{display:block;font-size:11px;color:var(--sub);background:transparent;border:none;cursor:pointer;margin-top:4px;padding:4px 0;font-family:inherit;text-decoration:underline}
 /* ===== 신규 가입 온보딩 슬라이드 ===== */
-.onb-overlay{position:fixed;inset:0;background:rgba(30,28,24,.55);z-index:95;display:none;align-items:center;justify-content:center;padding:22px;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+.onb-overlay{position:fixed;inset:0;background:rgba(30,28,24,.55);z-index:95;display:none;align-items:center;justify-content:center;padding:16px;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
 .onb-overlay.on{display:flex}
-.onb-card{background:var(--bg);border-radius:24px;width:100%;max-width:350px;padding:30px 24px 20px;box-shadow:0 24px 70px rgba(0,0,0,.35);text-align:center;animation:onbIn .3s ease}
+/* ★ 화면 크기 대응: 카드가 뷰포트 높이를 넘지 않게 제한(폰마다 화면·글꼴 크기 달라도 잘림 방지).
+   내용이 길면 가운데(슬라이드)만 스크롤되고, 점·"다음"·"닫기"는 항상 아래에 고정 노출. */
+.onb-card{background:var(--bg);border-radius:24px;width:100%;max-width:350px;padding:26px 24px 18px;box-shadow:0 24px 70px rgba(0,0,0,.35);text-align:center;animation:onbIn .3s ease;display:flex;flex-direction:column;max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px)}
 @keyframes onbIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
-.onb-viewport{overflow:hidden;width:100%}
+.onb-viewport{overflow-x:hidden;overflow-y:auto;width:100%;flex:1 1 auto;min-height:0;-webkit-overflow-scrolling:touch}
 .onb-track{display:flex;transition:transform .3s ease}
-.onb-slide{flex:0 0 100%;max-width:100%;box-sizing:border-box;padding:0 2px;min-height:344px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.onb-slide{flex:0 0 100%;max-width:100%;box-sizing:border-box;padding:0 2px;min-height:min(344px,50vh);display:flex;flex-direction:column;align-items:center;justify-content:center}
 .onb-logo{width:96px;height:96px;border-radius:22px;margin-bottom:18px;box-shadow:0 6px 20px rgba(139,58,42,.18)}
 .onb-title{font-size:21px;font-weight:800;color:var(--text);line-height:1.42;margin-bottom:12px}
 .onb-desc{font-size:13.5px;color:var(--sub);line-height:1.65}
@@ -2219,12 +2221,12 @@ body.align-right .cal-evbar{text-align:right}
 .onb-fic{font-size:23px;flex-shrink:0;line-height:1.2}
 .onb-ft{flex:1;min-width:0;font-size:12.5px;color:var(--sub);line-height:1.5}
 .onb-ft b{display:block;color:var(--text);font-size:14px;margin-bottom:2px}
-.onb-dots{display:flex;justify-content:center;gap:7px;margin:24px 0 16px}
+.onb-dots{display:flex;justify-content:center;gap:7px;margin:16px 0 12px;flex:none}
 .onb-dot{width:7px;height:7px;border-radius:50%;background:var(--mute);opacity:.4;transition:.25s}
 .onb-dot.on{background:var(--accent);opacity:1;width:22px;border-radius:4px}
-.onb-next{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;transition:transform .12s}
+.onb-next{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;transition:transform .12s;flex:none}
 .onb-next:active{transform:scale(.98)}
-.onb-dismiss{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;color:var(--sub);margin-bottom:14px;cursor:pointer;-webkit-user-select:none;user-select:none}
+.onb-dismiss{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;color:var(--sub);margin-bottom:14px;cursor:pointer;-webkit-user-select:none;user-select:none;flex:none}
 .onb-dismiss input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;margin:0}
 /* ============================================================
    V2 대규모 업데이트: 탭바 / 우리할일 / 통합설정 / 데이시트 탭
@@ -2232,7 +2234,7 @@ body.align-right .cal-evbar{text-align:right}
    ============================================================ */
 
 /* ── 1. 캘린더 헤더 제거에 따른 보정 ── */
-.cal-member-tabs{padding-top:max(10px,env(safe-area-inset-top))}
+.cal-member-tabs{padding-top:4px}
 .cal-grid{padding-bottom:calc(86px + env(safe-area-inset-bottom))}
 .cal-fab{bottom:calc(86px + env(safe-area-inset-bottom))}
 .cal-today-btn{bottom:calc(86px + env(safe-area-inset-bottom))}
@@ -3043,8 +3045,6 @@ body.has-ad .toast{ bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)
       <div class="uni-sec-label">🔧 관리자 전용</div>
       <button class="uni-nav" onclick="openAdminFullPage()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>관리자 페이지 열기</span><span class="chev">›</span></button>
       <button class="uni-nav plan-toggle off" id="planToggleBtn" onclick="toggleAdminPlan()"><span class="uni-nav-l" id="planToggleBtnLabel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>무료 플랜 (체험)</span><span class="plan-switch" id="planSwitch">OFF</span></button>
-      <button class="uni-nav" id="globalTrialBtn" onclick="toggleGlobalTrial()"><span class="uni-nav-l" id="globalTrialLabel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>전체 이용자 프리미엄</span><span class="plan-switch off" id="globalTrialSwitch">OFF</span></button>
-      <button class="uni-nav" id="premMgmtBtn" onclick="openPremiumManage()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h1"/><circle cx="18" cy="17" r="3"/><path d="M18 14v1.5M18 18.5V20M14.5 17H16M20 17h1.5"/></svg>프리미엄 개별 관리</span><span class="chev">›</span></button>
       <button class="uni-nav" id="deployBtn" onclick="openDeploySheet()"><span class="uni-nav-l" id="deployBtnLabel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91 0z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>배포하기</span><span class="chev">›</span></button>
     </div>
 
@@ -4657,6 +4657,27 @@ async function getNativePushPerm(){
   catch(_){ return 'error'; }
 }
 
+/* 고중요도 알림 채널 생성 (Android 8+ 헤드업 팝업의 핵심).
+   Android는 채널 importance로 헤드업(상단 팝업)이 결정된다. importance:5=HIGH → 팝업.
+   ★ 채널 importance는 '생성 후 변경 불가'라, 기존에 없던 새 id(uri_high)로 만들어야
+     보통 중요도로 굳지 않고 HIGH로 뜬다. FCM 발송 메시지도 이 채널 id를 지정한다. */
+async function _ensurePushChannel(){
+  try{
+    const PN=_getPushPlugin();
+    if(!PN || typeof PN.createChannel!=='function') return;   // iOS 등 미지원 시 skip
+    if(_nativePlatform()!=='android') return;
+    await PN.createChannel({
+      id:'uri_high',
+      name:'우리 캘린더 알림',
+      description:'일정 리마인더 및 방 알림',
+      importance:5,      // HIGH → 헤드업 팝업
+      visibility:1,      // 잠금화면에 내용 표시(public)
+      vibration:true,
+      lights:true,
+    });
+  }catch(e){ console.warn('알림 채널 생성 실패(무시):',e); }
+}
+
 /* 네이티브 푸시 등록 (권한 요청 + 토큰 등록). 반환: 권한 granted 성공 여부.
    Android 13+ 는 requestPermissions()가 POST_NOTIFICATIONS 시스템 팝업을 띄운다 → 설정 토글이 켜짐. */
 async function registerNativePush(silent){
@@ -4665,6 +4686,7 @@ async function registerNativePush(silent){
   if(!_currentUser){ if(!silent)toast('로그인이 필요해요'); return false; }
   try{
     _setupNativePushListeners();
+    await _ensurePushChannel();  // 고중요도 채널 생성 (헤드업 팝업 필수 — Android 8+)
     let perm=await PN.checkPermissions();
     if(perm.receive==='prompt'||perm.receive==='prompt-with-rationale'){
       perm=await PN.requestPermissions();
@@ -5241,7 +5263,7 @@ function openProfile(){
   const restoreBtn=document.querySelector('.pf-restore-btn');
   if(restoreBtn){
     const kakaoUrl=meta.avatar_url||meta.picture||meta.profile_image||meta.profile_image_url;
-    restoreBtn.style.display=kakaoUrl?'block':'none';
+    restoreBtn.style.display=(_isKakaoLogin()&&kakaoUrl)?'block':'none';  // 카카오 로그인 유저만
   }
   document.getElementById('profileOverlay').classList.add('on');
   document.getElementById('profileCard').classList.add('on');
@@ -5742,6 +5764,17 @@ function compressImage(file,maxSize,quality){
   });
 }
 
+/* 카카오 로그인 유저인지 판별 — 구글도 avatar_url/picture를 메타데이터에 넣으므로
+   "사진 URL 유무"가 아니라 로그인 provider로 구분해야 카카오 복구 버튼이 엉뚱하게 안 뜬다. */
+function _isKakaoLogin(){
+  try{
+    var am=_currentUser&&_currentUser.app_metadata;
+    if(!am) return false;
+    if(am.provider==='kakao') return true;
+    if(Array.isArray(am.providers)&&am.providers.indexOf('kakao')>=0) return true;
+    return false;
+  }catch(_){ return false; }
+}
 /* 카카오톡 원래 프로필 사진으로 복구 */
 async function restoreKakaoPhoto(){
   if(!_currentUser){toast('로그인이 필요해요');return}
@@ -6057,24 +6090,16 @@ async function hideAdBanner() {
    서브 시트가 열려 있으면 광고를 숨기고, 모두 닫히면 다시 표시한다.
    DOM의 .on 상태를 직접 보므로 닫는 경로가 어디든(닫기버튼·탭전환·뒤로) 항상 정합. */
 const _AD_HIDE_SHEET_IDS = ['premiumCard','storeCard','advCard','annCard','csCard','evCard','todoAddCard','dpCard','myOrdersCard','vcOverlay','upgOverlay','rdOverlay'];
-/* 요소가 실제로 화면에 보이는지 — .on 클래스가 남아 있어도 display:none·투명·0크기면 false.
-   (닫은 시트의 .on 잔여 클래스가 배너를 계속 숨기던 문제 방지: closeAllModals가 풀스크린 시트의 .on을
-    지우지 않아, 탭 전환으로 시트를 벗어나면 안 보이는데도 '모달 열림'으로 오판돼 무료 유저 광고가 안 뜸) */
+/* 요소가 실제로 화면에 보이는지(display:none이 아닌지) — 잔여 .on 클래스 오판 방지 */
 function _elVisible(el){
-  if(!el) return false;
-  try{
-    const cs=getComputedStyle(el);
-    if(cs.display==='none' || cs.visibility==='hidden' || parseFloat(cs.opacity||'1')===0) return false;
-    const r=el.getBoundingClientRect();
-    return r.width>0 && r.height>0;
-  }catch(_){ return true; } // 판단 불가 시엔 안전하게 '열림'으로 간주(콘텐츠 가림 방지)
+  try{ return !!(el && (el.offsetWidth>0 || el.offsetHeight>0 || el.getClientRects().length>0)); }catch(_){ return true; }
 }
 function _anySubSheetOpen(){
-  // 어떤 모달·오버레이·풀스크린 시트라도 "실제로 보이면" true (관리자 개별관리 등 전부 포함).
-  // .on 클래스만 남고 화면엔 안 보이는 잔여 시트는 제외한다.
-  for(const el of document.querySelectorAll('.mo-overlay.on, .mo-card.on, .dp-card.on, .dp-overlay.on, .vc-overlay.on, .vc-card.on, .store-card.on, .ann-card.on')){
-    if(_elVisible(el)) return true;
-  }
+  // ★ 실제로 '보이는' 모달/시트만 열림으로 카운트한다.
+  //   (닫혔는데 .on 클래스만 남은 잔여 요소가 광고를 영구히 숨기던 버그 방지 —
+  //    광고는 로드됐지만 매번 '시트 열림'으로 오판돼 숨겨지던 문제)
+  const els=document.querySelectorAll('.mo-overlay.on, .mo-card.on, .dp-card.on, .dp-overlay.on, .vc-overlay.on, .vc-card.on, .store-card.on, .ann-card.on');
+  for(let i=0;i<els.length;i++){ if(_elVisible(els[i])) return true; }
   for(const id of _AD_HIDE_SHEET_IDS){
     const el = document.getElementById(id);
     if(el && el.classList.contains('on') && _elVisible(el)) return true;
@@ -6098,9 +6123,23 @@ function _subScreenExit(){
 }
 
 /* ── 프리미엄 상태 ── 로그인 시 1회 로드, 모든 제한 체크는 _isPremium 하나로 판단 */
-let _isPremium=false;        // 현재 유저 프리미엄 여부
+let _isPremium=false;        // 현재 유저 프리미엄 여부(서버+기기 병합 결과)
 let _premiumInfo=null;       // {is_premium, expires_at, plan_type, is_manual}
 let _premiumLoaded=false;    // 세션당 로드 가드
+/* 프리미엄 진실의 원천은 둘: (1) 서버(my_premium_status ← RevenueCat webhook),
+   (2) 기기(RevenueCat 구독 그 자체). 웹훅이 지연·누락돼 서버가 '무료'로 응답해도
+   기기에 활성 구독이 있으면 프리미엄을 유지한다. → 앱을 껐다 켤 때마다 무료로
+   떨어지던 버그의 근본 수정. 두 소스를 OR로 병합한다. */
+let _serverPremium=false, _serverPremiumInfo=null;   // 서버(webhook) 기준
+let _rcPremiumActive=false, _rcPremiumInfo=null;      // 기기(RevenueCat) 기준
+function _recomputePremium(){
+  // 진실의 원천은 서버(subscriptions←웹훅)뿐이다. 기기(RevenueCat)의 entitlement는
+  // 앱 '계정'이 아니라 그 기기의 'Apple ID' 단위라, 한 기기에서 여러 계정으로 로그인하거나
+  // '구매 복원'을 누르면 남의(기기 소유자) 구독으로 다른 계정까지 프리미엄이 새는 문제가 있다.
+  // → 표시/기능 판정에는 서버 상태만 사용한다.
+  _isPremium = _serverPremium;
+  _premiumInfo = _serverPremiumInfo || null;
+}
 const FREE_LIMITS={ photosPerEvent:1, activeTodos:5, doneTodoDays:7 };  // 방·인원은 무제한(제한 없음)
 const PREMIUM_DONE_DAYS=0;  // 프리미엄: 완료 할일 평생 보관(만료 없음). 무료는 FREE_LIMITS.doneTodoDays=7
 const PREMIUM_PHOTOS=5;  // 프리미엄: 일정당 사진 5장 (무료는 FREE_LIMITS.photosPerEvent=1)
@@ -6131,12 +6170,13 @@ function photoKeepDaysLeft(ev){
 
 async function loadPremiumStatus(){
   try{
-    if(!_currentUser){ _isPremium=false; _premiumInfo=null; _premiumLoaded=false; return; }
+    if(!_currentUser){ _isPremium=false; _premiumInfo=null; _premiumLoaded=false; _serverPremium=false; _serverPremiumInfo=null; _rcPremiumActive=false; _rcPremiumInfo=null; return; }
     const {data,error}=await supa.rpc('my_premium_status');
-    if(error){ console.warn('프리미엄 상태 로드 실패:',error.message||error); return; }
-    _premiumInfo=data||null;
-    _isPremium=!!(data&&data.is_premium);
+    if(error){ console.warn('프리미엄 상태 로드 실패:',error.message||error); _recomputePremium(); return; } // 서버 실패해도 기기(RC) 상태는 유지
+    _serverPremium=!!(data&&data.is_premium);
+    _serverPremiumInfo=data||null;
     _premiumLoaded=true;
+    _recomputePremium();  // 서버가 '무료'라도 기기에 활성 구독 있으면 프리미엄 유지 (덮어쓰기 금지)
     try{ renderRoomThemeGrid(); }catch(_){} // 프리미엄 확정 후 이 방 테마 섹션 표시/숨김 갱신
   }catch(e){ console.warn('프리미엄 상태 오류:',e); }
 }
@@ -6993,6 +7033,7 @@ supa.auth.onAuthStateChange((event,session)=>{
   }else if(event==='SIGNED_OUT'){
     _currentUser=null;
     _isPremium=false;_premiumInfo=null;_premiumLoaded=false;  // 프리미엄 상태 리셋
+    _serverPremium=false;_serverPremiumInfo=null;_rcPremiumActive=false;_rcPremiumInfo=null;  // 서버·기기 병합 상태도 리셋
     try{ const P=_rcPlugin(); if(P&&_rcConfigured){ P.logOut(); } }catch(_){} // RevenueCat 로그아웃 (다음 유저와 구독 섞임 방지)
     hideAdBanner(); // 로그아웃 시 광고 숨김
     showScreen('welcomeScreen');
@@ -7859,6 +7900,35 @@ function daysInMonth(y,m){return new Date(y,m+1,0).getDate()}
 function firstDow(y,m){return new Date(y,m,1).getDay()}
 
 /* ── 일정 로드 (방의 모든 일정) ── */
+/* ── 홈화면 위젯 데이터 브리지 ──
+   앱이 "오늘 일정"을 네이티브 공유 저장소(@capacitor/preferences → Android의
+   CapacitorStorage SharedPreferences)에 기록한다. 위젯은 이 값을 읽어 표시한다.
+   Preferences 플러그인이 없거나 웹이면 조용히 no-op (앱 동작에 영향 없음). */
+async function syncWidgetData(){
+  try{
+    if(!isNativeApp()) return;
+    const P = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Preferences;
+    if(!P) return;
+    const key = _todayKeyStr();
+    let evs=[]; try{ evs=getDayEvents(key)||[]; }catch(_){ evs=[]; }
+    const items = evs
+      .filter(e=>e && e.title)
+      .map(e=>({ time:String(e.time||'').trim(), title:String(e.title).slice(0,60), color:e.color||'' }))
+      .sort((a,b)=>{
+        if(!a.time && b.time) return -1;   // 종일(시간 없음) 먼저
+        if(a.time && !b.time) return 1;
+        return a.time.localeCompare(b.time);
+      })
+      .slice(0,10);
+    const payload = {
+      updatedAt: Date.now(),
+      roomName: (_currentRoom && _currentRoom.name) ? String(_currentRoom.name) : '우리 캘린더',
+      dateLabel: key,
+      today: items
+    };
+    await P.set({ key:'widget_today', value: JSON.stringify(payload) });
+  }catch(_){ /* 위젯 동기화 실패는 무시 */ }
+}
 async function loadEvents(){
   if(!_currentRoom)return;
   _events={};
@@ -7891,6 +7961,7 @@ async function loadEvents(){
     // 일정 먼저 렌더 (반응 로딩을 기다리지 않음 → 체감 속도 ↑)
     invalidateDayEventsCache();
     renderMonthly();
+    syncWidgetData();  // 홈화면 위젯에 오늘 일정 반영 (로드·추가·수정·삭제 후 loadEvents가 다시 호출됨)
     // 이모지 반응은 백그라운드로 로드 후 다시 렌더
     loadReactions().then(()=>{
       renderMonthly();
@@ -8414,20 +8485,36 @@ function renderMonthly(){
   { let _nd=1; while(_gridDays.length<42){ _gridDays.push(dateKey(_calMonth===11?_calYear+1:_calYear, _calMonth===11?0:_calMonth+1, _nd)); _nd++; } }
   try{ _computeMonthLanes(_gridDays); }catch(e){ console.warn('lane calc', e); }
 
+  // 주(週)별 레인 압축 맵 — 6주(=6행) 각각에서 실제 쓰이는 레인만 위에서부터 채워 빈 줄 제거
+  _absSlotCache=new Map();
+  const _weekRemaps=[];
+  for(let w=0; w<6; w++){
+    const used=new Set();
+    for(let i=0;i<7;i++){
+      const key=_gridDays[w*7+i]; if(!key)continue;
+      const dt=parseDateKey(key);
+      const abs=_dayAbsSlots(key,dt.getFullYear(),dt.getMonth(),dt.getDate());
+      Object.keys(abs.slots).forEach(function(k){ used.add(+k); });
+    }
+    const sorted=Array.from(used).sort(function(a,b){return a-b;});
+    const map={}; sorted.forEach(function(L,idx){ map[L]=idx; });
+    _weekRemaps.push(map);
+  }
+
   let html='';
   let cellCount=0;
   for(let i=offset-1;i>=0;i--){
     const d=prevDim-i;
-    html+=cellHtml(_calMonth===0?_calYear-1:_calYear, _calMonth===0?11:_calMonth-1, d, true, todayKey);
+    html+=cellHtml(_calMonth===0?_calYear-1:_calYear, _calMonth===0?11:_calMonth-1, d, true, todayKey, _weekRemaps[(cellCount/7)|0]);
     cellCount++;
   }
   for(let d=1;d<=dim;d++){
-    html+=cellHtml(_calYear,_calMonth,d,false,todayKey);
+    html+=cellHtml(_calYear,_calMonth,d,false,todayKey, _weekRemaps[(cellCount/7)|0]);
     cellCount++;
   }
   let nextD=1;
   while(cellCount<42){
-    html+=cellHtml(_calMonth===11?_calYear+1:_calYear, _calMonth===11?0:_calMonth+1, nextD, true, todayKey);
+    html+=cellHtml(_calMonth===11?_calYear+1:_calYear, _calMonth===11?0:_calMonth+1, nextD, true, todayKey, _weekRemaps[(cellCount/7)|0]);
     nextD++;cellCount++;
   }
   grid.innerHTML=html;
@@ -8638,12 +8725,41 @@ function _eventBarHTML(ev,key,y,m,d){
   return {html:`<div class="cal-evbar${sharedCls}${rangeCls}${_spillCls}${_olCls}" style="${_barInline}"${dragAttr}>${sharedMarker}${displayTitle}</div>`, hasRangeStart:_hasRangeStart};
 }
 
-function cellHtml(y,m,d,isOther,todayKey){
+/* 하루치 일정/할일을 '절대 레인' 슬롯으로 계산 — 주별 레인 압축 계산과 셀 렌더가 공유.
+   renderMonthly 1회 동안만 유효한 _absSlotCache 로 중복 계산 방지. */
+let _absSlotCache=null;
+function _dayAbsSlots(key,y,m,d){
+  if(_absSlotCache){ const h=_absSlotCache.get(key); if(h) return h; }
+  const slots={}; let overflow=0; let hasRangeStart=false;
+  const place=function(lane,html,rs){ if(typeof lane!=='number'){return;} if(lane>49){ overflow++; return; } if(slots[lane]==null){ slots[lane]=html; if(rs)hasRangeStart=true; } };
+  // 일정
+  getDayEvents(key).forEach(function(ev){
+    const bar=_eventBarHTML(ev,key,y,m,d);
+    place(_laneMap[_eventItemKey(ev)], bar.html, bar.hasRangeStart);
+  });
+  // 할일 — 미완료/완료 모두 전역 레인
+  const _td=(typeof window!=='undefined'&&window.__getTodos)?(window.__getTodos()||[]):[];
+  const _occ=window.todoOccursOnDate;
+  if(_occ){
+    _td.forEach(function(t){
+      if(!_occ(t,key)) return;
+      const _isRangeTd=(t.todo_type==='range'&&t.end_date&&t.end_date>t.start_date);
+      const th=window.__todoCellHTML?window.__todoCellHTML(t,key):'';
+      const _spreadTd=(!_isRangeTd)&&((t.repeat_type&&t.repeat_type!=='none')||t.todo_type==='multi');
+      const _lk=_spreadTd?('t:'+t.id+'@'+key):('t:'+t.id);
+      if(th) place(_laneMap[_lk], th, false);
+    });
+  }
+  const res={slots:slots, overflow:overflow, hasRangeStart:hasRangeStart};
+  if(_absSlotCache) _absSlotCache.set(key,res);
+  return res;
+}
+
+function cellHtml(y,m,d,isOther,todayKey,weekRemap){
   const key=dateKey(y,m,d);
   const dow=new Date(y,m,d).getDay();
   const isToday=(key===todayKey);
   const isHoliday=!!HOLIDAYS[key];
-  const evs=getDayEvents(key);
   const cls=['cal-cell'];
   if(isOther)cls.push('other');
   if(isToday)cls.push('today');
@@ -8664,28 +8780,20 @@ function cellHtml(y,m,d,isOther,todayKey){
   let evsHtml='';
   let _hasRangeStart=false;
   {
-    const slots=[]; let overflow=0; let maxLane=-1;
-    const place=function(lane,html,rs){ if(typeof lane!=='number'){return;} if(lane>49){ overflow++; return; } if(slots[lane]==null){ slots[lane]=html; if(lane>maxLane)maxLane=lane; if(rs)_hasRangeStart=true; } };
-    // 일정
-    evs.forEach(function(ev){
-      const bar=_eventBarHTML(ev,key,y,m,d);
-      place(_laneMap[_eventItemKey(ev)], bar.html, bar.hasRangeStart);
+    const abs=_dayAbsSlots(key,y,m,d);
+    _hasRangeStart=abs.hasRangeStart;
+    // 주별 레인 압축: 이 주(週) 전체가 비어있는 레인은 걷어내 남은 바를 위로 끌어올린다.
+    // (겹치는 기간 일정이 끝난 뒤 남은 바가 빈 줄 아래로 떠 보이던 문제 해결)
+    const disp=[]; let maxLane=-1;
+    Object.keys(abs.slots).forEach(function(k){
+      const absL=+k;
+      const dL=weekRemap?weekRemap[absL]:absL;
+      if(typeof dL!=='number') return;
+      disp[dL]=abs.slots[absL];
+      if(dL>maxLane)maxLane=dL;
     });
-    // 할일 — 미완료/완료 모두 전역 레인. 정렬에서 미완료(위)→완료단일→완료기간(아래) 순서 확정됨
-    const _td=(typeof window!=='undefined'&&window.__getTodos)?(window.__getTodos()||[]):[];
-    const _occ=window.todoOccursOnDate;
-    if(_occ){
-      _td.forEach(function(t){
-        if(!_occ(t,key)) return;
-        const _isRangeTd=(t.todo_type==='range'&&t.end_date&&t.end_date>t.start_date);
-        const th=window.__todoCellHTML?window.__todoCellHTML(t,key):'';
-        const _spreadTd=(!_isRangeTd)&&((t.repeat_type&&t.repeat_type!=='none')||t.todo_type==='multi');
-        const _lk=_spreadTd?('t:'+t.id+'@'+key):('t:'+t.id);
-        if(th) place(_laneMap[_lk], th, false);
-      });
-    }
-    for(let L=0; L<=maxLane; L++){ evsHtml += (slots[L]!=null?slots[L]:'<div class="cal-evspacer"></div>'); }
-    if(overflow>0) evsHtml += '<div class="cal-more">+'+overflow+'</div>';
+    for(let L=0; L<=maxLane; L++){ evsHtml += (disp[L]!=null?disp[L]:'<div class="cal-evspacer"></div>'); }
+    if(abs.overflow>0) evsHtml += '<div class="cal-more">+'+abs.overflow+'</div>';
   }
 
   if(_hasRangeStart)cls.push('has-range-start');
@@ -14864,20 +14972,52 @@ async function initRevenueCat(userId){
     }
   }catch(e){ console.warn('RevenueCat init 실패:', e); }
 }
-/* 결제/복원 후 서버 상태를 다시 읽어 프리미엄을 반영한다.
-   ★ 기기(Apple ID) 엔타이틀먼트로는 프리미엄을 부여하지 않는다 — 서버(subscriptions ← webhook)가 유일한 진실.
-     구매 복원은 기기 Apple ID 기준이라, 예전엔 다른 계정으로 로그인해도 프리미엄이 새던 문제가 있었다.
-   결제 직후엔 webhook이 subscriptions 행을 쓰기까지 몇 초 걸릴 수 있어 짧게 재시도한다. */
-async function _applyRcEntitlement(customerInfo, planLabel){
-  for(let i=0;i<4;i++){
-    _premiumLoaded=false;
-    await loadPremiumStatus();     // my_premium_status() = 현재 로그인 계정의 활성 구독만 반영
-    if(_isPremium) break;
-    if(i<3) await new Promise(r=>setTimeout(r,1500)); // webhook 반영 대기 후 재확인
-  }
-  try{ showAdBannerIfNeeded(); }catch(_){} // 프리미엄이면 내부에서 숨김, 무료면 광고 표시
-  try{ if(typeof openPremiumSheet==='function' && document.getElementById('premiumCard') && document.getElementById('premiumCard').classList.contains('on')) openPremiumSheet(); }catch(_){}
-  return _isPremium;
+/* '결제(구매)' 성공 시에만 호출 — 방금 이 계정으로 결제했으므로 낙관적으로 프리미엄을 반영하고,
+   웹훅이 서버 subscriptions를 채우면 서버(진실의 원천)로 재동기화한다.
+   ⚠️ '구매 복원'에는 절대 쓰지 않는다. 기기(Apple ID) 구독을 그대로 신뢰하면 다른 계정으로
+      복원 시 남의 구독으로 프리미엄이 새기 때문. 복원은 서버 상태로만 판정한다(onRestorePurchases). */
+function _applyRcEntitlement(customerInfo, planLabel){
+  try{
+    const active=(customerInfo&&customerInfo.entitlements&&customerInfo.entitlements.active)||{};
+    const ent=active[RC_ENTITLEMENT];
+    if(!ent) return false;
+    _serverPremium=true;   // 방금 이 계정으로 결제 → 낙관적 반영(웹훅이 곧 서버에 기록)
+    _serverPremiumInfo={ is_premium:true, expires_at:ent.expirationDate||ent.expiresDate||null, plan_type:planLabel||'premium', is_manual:false };
+    _premiumLoaded=true;
+    _recomputePremium();
+    try{ hideAdBanner(); document.body.classList.remove('has-ad'); }catch(_){}
+    try{ if(typeof openPremiumSheet==='function' && document.getElementById('premiumCard') && document.getElementById('premiumCard').classList.contains('on')) openPremiumSheet(); }catch(_){}
+    // 웹훅이 subscriptions를 채우도록 여러 번(웹훅 지연 대비) 서버 상태로 재동기화
+    [4000, 10000, 20000].forEach(function(ms){
+      setTimeout(function(){ _premiumLoaded=false; loadPremiumStatus().then(function(){ try{ showAdBannerIfNeeded(); }catch(_){}}); }, ms);
+    });
+    return true;
+  }catch(_){ return false; }
+}
+/* 앱 시작·로그인 시 호출 — 기기의 RevenueCat 구독을 직접 읽어 프리미엄을 자동 복원한다.
+   서버 웹훅이 지연·누락돼도 이걸로 '껐다 켤 때마다 무료로 떨어지는' 현상을 막는다.
+   활성 구독이 없으면 기기 기준(_rcPremiumActive)만 내리고, 서버/관리자 부여 프리미엄은 건드리지 않는다. */
+async function syncPremiumFromRevenueCat(){
+  try{
+    if(!isNativeApp()) return false;
+    const P=_rcPlugin(); if(!P) return false;
+    await initRevenueCat(_currentUser&&_currentUser.id); // configure 보장
+    const res=await P.getCustomerInfo();
+    const ci=(res&&(res.customerInfo||res))||null;
+    const active=(ci&&ci.entitlements&&ci.entitlements.active)||{};
+    const ent=active[RC_ENTITLEMENT];
+    if(ent){
+      _rcPremiumActive=true;
+      _rcPremiumInfo={ is_premium:true, expires_at:ent.expirationDate||ent.expiresDate||null, plan_type:'premium', is_manual:false };
+      _premiumLoaded=true;
+    }else{
+      _rcPremiumActive=false; _rcPremiumInfo=null;   // 기기에 활성 구독 없음 (만료·미구독)
+    }
+    _recomputePremium();
+    try{ showAdBannerIfNeeded(); }catch(_){}
+    try{ renderRoomThemeGrid(); }catch(_){}
+    return _rcPremiumActive;
+  }catch(e){ console.warn('RC 프리미엄 동기화 실패:', e); return false; }
 }
 async function onPremiumSubscribe(){
   if(isEffectivePremium()){ toast('이미 프리미엄을 이용 중이에요'); return; }
@@ -14905,7 +15045,7 @@ async function onPremiumSubscribe(){
     const planLabel=_premSelectedPlan;
     const buy=await P.purchasePackage({ aPackage:pkg });
     const ci=buy&&buy.customerInfo;
-    if(await _applyRcEntitlement(ci, planLabel)){
+    if(_applyRcEntitlement(ci, planLabel)){
       toast('프리미엄 구독이 시작됐어요! 감사합니다 🎉');
     }else{
       toast('구독 확인에 시간이 걸리고 있어요. 잠시 후 새로고침하거나 구매 복원을 눌러주세요.');
@@ -14929,10 +15069,15 @@ async function onRestorePurchases(){
   try{
     toast('구매 내역을 확인하고 있어요...');
     await initRevenueCat(_currentUser&&_currentUser.id);
-    const res=await P.restorePurchases();
-    const ci=res&&res.customerInfo;
-    if(await _applyRcEntitlement(ci, 'restored')){
+    await P.restorePurchases();   // RevenueCat에 재연결 → 웹훅이 이 계정 구독을 갱신
+    // 진실은 서버. '이 계정'에 활성 구독이 있을 때만 프리미엄으로 판정한다.
+    // (기기 Apple ID 구독을 그대로 신뢰하면 다른 계정으로 남의 구독이 복원되는 문제)
+    _premiumLoaded=false;
+    await loadPremiumStatus();
+    if(_serverPremium){
       toast('프리미엄이 복원됐어요! 🎉');
+      try{ hideAdBanner(); document.body.classList.remove('has-ad'); }catch(_){}
+      try{ if(document.getElementById('premiumCard')&&document.getElementById('premiumCard').classList.contains('on')) openPremiumSheet(); }catch(_){}
     }else{
       toast('이 계정으로 복원할 구독 내역이 없어요.');
     }
@@ -17796,7 +17941,7 @@ function uniSyncProfileDisplay(){
   if($('uniNameInput')) $('uniNameInput').value=name;
   // 카카오 로그인 사용자(메타데이터에 카카오 사진 URL이 있을 때)만 복구 버튼 노출
   const rb=$('uniRestoreBtn');
-  if(rb){ const kakaoUrl=meta.avatar_url||meta.picture||meta.profile_image||meta.profile_image_url; rb.style.display=kakaoUrl?'':'none'; }
+  if(rb){ const kakaoUrl=meta.avatar_url||meta.picture||meta.profile_image||meta.profile_image_url; rb.style.display=(_isKakaoLogin()&&kakaoUrl)?'':'none'; }
 }
 function _copyBdSelects(){
   ['Type','Month','Day'].forEach(function(k){
