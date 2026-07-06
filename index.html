@@ -512,7 +512,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 /* ═══════════════════════════════════
    3-A: 캘린더 + 일정
    ═══════════════════════════════════ */
-.screen.cal{padding:0;justify-content:flex-start;align-items:stretch}
+.screen.cal{padding:max(8px,env(safe-area-inset-top)) 0 0;justify-content:flex-start;align-items:stretch}
 .cal-header{display:flex;align-items:center;justify-content:space-between;padding:max(16px,env(safe-area-inset-top)) 20px 8px;flex-shrink:0;gap:10px}
 .cal-back{background:none;border:none;cursor:pointer;padding:6px 10px;font-size:24px;color:var(--text);font-family:inherit;line-height:1;font-weight:300}
 .cal-back:active{opacity:.6}
@@ -2234,7 +2234,7 @@ body.align-right .cal-evbar{text-align:right}
    ============================================================ */
 
 /* ── 1. 캘린더 헤더 제거에 따른 보정 ── */
-.cal-member-tabs{padding-top:max(10px,env(safe-area-inset-top))}
+.cal-member-tabs{padding-top:4px}
 .cal-grid{padding-bottom:calc(86px + env(safe-area-inset-bottom))}
 .cal-fab{bottom:calc(86px + env(safe-area-inset-bottom))}
 .cal-today-btn{bottom:calc(86px + env(safe-area-inset-bottom))}
