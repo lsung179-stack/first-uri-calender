@@ -6936,7 +6936,6 @@ async function init(){
       showScreen('roomsScreen');
       loadRooms();
       loadPremiumStatus().then(()=>showAdBannerIfNeeded()); // 프리미엄 확인 후 광고 표시
-      syncPremiumFromRevenueCat(); // 기기 RevenueCat 구독으로 프리미엄 자동 복원 (웹훅 지연/누락 대비)
       ensureKakaoProfile();  // 재실행 시에도 카카오 이름·사진 보강 (아바타 "?" 방지)
       // 배포 버전 체크 — 관리자는 스킵, 일반 이용자는 새 버전 있으면 자동 새로고침
       setTimeout(checkDeployVersionOnStart, 1500);
@@ -7030,7 +7029,6 @@ supa.auth.onAuthStateChange((event,session)=>{
     }
     loadRooms();
     loadPremiumStatus().then(()=>showAdBannerIfNeeded()); // 프리미엄 확인 후 광고 표시
-    syncPremiumFromRevenueCat(); // 기기 RevenueCat 구독으로 프리미엄 자동 복원 (웹훅 지연/누락 대비)
     document.getElementById('loading').classList.add('hide');
   }else if(event==='SIGNED_OUT'){
     _currentUser=null;
