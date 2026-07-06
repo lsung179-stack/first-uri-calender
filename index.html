@@ -14864,21 +14864,20 @@ async function initRevenueCat(userId){
     }
   }catch(e){ console.warn('RevenueCat init 실패:', e); }
 }
-/* 결제 성공/복원 시 customerInfo로 프리미엄 즉시 반영 + 서버 상태 재로드 예약 */
-function _applyRcEntitlement(customerInfo, planLabel){
-  try{
-    const active=(customerInfo&&customerInfo.entitlements&&customerInfo.entitlements.active)||{};
-    const ent=active[RC_ENTITLEMENT];
-    if(!ent) return false;
-    _isPremium=true;
-    _premiumInfo={ is_premium:true, expires_at:ent.expirationDate||ent.expiresDate||null, plan_type:planLabel||'premium', is_manual:false };
-    _premiumLoaded=true;
-    try{ hideAdBanner(); document.body.classList.remove('has-ad'); }catch(_){}
-    try{ if(typeof openPremiumSheet==='function' && document.getElementById('premiumCard') && document.getElementById('premiumCard').classList.contains('on')) openPremiumSheet(); }catch(_){}
-    // webhook이 subscriptions를 채우도록 잠시 뒤 서버 상태로 재동기화
-    setTimeout(()=>{ _premiumLoaded=false; loadPremiumStatus().then(()=>{ try{ showAdBannerIfNeeded(); }catch(_){}}); }, 4000);
-    return true;
-  }catch(_){ return false; }
+/* 결제/복원 후 서버 상태를 다시 읽어 프리미엄을 반영한다.
+   ★ 기기(Apple ID) 엔타이틀먼트로는 프리미엄을 부여하지 않는다 — 서버(subscriptions ← webhook)가 유일한 진실.
+     구매 복원은 기기 Apple ID 기준이라, 예전엔 다른 계정으로 로그인해도 프리미엄이 새던 문제가 있었다.
+   결제 직후엔 webhook이 subscriptions 행을 쓰기까지 몇 초 걸릴 수 있어 짧게 재시도한다. */
+async function _applyRcEntitlement(customerInfo, planLabel){
+  for(let i=0;i<4;i++){
+    _premiumLoaded=false;
+    await loadPremiumStatus();     // my_premium_status() = 현재 로그인 계정의 활성 구독만 반영
+    if(_isPremium) break;
+    if(i<3) await new Promise(r=>setTimeout(r,1500)); // webhook 반영 대기 후 재확인
+  }
+  try{ showAdBannerIfNeeded(); }catch(_){} // 프리미엄이면 내부에서 숨김, 무료면 광고 표시
+  try{ if(typeof openPremiumSheet==='function' && document.getElementById('premiumCard') && document.getElementById('premiumCard').classList.contains('on')) openPremiumSheet(); }catch(_){}
+  return _isPremium;
 }
 async function onPremiumSubscribe(){
   if(isEffectivePremium()){ toast('이미 프리미엄을 이용 중이에요'); return; }
@@ -14906,7 +14905,7 @@ async function onPremiumSubscribe(){
     const planLabel=_premSelectedPlan;
     const buy=await P.purchasePackage({ aPackage:pkg });
     const ci=buy&&buy.customerInfo;
-    if(_applyRcEntitlement(ci, planLabel)){
+    if(await _applyRcEntitlement(ci, planLabel)){
       toast('프리미엄 구독이 시작됐어요! 감사합니다 🎉');
     }else{
       toast('구독 확인에 시간이 걸리고 있어요. 잠시 후 새로고침하거나 구매 복원을 눌러주세요.');
@@ -14932,10 +14931,10 @@ async function onRestorePurchases(){
     await initRevenueCat(_currentUser&&_currentUser.id);
     const res=await P.restorePurchases();
     const ci=res&&res.customerInfo;
-    if(_applyRcEntitlement(ci, 'restored')){
+    if(await _applyRcEntitlement(ci, 'restored')){
       toast('프리미엄이 복원됐어요! 🎉');
     }else{
-      toast('복원할 구독 내역이 없어요.');
+      toast('이 계정으로 복원할 구독 내역이 없어요.');
     }
   }catch(e){
     console.warn('복원 실패:', e);
