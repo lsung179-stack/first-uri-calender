@@ -6133,10 +6133,12 @@ let _premiumLoaded=false;    // 세션당 로드 가드
 let _serverPremium=false, _serverPremiumInfo=null;   // 서버(webhook) 기준
 let _rcPremiumActive=false, _rcPremiumInfo=null;      // 기기(RevenueCat) 기준
 function _recomputePremium(){
-  _isPremium = _serverPremium || _rcPremiumActive;
-  if(_serverPremium) _premiumInfo=_serverPremiumInfo;
-  else if(_rcPremiumActive) _premiumInfo=_rcPremiumInfo;
-  else _premiumInfo=_serverPremiumInfo||null;
+  // 진실의 원천은 서버(subscriptions←웹훅)뿐이다. 기기(RevenueCat)의 entitlement는
+  // 앱 '계정'이 아니라 그 기기의 'Apple ID' 단위라, 한 기기에서 여러 계정으로 로그인하거나
+  // '구매 복원'을 누르면 남의(기기 소유자) 구독으로 다른 계정까지 프리미엄이 새는 문제가 있다.
+  // → 표시/기능 판정에는 서버 상태만 사용한다.
+  _isPremium = _serverPremium;
+  _premiumInfo = _serverPremiumInfo || null;
 }
 const FREE_LIMITS={ photosPerEvent:1, activeTodos:5, doneTodoDays:7 };  // 방·인원은 무제한(제한 없음)
 const PREMIUM_DONE_DAYS=0;  // 프리미엄: 완료 할일 평생 보관(만료 없음). 무료는 FREE_LIMITS.doneTodoDays=7
@@ -14970,20 +14972,25 @@ async function initRevenueCat(userId){
     }
   }catch(e){ console.warn('RevenueCat init 실패:', e); }
 }
-/* 결제 성공/복원 시 customerInfo로 프리미엄 즉시 반영 + 서버 상태 재로드 예약 */
+/* '결제(구매)' 성공 시에만 호출 — 방금 이 계정으로 결제했으므로 낙관적으로 프리미엄을 반영하고,
+   웹훅이 서버 subscriptions를 채우면 서버(진실의 원천)로 재동기화한다.
+   ⚠️ '구매 복원'에는 절대 쓰지 않는다. 기기(Apple ID) 구독을 그대로 신뢰하면 다른 계정으로
+      복원 시 남의 구독으로 프리미엄이 새기 때문. 복원은 서버 상태로만 판정한다(onRestorePurchases). */
 function _applyRcEntitlement(customerInfo, planLabel){
   try{
     const active=(customerInfo&&customerInfo.entitlements&&customerInfo.entitlements.active)||{};
     const ent=active[RC_ENTITLEMENT];
     if(!ent) return false;
-    _rcPremiumActive=true;
-    _rcPremiumInfo={ is_premium:true, expires_at:ent.expirationDate||ent.expiresDate||null, plan_type:planLabel||'premium', is_manual:false };
+    _serverPremium=true;   // 방금 이 계정으로 결제 → 낙관적 반영(웹훅이 곧 서버에 기록)
+    _serverPremiumInfo={ is_premium:true, expires_at:ent.expirationDate||ent.expiresDate||null, plan_type:planLabel||'premium', is_manual:false };
     _premiumLoaded=true;
     _recomputePremium();
     try{ hideAdBanner(); document.body.classList.remove('has-ad'); }catch(_){}
     try{ if(typeof openPremiumSheet==='function' && document.getElementById('premiumCard') && document.getElementById('premiumCard').classList.contains('on')) openPremiumSheet(); }catch(_){}
-    // webhook이 subscriptions를 채우도록 잠시 뒤 서버 상태로 재동기화
-    setTimeout(()=>{ _premiumLoaded=false; loadPremiumStatus().then(()=>{ try{ showAdBannerIfNeeded(); }catch(_){}}); }, 4000);
+    // 웹훅이 subscriptions를 채우도록 여러 번(웹훅 지연 대비) 서버 상태로 재동기화
+    [4000, 10000, 20000].forEach(function(ms){
+      setTimeout(function(){ _premiumLoaded=false; loadPremiumStatus().then(function(){ try{ showAdBannerIfNeeded(); }catch(_){}}); }, ms);
+    });
     return true;
   }catch(_){ return false; }
 }
@@ -15062,12 +15069,17 @@ async function onRestorePurchases(){
   try{
     toast('구매 내역을 확인하고 있어요...');
     await initRevenueCat(_currentUser&&_currentUser.id);
-    const res=await P.restorePurchases();
-    const ci=res&&res.customerInfo;
-    if(_applyRcEntitlement(ci, 'restored')){
+    await P.restorePurchases();   // RevenueCat에 재연결 → 웹훅이 이 계정 구독을 갱신
+    // 진실은 서버. '이 계정'에 활성 구독이 있을 때만 프리미엄으로 판정한다.
+    // (기기 Apple ID 구독을 그대로 신뢰하면 다른 계정으로 남의 구독이 복원되는 문제)
+    _premiumLoaded=false;
+    await loadPremiumStatus();
+    if(_serverPremium){
       toast('프리미엄이 복원됐어요! 🎉');
+      try{ hideAdBanner(); document.body.classList.remove('has-ad'); }catch(_){}
+      try{ if(document.getElementById('premiumCard')&&document.getElementById('premiumCard').classList.contains('on')) openPremiumSheet(); }catch(_){}
     }else{
-      toast('복원할 구독 내역이 없어요.');
+      toast('이 계정으로 복원할 구독 내역이 없어요.');
     }
   }catch(e){
     console.warn('복원 실패:', e);
