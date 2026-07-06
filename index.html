@@ -8483,20 +8483,36 @@ function renderMonthly(){
   { let _nd=1; while(_gridDays.length<42){ _gridDays.push(dateKey(_calMonth===11?_calYear+1:_calYear, _calMonth===11?0:_calMonth+1, _nd)); _nd++; } }
   try{ _computeMonthLanes(_gridDays); }catch(e){ console.warn('lane calc', e); }
 
+  // 주(週)별 레인 압축 맵 — 6주(=6행) 각각에서 실제 쓰이는 레인만 위에서부터 채워 빈 줄 제거
+  _absSlotCache=new Map();
+  const _weekRemaps=[];
+  for(let w=0; w<6; w++){
+    const used=new Set();
+    for(let i=0;i<7;i++){
+      const key=_gridDays[w*7+i]; if(!key)continue;
+      const dt=parseDateKey(key);
+      const abs=_dayAbsSlots(key,dt.getFullYear(),dt.getMonth(),dt.getDate());
+      Object.keys(abs.slots).forEach(function(k){ used.add(+k); });
+    }
+    const sorted=Array.from(used).sort(function(a,b){return a-b;});
+    const map={}; sorted.forEach(function(L,idx){ map[L]=idx; });
+    _weekRemaps.push(map);
+  }
+
   let html='';
   let cellCount=0;
   for(let i=offset-1;i>=0;i--){
     const d=prevDim-i;
-    html+=cellHtml(_calMonth===0?_calYear-1:_calYear, _calMonth===0?11:_calMonth-1, d, true, todayKey);
+    html+=cellHtml(_calMonth===0?_calYear-1:_calYear, _calMonth===0?11:_calMonth-1, d, true, todayKey, _weekRemaps[(cellCount/7)|0]);
     cellCount++;
   }
   for(let d=1;d<=dim;d++){
-    html+=cellHtml(_calYear,_calMonth,d,false,todayKey);
+    html+=cellHtml(_calYear,_calMonth,d,false,todayKey, _weekRemaps[(cellCount/7)|0]);
     cellCount++;
   }
   let nextD=1;
   while(cellCount<42){
-    html+=cellHtml(_calMonth===11?_calYear+1:_calYear, _calMonth===11?0:_calMonth+1, nextD, true, todayKey);
+    html+=cellHtml(_calMonth===11?_calYear+1:_calYear, _calMonth===11?0:_calMonth+1, nextD, true, todayKey, _weekRemaps[(cellCount/7)|0]);
     nextD++;cellCount++;
   }
   grid.innerHTML=html;
@@ -8707,12 +8723,41 @@ function _eventBarHTML(ev,key,y,m,d){
   return {html:`<div class="cal-evbar${sharedCls}${rangeCls}${_spillCls}${_olCls}" style="${_barInline}"${dragAttr}>${sharedMarker}${displayTitle}</div>`, hasRangeStart:_hasRangeStart};
 }
 
-function cellHtml(y,m,d,isOther,todayKey){
+/* 하루치 일정/할일을 '절대 레인' 슬롯으로 계산 — 주별 레인 압축 계산과 셀 렌더가 공유.
+   renderMonthly 1회 동안만 유효한 _absSlotCache 로 중복 계산 방지. */
+let _absSlotCache=null;
+function _dayAbsSlots(key,y,m,d){
+  if(_absSlotCache){ const h=_absSlotCache.get(key); if(h) return h; }
+  const slots={}; let overflow=0; let hasRangeStart=false;
+  const place=function(lane,html,rs){ if(typeof lane!=='number'){return;} if(lane>49){ overflow++; return; } if(slots[lane]==null){ slots[lane]=html; if(rs)hasRangeStart=true; } };
+  // 일정
+  getDayEvents(key).forEach(function(ev){
+    const bar=_eventBarHTML(ev,key,y,m,d);
+    place(_laneMap[_eventItemKey(ev)], bar.html, bar.hasRangeStart);
+  });
+  // 할일 — 미완료/완료 모두 전역 레인
+  const _td=(typeof window!=='undefined'&&window.__getTodos)?(window.__getTodos()||[]):[];
+  const _occ=window.todoOccursOnDate;
+  if(_occ){
+    _td.forEach(function(t){
+      if(!_occ(t,key)) return;
+      const _isRangeTd=(t.todo_type==='range'&&t.end_date&&t.end_date>t.start_date);
+      const th=window.__todoCellHTML?window.__todoCellHTML(t,key):'';
+      const _spreadTd=(!_isRangeTd)&&((t.repeat_type&&t.repeat_type!=='none')||t.todo_type==='multi');
+      const _lk=_spreadTd?('t:'+t.id+'@'+key):('t:'+t.id);
+      if(th) place(_laneMap[_lk], th, false);
+    });
+  }
+  const res={slots:slots, overflow:overflow, hasRangeStart:hasRangeStart};
+  if(_absSlotCache) _absSlotCache.set(key,res);
+  return res;
+}
+
+function cellHtml(y,m,d,isOther,todayKey,weekRemap){
   const key=dateKey(y,m,d);
   const dow=new Date(y,m,d).getDay();
   const isToday=(key===todayKey);
   const isHoliday=!!HOLIDAYS[key];
-  const evs=getDayEvents(key);
   const cls=['cal-cell'];
   if(isOther)cls.push('other');
   if(isToday)cls.push('today');
@@ -8733,28 +8778,20 @@ function cellHtml(y,m,d,isOther,todayKey){
   let evsHtml='';
   let _hasRangeStart=false;
   {
-    const slots=[]; let overflow=0; let maxLane=-1;
-    const place=function(lane,html,rs){ if(typeof lane!=='number'){return;} if(lane>49){ overflow++; return; } if(slots[lane]==null){ slots[lane]=html; if(lane>maxLane)maxLane=lane; if(rs)_hasRangeStart=true; } };
-    // 일정
-    evs.forEach(function(ev){
-      const bar=_eventBarHTML(ev,key,y,m,d);
-      place(_laneMap[_eventItemKey(ev)], bar.html, bar.hasRangeStart);
+    const abs=_dayAbsSlots(key,y,m,d);
+    _hasRangeStart=abs.hasRangeStart;
+    // 주별 레인 압축: 이 주(週) 전체가 비어있는 레인은 걷어내 남은 바를 위로 끌어올린다.
+    // (겹치는 기간 일정이 끝난 뒤 남은 바가 빈 줄 아래로 떠 보이던 문제 해결)
+    const disp=[]; let maxLane=-1;
+    Object.keys(abs.slots).forEach(function(k){
+      const absL=+k;
+      const dL=weekRemap?weekRemap[absL]:absL;
+      if(typeof dL!=='number') return;
+      disp[dL]=abs.slots[absL];
+      if(dL>maxLane)maxLane=dL;
     });
-    // 할일 — 미완료/완료 모두 전역 레인. 정렬에서 미완료(위)→완료단일→완료기간(아래) 순서 확정됨
-    const _td=(typeof window!=='undefined'&&window.__getTodos)?(window.__getTodos()||[]):[];
-    const _occ=window.todoOccursOnDate;
-    if(_occ){
-      _td.forEach(function(t){
-        if(!_occ(t,key)) return;
-        const _isRangeTd=(t.todo_type==='range'&&t.end_date&&t.end_date>t.start_date);
-        const th=window.__todoCellHTML?window.__todoCellHTML(t,key):'';
-        const _spreadTd=(!_isRangeTd)&&((t.repeat_type&&t.repeat_type!=='none')||t.todo_type==='multi');
-        const _lk=_spreadTd?('t:'+t.id+'@'+key):('t:'+t.id);
-        if(th) place(_laneMap[_lk], th, false);
-      });
-    }
-    for(let L=0; L<=maxLane; L++){ evsHtml += (slots[L]!=null?slots[L]:'<div class="cal-evspacer"></div>'); }
-    if(overflow>0) evsHtml += '<div class="cal-more">+'+overflow+'</div>';
+    for(let L=0; L<=maxLane; L++){ evsHtml += (disp[L]!=null?disp[L]:'<div class="cal-evspacer"></div>'); }
+    if(abs.overflow>0) evsHtml += '<div class="cal-more">+'+abs.overflow+'</div>';
   }
 
   if(_hasRangeStart)cls.push('has-range-start');
