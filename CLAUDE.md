@@ -46,6 +46,8 @@
 3. ✅ **구매 복원 누수** — `onRestorePurchases()` 서버 단일 기준. 기기 엔타이틀먼트로 프리미엄 안 켜짐.
 4. ✅ **멤버 없을 때 캘린더가 위로 올라가던 현상** — 노치 여백(`env(safe-area-inset-top)`)을 조건부로 표시되던 `.cal-member-tabs`에서 항상 존재하는 부모 `.screen.cal`로 이동.
 5. ✅ 관리자 버튼 `전체 이용자 프리미엄`(globalTrialBtn)·`프리미엄 개별 관리`(premMgmtBtn) UI 삭제(충돌 우려). 함수/모달 마크업은 잔존(무해).
+6. ✅ **7일 무료체험 노출(전환)** — 전 플랜 첫 결제 무료체험이 UI에 안 보이던 문제. `showUpgradeModal`(잠금 안내: "무료로 체험하기"), `openPremiumSheet`/CTA 버튼("7일 무료로 시작하기"), `_updateTrialCta()`(선택 플랜 가격 기준 "첫 7일 무료·이후 자동결제" 캡션 `#premTrialNote`), `renderTrialBanner`("첫 7일 무료")에 반영.
+7. ✅ **혼자 방 초대 넛지(바이럴)** — 실멤버 1명인 방 캘린더 상단(`#calInviteNudge`)에 초대 배너 표시. `renderInviteNudge()`가 `_myMembers` 실멤버<2일 때 노출, `shareKakao()` 호출. `renderMemberTabs()` 시작부에서 호출.
 
 ## 주의사항 / 함정
 - 위 2~5번은 개발자의 **로컬 최신 `index.html`**에 반영돼 있으나, 저장소 `main`은 더 옛 버전일 수 있음. 새 세션은 “현재 배포/로컬 버전”을 개발자에게 확인하거나 최신 파일을 받아 작업할 것.
