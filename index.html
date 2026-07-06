@@ -498,6 +498,15 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .prem-notice-list li:last-child{margin-bottom:0}
 .prem-notice-list a{color:var(--accent);text-decoration:underline;font-weight:600}
 .prem-ctanote{text-align:center;font-size:12px;color:var(--gold);font-weight:600;margin-top:9px}
+.prem-cta-trialnote{text-align:center;font-size:12px;color:var(--sub);font-weight:600;margin-top:8px;line-height:1.4}
+.cal-invite-nudge{display:none;margin:6px 20px 2px;flex-shrink:0}
+.cal-invite-nudge.show{display:flex}
+.cal-invite-nudge-inner{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;background:linear-gradient(135deg,#fff4dc,#fbe6c9);border:1px solid rgba(176,135,66,.28);border-radius:12px;box-shadow:0 2px 8px rgba(176,135,66,.12)}
+.cal-invite-nudge-ic{font-size:18px;flex-shrink:0}
+.cal-invite-nudge-tx{flex:1;font-size:12.5px;line-height:1.35;color:var(--text);font-weight:500}
+.cal-invite-nudge-tx b{font-weight:800}
+.cal-invite-nudge-btn{flex-shrink:0;padding:8px 14px;background:linear-gradient(135deg,#d4af6a,#b08742);color:#43271a;border:none;border-radius:9px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;white-space:nowrap;box-shadow:0 3px 10px rgba(176,135,66,.32)}
+.cal-invite-nudge-btn:active{opacity:.9}
 .prem-cta-value{text-align:center;font-size:13px;color:var(--accent);font-weight:700;margin-bottom:9px}
 .prem-ctabtn{width:100%;padding:16px;background:linear-gradient(135deg,#d4af6a,#b08742);color:#43271a;border:none;border-radius:14px;font-size:16px;font-weight:800;font-family:var(--ff-serif);cursor:pointer;letter-spacing:.5px;box-shadow:0 6px 20px rgba(176,135,66,.38)}
 .prem-ctabtn:active{opacity:.9}
@@ -2770,6 +2779,7 @@ body.has-ad .toast{ bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)
 <div class="screen cal" id="calendarScreen">
   <!-- 멤버 프로필 탭 (전체 + 각 멤버) — renderMemberTabs()가 채움 -->
   <div class="cal-member-tabs" id="calMemberTabs"></div>
+  <div class="cal-invite-nudge" id="calInviteNudge"></div>
 
   <div class="cal-month-row">
     <button class="cal-search-btn" onclick="openSearch()" aria-label="검색"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.5" y2="16.5"/></svg></button>
@@ -3505,8 +3515,9 @@ body.has-ad .toast{ bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)
     </div>
   </div>
   <div class="prem-ctabar">
-    <div class="prem-cta-value">✨ 선택한 순간, 모든 기능이 열려요</div>
-    <button class="prem-ctabtn" id="premSubBtn" onclick="onPremiumSubscribe()">프리미엄 시작하기</button>
+    <div class="prem-cta-value">🎁 첫 7일 무료 체험 · 부담 없이 시작하세요</div>
+    <button class="prem-ctabtn" id="premSubBtn" onclick="onPremiumSubscribe()">7일 무료로 시작하기</button>
+    <div class="prem-cta-trialnote" id="premTrialNote"></div>
     <div class="prem-ctanote"><button type="button" onclick="onRestorePurchases()" style="background:none;border:none;color:inherit;font:inherit;text-decoration:underline;cursor:pointer;padding:2px 6px">구매 복원</button></div>
   </div>
 </div>
@@ -4044,7 +4055,7 @@ body.has-ad .toast{ bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)
     <button class="btn-danger-full" onclick="leaveRoomConfirm()">이 방 나가기</button>
   </div>
   
-  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 2026.05.30-B</div>
+  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.1.2 (26)</div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeRoomSettings()">닫기</button>
   </div>
@@ -5455,11 +5466,12 @@ async function showUpgradeModal(opts){
     toast(opts.message||'프리미엄 전용 기능이에요');
     return;
   }
-  const msg=(opts.message||'프리미엄 구독이 필요한 기능이에요.')
-    + (opts.feature?(' '+opts.feature):'');
+  const msg=(opts.message||'프리미엄 전용 기능이에요.')
+    + (opts.feature?(' '+opts.feature):'')
+    + ' 지금 시작하면 첫 7일은 무료로 모든 프리미엄 기능을 써볼 수 있어요.';
   let goSub=false;
   try{
-    goSub=await vConfirm(msg,{title:'프리미엄 기능',okText:'구독하기',cancelText:'닫기'});
+    goSub=await vConfirm(msg,{title:'✨ 7일 무료 체험',okText:'무료로 체험하기',cancelText:'다음에'});
   }catch(_){ goSub=true; }
   if(!goSub) return;
   if(typeof openPremiumSheet==='function'){
@@ -6947,7 +6959,7 @@ async function init(){
   }finally{
     initAdMob(); // AdMob 초기화 (네이티브에서만 동작)
     setTimeout(()=>document.getElementById('loading').classList.add('hide'),200);
-    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 2026.06.26-FIX3 · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
+    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 1.1.2 (26) · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
     // in-app browser(카톡·네이버·페이스북 등)에서 열렸을 때 한 줄 안내
     setTimeout(maybeShowInAppBrowserHint,800);
   }
@@ -8217,6 +8229,7 @@ function _visibleMembers(){
 function renderMemberTabs(){
   const wrap=document.getElementById('calMemberTabs');
   if(!wrap)return;
+  try{ renderInviteNudge(); }catch(_){}
   const _vis=_visibleMembers();
   // 멤버 2명 이상일 때만 표시 (혼자면 의미 없음)
   if(_vis.length<2){
@@ -14910,11 +14923,44 @@ const PREM_PLANS={
   '12m':{label:'12개월 구독',price:'₩39,900'}
 };
 let _premSelectedPlan='12m';
+/* 프리미엄 CTA 하단 안내 — 선택 플랜 기준 "첫 7일 무료 + 이후 자동결제" (전 플랜 첫 결제 무료체험) */
+function _updateTrialCta(){
+  const note=document.getElementById('premTrialNote');
+  if(!note) return;
+  if(typeof isEffectivePremium==='function' && isEffectivePremium()){ note.style.display='none'; note.textContent=''; return; }
+  const sel=document.querySelector('#premiumCard .prem-plan[data-plan="'+_premSelectedPlan+'"]');
+  const priceEl=sel?sel.querySelector('.pp-price'):null;
+  const price=priceEl?priceEl.textContent.trim():'';
+  const per=(_premSelectedPlan==='1m')?'매월':((_premSelectedPlan==='3m')?'3개월마다':'매년');
+  note.style.display='';
+  note.textContent = price
+    ? ('첫 7일 무료 · 이후 '+per+' '+price+' 자동결제 · 언제든 해지')
+    : '첫 7일 무료 · 언제든 해지 가능';
+}
+/* 혼자 방 초대 넛지 — 실멤버가 나 혼자면 캘린더 상단에 초대 배너 표시.
+   공유 캘린더의 성장은 초대에서 나오므로, 혼자 방을 공유방으로 전환 유도한다. */
+function renderInviteNudge(){
+  const el=document.getElementById('calInviteNudge');
+  if(!el) return;
+  const realCount=(_myMembers||[]).filter(function(m){return !m.is_virtual;}).length;
+  if(_currentRoom && realCount<2){
+    el.innerHTML='<div class="cal-invite-nudge-inner">'
+      +'<span class="cal-invite-nudge-ic">🏠</span>'
+      +'<span class="cal-invite-nudge-tx">아직 <b>혼자</b> 쓰고 있어요 · 가족·친구를 초대하면 일정을 함께 나눠요</span>'
+      +'<button class="cal-invite-nudge-btn" onclick="shareKakao()">초대하기</button>'
+      +'</div>';
+    el.classList.add('show');
+  }else{
+    el.innerHTML='';
+    el.classList.remove('show');
+  }
+}
 function selectPlan(p){
   if(!PREM_PLANS[p])return;
   _premSelectedPlan=p;
   const plans=document.querySelectorAll('#premiumCard .prem-plan');
   plans.forEach(function(el){ el.classList.toggle('selected', el.getAttribute('data-plan')===p); });
+  try{ _updateTrialCta(); }catch(_){}
 }
 function openPremiumSheet(){
   closeMainModals();
@@ -14935,7 +14981,8 @@ function openPremiumSheet(){
       st.classList.remove('on');
     }
   }
-  if(btn) btn.textContent = prem ? '이미 이용 중이에요' : '프리미엄 시작하기';
+  if(btn) btn.textContent = prem ? '이미 이용 중이에요' : '7일 무료로 시작하기';
+  try{ _updateTrialCta(); }catch(_){}
   selectPlan(_premSelectedPlan);
   document.getElementById('premiumCard').classList.add('on');
   _subScreenEnter();
@@ -15564,8 +15611,8 @@ function renderTrialBanner(){
   }else{
     banner.innerHTML=`
     <div class="store-trial-notice">
-      <span class="trial-icon">💡</span>
-      <span class="trial-text">프리미엄 구독 시 모든 테마·컬러·글꼴·캐릭터 팩을 골라 쓸 수 있어요</span>
+      <span class="trial-icon">🎁</span>
+      <span class="trial-text"><b>첫 7일 무료</b> — 모든 테마·컬러·글꼴·캐릭터 팩을 골라 쓸 수 있어요</span>
     </div>`;
   }
 }
