@@ -9071,7 +9071,7 @@ function renderDateSheetList(){
           ${memoHtml}
         </div>
         ${orderHtml}
-        <div class="dp-actions"><button class="dp-btn" onclick="event.stopPropagation();window.editTodoFromDay('${t.id}')">수정</button><button class="dp-btn del" onclick="event.stopPropagation();window.deleteTodo('${t.id}')">삭제</button></div>
+        <div class="dp-actions"><button class="dp-btn" onclick="event.stopPropagation();window.editTodoFromDay('${t.id}')">수정</button>${(!(Array.isArray(t.member_keys)&&t.member_keys.length))?`<button class="dp-btn" onclick="event.stopPropagation();window.copyTodoToRooms('${t.id}')">복사</button>`:''}<button class="dp-btn del" onclick="event.stopPropagation();window.deleteTodo('${t.id}')">삭제</button></div>
       </div>`;
       return;
     }
@@ -10073,6 +10073,7 @@ function confirmRoomPick(){
   closeRoomPick();
   if(_roomPickMode==='todo'){ _doSaveTodo(); }
   else if(_roomPickMode==='copy'){ _doCopyEvent(); }
+  else if(_roomPickMode==='copytodo'){ _doCopyTodo(); }
   else { _doSaveEvent(); }  // 모달은 숨겨둔 채 저장 — 실패 시 내부에서 복원
 }
 function cancelRoomPick(){
@@ -10081,6 +10082,7 @@ function cancelRoomPick(){
   closeRoomPick();
   if(_roomPickMode==='todo'){ _roomPickMode='event'; _showTodoSheetFromSub(); }
   else if(_roomPickMode==='copy'){ _roomPickMode='event'; _copySourceEventId=null; }
+  else if(_roomPickMode==='copytodo'){ _roomPickMode='event'; _copySourceTodoId=null; }
   else { _showEvCardFromSub(); }
 }
 
@@ -10156,6 +10158,56 @@ async function _doCopyEvent(){
     toast(rooms.length+'개 방에 복사됐어요');
     await loadEvents();
   }catch(e){ console.error(e); toast('복사 실패: '+((e.message||'').slice(0,40))); }
+}
+
+/* ───────── 할 일 복사 (다른 방으로) — 일정 복사와 동일 흐름 ───────── */
+let _copySourceTodoId=null;
+function copyTodoToRooms(todoId){
+  const others=(_myRooms||[]).filter(r=>r.id!==_currentRoom?.id);
+  if(!others.length){ toast('복사할 다른 방이 없어요'); return; }
+  const t=(_todos||[]).find(x=>x.id===todoId);
+  if(!t){ toast('할 일을 찾을 수 없어요'); return; }
+  if(Array.isArray(t.member_keys)&&t.member_keys.length){ toast('함께 할일은 복사할 수 없어요'); return; }
+  _copySourceTodoId=todoId;
+  // 상세/날짜 시트 닫고 방 선택 모달 열기
+  try{ if(window.closeDateSheet)closeDateSheet(); }catch(_){}
+  const dc=document.getElementById('dpCard'); if(dc)dc.classList.remove('on');
+  const dov=document.getElementById('dpOverlay'); if(dov)dov.classList.remove('on');
+  _selectedExtraRooms=[];
+  _roomPickMode='copytodo';
+  openRoomPick();
+}
+async function _doCopyTodo(){
+  const rooms=(_selectedExtraRooms||[]).slice();
+  _roomPickMode='event';
+  _selectedExtraRooms=[];
+  const todoId=_copySourceTodoId; _copySourceTodoId=null;
+  if(!rooms.length){ toast('복사할 방을 선택해주세요'); return; }
+  if(!todoId){ return; }
+  const t=(_todos||[]).find(x=>x.id===todoId);
+  if(!t){ toast('할 일을 찾을 수 없어요'); return; }
+  try{
+    // 그룹 id: 있으면 재사용, 없으면 새로 만들어 원본에도 부여(→ 어느 방에서 수정/이동/삭제해도 동기화)
+    let mgid=t.multi_group_id||null;
+    if(!mgid){
+      mgid=genShared();
+      const {error:eU}=await supa.from('todos').update({multi_group_id:mgid}).eq('id',t.id);
+      if(eU)throw eU;
+    }
+    // 선택 방마다 복사본 insert (완료상태는 초기화, 함께 멤버키는 제거)
+    const rows=rooms.map(rid=>({
+      room_id:rid, user_id:_currentUser.id,
+      title:t.title, todo_type:t.todo_type||'single',
+      start_date:t.start_date, end_date:t.end_date||null, multi_dates:t.multi_dates||null,
+      start_time:t.start_time||null, end_time:t.end_time||null,
+      color:t.color||'c-vintage', repeat_type:t.repeat_type||'none',
+      memo:t.memo||null, member_keys:null, multi_group_id:mgid,
+    }));
+    const {error}=await supa.from('todos').insert(rows);
+    if(error)throw error;
+    toast(rooms.length+'개 방에 복사됐어요');
+    await loadTodos(); safeRender();
+  }catch(e){ console.error('copy todo failed',e); toast('복사 실패: '+((e.message||'').slice(0,40))); }
 }
 function closeRoomPick(){
   document.getElementById('roomPickOverlay').classList.remove('on');
@@ -17318,9 +17370,11 @@ function buildTodoCard(t,multi){
       +(tr?('<span class="todo-card-time">'+escapeHtml(tr)+'</span>'):'')
       +'<span class="td-dday '+ddc+'">'+ddl+'</span>';
   }
+  const _tdCanCopy=!(Array.isArray(t.member_keys)&&t.member_keys.length);
   const actionsHtml =
     '<div class="td-card-actions">'
     +'<button class="td-act-btn" onclick="event.stopPropagation();window.openTodoEditSheet(\''+t.id+'\')" aria-label="수정">수정</button>'
+    +(_tdCanCopy?'<button class="td-act-btn" onclick="event.stopPropagation();window.copyTodoToRooms(\''+t.id+'\')" aria-label="복사">복사</button>':'')
     +'<button class="td-act-btn del" onclick="event.stopPropagation();window.deleteTodo(\''+t.id+'\')" aria-label="삭제">삭제</button>'
     +'</div>';
   return '<div class="todo-card '+(done?'done':'')+'" data-id="'+t.id+'">'
@@ -18185,6 +18239,7 @@ window.setTodoFilter=setTodoFilter;
 window.renderTodoScreen=renderTodoScreen;
 window.toggleTodoDone=toggleTodoDone;
 window.deleteTodo=deleteTodo;
+window.copyTodoToRooms=copyTodoToRooms;
 window.switchDayTab=switchDayTab;
 window.refreshDaySheetTodos=refreshDaySheetTodos;
 window.openTodoAddSheet=openTodoAddSheet;
