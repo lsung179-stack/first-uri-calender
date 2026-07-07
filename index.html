@@ -16236,11 +16236,21 @@ async function _tdMove(todo,fromDate,toDate){
   invalidateDayEventsCache();
   safeRender();
   if(navigator.vibrate)navigator.vibrate(10);
-  // 2) DB 반영은 백그라운드로
+  // 2) DB 반영은 백그라운드로 — 방 간 연결 할일(multi_group_id)이면 모든 방 복사본을 함께 이동
+  const _mgid=todo.multi_group_id||null;
   try{
-    const {error}=await supa.from('todos').update(upd).eq('id',todo.id);
+    let error;
+    if(_mgid){
+      // ⚠️ multi_group_id는 '여러 날' 할일(날짜별 개별 single 행)도 묶으므로, 원래 start_date로도
+      //    필터해서 그 날짜의 방별 복사본만 이동(다른 날짜 행을 같은 날로 뭉개는 것 방지).
+      //    range/single 모두 방당 1행이라 start_date 필터로 방별 형제가 정확히 매칭됨.
+      ({error}=await supa.from('todos').update(upd)
+        .eq('multi_group_id',_mgid).eq('user_id',_currentUser.id).eq('start_date',prev.start_date));
+    }else{
+      ({error}=await supa.from('todos').update(upd).eq('id',todo.id));
+    }
     if(error)throw error;
-    toast((todo.todo_type==='range')?'기간 할 일을 옮겼어요':'할 일을 옮겼어요');
+    toast(_mgid?'여러 방의 할 일을 옮겼어요':((todo.todo_type==='range')?'기간 할 일을 옮겼어요':'할 일을 옮겼어요'));
   }catch(err){
     console.error('move todo failed',err);
     toast('할 일 이동에 실패했어요');
@@ -17075,10 +17085,29 @@ async function deleteTodo(id){
   if(!ok) return;
   const todoSnapshot=Object.assign({},t);  // 삭제 전 스냅샷 (알림용)
   try{
-    const { error } = await supa.from('todos').delete().eq('id',id);
-    if(error){ toast('삭제 실패'); return; }
+    // 여러 방에 함께 등록된 할일(multi_group_id)이면 삭제 범위 선택 (이벤트 삭제와 동일)
+    if(t.multi_group_id){
+      const scope=await askMultiRoomScope('이 할 일은 여러 방에 함께 등록돼 있어요.<br>전체 방에서 삭제할까요,<br>아니면 이 방에서만 삭제할까요?',true);
+      if(!scope)return;  // 취소
+      if(scope==='all'){
+        // ⚠️ start_date로도 제한 — '여러 날' 할일(날짜별 개별 행이 같은 multi_group_id 공유)에서
+        //    이 날짜의 방별 복사본만 삭제(다른 날짜까지 지워지는 것 방지). 단일 방 칸 삭제와 일관.
+        const { error } = await supa.from('todos').delete()
+          .eq('multi_group_id',t.multi_group_id).eq('user_id',_currentUser.id).eq('start_date',t.start_date);
+        if(error){ toast('삭제 실패'); return; }
+        toast('전체 방에서 삭제됐어요');
+      }else{
+        // 이 방만 (할일은 방당 1행이라 id로 삭제)
+        const { error } = await supa.from('todos').delete().eq('id',id);
+        if(error){ toast('삭제 실패'); return; }
+        toast('이 방의 할 일만 삭제됐어요');
+      }
+    }else{
+      const { error } = await supa.from('todos').delete().eq('id',id);
+      if(error){ toast('삭제 실패'); return; }
+      toast('삭제됐어요');
+    }
     _notifyTodo('delete', todoSnapshot);
-    toast('삭제됐어요');
     await loadTodos(); safeRender();
   }catch(e){ toast('삭제 실패'); }
 }
