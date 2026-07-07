@@ -51,7 +51,7 @@
 7. ✅ **혼자 방 초대 넛지(바이럴)** — 실멤버 1명인 방 캘린더 상단(`#calInviteNudge`)에 초대 배너 표시. `renderInviteNudge()`가 `_myMembers` 실멤버<2일 때 노출, `shareKakao()` 호출. `renderMemberTabs()` 시작부에서 호출. 배너에 ✕ 닫기 버튼(`dismissInviteNudge`) — 닫으면 그 방 id를 `localStorage['uricalv2.inviteNudgeDismissed']`에 저장해 다시 안 띄움(방별 기억). ✕ 클릭 시 `vConfirm`('다시 보지 않기'/'취소') 확인 후 저장(실수 방지).
 8. ✅ **프리미엄 시트 탭바 숨김 버그** — 일정추가(탭바 숨김)→프리미엄 시트 진입 후 닫으면 하단 탭바가 안 돌아오던 문제. `openPremiumSheet`에 `hideTabbar()`, `closePremiumSheet`에 `showTabbar()` 추가(다른 풀스크린 시트와 대칭). 겸사겸사 프리미엄 안내 모달(`showUpgradeModal`의 `vConfirm`) 타이틀의 ✨ 제거.
 9. ✅ **관리자 페이지 자동 로그인(세션 전달)** — `openAdminFullPage()`가 admin.html로 세션 토큰(`#at=&rt=`)을 안 실어 보내, 외부 브라우저/새 탭에서 세션이 없어 비번 폼으로 빠지던 버그. 관리자 계정이 **카카오/애플 소셜 로그인(비번 없음, `has_password:false`)**이라 비번 폼으로는 진입 불가였음. `getSession()` 토큰을 URL 해시로 실어 보내 admin이 `setSession`으로 자동 로그인하도록 수정.
-10. ✅ **관리자 회원관리 상세화** — DB에 `admin_users_detailed()`(SECURITY DEFINER, 관리자 가드) RPC 추가: 유저별 최근활동(last_sign_in/이벤트/가입 GREATEST)·일정수·방수·구독·푸시토큰 유무. admin.html 회원관리를 **카드 대시보드**로 개편: 상단 KPI 타일(전체·7일/2주 활성·휴면·구독), 필터칩(+구독자), 회원 카드(활동색 아바타 링·이름·최근활동·📅일정·🏠방·가입경로·💎구독/휴면/🔔push 배지), 활동많은순 랭킹. '휴면(30일+ 미활동)'=앱삭제/이탈 추정(정확한 삭제 신호는 없음).
+10. ✅ **관리자 회원관리 상세화** — DB에 `admin_users_detailed()`(SECURITY DEFINER, 관리자 가드) RPC 추가: 유저별 최근활동(last_sign_in/이벤트/가입 GREATEST)·일정수·방수·구독·푸시토큰 유무. admin.html 회원관리를 **카드 대시보드**로 개편: 상단 KPI 타일(전체·7일/2주 활성·휴면·구독), 필터칩(+구독자), 회원 카드(활동색 아바타 링·이름·최근활동·📅일정·🏠방·가입경로·💎구독/휴면/🔔push 배지), 활동많은순·최근일정순 정렬, KPI에 7일 신규 추가. 카드=좌측 활동색 바+상태라벨(활발/보통/뜸함/휴면)+3칸 그리드(일정/방/최근접속)+'🗓 마지막 일정' 줄(last_event_at). '휴면(30일+ 미활동)'=앱삭제/이탈 추정(정확한 삭제 신호 없음).
 
 ## 주의사항 / 함정
 - 저장소 `main`의 `index.html`은 최신 배포본과 동기화됨 (**build 1.1.2 / 코드 26**, 위 1~7번 전부 반영). 단 개발자가 이후 로컬에서 다시 수정·업로드하면 main보다 앞설 수 있으니, 새 세션은 항상 현재 배포/로컬 버전을 확인할 것.
