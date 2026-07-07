@@ -369,20 +369,20 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .r-section-count{font-size:12px;color:var(--sub)}
 .r-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:transform .12s ease,box-shadow .15s ease;box-shadow:0 1px 2px rgba(60,40,25,.04)}
 .r-card:active{transform:scale(.98)}
-/* 방목록 순서 편집 — '순서 편집' 버튼 → 카드 좌우 흔들림(iOS식) → 드래그로 재정렬 */
+/* 방목록 순서 편집 — '순서 편집' 버튼 → 드래그 핸들(≡) 표시 → 드래그로 재정렬 (애니메이션 없음) */
 .r-reorder-btn{margin-left:auto;background:transparent;border:1px solid var(--border);color:var(--sub);font-size:12px;font-weight:700;padding:5px 11px;border-radius:99px;cursor:pointer;font-family:inherit;transition:background .12s,color .12s}
 .r-reorder-btn:active{background:rgba(139,58,42,.08)}
 .r-reorder-btn.on{background:var(--accent,#8b3a2a);border-color:var(--accent,#8b3a2a);color:#fff}
-@keyframes rWiggle{0%{transform:rotate(-1.15deg)}50%{transform:rotate(1.15deg)}100%{transform:rotate(-1.15deg)}}
-/* 편집 모드: 모든 카드 흔들림 + 즉시 드래그(스크롤 대신) */
-.room-edit .r-card{animation:rWiggle .3s ease-in-out infinite;touch-action:none;cursor:grab}
-.room-edit .r-card:nth-child(2n){animation-delay:-.15s}
-.room-edit .r-card:nth-child(3n){animation-delay:-.09s}
-/* 드래그 중에는 흔들림 정지(→ translateY 정상 적용) */
+/* 편집 모드: 흔들림 없이 드래그 핸들 표시 + 살짝 떠 보이게. 드래그가 스크롤 대신 동작 */
+.r-card-grip{display:none;flex:none;color:var(--mute,#b8a285);margin-left:2px;line-height:1;cursor:grab}
+.r-card-grip svg{width:20px;height:20px;display:block}
+.room-edit .r-card{touch-action:none;cursor:grab;box-shadow:0 2px 10px rgba(60,40,25,.10)}
+.room-edit .r-card-arrow{display:none}
+.room-edit .r-card-grip{display:block}
 body.room-reordering{-webkit-user-select:none;user-select:none}
-body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none;animation:none}
+body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .r-card.r-reorder-shift{transition:transform .18s cubic-bezier(.22,1,.36,1)}
-.r-card.r-card-drag{animation:none;transition:none;z-index:30;position:relative;box-shadow:0 14px 30px rgba(60,40,25,.28);opacity:.98;touch-action:none}
+.r-card.r-card-drag{transition:none;z-index:30;position:relative;box-shadow:0 14px 30px rgba(60,40,25,.28);opacity:.98;touch-action:none}
 .r-card.r-card-drag:active{transform:none}
 .r-card-seal{
   width:42px;height:42px;
@@ -6388,6 +6388,7 @@ function renderRooms(rooms,countMap){
           <div class="r-card-meta"><span class="r-card-code">${safeCode}</span><span>·</span><span>멤버 ${cnt}명</span></div>
         </div>
         <div class="r-card-arrow">›</div>
+        <div class="r-card-grip" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h16M4 16h16"/></svg></div>
       </div>
     `;
   });
