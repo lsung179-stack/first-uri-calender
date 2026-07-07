@@ -413,24 +413,41 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .r-card-pencil svg{width:11px;height:11px}
 .r-card-pencil:active{transform:scale(.9)}
 .room-edit .r-card-pencil{display:flex}
-.r-card-seal.has-mascot{background:linear-gradient(140deg,#fbe4c9,#f2d09b);overflow:hidden}
-.r-card-seal.has-mascot::before{display:none}
-.r-card-seal.has-mascot svg{width:30px;height:30px;display:block}
-/* 방 마스코트 선택 시트 (넷플릭스식) */
-.rm-bigprev{width:92px;height:92px;border-radius:50%;margin:14px auto 6px;display:flex;align-items:center;justify-content:center;background:linear-gradient(140deg,#fbe4c9,#f2d09b);box-shadow:inset 0 0 0 3px rgba(255,255,255,.45),0 4px 12px rgba(176,135,66,.3);overflow:hidden}
-.rm-bigprev svg{width:64px;height:64px}
-.rm-bigprev .rm-bigletter{font-family:var(--ff-serif);font-size:38px;font-weight:700;color:var(--accent)}
-.rm-bpname{text-align:center;font-size:13px;font-weight:700;color:var(--sub);margin-bottom:18px}
-.rm-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.rm-cell2{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer}
-.rm-cell2-ic{width:100%;aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--card);border:1px solid var(--border);overflow:hidden;transition:box-shadow .12s}
-.rm-cell2-ic svg{width:66%;height:66%}
-.rm-cell2:active .rm-cell2-ic{transform:scale(.94)}
-.rm-cell2.on .rm-cell2-ic{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--accent);border-color:var(--accent)}
-.rm-cell2-nm{font-size:12px;font-weight:700;color:var(--sub)}
-.rm-cell2.on .rm-cell2-nm{color:var(--accent)}
-.rs-mascot-thumb{width:34px;height:34px;border-radius:50%;overflow:hidden;display:none;align-items:center;justify-content:center;background:linear-gradient(140deg,#fbe4c9,#f2d09b);flex:none;margin-right:6px}
-.rs-mascot-thumb svg{width:24px;height:24px}
+/* 방 컬러 씰 (프리미엄) — 색 + 심볼(이니셜/엠블럼) */
+.has-seal{position:relative;overflow:hidden}
+.has-seal svg{position:relative;z-index:1}
+.has-seal svg *{stroke:#f3e6cf}
+.seal-ini{font-family:var(--ff-serif);font-weight:700;color:#f3e6cf;position:relative;z-index:1;line-height:1}
+.seal-terra{background:radial-gradient(circle at 32% 26%,#c06a52,#9c4a35 72%)!important}
+.seal-rose{background:radial-gradient(circle at 32% 26%,#cd8090,#a85668 72%)!important}
+.seal-gold{background:radial-gradient(circle at 32% 26%,#cfa259,#a97e33 72%)!important}
+.seal-sage{background:radial-gradient(circle at 32% 26%,#849b73,#5f7452 72%)!important}
+.seal-navy{background:radial-gradient(circle at 32% 26%,#62789a,#3f5570 72%)!important}
+.seal-plum{background:radial-gradient(circle at 32% 26%,#946f9c,#6d4f73 72%)!important}
+.r-card-seal.has-seal{border-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 2px 5px rgba(60,40,25,.20)}
+.r-card-seal.has-seal::before{border-color:rgba(243,230,207,.5);opacity:.7}
+.r-card-seal.has-seal .seal-ini{font-size:18px}
+.r-card-seal.has-seal svg{width:24px;height:24px}
+/* 방 프로필 선택 시트 (컬러 씰) */
+.rm-bigprev{width:96px;height:96px;border-radius:50%;margin:16px auto 8px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:radial-gradient(circle at 32% 26%,#c06a52,#9c4a35 72%);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 12px rgba(60,40,25,.28)}
+.rm-bigprev::after{content:"";position:absolute;inset:7px;border:1px solid rgba(243,230,207,.5);border-radius:50%;pointer-events:none}
+.rm-bigprev .seal-ini{font-size:42px}
+.rm-bigprev svg{width:48px;height:48px}
+.rm-bpname{text-align:center;font-size:13px;font-weight:700;color:var(--sub);margin-bottom:20px}
+.rm-field-label{font-size:11.5px;font-weight:800;color:var(--sub);letter-spacing:.03em;margin:0 2px 11px}
+.rm-swatches{display:flex;gap:12px;justify-content:space-between;margin-bottom:20px}
+.rm-sw{width:44px;height:44px;flex:1;max-width:48px;border-radius:50%;cursor:pointer;position:relative;border:none;padding:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 1px 3px rgba(60,40,25,.22)}
+.rm-sw:active{transform:scale(.94)}
+.rm-sw.on::after{content:"";position:absolute;inset:-5px;border:2px solid var(--accent);border-radius:50%}
+.rm-symrow{display:flex;gap:10px;flex-wrap:wrap}
+.rm-sym{width:52px;height:52px;border-radius:14px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--accent);padding:0}
+.rm-sym:active{transform:scale(.94)}
+.rm-sym .rm-sym-ini{font-family:var(--ff-serif);font-weight:700;font-size:22px;color:var(--text)}
+.rm-sym svg{width:24px;height:24px}
+.rm-sym.on{border-color:var(--accent);background:rgba(139,58,42,.09);box-shadow:0 0 0 2px rgba(139,58,42,.13)}
+.rs-mascot-thumb{width:34px;height:34px;border-radius:50%;overflow:hidden;display:none;align-items:center;justify-content:center;flex:none;margin-right:6px;position:relative}
+.rs-mascot-thumb.has-seal .seal-ini{font-size:15px}
+.rs-mascot-thumb.has-seal svg{width:19px;height:19px}
 .r-card-info{flex:1;min-width:0}
 .r-card-name{font-family:var(--ff-serif);font-size:17px;font-weight:700;color:var(--text);letter-spacing:.2px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .r-card-meta{font-size:12px;color:var(--sub);display:flex;align-items:center;gap:6px}
@@ -4016,7 +4033,7 @@ body.has-ad .toast{ bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)
     </div>
     <div class="rs-row" id="roomSetMascotRow">
       <div class="rs-row-info">
-        <div class="rs-row-label">방 마스코트</div>
+        <div class="rs-row-label">방 프로필</div>
         <div class="rs-row-sub" id="roomSetMascotSub">기본 (첫 글자)</div>
       </div>
       <div class="rs-mascot-thumb" id="roomSetMascotThumb"></div>
@@ -4113,14 +4130,14 @@ body.has-ad .toast{ bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)
   </div>
 </div>
 
-<!-- 방 마스코트 선택 시트 (프리미엄) -->
+<!-- 방 프로필(컬러 씰) 선택 시트 (프리미엄) -->
 <div class="mo-overlay" id="roomMascotOverlay" onclick="closeRoomMascot()"></div>
 <div class="mo-card" id="roomMascotCard">
   <div class="mo-handle"></div>
-  <div class="mo-title">방 마스코트</div>
+  <div class="mo-title">방 프로필</div>
   <div class="mo-sub">이 방 멤버 모두에게 똑같이 보여요</div>
   <div class="rm-bigprev" id="rmBigPrev"></div>
-  <div class="rm-bpname" id="rmBpName">마스코트를 골라주세요</div>
+  <div class="rm-bpname" id="rmBpName"></div>
   <div id="rmGroups"></div>
   <div class="mo-actions">
     <button class="btn btn-primary" onclick="saveRoomMascot()">저장하기</button>
@@ -6428,15 +6445,13 @@ function renderRooms(rooms,countMap){
     const safeName=escapeHtml(r.name||'(이름 없음)');
     const safeCode=escapeHtml(r.code||'------');
     const firstChar=escapeHtml((r.name||'·').trim().charAt(0));
-    const mascotSvg=r.mascot?(svgEmoji(r.mascot)||''):'';
-    const sealHtml=mascotSvg
-      ? `<div class="r-card-seal has-mascot">${mascotSvg}</div>`
-      : `<div class="r-card-seal"><span class="r-card-seal-letter">${firstChar}</span></div>`;
+    const sealHtml=_sealInner(r.mascot, r.name)
+      || `<div class="r-card-seal"><span class="r-card-seal-letter">${firstChar}</span></div>`;
     html+=`
       <div class="r-card" data-roomid="${r.id}" onclick="enterRoom('${r.id}')">
         <div class="r-card-sealwrap">
           ${sealHtml}
-          <button type="button" class="r-card-pencil" aria-label="방 마스코트 변경" onpointerdown="event.stopPropagation()" onclick="event.stopPropagation();openRoomMascotForRoom('${r.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+          <button type="button" class="r-card-pencil" aria-label="방 프로필 변경" onpointerdown="event.stopPropagation()" onclick="event.stopPropagation();openRoomMascotForRoom('${r.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
         </div>
         <div class="r-card-info">
           <div class="r-card-name">${safeName}</div>
@@ -12559,18 +12574,48 @@ async function removeMyReaction(){
 }
 
 /* 방 설정 모달 */
-/* ── 방 마스코트 (프리미엄) — 넷플릭스식 캐릭터 선택 ── */
+
 /* 캐릭터당 대표 1개만 노출 (모찌/곰돌/달콩) */
-const ROOM_MASCOTS=['mochi:basic','gomdol:basic','dalkong:basic'];
-let _mascotRoomId=null, _mascotSel=null, _mascotRoomName='';
+/* ── 방 컬러 씰 (프리미엄) — 색 + 심볼(이니셜/엠블럼) ── */
+const SEAL_COLORS=[
+  {key:'terra',name:'테라코타'},{key:'rose',name:'로즈'},{key:'gold',name:'골드'},
+  {key:'sage',name:'세이지'},{key:'navy',name:'네이비'},{key:'plum',name:'플럼'}
+];
+const SEAL_SYMS={
+  heart:'<path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 1 0-7.1 7.1l1.7 1.7L12 21.5l7.1-7.1 1.7-1.7a5 5 0 0 0 0-7.1Z"/>',
+  home:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M9.5 20v-6h5v6"/>',
+  star:'<path d="M12 3l2.5 5.2 5.7.8-4.1 4 1 5.7L12 21l-5.1 2.7 1-5.7-4.1-4 5.7-.8Z"/>',
+  moon:'<path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8Z"/>',
+  ring:'<circle cx="12" cy="14" r="6"/><path d="M12 8V4M9 4h6"/>',
+  leaf:'<path d="M12 21c5-3 8-6.5 8-11a8 8 0 0 0-16 0c0 4.5 3 8 8 11Z"/><path d="M12 3v18"/>'
+};
+const SEAL_SYM_ORDER=['heart','home','star','moon','ring','leaf'];
+const SEAL_SYM_NAMES={ini:'이니셜',heart:'하트',home:'집',star:'별',moon:'달',ring:'반지',leaf:'잎'};
+function _sealSvg(sym){ return SEAL_SYMS[sym]?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+SEAL_SYMS[sym]+'</svg>':''; }
+function _parseSeal(v){ if(!v||typeof v!=='string'||v.indexOf(':')<0)return null; const a=v.split(':'); const c=a[0], s=a[1]; if(!SEAL_COLORS.some(x=>x.key===c))return null; return {color:c,sym:s}; }
+function _sealGlyph(sym, roomName){
+  return (sym==='ini'||!SEAL_SYMS[sym])
+    ? '<span class="seal-ini">'+escapeHtml((roomName||'·').trim().charAt(0))+'</span>'
+    : _sealSvg(sym);
+}
+/* 방 목록 씰 inner (색 지정된 경우만, 아니면 null) */
+function _sealInner(mascotVal, roomName){
+  const p=_parseSeal(mascotVal); if(!p)return null;
+  return '<div class="r-card-seal has-seal seal-'+p.color+'">'+_sealGlyph(p.sym, roomName)+'</div>';
+}
+
+let _mascotRoomId=null, _mascotRoomName='', _sealColor='terra', _sealSym='ini', _sealHad=false;
 function openRoomMascotForRoom(roomId){
   const room=(_myRooms||[]).find(function(r){return r.id===roomId})
     || ((_currentRoom&&_currentRoom.id===roomId)?_currentRoom:null);
   if(!room)return;
-  if(!isEffectivePremium()){ showUpgradeModal({feature:'방 마스코트로 방을 꾸며보세요.'}); return; }
+  if(!isEffectivePremium()){ showUpgradeModal({feature:'방 프로필로 방을 꾸며보세요.'}); return; }
   _mascotRoomId=room.id;
-  _mascotSel=room.mascot||null;
   _mascotRoomName=room.name||'';
+  const p=_parseSeal(room.mascot);
+  _sealHad=!!p;
+  _sealColor = p?p.color:'terra';
+  _sealSym   = p?p.sym:'ini';
   renderRoomMascotPicker();
   const o=document.getElementById('roomMascotOverlay'),c=document.getElementById('roomMascotCard');
   if(o)o.classList.add('on'); if(c)c.classList.add('on');
@@ -12582,22 +12627,22 @@ function closeRoomMascot(){
 }
 function renderRoomMascotPicker(){
   const big=document.getElementById('rmBigPrev'), nm=document.getElementById('rmBpName');
-  if(big){
-    if(_mascotSel){ big.innerHTML=svgEmoji(_mascotSel)||''; }
-    else{ big.innerHTML='<span class="rm-bigletter">'+escapeHtml((_mascotRoomName||'·').trim().charAt(0))+'</span>'; }
-  }
-  if(nm) nm.textContent=_mascotSel?((CHAR_META[_mascotSel.split(':')[0]]||{}).name||''):'기본 (첫 글자)';
-  const cells=ROOM_MASCOTS.map(function(key){
-    const meta=CHAR_META[key.split(':')[0]]||{};
-    return '<div class="rm-cell2'+(key===_mascotSel?' on':'')+'" onclick="pickRoomMascot(\''+key+'\')">'
-      +'<div class="rm-cell2-ic">'+(svgEmoji(key)||'')+'</div>'
-      +'<span class="rm-cell2-nm">'+escapeHtml(meta.name||'')+'</span></div>';
+  if(big){ big.className='rm-bigprev has-seal seal-'+_sealColor; big.innerHTML=_sealGlyph(_sealSym, _mascotRoomName); }
+  if(nm){ const cn=(SEAL_COLORS.find(x=>x.key===_sealColor)||{}).name||''; nm.textContent=cn+' · '+(SEAL_SYM_NAMES[_sealSym]||''); }
+  const swatches='<div class="rm-field-label">배경 색</div><div class="rm-swatches">'
+    + SEAL_COLORS.map(c=>'<button type="button" class="rm-sw seal-'+c.key+(c.key===_sealColor?' on':'')+'" aria-label="'+c.name+'" onclick="pickSealColor(\''+c.key+'\')"></button>').join('')
+    + '</div>';
+  const symBtns=['ini'].concat(SEAL_SYM_ORDER).map(s=>{
+    const inner = s==='ini' ? '<span class="rm-sym-ini">'+escapeHtml((_mascotRoomName||'·').trim().charAt(0))+'</span>' : _sealSvg(s);
+    return '<button type="button" class="rm-sym'+(s===_sealSym?' on':'')+'" aria-label="'+(SEAL_SYM_NAMES[s]||s)+'" onclick="pickSealSym(\''+s+'\')">'+inner+'</button>';
   }).join('');
-  const g=document.getElementById('rmGroups'); if(g)g.innerHTML='<div class="rm-grid3">'+cells+'</div>';
-  const clr=document.getElementById('rmClearBtn'); if(clr)clr.style.display=_mascotSel?'block':'none';
+  const symrow='<div class="rm-field-label">심볼</div><div class="rm-symrow">'+symBtns+'</div>';
+  const g=document.getElementById('rmGroups'); if(g)g.innerHTML=swatches+symrow;
+  const clr=document.getElementById('rmClearBtn'); if(clr)clr.style.display=_sealHad?'block':'none';
 }
-function pickRoomMascot(key){ _mascotSel=key; renderRoomMascotPicker(); }
-async function saveRoomMascot(){ await _saveMascotValue(_mascotSel); }
+function pickSealColor(c){ _sealColor=c; renderRoomMascotPicker(); }
+function pickSealSym(s){ _sealSym=s; renderRoomMascotPicker(); }
+async function saveRoomMascot(){ await _saveMascotValue(_sealColor+':'+_sealSym); }
 async function clearRoomMascot(){ await _saveMascotValue(null); }
 async function _saveMascotValue(val){
   if(!_mascotRoomId)return;
@@ -12609,15 +12654,18 @@ async function _saveMascotValue(val){
     if(rr)rr.mascot=val;
     try{ if(_myRooms) renderRooms(_myRooms,_roomCountMap); }catch(_){}
     try{ _syncRoomSetMascot(); }catch(_){}
-    toast(val?'방 마스코트가 바뀌었어요':'기본으로 되돌렸어요');
+    toast(val?'방 프로필이 바뀌었어요':'기본으로 되돌렸어요');
     closeRoomMascot();
-  }catch(e){ console.error('mascot save',e); toast('저장 실패: '+((e.message||'').slice(0,40))); }
+  }catch(e){ console.error('seal save',e); toast('저장 실패: '+((e.message||'').slice(0,40))); }
 }
 function _syncRoomSetMascot(){
   const sub=document.getElementById('roomSetMascotSub'), thumb=document.getElementById('roomSetMascotThumb');
-  const m=_currentRoom&&_currentRoom.mascot;
-  if(thumb){ if(m){ thumb.innerHTML=svgEmoji(m)||''; thumb.style.display='flex'; } else { thumb.innerHTML=''; thumb.style.display='none'; } }
-  if(sub) sub.textContent=m?emojiDisplayName(m):'기본 (첫 글자)';
+  const p=_parseSeal(_currentRoom&&_currentRoom.mascot);
+  if(thumb){
+    if(p){ thumb.className='rs-mascot-thumb has-seal seal-'+p.color; thumb.innerHTML=_sealGlyph(p.sym, _currentRoom.name); thumb.style.display='flex'; }
+    else { thumb.className='rs-mascot-thumb'; thumb.innerHTML=''; thumb.style.display='none'; }
+  }
+  if(sub){ sub.textContent = p ? ((SEAL_COLORS.find(x=>x.key===p.color)||{}).name+' · '+(SEAL_SYM_NAMES[p.sym]||'')) : '기본 (첫 글자)'; }
 }
 
 function openRoomSettings(){
