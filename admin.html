@@ -620,6 +620,7 @@ function drawUsers(m){
   const rankMode=(f==='rank'), recentMode=(f==='recent');
   if(rankMode)list.sort((a,b)=>(b.event_count||0)-(a.event_count||0));
   else if(recentMode)list.sort((a,b)=>(b.last_event_at?new Date(b.last_event_at).getTime():0)-(a.last_event_at?new Date(a.last_event_at).getTime():0));
+  else if(f==='newjoin')list.sort((a,b)=>(a.created_at&&b.created_at?new Date(b.created_at).getTime()-new Date(a.created_at).getTime():0));
   else list.sort((a,b)=>a._d-b._d);
   const chip=(k,label)=>`<button class="usr-chip${f===k?' on':''}" data-f="${k}">${label}</button>`;
   const kpi=(cls,label,num,sub)=>`<div class="usr-kpi ${cls}"><div class="k-label">${label}</div><div class="k-num">${num}</div>${sub?`<div class="k-sub">${sub}</div>`:''}</div>`;
@@ -627,7 +628,6 @@ function drawUsers(m){
     const ac=_actColor(u._d), stt=_actLabel(u._d);
     const head=rankMode?String(i+1):esc((u.name||'?').trim().charAt(0)||'?');
     const evTxt=u.last_event_at?_relDay(_usrDaysFrom(u.last_event_at)):'없음';
-    const loginTxt=_relDay(_usrDaysFrom(u.last_sign_in_at));
     const badges=(u.is_premium?`<span class="usr-badge" style="background:var(--gold)">💎구독</span>`:'')+(u.has_push?`<span class="usr-badge" style="background:#6a8b9a">🔔</span>`:'');
     return `<div class="usr-card" style="border-left-color:${ac}">
       <div class="usr-card-head">
@@ -641,7 +641,7 @@ function drawUsers(m){
       <div class="usr-grid">
         <div class="usr-cell"><div class="c-num">${u.event_count||0}</div><div class="c-lbl">일정</div></div>
         <div class="usr-cell"><div class="c-num">${u.room_count||0}</div><div class="c-lbl">방</div></div>
-        <div class="usr-cell"><div class="c-num" style="font-size:13px">${loginTxt}</div><div class="c-lbl">최근 접속</div></div>
+        <div class="usr-cell"><div class="c-num" style="font-size:13px">${_relDay(u._d)}</div><div class="c-lbl">최근 활동</div></div>
       </div>
       <div class="usr-foot">🗓 마지막 일정 <b style="color:var(--ink)">${evTxt}</b> · ${esc(u.provider||'-')} · 가입 ${fmtDay(u.created_at)}</div>
     </div>`;
@@ -657,7 +657,7 @@ function drawUsers(m){
       ${kpi('gold','구독',premCount,'')}
     </div>
     <div class="usr-chips">
-      ${chip('all','전체')}${chip('act7','7일 활성')}${chip('act14','2주 활성')}${chip('dormant','휴면')}${chip('prem','구독자')}${chip('rank','활동 많은순')}${chip('recent','최근 일정순')}
+      ${chip('all','전체')}${chip('act7','7일 활성')}${chip('act14','2주 활성')}${chip('dormant','휴면')}${chip('prem','구독자')}${chip('rank','활동 많은순')}${chip('recent','최근 일정순')}${chip('newjoin','최근 가입순')}
     </div>
     <div class="head-row"><div class="search"><input id="usrSearch" placeholder="이름·이메일 검색" value="${esc(_usrSearch)}"></div></div>
     ${!list.length?`<div class="empty"><div class="e-emoji">👥</div>${_usrSearch?'검색 결과가 없어요':'해당 회원이 없어요'}</div>`:`<div class="usr-cards">${list.map((u,i)=>card(u,i)).join('')}</div>`}`;
