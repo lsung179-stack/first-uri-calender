@@ -501,14 +501,13 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .prem-cta-trialnote{text-align:center;font-size:12px;color:var(--sub);font-weight:600;margin-top:8px;line-height:1.4}
 .cal-invite-nudge{display:none;margin:6px 20px 2px;flex-shrink:0}
 .cal-invite-nudge.show{display:flex}
-.cal-invite-nudge-inner{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:10px;width:100%;padding:12px 14px;background:linear-gradient(135deg,#fff4dc,#fbe6c9);border:1px solid rgba(176,135,66,.28);border-radius:12px;box-shadow:0 2px 8px rgba(176,135,66,.12)}
-.cal-invite-nudge-row{display:flex;align-items:flex-start;gap:8px;padding-right:20px}
-.cal-invite-nudge-ic{font-size:17px;flex-shrink:0;line-height:1.4}
-.cal-invite-nudge-tx{flex:1;font-size:13.5px;line-height:1.4;color:var(--text);font-weight:500;word-break:keep-all}
+.cal-invite-nudge-inner{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;background:linear-gradient(135deg,#fff4dc,#fbe6c9);border:1px solid rgba(176,135,66,.28);border-radius:12px;box-shadow:0 2px 8px rgba(176,135,66,.12)}
+.cal-invite-nudge-ic{font-size:18px;flex-shrink:0}
+.cal-invite-nudge-tx{flex:1;font-size:12.5px;line-height:1.35;color:var(--text);font-weight:500}
 .cal-invite-nudge-tx b{font-weight:800}
-.cal-invite-nudge-btn{width:100%;padding:10px;background:linear-gradient(135deg,#d4af6a,#b08742);color:#43271a;border:none;border-radius:10px;font-size:13.5px;font-weight:800;font-family:inherit;cursor:pointer;box-shadow:0 3px 10px rgba(176,135,66,.32)}
+.cal-invite-nudge-btn{flex-shrink:0;padding:8px 14px;background:linear-gradient(135deg,#d4af6a,#b08742);color:#43271a;border:none;border-radius:9px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;white-space:nowrap;box-shadow:0 3px 10px rgba(176,135,66,.32)}
 .cal-invite-nudge-btn:active{opacity:.9}
-.cal-invite-nudge-x{position:absolute;top:8px;right:10px;width:22px;height:22px;padding:0;background:none;border:none;color:var(--sub);font-size:13px;line-height:1;cursor:pointer;opacity:.55}
+.cal-invite-nudge-x{flex-shrink:0;width:24px;height:24px;padding:0;margin-left:-2px;background:none;border:none;color:var(--sub);font-size:14px;line-height:1;cursor:pointer;opacity:.55}
 .cal-invite-nudge-x:active{opacity:.25}
 .prem-cta-value{text-align:center;font-size:13px;color:var(--accent);font-weight:700;margin-bottom:9px}
 .prem-ctabtn{width:100%;padding:16px;background:linear-gradient(135deg,#d4af6a,#b08742);color:#43271a;border:none;border-radius:14px;font-size:16px;font-weight:800;font-family:var(--ff-serif);cursor:pointer;letter-spacing:.5px;box-shadow:0 6px 20px rgba(176,135,66,.38)}
@@ -14969,12 +14968,10 @@ function renderInviteNudge(){
   const realCount=(_myMembers||[]).filter(function(m){return !m.is_virtual;}).length;
   if(_currentRoom && realCount<2 && !_inviteNudgeDismissed(_currentRoom.id)){
     el.innerHTML='<div class="cal-invite-nudge-inner">'
-      +'<button class="cal-invite-nudge-x" onclick="dismissInviteNudge()" aria-label="닫기">✕</button>'
-      +'<div class="cal-invite-nudge-row">'
       +'<span class="cal-invite-nudge-ic">🏠</span>'
       +'<span class="cal-invite-nudge-tx">아직 <b>혼자</b> 쓰고 있어요 · 가족·연인·친구를 초대하면 일정을 함께 나눠요</span>'
-      +'</div>'
       +'<button class="cal-invite-nudge-btn" onclick="shareKakao()">초대하기</button>'
+      +'<button class="cal-invite-nudge-x" onclick="dismissInviteNudge()" aria-label="닫기">✕</button>'
       +'</div>';
     el.classList.add('show');
   }else{
