@@ -24,6 +24,7 @@
 ## Supabase
 - 프로젝트 id: **`bgqzkkaslqchbovzrkao`**
 - 핵심 테이블: `public.subscriptions` (user_id, status, expires_at, plan_type, is_manual)
+- 관리자 RPC: `admin_users_detailed()` — 회원별 활동지표(SECURITY DEFINER, 관리자만).
 - 핵심 RPC: `my_premium_status()` — SECURITY DEFINER. `status='active' AND expires_at>now()` 인 구독이 있을 때만 `is_premium=true` 반환.
   - ⚠️ 과거 버그: 집계함수(max/array_agg/bool_or)를 GROUP BY 없이 써서 구독 0건이어도 항상 1행+상수 `is_premium:true`를 반환 → **모든 유저가 프리미엄으로 오판**. `HAVING count(*)>0` 추가로 수정 완료(라이브).
 
@@ -50,6 +51,7 @@
 7. ✅ **혼자 방 초대 넛지(바이럴)** — 실멤버 1명인 방 캘린더 상단(`#calInviteNudge`)에 초대 배너 표시. `renderInviteNudge()`가 `_myMembers` 실멤버<2일 때 노출, `shareKakao()` 호출. `renderMemberTabs()` 시작부에서 호출. 배너에 ✕ 닫기 버튼(`dismissInviteNudge`) — 닫으면 그 방 id를 `localStorage['uricalv2.inviteNudgeDismissed']`에 저장해 다시 안 띄움(방별 기억). ✕ 클릭 시 `vConfirm`('다시 보지 않기'/'취소') 확인 후 저장(실수 방지).
 8. ✅ **프리미엄 시트 탭바 숨김 버그** — 일정추가(탭바 숨김)→프리미엄 시트 진입 후 닫으면 하단 탭바가 안 돌아오던 문제. `openPremiumSheet`에 `hideTabbar()`, `closePremiumSheet`에 `showTabbar()` 추가(다른 풀스크린 시트와 대칭). 겸사겸사 프리미엄 안내 모달(`showUpgradeModal`의 `vConfirm`) 타이틀의 ✨ 제거.
 9. ✅ **관리자 페이지 자동 로그인(세션 전달)** — `openAdminFullPage()`가 admin.html로 세션 토큰(`#at=&rt=`)을 안 실어 보내, 외부 브라우저/새 탭에서 세션이 없어 비번 폼으로 빠지던 버그. 관리자 계정이 **카카오/애플 소셜 로그인(비번 없음, `has_password:false`)**이라 비번 폼으로는 진입 불가였음. `getSession()` 토큰을 URL 해시로 실어 보내 admin이 `setSession`으로 자동 로그인하도록 수정.
+10. ✅ **관리자 회원관리 상세화** — DB에 `admin_users_detailed()`(SECURITY DEFINER, 관리자 가드) RPC 추가: 유저별 최근활동(last_sign_in/이벤트/가입 GREATEST)·일정수·방수·구독·푸시토큰 유무. admin.html 회원관리에 요약(7일/2주 활성·휴면30일+)·필터칩·활동많은순 정렬·최근활동/일정/방 컬럼 추가. '휴면(30일+ 미활동)'=앱삭제/이탈 추정(정확한 삭제 신호는 없음).
 
 ## 주의사항 / 함정
 - 저장소 `main`의 `index.html`은 최신 배포본과 동기화됨 (**build 1.1.2 / 코드 26**, 위 1~7번 전부 반영). 단 개발자가 이후 로컬에서 다시 수정·업로드하면 main보다 앞설 수 있으니, 새 세션은 항상 현재 배포/로컬 버전을 확인할 것.
