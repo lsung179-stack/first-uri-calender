@@ -369,6 +369,13 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .r-section-count{font-size:12px;color:var(--sub)}
 .r-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:transform .12s ease,box-shadow .15s ease;box-shadow:0 1px 2px rgba(60,40,25,.04)}
 .r-card:active{transform:scale(.98)}
+/* 방목록 순서 변경(드래그) — 집은 카드는 위로 떠서 손가락 따라감, 나머지는 자리 양보(부드럽게) */
+body.room-reordering{-webkit-user-select:none;user-select:none}
+body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
+.r-card[data-roomid]{touch-action:pan-y}
+.r-card.r-reorder-shift{transition:transform .18s cubic-bezier(.22,1,.36,1)}
+.r-card.r-card-drag{transition:none;z-index:30;position:relative;box-shadow:0 14px 30px rgba(60,40,25,.28);opacity:.98;touch-action:none}
+.r-card.r-card-drag:active{transform:none}
 .r-card-seal{
   width:42px;height:42px;
   border:1.2px solid var(--accent);
@@ -6169,9 +6176,9 @@ async function loadRooms(){
   loadCurrentProfile();
 
   try{
-    // 내가 속한 방들의 room_id 가져오기
+    // 내가 속한 방들의 room_id + 내 순서(sort_order) 가져오기
     const {data:myMems,error:e1}=await supa
-      .from('members').select('room_id')
+      .from('members').select('room_id,sort_order')
       .eq('user_id',_currentUser.id);
     if(e1)throw e1;
 
@@ -6199,8 +6206,19 @@ async function loadRooms(){
     const countMap={};
     (allMems||[]).forEach(m=>{countMap[m.room_id]=(countMap[m.room_id]||0)+1});
 
-    renderRooms(rooms||[],countMap);
-    _myRooms=rooms||[];
+    // 내 순서(sort_order) 오름차순 정렬 — 없으면 created_at 최신순(현재 정렬) 유지(nulls last).
+    // rooms는 created_at desc로 옴 → sort_order null끼리는 그 순서 보존(안정 정렬).
+    const _ordMap={}; (myMems||[]).forEach(m=>{ _ordMap[m.room_id]=(m.sort_order==null?null:m.sort_order); });
+    const _sortedRooms=(rooms||[]).slice().sort((a,b)=>{
+      const oa=_ordMap[a.id], ob=_ordMap[b.id];
+      if(oa==null&&ob==null)return 0;
+      if(oa==null)return 1;
+      if(ob==null)return -1;
+      return oa-ob;
+    });
+    _roomCountMap=countMap;   // 순서 변경 후 재렌더용 캐시
+    renderRooms(_sortedRooms,countMap);
+    _myRooms=_sortedRooms;
     // 신규 가입자 온보딩 (예약돼 있으면 1회)
     setTimeout(maybeShowOnboarding, 400);
     // 알림 클릭으로 진입할 방이 있으면 자동 진입
@@ -6353,7 +6371,7 @@ function renderRooms(rooms,countMap){
     const safeCode=escapeHtml(r.code||'------');
     const firstChar=escapeHtml((r.name||'·').trim().charAt(0));
     html+=`
-      <div class="r-card" onclick="enterRoom('${r.id}')">
+      <div class="r-card" data-roomid="${r.id}" onclick="enterRoom('${r.id}')">
         <div class="r-card-seal"><span class="r-card-seal-letter">${firstChar}</span></div>
         <div class="r-card-info">
           <div class="r-card-name">${safeName}</div>
@@ -6364,7 +6382,106 @@ function renderRooms(rooms,countMap){
     `;
   });
   c.innerHTML=html;
+  try{ _setupRoomReorder(); }catch(e){}
 }
+
+/* ── 방목록 순서 변경 (카드 꾹 눌러 드래그, members.sort_order에 저장) ── */
+let _roomDrag=null, _roomCountMap={}, _roomSuppressClick=false;
+const ROOM_DRAG_HOLD=220;
+function _setupRoomReorder(){
+  const c=document.getElementById('roomsContent');
+  if(!c||c._roomDragBound)return;
+  c._roomDragBound=true;
+  // 리스너는 컨테이너(#roomsContent)에 위임 — 재렌더로 카드가 바뀌어도 유지
+  c.addEventListener('pointerdown',_roomPD,{passive:true});
+  window.addEventListener('pointermove',_roomPM,{passive:false});
+  window.addEventListener('pointerup',_roomPU,{passive:true});
+  window.addEventListener('pointercancel',_roomPU,{passive:true});
+}
+function _roomPD(e){
+  if(e.button!==undefined&&e.button!==0)return;
+  if(_roomDrag)_roomFinish(false);
+  const card=e.target.closest&&e.target.closest('.r-card[data-roomid]');
+  if(!card)return;
+  _roomDrag={card,roomId:card.getAttribute('data-roomid'),startY:e.clientY,pid:e.pointerId,
+    active:false,moved:false,holdTimer:setTimeout(_roomDragStart,ROOM_DRAG_HOLD)};
+}
+function _roomDragStart(){
+  const d=_roomDrag; if(!d)return;
+  const c=document.getElementById('roomsContent');
+  const els=Array.prototype.slice.call(c.querySelectorAll('.r-card[data-roomid]'));
+  if(els.length<2){ _roomDrag=null; return; }   // 방 1개면 순서변경 불가
+  d.cards=els.map(el=>({el,roomId:el.getAttribute('data-roomid'),top:el.getBoundingClientRect().top}));
+  d.dragIndex=d.cards.findIndex(x=>x.el===d.card);
+  d.targetIndex=d.dragIndex;
+  d.h=(d.cards.length>1)?(d.cards[1].top-d.cards[0].top):d.card.getBoundingClientRect().height;
+  d.active=true;
+  document.body.classList.add('room-reordering');
+  d.cards.forEach(x=>{ if(x.el!==d.card)x.el.classList.add('r-reorder-shift'); });
+  d.card.classList.add('r-card-drag');
+  try{d.card.setPointerCapture(d.pid)}catch(_){}
+  if(navigator.vibrate)navigator.vibrate(12);
+}
+function _roomPM(e){
+  const d=_roomDrag; if(!d||e.pointerId!==d.pid)return;
+  if(!d.active){
+    if(Math.abs(e.clientY-d.startY)>10){ clearTimeout(d.holdTimer); _roomDrag=null; } // 홀드 전 세로 이동 → 스크롤 양보
+    return;
+  }
+  e.preventDefault();
+  d.moved=true;
+  const dy=e.clientY-d.startY;
+  d.card.style.transform='translateY('+dy+'px) scale(1.03)';
+  let ti=d.dragIndex+Math.round(dy/d.h);
+  ti=Math.max(0,Math.min(d.cards.length-1,ti));
+  if(ti!==d.targetIndex){
+    d.targetIndex=ti;
+    d.cards.forEach((x,i)=>{
+      if(x.el===d.card)return;
+      let shift=0;
+      if(d.dragIndex<ti && i>d.dragIndex && i<=ti) shift=-d.h;
+      else if(d.dragIndex>ti && i>=ti && i<d.dragIndex) shift=d.h;
+      x.el.style.transform=shift?('translateY('+shift+'px)'):'';
+    });
+  }
+}
+function _roomPU(e){ if(_roomDrag&&e.pointerId===_roomDrag.pid)_roomFinish(true); }
+function _roomFinish(commit){
+  const d=_roomDrag; _roomDrag=null;
+  if(!d)return;
+  clearTimeout(d.holdTimer);
+  if(!d.active)return;
+  try{d.card.releasePointerCapture(d.pid)}catch(_){}
+  document.body.classList.remove('room-reordering');
+  (d.cards||[]).forEach(x=>{ x.el.style.transform=''; x.el.classList.remove('r-reorder-shift','r-card-drag'); });
+  d.card.classList.remove('r-card-drag');
+  if(d.moved){ _roomSuppressClick=true; setTimeout(function(){_roomSuppressClick=false},400); }
+  if(commit && d.targetIndex!==d.dragIndex){ _applyRoomReorder(d.dragIndex,d.targetIndex); }
+}
+function _applyRoomReorder(from,to){
+  const arr=(_myRooms||[]).slice();
+  if(from<0||from>=arr.length)return;
+  const moved=arr.splice(from,1)[0];
+  arr.splice(to,0,moved);
+  _myRooms=arr;
+  renderRooms(_myRooms,_roomCountMap||{});   // 즉시 반영(낙관적)
+  if(navigator.vibrate)navigator.vibrate(8);
+  _saveRoomOrder(arr.map(r=>r.id));           // 백그라운드로 sort_order 저장
+}
+async function _saveRoomOrder(orderedIds){
+  if(!_currentUser)return;
+  try{
+    await Promise.all(orderedIds.map((rid,idx)=>
+      supa.from('members').update({sort_order:idx}).eq('user_id',_currentUser.id).eq('room_id',rid)));
+  }catch(e){ console.warn('방 순서 저장 실패',e); toast('순서 저장에 실패했어요'); }
+}
+/* 드래그 직후 카드 클릭(방 입장) 1회 차단 */
+document.addEventListener('click',function(e){
+  if(!_roomSuppressClick)return;
+  _roomSuppressClick=false;
+  const t=e.target;
+  if(t&&t.closest&&t.closest('.r-card')){ e.stopPropagation(); e.preventDefault(); }
+},true);
 
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 
