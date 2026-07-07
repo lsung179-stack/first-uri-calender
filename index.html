@@ -9062,7 +9062,10 @@ function renderDateSheetList(){
       const chk=done?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>':'';
       const chkCol=done?'var(--done)':hex;
       const memoHtml=t.memo?`<div class="dp-memo">${escapeHtml(t.memo)}</div>`:'';
-      html+=`<div class="dp-item todo${done?' tddone':''}">
+      // 목록에서 꾹 눌러 드래그(일정처럼) — 비반복 단일·기간·여러날 할일
+      const _tdCanDrag=(!t.repeat_type||t.repeat_type==='none')&&(t.todo_type==='single'||t.todo_type==='multi'||isRangeT);
+      const _tdDragAttr=_tdCanDrag?` data-tddrag="1" data-tdid="${t.id}" data-tddate="${_selectedDate}"`:'';
+      html+=`<div class="dp-item todo${done?' tddone':''}"${_tdDragAttr}>
         <div class="dp-tdchk" style="border-color:${chkCol};color:${chkCol}" onclick="event.stopPropagation();window.toggleTodoDone('${t.id}');setTimeout(renderDateSheetList,40)">${chk}</div>
         <div class="dp-info">
           <div class="dp-title">${escapeHtml(t.title||'')}</div>
@@ -16372,8 +16375,11 @@ function setupEventDrag(){
       _swipeEnabled=false;
       document.body.classList.add('ev-dragging');
       _evDrag.groupDates=_tdGroupDates(todo);
-      _evDrag.bar.classList.add('ev-drag-src');
-      _evDrag.srcBars=[_evDrag.bar];
+      // 기간/여러날 할일은 여러 칸에 걸쳐 렌더되므로 같은 tdid의 모든 조각을 함께 들어올림(전체 활성화)
+      const _tdBars=[];
+      document.querySelectorAll('.cal-tditem[data-tdid="'+_evDrag.tdid+'"],.cal-tdline[data-tdid="'+_evDrag.tdid+'"]').forEach(function(b){ if(_tdBars.indexOf(b)<0){ b.classList.add('ev-drag-src'); _tdBars.push(b); } });
+      if(_tdBars.indexOf(_evDrag.bar)<0){ _evDrag.bar.classList.add('ev-drag-src'); _tdBars.push(_evDrag.bar); }
+      _evDrag.srcBars=_tdBars;
       _evDrag.ghost=_evMakeGhost(_evDrag.bar,_evDrag.startX,_evDrag.startY,todo.title);
       if(navigator.vibrate)navigator.vibrate(15);
       try{_evDrag.bar.setPointerCapture(_evDrag.pid)}catch(_){}
@@ -16500,16 +16506,17 @@ function setupDateSheetDrag(){
   function cancel(){ if(s){ clearTimeout(s.timer); s=null; } }
   list.addEventListener('pointerdown',function(e){
     if(e.button!==undefined&&e.button!==0)return;
-    const item=e.target.closest&&e.target.closest('.dp-item[data-evdrag="1"]');
+    const item=e.target.closest&&e.target.closest('.dp-item[data-evdrag="1"],.dp-item[data-tddrag="1"]');
     if(!item)return;
     // 인터랙티브 자식(수정/삭제·순서 화살표·반응·사진 등) 위에선 드래그 시작 안 함
     if(e.target.closest('button,a,input,textarea,select,.dp-order,.dp-actions,.dp-reaction-row,.dp-photo-thumb,.dp-tdchk'))return;
     const evid=item.getAttribute('data-evid');
-    const fromDate=item.getAttribute('data-evdate');
-    if(!evid||!fromDate)return;
+    const tdid=item.getAttribute('data-tdid');
+    const fromDate=item.getAttribute('data-evdate')||item.getAttribute('data-tddate');
+    if(!fromDate||(!evid&&!tdid))return;
     cancel();
-    s={evid:evid,fromDate:fromDate,x:e.clientX,y:e.clientY,pid:e.pointerId,
-       timer:setTimeout(function(){ const cur=s; s=null; _beginSheetEvDrag(cur); },EV_DRAG_HOLD)};
+    s={evid:evid||null,tdid:tdid||null,fromDate:fromDate,x:e.clientX,y:e.clientY,pid:e.pointerId,
+       timer:setTimeout(function(){ const cur=s; s=null; if(cur.tdid)_beginSheetTdDrag(cur); else _beginSheetEvDrag(cur); },EV_DRAG_HOLD)};
   },{passive:true});
   list.addEventListener('pointermove',function(e){
     if(!s||e.pointerId!==s.pid)return;
@@ -16550,6 +16557,38 @@ function _beginSheetEvDrag(s){
     ghostSrc=tempSrc;
   }
   _evDrag.ghost=_evMakeGhost(ghostSrc,s.x,s.y,row.title);
+  if(tempSrc)tempSrc.remove();
+  if(navigator.vibrate)navigator.vibrate(15);
+  try{ if(bar)bar.setPointerCapture(s.pid); }catch(_){}
+}
+/* 날짜 시트에서 '할 일'을 꾹 눌러 → 시트 닫고 캘린더 드래그로 이어받기 (_beginSheetEvDrag의 할일판) */
+function _beginSheetTdDrag(s){
+  if(!s)return;
+  const todo=_tdFindById(s.tdid);
+  if(!todo)return;
+  try{ closeDateSheet(); }catch(_){}
+  const bar=document.querySelector('.cal-tditem[data-tdid="'+s.tdid+'"],.cal-tdline[data-tdid="'+s.tdid+'"]');
+  _evDrag={kind:'todo',bar:bar||null,fromDate:s.fromDate,tdid:s.tdid,startX:s.x,startY:s.y,pid:s.pid,
+           active:true,ghost:null,lastCell:null,dropDate:null,anchorTodo:todo,holdTimer:null};
+  _evDragging=true;
+  _swipeEnabled=false;
+  document.body.classList.add('ev-dragging');
+  _evDrag.groupDates=_tdGroupDates(todo);
+  // 기간/여러날 할일은 여러 칸의 모든 조각을 함께 들어올림(전체 활성화)
+  const bars=[];
+  document.querySelectorAll('.cal-tditem[data-tdid="'+s.tdid+'"],.cal-tdline[data-tdid="'+s.tdid+'"]').forEach(function(b){ if(bars.indexOf(b)<0){b.classList.add('ev-drag-src');bars.push(b);} });
+  _evDrag.srcBars=bars;
+  // 고스트: 캘린더 바가 있으면 그 색, 없으면(+N 오버플로 등) 임시 요소로 할일 색 적용
+  let ghostSrc=bar,tempSrc=null;
+  if(!ghostSrc){
+    const _hex=(window.todoHexPublic?window.todoHexPublic(todo.color):(todo.color||'#8b3a2a'));
+    tempSrc=document.createElement('div');
+    tempSrc.className='cal-tditem';
+    tempSrc.style.cssText='position:absolute;left:-9999px;top:-9999px;color:'+_hex;
+    document.body.appendChild(tempSrc);
+    ghostSrc=tempSrc;
+  }
+  _evDrag.ghost=_evMakeGhost(ghostSrc,s.x,s.y,todo.title);
   if(tempSrc)tempSrc.remove();
   if(navigator.vibrate)navigator.vibrate(15);
   try{ if(bar)bar.setPointerCapture(s.pid); }catch(_){}
