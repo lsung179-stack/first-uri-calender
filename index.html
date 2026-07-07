@@ -16164,27 +16164,43 @@ async function _evMove(anchorRow,fromDate,toDate){
   if(!grp.length)return;
   const moves=grp.map(o=>({id:o.id,od:o.date,nd:shiftDateKey(o.date,diff)}));
   // 1) 낙관적 로컬 이동 — 전체 새로고침(빈 화면→재로드) 없이 즉시 새 칸에 반영
+  //    (현재 방만 로드돼 있으므로 로컬 반영은 현재 방 기준. 다른 방은 아래 DB 반영 후 재진입 시 반영)
   moves.forEach(m=>_evLocalMove(m.id,m.od,m.nd));
   invalidateDayEventsCache();
   invalidateSearchCache();
   renderMonthly();
   if(navigator.vibrate)navigator.vibrate(10);
+  // 방 간 연결 일정(multi_group_id)이면 다른 방 복사본도 같은 간격으로 함께 이동
+  const mgid=anchorRow.multi_group_id||null;
   // 2) DB 반영은 백그라운드로 (성공 시 조용히, 실패 시 서버 기준으로 되돌림)
   try{
-    const results=await Promise.all(moves.map(m=>supa.from('events').update({date:m.nd}).eq('id',m.id)));
-    const failedIdx=[];
-    results.forEach((r,i)=>{ if(r&&r.error)failedIdx.push(i); });
-    if(failedIdx.length){
-      // 일부만 성공 → 성공분을 원래 날짜로 되돌려 그룹 일관성 복구
-      const okMoves=moves.filter((_,i)=>!failedIdx.includes(i));
-      if(okMoves.length){
-        try{ await Promise.all(okMoves.map(m=>supa.from('events').update({date:m.od}).eq('id',m.id))); }
-        catch(rollbackErr){ console.error('rollback failed',rollbackErr); }
+    let results;
+    if(mgid){
+      // 날짜별로 (multi_group_id + user_id + date=od) → nd 일괄 업데이트: 현재 방 + 다른 방을 한 번에.
+      // distinct od→nd 쌍만 처리(기간/여러날이면 날짜가 여럿).
+      const seen=new Set(), dateMoves=[];
+      moves.forEach(m=>{ const k=m.od+'>'+m.nd; if(!seen.has(k)){seen.add(k);dateMoves.push(m);} });
+      results=await Promise.all(dateMoves.map(m=>supa.from('events').update({date:m.nd})
+        .eq('multi_group_id',mgid).eq('user_id',_currentUser.id).eq('date',m.od)));
+      if((results||[]).some(r=>r&&r.error)) throw ((results.find(r=>r&&r.error)||{}).error)||new Error('multi-room move failed');
+      syncWidgetData();
+      toast(grp.length>1?'기간 일정을 여러 방에서 옮겼어요':'여러 방의 일정을 옮겼어요');
+    }else{
+      results=await Promise.all(moves.map(m=>supa.from('events').update({date:m.nd}).eq('id',m.id)));
+      const failedIdx=[];
+      results.forEach((r,i)=>{ if(r&&r.error)failedIdx.push(i); });
+      if(failedIdx.length){
+        // 일부만 성공 → 성공분을 원래 날짜로 되돌려 그룹 일관성 복구
+        const okMoves=moves.filter((_,i)=>!failedIdx.includes(i));
+        if(okMoves.length){
+          try{ await Promise.all(okMoves.map(m=>supa.from('events').update({date:m.od}).eq('id',m.id))); }
+          catch(rollbackErr){ console.error('rollback failed',rollbackErr); }
+        }
+        throw (results[failedIdx[0]]&&results[failedIdx[0]].error)||new Error('partial move failed');
       }
-      throw (results[failedIdx[0]]&&results[failedIdx[0]].error)||new Error('partial move failed');
+      syncWidgetData();
+      toast(grp.length>1?'기간 일정을 옮겼어요':'일정을 옮겼어요');
     }
-    syncWidgetData();
-    toast(grp.length>1?'기간 일정을 옮겼어요':'일정을 옮겼어요');
   }catch(err){
     console.error('move event failed',err);
     toast('일정 이동에 실패했어요');
