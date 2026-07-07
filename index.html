@@ -18274,7 +18274,9 @@ function __todoCellHTML(t,key){
   const CHK='<svg viewBox="0 0 24 24" fill="none" stroke="'+chkCol+'" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
   const chkSpan='<span class="cal-tdchk" style="border-color:'+chkCol+'">'+(done?CHK:'')+'</span>';
   const isRange=(t.todo_type==='range' && t.end_date && t.end_date>t.start_date);
-  const canTdDrag=(!t.repeat_type||t.repeat_type==='none') && (t.todo_type==='single' || isRange);
+  // 드래그 허용: 비반복 + (단일·기간·여러날). 여러날(multi)도 _tdMove/_tdGroupDates가
+  // 이미 지원하므로 게이트만 열어줌. 반복 할일은 단일 DB행 이동이 애매해 제외.
+  const canTdDrag=(!t.repeat_type||t.repeat_type==='none') && (t.todo_type==='single' || t.todo_type==='multi' || isRange);
   const tdDragAttr=' data-tddrag="'+(canTdDrag?'1':'0')+'"';
   if(!isRange){
     return '<div class="cal-tditem'+(done?' done':'')+'" data-tdid="'+t.id+'"'+tdDragAttr+'>'
