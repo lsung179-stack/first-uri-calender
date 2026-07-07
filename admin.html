@@ -189,17 +189,20 @@ tbody tr:hover{background:rgba(139,58,42,.025)}
 .usr-kpi.good .k-num{color:#4a9d5b}
 .usr-kpi.warn .k-num{color:#b06a4a}
 .usr-kpi.gold .k-num{color:var(--gold)}
-.usr-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px;margin-top:4px}
-.usr-card{display:flex;gap:11px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 14px;align-items:flex-start}
-.usr-av{flex-shrink:0;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;color:#fff;border:2.5px solid transparent;box-sizing:border-box}
-.usr-card-main{flex:1;min-width:0}
-.usr-card-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
-.usr-card-name{font-weight:800;font-size:14.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.usr-card-when{font-size:11.5px;font-weight:700;flex-shrink:0}
-.usr-card-sub{font-size:12px;color:var(--sub);margin:2px 0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.usr-stats{display:flex;flex-wrap:wrap;gap:6px}
-.usr-stat{font-size:11.5px;font-weight:700;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:7px;padding:3px 8px}
-.usr-badge{font-size:10.5px;font-weight:800;padding:3px 8px;border-radius:20px;color:#fff}
+.usr-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:11px;margin-top:4px}
+.usr-card{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:14px;padding:13px 15px}
+.usr-card-head{display:flex;align-items:center;gap:11px}
+.usr-av{flex-shrink:0;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#fff;border:2.5px solid transparent;box-sizing:border-box}
+.usr-card-id{flex:1;min-width:0}
+.usr-card-name{font-weight:800;font-size:15px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.usr-card-sub{font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.usr-status{flex-shrink:0;font-size:12px;font-weight:800}
+.usr-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin:12px 0 10px}
+.usr-cell{background:var(--paper);border-radius:9px;padding:8px 4px;text-align:center}
+.usr-cell .c-num{font-size:15.5px;font-weight:800;color:var(--ink);line-height:1.15}
+.usr-cell .c-lbl{font-size:10.5px;color:var(--sub);margin-top:3px;font-weight:700}
+.usr-foot{font-size:11.5px;color:var(--sub);font-weight:600;border-top:1px dashed var(--line);padding-top:8px}
+.usr-badge{font-size:10px;font-weight:800;padding:2px 7px;border-radius:20px;color:#fff}
 </style>
 </head>
 <body>
@@ -588,11 +591,8 @@ async function renderUsers(m){
   _cache.users=(data&&data.rows)||[];
   drawUsers(m);
 }
-function _usrDays(u){
-  const t=u.last_activity_at?new Date(u.last_activity_at).getTime():0;
-  if(!t) return 99999;
-  return Math.floor((Date.now()-t)/86400000);
-}
+function _usrDaysFrom(iso){ const t=iso?new Date(iso).getTime():0; if(!t)return 99999; return Math.floor((Date.now()-t)/86400000); }
+function _usrDays(u){ return _usrDaysFrom(u.last_activity_at); }
 function _relDay(d){
   if(d>=99999) return '-';
   if(d<=0) return '오늘';
@@ -603,10 +603,12 @@ function _relDay(d){
   return Math.floor(d/365)+'년 전';
 }
 function _actColor(d){ if(d<=7)return '#4a9d5b'; if(d<=14)return '#c79a3a'; if(d<=30)return '#cf7a3a'; return '#9a9a9a'; }
+function _actLabel(d){ if(d<=7)return '활발'; if(d<=14)return '보통'; if(d<=30)return '뜸함'; return '휴면'; }
 function _avColor(name){ const cs=['#8b5a3a','#a6784a','#7a8b5a','#5a7a8b','#8b5a7a','#5a8b7a','#a05a4a']; let h=0; const t=String(name||'?'); for(let i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))>>>0; return cs[h%cs.length]; }
 function drawUsers(m){
   const all=(_cache.users||[]).map(u=>Object.assign({},u,{_d:_usrDays(u)}));
   const act7=all.filter(u=>u._d<=7).length, act14=all.filter(u=>u._d<=14).length, dormant=all.filter(u=>u._d>30).length, premCount=all.filter(u=>u.is_premium).length;
+  const new7=all.filter(u=>_usrDaysFrom(u.created_at)<=7).length;
   const pct=all.length?Math.round(act7/all.length*100):0;
   const f=_usrFilter||'all';
   let list=all.slice();
@@ -615,39 +617,47 @@ function drawUsers(m){
   else if(f==='dormant')list=list.filter(u=>u._d>30);
   else if(f==='prem')list=list.filter(u=>u.is_premium);
   if(_usrSearch)list=list.filter(u=>(u.name||'').toLowerCase().includes(_usrSearch)||(u.email||'').toLowerCase().includes(_usrSearch));
-  const rankMode=(f==='rank');
+  const rankMode=(f==='rank'), recentMode=(f==='recent');
   if(rankMode)list.sort((a,b)=>(b.event_count||0)-(a.event_count||0));
+  else if(recentMode)list.sort((a,b)=>(b.last_event_at?new Date(b.last_event_at).getTime():0)-(a.last_event_at?new Date(a.last_event_at).getTime():0));
   else list.sort((a,b)=>a._d-b._d);
   const chip=(k,label)=>`<button class="usr-chip${f===k?' on':''}" data-f="${k}">${label}</button>`;
+  const kpi=(cls,label,num,sub)=>`<div class="usr-kpi ${cls}"><div class="k-label">${label}</div><div class="k-num">${num}</div>${sub?`<div class="k-sub">${sub}</div>`:''}</div>`;
   const card=(u,i)=>{
-    const ac=_actColor(u._d), init=esc((u.name||'?').trim().charAt(0)||'?');
-    const badges=(u.is_premium?`<span class="usr-badge" style="background:var(--gold)">💎 구독</span>`:'')+(u._d>30?`<span class="usr-badge" style="background:#b06a4a">휴면</span>`:'')+(u.has_push?`<span class="usr-badge" style="background:#6a8b9a">🔔</span>`:'');
-    return `<div class="usr-card">
-      <div class="usr-av" style="background:${_avColor(u.name)};border-color:${ac}">${rankMode?(i+1):init}</div>
-      <div class="usr-card-main">
-        <div class="usr-card-top"><span class="usr-card-name">${esc(u.name||'(이름 없음)')}</span><span class="usr-card-when" style="color:${ac}">${_relDay(u._d)}</span></div>
-        <div class="usr-card-sub">${esc(u.email||'-')}</div>
-        <div class="usr-stats">
-          <span class="usr-stat">📅 일정 ${u.event_count||0}</span>
-          <span class="usr-stat">🏠 방 ${u.room_count||0}</span>
-          <span class="usr-stat">${esc(u.provider||'-')}</span>
-          <span class="usr-stat">가입 ${fmtDay(u.created_at)}</span>
-          ${badges}
+    const ac=_actColor(u._d), stt=_actLabel(u._d);
+    const head=rankMode?String(i+1):esc((u.name||'?').trim().charAt(0)||'?');
+    const evTxt=u.last_event_at?_relDay(_usrDaysFrom(u.last_event_at)):'없음';
+    const loginTxt=_relDay(_usrDaysFrom(u.last_sign_in_at));
+    const badges=(u.is_premium?`<span class="usr-badge" style="background:var(--gold)">💎구독</span>`:'')+(u.has_push?`<span class="usr-badge" style="background:#6a8b9a">🔔</span>`:'');
+    return `<div class="usr-card" style="border-left-color:${ac}">
+      <div class="usr-card-head">
+        <div class="usr-av" style="background:${_avColor(u.name)};border-color:${ac}">${head}</div>
+        <div class="usr-card-id">
+          <div class="usr-card-name">${esc(u.name||'(이름 없음)')} ${badges}</div>
+          <div class="usr-card-sub">${esc(u.email||'-')}</div>
         </div>
+        <div class="usr-status" style="color:${ac}">● ${stt}</div>
       </div>
+      <div class="usr-grid">
+        <div class="usr-cell"><div class="c-num">${u.event_count||0}</div><div class="c-lbl">일정</div></div>
+        <div class="usr-cell"><div class="c-num">${u.room_count||0}</div><div class="c-lbl">방</div></div>
+        <div class="usr-cell"><div class="c-num" style="font-size:13px">${loginTxt}</div><div class="c-lbl">최근 접속</div></div>
+      </div>
+      <div class="usr-foot">🗓 마지막 일정 <b style="color:var(--ink)">${evTxt}</b> · ${esc(u.provider||'-')} · 가입 ${fmtDay(u.created_at)}</div>
     </div>`;
   };
   m.innerHTML=`
     <div class="page-title">회원 관리</div>
     <div class="usr-kpis">
-      <div class="usr-kpi"><div class="k-label">전체 회원</div><div class="k-num">${all.length}</div></div>
-      <div class="usr-kpi good"><div class="k-label">7일 활성</div><div class="k-num">${act7}</div><div class="k-sub">${pct}%</div></div>
-      <div class="usr-kpi"><div class="k-label">2주 활성</div><div class="k-num">${act14}</div></div>
-      <div class="usr-kpi warn"><div class="k-label">휴면 30일+</div><div class="k-num">${dormant}</div></div>
-      <div class="usr-kpi gold"><div class="k-label">구독</div><div class="k-num">${premCount}</div></div>
+      ${kpi('','전체 회원',all.length,'')}
+      ${kpi('good','7일 활성',act7,pct+'%')}
+      ${kpi('','2주 활성',act14,'')}
+      ${kpi('warn','휴면 30일+',dormant,'')}
+      ${kpi('','7일 신규',new7,'')}
+      ${kpi('gold','구독',premCount,'')}
     </div>
     <div class="usr-chips">
-      ${chip('all','전체')}${chip('act7','7일 활성')}${chip('act14','2주 활성')}${chip('dormant','휴면')}${chip('prem','구독자')}${chip('rank','활동 많은순')}
+      ${chip('all','전체')}${chip('act7','7일 활성')}${chip('act14','2주 활성')}${chip('dormant','휴면')}${chip('prem','구독자')}${chip('rank','활동 많은순')}${chip('recent','최근 일정순')}
     </div>
     <div class="head-row"><div class="search"><input id="usrSearch" placeholder="이름·이메일 검색" value="${esc(_usrSearch)}"></div></div>
     ${!list.length?`<div class="empty"><div class="e-emoji">👥</div>${_usrSearch?'검색 결과가 없어요':'해당 회원이 없어요'}</div>`:`<div class="usr-cards">${list.map((u,i)=>card(u,i)).join('')}</div>`}`;
