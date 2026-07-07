@@ -1231,12 +1231,25 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 body.ev-dragging{touch-action:none;-webkit-user-select:none;user-select:none}
 body.ev-dragging .cal-evbar,body.ev-dragging input,body.ev-dragging textarea{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 body.ev-dragging .cal-cell{cursor:grabbing}
-.cal-evbar.ev-drag-src{opacity:.35}
-.cal-tditem.ev-drag-src,.cal-tdline.ev-drag-src{opacity:.35}
+/* 집어올린 원본은 살짝 가라앉은 자리표시(부드럽게) — 고스트가 튀어나온 느낌을 강조 */
+.cal-evbar.ev-drag-src,.cal-tditem.ev-drag-src,.cal-tdline.ev-drag-src{opacity:.28;transform:scale(.94);transition:opacity .16s ease,transform .16s ease}
 .cal-tditem[data-tddrag="1"],.cal-tdline[data-tddrag="1"]{-webkit-touch-callout:none}
-.cal-cell.ev-drop-target{box-shadow:inset 0 0 0 2px var(--accent);border-radius:7px;background:rgba(0,0,0,.04)}
+.cal-cell.ev-drop-target{box-shadow:inset 0 0 0 2px var(--accent);border-radius:7px;background:rgba(0,0,0,.04);transition:box-shadow .12s ease,background .12s ease}
 .cal-cell.ev-drop-target .cal-day-num{font-weight:800}
-.ev-drag-ghost{position:fixed;left:0;top:0;z-index:9999;pointer-events:none;font-size:10px;font-weight:700;padding:4px 9px;border-radius:6px;color:#fff;box-shadow:0 8px 22px rgba(0,0,0,.30);white-space:nowrap;max-width:170px;overflow:hidden;text-overflow:ellipsis;transform:translate3d(0,0,0) translate(-50%,-135%) scale(1.06);opacity:.97;will-change:transform;transition:transform .05s linear}
+/* 드래그 고스트 — 위치(outer)와 시각 리프트(inner)를 분리:
+   outer는 rAF에서 transform:translate3d로만 이동(GPU, 리플로우 없음, 드래그 중 트랜지션 없음→손가락에 1:1),
+   inner는 집는 순간 pop / 놓는 순간 settle 애니메이션을 담당(위치와 독립). */
+.ev-drag-ghost{position:fixed;left:0;top:0;z-index:9999;pointer-events:none;will-change:transform}
+.ev-drag-ghost-inner{display:inline-block;font-size:10px;font-weight:700;padding:4px 9px;border-radius:6px;color:#fff;box-shadow:0 10px 26px rgba(0,0,0,.34);white-space:nowrap;max-width:170px;overflow:hidden;text-overflow:ellipsis;transform:translate(-50%,-135%) scale(1.08);transform-origin:50% 50%;will-change:transform,opacity;animation:evGhostPop .26s cubic-bezier(.34,1.56,.64,1) both}
+/* 꾹 눌러 집는 순간: 작게→살짝 오버슈트→안정. 앞으로 툭 튀어나오는 느낌 */
+@keyframes evGhostPop{0%{transform:translate(-50%,-135%) scale(.55);opacity:.35}55%{transform:translate(-50%,-135%) scale(1.2);opacity:1}100%{transform:translate(-50%,-135%) scale(1.08);opacity:1}}
+/* 놓는 순간: 목표 칸으로 미끄러지며 안으로 쏙 들어가듯 축소+페이드 */
+.ev-drag-ghost.dropping{transition:transform .22s cubic-bezier(.22,1,.36,1)}
+.ev-drag-ghost.dropping .ev-drag-ghost-inner{animation:none;transition:transform .22s cubic-bezier(.22,1,.36,1),opacity .22s ease;transform:translate(-50%,-78%) scale(.36);opacity:0}
+@media (prefers-reduced-motion:reduce){
+  .ev-drag-ghost-inner{animation:none}
+  .ev-drag-ghost.dropping,.ev-drag-ghost.dropping .ev-drag-ghost-inner{transition:none}
+}
 
 /* 일정 복사 옵션 (방 만들기/입장 시) */
 .copy-option{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fdf6e8;border:1.5px solid var(--borderL);border-radius:10px;margin:4px 0 10px;cursor:pointer}
@@ -16095,10 +16108,10 @@ const EV_DRAG_CANCEL=12;    // 시작 전 허용 이동(px) — 넘으면 스크
 /* 드래그 프레임 배칭 — pointermove는 프레임보다 자주 발생하므로 최신 좌표만 모아
    requestAnimationFrame에서 1회만 고스트 이동 + 셀 히트테스트(끊김 방지) */
 let _evRaf=0, _evPtrX=0, _evPtrY=0;
-/* 고스트 위치를 transform(GPU 합성)으로 지정 — left/top 리플로우 회피.
-   기존 시각 오프셋(위로 띄우고 살짝 확대)은 translate3d 뒤에 이어붙여 유지 */
+/* 고스트 outer의 위치만 transform(GPU 합성)으로 지정 — left/top 리플로우 회피.
+   시각 오프셋(-50%,-135%)·스케일·pop/settle은 inner가 CSS로 담당(위치와 독립). */
 function _evGhostTransform(x,y){
-  return 'translate3d('+x+'px,'+y+'px,0) translate(-50%,-135%) scale(1.06)';
+  return 'translate3d('+x+'px,'+y+'px,0)';
 }
 
 function _evDayDiff(a,b){return Math.round((parseDateKey(b)-parseDateKey(a))/86400000)}
@@ -16201,13 +16214,29 @@ async function _tdMove(todo,fromDate,toDate){
 function _evMakeGhost(srcBar,x,y,label){
   const g=document.createElement('div');
   g.className='ev-drag-ghost';
+  g.style.transform=_evGhostTransform(x,y);   // outer: 위치만
+  const inner=document.createElement('div');
+  inner.className='ev-drag-ghost-inner';       // inner: 시각 pill + pop/settle
   const cs=getComputedStyle(srcBar);
-  g.style.background=cs.backgroundColor;
-  g.style.color=cs.color;
-  g.textContent=((label||srcBar.textContent||'')+'').trim()||'일정';
-  g.style.transform=_evGhostTransform(x,y);
+  inner.style.background=cs.backgroundColor;
+  inner.style.color=cs.color;
+  inner.textContent=((label||srcBar.textContent||'')+'').trim()||'일정';
+  g.appendChild(inner);
   document.body.appendChild(g);
   return g;
+}
+/* 놓는 순간: 고스트를 목표 칸(또는 원위치)으로 미끄러뜨린 뒤 안으로 쏙 들어가듯 사라지게 함 */
+function _evSettleGhost(ghost,date){
+  if(!ghost)return;
+  const cell=date&&document.querySelector('.cal-cell[data-date="'+date+'"]');
+  if(!cell){ ghost.remove(); return; }
+  const r=cell.getBoundingClientRect();
+  const tx=r.left+r.width/2;
+  const ty=r.top+Math.min(30,r.height*0.4);
+  ghost.classList.add('dropping');
+  // 다음 프레임에 목표 위치로 트랜지션(현재 위치에서 부드럽게 미끄러짐)
+  requestAnimationFrame(()=>{ if(ghost)ghost.style.transform=_evGhostTransform(tx,ty); });
+  setTimeout(()=>{ if(ghost&&ghost.parentNode)ghost.remove(); },250);
 }
 function _evCellFromPoint(x,y){
   const el=document.elementFromPoint(x,y);
@@ -16270,15 +16299,16 @@ function setupEventDrag(){
     clearTimeout(_evDrag.holdTimer);
     if(_evRaf){cancelAnimationFrame(_evRaf);_evRaf=0;}
     const d=_evDrag;_evDrag=null;
-    if(!d.active)return;            // 길게 누르기 전이면 일반 탭 — 그대로 둠
+    if(!d.active){ if(d.ghost)d.ghost.remove(); return; }   // 길게 누르기 전이면 일반 탭
     try{d.bar.releasePointerCapture(d.pid)}catch(_){}
-    if(d.ghost)d.ghost.remove();
     (d.srcBars||[d.bar]).forEach(b=>{if(b)b.classList.remove('ev-drag-src')});
     _evClearDropHl();
     document.body.classList.remove('ev-dragging');
     _evDragging=false;
     _evDragSuppressClick=true;      // 드롭 직후 셀 click(날짜시트) 1회 차단
     setTimeout(()=>{_evDragSuppressClick=false},400);
+    // 놓는 자리(커밋이면 드롭날짜, 아니면 원위치)로 고스트가 쏙 들어가는 마무리 애니메이션
+    _evSettleGhost(d.ghost,(commit&&d.dropDate)?d.dropDate:d.fromDate);
     if(commit&&d.dropDate){
       if(d.kind==='todo'){ if(d.anchorTodo)_tdMove(d.anchorTodo,d.fromDate,d.dropDate); }
       else if(d.anchorRow)_evMove(d.anchorRow,d.fromDate,d.dropDate);
