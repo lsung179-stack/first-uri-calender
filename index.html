@@ -16142,36 +16142,50 @@ function _evCollectGroup(anchorRow,anchorDate){
   });
   return out;
 }
+/* 로컬 _events 맵에서 일정 1건을 od→nd로 이동(낙관적 업데이트용). 드래그 대상은
+   실제 DB row(반복·가상 제외)라 반복 인덱스는 건드릴 필요 없음. */
+function _evLocalMove(id,od,nd){
+  const arr=_events[od];
+  if(!arr)return;
+  const i=arr.findIndex(e=>e&&e.id===id);
+  if(i<0)return;
+  const ev=arr.splice(i,1)[0];
+  ev.date=nd;
+  (_events[nd]=_events[nd]||[]).push(ev);
+  if(!arr.length)delete _events[od];
+}
 async function _evMove(anchorRow,fromDate,toDate){
   const diff=_evDayDiff(fromDate,toDate);
   if(!diff)return;
   const grp=_evCollectGroup(anchorRow,fromDate);
   if(!grp.length)return;
   const moves=grp.map(o=>({id:o.id,od:o.date,nd:shiftDateKey(o.date,diff)}));
+  // 1) 낙관적 로컬 이동 — 전체 새로고침(빈 화면→재로드) 없이 즉시 새 칸에 반영
+  moves.forEach(m=>_evLocalMove(m.id,m.od,m.nd));
+  invalidateDayEventsCache();
+  invalidateSearchCache();
+  renderMonthly();
+  if(navigator.vibrate)navigator.vibrate(10);
+  // 2) DB 반영은 백그라운드로 (성공 시 조용히, 실패 시 서버 기준으로 되돌림)
   try{
     const results=await Promise.all(moves.map(m=>supa.from('events').update({date:m.nd}).eq('id',m.id)));
-    // 성공/실패를 인덱스로 매칭 (find는 어떤 row가 실패했는지 모름)
     const failedIdx=[];
     results.forEach((r,i)=>{ if(r&&r.error)failedIdx.push(i); });
     if(failedIdx.length){
-      // 일부만 성공한 경우 → 이미 성공한 row를 원래 날짜로 되돌려 그룹 일관성 복구
+      // 일부만 성공 → 성공분을 원래 날짜로 되돌려 그룹 일관성 복구
       const okMoves=moves.filter((_,i)=>!failedIdx.includes(i));
       if(okMoves.length){
-        try{
-          await Promise.all(okMoves.map(m=>supa.from('events').update({date:m.od}).eq('id',m.id)));
-        }catch(rollbackErr){
-          console.error('rollback failed',rollbackErr);
-        }
+        try{ await Promise.all(okMoves.map(m=>supa.from('events').update({date:m.od}).eq('id',m.id))); }
+        catch(rollbackErr){ console.error('rollback failed',rollbackErr); }
       }
       throw (results[failedIdx[0]]&&results[failedIdx[0]].error)||new Error('partial move failed');
     }
-    if(navigator.vibrate)navigator.vibrate(10);
-    await loadEvents();
+    syncWidgetData();
     toast(grp.length>1?'기간 일정을 옮겼어요':'일정을 옮겼어요');
   }catch(err){
     console.error('move event failed',err);
     toast('일정 이동에 실패했어요');
-    try{await loadEvents()}catch(_){}
+    try{await loadEvents()}catch(_){}   // 실패 시에만 서버에서 재로드해 되돌림
   }
 }
 function _tdFindById(id){ return (typeof _todos!=='undefined'&&_todos)?(_todos.find(function(t){return t.id===id;})||null):null; }
@@ -16197,17 +16211,23 @@ async function _tdMove(todo,fromDate,toDate){
   }else{
     upd.start_date=shiftDateKey(todo.start_date,diff);
   }
+  // 1) 낙관적 로컬 이동 — todo 객체는 _todos의 참조라 필드만 바꾸면 즉시 반영
+  const prev={start_date:todo.start_date,end_date:todo.end_date,multi_dates:todo.multi_dates};
+  Object.assign(todo,upd);
+  invalidateDayEventsCache();
+  safeRender();
+  if(navigator.vibrate)navigator.vibrate(10);
+  // 2) DB 반영은 백그라운드로
   try{
     const {error}=await supa.from('todos').update(upd).eq('id',todo.id);
     if(error)throw error;
-    if(navigator.vibrate)navigator.vibrate(10);
-    if(window.loadTodos) await window.loadTodos();
-    safeRender();
     toast((todo.todo_type==='range')?'기간 할 일을 옮겼어요':'할 일을 옮겼어요');
   }catch(err){
     console.error('move todo failed',err);
     toast('할 일 이동에 실패했어요');
+    Object.assign(todo,prev);           // 실패 시 원위치로 즉시 되돌림
     try{ if(window.loadTodos) await window.loadTodos(); }catch(_){}
+    invalidateDayEventsCache();
     safeRender();
   }
 }
