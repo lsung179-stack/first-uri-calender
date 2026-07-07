@@ -415,16 +415,20 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .room-edit .r-card-pencil{display:flex}
 .r-card-seal.has-mascot{background:linear-gradient(140deg,#fbe4c9,#f2d09b);overflow:hidden}
 .r-card-seal.has-mascot::before{display:none}
-.r-card-seal.has-mascot svg{width:30px;height:30px;display:block}
+.r-card-seal.has-mascot svg{width:138%;height:138%;display:block;flex:none}
+/* 캐릭터별 배경 — 넷플릭스식 꽉 찬 타일 */
+.mascot-mochi{background:linear-gradient(145deg,#f5e5cb,#eed5aa)!important}
+.mascot-gomdol{background:linear-gradient(145deg,#e7d1ab,#d9bd8f)!important}
+.mascot-dalkong{background:linear-gradient(145deg,#f7eab3,#f0dd93)!important}
 /* 방 마스코트 선택 시트 (넷플릭스식) */
 .rm-bigprev{width:92px;height:92px;border-radius:50%;margin:14px auto 6px;display:flex;align-items:center;justify-content:center;background:linear-gradient(140deg,#fbe4c9,#f2d09b);box-shadow:inset 0 0 0 3px rgba(255,255,255,.45),0 4px 12px rgba(176,135,66,.3);overflow:hidden}
-.rm-bigprev svg{width:64px;height:64px}
+.rm-bigprev svg{width:124%;height:124%;flex:none}
 .rm-bigprev .rm-bigletter{font-family:var(--ff-serif);font-size:38px;font-weight:700;color:var(--accent)}
 .rm-bpname{text-align:center;font-size:13px;font-weight:700;color:var(--sub);margin-bottom:18px}
 .rm-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .rm-cell2{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer}
 .rm-cell2-ic{width:100%;aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--card);border:1px solid var(--border);overflow:hidden;transition:box-shadow .12s}
-.rm-cell2-ic svg{width:66%;height:66%}
+.rm-cell2-ic svg{width:126%;height:126%;flex:none}
 .rm-cell2:active .rm-cell2-ic{transform:scale(.94)}
 .rm-cell2.on .rm-cell2-ic{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--accent);border-color:var(--accent)}
 .rm-cell2-nm{font-size:12px;font-weight:700;color:var(--sub)}
@@ -6429,8 +6433,9 @@ function renderRooms(rooms,countMap){
     const safeCode=escapeHtml(r.code||'------');
     const firstChar=escapeHtml((r.name||'·').trim().charAt(0));
     const mascotSvg=r.mascot?(svgEmoji(r.mascot)||''):'';
+    const mChar=r.mascot?r.mascot.split(':')[0]:'';
     const sealHtml=mascotSvg
-      ? `<div class="r-card-seal has-mascot">${mascotSvg}</div>`
+      ? `<div class="r-card-seal has-mascot mascot-${mChar}">${mascotSvg}</div>`
       : `<div class="r-card-seal"><span class="r-card-seal-letter">${firstChar}</span></div>`;
     html+=`
       <div class="r-card" data-roomid="${r.id}" onclick="enterRoom('${r.id}')">
@@ -12583,14 +12588,14 @@ function closeRoomMascot(){
 function renderRoomMascotPicker(){
   const big=document.getElementById('rmBigPrev'), nm=document.getElementById('rmBpName');
   if(big){
-    if(_mascotSel){ big.innerHTML=svgEmoji(_mascotSel)||''; }
-    else{ big.innerHTML='<span class="rm-bigletter">'+escapeHtml((_mascotRoomName||'·').trim().charAt(0))+'</span>'; }
+    if(_mascotSel){ big.innerHTML=svgEmoji(_mascotSel)||''; big.className='rm-bigprev mascot-'+_mascotSel.split(':')[0]; }
+    else{ big.innerHTML='<span class="rm-bigletter">'+escapeHtml((_mascotRoomName||'·').trim().charAt(0))+'</span>'; big.className='rm-bigprev'; }
   }
   if(nm) nm.textContent=_mascotSel?((CHAR_META[_mascotSel.split(':')[0]]||{}).name||''):'기본 (첫 글자)';
   const cells=ROOM_MASCOTS.map(function(key){
-    const meta=CHAR_META[key.split(':')[0]]||{};
+    const ch=key.split(':')[0], meta=CHAR_META[ch]||{};
     return '<div class="rm-cell2'+(key===_mascotSel?' on':'')+'" onclick="pickRoomMascot(\''+key+'\')">'
-      +'<div class="rm-cell2-ic">'+(svgEmoji(key)||'')+'</div>'
+      +'<div class="rm-cell2-ic mascot-'+ch+'">'+(svgEmoji(key)||'')+'</div>'
       +'<span class="rm-cell2-nm">'+escapeHtml(meta.name||'')+'</span></div>';
   }).join('');
   const g=document.getElementById('rmGroups'); if(g)g.innerHTML='<div class="rm-grid3">'+cells+'</div>';
