@@ -972,6 +972,8 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
   transition:transform .12s,opacity .12s;letter-spacing:.2px;
 }
 .pack-btn:active{transform:scale(.94)}
+.pack-btn-lock{margin-inline-end:5px}
+.theme-card-lock-tag .pack-btn-lock{margin-inline-end:3px}
 .pack-btn-try{}
 .pack-btn-using{
   background:#5e8a3a;border-color:#5e8a3a;color:#fff;
@@ -15688,7 +15690,7 @@ function renderStoreThemes(){
     html+=`
       <div class="theme-card${applied?' on':''}${locked?' locked':''}" ${handler}>
         ${applied?'<div class="theme-card-applied-tag">사용 중</div>':''}
-        ${locked?'<div class="theme-card-lock-tag">🔒 프리미엄</div>':''}
+        ${locked?'<div class="theme-card-lock-tag"><span class="pack-btn-lock">🔒</span>프리미엄</div>':''}
         <div class="theme-preview" style="background:${t.bg}">
           <div class="theme-preview-circle" style="border-color:${t.accent};background:${t.card}">
             <svg class="theme-preview-logo" viewBox="0 0 24 24" fill="none" stroke="${t.accent}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -15725,7 +15727,7 @@ function renderStoreColors(){
       ? `<button class="pack-btn pack-btn-using">사용 중</button>`
       : (isEffectivePremium()
           ? `<button class="pack-btn pack-btn-try">사용하기</button>`
-          : `<button class="pack-btn pack-btn-try">🔒 프리미엄</button>`);
+          : `<button class="pack-btn pack-btn-try"><span class="pack-btn-lock">🔒</span>프리미엄</button>`);
     html+=`
       <div class="theme-card${unlocked?' unlocked':''}" onclick="${_cardClick}" style="cursor:pointer">
         <div class="theme-preview color-pack-preview">
@@ -15824,7 +15826,7 @@ function renderStoreText(){
     const btn=applied
       ? `<button class="tt-apply using" onclick="event.stopPropagation();applyTextTheme('default')">사용 중</button>`
       : (locked
-          ? `<button class="tt-apply" onclick="event.stopPropagation();applyTextTheme('${item.key}')">🔒 프리미엄</button>`
+          ? `<button class="tt-apply" onclick="event.stopPropagation();applyTextTheme('${item.key}')"><span class="pack-btn-lock">🔒</span>프리미엄</button>`
           : `<button class="tt-apply" onclick="event.stopPropagation();applyTextTheme('${item.key}')">사용하기</button>`);
     return `<div class="tt-card${applied?' on':''}${locked?' locked':''}" onclick="applyTextTheme('${applied?'default':item.key}')">
       <div class="tt-preview" style="font-family:${fam}">
@@ -15880,7 +15882,7 @@ function renderStoreEmoji(){
       ? `<button class="pack-btn pack-btn-using" onclick="event.stopPropagation();onLockCharClick('${escapeHtml(item.key)}')">사용 중</button>`
       : (isEffectivePremium()
           ? `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();onUnlockCharClick('${escapeHtml(item.key)}')">사용하기</button>`
-          : `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();onUnlockCharClick('${escapeHtml(item.key)}')">🔒 프리미엄</button>`);
+          : `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();onUnlockCharClick('${escapeHtml(item.key)}')"><span class="pack-btn-lock">🔒</span>프리미엄</button>`);
     html+=`
       <div class="theme-card${unlocked?' unlocked':''}" onclick="openCharDetail('${escapeHtml(item.key)}')">
         <div class="theme-preview emoji-pack-preview">
@@ -15978,7 +15980,7 @@ function openCharDetail(charKey){
       ? `<button class="pack-btn pack-btn-using pack-btn-lg" onclick="onLockCharFromDetail('${escapeHtml(charKey)}')">사용 중</button>`
       : (isEffectivePremium()
           ? `<button class="pack-btn pack-btn-try pack-btn-lg" onclick="onUnlockCharFromDetail('${escapeHtml(charKey)}')">사용하기</button>`
-          : `<button class="pack-btn pack-btn-try pack-btn-lg" onclick="onUnlockCharFromDetail('${escapeHtml(charKey)}')">🔒 프리미엄</button>`);
+          : `<button class="pack-btn pack-btn-try pack-btn-lg" onclick="onUnlockCharFromDetail('${escapeHtml(charKey)}')"><span class="pack-btn-lock">🔒</span>프리미엄</button>`);
   }
   document.getElementById('charDetailOverlay').classList.add('on');
   document.getElementById('charDetailCard').classList.add('on');
