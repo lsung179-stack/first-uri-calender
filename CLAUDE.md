@@ -26,6 +26,7 @@
 - 핵심 테이블: `public.subscriptions` (user_id, status, expires_at, plan_type, is_manual)
 - 관리자 RPC: `admin_users_detailed()` — 회원별 활동지표(SECURITY DEFINER, 관리자만).
 - 관리자 RPC: `admin_growth_stats()` — WAU/MAU·활성화율·7일 리텐션·구독전환·공유방 비율(대시보드 성장 섹션).
+- Edge Functions: `push-cron`(mode: daily/reminder/empty-rooms/**birthday**), `send-push`, `revenuecat-webhook`. pg_cron: daily 08:00·empty-rooms 08:05·**birthday 09:00(KST=0 0 UTC)**·reminder 5분마다·오래된 notifications 정리. 생일=`profiles.birthday`('MM-DD') 매칭, 같은 방 멤버+본인에게 축하 푸시.
 - 핵심 RPC: `my_premium_status()` — SECURITY DEFINER. `status='active' AND expires_at>now()` 인 구독이 있을 때만 `is_premium=true` 반환.
   - ⚠️ 과거 버그: 집계함수(max/array_agg/bool_or)를 GROUP BY 없이 써서 구독 0건이어도 항상 1행+상수 `is_premium:true`를 반환 → **모든 유저가 프리미엄으로 오판**. `HAVING count(*)>0` 추가로 수정 완료(라이브).
 
@@ -54,6 +55,7 @@
 9. ✅ **관리자 페이지 자동 로그인(세션 전달)** — `openAdminFullPage()`가 admin.html로 세션 토큰(`#at=&rt=`)을 안 실어 보내, 외부 브라우저/새 탭에서 세션이 없어 비번 폼으로 빠지던 버그. 관리자 계정이 **카카오/애플 소셜 로그인(비번 없음, `has_password:false`)**이라 비번 폼으로는 진입 불가였음. `getSession()` 토큰을 URL 해시로 실어 보내 admin이 `setSession`으로 자동 로그인하도록 수정.
 10. ✅ **관리자 회원관리 상세화** — DB에 `admin_users_detailed()`(SECURITY DEFINER, 관리자 가드) RPC 추가: 유저별 최근활동(last_sign_in/이벤트/가입 GREATEST)·일정수·방수·구독·푸시토큰 유무. admin.html 회원관리를 **카드 대시보드**로 개편: 상단 KPI 타일(전체·7일/2주 활성·휴면·구독), 필터칩(+구독자), 회원 카드(활동색 아바타 링·이름·최근활동·📅일정·🏠방·가입경로·💎구독/휴면/🔔push 배지), 활동많은순·최근일정순 정렬, KPI에 7일 신규 추가. 카드=좌측 활동색 바+상태라벨(활발/보통/뜸함/휴면)+3칸 그리드(일정/방/최근접속)+'🗓 마지막 일정' 줄(last_event_at). '휴면(30일+ 미활동)'=앱삭제/이탈 추정(정확한 삭제 신호 없음). ※ '최근 활동'은 last_activity(=GREATEST(last_sign_in,last_event,가입)) 기준 — last_sign_in만 쓰면 로그인 유지 유저가 오래전 접속으로 오표시됨. 🔔=fcm_tokens OR push_subscriptions(알림 허용). 필터에 '최근 가입순' 있음.
 11. ✅ **관리자 성장 대시보드** — `admin_growth_stats()` RPC + 대시보드에 '성장·리텐션·전환' 섹션(WAU/MAU, 활성화율, 7일 리텐션, 구독 전환율, 공유방 비율). Edge Function `push-cron`/`send-push`로 리텐션 푸시는 이미 가동 중.
+12. ✅ **생일 축하 푸시** — `push-cron`에 `handleBirthday()`+`mode='birthday'` 추가(재배포 v12). 오늘 생일(`profiles.birthday`='MM-DD')인 유저와 같은 방 멤버에게 '🎂 OO님의 생일이에요', 본인에게 '🎂 생일 축하해요'. pg_cron `push-birthday`(매일 09:00 KST) 추가. Edge Function은 git 아닌 Supabase에 있음(수정 시 원본 백업 후 재배포).
 
 ## 주의사항 / 함정
 - 저장소 `main`의 `index.html`은 최신 배포본과 동기화됨 (**build 1.1.2 / 코드 26**, 위 1~7번 전부 반영). 단 개발자가 이후 로컬에서 다시 수정·업로드하면 main보다 앞설 수 있으니, 새 세션은 항상 현재 배포/로컬 버전을 확인할 것.
