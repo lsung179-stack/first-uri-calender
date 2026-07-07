@@ -59,6 +59,7 @@
 13. ✅ **페이월 문구 전환 최적화(#2)** — 잠금 안내(`showUpgradeModal`) 문구를 '~는 프리미엄 전용/구독하면'(제한·결제 프레임)에서 '혜택+하고 싶은 것'(사진·테마·컬러/캐릭터팩·글꼴·할일) 프레임으로 교체. 모달이 이미 '무료로 체험하기' 버튼+7일 무료 문구를 붙이므로 전환 유도 강화.
 14. ✅ **컬러 팩 카드 전체 클릭** — `renderStoreColors()`에서 기존엔 `.pack-btn` 버튼에만 onclick이 있어 버튼을 정확히 눌러야 안내모달이 떴음. 카드 전체(`.theme-card`)에 `onclick`(`_cardClick`: 잠금=`onUnlockColorClick`, 보유=`onLockColorClick`)+`cursor:pointer` 부여, 버튼에서는 onclick 제거(카드로 버블링 → 단일 발화, 중복 없음). 상자 아무 곳이나 눌러도 프리미엄 안내모달이 뜸.
 15. ✅ **🔒 프리미엄 버튼 여백** — 자물쇠 이모지와 '프리미엄' 텍스트가 붙어 보이던 문제. 이모지를 `<span class="pack-btn-lock">🔒</span>`로 감싸고 `.pack-btn-lock{margin-inline-end:9px}`(카드 잠금태그는 5px) CSS 추가. 폰트 무관하게 고정 여백. 적용 대상: 컬러/캐릭터 팩 버튼·캐릭터 상세시트 큰 버튼(`pack-btn-lg`)·텍스트 테마 버튼·카드 잠금태그(`theme-card-lock-tag`). ⚠️ 최초엔 5px로 넣었으나 원래 있던 공백(~4px)과 거의 같아 티가 안 나서 **9px로 상향**(눈에 띄게).
+16. ✅ **일정 드래그 부드럽게(성능)** — 드래그 이동 시 끊김 개선. (1) 고스트를 `left/top`(리플로우) → **`transform:translate3d`(GPU 합성)** 로 이동, CSS `will-change:transform`+`transition:transform .05s linear`. (2) `pointermove`마다 하던 고스트 이동+`elementFromPoint` 히트테스트를 **`requestAnimationFrame` 배칭(프레임당 1회)** 으로 변경 — 최신 좌표만 `_evPtrX/Y`에 저장하고 `_evDragFrame()`에서 처리. 관련: `_evGhostTransform()`, `_evMakeGhost()`, `_evDragFrame()`, `_finish()`에서 `cancelAnimationFrame`. 캘린더 그리드 드래그 + 날짜시트 롱프레스 드래그(같은 window 핸들러 공유) 모두 적용.
 
 ## 주의사항 / 함정
 - 저장소 `main`의 `index.html`은 최신 배포본과 동기화됨 (**build 1.1.2 / 코드 26**, 위 1~7번 전부 반영). 단 개발자가 이후 로컬에서 다시 수정·업로드하면 main보다 앞설 수 있으니, 새 세션은 항상 현재 배포/로컬 버전을 확인할 것.
