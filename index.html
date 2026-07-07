@@ -589,6 +589,10 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .cal-dday-strip{display:flex;align-items:center;height:30px;margin:2px 16px 5px;flex-shrink:0;
   background:var(--card);border:1px solid var(--border);border-radius:10px;padding:0 4px 0 10px;
   overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent}
+/* D-day 없을 때: 배경 없이 작은 추가 버튼만(최소 노출) */
+.cal-dday-strip.empty{background:transparent;border:none;padding:0 12px;justify-content:flex-start}
+.dday-empty-add{background:transparent;border:1px dashed rgba(139,58,42,.34);color:var(--accent);font-size:11.5px;font-weight:700;padding:4px 12px;border-radius:99px;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.dday-empty-add:active{background:rgba(139,58,42,.07)}
 .cal-dday-scan{display:flex;align-items:center;gap:13px;overflow-x:auto;scrollbar-width:none;flex:1;height:100%}
 .cal-dday-scan::-webkit-scrollbar{display:none}
 .dday-pill{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-size:12.5px;color:var(--text);flex:none}
@@ -8656,7 +8660,15 @@ async function loadDdays(){
 }
 function renderDdayStrip(){
   const el=document.getElementById('calDdayBar'); if(!el)return;
-  if(!_currentRoom || !_ddays || !_ddays.length){ el.style.display='none'; el.innerHTML=''; return; }
+  if(!_currentRoom){ el.style.display='none'; el.innerHTML=''; return; }
+  if(!_ddays || !_ddays.length){
+    // D-day가 없어도 최초 추가 진입점(작은 버튼)은 항상 노출
+    el.classList.add('empty');
+    el.innerHTML='<button class="dday-empty-add" onclick="event.stopPropagation();openDdayEdit()">＋ 기념일·D-day 추가</button>';
+    el.style.display='flex';
+    return;
+  }
+  el.classList.remove('empty');
   const items=_ddays.map(d=>({d,info:_ddayInfo(d)})).sort((a,b)=>a.info.sort-b.info.sort);
   let pills='';
   items.forEach((it,i)=>{
