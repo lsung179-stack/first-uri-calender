@@ -177,6 +177,10 @@ tbody tr:hover{background:rgba(139,58,42,.025)}
   .topbar .tb-user{order:9;flex-basis:100%;width:100%;font-size:12px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
 }
 @media(min-width:881px){ .only-mobile{display:none!important} }
+.usr-chips{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 6px}
+.usr-chip{padding:6px 12px;border:1px solid var(--line);border-radius:20px;background:var(--card);color:var(--sub);font-size:12.5px;font-weight:700;cursor:pointer}
+.usr-chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.usr-chip b{font-weight:800}
 </style>
 </head>
 <body>
@@ -288,7 +292,7 @@ const TABS=[
 let _tab='dash';
 let _cache={};
 let _editAnnId=null;
-let _ordFilter='all', _ordSearch='', _usrSearch='', _fbFilter='all';
+let _ordFilter='all', _ordSearch='', _usrSearch='', _fbFilter='all', _usrFilter='all';
 
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.remove('show'),2200);}
@@ -560,38 +564,76 @@ async function delAnn(id){
 }
 
 async function renderUsers(m){
-  const {data,error}=await supa.rpc('admin_users_with_premium');
+  const {data,error}=await supa.rpc('admin_users_detailed');
   if(error){m.innerHTML=errBox(error);return;}
   _cache.users=(data&&data.rows)||[];
   drawUsers(m);
 }
+function _usrDays(u){
+  const t=u.last_activity_at?new Date(u.last_activity_at).getTime():0;
+  if(!t) return 99999;
+  return Math.floor((Date.now()-t)/86400000);
+}
+function _relDay(d){
+  if(d>=99999) return '-';
+  if(d<=0) return '오늘';
+  if(d===1) return '어제';
+  if(d<7) return d+'일 전';
+  if(d<30) return Math.floor(d/7)+'주 전';
+  if(d<365) return Math.floor(d/30)+'개월 전';
+  return Math.floor(d/365)+'년 전';
+}
 function drawUsers(m){
-  let list=_cache.users;
-  if(_usrSearch)list=list.filter(u=>(u.name||'').toLowerCase().includes(_usrSearch)||(u.email||'').toLowerCase().includes(_usrSearch));
-  const premBadge=u=>u.is_premium?' <span class="status-badge" style="background:var(--gold)">💎 구독</span>':'';
-  const premCount=_cache.users.filter(u=>u.is_premium).length;
+  const all=(_cache.users||[]).map(u=>Object.assign({},u,{_d:_usrDays(u)}));
+  const act7=all.filter(u=>u._d<=7).length;
+  const act14=all.filter(u=>u._d<=14).length;
+  const dormant=all.filter(u=>u._d>30).length;
+  const premCount=all.filter(u=>u.is_premium).length;
+  const f=_usrFilter||'all';
+  let list=all.slice();
+  if(f==='act7') list=list.filter(u=>u._d<=7);
+  else if(f==='act14') list=list.filter(u=>u._d<=14);
+  else if(f==='dormant') list=list.filter(u=>u._d>30);
+  if(_usrSearch) list=list.filter(u=>(u.name||'').toLowerCase().includes(_usrSearch)||(u.email||'').toLowerCase().includes(_usrSearch));
+  const rankMode=(f==='rank');
+  if(rankMode) list.sort((a,b)=>(b.event_count||0)-(a.event_count||0));
+  else list.sort((a,b)=>a._d-b._d);
+  const chip=(k,label,n)=>`<button class="usr-chip${f===k?' on':''}" data-f="${k}">${label}${n!=null?` <b>${n}</b>`:''}</button>`;
+  const premBadge=u=>u.is_premium?' <span class="status-badge" style="background:var(--gold)">💎</span>':'';
+  const dormBadge=u=>u._d>30?' <span class="status-badge" style="background:#b06a4a">휴면</span>':'';
   m.innerHTML=`
     <div class="page-title">회원 관리</div>
-    <div class="page-sub">총 ${_cache.users.length}명 · 구독자 ${premCount}명</div>
+    <div class="page-sub">총 ${all.length}명 · 구독 ${premCount} · 7일 활성 ${act7} · 2주 활성 ${act14} · 휴면(30일+) ${dormant}</div>
+    <div class="usr-chips">
+      ${chip('all','전체',all.length)}
+      ${chip('act7','7일 활성',act7)}
+      ${chip('act14','2주 활성',act14)}
+      ${chip('dormant','휴면 30일+',dormant)}
+      ${chip('rank','활동 많은순',null)}
+    </div>
     <div class="head-row"><div class="search"><input id="usrSearch" placeholder="이름·이메일 검색" value="${esc(_usrSearch)}"></div></div>
-    ${!list.length?`<div class="empty"><div class="e-emoji">👥</div>${_usrSearch?'검색 결과가 없어요':'회원이 없어요'}</div>`:`
+    ${!list.length?`<div class="empty"><div class="e-emoji">👥</div>${_usrSearch?'검색 결과가 없어요':'해당 회원이 없어요'}</div>`:`
     <div class="table-wrap only-pc"><table>
-      <thead><tr><th>이름</th><th>이메일</th><th>가입 경로</th><th>생일</th><th>가입일</th></tr></thead>
-      <tbody>${list.map(u=>`<tr>
-        <td class="t-strong">${esc(u.name||'(이름 없음)')}${premBadge(u)}</td>
+      <thead><tr>${rankMode?'<th>#</th>':''}<th>이름</th><th>이메일</th><th>가입</th><th>최근활동</th><th>일정</th><th>방</th><th>가입일</th></tr></thead>
+      <tbody>${list.map((u,i)=>`<tr>
+        ${rankMode?`<td class="t-strong">${i+1}</td>`:''}
+        <td class="t-strong">${esc(u.name||'(이름 없음)')}${premBadge(u)}${dormBadge(u)}</td>
         <td class="t-dim">${esc(u.email||'-')}</td>
         <td class="t-dim">${esc(u.provider||'-')}</td>
-        <td class="t-dim">${esc(u.birthday||'-')}</td>
+        <td class="t-dim">${_relDay(u._d)}</td>
+        <td class="t-dim">${u.event_count||0}</td>
+        <td class="t-dim">${u.room_count||0}</td>
         <td class="t-dim">${fmtDay(u.created_at)}</td>
       </tr>`).join('')}</tbody>
     </table></div>
-    <div class="clist only-mobile">${list.map(u=>`<div class="ccard">
-      <div class="ccard-top"><span class="ccard-title">${esc(u.name||'(이름 없음)')}${premBadge(u)}</span><span class="ccard-date">${fmtDay(u.created_at)}</span></div>
+    <div class="clist only-mobile">${list.map((u,i)=>`<div class="ccard">
+      <div class="ccard-top"><span class="ccard-title">${rankMode?`${i+1}. `:''}${esc(u.name||'(이름 없음)')}${premBadge(u)}${dormBadge(u)}</span><span class="ccard-date">${_relDay(u._d)}</span></div>
       <div class="ccard-body" style="font-size:13px">${esc(u.email||'-')}</div>
-      <div class="ccard-meta">가입 ${esc(u.provider||'-')}${u.birthday?' · 생일 '+esc(u.birthday):''}</div>
+      <div class="ccard-meta">가입 ${esc(u.provider||'-')} · 일정 ${u.event_count||0} · 방 ${u.room_count||0} · 가입 ${fmtDay(u.created_at)}</div>
     </div>`).join('')}</div>`}`;
   const si=document.getElementById('usrSearch');
   if(si)si.oninput=e=>{_usrSearch=e.target.value.trim().toLowerCase();drawUsers(m);const el=document.getElementById('usrSearch');if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}};
+  m.querySelectorAll('.usr-chip').forEach(b=>{ b.onclick=()=>{ _usrFilter=b.getAttribute('data-f'); drawUsers(m); }; });
 }
 
 async function renderErrors(m){
