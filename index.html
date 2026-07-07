@@ -15718,13 +15718,16 @@ function renderStoreColors(){
   STORE_COLORS.forEach(item=>{
     const unlocked=hasColorPack(item.key);
     const swatches=item.colors.map(c=>`<span class="color-swatch" style="background:${c}"></span>`).join('');
+    const _cardClick=unlocked
+      ? `onLockColorClick('${escapeHtml(item.key)}')`
+      : `onUnlockColorClick('${escapeHtml(item.key)}')`;
     const btn=unlocked
-      ? `<button class="pack-btn pack-btn-using" onclick="onLockColorClick('${escapeHtml(item.key)}')">사용 중</button>`
+      ? `<button class="pack-btn pack-btn-using">사용 중</button>`
       : (isEffectivePremium()
-          ? `<button class="pack-btn pack-btn-try" onclick="onUnlockColorClick('${escapeHtml(item.key)}')">사용하기</button>`
-          : `<button class="pack-btn pack-btn-try" onclick="onUnlockColorClick('${escapeHtml(item.key)}')">🔒 프리미엄</button>`);
+          ? `<button class="pack-btn pack-btn-try">사용하기</button>`
+          : `<button class="pack-btn pack-btn-try">🔒 프리미엄</button>`);
     html+=`
-      <div class="theme-card${unlocked?' unlocked':''}">
+      <div class="theme-card${unlocked?' unlocked':''}" onclick="${_cardClick}" style="cursor:pointer">
         <div class="theme-preview color-pack-preview">
           <div class="color-swatch-grid">${swatches}</div>
         </div>
