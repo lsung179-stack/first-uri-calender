@@ -407,6 +407,24 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
   margin-top:-1px;
   position:relative;z-index:1;
 }
+/* 방 마스코트(프리미엄) — 씰 안에 캐릭터 표시 */
+.r-card-seal.has-mascot{background:linear-gradient(140deg,#fbe4c9,#f2d09b);overflow:hidden}
+.r-card-seal.has-mascot::before{display:none}
+.r-card-seal.has-mascot svg{width:30px;height:30px;display:block}
+/* 방 마스코트 선택 시트 (넷플릭스식) */
+.rm-bigprev{width:92px;height:92px;border-radius:50%;margin:14px auto 6px;display:flex;align-items:center;justify-content:center;background:linear-gradient(140deg,#fbe4c9,#f2d09b);box-shadow:inset 0 0 0 3px rgba(255,255,255,.45),0 4px 12px rgba(176,135,66,.3);overflow:hidden}
+.rm-bigprev svg{width:64px;height:64px}
+.rm-bigprev .rm-bigletter{font-family:var(--ff-serif);font-size:38px;font-weight:700;color:var(--accent)}
+.rm-bpname{text-align:center;font-size:12.5px;color:var(--sub);margin-bottom:14px}
+.rm-grpname{font-size:12px;font-weight:800;color:var(--accent);margin:14px 2px 9px;letter-spacing:.03em}
+.rm-grpname small{color:var(--mute);font-weight:600;font-size:10.5px;margin-left:4px}
+.rm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+.rm-cell{aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--card);border:1px solid var(--border);overflow:hidden;cursor:pointer}
+.rm-cell svg{width:64%;height:64%}
+.rm-cell:active{transform:scale(.92)}
+.rm-cell.on{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--accent);border-color:var(--accent)}
+.rs-mascot-thumb{width:34px;height:34px;border-radius:50%;overflow:hidden;display:none;align-items:center;justify-content:center;background:linear-gradient(140deg,#fbe4c9,#f2d09b);flex:none;margin-right:6px}
+.rs-mascot-thumb svg{width:24px;height:24px}
 .r-card-info{flex:1;min-width:0}
 .r-card-name{font-family:var(--ff-serif);font-size:17px;font-weight:700;color:var(--text);letter-spacing:.2px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .r-card-meta{font-size:12px;color:var(--sub);display:flex;align-items:center;gap:6px}
@@ -3990,6 +4008,14 @@ body.has-ad .toast{ bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)
       <button class="dp-btn primary" onclick="saveRoomName()">저장</button>
       <button class="dp-btn" onclick="closeRoomNameEdit()">취소</button>
     </div>
+    <div class="rs-row" id="roomSetMascotRow">
+      <div class="rs-row-info">
+        <div class="rs-row-label">방 마스코트</div>
+        <div class="rs-row-sub" id="roomSetMascotSub">기본 (첫 글자)</div>
+      </div>
+      <div class="rs-mascot-thumb" id="roomSetMascotThumb"></div>
+      <button class="dp-btn" onclick="openRoomMascot()">변경</button>
+    </div>
     <div class="rs-row">
       <div class="rs-row-info">
         <div class="rs-row-label">코드</div>
@@ -4078,6 +4104,22 @@ body.has-ad .toast{ bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)
   <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.1.2 (26)</div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeRoomSettings()">닫기</button>
+  </div>
+</div>
+
+<!-- 방 마스코트 선택 시트 (프리미엄) -->
+<div class="mo-overlay" id="roomMascotOverlay" onclick="closeRoomMascot()"></div>
+<div class="mo-card" id="roomMascotCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">방 마스코트</div>
+  <div class="mo-sub">이 방 멤버 모두에게 똑같이 보여요</div>
+  <div class="rm-bigprev" id="rmBigPrev"></div>
+  <div class="rm-bpname" id="rmBpName">마스코트를 골라주세요</div>
+  <div id="rmGroups"></div>
+  <div class="mo-actions">
+    <button class="btn btn-primary" onclick="saveRoomMascot()">저장하기</button>
+    <button class="mo-cancel" id="rmClearBtn" onclick="clearRoomMascot()" style="display:none">기본(첫 글자)으로 되돌리기</button>
+    <button class="mo-cancel" onclick="closeRoomMascot()">취소</button>
   </div>
 </div>
 
@@ -6380,9 +6422,13 @@ function renderRooms(rooms,countMap){
     const safeName=escapeHtml(r.name||'(이름 없음)');
     const safeCode=escapeHtml(r.code||'------');
     const firstChar=escapeHtml((r.name||'·').trim().charAt(0));
+    const mascotSvg=r.mascot?(svgEmoji(r.mascot)||''):'';
+    const sealHtml=mascotSvg
+      ? `<div class="r-card-seal has-mascot">${mascotSvg}</div>`
+      : `<div class="r-card-seal"><span class="r-card-seal-letter">${firstChar}</span></div>`;
     html+=`
       <div class="r-card" data-roomid="${r.id}" onclick="enterRoom('${r.id}')">
-        <div class="r-card-seal"><span class="r-card-seal-letter">${firstChar}</span></div>
+        ${sealHtml}
         <div class="r-card-info">
           <div class="r-card-name">${safeName}</div>
           <div class="r-card-meta"><span class="r-card-code">${safeCode}</span><span>·</span><span>멤버 ${cnt}명</span></div>
@@ -12501,6 +12547,63 @@ async function removeMyReaction(){
 }
 
 /* 방 설정 모달 */
+/* ── 방 마스코트 (프리미엄) — 넷플릭스식 캐릭터 선택 ── */
+let _mascotRoomId=null, _mascotSel=null;
+function openRoomMascot(){
+  if(!_currentRoom)return;
+  if(!isEffectivePremium()){ showUpgradeModal({feature:'방 마스코트로 방을 꾸며보세요.'}); return; }
+  _mascotRoomId=_currentRoom.id;
+  _mascotSel=_currentRoom.mascot||null;
+  renderRoomMascotPicker();
+  const o=document.getElementById('roomMascotOverlay'),c=document.getElementById('roomMascotCard');
+  if(o)o.classList.add('on'); if(c)c.classList.add('on');
+}
+function closeRoomMascot(){
+  const o=document.getElementById('roomMascotOverlay'),c=document.getElementById('roomMascotCard');
+  if(o)o.classList.remove('on'); if(c)c.classList.remove('on');
+}
+function renderRoomMascotPicker(){
+  const big=document.getElementById('rmBigPrev'), nm=document.getElementById('rmBpName');
+  if(big){
+    if(_mascotSel){ big.innerHTML=svgEmoji(_mascotSel)||''; }
+    else{ big.innerHTML='<span class="rm-bigletter">'+escapeHtml((_currentRoom&&_currentRoom.name||'·').trim().charAt(0))+'</span>'; }
+  }
+  if(nm) nm.textContent=_mascotSel?emojiDisplayName(_mascotSel):'기본 (첫 글자)';
+  const groups=['mochi','gomdol','dalkong'].map(function(ch){
+    const meta=CHAR_META[ch]; if(!meta)return '';
+    const cells=(CHAR_EXPRESSIONS[ch]||[]).map(function(e){
+      const key=ch+':'+e;
+      return '<div class="rm-cell'+(key===_mascotSel?' on':'')+'" onclick="pickRoomMascot(\''+key+'\')">'+(svgEmoji(key)||'')+'</div>';
+    }).join('');
+    return '<div class="rm-grpname">'+escapeHtml(meta.name)+' <small>'+escapeHtml(meta.desc||'')+'</small></div><div class="rm-grid">'+cells+'</div>';
+  }).join('');
+  const g=document.getElementById('rmGroups'); if(g)g.innerHTML=groups;
+  const clr=document.getElementById('rmClearBtn'); if(clr)clr.style.display=(_currentRoom&&_currentRoom.mascot)?'block':'none';
+}
+function pickRoomMascot(key){ _mascotSel=key; renderRoomMascotPicker(); }
+async function saveRoomMascot(){ await _saveMascotValue(_mascotSel); }
+async function clearRoomMascot(){ await _saveMascotValue(null); }
+async function _saveMascotValue(val){
+  if(!_mascotRoomId)return;
+  try{
+    const {error}=await supa.rpc('set_room_mascot',{p_room_id:_mascotRoomId,p_mascot:val});
+    if(error)throw error;
+    if(_currentRoom&&_currentRoom.id===_mascotRoomId)_currentRoom.mascot=val;
+    const rr=(_myRooms||[]).find(function(r){return r.id===_mascotRoomId});
+    if(rr)rr.mascot=val;
+    try{ if(_myRooms) renderRooms(_myRooms,_roomCountMap); }catch(_){}
+    try{ _syncRoomSetMascot(); }catch(_){}
+    toast(val?'방 마스코트가 바뀌었어요':'기본으로 되돌렸어요');
+    closeRoomMascot();
+  }catch(e){ console.error('mascot save',e); toast('저장 실패: '+((e.message||'').slice(0,40))); }
+}
+function _syncRoomSetMascot(){
+  const sub=document.getElementById('roomSetMascotSub'), thumb=document.getElementById('roomSetMascotThumb');
+  const m=_currentRoom&&_currentRoom.mascot;
+  if(thumb){ if(m){ thumb.innerHTML=svgEmoji(m)||''; thumb.style.display='flex'; } else { thumb.innerHTML=''; thumb.style.display='none'; } }
+  if(sub) sub.textContent=m?emojiDisplayName(m):'기본 (첫 글자)';
+}
+
 function openRoomSettings(){
   if(!_currentRoom)return;
   closeMainModals();
@@ -12508,6 +12611,7 @@ function openRoomSettings(){
   document.getElementById('roomSetCode').textContent=_currentRoom.code||'—';
   document.getElementById('roomSetNameSub').textContent=_currentRoom.name||'—';
   document.getElementById('roomSetMemberCount').textContent=`${_myMembers.length}명`;
+  _syncRoomSetMascot();
   syncAnnouncementBadge();
   renderRoomMemberList();
   renderAdminMigrateTool();
