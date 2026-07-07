@@ -14525,24 +14525,34 @@ async function openOrderAdmin(){
 }
 function closeOrderAdmin(){ document.getElementById('orderAdminModal').classList.remove('on'); }
 /* 관리자 전용 웹페이지(admin.html)를 새 탭으로 — 같은 도메인 기준 */
-function openAdminFullPage(){
+async function openAdminFullPage(){
   // 관리자 페이지 실제 웹 주소 (네이티브 앱은 번들에 admin.html이 없으므로 웹 URL로 열어야 함)
   const ADMIN_URL = 'https://first-uri-calender.vercel.app/admin.html';
+  // ★ 현재 세션 토큰을 URL 해시로 실어 보내 admin에서 비번 없이 자동 로그인.
+  //   (관리자 계정이 카카오/애플 소셜 로그인이라 이메일/비번이 없음 → 비번 폼으로는 못 들어감)
+  let hash='';
+  try{
+    const { data } = await supa.auth.getSession();
+    const s = data && data.session;
+    if(s && s.access_token && s.refresh_token){
+      hash = '#at='+encodeURIComponent(s.access_token)+'&rt='+encodeURIComponent(s.refresh_token);
+    }
+  }catch(_){}
   try{
     // 네이티브(Capacitor): 외부 브라우저(또는 인앱 브라우저)로 열기
     if(isNativeApp() && window.Capacitor?.Plugins?.Browser){
-      window.Capacitor.Plugins.Browser.open({ url: ADMIN_URL });
+      window.Capacitor.Plugins.Browser.open({ url: ADMIN_URL + hash });
       return;
     }
     // 웹/PWA: 같은 출처면 상대경로, 아니면 새 탭
     const origin = window.location.origin;
     if(origin && origin.startsWith('http')){
-      window.open(origin + '/admin.html', '_blank');
+      window.open(origin + '/admin.html' + hash, '_blank');
     } else {
-      window.open(ADMIN_URL, '_blank');
+      window.open(ADMIN_URL + hash, '_blank');
     }
   }catch(e){
-    try{ window.location.href = ADMIN_URL; }catch(_){}
+    try{ window.location.href = ADMIN_URL + hash; }catch(_){}
   }
 }
 function oaFilter(st){
