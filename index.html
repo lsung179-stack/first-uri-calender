@@ -3073,21 +3073,6 @@ body.has-ad .toast{ bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)
 </div>
 
 
-<!-- 프리미엄 개별 관리 (관리자 전용) -->
-<div class="mo-overlay" id="premMgmtOverlay" onclick="closePremiumManage()"></div>
-<div class="mo-card" id="premMgmtCard" style="max-width:460px">
-  <div class="mo-handle"></div>
-  <div style="font-weight:800;font-size:16px;margin:2px 0 10px;text-align:center">프리미엄 개별 관리</div>
-  <div style="display:flex;gap:8px;margin-bottom:10px">
-    <input id="premSearchInput" type="text" placeholder="이름 또는 이메일 검색" style="flex:1;padding:11px 13px;border:1.5px solid var(--line,#e5e0d5);border-radius:11px;font-size:14px;font-family:inherit;background:var(--card,#fff);color:inherit" onkeydown="if(event.key==='Enter')premSearchUsers()">
-    <button onclick="premSearchUsers()" style="padding:0 16px;border:none;background:var(--accent,#b08d57);color:#fff;border-radius:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">검색</button>
-  </div>
-  <div id="premResults" style="max-height:52vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px">
-    <div style="text-align:center;color:var(--mute,#999);font-size:13px;padding:18px 0">이름이나 이메일로 검색하세요</div>
-  </div>
-  <button class="mo-cancel" style="width:100%;margin-top:12px" onclick="closePremiumManage()">닫기</button>
-</div>
-
 <!-- 날짜로 이동 picker (휠 두 컬럼) -->
 <div class="mo-overlay" id="datePickerOverlay" onclick="closeDatePicker()"></div>
 <div class="mo-card date-picker-card" id="datePickerCard">
@@ -5506,111 +5491,8 @@ function toggleAdminPlan(){
   toast(_adminPlanOverride ? '유료 플랜으로 체험 중이에요' : '무료 플랜으로 체험 중이에요 (편집 시 안내 모달)');
 }
 
-/* ── 전체 이용자 프리미엄 체험 토글 (관리자 전용) ── */
-let _globalTrialState = false;
-
-async function loadGlobalTrialState(){
-  try{
-    const {data} = await supa.rpc('get_global_premium_trial');
-    _globalTrialState = !!data;
-    const sw = document.getElementById('globalTrialSwitch');
-    const btn = document.getElementById('globalTrialBtn');
-    if(sw) sw.textContent = _globalTrialState ? 'ON' : 'OFF';
-    if(btn){ btn.classList.toggle('on', _globalTrialState); btn.classList.toggle('off', !_globalTrialState); }
-  }catch(e){ console.warn('전체 체험 상태 로드 실패:', e); }
-}
-
-async function toggleGlobalTrial(){
-  try{
-    const next = !_globalTrialState;
-    const confirmed = await vConfirm(
-      next
-        ? '전체 이용자를 프리미엄으로 전환할까요?\n앱을 재시작하면 모든 이용자에게 적용돼요.'
-        : '전체 이용자 프리미엄 체험을 종료할까요?\n무료 플랜으로 돌아가요.'
-    );
-    if(!confirmed) return;
-    await supa.rpc('set_global_premium_trial', { enabled: next });
-    _globalTrialState = next;
-    const sw = document.getElementById('globalTrialSwitch');
-    const btn = document.getElementById('globalTrialBtn');
-    if(sw) sw.textContent = next ? 'ON' : 'OFF';
-    if(btn){ btn.classList.toggle('on', next); btn.classList.toggle('off', !next); }
-    toast(next ? '전체 이용자 프리미엄 체험이 시작됐어요' : '전체 이용자 프리미엄 체험이 종료됐어요');
-  }catch(e){
-    toast('오류: '+(e.message||'').slice(0,40));
-  }
-}
-
-/* ── 프리미엄 개별 관리 (관리자 전용) ── */
-function openPremiumManage(){
-  if(!isAdmin()){ toast('권한 없음'); return; }
-  document.getElementById('premMgmtOverlay').classList.add('on');
-  document.getElementById('premMgmtCard').classList.add('on');
-  _subScreenEnter();  // 관리자 시트 열림 → 광고 숨김
-  const inp=document.getElementById('premSearchInput');
-  if(inp){ inp.value=''; setTimeout(()=>inp.focus(),300); }
-  const res=document.getElementById('premResults');
-  if(res) res.innerHTML='<div style="text-align:center;color:var(--mute,#999);font-size:13px;padding:18px 0">이름이나 이메일로 검색하세요</div>';
-}
-function closePremiumManage(){
-  document.getElementById('premMgmtOverlay').classList.remove('on');
-  document.getElementById('premMgmtCard').classList.remove('on');
-  _subScreenExit();  // 닫힘 → 조건 되면 광고 복원
-}
-async function premSearchUsers(){
-  if(!isAdmin()){ toast('권한 없음'); return; }
-  const q=(document.getElementById('premSearchInput').value||'').trim();
-  const res=document.getElementById('premResults');
-  if(!q){ res.innerHTML='<div style="text-align:center;color:var(--mute,#999);font-size:13px;padding:18px 0">검색어를 입력하세요</div>'; return; }
-  res.innerHTML='<div style="text-align:center;color:var(--mute,#999);font-size:13px;padding:18px 0">검색 중...</div>';
-  try{
-    const {data,error}=await supa.rpc('admin_search_users',{ q });
-    if(error) throw error;
-    const list=Array.isArray(data)?data:(data?JSON.parse(data):[]);
-    premRenderResults(list);
-  }catch(e){
-    res.innerHTML='<div style="text-align:center;color:#c0392b;font-size:13px;padding:18px 0">검색 실패: '+((e.message||'')+'').slice(0,60)+'</div>';
-  }
-}
-function _premStateLabel(state){
-  if(state==='force_premium') return '<span style="color:#2e7d32;font-weight:700">강제 프리미엄</span>';
-  if(state==='force_free') return '<span style="color:#c0392b;font-weight:700">강제 무료</span>';
-  return '<span style="color:var(--mute,#999)">기본값</span>';
-}
-function premRenderResults(list){
-  const res=document.getElementById('premResults');
-  if(!list||list.length===0){ res.innerHTML='<div style="text-align:center;color:var(--mute,#999);font-size:13px;padding:18px 0">검색 결과가 없어요</div>'; return; }
-  res.innerHTML=list.map(u=>{
-    const uid=u.user_id;
-    const name=(u.display_name||'(이름없음)');
-    const email=(u.email||'');
-    const prov=(u.provider||'');
-    const st=u.override_state||null;
-    return '<div style="border:1.5px solid var(--line,#e5e0d5);border-radius:12px;padding:11px 12px;background:var(--card,#fff)">'
-      +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px">'
-        +'<div style="min-width:0"><div style="font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escapeHtml(name)+'</div>'
-        +'<div style="font-size:11px;color:var(--mute,#999);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escapeHtml(email)+(prov?' · '+escapeHtml(prov):'')+'</div></div>'
-        +'<div style="font-size:12px;white-space:nowrap">'+_premStateLabel(st)+'</div>'
-      +'</div>'
-      +'<div style="display:flex;gap:6px">'
-        +'<button onclick="premSetOverride(\''+uid+'\',\'force_free\')" style="flex:1;padding:8px;border:1.5px solid #c0392b;background:'+(st==='force_free'?'#c0392b':'transparent')+';color:'+(st==='force_free'?'#fff':'#c0392b')+';border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">프리미엄 해제</button>'
-        +'<button onclick="premSetOverride(\''+uid+'\',\'force_premium\')" style="flex:1;padding:8px;border:1.5px solid #2e7d32;background:'+(st==='force_premium'?'#2e7d32':'transparent')+';color:'+(st==='force_premium'?'#fff':'#2e7d32')+';border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">프리미엄 적용</button>'
-        +'<button onclick="premSetOverride(\''+uid+'\',\'default\')" style="flex:1;padding:8px;border:1.5px solid var(--line,#ccc);background:'+(!st?'#eee':'transparent')+';color:var(--mute,#777);border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">기본값</button>'
-      +'</div>'
-    +'</div>';
-  }).join('');
-}
-async function premSetOverride(userId, state){
-  if(!isAdmin()){ toast('권한 없음'); return; }
-  try{
-    const {error}=await supa.rpc('admin_set_premium_override',{ target:userId, new_state:state });
-    if(error) throw error;
-    toast(state==='force_free'?'프리미엄을 해제했어요':(state==='force_premium'?'프리미엄을 적용했어요':'기본값으로 되돌렸어요'));
-    await premSearchUsers();  // 목록 새로고침 (상태 배지 갱신)
-  }catch(e){
-    toast('설정 실패: '+((e.message||'')+'').slice(0,50));
-  }
-}
+/* 프리미엄 수동부여(전체체험·개별관리) UI 제거 — 필요 시 관리자가 subscriptions에
+   is_manual 행을 직접 넣어 부여(my_premium_status가 읽는 유일한 소스). */
 
 
 /* 반복 일정 삭제 선택 — 'one'(이 날짜만) | 'all'(모두) | null(취소) */
@@ -18066,7 +17948,6 @@ function openUnifiedSettings(){
   const bi=$('buildInfo'), ub=$('uniBuildInfo'); if(bi&&ub) ub.textContent=(bi.textContent||'')+' · 광고:'+(typeof _admobDebug!=='undefined'?_admobDebug:'?');
   let adminUser=false; try{ adminUser=isAdmin(); }catch(e){}
   showEl('uniAdminSection',adminUser);
-  if(adminUser) loadGlobalTrialState(); // 전체 체험 상태 동기화
   showScreen('settingsScreen');
   _setActiveTab(3);
 }
