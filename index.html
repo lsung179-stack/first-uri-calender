@@ -9469,8 +9469,8 @@ async function toggleColorLabelEdit(mode){
   await ensurePremiumLoaded();
   if(!isEffectivePremium()){
     showUpgradeModal({
-      message:'색상 라벨 이름 편집은 프리미엄 전용이에요.',
-      feature:'프리미엄으로 업그레이드하면 색상마다 원하는 이름을 붙일 수 있어요.'
+      message:'🎨 색상에 우리만의 이름을 붙여보세요',
+      feature:'프리미엄이면 색상마다 원하는 이름을 붙일 수 있어요.'
     });
     return;
   }
@@ -10125,8 +10125,8 @@ async function onOutlineToggle(checked){
       const cb=document.getElementById('evOutline'); if(cb) cb.checked=false;
       _selectedStyle='solid';
       showUpgradeModal({
-        message:'테두리만 표시는 프리미엄 전용이에요.',
-        feature:'프리미엄으로 업그레이드하면 일정을 색 채움 없이 깔끔한 외곽선으로 표시할 수 있어요.'
+        message:'깔끔한 외곽선 스타일, 써보고 싶으세요?',
+        feature:'프리미엄이면 일정을 색 채움 없이 깔끔한 외곽선으로 표시할 수 있어요.'
       });
       return;
     }
@@ -10597,8 +10597,8 @@ function pickEventPhoto(){
   if(_evPhotos.length>=lim){
     if(!isEffectivePremium()){
       showUpgradeModal({
-        message:'무료 플랜은 일정당 사진을 1장만 넣을 수 있어요.',
-        feature:'⭐ 프리미엄 구독 시 일정마다 사진을 최대 5장까지! 추억을 더 풍성하게 담아보세요.'
+        message:'📷 사진을 더 담고 싶으세요?',
+        feature:'프리미엄이면 일정마다 최대 5장, 올린 사진은 평생 보관돼요.'
       });
     }else{ toast('사진은 최대 '+lim+'장까지 넣을 수 있어요'); }
     return;
@@ -10639,8 +10639,8 @@ async function onEventPhotoSelected(e){
     renderPhotoStrip();
     if(blockedByLimit){
       if(!isEffectivePremium()) showUpgradeModal({
-        message:'무료 플랜은 일정당 사진을 1장만 넣을 수 있어요.',
-        feature:'⭐ 프리미엄 구독 시 일정마다 사진을 최대 5장까지! 추억을 더 풍성하게 담아보세요.'
+        message:'📷 사진을 더 담고 싶으세요?',
+        feature:'프리미엄이면 일정마다 최대 5장, 올린 사진은 평생 보관돼요.'
       });
       else toast('사진은 최대 '+lim+'장까지 넣을 수 있어요');
     }
@@ -15743,8 +15743,8 @@ function onUnlockColorClick(key){
   if(!pack)return;
   if(!isEffectivePremium()){
     showUpgradeModal({
-      message:'컬러 팩은 프리미엄 전용이에요.',
-      feature:'⭐ 프리미엄 구독하면 모든 컬러 팩에서 원하는 것만 골라 쓸 수 있어요.'
+      message:'🎨 예쁜 컬러 팩, 우리 방에 입혀볼까요?',
+      feature:'프리미엄이면 모든 컬러 팩을 골라 쓸 수 있어요.'
     });
     return;
   }
@@ -15851,8 +15851,8 @@ async function applyTextTheme(key){
     await ensurePremiumLoaded();
     if(!isEffectivePremium()){
       showUpgradeModal({
-        message:'글꼴 변경은 프리미엄 전용이에요.',
-        feature:'⭐ 프리미엄 구독하면 모든 글꼴을 자유롭게 쓸 수 있어요.'
+        message:'✍️ 우리 방 분위기에 맞는 글꼴로 바꿔보세요',
+        feature:'프리미엄이면 모든 글꼴을 자유롭게 쓸 수 있어요.'
       });
       return;
     }
@@ -15898,8 +15898,8 @@ function onUnlockCharClick(key){
   if(!pack)return;
   if(!isEffectivePremium()){
     showUpgradeModal({
-      message:'캐릭터 팩은 프리미엄 전용이에요.',
-      feature:'⭐ 프리미엄 구독하면 모든 캐릭터 팩에서 원하는 것만 골라 쓸 수 있어요.'
+      message:'🐻 귀여운 캐릭터 팩, 써보고 싶으세요?',
+      feature:'프리미엄이면 모든 캐릭터 팩을 골라 쓸 수 있어요.'
     });
     return;
   }
@@ -15925,8 +15925,8 @@ async function applyStoreTheme(themeKey){
     await ensurePremiumLoaded();
     if(!isEffectivePremium()){
       showUpgradeModal({
-        message:'테마 변경은 프리미엄 전용이에요.',
-        feature:'⭐ 프리미엄 구독하면 모든 테마를 자유롭게 바꿀 수 있어요.'
+        message:'🎨 우리 방을 예쁜 테마로 꾸며보세요',
+        feature:'프리미엄이면 모든 테마를 자유롭게 바꿀 수 있어요.'
       });
       return;
     }
@@ -15989,8 +15989,8 @@ function onUnlockCharFromDetail(key){
   if(!pack)return;
   if(!isEffectivePremium()){
     showUpgradeModal({
-      message:'캐릭터 팩은 프리미엄 전용이에요.',
-      feature:'⭐ 프리미엄 구독하면 모든 캐릭터 팩에서 원하는 것만 골라 쓸 수 있어요.'
+      message:'🐻 귀여운 캐릭터 팩, 써보고 싶으세요?',
+      feature:'프리미엄이면 모든 캐릭터 팩을 골라 쓸 수 있어요.'
     });
     return;
   }
@@ -17082,7 +17082,7 @@ async function toggleTodoDone(id){
         try{ renderDateSheetList(); }catch(_){}
         showUpgradeModal({
           message:'진행 중인 할일이 이미 5개예요. 다른 할일을 완료하거나 지운 뒤 다시 시도해주세요.',
-          feature:'프리미엄으로 업그레이드하면 완료한 할일도 무제한으로 되돌릴 수 있어요.'
+          feature:'프리미엄이면 진행 중인 할일을 무제한으로 추가할 수 있어요.'
         });
         return;
       }
