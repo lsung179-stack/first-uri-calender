@@ -10165,12 +10165,14 @@ let _copySourceTodoId=null;
 function copyTodoToRooms(todoId){
   const others=(_myRooms||[]).filter(r=>r.id!==_currentRoom?.id);
   if(!others.length){ toast('복사할 다른 방이 없어요'); return; }
-  const t=(_todos||[]).find(x=>x.id===todoId);
+  // ⚠️ _todos는 IIFE 내부 → 바깥 스코프에선 window.__getTodos()로 접근
+  const _tds=(window.__getTodos?window.__getTodos():[])||[];
+  const t=_tds.find(x=>x.id===todoId);
   if(!t){ toast('할 일을 찾을 수 없어요'); return; }
   if(Array.isArray(t.member_keys)&&t.member_keys.length){ toast('함께 할일은 복사할 수 없어요'); return; }
   _copySourceTodoId=todoId;
   // 상세/날짜 시트 닫고 방 선택 모달 열기
-  try{ if(window.closeDateSheet)closeDateSheet(); }catch(_){}
+  try{ if(window.closeDateSheet)window.closeDateSheet(); }catch(_){}
   const dc=document.getElementById('dpCard'); if(dc)dc.classList.remove('on');
   const dov=document.getElementById('dpOverlay'); if(dov)dov.classList.remove('on');
   _selectedExtraRooms=[];
@@ -10184,7 +10186,8 @@ async function _doCopyTodo(){
   const todoId=_copySourceTodoId; _copySourceTodoId=null;
   if(!rooms.length){ toast('복사할 방을 선택해주세요'); return; }
   if(!todoId){ return; }
-  const t=(_todos||[]).find(x=>x.id===todoId);
+  const _tds=(window.__getTodos?window.__getTodos():[])||[];
+  const t=_tds.find(x=>x.id===todoId);
   if(!t){ toast('할 일을 찾을 수 없어요'); return; }
   try{
     // 그룹 id: 있으면 재사용, 없으면 새로 만들어 원본에도 부여(→ 어느 방에서 수정/이동/삭제해도 동기화)
@@ -10206,7 +10209,7 @@ async function _doCopyTodo(){
     const {error}=await supa.from('todos').insert(rows);
     if(error)throw error;
     toast(rooms.length+'개 방에 복사됐어요');
-    await loadTodos(); safeRender();
+    if(window.loadTodos)await window.loadTodos(); (window.safeRender||renderMonthly)();
   }catch(e){ console.error('copy todo failed',e); toast('복사 실패: '+((e.message||'').slice(0,40))); }
 }
 function closeRoomPick(){
@@ -16259,7 +16262,9 @@ async function _evMove(anchorRow,fromDate,toDate){
     try{await loadEvents()}catch(_){}   // 실패 시에만 서버에서 재로드해 되돌림
   }
 }
-function _tdFindById(id){ return (typeof _todos!=='undefined'&&_todos)?(_todos.find(function(t){return t.id===id;})||null):null; }
+/* ⚠️ 이 헬퍼는 IIFE 바깥 스코프라 할일 저장소(_todos, 16786행 IIFE 내부)에 직접 접근 못 함.
+   window.__getTodos()로 실제 할일 목록을 가져와야 함(안 그러면 항상 못 찾아 드래그가 시작 안 됨). */
+function _tdFindById(id){ var a=(typeof window!=='undefined'&&window.__getTodos)?(window.__getTodos()||[]):[]; return a.find(function(t){return t.id===id;})||null; }
 function _tdGroupDates(t){
   if(t.todo_type==='range' && t.end_date && t.end_date>t.start_date){
     const out=[]; let d=t.start_date;
@@ -16286,7 +16291,7 @@ async function _tdMove(todo,fromDate,toDate){
   const prev={start_date:todo.start_date,end_date:todo.end_date,multi_dates:todo.multi_dates};
   Object.assign(todo,upd);
   invalidateDayEventsCache();
-  safeRender();
+  (window.safeRender||renderMonthly)();   // safeRender는 IIFE 내부 → window 경유 호출
   if(navigator.vibrate)navigator.vibrate(10);
   // 2) DB 반영은 백그라운드로 — 방 간 연결 할일(multi_group_id)이면 모든 방 복사본을 함께 이동
   const _mgid=todo.multi_group_id||null;
@@ -16309,7 +16314,7 @@ async function _tdMove(todo,fromDate,toDate){
     Object.assign(todo,prev);           // 실패 시 원위치로 즉시 되돌림
     try{ if(window.loadTodos) await window.loadTodos(); }catch(_){}
     invalidateDayEventsCache();
-    safeRender();
+    (window.safeRender||renderMonthly)();
   }
 }
 function _evMakeGhost(srcBar,x,y,label){
