@@ -47,7 +47,7 @@
 4. ✅ **멤버 없을 때 캘린더가 위로 올라가던 현상** — 노치 여백(`env(safe-area-inset-top)`)을 조건부로 표시되던 `.cal-member-tabs`에서 항상 존재하는 부모 `.screen.cal`로 이동.
 5. ✅ 관리자 버튼 `전체 이용자 프리미엄`(globalTrialBtn)·`프리미엄 개별 관리`(premMgmtBtn) UI 삭제(충돌 우려). 함수/모달 마크업은 잔존(무해).
 6. ✅ **7일 무료체험 노출(전환)** — 전 플랜 첫 결제 무료체험이 UI에 안 보이던 문제. `showUpgradeModal`(잠금 안내: "무료로 체험하기"), `openPremiumSheet`/CTA 버튼("7일 무료로 시작하기"), `_updateTrialCta()`(선택 플랜 가격 기준 "첫 7일 무료·이후 자동결제" 캡션 `#premTrialNote`), `renderTrialBanner`("첫 7일 무료")에 반영.
-7. ✅ **혼자 방 초대 넛지(바이럴)** — 실멤버 1명인 방 캘린더 상단(`#calInviteNudge`)에 초대 배너 표시. `renderInviteNudge()`가 `_myMembers` 실멤버<2일 때 노출, `shareKakao()` 호출. `renderMemberTabs()` 시작부에서 호출. 배너에 ✕ 닫기 버튼(`dismissInviteNudge`) — 닫으면 그 방 id를 `localStorage['uricalv2.inviteNudgeDismissed']`에 저장해 다시 안 띄움(방별 기억).
+7. ✅ **혼자 방 초대 넛지(바이럴)** — 실멤버 1명인 방 캘린더 상단(`#calInviteNudge`)에 초대 배너 표시. `renderInviteNudge()`가 `_myMembers` 실멤버<2일 때 노출, `shareKakao()` 호출. `renderMemberTabs()` 시작부에서 호출. 배너에 ✕ 닫기 버튼(`dismissInviteNudge`) — 닫으면 그 방 id를 `localStorage['uricalv2.inviteNudgeDismissed']`에 저장해 다시 안 띄움(방별 기억). ✕ 클릭 시 `vConfirm`('다시 보지 않기'/'취소') 확인 후 저장(실수 방지).
 8. ✅ **프리미엄 시트 탭바 숨김 버그** — 일정추가(탭바 숨김)→프리미엄 시트 진입 후 닫으면 하단 탭바가 안 돌아오던 문제. `openPremiumSheet`에 `hideTabbar()`, `closePremiumSheet`에 `showTabbar()` 추가(다른 풀스크린 시트와 대칭). 겸사겸사 프리미엄 안내 모달(`showUpgradeModal`의 `vConfirm`) 타이틀의 ✨ 제거.
 
 ## 주의사항 / 함정

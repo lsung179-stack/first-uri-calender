@@ -14946,7 +14946,10 @@ function _inviteNudgeDismissed(roomId){
   if(!roomId) return false;
   try{ var raw=localStorage.getItem('uricalv2.inviteNudgeDismissed'); var arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)&&arr.indexOf(roomId)>=0; }catch(_){ return false; }
 }
-function dismissInviteNudge(){
+async function dismissInviteNudge(){
+  var ok=true;
+  try{ ok=await vConfirm('이 방에서는 초대 안내를 다시 표시하지 않을까요?',{title:'초대 안내 숨기기',okText:'다시 보지 않기',cancelText:'취소'}); }catch(_){ ok=true; }
+  if(!ok) return;
   try{
     var rid=_currentRoom&&_currentRoom.id;
     if(rid){
