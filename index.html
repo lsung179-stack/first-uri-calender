@@ -2111,7 +2111,11 @@ body.align-right .cal-evbar{text-align:right}
   font-size:8px;color:var(--sub);
   text-align:center;letter-spacing:0;
   margin-top:-2px;margin-bottom:2px;
-  line-height:1.1;min-height:9px;
+  /* 높이를 '고정'(min-height 아님)해 라벨 유무와 무관하게 이벤트 시작 Y를 항상 동일하게 유지.
+     → 기간 일정 바가 공휴일/절기 라벨이 있는 칸에서만 아래로 밀려 삐뚤빼뚤해지던 문제 방지.
+     box-sizing:border-box + overflow:hidden으로 어떤 폰트/기기에서도 9px를 넘지 않게 clamp. */
+  height:11px;box-sizing:border-box;
+  line-height:11px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   padding:0 2px;
 }
