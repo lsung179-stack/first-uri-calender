@@ -444,17 +444,24 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .rm-sym .rm-sym-ini{font-family:var(--ff-serif);font-weight:700;font-size:22px;color:var(--text)}
 .rm-sym svg{width:24px;height:24px}
 .rm-sym.on{border-color:var(--accent);background:rgba(139,58,42,.09);box-shadow:0 0 0 2px rgba(139,58,42,.13)}
-/* 스토어 방 프로필 쇼케이스 카드 */
-.store-seal-showcase{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;cursor:pointer;margin-bottom:6px;transition:transform .12s ease}
-.store-seal-showcase:active{transform:scale(.98)}
-.ssc-seals{display:flex;flex:none}
-.ssc-seal{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(60,40,25,.25),inset 0 1px 0 rgba(255,255,255,.2);border:2px solid var(--card)}
-.ssc-seal+.ssc-seal{margin-left:-11px}
-.ssc-seal svg{width:19px;height:19px}
-.ssc-info{flex:1;min-width:0}
-.ssc-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px}
-.ssc-desc{font-size:11.5px;color:var(--sub);line-height:1.4}
-.ssc-arrow{font-size:20px;font-weight:300;color:var(--mute);flex:none}
+/* 스토어 방 프로필 히어로 배너 (테마 탭 최상단) */
+.store-seal-hero{position:relative;overflow:hidden;border-radius:18px;padding:20px 128px 20px 18px;margin-bottom:24px;cursor:pointer;background:radial-gradient(130% 150% at 88% 12%,#b55c46,#8b3a2a 52%,#6a2a1e 100%);box-shadow:0 6px 16px rgba(106,42,30,.32);transition:transform .12s ease;-webkit-tap-highlight-color:transparent}
+.store-seal-hero:active{transform:scale(.98)}
+.ssh-eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.16em;color:#f0d089;margin-bottom:7px}
+.ssh-title{font-family:var(--ff-serif);font-size:21px;line-height:1.32;font-weight:700;color:#faf3e3;margin-bottom:7px}
+.ssh-desc{font-size:12px;color:rgba(243,230,207,.82);margin-bottom:13px}
+.ssh-cta{display:inline-block;background:#f3e6cf;color:#8b3a2a;font-weight:800;font-size:12.5px;border-radius:99px;padding:8px 15px}
+.ssh-seals{position:absolute;right:12px;top:0;bottom:0;width:112px;pointer-events:none;color:#f3e6cf}
+.ssh-seal{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 3px 8px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.22)}
+.ssh-seal::after{content:"";position:absolute;inset:5px;border:1px solid rgba(243,230,207,.45);border-radius:50%}
+.ssh-seal.s1{width:74px;height:74px;right:26px;top:50%;margin-top:-37px;transform:rotate(-8deg);animation:sshPop .55s cubic-bezier(.2,1.4,.4,1) both}
+.ssh-seal.s1 svg{width:42px;height:42px}
+.ssh-seal.s2{width:46px;height:46px;right:0;top:10px;transform:rotate(10deg)}
+.ssh-seal.s2 svg{width:26px;height:26px}
+.ssh-seal.s3{width:42px;height:42px;right:2px;bottom:8px;transform:rotate(-14deg)}
+.ssh-seal.s3 svg{width:24px;height:24px}
+@keyframes sshPop{from{transform:rotate(-8deg) scale(.4);opacity:0}60%{transform:rotate(-8deg) scale(1.12)}to{transform:rotate(-8deg) scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.ssh-seal.s1{animation:none}}
 .rs-mascot-thumb{width:34px;height:34px;border-radius:50%;overflow:hidden;display:none;align-items:center;justify-content:center;flex:none;margin-right:6px;position:relative}
 .rs-mascot-thumb.has-seal .seal-ini{font-size:15px}
 .rs-mascot-thumb.has-seal svg{width:19px;height:19px}
@@ -16020,6 +16027,19 @@ function renderStoreThemes(){
     </div>
   `;
   
+  // 방 프로필 히어로 — 스토어 첫 화면에서 바로 눈에 띄게 (탭하면 피커로)
+  html+=`<div class="store-seal-hero" onclick="openSealShowcase()">
+    <div class="ssh-eyebrow">NEW · ROOM SEAL</div>
+    <div class="ssh-title">방마다 찍는<br>나만의 전통 문양 씰</div>
+    <div class="ssh-desc">색 6종 × 문양 14종 — 내 방 도장 만들기</div>
+    <span class="ssh-cta">꾸미러 가기 ›</span>
+    <div class="ssh-seals">
+      <span class="ssh-seal s1 has-seal seal-navy">${_sealSvg('taegeuk')}</span>
+      <span class="ssh-seal s2 has-seal seal-gold">${_sealSvg('moon')}</span>
+      <span class="ssh-seal s3 has-seal seal-sage">${_sealSvg('butterfly')}</span>
+    </div>
+  </div>`;
+
   // 테마 섹션 — 무료는 기본(빈티지)만, 나머지는 프리미엄 잠금
   const _premTheme=isEffectivePremium();
   html+=`<div class="store-section-title">테마 <small>THEME</small></div>`;
@@ -16052,21 +16072,6 @@ function renderStoreThemes(){
     `;
   });
   html+=`</div>`;
-
-  // 방 프로필 쇼케이스 — 스토어에서 발견 → 피커로 바로 이동 (해제/적용은 피커에서)
-  html+=`<div class="store-section-title" style="margin-top:22px">방 프로필 <small>ROOM SEAL</small></div>`;
-  html+=`<div class="store-seal-showcase" onclick="openSealShowcase()">
-    <div class="ssc-seals">
-      <span class="ssc-seal has-seal seal-terra">${_sealSvg('taegeuk')}</span>
-      <span class="ssc-seal has-seal seal-navy">${_sealSvg('moon')}</span>
-      <span class="ssc-seal has-seal seal-sage">${_sealSvg('pine')}</span>
-    </div>
-    <div class="ssc-info">
-      <div class="ssc-name">전통 문양 씰</div>
-      <div class="ssc-desc">색 6종 × 문양 14종 — 방마다 나만의 씰로</div>
-    </div>
-    <span class="ssc-arrow">›</span>
-  </div>`;
 
   body.innerHTML=html;
 }
