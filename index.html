@@ -1878,6 +1878,27 @@ body.align-right .cal-evbar{text-align:right}
   font-size:14px;color:var(--text);line-height:1.7;white-space:pre-wrap;
   word-break:break-word;
 }
+/* ═════════════════ 알림 설정 시트 ═════════════════ */
+.ntf-sys{border:1px solid var(--borderL);background:var(--card);border-radius:14px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:flex-start;gap:11px}
+.ntf-sys-ic{font-size:20px;line-height:1.3;flex:none}
+.ntf-sys-tx{flex:1;font-size:12.5px;line-height:1.6;color:var(--sub)}
+.ntf-sys-tx b{display:block;font-size:13.5px;color:var(--text);margin-bottom:2px}
+.ntf-sys-btn{flex:none;align-self:center;padding:9px 14px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer}
+.ntf-sys.ok{border-color:rgba(90,130,90,.35)}
+.ntf-sys.warn{border-color:rgba(180,110,50,.4)}
+.ntf-row{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--borderL)}
+#ntfCatRows .ntf-row:last-child{border-bottom:none}
+.ntf-row-info{flex:1;min-width:0}
+.ntf-row-label{font-size:14.5px;font-weight:600;color:var(--text)}
+.ntf-row-sub{font-size:11.5px;color:var(--sub);margin-top:2px;line-height:1.5}
+.ntg{position:relative;width:46px;height:27px;border-radius:14px;background:#d8c6a8;border:none;padding:0;cursor:pointer;transition:background .18s;flex:none}
+.ntg::after{content:'';position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(60,40,20,.3);transition:transform .18s}
+.ntg.on{background:var(--accent)}
+.ntg.on::after{transform:translateX(19px)}
+.ntg:disabled{opacity:.5}
+/* 전체 알림 OFF → 하위 카테고리 비활성 표시 */
+#ntfSection.ntf-dim #ntfCatRows{opacity:.4;pointer-events:none}
+
 /* 공지사항 상세 사진 */
 .ann-detail-photo{
   margin:0 0 18px;border-radius:14px;overflow:hidden;
@@ -4101,14 +4122,22 @@ body.has-ad .toast{ bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)
     </div>
   </div>
 
-  <!-- 4. 고급 설정 (진입 행 - 별도 시트 열림) -->
+  <!-- 4. 고급 설정 / 알림 설정 (진입 행 - 별도 시트 열림) -->
   <div class="rs-section">
     <div class="rs-section-title">기타</div>
     <div class="rs-nav-row" onclick="openAdvSettings()">
       <div class="rs-nav-row-icon">⚙️</div>
       <div class="rs-nav-row-info">
         <div class="rs-nav-row-label">고급 설정</div>
-        <div class="rs-nav-row-sub">알림, 폰트 크기, 주 시작 요일, 일정 정렬</div>
+        <div class="rs-nav-row-sub">폰트 크기, 주 시작 요일, 일정 정렬</div>
+      </div>
+      <div class="rs-nav-row-arrow">›</div>
+    </div>
+    <div class="rs-nav-row" onclick="openNotifSettings()">
+      <div class="rs-nav-row-icon">🔔</div>
+      <div class="rs-nav-row-info">
+        <div class="rs-nav-row-label">알림 설정</div>
+        <div class="rs-nav-row-sub">알림 종류별로 켜고 끌 수 있어요</div>
       </div>
       <div class="rs-nav-row-arrow">›</div>
     </div>
@@ -4277,17 +4306,6 @@ body.has-ad .toast{ bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)
   <div class="ann-body" style="padding:20px">
 
     <div class="rs-section">
-      <div class="rs-section-title">알림</div>
-      <div class="rs-row">
-        <div class="rs-row-info">
-          <div class="rs-row-label">알림 받기</div>
-          <div class="rs-row-sub">내가 속한 모든 방에 함께 적용돼요</div>
-        </div>
-        <button class="dp-btn primary" id="roomNotifToggleBtn" onclick="toggleRoomNotification()">—</button>
-      </div>
-    </div>
-
-    <div class="rs-section">
       <div class="rs-section-title">폰트 크기</div>
       <div class="dm-row" id="fontSizeRow">
         <button class="dm-btn" data-fs="small" onclick="onFontSizeSelect('small')">작게</button>
@@ -4335,6 +4353,29 @@ body.has-ad .toast{ bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- 알림 설정 시트 (종류별 수신 토글 + 기기 권한 상태) -->
+<div class="ann-card" id="notifSetCard">
+  <div class="ann-head">
+    <button class="ann-back" onclick="backFromNotifSettings()" aria-label="뒤로">‹</button>
+    <div class="ann-title">알림 설정</div>
+    <button class="ann-head-btn" onclick="closeNotifSettings()" aria-label="닫기">✕</button>
+  </div>
+  <div class="ann-body" style="padding:20px">
+    <div class="ntf-sys" id="ntfSysCard" style="display:none"></div>
+    <div class="rs-section" id="ntfSection">
+      <div class="rs-section-title">알림 수신</div>
+      <div class="ntf-row master">
+        <div class="ntf-row-info">
+          <div class="ntf-row-label">앱 전체 알림</div>
+          <div class="ntf-row-sub">내가 속한 모든 방에 함께 적용돼요</div>
+        </div>
+        <button class="ntg" id="ntgMaster" onclick="toggleNotifMaster()" aria-label="앱 전체 알림"></button>
+      </div>
+      <div id="ntfCatRows"></div>
+    </div>
   </div>
 </div>
 
@@ -4860,7 +4901,7 @@ function closeAllModals(){
 function closeMainModals(){
   ['createOverlay','createCard','joinOverlay','joinCard','evOverlay','evCard',
    'dpOverlay','dpCard','profileOverlay','profileCard','roomSetOverlay','roomSetCard',
-   'storeCard','advCard','annCard','annComposeOverlay','annComposeCard',
+   'storeCard','advCard','notifSetCard','annCard','annComposeOverlay','annComposeCard',
    'annMenuOverlay','annMenuCard','annPopupOverlay','annPopup',
    'datePickerOverlay','datePickerCard','searchOverlay','searchCard',
    'csCard','leaveAccountOverlay','leaveAccountCard',
@@ -6133,7 +6174,7 @@ async function hideAdBanner() {
    AdMob 배너는 OS 별도 레이어라 서브 화면 위에도 떠서 버튼/콘텐츠를 가린다.
    서브 시트가 열려 있으면 광고를 숨기고, 모두 닫히면 다시 표시한다.
    DOM의 .on 상태를 직접 보므로 닫는 경로가 어디든(닫기버튼·탭전환·뒤로) 항상 정합. */
-const _AD_HIDE_SHEET_IDS = ['premiumCard','storeCard','advCard','annCard','csCard','evCard','todoAddCard','dpCard','myOrdersCard','vcOverlay','upgOverlay','rdOverlay'];
+const _AD_HIDE_SHEET_IDS = ['premiumCard','storeCard','advCard','notifSetCard','annCard','csCard','evCard','todoAddCard','dpCard','myOrdersCard','vcOverlay','upgOverlay','rdOverlay'];
 /* 요소가 실제로 화면에 보이는지(display:none이 아닌지) — 잔여 .on 클래스 오판 방지 */
 function _elVisible(el){
   try{ return !!(el && (el.offsetWidth>0 || el.offsetHeight>0 || el.getClientRects().length>0)); }catch(_){ return true; }
@@ -7361,6 +7402,7 @@ supa.auth.onAuthStateChange((event,session)=>{
       ['premiumCard', function(){ closePremiumSheet(); }],   // 프리미엄 구독 (기존 무반응 버그 수정)
       ['storeCard', function(){ closeStore(); }],
       ['advCard', function(){ closeAdvSettings(); }],
+      ['notifSetCard', function(){ closeNotifSettings(); }],
       ['myOrdersCard', function(){ closeMyOrders(); }],
       ['profileCard', function(){ closeProfile(); }],
       ['roomSetCard', function(){ closeRoomSettings(); }],
@@ -11367,6 +11409,7 @@ function notifyEventLeft(ev){
         body:body,
         url:`/?room=${_currentRoom.id}&date=${ev.date}`,
         tag:`event-${ev.date}-${ev.title||''}`,
+        kind:'event',
       }
     }).catch(e=>console.warn('빠짐 알림 발송 실패:',e));
 
@@ -11397,6 +11440,7 @@ function notifyEventDeleted(ev, opts){
         body:body,
         url:`/?room=${_currentRoom.id}&date=${ev.date}`,
         tag:`event-${ev.date}-${ev.title||''}`,
+        kind:'event',
       }
     }).catch(e=>console.warn('삭제 알림 발송 실패:',e));
 
@@ -11447,6 +11491,7 @@ function _notifyEventChange(action, title, time){
         body:`${actionPrefix}${sharedPrefix}${dateLabel}${timeLabel}`,
         url:`/?room=${_currentRoom.id}&date=${jumpDate}`,
         tag:`event-${jumpDate}-${title}`,
+        kind:'event',
       }
     }).catch(e=>console.warn('알림 발송 실패:',e));
 
@@ -11476,7 +11521,7 @@ async function _notifyMemberJoined(room){
     const title=`${room.name||'방'}에 새 멤버`;
     const body=`${myName}님이 방에 들어왔어요`;
     supa.functions.invoke('send-push',{
-      body:{ user_ids:targetIds, title, body, url:`/?room=${room.id}`, tag:`join-${room.id}` }
+      body:{ user_ids:targetIds, title, body, url:`/?room=${room.id}`, tag:`join-${room.id}`, kind:'social' }
     }).catch(e=>console.warn('입장 알림 발송 실패:',e));
     _insertNotificationRows(targetIds, room.id, null, title, body, 'member_joined');
   }catch(e){console.warn('_notifyMemberJoined 에러:',e)}
@@ -11509,7 +11554,7 @@ function _notifyTodo(action, todo){
     supa.functions.invoke('send-push',{
       body:{ user_ids:targetIds, title, body,
         url:jumpDate?`/?room=${_currentRoom.id}&date=${jumpDate}`:`/?room=${_currentRoom.id}`,
-        tag:`todo-${todo.id||todo.title||''}` }
+        tag:`todo-${todo.id||todo.title||''}`, kind:'todo' }
     }).catch(e=>console.warn('할일 알림 발송 실패:',e));
     _insertNotificationRows(targetIds, _currentRoom.id, jumpDate||null, title, body, 'todo_'+action);
   }catch(e){console.warn('_notifyTodo 에러:',e)}
@@ -11542,7 +11587,7 @@ function _notifyEmojiReaction(ev, emoji){
     supa.functions.invoke('send-push',{
       body:{ user_ids:targetIds, title, body,
         url:`/?room=${_currentRoom.id}&date=${ev.date}`,
-        tag:`reaction-${ev.date}-${ev.id||''}` }
+        tag:`reaction-${ev.date}-${ev.id||''}`, kind:'social' }
     }).catch(e=>console.warn('반응 알림 발송 실패:',e));
     _insertNotificationRows(targetIds, _currentRoom.id, ev.date, title, body, 'emoji_reaction');
   }catch(e){console.warn('_notifyEmojiReaction 에러:',e)}
@@ -12821,63 +12866,8 @@ function openRoomSettings(){
   document.getElementById('roomSetCard').classList.add('on');
 }
 
-/* 방 알림 토글 버튼 상태 동기화 */
-function syncRoomNotifButton(){
-  const btn=document.getElementById('roomNotifToggleBtn');
-  if(!btn||!_currentUser)return;
-  const me=(_myMembers||[]).find(m=>m.user_id===_currentUser.id);
-  const on=me?(me.notifications_enabled!==false):true;
-  btn.textContent=on?'끄기':'켜기';
-  btn.classList.toggle('primary',!on);  // 꺼진 상태일 때 primary(강조)로 — 켜기 권유
-}
-
-/* 알림 토글 클릭 — 내 모든 방의 알림 수신을 한 번에 켜고/끈다 */
-async function toggleRoomNotification(){
-  if(!_currentRoom||!_currentUser)return;
-  const btn=document.getElementById('roomNotifToggleBtn');
-  const me=(_myMembers||[]).find(m=>m.user_id===_currentUser.id);
-  const current=me?(me.notifications_enabled!==false):true;
-  const next=!current;
-  btn.disabled=true;
-  try{
-    // 켤 때: 브라우저 알림 권한/구독이 없으면 먼저 요청.
-    // (수신 플래그만 켜도 권한이 없으면 푸시가 실제로 오지 않으므로 함께 처리)
-    if(next){
-      const st=await getPushStatus();
-      if(st!=='granted'&&st!=='subscribed'){
-        // 네이티브: FCM 등록(권한 팝업 포함). 실패 시 registerNativePush가 구체적 안내 toast를 직접 띄움.
-        // 웹/PWA: 기존 웹푸시 등록. 실패 시 상태에 맞는 안내.
-        let ok;
-        if(isAndroidNative()){
-          ok=await registerNativePush(false);
-        }else{
-          ok=await registerPushNotification(true);
-          if(!ok){
-            toast(st==='denied'
-              ? '휴대폰 설정에서 이 앱의 알림을 허용해 주세요'
-              : (st==='unsupported' ? '이 브라우저는 알림을 지원하지 않아요' : '알림 권한을 허용해야 켤 수 있어요'));
-          }
-        }
-        if(!ok){btn.disabled=false;return;}
-      }
-    }
-    // 내가 속한 모든 방의 멤버 row를 한 번에 갱신.
-    // (가상 멤버는 user_id가 NULL이라 매칭되지 않아 영향 없음)
-    const {error}=await supa.from('members')
-      .update({notifications_enabled:next})
-      .eq('user_id',_currentUser.id);
-    if(error)throw error;
-    // 로컬 상태 갱신(현재 방 기준 — 전체가 동일 값이 되므로 버튼 표시도 일관)
-    if(me)me.notifications_enabled=next;
-    syncRoomNotifButton();
-    toast(next?'모든 방 알림을 켰어요':'모든 방 알림을 껐어요');
-  }catch(e){
-    toast('실패: '+(e.message||'').slice(0,40));
-    console.error(e);
-  }finally{
-    btn.disabled=false;
-  }
-}
+/* (구) 고급설정의 '알림 받기' 버튼/토글은 알림 설정 시트(openNotifSettings)로 이동 —
+   마스터 토글은 toggleNotifMaster()가 동일 로직(권한 요청 + members.notifications_enabled 일괄 갱신)을 수행 */
 
 /* 방 이름 변경 (owner만) */
 function openRoomNameEdit(){
@@ -13906,7 +13896,6 @@ function openAdvSettings(){
   closeMainModals();
   document.getElementById('advCard').classList.add('on');
   // 토글 상태 동기화 (시트 안에 있는 모든 컨트롤)
-  try{ syncRoomNotifButton(); }catch(_){}
   try{ syncFontSizeButtons(); }catch(_){}
   try{ syncWeekStartButtons(); }catch(_){}
   try{ syncAlignButtons(); }catch(_){}
@@ -13917,6 +13906,158 @@ function openAdvSettings(){
 function closeAdvSettings(){
   document.getElementById('advCard').classList.remove('on');
   _subScreenExit();
+}
+
+/* ═══════════════════════════════════
+   알림 설정 시트 — 종류별 수신 토글(profiles.notif_prefs) + 마스터(members.notifications_enabled) + 기기 권한 카드
+   키 없음/true=켜짐, false=꺼짐. 발송 필터는 send-push(kind)·push-cron(모드별 키)이 서버에서 수행.
+   ═══════════════════════════════════ */
+const NOTIF_CATS=[
+  {key:'event',   name:'캘린더 알림',     sub:'일정 등록 · 수정 · 삭제'},
+  {key:'todo',    name:'할 일 알림',      sub:'할 일 등록 · 수정 · 완료'},
+  {key:'reminder',name:'일정 미리 알림',  sub:'일정 시작 1시간 전에 알려드려요'},
+  {key:'daily',   name:'아침 요약 알림',  sub:'매일 아침 오늘의 일정 요약'},
+  {key:'nudge',   name:'일정 등록 안내',  sub:'일정이 없는 날 아침, 등록을 권해드려요'},
+  {key:'birthday',name:'생일 알림',       sub:'멤버 생일 축하 알림'},
+  {key:'social',  name:'반응 · 멤버 알림', sub:'이모지 반응, 새 멤버 입장'},
+];
+let _notifPrefs={};
+let _notifMasterOn=true;
+
+async function openNotifSettings(){
+  closeMainModals();
+  document.getElementById('notifSetCard').classList.add('on');
+  _ntfRenderCats();                 // 우선 기본값으로 즉시 렌더 (로드 후 재렌더)
+  _subScreenEnter();
+  try{
+    if(_currentUser){
+      const [profRes,memRes]=await Promise.all([
+        supa.from('profiles').select('notif_prefs').eq('id',_currentUser.id).maybeSingle(),
+        supa.from('members').select('notifications_enabled').eq('user_id',_currentUser.id).limit(1).maybeSingle()
+      ]);
+      _notifPrefs=(profRes.data&&profRes.data.notif_prefs)||{};
+      _notifMasterOn=memRes.data?(memRes.data.notifications_enabled!==false):true;
+    }
+  }catch(_){}
+  _ntfRenderCats();
+  _ntfRenderSys();
+}
+function closeNotifSettings(){
+  document.getElementById('notifSetCard').classList.remove('on');
+  _subScreenExit();
+}
+function backFromNotifSettings(){ closeNotifSettings(); }
+
+function _ntfRenderCats(){
+  const box=document.getElementById('ntfCatRows');
+  if(!box)return;
+  const master=document.getElementById('ntgMaster');
+  if(master)master.classList.toggle('on',_notifMasterOn);
+  const sec=document.getElementById('ntfSection');
+  if(sec)sec.classList.toggle('ntf-dim',!_notifMasterOn);
+  box.innerHTML=NOTIF_CATS.map(c=>{
+    const on=_notifPrefs[c.key]!==false;
+    return `<div class="ntf-row">
+      <div class="ntf-row-info">
+        <div class="ntf-row-label">${c.name}</div>
+        <div class="ntf-row-sub">${c.sub}</div>
+      </div>
+      <button class="ntg ${on?'on':''}" onclick="toggleNotifCat('${c.key}')" aria-label="${c.name}"></button>
+    </div>`;
+  }).join('');
+}
+
+/* 카테고리 토글 — 낙관 반영 후 profiles.notif_prefs 저장, 실패 시 원복 */
+async function toggleNotifCat(key){
+  if(!_currentUser)return;
+  const next=!(_notifPrefs[key]!==false);
+  const prev=JSON.parse(JSON.stringify(_notifPrefs));
+  if(next)delete _notifPrefs[key]; else _notifPrefs[key]=false;
+  _ntfRenderCats();
+  try{
+    const {error}=await supa.from('profiles').update({notif_prefs:_notifPrefs}).eq('id',_currentUser.id);
+    if(error)throw error;
+  }catch(e){
+    _notifPrefs=prev;_ntfRenderCats();
+    toast('저장 실패: '+(e.message||'').slice(0,40));
+  }
+}
+
+/* 마스터 토글 — 내 모든 방의 members.notifications_enabled 일괄 갱신.
+   켤 때 기기 권한이 없으면 먼저 요청 (구 toggleRoomNotification과 동일 정책) */
+async function toggleNotifMaster(){
+  if(!_currentUser)return;
+  const btn=document.getElementById('ntgMaster');
+  const next=!_notifMasterOn;
+  btn.disabled=true;
+  try{
+    if(next){
+      const st=await getPushStatus();
+      if(st!=='granted'&&st!=='subscribed'){
+        let ok;
+        if(isAndroidNative()){
+          ok=await registerNativePush(false);
+        }else{
+          ok=await registerPushNotification(true);
+          if(!ok){
+            toast(st==='denied'
+              ? '휴대폰 설정에서 이 앱의 알림을 허용해 주세요'
+              : (st==='unsupported' ? '이 브라우저는 알림을 지원하지 않아요' : '알림 권한을 허용해야 켤 수 있어요'));
+          }
+        }
+        if(!ok){btn.disabled=false;_ntfRenderSys();return;}
+      }
+    }
+    const {error}=await supa.from('members')
+      .update({notifications_enabled:next})
+      .eq('user_id',_currentUser.id);
+    if(error)throw error;
+    _notifMasterOn=next;
+    // 현재 방 멤버 캐시도 동기화 (가상 멤버는 user_id NULL이라 영향 없음)
+    try{ const me=(_myMembers||[]).find(m=>m.user_id===_currentUser.id); if(me)me.notifications_enabled=next; }catch(_){}
+    _ntfRenderCats();
+    _ntfRenderSys();
+    toast(next?'모든 방 알림을 켰어요':'모든 방 알림을 껐어요');
+  }catch(e){
+    toast('실패: '+(e.message||'').slice(0,40));
+    console.error(e);
+  }finally{
+    btn.disabled=false;
+  }
+}
+
+/* 기기(OS) 알림 권한 상태 카드 — 거절 유저에게 휴대폰 설정에서 켜는 법 안내 */
+async function _ntfRenderSys(){
+  const el=document.getElementById('ntfSysCard');
+  if(!el)return;
+  let st='error';
+  try{ st=await getPushStatus(); }catch(_){}
+  const isAnd=isAndroidNative()||/android/i.test(navigator.userAgent||'');
+  if(st==='granted'||st==='subscribed'){
+    el.className='ntf-sys ok';
+    el.innerHTML='<span class="ntf-sys-ic">✅</span><div class="ntf-sys-tx"><b>기기 알림이 켜져 있어요</b>아래에서 받고 싶은 알림 종류를 고를 수 있어요.</div>';
+    el.style.display='flex';
+  }else if(st==='default'){
+    el.className='ntf-sys warn';
+    el.innerHTML='<span class="ntf-sys-ic">🔕</span><div class="ntf-sys-tx"><b>기기 알림이 아직 꺼져 있어요</b>알림을 켜면 새 일정과 약속을 놓치지 않아요.</div>'
+      +'<button class="ntf-sys-btn" onclick="ntfEnablePush()">알림 켜기</button>';
+    el.style.display='flex';
+  }else if(st==='denied'){
+    const guide=isAnd
+      ? '휴대폰 <b style="display:inline">설정 → 애플리케이션 → 우리 캘린더 → 알림</b>에서 허용해 주세요.'
+      : '휴대폰 <b style="display:inline">설정 → 알림 → 우리 캘린더</b>에서 \'알림 허용\'을 켜주세요.';
+    el.className='ntf-sys warn';
+    el.innerHTML='<span class="ntf-sys-ic">🔕</span><div class="ntf-sys-tx"><b>휴대폰에서 알림이 꺼져 있어요</b>'+guide+'</div>';
+    el.style.display='flex';
+  }else{
+    el.style.display='none';   // unsupported/error — 카드 숨김
+  }
+}
+async function ntfEnablePush(){
+  let ok=false;
+  try{ ok=isAndroidNative()?await registerNativePush(false):await registerPushNotification(false); }catch(_){}
+  if(ok)toast('알림을 켰어요');
+  _ntfRenderSys();
 }
 
 /* ── 뒤로가기: 스토어/고급설정/공지사항 → 통합 설정 화면으로 복귀 ──
