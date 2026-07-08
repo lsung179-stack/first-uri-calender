@@ -13,6 +13,7 @@
 require 'xcodeproj'
 
 proj_path = ARGV[0] || 'ios/App/App.xcodeproj'
+TEAM_ID = ARGV[1] || 'ZZ9B9BWM8T'                     # 워크플로의 DEVELOPMENT_TEAM과 동일
 WIDGET_NAME = 'UriCalendarWidget'
 WIDGET_BUNDLE_ID = 'com.lsung.uricalendar.widget'
 APP_GROUP = 'group.com.lsung.uricalendar'
@@ -50,7 +51,8 @@ widget.build_configurations.each do |config|
   bs['INFOPLIST_FILE'] = File.join('App', WIDGET_NAME, 'Info.plist')
   bs['SWIFT_VERSION'] = '5.0'
   bs['IPHONEOS_DEPLOYMENT_TARGET'] = deployment_target
-  bs['TARGETED_DEVICE_FAMILY'] = '1,2'
+  bs['TARGETED_DEVICE_FAMILY'] = '1'                  # 앱이 iPhone 전용이므로 위젯도 동일
+  bs['DEVELOPMENT_TEAM'] = TEAM_ID
   bs['MARKETING_VERSION'] = app_target.build_configurations.first.build_settings['MARKETING_VERSION'] || '1.0'
   bs['CURRENT_PROJECT_VERSION'] = app_target.build_configurations.first.build_settings['CURRENT_PROJECT_VERSION'] || '1'
   bs['CODE_SIGN_ENTITLEMENTS'] = File.join('App', WIDGET_NAME, "#{WIDGET_NAME}.entitlements")
