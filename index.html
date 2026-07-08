@@ -4639,12 +4639,10 @@ async function autoRegisterPush(){
   if(isAndroidNative()){
     const perm=await getNativePushPerm();
     if(perm==='denied'||perm==='unsupported'||perm==='error')return;
-    // 아직 선택 안 함(prompt): 첫 진입에 1회만 자동 권한 요청 (팝업 무시 시 반복 방지)
-    if(perm==='prompt'||perm==='prompt-with-rationale'){
-      if(localStorage.getItem('pushPrompted')==='1')return;
-      localStorage.setItem('pushPrompted','1');
-    }
-    await registerNativePush(true);
+    // 미결정(prompt): 자동으로 OS 팝업을 쏘지 않음 — 가치 순간의 소프트 프리퍼미션(maybeAskPush)이 담당
+    // (콜드 첫 진입 팝업은 수락률이 가장 낮고, iOS는 거절 시 카드 영구 소진)
+    if(perm==='prompt'||perm==='prompt-with-rationale')return;
+    await registerNativePush(true);   // 이미 허용된 유저만 (재)등록
     return;
   }
 
@@ -4668,16 +4666,47 @@ async function autoRegisterPush(){
   const status=await getPushStatus();
   // denied / unsupported / error: 아무 것도 안 함
   if(status==='denied'||status==='unsupported'||status==='error')return;
-  // 'default'(아직 허용/차단을 선택 안 함): 첫 진입에 한 번만 자동으로 권한 요청.
-  //  팝업을 무시(X)했을 때 방을 옮길 때마다 반복되지 않도록 1회 표시만 기록한다.
-  if(status==='default'){
-    if(localStorage.getItem('pushPrompted')==='1') return;
-    localStorage.setItem('pushPrompted','1');
-  }
-  // granted/subscribed/default(최초 1회) → (재)등록.
-  // ※ registerPushNotification은 이미 granted면 권한 재요청을 생략하므로(위 함수 참고),
-  //   허용한 사용자에게는 방에 들어와도 다시 팝업이 뜨지 않는다.
+  // 'default'(미결정): 자동으로 OS 팝업을 쏘지 않음 — 소프트 프리퍼미션(maybeAskPush)이 담당
+  if(status==='default')return;
+  // granted/subscribed → (재)등록만. 허용한 사용자에게는 팝업이 다시 뜨지 않는다.
   await registerPushNotification(true);
+}
+
+/* ── 푸시 소프트 프리퍼미션 ──
+   OS 권한 팝업(iOS는 1회용 카드)을 바로 쏘지 않고, 가치 순간에 앱 모달로 먼저 물어본 뒤
+   수락한 사람에게만 OS 팝업을 띄운다. 트리거: (a) 2인+ 방 진입 (b) 일정 저장 직후.
+   '다음에' 또는 OS 거절 → 7일 스누즈, 평생 최대 3회 노출. 세션당 1회. */
+const PUSH_ASK_KEY='uricalv2.pushAsk';
+let _pushAskShown=false;
+function _pushAskState(){ try{ return JSON.parse(localStorage.getItem(PUSH_ASK_KEY)||'{}')||{}; }catch(_){ return {}; } }
+function _pushAskSnooze(){
+  const s=_pushAskState(); s.c=(s.c||0)+1; s.n=Date.now()+7*24*3600*1000;
+  try{ localStorage.setItem(PUSH_ASK_KEY,JSON.stringify(s)); }catch(_){}
+}
+async function _pushAskEligible(){
+  if(_pushAskShown||!_currentUser)return false;
+  const s=_pushAskState();
+  if((s.c||0)>=3)return false;              // 소프트 모달 평생 최대 3회
+  if(s.n&&Date.now()<s.n)return false;      // 스누즈 중
+  if(isAndroidNative()){
+    const p=await getNativePushPerm();
+    return p==='prompt'||p==='prompt-with-rationale';
+  }
+  const st=await getPushStatus();
+  return st==='default';
+}
+async function maybeAskPush(trigger){
+  try{
+    if(!(await _pushAskEligible()))return;
+    _pushAskShown=true;   // 세션당 1회
+    const msg = trigger==='event'
+      ? '방금 만든 일정, 시작 전에 미리 알려드릴까요?\n멤버가 새 일정을 올릴 때도 바로 알 수 있어요.'
+      : '멤버가 일정을 올리면 바로 알려드릴까요?\n다가오는 약속 리마인드도 함께 챙겨드려요.';
+    const ok=await vConfirm(msg,{title:'알림 켜기',okText:'알림 받기',cancelText:'다음에'});
+    if(!ok){ _pushAskSnooze(); return; }
+    const granted = isAndroidNative() ? await registerNativePush(false) : await registerPushNotification(false);
+    if(!granted) _pushAskSnooze();   // OS 팝업 거절/실패도 동일하게 스누즈
+  }catch(e){ console.warn('push soft-ask',e); }
 }
 
 /* 푸시 해제 */
@@ -6490,6 +6519,8 @@ function renderRooms(rooms,countMap){
   try{ _setupRoomReorder(); }catch(e){}
   // 스토어 쇼케이스에서 넘어온 경우: 로드 완료 후 편집모드 자동 ON (연필 노출)
   if(_pendingRoomEdit){ _pendingRoomEdit=false; if(!_roomEditMode && rooms.length>=1){ try{ toggleRoomEdit(); }catch(_){} } }
+  // 로그인 → 방목록 도착 = 소프트 프리퍼미션 1차 시점 (내부에서 자격/스누즈/세션 가드)
+  if(rooms.length>=1 && !_pushAskShown){ setTimeout(function(){ try{ maybeAskPush('rooms'); }catch(_){} },1000); }
 }
 
 /* ── 방목록 순서 편집 ('순서 편집' 버튼 → 흔들림 → 드래그, members.sort_order에 저장) ── */
@@ -8420,6 +8451,8 @@ function renderMemberTabs(){
   if(!wrap)return;
   try{ renderInviteNudge(); }catch(_){}
   const _vis=_visibleMembers();
+  // 2인+ 공유방 진입 = 알림 가치가 생기는 순간 → 소프트 프리퍼미션 (내부에서 자격/세션 가드)
+  if(_vis.length>=2 && !_pushAskShown){ setTimeout(function(){ try{ maybeAskPush('room'); }catch(_){} },1200); }
   // 멤버 2명 이상일 때만 표시 (혼자면 의미 없음)
   if(_vis.length<2){
     wrap.classList.remove('show');
@@ -10781,6 +10814,8 @@ async function _doSaveEvent(){
           if(eX)console.warn('다른 방 일정 추가 일부 실패:',eX);
         }
         toast(`일정이 추가됐어요`);
+        // 일정을 만든 직후 = 리마인드 알림의 가치가 보이는 순간 → 소프트 프리퍼미션
+        setTimeout(function(){ try{ maybeAskPush('event'); }catch(_){} },900);
       }
     }
     closeEventModal();
