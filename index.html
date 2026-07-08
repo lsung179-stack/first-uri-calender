@@ -6517,12 +6517,14 @@ function renderRooms(rooms,countMap){
   if(rooms.length<1) _roomEditMode=false;  // 방 0개면 편집모드 없음(1개는 마스코트 편집 위해 허용)
   c.classList.toggle('room-edit', _roomEditMode);
   try{ _setupRoomReorder(); }catch(e){}
+  // 스토어 쇼케이스에서 넘어온 경우: 로드 완료 후 편집모드 자동 ON (연필 노출)
+  if(_pendingRoomEdit){ _pendingRoomEdit=false; if(!_roomEditMode && rooms.length>=1){ try{ toggleRoomEdit(); }catch(_){} } }
   // 로그인 → 방목록 도착 = 소프트 프리퍼미션 1차 시점 (내부에서 자격/스누즈/세션 가드)
   if(rooms.length>=1 && !_pushAskShown){ setTimeout(function(){ try{ maybeAskPush('rooms'); }catch(_){} },1000); }
 }
 
 /* ── 방목록 순서 편집 ('순서 편집' 버튼 → 흔들림 → 드래그, members.sort_order에 저장) ── */
-let _roomDrag=null, _roomCountMap={}, _roomSuppressClick=false, _roomEditMode=false;
+let _roomDrag=null, _roomCountMap={}, _roomSuppressClick=false, _roomEditMode=false, _pendingRoomEdit=false;
 function toggleRoomEdit(){
   _roomEditMode=!_roomEditMode;
   const c=document.getElementById('roomsContent');
@@ -16110,10 +16112,16 @@ function renderStoreThemes(){
 
   body.innerHTML=html;
 }
-/* 스토어 쇼케이스 → 현재 방 프로필 피커 열기 */
+/* 스토어 쇼케이스 → 방목록 탭으로 이동 + 편집모드 켜서 연필 노출 */
 function openSealShowcase(){
   closeStore();
-  setTimeout(function(){ try{ openRoomMascot(); }catch(_){} },180);
+  _pendingRoomEdit=true;   // loadRooms 완료 후 renderRooms가 편집모드를 켬
+  setTimeout(function(){
+    try{
+      calTabSwitch('rooms');
+      toast('씰의 연필을 눌러 방을 꾸며보세요');
+    }catch(_){}
+  },180);
 }
 /* ── 컬러 팩 (곧 출시) ── */
 function renderStoreColors(){
