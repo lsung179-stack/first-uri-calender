@@ -2393,16 +2393,16 @@ body.align-right .cal-evbar{text-align:right}
    사용자 기기 크기에 맞춰 자동 조정. 탭바는 배너 바로 위에 딱 붙고(여백 없음),
    콘텐츠·FAB는 배너+탭바 높이만큼만 확보. 광고 사라지면 클래스 제거로 원복. */
 :root{ --ad-h:56px; } /* AdMob 배너 기본 높이 (배너 로드 시 실제 값으로 갱신됨) */
-body.has-ad .cal-grid{ padding-bottom:calc(var(--ad-h) + 64px + env(safe-area-inset-bottom)) !important; }
-body.has-ad .todo-list{ padding-bottom:calc(var(--ad-h) + 64px + env(safe-area-inset-bottom)) !important; }
-body.has-ad #roomsContent{ padding-bottom:calc(var(--ad-h) + 64px + env(safe-area-inset-bottom)) !important; }
-body.has-ad .uni-scroll{ padding-bottom:calc(var(--ad-h) + 64px + env(safe-area-inset-bottom)) !important; }
+body.has-ad .cal-grid{ padding-bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)) !important; }
+body.has-ad .todo-list{ padding-bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)) !important; }
+body.has-ad #roomsContent{ padding-bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)) !important; }
+body.has-ad .uni-scroll{ padding-bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)) !important; }
 /* 탭바를 배너 바로 위에 딱 붙임 (배너 실제 높이만큼만 올림 → 사이 여백 없음) */
-body.has-ad .cal-tabbar{ bottom:calc(var(--ad-h) + env(safe-area-inset-bottom)) !important; }
+body.has-ad .cal-tabbar{ bottom:calc(var(--ad-h) + 10px + env(safe-area-inset-bottom)) !important; }
 /* FAB(+버튼)·오늘버튼·토스트는 탭바 위로 (배너+탭바 높이, 여유 확보) */
-body.has-ad .cal-fab{ bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)) !important; }
-body.has-ad .cal-today-btn{ bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)) !important; }
-body.has-ad .toast{ bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)) !important; }
+body.has-ad .cal-fab{ bottom:calc(var(--ad-h) + 84px + env(safe-area-inset-bottom)) !important; }
+body.has-ad .cal-today-btn{ bottom:calc(var(--ad-h) + 84px + env(safe-area-inset-bottom)) !important; }
+body.has-ad .toast{ bottom:calc(var(--ad-h) + 84px + env(safe-area-inset-bottom)) !important; }
 .cal-tab{
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   border:none;background:transparent;cursor:pointer;color:var(--mute);font-family:inherit;
@@ -6138,7 +6138,7 @@ async function showAdBannerIfNeeded() {
         adId,
         adSize,
         position: 'BOTTOM_CENTER',
-        margin: 0, // 화면 최하단에 붙임 — 탭바는 --ad-h(배너 실제 높이)만큼만 올라가 딱 붙음 (여백 없음)
+        margin: 0, // 화면 최하단에 붙임 — 탭바는 --ad-h + 10px 위 (오클릭 방지 여백, AdMob 정책)
         isTesting: false, // 프로덕션 모드 (실광고)
       });
     } finally {
