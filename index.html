@@ -417,12 +417,12 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .has-seal{position:relative;overflow:hidden;color:#f3e6cf}
 .has-seal svg{position:relative;z-index:1}
 .seal-ini{font-family:var(--ff-serif);font-weight:700;color:#f3e6cf;position:relative;z-index:1;line-height:1}
-.seal-terra{background:radial-gradient(circle at 32% 26%,#c06a52,#9c4a35 72%)!important}
-.seal-rose{background:radial-gradient(circle at 32% 26%,#cd8090,#a85668 72%)!important}
-.seal-gold{background:radial-gradient(circle at 32% 26%,#cfa259,#a97e33 72%)!important}
-.seal-sage{background:radial-gradient(circle at 32% 26%,#849b73,#5f7452 72%)!important}
-.seal-navy{background:radial-gradient(circle at 32% 26%,#62789a,#3f5570 72%)!important}
-.seal-plum{background:radial-gradient(circle at 32% 26%,#946f9c,#6d4f73 72%)!important}
+.seal-terra{background:radial-gradient(circle at 32% 26%,#d5816a,#b55c46 72%)!important}
+.seal-rose{background:radial-gradient(circle at 32% 26%,#dd94a3,#bf6c7e 72%)!important}
+.seal-gold{background:radial-gradient(circle at 32% 26%,#e0b46c,#c1954a 72%)!important}
+.seal-sage{background:radial-gradient(circle at 32% 26%,#9ab188,#75906a 72%)!important}
+.seal-navy{background:radial-gradient(circle at 32% 26%,#7c92b4,#566f8f 72%)!important}
+.seal-plum{background:radial-gradient(circle at 32% 26%,#ab86b3,#84648c 72%)!important}
 .r-card-seal.has-seal{border-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 2px 5px rgba(60,40,25,.20)}
 .r-card-seal.has-seal::before{border-color:rgba(243,230,207,.5);opacity:.7}
 .r-card-seal.has-seal .seal-ini{font-size:18px}
@@ -12634,18 +12634,18 @@ const SEAL_COLORS=[
 /* 오리지널 창작 마크 — 이모지 모사 아님, 왁스씰 새김체 추상 문장 */
 const SEAL_SYMS={
   taegeuk:'<circle cx="12" cy="12" r="9" fill="none" stroke-width="1.8"/><path stroke="none" d="M3 12A9 9 0 0 1 21 12 4.5 4.5 0 0 1 12 12 4.5 4.5 0 0 0 3 12Z"/>',
-  plum:'<circle cx="12" cy="6.6" r="2.6"/><circle cx="17.1" cy="10.3" r="2.6"/><circle cx="15.2" cy="16.3" r="2.6"/><circle cx="8.8" cy="16.3" r="2.6"/><circle cx="6.9" cy="10.3" r="2.6"/><circle cx="12" cy="11.6" r="2"/><circle cx="12" cy="11.6" r="1" fill="rgba(0,0,0,.30)" stroke="none"/>',
-  lotus:'<path d="M12 4.5C10.6 8 10.6 11.4 12 14.6 13.4 11.4 13.4 8 12 4.5Z"/><path d="M8 7.5C8.4 11 9.6 13.4 12 15 10.8 11.6 9.8 9.2 8 7.5Z"/><path d="M16 7.5C15.6 11 14.4 13.4 12 15 13.2 11.6 14.2 9.2 16 7.5Z"/><path d="M4.5 11C5.6 14 8 15.8 12 15.6 9.6 13.4 7.2 11.8 4.5 11Z"/><path d="M19.5 11C18.4 14 16 15.8 12 15.6 14.4 13.4 16.8 11.8 19.5 11Z"/><path d="M8 15.5c1.2 2 2.4 3 4 3.2 1.6-.2 2.8-1.2 4-3.2-1.4-.9-2.8-1.3-4-1.3s-2.6.4-4 1.3Z"/>',
-  chrys:'<circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(0 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(40 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(80 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(120 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(160 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(200 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(240 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(280 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(320 12 12)"/>',
-  leaf:'<path d="M12 21C6.5 16.5 6.5 8.5 12 3.2 17.5 8.5 17.5 16.5 12 21Z"/><path d="M12 5.5v13.5" stroke="rgba(0,0,0,.28)" stroke-width="1.2" fill="none"/>',
-  butterfly:'<path d="M12 10C10.6 6.4 7.2 4.6 4.8 5.8 2.8 6.8 2.8 9.6 4.6 11.2 6.2 12.6 9.4 12.4 12 11Z"/><path d="M12 10C13.4 6.4 16.8 4.6 19.2 5.8 21.2 6.8 21.2 9.6 19.4 11.2 17.8 12.6 14.6 12.4 12 11Z"/><path d="M12 11C10.8 14.2 8.4 15.8 6.4 15 4.8 14.4 4.8 12.4 6.2 11.4 7.6 10.4 10 10.8 12 12Z"/><path d="M12 11C13.2 14.2 15.6 15.8 17.6 15 19.2 14.4 19.2 12.4 17.8 11.4 16.4 10.4 14 10.8 12 12Z"/><rect x="11.4" y="7.5" width="1.2" height="9" rx=".6"/><path d="M11.7 7.6C11 6.2 10.1 5.4 9.2 5M12.3 7.6C13 6.2 13.9 5.4 14.8 5" fill="none" stroke-width="1.2"/>',
-  fish:'<path d="M3.6 12C6.6 7 13.6 7.6 16.8 11l3.4-2.6-1 3.6 1 3.6L16.8 13C13.6 16.4 6.6 17 3.6 12Z"/><circle cx="7.2" cy="11" r="1" fill="rgba(0,0,0,.34)" stroke="none"/>',
-  gourd:'<circle cx="12" cy="15.2" r="4.8"/><circle cx="12" cy="8.4" r="3"/><path d="M12 3.4c-1 .5-1 2 0 2.6 1-.6 1-2.1 0-2.6Z"/><rect x="10.6" y="2.6" width="2.8" height="1.8" rx=".8"/><path d="M9.4 11.1h5.2" stroke="rgba(0,0,0,.26)" stroke-width="1.2" fill="none"/>',
+  plum:'<circle cx="12" cy="6.6" r="2.6"/><circle cx="17.1" cy="10.3" r="2.6"/><circle cx="15.2" cy="16.3" r="2.6"/><circle cx="8.8" cy="16.3" r="2.6"/><circle cx="6.9" cy="10.3" r="2.6"/><circle cx="12" cy="11.6" r="2"/><circle cx="12" cy="11.6" r="1" fill="rgba(0,0,0,.30)" stroke="none"/><path d="M12 9.6V7.6M13.9 11.1l2-.5M13.1 13.3l1.2 1.6M10.9 13.3l-1.2 1.6M10.1 11.1l-2-.5" stroke="rgba(0,0,0,.26)" stroke-width="1" fill="none"/>',
+  lotus:'<path d="M12 4.5C10.6 8 10.6 11.4 12 14.6 13.4 11.4 13.4 8 12 4.5Z"/><path d="M8 7.5C8.4 11 9.6 13.4 12 15 10.8 11.6 9.8 9.2 8 7.5Z"/><path d="M16 7.5C15.6 11 14.4 13.4 12 15 13.2 11.6 14.2 9.2 16 7.5Z"/><path d="M4.5 11C5.6 14 8 15.8 12 15.6 9.6 13.4 7.2 11.8 4.5 11Z"/><path d="M19.5 11C18.4 14 16 15.8 12 15.6 14.4 13.4 16.8 11.8 19.5 11Z"/><path d="M8 15.5c1.2 2 2.4 3 4 3.2 1.6-.2 2.8-1.2 4-3.2-1.4-.9-2.8-1.3-4-1.3s-2.6.4-4 1.3Z"/><path fill="none" stroke-width="1.1" d="M7.6 21c1.5.9 2.9.9 4.4 0 1.5.9 2.9.9 4.4 0"/>',
+  chrys:'<circle cx="12" cy="12" r="2"/><circle cx="12" cy="12" r="1" fill="rgba(0,0,0,.30)" stroke="none"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(0 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(40 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(80 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(120 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(160 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(200 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(240 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(280 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(320 12 12)"/>',
+  leaf:'<path d="M12 21C6.5 16.5 6.5 8.5 12 3.2 17.5 8.5 17.5 16.5 12 21Z"/><path d="M12 5.5v13.5" stroke="rgba(0,0,0,.28)" stroke-width="1.2" fill="none"/><path d="M12 9.2C10.9 9.9 10.1 10.8 9.5 12M12 9.2C13.1 9.9 13.9 10.8 14.5 12M12 12.8C11 13.5 10.2 14.4 9.7 15.5M12 12.8C13 13.5 13.8 14.4 14.3 15.5" stroke="rgba(0,0,0,.26)" stroke-width="1" fill="none"/>',
+  butterfly:'<path d="M12 10C10.6 6.4 7.2 4.6 4.8 5.8 2.8 6.8 2.8 9.6 4.6 11.2 6.2 12.6 9.4 12.4 12 11Z"/><path d="M12 10C13.4 6.4 16.8 4.6 19.2 5.8 21.2 6.8 21.2 9.6 19.4 11.2 17.8 12.6 14.6 12.4 12 11Z"/><path d="M12 11C10.8 14.2 8.4 15.8 6.4 15 4.8 14.4 4.8 12.4 6.2 11.4 7.6 10.4 10 10.8 12 12Z"/><path d="M12 11C13.2 14.2 15.6 15.8 17.6 15 19.2 14.4 19.2 12.4 17.8 11.4 16.4 10.4 14 10.8 12 12Z"/><rect x="11.4" y="7.5" width="1.2" height="9" rx=".6"/><path d="M11.7 7.6C11 6.2 10.1 5.4 9.2 5M12.3 7.6C13 6.2 13.9 5.4 14.8 5" fill="none" stroke-width="1.2"/><path d="M6.6 8.1c1.1.6 2.3.8 3.5.6M17.4 8.1c-1.1.6-2.3.8-3.5.6" stroke="rgba(0,0,0,.24)" stroke-width="1" fill="none"/><circle cx="7.5" cy="13.1" r=".7" fill="rgba(0,0,0,.24)" stroke="none"/><circle cx="16.5" cy="13.1" r=".7" fill="rgba(0,0,0,.24)" stroke="none"/>',
+  fish:'<path d="M3.6 12C6.6 7 13.6 7.6 16.8 11l3.4-2.6-1 3.6 1 3.6L16.8 13C13.6 16.4 6.6 17 3.6 12Z"/><circle cx="7.2" cy="11" r="1" fill="rgba(0,0,0,.34)" stroke="none"/><path d="M8.9 9.3c1 1.7 1 3.7 0 5.3M11.6 9.9c.8 1.3.8 2.9 0 4.2" stroke="rgba(0,0,0,.24)" stroke-width="1" fill="none"/>',
+  gourd:'<circle cx="12" cy="15.2" r="4.8"/><circle cx="12" cy="8.4" r="3"/><path d="M12 3.4c-1 .5-1 2 0 2.6 1-.6 1-2.1 0-2.6Z"/><rect x="10.6" y="2.6" width="2.8" height="1.8" rx=".8"/><path d="M9.4 11.1h5.2" stroke="rgba(0,0,0,.26)" stroke-width="1.2" fill="none"/><path d="M12 13v4.6" stroke="rgba(0,0,0,.22)" stroke-width="1" fill="none"/>',
   fan:'<path d="M12 20 3.6 9.2A10.5 10.5 0 0 1 20.4 9.2Z"/><path d="M12 20 12 8.2M12 20 6.6 10M12 20 17.4 10" stroke="rgba(0,0,0,.24)" stroke-width="1.1" fill="none"/><circle cx="12" cy="19.4" r="1.5"/>',
-  cloud:'<path d="M6 17c-2.2 0-3.8-1.6-3.8-3.6s1.7-3.5 3.8-3.1c.1-2.4 2.1-4 4.4-3.6.4-2.2 2.5-3.4 4.6-3 2 .4 3.3 2.3 3.1 4.4 2.2-.4 4.3 1.3 4.3 3.5s-1.9 4-4.1 3.8Z"/>',
-  mountain:'<path d="M2 18.5 8 7l4 6.2L15 8l7 10.5Z"/><circle cx="7.4" cy="5.6" r="1.7"/>',
-  moon:'<path d="M14.4 3.6a9 9 0 1 0 0 16.8A7 7 0 0 1 14.4 3.6Z"/>',
-  pine:'<path d="M12 3 8 8.5h2.2L7 13h2.4l-3 4.4h4.4V21h2.4v-3.6H19l-3-4.4h2.4L15 8.5H17Z"/>',
+  cloud:'<path d="M6 17c-2.2 0-3.8-1.6-3.8-3.6s1.7-3.5 3.8-3.1c.1-2.4 2.1-4 4.4-3.6.4-2.2 2.5-3.4 4.6-3 2 .4 3.3 2.3 3.1 4.4 2.2-.4 4.3 1.3 4.3 3.5s-1.9 4-4.1 3.8Z"/><path d="M8.2 13.4c1.3-1.4 3.4-1.2 4.4.4M13.7 9.6c.9-.9 2.3-.8 3 .2" stroke="rgba(0,0,0,.24)" stroke-width="1" fill="none"/>',
+  mountain:'<path d="M2 18.5 8 7l4 6.2L15 8l7 10.5Z"/><circle cx="7.4" cy="5.6" r="1.7"/><path d="M7.6 11 6.2 14.8M16 11.5l-1.4 4.3" stroke="rgba(0,0,0,.24)" stroke-width="1" fill="none"/>',
+  moon:'<path d="M14.4 3.6a9 9 0 1 0 0 16.8A7 7 0 0 1 14.4 3.6Z"/><circle cx="4.3" cy="10.8" r=".75" fill="rgba(0,0,0,.22)" stroke="none"/><circle cx="5" cy="14.6" r=".55" fill="rgba(0,0,0,.22)" stroke="none"/>',
+  pine:'<path d="M12 3 8 8.5h2.2L7 13h2.4l-3 4.4h4.4V21h2.4v-3.6H19l-3-4.4h2.4L15 8.5H17Z"/><path d="M10 8.5h4M8.9 13h6.2" stroke="rgba(0,0,0,.24)" stroke-width="1" fill="none"/>',
   kite:'<path fill="none" d="M5 4.5h14v15H5Z" stroke-width="1.9"/><circle cx="12" cy="12" r="2.9" fill="none" stroke-width="1.9"/><path fill="none" d="M12 4.5V19.5M5 12H19M5.4 5 18.6 19M18.6 5 5.4 19" stroke-width="1.1"/>'
 };
 const SEAL_SYM_ORDER=['taegeuk','plum','lotus','chrys','leaf','butterfly','fish','gourd','fan','cloud','mountain','moon','pine','kite'];
@@ -12668,7 +12668,7 @@ function openRoomMascotForRoom(roomId){
   const room=(_myRooms||[]).find(function(r){return r.id===roomId})
     || ((_currentRoom&&_currentRoom.id===roomId)?_currentRoom:null);
   if(!room)return;
-  if(!isEffectivePremium()){ showUpgradeModal({feature:'방 프로필로 방을 꾸며보세요.'}); return; }
+  // 무료 유저도 편집(색·문양 미리보기)은 자유 — 프리미엄 게이트는 저장 시점(saveRoomMascot)에
   _mascotRoomId=room.id;
   _mascotRoomName=room.name||'';
   const p=_parseSeal(room.mascot);
@@ -12701,8 +12701,14 @@ function renderRoomMascotPicker(){
 }
 function pickSealColor(c){ _sealColor=c; renderRoomMascotPicker(); }
 function pickSealSym(s){ _sealSym=s; renderRoomMascotPicker(); }
-async function saveRoomMascot(){ await _saveMascotValue(_sealColor+':'+_sealSym); }
-async function clearRoomMascot(){ await _saveMascotValue(null); }
+async function saveRoomMascot(){
+  if(!isEffectivePremium()){ showUpgradeModal({feature:'방 프로필 저장은 프리미엄에서 할 수 있어요.'}); return; }
+  await _saveMascotValue(_sealColor+':'+_sealSym);
+}
+async function clearRoomMascot(){
+  if(!isEffectivePremium()){ showUpgradeModal({feature:'방 프로필 저장은 프리미엄에서 할 수 있어요.'}); return; }
+  await _saveMascotValue(null);
+}
 async function _saveMascotValue(val){
   if(!_mascotRoomId)return;
   try{
