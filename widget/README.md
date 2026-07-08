@@ -51,6 +51,11 @@ npx cap sync ios                        # 플러그인 새로 깔았으면 한 �
 - [ ] 일정 추가 → 위젯 반영 (즉시 or 자정)
 - [ ] 로그아웃/방 없음 상태에서 위젯이 "오늘 일정이 없어요"로 안전하게 표시되는지
 
+## ⚠️ 빌드 저장소 주의
+Codemagic이 클론하는 **빌드 저장소는 이 repo가 아님** (워크플로가 `package.json`·`assets/`·`google-services.json`을 참조하는데 이 repo엔 없음).
+도입 시 이 `widget/` 폴더 전체를 **빌드 저장소 루트로 복사**해야 주입 스텝이 동작한다 (스텝은 `widget/ios/add_widget_target.rb` 존재 여부로 자동 활성/스킵).
+완성된 워크플로는 `widget/codemagic-widget.yaml` — 기존 yaml에 (1) preferences 보장 (2) 위젯 주입(엔타이틀먼트 재작성 스텝 뒤) (3) `uricalendar_widget_profile` 서명 참조가 추가된 버전.
+
 ## 설계 메모
 - **왜 CI 주입 스크립트인가**: Codemagic이 매 빌드 네이티브 프로젝트를 재생성하므로 Xcode에서 수동으로 타깃을 추가해도 다음 빌드에 사라짐. Ruby(xcodeproj)로 매 빌드 재주입하는 것이 유일하게 지속 가능한 방식.
 - 위젯 딥링크(탭하면 해당 날짜로)는 2차 — `widgetURL`에 `com.lsung.uricalendar://open?date=` 붙이면 기존 딥링크 핸들러(index.html ~7286)에 케이스 하나 추가로 가능.
