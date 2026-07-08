@@ -414,28 +414,35 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .r-card-pencil:active{transform:scale(.9)}
 .room-edit .r-card-pencil{display:flex}
 /* 방 컬러 씰 (프리미엄) — 색 + 심볼(이니셜/엠블럼) */
-.has-seal{position:relative;overflow:hidden;color:#f3e6cf}
+.has-seal{position:relative;overflow:hidden;color:var(--seal-ink,#f3e6cf)}
 .has-seal svg{position:relative;z-index:1}
-.seal-ini{font-family:var(--ff-serif);font-weight:700;color:#f3e6cf;position:relative;z-index:1;line-height:1}
+.seal-ini{font-family:var(--ff-serif);font-weight:700;color:inherit;position:relative;z-index:1;line-height:1}
 .seal-terra{background:radial-gradient(circle at 32% 26%,#d5816a,#b55c46 72%)!important}
 .seal-rose{background:radial-gradient(circle at 32% 26%,#dd94a3,#bf6c7e 72%)!important}
 .seal-gold{background:radial-gradient(circle at 32% 26%,#e0b46c,#c1954a 72%)!important}
 .seal-sage{background:radial-gradient(circle at 32% 26%,#9ab188,#75906a 72%)!important}
 .seal-navy{background:radial-gradient(circle at 32% 26%,#7c92b4,#566f8f 72%)!important}
 .seal-plum{background:radial-gradient(circle at 32% 26%,#ab86b3,#84648c 72%)!important}
+/* 파스텔 6종 (밝은 배경 → 심볼·이니셜은 진한 먹색 --seal-ink로 자동 전환, 링도 어둡게) */
+.seal-butter{--seal-ink:#7a5a2e;--seal-ring:rgba(90,60,25,.32);background:radial-gradient(circle at 32% 26%,#f5e3a6,#ecca77 72%)!important}
+.seal-mint{--seal-ink:#3d6b53;--seal-ring:rgba(30,70,50,.30);background:radial-gradient(circle at 32% 26%,#c3e8d3,#9dd3b6 72%)!important}
+.seal-sky{--seal-ink:#3a5f7d;--seal-ring:rgba(30,60,85,.30);background:radial-gradient(circle at 32% 26%,#bcdaf0,#93bdda 72%)!important}
+.seal-lavender{--seal-ink:#5f4a7c;--seal-ring:rgba(70,50,100,.30);background:radial-gradient(circle at 32% 26%,#dbcbee,#bda6db 72%)!important}
+.seal-peach{--seal-ink:#9a5637;--seal-ring:rgba(120,60,35,.30);background:radial-gradient(circle at 32% 26%,#f8d4bb,#f0af8d 72%)!important}
+.seal-blush{--seal-ink:#96475c;--seal-ring:rgba(120,45,70,.30);background:radial-gradient(circle at 32% 26%,#f6cdd8,#e8a6b7 72%)!important}
 .r-card-seal.has-seal{border-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 2px 5px rgba(60,40,25,.20)}
-.r-card-seal.has-seal::before{border-color:rgba(243,230,207,.5);opacity:.7}
+.r-card-seal.has-seal::before{border-color:var(--seal-ring,rgba(243,230,207,.5));opacity:.7}
 .r-card-seal.has-seal .seal-ini{font-size:18px}
 .r-card-seal.has-seal svg{width:24px;height:24px}
 /* 방 프로필 선택 시트 (컬러 씰) */
 .rm-bigprev{width:96px;height:96px;border-radius:50%;margin:16px auto 8px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:radial-gradient(circle at 32% 26%,#c06a52,#9c4a35 72%);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 12px rgba(60,40,25,.28)}
-.rm-bigprev::after{content:"";position:absolute;inset:7px;border:1px solid rgba(243,230,207,.5);border-radius:50%;pointer-events:none}
+.rm-bigprev::after{content:"";position:absolute;inset:7px;border:1px solid var(--seal-ring,rgba(243,230,207,.5));border-radius:50%;pointer-events:none}
 .rm-bigprev .seal-ini{font-size:42px}
 .rm-bigprev svg{width:48px;height:48px}
 .rm-bpname{text-align:center;font-size:13px;font-weight:700;color:var(--sub);margin-bottom:20px}
 .rm-field-label{font-size:11.5px;font-weight:800;color:var(--sub);letter-spacing:.03em;margin:0 2px 11px}
-.rm-swatches{display:flex;gap:12px;justify-content:space-between;margin-bottom:20px}
-.rm-sw{width:44px;height:44px;flex:1;max-width:48px;border-radius:50%;cursor:pointer;position:relative;border:none;padding:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 1px 3px rgba(60,40,25,.22)}
+.rm-swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px}
+.rm-sw{width:100%;aspect-ratio:1;border-radius:50%;cursor:pointer;position:relative;border:none;padding:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 1px 3px rgba(60,40,25,.22)}
 .rm-sw:active{transform:scale(.94)}
 .rm-sw.on::after{content:"";position:absolute;inset:-5px;border:2px solid var(--accent);border-radius:50%}
 .rm-symrow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
@@ -12733,7 +12740,9 @@ async function removeMyReaction(){
 /* ── 방 컬러 씰 (프리미엄) — 색 + 심볼(이니셜/엠블럼) ── */
 const SEAL_COLORS=[
   {key:'terra',name:'테라코타'},{key:'rose',name:'로즈'},{key:'gold',name:'골드'},
-  {key:'sage',name:'세이지'},{key:'navy',name:'네이비'},{key:'plum',name:'플럼'}
+  {key:'sage',name:'세이지'},{key:'navy',name:'네이비'},{key:'plum',name:'플럼'},
+  {key:'butter',name:'버터'},{key:'mint',name:'민트'},{key:'sky',name:'하늘'},
+  {key:'lavender',name:'라벤더'},{key:'peach',name:'피치'},{key:'blush',name:'블러쉬'}
 ];
 /* 오리지널 창작 마크 — 이모지 모사 아님, 왁스씰 새김체 추상 문장 */
 const SEAL_SYMS={
