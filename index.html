@@ -438,12 +438,23 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .rm-sw{width:44px;height:44px;flex:1;max-width:48px;border-radius:50%;cursor:pointer;position:relative;border:none;padding:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 1px 3px rgba(60,40,25,.22)}
 .rm-sw:active{transform:scale(.94)}
 .rm-sw.on::after{content:"";position:absolute;inset:-5px;border:2px solid var(--accent);border-radius:50%}
-.rm-symrow{display:flex;gap:10px;flex-wrap:wrap}
-.rm-sym{width:52px;height:52px;border-radius:14px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--accent);padding:0}
+.rm-symrow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.rm-sym{width:100%;aspect-ratio:1;border-radius:14px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--accent);padding:0}
 .rm-sym:active{transform:scale(.94)}
 .rm-sym .rm-sym-ini{font-family:var(--ff-serif);font-weight:700;font-size:22px;color:var(--text)}
 .rm-sym svg{width:24px;height:24px}
 .rm-sym.on{border-color:var(--accent);background:rgba(139,58,42,.09);box-shadow:0 0 0 2px rgba(139,58,42,.13)}
+/* 스토어 방 프로필 쇼케이스 카드 */
+.store-seal-showcase{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;cursor:pointer;margin-bottom:6px;transition:transform .12s ease}
+.store-seal-showcase:active{transform:scale(.98)}
+.ssc-seals{display:flex;flex:none}
+.ssc-seal{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(60,40,25,.25),inset 0 1px 0 rgba(255,255,255,.2);border:2px solid var(--card)}
+.ssc-seal+.ssc-seal{margin-left:-11px}
+.ssc-seal svg{width:19px;height:19px}
+.ssc-info{flex:1;min-width:0}
+.ssc-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px}
+.ssc-desc{font-size:11.5px;color:var(--sub);line-height:1.4}
+.ssc-arrow{font-size:20px;font-weight:300;color:var(--mute);flex:none}
 .rs-mascot-thumb{width:34px;height:34px;border-radius:50%;overflow:hidden;display:none;align-items:center;justify-content:center;flex:none;margin-right:6px;position:relative}
 .rs-mascot-thumb.has-seal .seal-ini{font-size:15px}
 .rs-mascot-thumb.has-seal svg{width:19px;height:19px}
@@ -3560,6 +3571,7 @@ body.has-ad .toast{ bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)
         <div class="prem-feature"><span class="pmf-ic">🏷️</span><div class="pmf-body"><div class="pmf-name">색상 라벨 이름</div><div class="pmf-desc">색마다 <b>이름 붙이기</b></div></div></div>
         <div class="prem-feature"><span class="pmf-ic">🔲</span><div class="pmf-body"><div class="pmf-name">테두리 일정</div><div class="pmf-desc">색 채움 없이 <b>외곽선 스타일</b></div></div></div>
         <div class="prem-feature"><span class="pmf-ic">🎨</span><div class="pmf-body"><div class="pmf-name">스토어 팩</div><div class="pmf-desc"><b>모든 컬러·캐릭터 팩</b> 사용</div></div></div>
+        <div class="prem-feature"><span class="pmf-ic">🪷</span><div class="pmf-body"><div class="pmf-name">방 프로필</div><div class="pmf-desc">전통 문양 씰로 <b>내 방 꾸미기</b></div></div></div>
         <div class="prem-feature"><span class="pmf-ic">🚫</span><div class="pmf-body"><div class="pmf-name">광고 제거</div><div class="pmf-desc">배너 광고 없이 <b>깔끔하게</b></div></div></div>
       </div>
     </div>
@@ -4136,7 +4148,7 @@ body.has-ad .toast{ bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)
 <div class="mo-card" id="roomMascotCard">
   <div class="mo-handle"></div>
   <div class="mo-title">방 프로필</div>
-  <div class="mo-sub">이 방 멤버 모두에게 똑같이 보여요</div>
+  <div class="mo-sub">내 화면에만 적용돼요 · 방마다 나만의 씰로 꾸며보세요</div>
   <div class="rm-bigprev" id="rmBigPrev"></div>
   <div class="rm-bpname" id="rmBpName"></div>
   <div id="rmGroups"></div>
@@ -6253,9 +6265,10 @@ async function loadRooms(){
   try{
     // 내가 속한 방들의 room_id + 내 순서(sort_order) 가져오기
     const {data:myMems,error:e1}=await supa
-      .from('members').select('room_id,sort_order')
+      .from('members').select('room_id,sort_order,seal')
       .eq('user_id',_currentUser.id);
     if(e1)throw e1;
+    _mySealByRoom={}; (myMems||[]).forEach(function(m){ _mySealByRoom[m.room_id]=m.seal||null; });
 
     if(!myMems||myMems.length===0){
       renderEmpty();
@@ -6446,7 +6459,7 @@ function renderRooms(rooms,countMap){
     const safeName=escapeHtml(r.name||'(이름 없음)');
     const safeCode=escapeHtml(r.code||'------');
     const firstChar=escapeHtml((r.name||'·').trim().charAt(0));
-    const sealHtml=_sealInner(r.mascot, r.name)
+    const sealHtml=_sealInner(_mySealByRoom[r.id], r.name)
       || `<div class="r-card-seal"><span class="r-card-seal-letter">${firstChar}</span></div>`;
     html+=`
       <div class="r-card" data-roomid="${r.id}" onclick="enterRoom('${r.id}')">
@@ -12633,7 +12646,7 @@ const SEAL_COLORS=[
 ];
 /* 오리지널 창작 마크 — 이모지 모사 아님, 왁스씰 새김체 추상 문장 */
 const SEAL_SYMS={
-  taegeuk:'<circle cx="12" cy="12" r="9" fill="none" stroke-width="1.8"/><path stroke="none" d="M3 12A9 9 0 0 1 21 12 4.5 4.5 0 0 1 12 12 4.5 4.5 0 0 0 3 12Z"/>',
+  taegeuk:'<circle cx="12" cy="12" r="9" fill="none" stroke-width="1.8"/><path stroke="none" d="M3 12A9 9 0 0 1 21 12 4.5 4.5 0 0 0 12 12 4.5 4.5 0 0 1 3 12Z"/>',
   plum:'<circle cx="12" cy="6.6" r="2.6"/><circle cx="17.1" cy="10.3" r="2.6"/><circle cx="15.2" cy="16.3" r="2.6"/><circle cx="8.8" cy="16.3" r="2.6"/><circle cx="6.9" cy="10.3" r="2.6"/><circle cx="12" cy="11.6" r="2"/><circle cx="12" cy="11.6" r="1" fill="rgba(0,0,0,.30)" stroke="none"/><path d="M12 9.6V7.6M13.9 11.1l2-.5M13.1 13.3l1.2 1.6M10.9 13.3l-1.2 1.6M10.1 11.1l-2-.5" stroke="rgba(0,0,0,.26)" stroke-width="1" fill="none"/>',
   lotus:'<path d="M12 4.5C10.6 8 10.6 11.4 12 14.6 13.4 11.4 13.4 8 12 4.5Z"/><path d="M8 7.5C8.4 11 9.6 13.4 12 15 10.8 11.6 9.8 9.2 8 7.5Z"/><path d="M16 7.5C15.6 11 14.4 13.4 12 15 13.2 11.6 14.2 9.2 16 7.5Z"/><path d="M4.5 11C5.6 14 8 15.8 12 15.6 9.6 13.4 7.2 11.8 4.5 11Z"/><path d="M19.5 11C18.4 14 16 15.8 12 15.6 14.4 13.4 16.8 11.8 19.5 11Z"/><path d="M8 15.5c1.2 2 2.4 3 4 3.2 1.6-.2 2.8-1.2 4-3.2-1.4-.9-2.8-1.3-4-1.3s-2.6.4-4 1.3Z"/><path fill="none" stroke-width="1.1" d="M7.6 21c1.5.9 2.9.9 4.4 0 1.5.9 2.9.9 4.4 0"/>',
   chrys:'<circle cx="12" cy="12" r="2"/><circle cx="12" cy="12" r="1" fill="rgba(0,0,0,.30)" stroke="none"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(0 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(40 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(80 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(120 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(160 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(200 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(240 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(280 12 12)"/><ellipse cx="12" cy="6.2" rx="1.7" ry="3.2" transform="rotate(320 12 12)"/>',
@@ -12663,7 +12676,7 @@ function _sealInner(mascotVal, roomName){
   return '<div class="r-card-seal has-seal seal-'+p.color+'">'+_sealGlyph(p.sym, roomName)+'</div>';
 }
 
-let _mascotRoomId=null, _mascotRoomName='', _sealColor='terra', _sealSym='ini', _sealHad=false;
+let _mascotRoomId=null, _mascotRoomName='', _sealColor='terra', _sealSym='ini', _sealHad=false, _mySealByRoom={};
 function openRoomMascotForRoom(roomId){
   const room=(_myRooms||[]).find(function(r){return r.id===roomId})
     || ((_currentRoom&&_currentRoom.id===roomId)?_currentRoom:null);
@@ -12671,7 +12684,7 @@ function openRoomMascotForRoom(roomId){
   // 무료 유저도 편집(색·문양 미리보기)은 자유 — 프리미엄 게이트는 저장 시점(saveRoomMascot)에
   _mascotRoomId=room.id;
   _mascotRoomName=room.name||'';
-  const p=_parseSeal(room.mascot);
+  const p=_parseSeal(_mySealByRoom[room.id]);   // 개인별 씰 (members.seal)
   _sealHad=!!p;
   _sealColor = p?p.color:'terra';
   _sealSym   = p?p.sym:'ini';
@@ -12710,13 +12723,13 @@ async function clearRoomMascot(){
   await _saveMascotValue(null);
 }
 async function _saveMascotValue(val){
-  if(!_mascotRoomId)return;
+  if(!_mascotRoomId||!_currentUser)return;
   try{
-    const {error}=await supa.rpc('set_room_mascot',{p_room_id:_mascotRoomId,p_mascot:val});
+    // 개인별 설정 — 내 members 행의 seal만 갱신 (RLS members_update_self)
+    const {error}=await supa.from('members').update({seal:val})
+      .eq('room_id',_mascotRoomId).eq('user_id',_currentUser.id);
     if(error)throw error;
-    if(_currentRoom&&_currentRoom.id===_mascotRoomId)_currentRoom.mascot=val;
-    const rr=(_myRooms||[]).find(function(r){return r.id===_mascotRoomId});
-    if(rr)rr.mascot=val;
+    _mySealByRoom[_mascotRoomId]=val;
     try{ if(_myRooms) renderRooms(_myRooms,_roomCountMap); }catch(_){}
     try{ _syncRoomSetMascot(); }catch(_){}
     toast(val?'방 프로필이 바뀌었어요':'기본으로 되돌렸어요');
@@ -12725,7 +12738,7 @@ async function _saveMascotValue(val){
 }
 function _syncRoomSetMascot(){
   const sub=document.getElementById('roomSetMascotSub'), thumb=document.getElementById('roomSetMascotThumb');
-  const p=_parseSeal(_currentRoom&&_currentRoom.mascot);
+  const p=_parseSeal(_currentRoom&&_mySealByRoom[_currentRoom.id]);
   if(thumb){
     if(p){ thumb.className='rs-mascot-thumb has-seal seal-'+p.color; thumb.innerHTML=_sealGlyph(p.sym, _currentRoom.name); thumb.style.display='flex'; }
     else { thumb.className='rs-mascot-thumb'; thumb.innerHTML=''; thumb.style.display='none'; }
@@ -16038,8 +16051,28 @@ function renderStoreThemes(){
     `;
   });
   html+=`</div>`;
-  
+
+  // 방 프로필 쇼케이스 — 스토어에서 발견 → 피커로 바로 이동 (해제/적용은 피커에서)
+  html+=`<div class="store-section-title" style="margin-top:22px">방 프로필 <small>ROOM SEAL</small></div>`;
+  html+=`<div class="store-seal-showcase" onclick="openSealShowcase()">
+    <div class="ssc-seals">
+      <span class="ssc-seal has-seal seal-terra">${_sealSvg('taegeuk')}</span>
+      <span class="ssc-seal has-seal seal-navy">${_sealSvg('moon')}</span>
+      <span class="ssc-seal has-seal seal-sage">${_sealSvg('pine')}</span>
+    </div>
+    <div class="ssc-info">
+      <div class="ssc-name">전통 문양 씰</div>
+      <div class="ssc-desc">색 6종 × 문양 14종 — 방마다 나만의 씰로</div>
+    </div>
+    <span class="ssc-arrow">›</span>
+  </div>`;
+
   body.innerHTML=html;
+}
+/* 스토어 쇼케이스 → 현재 방 프로필 피커 열기 */
+function openSealShowcase(){
+  closeStore();
+  setTimeout(function(){ try{ openRoomMascot(); }catch(_){} },180);
 }
 /* ── 컬러 팩 (곧 출시) ── */
 function renderStoreColors(){
