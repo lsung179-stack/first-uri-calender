@@ -420,18 +420,56 @@ async function renderDash(m){
     {l:'새 피드백',v:st.feedback_new,e:'피드백 탭에서 확인',alert:st.feedback_new>0},
   ];
   let gr=null; try{ const {data:gd}=await supa.rpc('admin_growth_stats'); gr=(gd&&gd.ok!==false)?gd:null; }catch(_){}
+  let co=null; try{ const {data:cd}=await supa.rpc('admin_ads_cohorts'); co=Array.isArray(cd)?cd:null; }catch(_){}
   const G=gr||{}; const pctOf=(a,b)=>b>0?Math.round(a/b*100):0;
   const gcards=[
     {l:'주간 활성 (WAU)', v:G.active_7d||0, e:`전체의 ${pctOf(G.active_7d,G.total_users)}% · 일정 ${(G.events_7d||0).toLocaleString()}건`},
     {l:'월간 활성 (MAU)', v:G.active_30d||0, e:`전체의 ${pctOf(G.active_30d,G.total_users)}%`},
     {l:'활성화율 (방 참여)', v:pctOf(G.in_room,G.total_users)+'%', e:`${G.in_room||0}/${G.total_users||0}명이 방 참여`},
     {l:'7일 리텐션', v:pctOf(G.ret_returned,G.ret_cohort)+'%', e:`기존 ${G.ret_cohort||0}명 중 ${G.ret_returned||0}명 재방문`},
-    {l:'구독 전환율', v:pctOf(G.active_subs,G.total_users)+'%', e:`유료 ${G.active_subs||0}명 · 이번주 +${G.new_subs_7d||0}`},
+    {l:'구독 전환율', v:pctOf(G.active_subs,G.total_users)+'%', e:`유료 ${G.active_subs||0}명 · 이번주 +${G.new_subs_7d||0} · 해지예약 ${G.cancel_pending||0}`},
     {l:'공유방 비율', v:pctOf(G.shared_rooms,G.total_rooms)+'%', e:`${G.shared_rooms||0}/${G.total_rooms||0}개 (2명+)`},
+    {l:'초대 입장 (7일)', v:G.invite_joins_7d||0, e:`최근 30일 ${G.invite_joins_30d||0}건 · 코드로 남의 방 입장`},
+    {l:'초대 동반가입률', v:pctOf(G.invite_conv_num,G.invite_conv_den)+'%', e:`30일 신규 ${G.invite_conv_den||0}명 중 ${G.invite_conv_num||0}명이 7일 내 합류`},
   ];
   const growthHtml = gr ? `
     <div class="page-sub" style="margin:20px 0 4px;font-weight:800;color:var(--accent);font-size:14px">📈 성장 · 리텐션 · 전환</div>
     <div class="stat-grid">${gcards.map(c=>`<div class="stat-card"><div class="sc-label">${c.l}</div><div class="sc-val">${c.v}</div><div class="sc-extra">${c.e}</div></div>`).join('')}</div>` : '';
+  const cohortHtml = (co&&co.length) ? `
+    <div class="page-sub" style="margin:20px 0 4px;font-weight:800;color:var(--accent);font-size:14px">🎯 주간 가입 코호트 (광고 효과 추적)</div>
+    <div class="chart-card" style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:560px">
+        <thead><tr style="color:var(--sub)">
+          <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)">가입 주</th>
+          <th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)">가입</th>
+          <th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)">7일 생존</th>
+          <th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)">초대 합류</th>
+          <th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)">체험</th>
+          <th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)">유료</th>
+          <th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)">해지예약</th>
+        </tr></thead>
+        <tbody>${co.map(c=>{
+          const d=new Date(c.week_start+'T00:00:00');
+          const wlbl=(d.getMonth()+1)+'/'+d.getDate()+'~';
+          const surv=(c.measurable>0)
+            ? Math.round(c.alive_d7/c.measurable*100)+'% <span style="color:var(--sub)">('+c.alive_d7+'/'+c.measurable+(c.measurable<c.signups?' 경과분':'')+')</span>'
+            : '<span style="color:var(--sub)">측정중</span>';
+          const td=v=>`<td style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)">${v}</td>`;
+          return `<tr>
+            <td style="padding:6px 8px;border-bottom:1px solid var(--line);font-weight:700">${wlbl}</td>
+            ${td(c.signups)}${td(surv)}
+            ${td(c.cojoin_d7+' <span style="color:var(--sub)">('+pctOf(c.cojoin_d7,c.signups)+'%)</span>')}
+            ${td(c.trials||0)}
+            ${td(c.paid? '<b style="color:var(--accent)">'+c.paid+'</b>' : 0)}
+            ${td(c.cancel_pending||0)}
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+      <div style="font-size:11px;color:var(--sub);margin-top:8px;line-height:1.6">
+        7일 생존 = 가입 7일 이후에도 활동(일정 등록·로그인) · '경과분' = 7일이 지난 인원만 분모 ·
+        초대 합류 = 가입 7일 내 타인 방 입장 · 체험/유료/해지예약 = 실결제(PRODUCTION) 기준, 유료 = 체험 후 결제 전환
+      </div>
+    </div>` : '';
   const daily=st.signups_daily||[];
   const maxc=Math.max(1,...daily.map(d=>d.cnt));
   m.innerHTML=`
@@ -445,6 +483,7 @@ async function renderDash(m){
       </div>`).join('')}
     </div>
 ${growthHtml}
+${cohortHtml}
     <div class="chart-card">
       <div class="chart-title">최근 14일 가입 추이</div>
       <div class="bars">
