@@ -6517,6 +6517,8 @@ function renderRooms(rooms,countMap){
   if(rooms.length<1) _roomEditMode=false;  // 방 0개면 편집모드 없음(1개는 마스코트 편집 위해 허용)
   c.classList.toggle('room-edit', _roomEditMode);
   try{ _setupRoomReorder(); }catch(e){}
+  // 로그인 → 방목록 도착 = 소프트 프리퍼미션 1차 시점 (내부에서 자격/스누즈/세션 가드)
+  if(rooms.length>=1 && !_pushAskShown){ setTimeout(function(){ try{ maybeAskPush('rooms'); }catch(_){} },1000); }
 }
 
 /* ── 방목록 순서 편집 ('순서 편집' 버튼 → 흔들림 → 드래그, members.sort_order에 저장) ── */
