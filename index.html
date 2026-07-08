@@ -12668,7 +12668,7 @@ function openRoomMascotForRoom(roomId){
   const room=(_myRooms||[]).find(function(r){return r.id===roomId})
     || ((_currentRoom&&_currentRoom.id===roomId)?_currentRoom:null);
   if(!room)return;
-  if(!isEffectivePremium()){ showUpgradeModal({feature:'방 프로필로 방을 꾸며보세요.'}); return; }
+  // 무료 유저도 편집(색·문양 미리보기)은 자유 — 프리미엄 게이트는 저장 시점(saveRoomMascot)에
   _mascotRoomId=room.id;
   _mascotRoomName=room.name||'';
   const p=_parseSeal(room.mascot);
@@ -12701,8 +12701,14 @@ function renderRoomMascotPicker(){
 }
 function pickSealColor(c){ _sealColor=c; renderRoomMascotPicker(); }
 function pickSealSym(s){ _sealSym=s; renderRoomMascotPicker(); }
-async function saveRoomMascot(){ await _saveMascotValue(_sealColor+':'+_sealSym); }
-async function clearRoomMascot(){ await _saveMascotValue(null); }
+async function saveRoomMascot(){
+  if(!isEffectivePremium()){ showUpgradeModal({feature:'방 프로필 저장은 프리미엄에서 할 수 있어요.'}); return; }
+  await _saveMascotValue(_sealColor+':'+_sealSym);
+}
+async function clearRoomMascot(){
+  if(!isEffectivePremium()){ showUpgradeModal({feature:'방 프로필 저장은 프리미엄에서 할 수 있어요.'}); return; }
+  await _saveMascotValue(null);
+}
 async function _saveMascotValue(val){
   if(!_mascotRoomId)return;
   try{
