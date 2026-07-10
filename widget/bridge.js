@@ -1,71 +1,154 @@
 /* ═══════════════════════════════════════════════════════════════════
-   우리 캘린더 — 위젯 데이터 브릿지 (index.html에 이식할 스니펫)
-   ⚠️ 아직 index.html에 병합하지 않음 — 위젯 도입 시점에 이식.
-   iOS 네이티브에서만 동작. App Group UserDefaults에 7일치 일정 JSON을 기록해
-   WidgetKit 익스텐션(widget/ios/UriCalendarWidget.swift)이 읽게 한다.
+   우리 캘린더 — 위젯 데이터 브릿지 v2 (index.html 이식용)
+   ⚠️ 아직 index.html에 병합 안 함 — 위젯 도입(빌드) 시점에 이식.
+   iOS/Android 네이티브에서만 동작. App Group / SharedPreferences에
+   "모든 방 · 멤버 · 한 달치 일정 · 할일"을 JSON으로 기록 → 위젯이 읽음.
 
-   전제(빌드 스크립트): npm i @capacitor/preferences
-   선택(즉시 갱신): npm i capacitor-widgetsbridge-plugin  — 없으면 자정 자동 갱신만.
+   설계:
+   - 위젯은 방을 바꿀 수 있어야 하므로(방 선택), 현재 방만이 아니라
+     내가 속한 '모든 방'의 데이터를 한 번에 내보낸다.
+   - 앱은 현재 방 일정만 메모리에 있으므로, 브릿지가 Supabase에서
+     전체 방의 [오늘-7 ~ 오늘+40] 창(월 그리드+2주+다가오는 커버)을 직접 조회.
+   - 색은 앱의 colorHex()로 hex 변환해 내보냄 → Swift/Kotlin은 hex만 쓰면 됨.
 
-   이식 시 TODO:
-   1. 날짜키 헬퍼: 아래 _wgDateKey를 index.html의 기존 날짜키 함수로 교체 가능(형식 YYYY-MM-DD 동일하면 그대로 둬도 됨)
-   2. 일정 조회: getDayEvents(key) 부분을 index.html의 실제 일별 일정 함수(반복 일정 확장 포함)로 연결
-      (renderMonthly가 쓰는 일별 캐시 함수 — 코드 16번 참고)
-   3. 색상: _wgColorHex의 색상키→hex 매핑을 앱의 색상 팔레트와 맞춤
-   4. 호출 지점: loadEvents 완료 후 / 일정 저장·수정·삭제 후 / enterRoom 후 → syncWidgetData()
+   내보내는 JSON 스키마(위젯이 읽는 계약):
+   {
+     updatedAt: 1720000000000,
+     currentRoomId: "r1",
+     rooms: [{
+       id, name, seal,                 // seal = 'color:sym' or null (방 아이콘)
+       members: [{userId, name, color}],   // color = hex
+       events:  [{date, title, time, color, userId}],  // color = hex, date=YYYY-MM-DD, time="HH:MM" or ""
+       todos:   [{id, date, title, time, color, done}]
+     }]
+   }
+
+   이식 시 필요한 전역(모두 index.html에 이미 있음):
+   isNativeApp, supa, _currentUser, _currentRoom, _myRooms, _mySealByRoom,
+   colorHex, _todayKeyStr, window.Capacitor.Plugins.Preferences
    ═══════════════════════════════════════════════════════════════════ */
 
-function _wgDateKey(d){
-  const p=n=>String(n).padStart(2,'0');
-  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
-}
+const WIDGET_GROUP = 'group.com.lsung.uricalendar';
+const WIDGET_KEY = 'widget.data';
+let _wgSyncTimer = null;
 
-/* 색상키 → hex (앱 팔레트 근사값 — 이식 시 실제 값으로) */
-function _wgColorHex(colorKey){
-  const MAP={ 'c-vintage':'#8b3a2a', 'c-navy':'#5d7291', 'c-sage':'#7e8b6f', 'c-gold':'#b3873e', 'c-rose':'#b06a77', 'c-plum':'#7d5b7f' };
-  return MAP[colorKey]||'#8b3a2a';
-}
-
-let _wgSyncTimer=null;
-/* 일정 변경 후 호출 — 500ms 디바운스로 몰아서 1회 기록 */
-function syncWidgetData(){
-  try{
-    if(typeof isNativeApp!=='function'||!isNativeApp()) return;   // 네이티브만
-    if(typeof isAndroidNative==='function'&&isAndroidNative()) return; // iOS만 (Android 위젯은 추후)
+/* 일정 변경 후 호출 — 700ms 디바운스로 몰아서 1회 기록 */
+function syncWidgetData() {
+  try {
+    if (typeof isNativeApp !== 'function' || !isNativeApp()) return; // 네이티브만
     clearTimeout(_wgSyncTimer);
-    _wgSyncTimer=setTimeout(_wgDoSync, 500);
-  }catch(_){}
+    _wgSyncTimer = setTimeout(_wgDoSync, 700);
+  } catch (_) {}
 }
 
-async function _wgDoSync(){
-  try{
-    const P=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Preferences;
-    if(!P) return;   // Preferences 플러그인 없는 빌드 — 조용히 무시
-    if(P.configure) await P.configure({ group:'group.com.lsung.uricalendar' });
+/* 날짜 유틸 (YYYY-MM-DD) */
+function _wgShift(base, days) {
+  const d = new Date(base.getFullYear(), base.getMonth(), base.getDate() + days);
+  const p = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+}
 
-    const days=[];
-    const now=new Date();
-    for(let i=0;i<7;i++){
-      const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()+i);
-      const key=_wgDateKey(d);
-      // TODO(이식): 반복 일정 포함 일별 조회 함수로 교체
-      const raw=(typeof getDayEvents==='function')?getDayEvents(key):((window._events&&window._events[key])||[]);
-      const evs=(raw||[]).slice(0,6).map(e=>({
-        title:String(e.title||'').slice(0,40),
-        time:e.time||null,
-        color:_wgColorHex(e.color),
-      }));
-      if(i<2||evs.length) days.push({ date:key, label:i===0?'오늘':(i===1?'내일':null), events:evs });
-    }
+/* 실제 내보내기 — 위젯 페이로드 생성 후 Preferences에 기록 */
+async function _wgDoSync() {
+  try {
+    const P = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Preferences;
+    if (!P || !_currentUser) return;
+    const payload = await buildWidgetPayload();
+    if (!payload) return;
+    if (P.configure) { try { await P.configure({ group: WIDGET_GROUP }); } catch (_) {} }
+    await P.set({ key: WIDGET_KEY, value: JSON.stringify(payload) });
+    // 위젯 즉시 갱신(플러그인 있을 때만 — 없으면 자정/주기 갱신에 맡김)
+    const W = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WidgetsBridge;
+    if (W && W.reloadAllTimelines) { try { W.reloadAllTimelines(); } catch (_) {} }
+  } catch (_) { /* 위젯 실패가 앱에 영향 주지 않게 무시 */ }
+}
 
-    await P.set({ key:'widget.events', value: JSON.stringify({
-      updatedAt:new Date().toISOString(),
-      roomName:(window._currentRoom&&window._currentRoom.name)||'',
-      days,
-    })});
+/* 위젯 페이로드 빌드 — 내가 속한 모든 방의 창(window) 데이터를 조회해 조립.
+   테스트를 위해 순수 함수에 가깝게(전역 의존만) 분리. */
+async function buildWidgetPayload() {
+  const rooms = (typeof _myRooms !== 'undefined' && _myRooms) ? _myRooms : [];
+  if (!rooms.length) {
+    return { updatedAt: Date.now(), currentRoomId: null, rooms: [] };
+  }
+  const roomIds = rooms.map(r => r.id);
+  const today = new Date();
+  const from = _wgShift(today, -7);   // 지난주 일부(진행 중 기간 일정 커버)
+  const to = _wgShift(today, 40);     // 월 그리드 + 2주 + 다가오는 커버
 
-    // 위젯 즉시 갱신 (플러그인 있을 때만 — 없으면 자정 타임라인 갱신에 맡김)
-    const W=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.WidgetsBridge;
-    if(W&&W.reloadAllTimelines) W.reloadAllTimelines();
-  }catch(_){/* 위젯 실패가 앱에 영향 주지 않게 무시 */}
+  // 1) 창 내 일정 (모든 방)
+  let events = [];
+  try {
+    const { data } = await supa.from('events')
+      .select('room_id,date,title,time,color,user_id')
+      .in('room_id', roomIds).gte('date', from).lte('date', to);
+    events = data || [];
+  } catch (_) {}
+
+  // 2) 멤버 (모든 방) + 프로필 이름
+  let members = [];
+  try {
+    const { data } = await supa.from('members')
+      .select('room_id,user_id,color,is_virtual,virtual_name')
+      .in('room_id', roomIds);
+    members = data || [];
+  } catch (_) {}
+  const realIds = [...new Set(members.filter(m => m.user_id && !m.is_virtual).map(m => m.user_id))];
+  let profById = {};
+  if (realIds.length) {
+    try {
+      const { data } = await supa.from('profiles').select('id,name,email').in('id', realIds);
+      (data || []).forEach(p => { profById[p.id] = p; });
+    } catch (_) {}
+  }
+
+  // 3) 창 내 할일 (모든 방)
+  let todos = [];
+  try {
+    const { data } = await supa.from('todos')
+      .select('id,room_id,start_date,title,time,color,done')
+      .in('room_id', roomIds).gte('start_date', from).lte('start_date', to);
+    todos = data || [];
+  } catch (_) {}
+
+  const hex = (c) => (typeof colorHex === 'function' ? colorHex(c || 'c-vintage') : (c || '#8b3a2a'));
+  const sealMap = (typeof _mySealByRoom !== 'undefined' && _mySealByRoom) ? _mySealByRoom : {};
+
+  const outRooms = rooms.map(r => {
+    const rMembers = members.filter(m => m.room_id === r.id).map(m => {
+      const name = m.is_virtual
+        ? (m.virtual_name || '멤버')
+        : ((profById[m.user_id] && profById[m.user_id].name)
+           || (profById[m.user_id] && profById[m.user_id].email ? profById[m.user_id].email.split('@')[0] : '멤버'));
+      return { userId: m.user_id || null, name, color: hex(m.color) };
+    });
+    const rEvents = events.filter(e => e.room_id === r.id).map(e => ({
+      date: e.date,
+      title: String(e.title || '').slice(0, 60),
+      time: String(e.time || '').trim(),
+      color: hex(e.color),
+      userId: e.user_id || null,
+    }));
+    const rTodos = todos.filter(t => t.room_id === r.id).map(t => ({
+      id: String(t.id),
+      date: t.start_date,
+      title: String(t.title || '').slice(0, 60),
+      time: String(t.time || '').trim(),
+      color: hex(t.color),
+      done: !!t.done,
+    }));
+    return { id: r.id, name: r.name || '방', seal: sealMap[r.id] || null,
+             members: rMembers, events: rEvents, todos: rTodos };
+  });
+
+  return {
+    updatedAt: Date.now(),
+    currentRoomId: (typeof _currentRoom !== 'undefined' && _currentRoom) ? _currentRoom.id : (outRooms[0] ? outRooms[0].id : null),
+    rooms: outRooms,
+  };
+}
+
+// 테스트/이식용 노출
+if (typeof window !== 'undefined') {
+  window.syncWidgetData = syncWidgetData;
+  window.buildWidgetPayload = buildWidgetPayload;
 }

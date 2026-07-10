@@ -51,10 +51,21 @@ npx cap sync ios                        # 플러그인 새로 깔았으면 한 �
 ```
 - ⚠️ 실제 워크플로 yaml/스크립트를 보고 정확한 위치에 끼워야 함 — 도입 시점에 Codemagic 워크플로 내용 공유 필요.
 
-### 3. index.html 이식
-- [ ] `bridge.js` 내용을 index.html에 병합 (전역 스코프, 16786 IIFE 바깥)
-- [ ] TODO 4곳 연결: 일별 일정 조회 함수(반복 포함), 색상 hex 맵, 호출 지점(loadEvents 완료·일정 저장·삭제·enterRoom)
-- [ ] (선택) `capacitor-widgetsbridge-plugin` 설치하면 일정 변경 즉시 위젯 갱신 — 없어도 자정 갱신은 동작
+### 3. index.html 이식 (bridge.js v2 — 실제 코드 작성 완료·테스트 통과)
+- [ ] `bridge.js`(v2) 내용을 index.html에 병합 — 전역 스코프(<16786 IIFE 바깥). **기존 `syncWidgetData`(line ~8193, widget_today 단일방)는 삭제하고 이걸로 교체.**
+- [ ] 호출 지점 연결: `syncWidgetData()`를 loadEvents 완료·일정 저장/수정/삭제·enterRoom·loadRooms 후에 호출(디바운스 내장).
+- [ ] **딥링크 핸들러 추가**: `com.lsung.uricalendar://add?room=<id>` 수신 시 그 방으로 일정 추가 화면 열기(iOS setupNativeAuthDeepLink ~7286, Android intent-filter). ＋버튼이 이 스킴을 씀.
+- [ ] **할일 토글 flush**: 앱 포그라운드 복귀 시 App Group의 `widget.pendingTodoToggles`(위젯이 기록한 todoId 배열)를 읽어 Supabase todos.done 반영 후 배열 비우기. (위젯은 iOS17+ 인터랙티브라 오프라인 낙관 토글만 하고, 실제 DB 반영은 앱이 flush)
+- [ ] `npm i @capacitor/preferences` (App Group group 지정: bridge가 `P.configure({group})` 호출).
+- [ ] (선택) `capacitor-widgetsbridge-plugin` 설치 시 일정 변경 즉시 위젯 갱신 — 없어도 자정 갱신 동작.
+- ✅ **데이터 계약 검증됨**: `buildWidgetPayload()` 단위 테스트(scratchpad/bridgetest.mjs)로 모든 방·멤버(프로필명+가상)·일정(hex 색)·할일·seal JSON 정확 확인.
+
+### 3b. Swift 위젯 (widget/ios/UriCalendarWidget.swift — 작성 완료, ⚠️Xcode 컴파일 검증 필요)
+- 4종: 오늘(systemSmall)·2주 캘린더(systemMedium)·콤보=오늘+미니월(systemLarge). 월 그리드는 `GridView(weeks:6)`로 large 편집 옵션 추가 가능.
+- `AppIntentConfiguration` + `RoomEntity`(App Group에서 방 목록 읽음)로 **방 선택**, `memberUserId` 파라미터로 **멤버 필터**.
+- `ToggleTodoIntent`(iOS17+): 할일 체크 → App Group `widget.pendingTodoToggles`에 기록 + widget.data 낙관 반영.
+- ＋버튼/빈칸 = `com.lsung.uricalendar://add?room=` 딥링크(Link).
+- ⚠️ 이 환경에선 미컴파일 — 첫 빌드 때 Xcode 에러 있으면 잡을 것(WidgetKit/AppIntents API 버전차 가능).
 
 ### 4. 검증
 - [ ] TestFlight/실기기: 홈 화면 길게 눌러 위젯 추가 → '우리 캘린더' 노출 확인
