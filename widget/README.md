@@ -1,7 +1,17 @@
-# 우리 캘린더 — iOS 홈 화면 위젯 (도입 준비)
+# 우리 캘린더 — 홈 화면 위젯 (도입 준비)
 
 > 상태: **스캐폴드 완료, 미도입.** 반응 보고 도입 결정 시 아래 체크리스트대로 연결하면 바로 나감.
 > 이 폴더의 파일들은 앱/웹 동작에 아무 영향 없음 (참조되지 않는 대기 코드).
+
+## ✅ 확정된 방향 (2026-07-10 사용자 결정)
+- **플랫폼: iOS + Android 둘 다** (iOS 먼저 → Android 뒤이어). ⚠️ Android는 TWA 구조라 네이티브 래퍼(Glance/RemoteViews) 신규 작업 필요 = iOS의 2~3배 공수.
+- **형태: 두 종류 모두 제공** — ①오늘+다가오는 일정(small/medium, 현재 Swift 구현본) ②**월 전체 그리드(large, 신규)** — 사용자가 홈에서 크기로 골라 배치. 레퍼런스=삼성/네이버 캘린더 월 위젯 스타일, 우리 빈티지 크림 테마로.
+- **방(프로필) 선택형** — 위젯마다 어느 방을 볼지 선택. iOS는 `StaticConfiguration`→**`AppIntentConfiguration`**(위젯 편집에서 방 고르기)로 교체 필요. 방 목록/현재 선택도 App Group에 기록해야 함(bridge가 rooms까지 기록).
+- 월 그리드 목업: 이 세션에서 렌더(빈티지 테마, 방 씰 색+일정 색 반영, 오늘 강조·공휴일 빨강). 스크린샷은 대화 기록 참조.
+
+### 도입 시 추가 작업(위 결정 반영)
+- iOS: `UriCalendarWidget.swift`에 `.systemLarge` 월 그리드 뷰 추가 + `AppIntentConfiguration`(RoomEntity 선택) + `bridge.js`가 7일치→**한 달치 일정 + 방 목록**을 기록하도록 확장.
+- Android: 별도 위젯 모듈(Glance 권장) — 같은 App Group 대신 SharedPreferences, TWA 래퍼에 위젯 provider 추가. codemagic android-aab 워크플로에 위젯 소스 주입 스텝 필요. (iOS 안정화 후 착수)
 
 ## 구성
 
