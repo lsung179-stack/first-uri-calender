@@ -602,13 +602,45 @@ func dayLabel(_ ds: String) -> String {
     if let d = parse(ds) { let c = cal.dateComponents([.month, .day], from: d); return "\(c.month ?? 0).\(c.day ?? 0)" }
     return ds
 }
+// 'M월d일' 한글 라벨(기간 표시용)
+func mdKo(_ ds: String) -> String {
+    if let d = parse(ds) { let c = Calendar.current.dateComponents([.month, .day], from: d); return "\(c.month ?? 0)월\(c.day ?? 0)일" }
+    return ds
+}
+// 기간 라벨: 하루면 오늘/내일/M.d, 여러 날이면 'M월d일 ~ M월d일'
+func rangeLabel(_ s: String, _ e: String) -> String {
+    return s == e ? dayLabel(s) : "\(mdKo(s)) ~ \(mdKo(e))"
+}
+// 다가오는 일정 한 줄(기간 일정은 하나로 묶음)
+struct UpRun { let title: String; let color: String; let start: String; let end: String; let time: String }
 struct ComboView: View {
     let room: WGRoom; let filter: String?
-    // 오늘부터 앞으로의 일정(날짜→시간 순). 오늘만이 아니라 다음날들도 포함.
-    var upcoming: [WGEvent] {
+    // 오늘부터 앞으로의 일정. 같은 제목+색의 '연속 날짜'는 하나의 기간(run)으로 묶음.
+    var upcoming: [UpRun] {
+        let cal = Calendar.current
         let t = todayStr()
-        return dedupeEvents(room.events.filter { $0.date >= t && (filter == nil || $0.userId == filter) }
-            .sorted { ($0.date, $0.time.isEmpty ? "zz" : $0.time) < ($1.date, $1.time.isEmpty ? "zz" : $1.time) })
+        let evs = dedupeEvents(room.events.filter { $0.date >= t && (filter == nil || $0.userId == filter) })
+        var byKey: [String: (title: String, color: String, dates: [String: String])] = [:]  // dates: date→time
+        for e in evs {
+            let key = e.title + "|" + e.color
+            if byKey[key] == nil { byKey[key] = (e.title, e.color, [:]) }
+            let prev = byKey[key]!.dates[e.date]
+            if prev == nil || (!e.time.isEmpty && e.time < (prev ?? "zz")) { byKey[key]!.dates[e.date] = e.time }
+        }
+        var result: [UpRun] = []
+        for (_, v) in byKey {
+            let ds = v.dates.keys.sorted()
+            var i = 0
+            while i < ds.count {
+                var j = i
+                while j + 1 < ds.count, let cur = parse(ds[j]), let nd = cal.date(byAdding: .day, value: 1, to: cur), fmt(nd) == ds[j+1] { j += 1 }
+                result.append(UpRun(title: v.title, color: v.color, start: ds[i], end: ds[j],
+                                    time: i == j ? (v.dates[ds[i]] ?? "") : ""))   // 시간은 하루짜리에만
+                i = j + 1
+            }
+        }
+        result.sort { $0.start != $1.start ? $0.start < $1.start : $0.title < $1.title }
+        return result
     }
     var body: some View {
         VStack(spacing: 8) {
@@ -620,15 +652,17 @@ struct ComboView: View {
                         Text("예정된 일정이 없어요").font(.system(size: 12)).foregroundColor(.mutedBrown).padding(.top, 4)
                     } else {
                         ForEach(Array(upcoming.prefix(6).enumerated()), id: \.offset) { _, e in
+                            let isNow = e.start <= todayStr() && todayStr() <= e.end   // 진행 중(오늘 포함)
                             HStack(spacing: 7) {
                                 RoundedRectangle(cornerRadius: 2).fill(Color(hexStr: e.color)).frame(width: 3, height: 24)
                                 VStack(alignment: .leading, spacing: 1) {
                                     HStack(spacing: 5) {
-                                        Text(dayLabel(e.date))
+                                        Text(rangeLabel(e.start, e.end))
                                             .font(.system(size: 9.5, weight: .bold))
-                                            .foregroundColor(e.date == todayStr() ? .cream : .mutedBrown)
+                                            .foregroundColor(isNow ? .cream : .mutedBrown)
                                             .padding(.horizontal, 5).padding(.vertical, 1)
-                                            .background(Capsule().fill(e.date == todayStr() ? Color.terra : Color.mutedBrown.opacity(0.18)))
+                                            .background(Capsule().fill(isNow ? Color.terra : Color.mutedBrown.opacity(0.18)))
+                                            .lineLimit(1)
                                         if !e.time.isEmpty { Text(e.time).font(.system(size: 10).monospacedDigit()).foregroundColor(.mutedBrown) }
                                     }
                                     Text(e.title).font(.system(size: 13.5, weight: .bold)).foregroundColor(.ink).lineLimit(1)
