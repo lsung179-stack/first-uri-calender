@@ -61,7 +61,7 @@ extension Color {
     static let sunRed = Color(hexStr: "#c0503f")
 }
 
-// MARK: - 설정 인텐트 (방 선택 + 멤버 필터)
+// MARK: - 설정 인텐트 (방 선택 + 멤버 필터 + 큰 위젯 레이아웃)
 
 struct RoomEntity: AppEntity {
     let id: String
@@ -112,12 +112,38 @@ struct MemberQuery: EntityQuery {
         return out
     }
 }
+// 큰 위젯(systemLarge) 레이아웃 선택: 콤보(오늘+미니달력) 또는 한 달 전체 그리드
+enum WidgetLayout: String, AppEnum {
+    case combo
+    case month
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "큰 위젯 보기"
+    static var caseDisplayRepresentations: [WidgetLayout: DisplayRepresentation] = [
+        .combo: "다가오는 일정 + 미니 달력",
+        .month: "한 달 전체 달력",
+    ]
+}
 struct CalConfigIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource = "우리 캘린더 위젯"
-    static var description = IntentDescription("볼 방과 멤버를 선택하세요.")
+    static var description = IntentDescription("볼 방과 멤버를 선택하세요. (프로필을 눌러도 멤버별로 볼 수 있어요)")
     @Parameter(title: "방") var room: RoomEntity?
     // 멤버 필터: '전체 보기'(기본) 또는 특정 멤버 선택. 드롭다운(직접 입력 아님).
     @Parameter(title: "멤버") var member: MemberEntity?
+    // 큰 위젯일 때 보기 방식 (작은/2주 위젯엔 영향 없음)
+    @Parameter(title: "큰 위젯 보기", default: .combo) var layout: WidgetLayout
+}
+
+// MARK: - 멤버 필터 탭 인텐트 (프로필 눌러서 그 사람 일정만 보기)
+// App Group에 'widget.memberFilter'를 기록 → 타임라인이 이걸 우선 적용. ""=전체.
+let FILTER_KEY = "widget.memberFilter"
+struct SetFilterIntent: AppIntent {
+    static var title: LocalizedStringResource = "멤버별 보기 전환"
+    @Parameter(title: "userId") var userId: String
+    init() {}
+    init(userId: String) { self.userId = userId }
+    func perform() async throws -> some IntentResult {
+        UserDefaults(suiteName: APP_GROUP)?.set(userId, forKey: FILTER_KEY)
+        return .result()
+    }
 }
 
 // MARK: - 할일 체크 인텐트 (위젯에서 바로 완료 — App Group 대기열 기록, 앱이 flush)
@@ -161,18 +187,19 @@ struct CalEntry: TimelineEntry {
     let date: Date
     let room: WGRoom?
     let memberFilter: String?   // userId or nil(전체)
+    var layout: WidgetLayout = .combo
 }
 struct CalProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> CalEntry {
-        CalEntry(date: Date(), room: sampleRoom(), memberFilter: nil)
+        CalEntry(date: Date(), room: sampleRoom(), memberFilter: nil, layout: .combo)
     }
     func snapshot(for configuration: CalConfigIntent, in context: Context) async -> CalEntry {
         let room = pickRoom(loadWGData(), roomId: configuration.room?.id) ?? sampleRoom()
-        return CalEntry(date: Date(), room: room, memberFilter: wgMemberFilter(configuration.member))
+        return CalEntry(date: Date(), room: room, memberFilter: effectiveFilter(configuration.member), layout: configuration.layout)
     }
     func timeline(for configuration: CalConfigIntent, in context: Context) async -> Timeline<CalEntry> {
         let room = pickRoom(loadWGData(), roomId: configuration.room?.id)
-        let entry = CalEntry(date: Date(), room: room, memberFilter: wgMemberFilter(configuration.member))
+        let entry = CalEntry(date: Date(), room: room, memberFilter: effectiveFilter(configuration.member), layout: configuration.layout)
         // 자정에 '오늘'이 넘어가므로 자정 직후 갱신 예약(그 외는 앱이 reloadAllTimelines)
         let mid = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: 1, to: Date())!)
         return Timeline(entries: [entry], policy: .after(mid))
@@ -182,6 +209,14 @@ struct CalProvider: AppIntentTimelineProvider {
 func wgMemberFilter(_ m: MemberEntity?) -> String? {
     guard let id = m?.id, !id.isEmpty else { return nil }
     return id
+}
+// 실효 필터: 프로필 탭(App Group 오버라이드)이 있으면 그걸, 없으면 설정의 멤버.
+// 오버라이드 값 ""=전체, 키 없음=탭 안 함→설정값 사용.
+func effectiveFilter(_ configMember: MemberEntity?) -> String? {
+    if let ov = UserDefaults(suiteName: APP_GROUP)?.string(forKey: FILTER_KEY) {
+        return ov.isEmpty ? nil : ov
+    }
+    return wgMemberFilter(configMember)
 }
 func sampleRoom() -> WGRoom {
     WGRoom(id: "s", name: "가족방", seal: "navy:taegeuk",
@@ -201,20 +236,33 @@ func parse(_ s: String) -> Date? { let f = DateFormatter(); f.dateFormat = "yyyy
 struct WGHeader: View {
     let room: WGRoom
     var compact: Bool = false
+    var active: String? = nil          // 현재 선택된 멤버 userId (nil=전체)
+    private var sealSize: CGFloat { compact ? 22 : 26 }
+    private var avSize: CGFloat { compact ? 18 : 20 }
+    private var maxAvatars: Int { compact ? 3 : 4 }
     var body: some View {
-        HStack(spacing: 7) {
-            SealIcon(seal: room.seal, name: room.name, size: compact ? 20 : 26)
-            if !compact {
-                HStack(spacing: -5) {
-                    ForEach(Array(room.members.prefix(4).enumerated()), id: \.offset) { _, m in
-                        Circle().fill(Color(hexStr: m.color)).frame(width: 17, height: 17)
-                            .overlay(Text(String(m.name.prefix(1))).font(.system(size: 8, weight: .bold)).foregroundColor(.white))
-                            .overlay(Circle().stroke(Color.cream, lineWidth: 1.5))
-                    }
+        HStack(spacing: 6) {
+            // 씰 = '전체 보기'로 리셋 (탭). 전체 선택 중이면 강조.
+            Button(intent: SetFilterIntent(userId: "")) {
+                SealIcon(seal: room.seal, name: room.name, size: sealSize)
+                    .overlay(Circle().stroke(Color.terra, lineWidth: active == nil ? 2.5 : 0))
+                    .opacity(active == nil ? 1 : 0.85)
+            }.buttonStyle(.plain)
+            // 멤버 아바타 = 그 사람만 보기 (탭). 실제 멤버(userId 있는)만.
+            HStack(spacing: -4) {
+                ForEach(Array(room.members.filter { ($0.userId ?? "").isEmpty == false }.prefix(maxAvatars).enumerated()), id: \.offset) { _, m in
+                    let uid = m.userId ?? ""
+                    let on = (active == uid)
+                    Button(intent: SetFilterIntent(userId: uid)) {
+                        Circle().fill(Color(hexStr: m.color)).frame(width: avSize, height: avSize)
+                            .overlay(Text(String(m.name.prefix(1))).font(.system(size: avSize*0.46, weight: .bold)).foregroundColor(.white))
+                            .overlay(Circle().stroke(on ? Color.terra : Color.cream, lineWidth: on ? 2.5 : 1.5))
+                            .opacity(active == nil || on ? 1 : 0.4)   // 필터 중이면 선택된 사람만 또렷
+                    }.buttonStyle(.plain)
                 }
             }
-            Spacer()
-            Text(room.name).font(.system(size: compact ? 12 : 14, weight: .heavy)).foregroundColor(.ink)
+            Spacer(minLength: 4)
+            Text(room.name).font(.system(size: compact ? 12 : 14, weight: .heavy)).foregroundColor(.ink).lineLimit(1)
             // ＋ 빠른 추가 (앱의 추가 화면 딥링크)
             Link(destination: URL(string: "com.lsung.uricalendar://add?room=\(room.id)")!) {
                 ZStack { Circle().fill(Color.terra).frame(width: 22, height: 22)
@@ -318,14 +366,14 @@ struct GridView: View {
         let cal = Calendar.current
         let cols = Array(repeating: GridItem(.flexible(), spacing: 1), count: 7)
         VStack(spacing: 3) {
-            WGHeader(room: room, compact: weeks > 2)
+            WGHeader(room: room, compact: weeks > 2, active: filter)
             HStack(spacing: 0) {
                 ForEach(0..<7) { i in
                     Text(["일","월","화","수","목","금","토"][i]).font(.system(size: 10, weight: .bold))
                         .foregroundColor(i == 0 ? .sunRed : .mutedBrown).frame(maxWidth: .infinity)
                 }
             }
-            LazyVGrid(columns: cols, spacing: 1) {
+            LazyVGrid(columns: cols, spacing: 2) {
                 ForEach(0..<(weeks*7), id: \.self) { i in
                     let d = cal.date(byAdding: .day, value: i, to: startDate)!
                     DayCell(date: d, events: eventsOn(d), isToday: fmt(d) == todayStr(),
@@ -337,48 +385,75 @@ struct GridView: View {
 }
 struct DayCell: View {
     let date: Date; let events: [WGEvent]; let isToday: Bool; let dow: Int; let dense: Bool
+    // 날짜 숫자는 '항상' 같은 크기 상자에 담아, 오늘 동그라미가 다른 날 일정바를 밀지 않게 함.
+    private var numBox: CGFloat { dense ? 19 : 22 }
+    private var maxBars: Int { dense ? 2 : 2 }
     var body: some View {
-        VStack(spacing: 1) {
+        VStack(spacing: 2) {
             Text("\(Calendar.current.component(.day, from: date))")
                 .font(.system(size: dense ? 11 : 13, weight: .semibold))
                 .foregroundColor(isToday ? .white : (dow == 0 ? .sunRed : .ink))
-                .frame(width: isToday ? (dense ? 17 : 20) : nil, height: isToday ? (dense ? 17 : 20) : nil)
+                .frame(width: numBox, height: numBox)                 // ★ 항상 고정 → 모든 날짜 같은 라인
                 .background(isToday ? Circle().fill(Color.terra) : nil)
-            ForEach(Array(events.prefix(dense ? 1 : 2).enumerated()), id: \.offset) { _, e in
-                Text(e.title).font(.system(size: dense ? 8 : 10, weight: .bold)).foregroundColor(.white).lineLimit(1)
-                    .padding(.horizontal, 3).frame(maxWidth: .infinity)
+            ForEach(Array(events.prefix(maxBars).enumerated()), id: \.offset) { _, e in
+                Text(e.title).font(.system(size: dense ? 8.5 : 10, weight: .bold)).foregroundColor(.white).lineLimit(1)
+                    .padding(.horizontal, 3).padding(.vertical, 0.5).frame(maxWidth: .infinity)
                     .background(RoundedRectangle(cornerRadius: 3).fill(Color(hexStr: e.color)))
             }
+            if events.count > maxBars {
+                Text("+\(events.count - maxBars)").font(.system(size: dense ? 7.5 : 9, weight: .bold)).foregroundColor(.mutedBrown)
+            }
             Spacer(minLength: 0)
-        }.frame(maxWidth: .infinity, minHeight: dense ? 30 : 44, alignment: .top)
+        }.frame(maxWidth: .infinity, minHeight: dense ? 40 : 50, alignment: .top)
     }
 }
 
-// MARK: - ③ 콤보 (large): 오늘 리스트 + 미니 월
+// MARK: - ③ 콤보 (large): 다가오는 일정(오늘+다음날들) + 미니 월
 
+// 날짜 라벨: 오늘/내일/M.d
+func dayLabel(_ ds: String) -> String {
+    if ds == todayStr() { return "오늘" }
+    let cal = Calendar.current
+    if let tm = cal.date(byAdding: .day, value: 1, to: Date()), fmt(tm) == ds { return "내일" }
+    if let d = parse(ds) { let c = cal.dateComponents([.month, .day], from: d); return "\(c.month ?? 0).\(c.day ?? 0)" }
+    return ds
+}
 struct ComboView: View {
     let room: WGRoom; let filter: String?
-    var todays: [WGEvent] { room.events.filter { $0.date == todayStr() && (filter == nil || $0.userId == filter) }
-        .sorted { ($0.time.isEmpty ? "zz" : $0.time) < ($1.time.isEmpty ? "zz" : $1.time) } }
+    // 오늘부터 앞으로의 일정(날짜→시간 순). 오늘만이 아니라 다음날들도 포함.
+    var upcoming: [WGEvent] {
+        let t = todayStr()
+        return room.events.filter { $0.date >= t && (filter == nil || $0.userId == filter) }
+            .sorted { ($0.date, $0.time.isEmpty ? "zz" : $0.time) < ($1.date, $1.time.isEmpty ? "zz" : $1.time) }
+    }
     var body: some View {
         VStack(spacing: 8) {
-            WGHeader(room: room)
+            WGHeader(room: room, active: filter)
             HStack(alignment: .top, spacing: 14) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("오늘").font(.system(size: 15, weight: .black)).foregroundColor(.terra)
-                    ForEach(Array(todays.prefix(4).enumerated()), id: \.offset) { _, e in
-                        VStack(alignment: .leading, spacing: 1) {
+                VStack(alignment: .leading, spacing: 7) {
+                    Text("다가오는 일정").font(.system(size: 14, weight: .black)).foregroundColor(.terra)
+                    if upcoming.isEmpty {
+                        Text("예정된 일정이 없어요").font(.system(size: 12)).foregroundColor(.mutedBrown).padding(.top, 4)
+                    } else {
+                        ForEach(Array(upcoming.prefix(6).enumerated()), id: \.offset) { _, e in
                             HStack(spacing: 7) {
-                                RoundedRectangle(cornerRadius: 2).fill(Color(hexStr: e.color)).frame(width: 3, height: 26)
+                                RoundedRectangle(cornerRadius: 2).fill(Color(hexStr: e.color)).frame(width: 3, height: 24)
                                 VStack(alignment: .leading, spacing: 1) {
-                                    Text(e.title).font(.system(size: 14, weight: .bold)).foregroundColor(.ink).lineLimit(1)
-                                    if !e.time.isEmpty { Text(e.time).font(.system(size: 11)).foregroundColor(.mutedBrown) }
+                                    HStack(spacing: 5) {
+                                        Text(dayLabel(e.date))
+                                            .font(.system(size: 9.5, weight: .bold))
+                                            .foregroundColor(e.date == todayStr() ? .cream : .mutedBrown)
+                                            .padding(.horizontal, 5).padding(.vertical, 1)
+                                            .background(Capsule().fill(e.date == todayStr() ? Color.terra : Color.mutedBrown.opacity(0.18)))
+                                        if !e.time.isEmpty { Text(e.time).font(.system(size: 10).monospacedDigit()).foregroundColor(.mutedBrown) }
+                                    }
+                                    Text(e.title).font(.system(size: 13.5, weight: .bold)).foregroundColor(.ink).lineLimit(1)
                                 }
                             }
                         }
                     }
                     Spacer(minLength: 0)
-                    ForEach(room.todos.filter { $0.date == todayStr() }.prefix(2)) { t in TodoRow(t: t) }
+                    ForEach(room.todos.filter { $0.date == todayStr() && !$0.done }.prefix(1)) { t in TodoRow(t: t) }
                 }.frame(maxWidth: .infinity, alignment: .leading)
                 Rectangle().fill(Color.mutedBrown.opacity(0.2)).frame(width: 1)
                 MiniMonth(room: room, filter: filter).frame(maxWidth: .infinity)
@@ -412,7 +487,7 @@ struct MiniMonth: View {
                     VStack(spacing: 1) {
                         Text("\(cal.component(.day, from: d))").font(.system(size: 10, weight: .semibold))
                             .foregroundColor(isToday ? .white : (inMonth ? .ink : Color.ink.opacity(0.3)))
-                            .frame(width: isToday ? 16 : nil, height: isToday ? 16 : nil)
+                            .frame(width: 16, height: 16)                 // ★ 항상 고정 → 오늘 동그라미 정렬
                             .background(isToday ? Circle().fill(Color.terra) : nil)
                         HStack(spacing: 1) { ForEach(Array(hasEvent(d).enumerated()), id: \.offset) { _, c in
                             Circle().fill(c).frame(width: 3, height: 3) } }.frame(height: 4)
@@ -433,7 +508,13 @@ struct UriCalendarEntryView: View {
             switch family {
             case .systemSmall: TodayView(room: room, filter: entry.memberFilter)
             case .systemMedium: GridView(room: room, filter: entry.memberFilter, weeks: 2)
-            case .systemLarge: ComboView(room: room, filter: entry.memberFilter)  // 편집서 월(GridView weeks:6)로 전환 옵션
+            case .systemLarge:
+                // 위젯 편집의 '큰 위젯 보기'로 콤보 ↔ 한 달 전체 전환
+                if entry.layout == .month {
+                    GridView(room: room, filter: entry.memberFilter, weeks: 6)
+                } else {
+                    ComboView(room: room, filter: entry.memberFilter)
+                }
             default: TodayView(room: room, filter: entry.memberFilter)
             }
         } else {
