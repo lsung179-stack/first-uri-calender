@@ -439,12 +439,22 @@ struct GridView: View {
         }
     }
     var maxLanes: Int { 2 }
+    // 실제 표시할 주 수 — 월 그리드는 그 달을 덮는 데 필요한 만큼만(보통 5, 가끔 6). 2주는 2.
+    var rowCount: Int {
+        if weeks == 2 { return 2 }
+        let cal = Calendar.current
+        let comp = cal.dateComponents([.year, .month], from: monthDate)
+        guard let first = cal.date(from: comp) else { return 6 }
+        let offset = cal.component(.weekday, from: first) - 1   // 0=일요일
+        let days = cal.range(of: .day, in: .month, for: monthDate)?.count ?? 30
+        return max(1, Int(ceil(Double(offset + days) / 7.0)))
+    }
     // 보이는 그리드 범위의 '기간 런(run)'을 만들고 줄(lane)을 고정 배정 →
     // 같은 일정이 날마다 같은 줄에 놓여 끊기지 않고 이어짐.
     var runs: [EvRun] {
         let cal = Calendar.current
         let startS = fmt(startDate)
-        let endS = fmt(cal.date(byAdding: .day, value: weeks*7 - 1, to: startDate)!)
+        let endS = fmt(cal.date(byAdding: .day, value: rowCount*7 - 1, to: startDate)!)
         var byKey: [String: (title: String, color: String, dates: Set<String>)] = [:]
         for e in room.events where e.date >= startS && e.date <= endS && (filter == nil || e.userId == filter) {
             let key = e.title + "|" + e.color
@@ -499,7 +509,7 @@ struct GridView: View {
             }.padding(.bottom, 2)
             // 주(week)별 행을 maxHeight 무한으로 균등 분배 → 위젯 높이를 정확히 채워 '아래 잘림' 방지
             VStack(spacing: 2) {
-                ForEach(0..<weeks, id: \.self) { w in
+                ForEach(0..<rowCount, id: \.self) { w in
                     HStack(spacing: 0) {
                         ForEach(0..<7, id: \.self) { c in
                             let d = cal.date(byAdding: .day, value: w*7 + c, to: startDate)!
