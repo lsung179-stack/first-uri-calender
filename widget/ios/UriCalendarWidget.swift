@@ -16,6 +16,8 @@ struct WGData: Codable {
     let updatedAt: Double?
     let currentRoomId: String?
     var myUserId: String?          // 현재 로그인 사용자 — 작은 위젯 '내 일정만' 기본값
+    var gridV: Bool? = nil         // 세로 격자선(앱 설정 연동)
+    var gridH: Bool? = nil         // 가로 격자선
     let rooms: [WGRoom]
 }
 struct WGRoom: Codable, Identifiable {
@@ -150,6 +152,14 @@ struct SetFilterIntent: AppIntent {
         return .result()
     }
 }
+// 새로고침 — 위젯 타임라인 다시 로드(App Group 최신 데이터 재반영 + 오늘 재계산)
+struct RefreshIntent: AppIntent {
+    static var title: LocalizedStringResource = "새로고침"
+    func perform() async throws -> some IntentResult {
+        WidgetCenter.shared.reloadAllTimelines()
+        return .result()
+    }
+}
 // 월 위젯 이전/다음달 이동 (< >) — App Group에 개월 오프셋 저장
 let MONTH_KEY = "widget.monthOffset"
 func readMonthOffset() -> Int { UserDefaults(suiteName: APP_GROUP)?.integer(forKey: MONTH_KEY) ?? 0 }
@@ -210,7 +220,7 @@ struct ToggleTodoIntent: AppIntent {
             }
             return WGRoom(id: r.id, name: r.name, seal: r.seal, sealPng: r.sealPng, members: r.members, events: r.events, todos: todos)
         }
-        return WGData(updatedAt: data.updatedAt, currentRoomId: data.currentRoomId, myUserId: data.myUserId, rooms: rooms)
+        return WGData(updatedAt: data.updatedAt, currentRoomId: data.currentRoomId, myUserId: data.myUserId, gridV: data.gridV, gridH: data.gridH, rooms: rooms)
     }
 }
 // (WGData 등은 이미 Codable → Encodable 자동 충족. JSONEncoder().encode 그대로 사용)
@@ -222,6 +232,8 @@ struct CalEntry: TimelineEntry {
     let room: WGRoom?
     let memberFilter: String?   // userId or nil(전체)
     var myUserId: String? = nil // 현재 사용자 (작은 위젯 기본 필터)
+    var gridV: Bool = false     // 세로/가로 격자선(앱 설정)
+    var gridH: Bool = false
 }
 struct CalProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> CalEntry {
@@ -229,11 +241,13 @@ struct CalProvider: AppIntentTimelineProvider {
     }
     func snapshot(for configuration: CalConfigIntent, in context: Context) async -> CalEntry {
         let room = effectiveRoom(configuration.room?.id) ?? sampleRoom()
-        return CalEntry(date: Date(), room: room, memberFilter: effectiveFilter(configuration.member), myUserId: loadWGData()?.myUserId)
+        let d = loadWGData()
+        return CalEntry(date: Date(), room: room, memberFilter: effectiveFilter(configuration.member), myUserId: d?.myUserId, gridV: d?.gridV ?? false, gridH: d?.gridH ?? false)
     }
     func timeline(for configuration: CalConfigIntent, in context: Context) async -> Timeline<CalEntry> {
         let room = effectiveRoom(configuration.room?.id)
-        let entry = CalEntry(date: Date(), room: room, memberFilter: effectiveFilter(configuration.member), myUserId: loadWGData()?.myUserId)
+        let d = loadWGData()
+        let entry = CalEntry(date: Date(), room: room, memberFilter: effectiveFilter(configuration.member), myUserId: d?.myUserId, gridV: d?.gridV ?? false, gridH: d?.gridH ?? false)
         // 자정에 '오늘'이 넘어가므로 자정 직후 갱신 예약(그 외는 앱이 reloadAllTimelines)
         let mid = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: 1, to: Date())!)
         return Timeline(entries: [entry], policy: .after(mid))
@@ -321,6 +335,10 @@ struct WGHeader: View {
             } else {
                 Text(room.name).font(.system(size: compact ? 12 : 14, weight: .heavy)).foregroundColor(.ink).lineLimit(1)
             }
+            // 새로고침
+            Button(intent: RefreshIntent()) {
+                Image(systemName: "arrow.clockwise").font(.system(size: 12, weight: .bold)).foregroundColor(.mutedBrown).frame(width: 20, height: 20)
+            }.buttonStyle(.plain)
             // ＋ 빠른 추가 (앱의 추가 화면 딥링크)
             Link(destination: URL(string: "com.lsung.uricalendar://add?room=\(room.id)")!) {
                 ZStack { Circle().fill(Color.terra).frame(width: 22, height: 22)
@@ -364,6 +382,9 @@ struct TodayView: View {
                         .padding(.horizontal, 5).background(Capsule().fill(Color.terra))
                 }
                 Spacer()
+                Button(intent: RefreshIntent()) {
+                    Image(systemName: "arrow.clockwise").font(.system(size: 13, weight: .bold)).foregroundColor(.mutedBrown)
+                }.buttonStyle(.plain)
                 Link(destination: URL(string: "com.lsung.uricalendar://add?room=\(room.id)")!) {
                     Image(systemName: "plus.circle.fill").font(.system(size: 17)).foregroundColor(.terra)
                 }
@@ -414,6 +435,8 @@ struct TodoRow: View {
 struct GridView: View {
     let room: WGRoom; let filter: String?; let weeks: Int   // 2 or 6
     var monthNav: Bool = false        // 월 위젯: 이전/다음달 이동
+    var gridV: Bool = false           // 세로/가로 격자선(앱 설정 연동)
+    var gridH: Bool = false
     // 월 위젯 기준 달 (오프셋 적용)
     var monthDate: Date {
         let cal = Calendar.current
@@ -439,16 +462,8 @@ struct GridView: View {
         }
     }
     var maxLanes: Int { 2 }
-    // 실제 표시할 주 수 — 월 그리드는 그 달을 덮는 데 필요한 만큼만(보통 5, 가끔 6). 2주는 2.
-    var rowCount: Int {
-        if weeks == 2 { return 2 }
-        let cal = Calendar.current
-        let comp = cal.dateComponents([.year, .month], from: monthDate)
-        guard let first = cal.date(from: comp) else { return 6 }
-        let offset = cal.component(.weekday, from: first) - 1   // 0=일요일
-        let days = cal.range(of: .day, in: .month, for: monthDate)?.count ?? 30
-        return max(1, Int(ceil(Double(offset + days) / 7.0)))
-    }
+    // 표시 주 수 — 2주 위젯은 2, 월 위젯은 5주 고정(사용자 요청, 넉넉한 여백).
+    var rowCount: Int { weeks == 2 ? 2 : 5 }
     // 보이는 그리드 범위의 '기간 런(run)'을 만들고 줄(lane)을 고정 배정 →
     // 같은 일정이 날마다 같은 줄에 놓여 끊기지 않고 이어짐.
     var runs: [EvRun] {
@@ -516,7 +531,8 @@ struct GridView: View {
                             let pair = slotsFor(d, allRuns)
                             let inM = (weeks != 6) || (cal.component(.month, from: d) == curMonth)
                             DayCell(date: d, slots: pair.0, overflow: pair.1, isToday: fmt(d) == todayStr(),
-                                    dow: cal.component(.weekday, from: d) - 1, roomId: room.id, inMonth: inM)
+                                    dow: cal.component(.weekday, from: d) - 1, roomId: room.id, inMonth: inM,
+                                    rightLine: gridV && c < 6, bottomLine: gridH && w < rowCount - 1)
                         }
                     }.frame(maxHeight: .infinity)
                 }
@@ -530,6 +546,7 @@ struct EvRun { let title: String; let color: String; let start: String; let end:
 struct DayBar { let title: String; let color: String; let contLeft: Bool; let contRight: Bool }
 struct DayCell: View {
     let date: Date; let slots: [DayBar?]; let overflow: Int; let isToday: Bool; let dow: Int; let roomId: String; let inMonth: Bool
+    var rightLine: Bool = false; var bottomLine: Bool = false
     private let numBox: CGFloat = 18
     private let barH: CGFloat = 12
     // 기간 바: 주 안에서 이어지는 쪽은 각지게+딱 붙게, 끝/주경계는 둥글게 → 옆칸과 맞닿아 연속.
@@ -568,6 +585,9 @@ struct DayCell: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)   // 셀이 행 높이를 채움 → 위젯 밖으로 안 넘침
             .opacity(inMonth ? 1 : 0.4)   // 다음/이전달 날짜는 흐리게
             .clipped()
+            // 격자선(앱 설정 연동) — 세로=우측, 가로=하단
+            .overlay(alignment: .trailing) { if rightLine { Rectangle().fill(Color.mutedBrown.opacity(0.16)).frame(width: 0.6) } }
+            .overlay(alignment: .bottom) { if bottomLine { Rectangle().fill(Color.mutedBrown.opacity(0.16)).frame(height: 0.6) } }
         }.buttonStyle(.plain)
     }
 }
@@ -699,7 +719,7 @@ struct TodayWidget: Widget {
 struct TwoWeekWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: "UriTwoWeek", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
-            if let room = entry.room { GridView(room: room, filter: entry.memberFilter, weeks: 2) } else { EmptyStateView() }
+            if let room = entry.room { GridView(room: room, filter: entry.memberFilter, weeks: 2, gridV: entry.gridV, gridH: entry.gridH) } else { EmptyStateView() }
         }
         .configurationDisplayName("2주 달력")
         .description("이번 주·다음 주 2주치 달력.")
@@ -723,7 +743,7 @@ struct ComboWidget: Widget {
 struct MonthWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: "UriMonth", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
-            if let room = entry.room { GridView(room: room, filter: entry.memberFilter, weeks: 6, monthNav: true) } else { EmptyStateView() }
+            if let room = entry.room { GridView(room: room, filter: entry.memberFilter, weeks: 6, monthNav: true, gridV: entry.gridV, gridH: entry.gridH) } else { EmptyStateView() }
         }
         .configurationDisplayName("한 달 달력")
         .description("이번 달 전체 달력을 크게.")
