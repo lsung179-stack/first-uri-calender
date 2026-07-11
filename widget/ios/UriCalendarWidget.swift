@@ -294,9 +294,16 @@ struct WGHeader: View {
     var active: String? = nil          // 현재 선택된 멤버 userId (nil=전체)
     var monthNav: Bool = false         // 월 위젯 이전/다음달 < >
     var monthLabel: String = ""
+    var myUserId: String? = nil        // 현재 사용자 — 아바타 맨 앞에 고정(항상 노출)
     private var sealSize: CGFloat { compact ? 22 : 26 }
     private var avSize: CGFloat { compact ? 19 : 21 }
-    private var maxAvatars: Int { compact ? 3 : 4 }
+    private var maxAvatars: Int { compact ? 4 : 5 }
+    // 실멤버(가상 제외)를 '나 먼저' 순서로 정렬 → prefix로 잘려도 내가 항상 보임.
+    private var orderedMembers: [WGMember] {
+        let reals = room.members.filter { ($0.userId ?? "").isEmpty == false }
+        guard let me = myUserId, !me.isEmpty else { return reals }
+        return reals.sorted { ($0.userId == me ? 0 : 1) < ($1.userId == me ? 0 : 1) }
+    }
     var body: some View {
         HStack(spacing: 6) {
             // 씰 = 방 프로필. 탭하면 다음 방으로 전환(방 여러 개일 때). 실제 앱 씰 이미지.
@@ -305,7 +312,7 @@ struct WGHeader: View {
             }.buttonStyle(.plain)
             // 멤버 아바타 = 그 사람만 보기 (탭). 겹치지 않게 간격, 사진 있으면 사진.
             HStack(spacing: 4) {
-                ForEach(Array(room.members.filter { ($0.userId ?? "").isEmpty == false }.prefix(maxAvatars).enumerated()), id: \.offset) { _, m in
+                ForEach(Array(orderedMembers.prefix(maxAvatars).enumerated()), id: \.offset) { _, m in
                     let uid = m.userId ?? ""
                     let on = (active == uid)
                     Button(intent: SetFilterIntent(userId: on ? "" : uid)) {
@@ -437,6 +444,7 @@ struct GridView: View {
     var monthNav: Bool = false        // 월 위젯: 이전/다음달 이동
     var gridV: Bool = false           // 세로/가로 격자선(앱 설정 연동)
     var gridH: Bool = false
+    var myUserId: String? = nil       // 헤더 아바타 '나 먼저' 정렬용
     // 월 위젯 기준 달 (오프셋 적용)
     var monthDate: Date {
         let cal = Calendar.current
@@ -514,7 +522,7 @@ struct GridView: View {
         let allRuns = runs
         let curMonth = cal.component(.month, from: monthDate)
         VStack(spacing: 0) {
-            WGHeader(room: room, compact: weeks > 2, active: filter, monthNav: monthNav, monthLabel: monthLabel)
+            WGHeader(room: room, compact: weeks > 2, active: filter, monthNav: monthNav, monthLabel: monthLabel, myUserId: myUserId)
             Color.clear.frame(height: weeks > 2 ? 9 : 7)     // 헤더 ↔ 달력 사이 여백(위아래 균형)
             HStack(spacing: 0) {
                 ForEach(0..<7) { i in
@@ -614,7 +622,7 @@ func rangeLabel(_ s: String, _ e: String) -> String {
 // 다가오는 일정 한 줄(기간 일정은 하나로 묶음)
 struct UpRun { let title: String; let color: String; let start: String; let end: String; let time: String }
 struct ComboView: View {
-    let room: WGRoom; let filter: String?
+    let room: WGRoom; let filter: String?; var myUserId: String? = nil
     // 오늘부터 앞으로의 일정. 같은 제목+색의 '연속 날짜'는 하나의 기간(run)으로 묶음.
     var upcoming: [UpRun] {
         let cal = Calendar.current
@@ -644,7 +652,7 @@ struct ComboView: View {
     }
     var body: some View {
         VStack(spacing: 8) {
-            WGHeader(room: room, active: filter)
+            WGHeader(room: room, active: filter, myUserId: myUserId)
             HStack(alignment: .top, spacing: 14) {
                 VStack(alignment: .leading, spacing: 7) {
                     Text("다가오는 일정").font(.system(size: 14, weight: .black)).foregroundColor(.terra)
@@ -753,7 +761,7 @@ struct TodayWidget: Widget {
 struct TwoWeekWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: "UriTwoWeek", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
-            if let room = entry.room { GridView(room: room, filter: entry.memberFilter, weeks: 2, gridV: entry.gridV, gridH: entry.gridH) } else { EmptyStateView() }
+            if let room = entry.room { GridView(room: room, filter: entry.memberFilter, weeks: 2, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId) } else { EmptyStateView() }
         }
         .configurationDisplayName("2주 달력")
         .description("이번 주·다음 주 2주치 달력.")
@@ -765,7 +773,7 @@ struct TwoWeekWidget: Widget {
 struct ComboWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: "UriCombo", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
-            if let room = entry.room { ComboView(room: room, filter: entry.memberFilter) } else { EmptyStateView() }
+            if let room = entry.room { ComboView(room: room, filter: entry.memberFilter, myUserId: entry.myUserId) } else { EmptyStateView() }
         }
         .configurationDisplayName("다가오는 일정")
         .description("다가오는 일정 목록 + 이번 달 미니 달력.")
@@ -777,7 +785,7 @@ struct ComboWidget: Widget {
 struct MonthWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: "UriMonth", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
-            if let room = entry.room { GridView(room: room, filter: entry.memberFilter, weeks: 6, monthNav: true, gridV: entry.gridV, gridH: entry.gridH) } else { EmptyStateView() }
+            if let room = entry.room { GridView(room: room, filter: entry.memberFilter, weeks: 6, monthNav: true, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId) } else { EmptyStateView() }
         }
         .configurationDisplayName("한 달 달력")
         .description("이번 달 전체 달력을 크게.")
