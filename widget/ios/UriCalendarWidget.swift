@@ -174,6 +174,20 @@ struct ShiftMonthIntent: AppIntent {
         return .result()
     }
 }
+// 2주 위젯 이전/다음 2주 이동 (< >) — App Group에 '2주 페이지' 오프셋 저장(1페이지=14일)
+let WEEK_KEY = "widget.weekOffset"
+func readWeekOffset() -> Int { UserDefaults(suiteName: APP_GROUP)?.integer(forKey: WEEK_KEY) ?? 0 }
+struct ShiftWeekIntent: AppIntent {
+    static var title: LocalizedStringResource = "2주 이동"
+    @Parameter(title: "delta") var delta: Int
+    init() {}
+    init(delta: Int) { self.delta = delta }
+    func perform() async throws -> some IntentResult {
+        let ud = UserDefaults(suiteName: APP_GROUP)
+        ud?.set((ud?.integer(forKey: WEEK_KEY) ?? 0) + delta, forKey: WEEK_KEY)
+        return .result()
+    }
+}
 // 방 프로필(씰) 탭 → 다음 방으로 순환 전환 (방이 여러 개일 때)
 struct CycleRoomIntent: AppIntent {
     static var title: LocalizedStringResource = "방 전환"
@@ -295,9 +309,14 @@ struct WGHeader: View {
     var monthNav: Bool = false         // 월 위젯 이전/다음달 < >
     var monthLabel: String = ""
     var myUserId: String? = nil        // 현재 사용자 — 아바타 맨 앞에 고정(항상 노출)
+    var weekNav: Bool = false          // 2주 위젯 이전/다음 2주 < >
+    var weekLabel: String = ""
+    var weekOffset: Int = 0            // 현재 2주 오프셋(라벨 탭=현재로 복귀용)
     private var sealSize: CGFloat { compact ? 22 : 26 }
     private var avSize: CGFloat { compact ? 19 : 21 }
-    private var maxAvatars: Int { 4 }   // 그리드 위젯은 폭이 넓어 4명 + '전체' 칩 여유
+    // 그리드 위젯은 폭이 넓어 4명 + '전체' 칩. 단 2주(medium)는 주 이동 < > 라벨이
+    // 폭을 더 먹어 작은 폰에서 넘칠 수 있으므로 3명으로(나 먼저 정렬이라 내 것은 항상 보임).
+    private var maxAvatars: Int { weekNav ? 3 : 4 }
     // 실멤버(가상 제외)를 '나 먼저' 순서로 정렬 → prefix로 잘려도 내가 항상 보임.
     private var orderedMembers: [WGMember] {
         let reals = room.members.filter { ($0.userId ?? "").isEmpty == false }
@@ -347,6 +366,17 @@ struct WGHeader: View {
                 }.buttonStyle(.plain)
                 Text(monthLabel).font(.system(size: 13, weight: .heavy)).foregroundColor(.ink).lineLimit(1)
                 Button(intent: ShiftMonthIntent(delta: 1)) {
+                    Image(systemName: "chevron.right").font(.system(size: 12, weight: .bold)).foregroundColor(.terra).frame(width: 20, height: 20)
+                }.buttonStyle(.plain)
+            } else if weekNav {
+                // 이전/다음 2주 이동. 라벨 탭 = 현재 2주로 복귀(오프셋 0).
+                Button(intent: ShiftWeekIntent(delta: -1)) {
+                    Image(systemName: "chevron.left").font(.system(size: 12, weight: .bold)).foregroundColor(.terra).frame(width: 20, height: 20)
+                }.buttonStyle(.plain)
+                Button(intent: ShiftWeekIntent(delta: -weekOffset)) {
+                    Text(weekLabel).font(.system(size: 12, weight: .heavy)).foregroundColor(weekOffset == 0 ? .ink : .terra).lineLimit(1).fixedSize()
+                }.buttonStyle(.plain)
+                Button(intent: ShiftWeekIntent(delta: 1)) {
                     Image(systemName: "chevron.right").font(.system(size: 12, weight: .bold)).foregroundColor(.terra).frame(width: 20, height: 20)
                 }.buttonStyle(.plain)
             } else {
@@ -452,9 +482,11 @@ struct TodoRow: View {
 struct GridView: View {
     let room: WGRoom; let filter: String?; let weeks: Int   // 2 or 6
     var monthNav: Bool = false        // 월 위젯: 이전/다음달 이동
+    var weekNav: Bool = false         // 2주 위젯: 이전/다음 2주 이동
     var gridV: Bool = false           // 세로/가로 격자선(앱 설정 연동)
     var gridH: Bool = false
     var myUserId: String? = nil       // 헤더 아바타 '나 먼저' 정렬용
+    private var weekOffset: Int { weekNav ? readWeekOffset() : 0 }   // 2주 페이지(1=14일)
     // 월 위젯 기준 달 (오프셋 적용)
     var monthDate: Date {
         let cal = Calendar.current
@@ -466,12 +498,23 @@ struct GridView: View {
         let curY = cal.component(.year, from: Date())
         return (c.year == curY) ? "\(c.month ?? 0)월" : "\(c.year ?? 0).\(c.month ?? 0)"
     }
+    // 2주 위젯 헤더 라벨: 보이는 범위 'M.d~M.d' (같은 달이면 뒤 달 생략)
+    var weekLabel: String {
+        let cal = Calendar.current
+        let s = startDate
+        let e = cal.date(byAdding: .day, value: 13, to: s)!
+        let cs = cal.dateComponents([.month, .day], from: s)
+        let ce = cal.dateComponents([.month, .day], from: e)
+        let tail = (cs.month == ce.month) ? "\(ce.day ?? 0)" : "\(ce.month ?? 0).\(ce.day ?? 0)"
+        return "\(cs.month ?? 0).\(cs.day ?? 0)~\(tail)"
+    }
     var startDate: Date {
         let cal = Calendar.current
-        if weeks == 2 { // 이번 주 일요일부터
+        if weeks == 2 { // 이번 주 일요일부터(+ 2주 페이지 오프셋)
             let today = cal.startOfDay(for: Date())
             let wd = cal.component(.weekday, from: today) - 1
-            return cal.date(byAdding: .day, value: -wd, to: today)!
+            let sun = cal.date(byAdding: .day, value: -wd, to: today)!
+            return cal.date(byAdding: .day, value: weekOffset * 14, to: sun)!
         } else { // 기준 달 1일이 포함된 주의 일요일
             let comp = cal.dateComponents([.year, .month], from: monthDate)
             let first = cal.date(from: comp)!
@@ -532,7 +575,7 @@ struct GridView: View {
         let allRuns = runs
         let curMonth = cal.component(.month, from: monthDate)
         VStack(spacing: 0) {
-            WGHeader(room: room, compact: weeks > 2, active: filter, monthNav: monthNav, monthLabel: monthLabel, myUserId: myUserId)
+            WGHeader(room: room, compact: weeks > 2, active: filter, monthNav: monthNav, monthLabel: monthLabel, myUserId: myUserId, weekNav: weekNav, weekLabel: weekLabel, weekOffset: weekOffset)
             Color.clear.frame(height: weeks > 2 ? 9 : 7)     // 헤더 ↔ 달력 사이 여백(위아래 균형)
             HStack(spacing: 0) {
                 ForEach(0..<7) { i in
@@ -771,7 +814,7 @@ struct TodayWidget: Widget {
 struct TwoWeekWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: "UriTwoWeek", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
-            if let room = entry.room { GridView(room: room, filter: entry.memberFilter, weeks: 2, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId) } else { EmptyStateView() }
+            if let room = entry.room { GridView(room: room, filter: entry.memberFilter, weeks: 2, weekNav: true, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId) } else { EmptyStateView() }
         }
         .configurationDisplayName("2주 달력")
         .description("이번 주·다음 주 2주치 달력.")
