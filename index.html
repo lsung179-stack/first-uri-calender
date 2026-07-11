@@ -6396,6 +6396,7 @@ async function loadRooms(){
     _roomCountMap=countMap;   // 순서 변경 후 재렌더용 캐시
     renderRooms(_sortedRooms,countMap);
     _myRooms=_sortedRooms;
+    syncWidgetData();  // 방 목록 로드 직후 위젯에 방 데이터 기록 — 방 '입장' 전에도 위젯 편집에서 방 선택 가능하게
     // 신규 가입자 온보딩 (예약돼 있으면 1회)
     setTimeout(maybeShowOnboarding, 400);
     // 알림 클릭으로 진입할 방이 있으면 자동 진입
