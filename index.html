@@ -8323,7 +8323,7 @@ async function buildWidgetPayload(){
   const roomIds=rooms.map(r=>r.id);
   const today=new Date();
   const from=_wgShift(today,-40), to=_wgShift(today,70);   // 이전/다음달 네비게이션 커버 위해 창 확대
-  let events=[]; try{ const {data}=await supa.from('events').select('room_id,date,title,time,color,user_id').in('room_id',roomIds).gte('date',from).lte('date',to); events=data||[]; }catch(_){}
+  let events=[]; try{ const {data}=await supa.from('events').select('room_id,date,title,time,color,user_id,range_group_id,shared_id,is_multi').in('room_id',roomIds).gte('date',from).lte('date',to); events=data||[]; }catch(_){}
   let members=[]; try{ const {data}=await supa.from('members').select('room_id,user_id,color,is_virtual,virtual_name').in('room_id',roomIds); members=data||[]; }catch(_){}
   const realIds=[...new Set(members.filter(m=>m.user_id&&!m.is_virtual).map(m=>m.user_id))];
   let profById={};
@@ -8340,7 +8340,10 @@ async function buildWidgetPayload(){
         :((profById[m.user_id]&&profById[m.user_id].name)||(profById[m.user_id]&&profById[m.user_id].email?profById[m.user_id].email.split('@')[0]:'멤버'));
       return { userId:m.user_id||null, name, color:hx(m.color), avatarPng:(m.user_id&&avPngById[m.user_id])||null };
     });
-    const re=events.filter(e=>e.room_id===r.id).map(e=>({ date:e.date, title:String(e.title||'').slice(0,60), time:String(e.time||'').trim(), color:hx(e.color), userId:e.user_id||null }));
+    const re=events.filter(e=>e.room_id===r.id).map(e=>({ date:e.date, title:String(e.title||'').slice(0,60), time:String(e.time||'').trim(), color:hx(e.color), userId:e.user_id||null,
+      // 바 연결 키(gid) — 앱 isSameRangeGroup 규칙 그대로: 여러날(is_multi)/단일은 연결 안 함(null),
+      // 함께 기간=shared_id, 단독 기간=range_group_id. null이면 위젯에서 각각 단독 칩.
+      gid: e.is_multi ? null : (e.shared_id ? ('s:'+e.shared_id) : (e.range_group_id ? ('r:'+e.range_group_id) : null)) }));
     const rt=todos.filter(t=>t.room_id===r.id).map(t=>({ id:String(t.id), date:t.start_date, title:String(t.title||'').slice(0,60), time:String(t.time||'').trim(), color:hx(t.color), done:!!t.is_done }));
     return { id:r.id, name:r.name||'방', seal:sealMap[r.id]||null, members:rm, events:re, todos:rt };
   });

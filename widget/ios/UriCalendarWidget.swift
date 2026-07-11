@@ -43,7 +43,7 @@ func dedupeEvents(_ evs: [WGEvent]) -> [WGEvent] {
     for e in evs { let k = e.date + "|" + e.title + "|" + e.time; if !seen.contains(k) { seen.insert(k); out.append(e) } }
     return out
 }
-struct WGEvent: Codable { let date: String; let title: String; let time: String; let color: String; let userId: String? }
+struct WGEvent: Codable { let date: String; let title: String; let time: String; let color: String; let userId: String?; var gid: String? = nil }
 struct WGTodo: Codable, Identifiable { let id: String; let date: String; let title: String; let time: String; let color: String; let done: Bool }
 
 let APP_GROUP = "group.com.lsung.uricalendar"
@@ -185,6 +185,20 @@ struct ShiftWeekIntent: AppIntent {
     func perform() async throws -> some IntentResult {
         let ud = UserDefaults(suiteName: APP_GROUP)
         ud?.set((ud?.integer(forKey: WEEK_KEY) ?? 0) + delta, forKey: WEEK_KEY)
+        return .result()
+    }
+}
+// 콤보(다가오는 일정) 위젯의 미니 달력 이전/다음달 이동 — 월 위젯과 독립된 별도 오프셋
+let COMBO_MONTH_KEY = "widget.comboMonthOffset"
+func readComboMonthOffset() -> Int { UserDefaults(suiteName: APP_GROUP)?.integer(forKey: COMBO_MONTH_KEY) ?? 0 }
+struct ShiftComboMonthIntent: AppIntent {
+    static var title: LocalizedStringResource = "미니 달력 달 이동"
+    @Parameter(title: "delta") var delta: Int
+    init() {}
+    init(delta: Int) { self.delta = delta }
+    func perform() async throws -> some IntentResult {
+        let ud = UserDefaults(suiteName: APP_GROUP)
+        ud?.set((ud?.integer(forKey: COMBO_MONTH_KEY) ?? 0) + delta, forKey: COMBO_MONTH_KEY)
         return .result()
     }
 }
@@ -531,14 +545,20 @@ struct GridView: View {
         let cal = Calendar.current
         let startS = fmt(startDate)
         let endS = fmt(cal.date(byAdding: .day, value: rowCount*7 - 1, to: startDate)!)
-        var byKey: [String: (title: String, color: String, dates: Set<String>)] = [:]
-        for e in room.events where e.date >= startS && e.date <= endS && (filter == nil || e.userId == filter) {
-            let key = e.title + "|" + e.color
-            if byKey[key] == nil { byKey[key] = (e.title, e.color, []) }
-            byKey[key]!.dates.insert(e.date)
-        }
+        let vis = room.events.filter { $0.date >= startS && $0.date <= endS && (filter == nil || $0.userId == filter) }
         var result: [EvRun] = []
-        for (_, v) in byKey {
+        // gid(연결 키)가 있는 것만 연속 날짜로 묶어 기간 바로. 없으면(단일·여러날) 각각 단독 칩.
+        // (앱 isSameRangeGroup과 동일 — 제목이 같아도 gid 없으면 절대 안 붙음)
+        var byGid: [String: (title: String, color: String, dates: Set<String>)] = [:]
+        for e in vis {
+            if let g = e.gid, !g.isEmpty {
+                if byGid[g] == nil { byGid[g] = (e.title, e.color, []) }
+                byGid[g]!.dates.insert(e.date)
+            } else {
+                result.append(EvRun(title: e.title, color: e.color, start: e.date, end: e.date, lane: 0))
+            }
+        }
+        for (_, v) in byGid {
             let ds = v.dates.sorted()
             var i = 0
             while i < ds.count {
@@ -681,15 +701,19 @@ struct ComboView: View {
         let cal = Calendar.current
         let t = todayStr()
         let evs = dedupeEvents(room.events.filter { $0.date >= t && (filter == nil || $0.userId == filter) })
-        var byKey: [String: (title: String, color: String, dates: [String: String])] = [:]  // dates: date→time
-        for e in evs {
-            let key = e.title + "|" + e.color
-            if byKey[key] == nil { byKey[key] = (e.title, e.color, [:]) }
-            let prev = byKey[key]!.dates[e.date]
-            if prev == nil || (!e.time.isEmpty && e.time < (prev ?? "zz")) { byKey[key]!.dates[e.date] = e.time }
-        }
         var result: [UpRun] = []
-        for (_, v) in byKey {
+        // gid가 있는 것만 연속 날짜로 묶음. 없으면(단일·여러날) 각각 단독. 제목만 같고 gid 없으면 안 붙음.
+        var byGid: [String: (title: String, color: String, dates: [String: String])] = [:]  // gid → date→time
+        for e in evs {
+            if let g = e.gid, !g.isEmpty {
+                if byGid[g] == nil { byGid[g] = (e.title, e.color, [:]) }
+                let prev = byGid[g]!.dates[e.date]
+                if prev == nil || (!e.time.isEmpty && e.time < (prev ?? "zz")) { byGid[g]!.dates[e.date] = e.time }
+            } else {
+                result.append(UpRun(title: e.title, color: e.color, start: e.date, end: e.date, time: e.time))
+            }
+        }
+        for (_, v) in byGid {
             let ds = v.dates.keys.sorted()
             var i = 0
             while i < ds.count {
@@ -748,20 +772,34 @@ struct MiniMonth: View {
     }
     var body: some View {
         let cal = Calendar.current
-        let comp = cal.dateComponents([.year, .month], from: Date())
+        let off = readComboMonthOffset()
+        let base = cal.date(byAdding: .month, value: off, to: Date()) ?? Date()
+        let comp = cal.dateComponents([.year, .month], from: base)
         let first = cal.date(from: comp)!
         let wd = cal.component(.weekday, from: first) - 1
         let start = cal.date(byAdding: .day, value: -wd, to: first)!
+        let baseMonth = cal.component(.month, from: base)
         let cols = Array(repeating: GridItem(.flexible(), spacing: 1), count: 7)
         VStack(alignment: .leading, spacing: 4) {
-            Text("\(cal.component(.month, from: Date()))월").font(.system(size: 15, weight: .bold)).foregroundColor(.ink)
+            // 이전/다음달 이동 — 라벨 탭 = 현재 달로 복귀
+            HStack(spacing: 2) {
+                Button(intent: ShiftComboMonthIntent(delta: -1)) {
+                    Image(systemName: "chevron.left").font(.system(size: 11, weight: .bold)).foregroundColor(.terra).frame(width: 18, height: 18)
+                }.buttonStyle(.plain)
+                Button(intent: ShiftComboMonthIntent(delta: -off)) {
+                    Text("\(baseMonth)월").font(.system(size: 15, weight: .bold)).foregroundColor(off == 0 ? .ink : .terra)
+                }.buttonStyle(.plain)
+                Button(intent: ShiftComboMonthIntent(delta: 1)) {
+                    Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold)).foregroundColor(.terra).frame(width: 18, height: 18)
+                }.buttonStyle(.plain)
+            }
             HStack(spacing: 0) { ForEach(0..<7) { i in
                 Text(["일","월","화","수","목","금","토"][i]).font(.system(size: 8, weight: .bold))
                     .foregroundColor(i == 0 ? .sunRed : .mutedBrown).frame(maxWidth: .infinity) } }
             LazyVGrid(columns: cols, spacing: 2) {
                 ForEach(0..<35, id: \.self) { i in
                     let d = cal.date(byAdding: .day, value: i, to: start)!
-                    let inMonth = cal.component(.month, from: d) == cal.component(.month, from: Date())
+                    let inMonth = cal.component(.month, from: d) == baseMonth
                     let isToday = fmt(d) == todayStr()
                     VStack(spacing: 1) {
                         Text("\(cal.component(.day, from: d))").font(.system(size: 10, weight: .semibold))
