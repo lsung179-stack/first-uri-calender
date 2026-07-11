@@ -297,7 +297,7 @@ struct WGHeader: View {
     var myUserId: String? = nil        // 현재 사용자 — 아바타 맨 앞에 고정(항상 노출)
     private var sealSize: CGFloat { compact ? 22 : 26 }
     private var avSize: CGFloat { compact ? 19 : 21 }
-    private var maxAvatars: Int { compact ? 4 : 5 }
+    private var maxAvatars: Int { compact ? 3 : 4 }   // '전체' 칩이 한 자리 차지 → 그만큼 축소
     // 실멤버(가상 제외)를 '나 먼저' 순서로 정렬 → prefix로 잘려도 내가 항상 보임.
     private var orderedMembers: [WGMember] {
         let reals = room.members.filter { ($0.userId ?? "").isEmpty == false }
@@ -312,6 +312,15 @@ struct WGHeader: View {
             }.buttonStyle(.plain)
             // 멤버 아바타 = 그 사람만 보기 (탭). 겹치지 않게 간격, 사진 있으면 사진.
             HStack(spacing: 4) {
+                // 전체 = 필터 해제(모든 멤버 일정). 아무도 선택 안 됐을 때 강조.
+                Button(intent: SetFilterIntent(userId: "")) {
+                    Text("전체")
+                        .font(.system(size: compact ? 9 : 9.5, weight: .bold))
+                        .foregroundColor(active == nil ? .cream : .mutedBrown)
+                        .padding(.horizontal, 6).frame(height: avSize)
+                        .background(Capsule().fill(active == nil ? Color.terra : Color.mutedBrown.opacity(0.16)))
+                        .overlay(Capsule().stroke(active == nil ? Color.clear : Color.cream, lineWidth: 1))
+                }.buttonStyle(.plain)
                 ForEach(Array(orderedMembers.prefix(maxAvatars).enumerated()), id: \.offset) { _, m in
                     let uid = m.userId ?? ""
                     let on = (active == uid)
