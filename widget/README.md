@@ -27,7 +27,7 @@
 ```
 index.html (일정 로드/변경)
   → syncWidgetData()                         [bridge.js, 500ms 디바운스]
-  → Capacitor Preferences (group: group.com.lsung.uricalendar)
+  → capacitor-widgetsbridge-plugin setItem(group: group.com.lsung.uricalendar)
   → App Group UserDefaults "widget.events"
   → WidgetKit 타임라인이 읽어서 렌더 (자정 자동 롤오버 + 앱 트리거 갱신)
 ```
@@ -44,7 +44,7 @@ index.html (일정 로드/변경)
 ### 2. Codemagic 워크플로 (빌드 스크립트 수정)
 `npx cap sync ios`(또는 add) **다음**, xcodebuild/archive **이전**에 추가:
 ```bash
-npm i @capacitor/preferences            # 브릿지가 쓰는 플러그인 (미설치 시)
+npm i capacitor-widgetsbridge-plugin    # 브릿지가 쓰는 플러그인 (App Group UserDefaults 직접 기록)
 gem install xcodeproj --no-document
 ruby widget/ios/add_widget_target.rb ios/App/App.xcodeproj
 npx cap sync ios                        # 플러그인 새로 깔았으면 한 번 더
@@ -56,7 +56,7 @@ npx cap sync ios                        # 플러그인 새로 깔았으면 한 �
 - [x] 호출 지점: `syncWidgetData()`가 loadEvents 완료·일정 이동 2곳에서 호출됨(디바운스 700ms 내장). ⚠️ 필요 시 저장/삭제/enterRoom/loadRooms 후에도 추가 호출 가능(현재는 loadEvents가 커버).
 - [x] **딥링크 핸들러 추가됨**: `com.lsung.uricalendar://add?room=<id>` — `setupNativeAuthDeepLink`의 `appUrlOpen`(~7349)에 케이스 추가. 해당 방 진입(`enterRoom`) 후 오늘 날짜시트(`openDateSheetForToday`) 오픈. ＋버튼이 이 스킴을 씀.
 - [x] **할일 토글 flush 추가됨**: `setupWidgetForegroundFlush`가 `App.addListener('appStateChange', isActive)`로 포그라운드 복귀마다 `_wgFlushPendingTodos()` 호출 — App Group `widget.pendingTodoToggles`(위젯이 append한 todoId 배열)를 읽어 **id별 홀짝 판정**(홀수번만 최종 토글) 후 DB `is_done` 반영(done_by/done_at/expires_at 포함, toggleTodoDone과 동일 필드) → 대기열 비움 → 위젯 재동기화. ⚠️ **DB 컬럼은 `is_done`**(bridge가 `done`으로 잘못 읽던 버그 수정: select `is_done`, 출력 `done:!!t.is_done`).
-- [ ] `npm i @capacitor/preferences` (App Group group 지정: `P.configure({group})` 호출). — **빌드 저장소에서 설치 필요.**
+- [x] `capacitor-widgetsbridge-plugin` — package.json에 추가됨. ⚠️ **@capacitor/preferences는 못 씀**: group 옵션을 줘도 UserDefaults.standard에 키 프리픽스만 붙여 저장 → 별도 프로세스인 위젯이 못 읽음. widgetsbridge는 `UserDefaults(suiteName:group)`에 프리픽스 없이 직접 기록해 위젯이 그대로 읽음.
 - [ ] (선택) `capacitor-widgetsbridge-plugin` 설치 시 일정 변경 즉시 위젯 갱신 — 없어도 자정 갱신 동작.
 - ✅ **검증됨**: `buildWidgetPayload()` 단위 테스트(scratchpad/bridgetest.mjs·bridgelive.mjs) + is_done 매핑·flush 홀짝(scratchpad/widgetflush.mjs) 전부 통과.
 
@@ -75,7 +75,7 @@ npx cap sync ios                        # 플러그인 새로 깔았으면 한 �
 ## ⚠️ 빌드 저장소 주의
 Codemagic이 클론하는 **빌드 저장소는 이 repo가 아님** (워크플로가 `package.json`·`assets/`·`google-services.json`을 참조하는데 이 repo엔 없음).
 도입 시 이 `widget/` 폴더 전체를 **빌드 저장소 루트로 복사**해야 주입 스텝이 동작한다 (스텝은 `widget/ios/add_widget_target.rb` 존재 여부로 자동 활성/스킵).
-완성된 워크플로는 `widget/codemagic-widget.yaml` — 기존 yaml에 (1) preferences 보장 (2) 위젯 주입(엔타이틀먼트 재작성 스텝 뒤) (3) `uricalendar_widget_profile` 서명 참조가 추가된 버전.
+⚠️ `widget/codemagic-widget.yaml`은 옛 초안(수동 프로파일 방식). 실제 적용본은 빌드 저장소(lsung179-stack/appstore)의 codemagic.yaml에 직접 반영: (1) package.json에 capacitor-widgetsbridge-plugin (2) ios-compile-check·ios-testflight에 위젯 주입 스텝(Sign in with Apple 엔타이틀먼트 뒤) (3) 서명은 app-store-connect fetch-signing-files로 앱+위젯 두 번들 ID 자동 발급.
 
 ## 설계 메모
 - **왜 CI 주입 스크립트인가**: Codemagic이 매 빌드 네이티브 프로젝트를 재생성하므로 Xcode에서 수동으로 타깃을 추가해도 다음 빌드에 사라짐. Ruby(xcodeproj)로 매 빌드 재주입하는 것이 유일하게 지속 가능한 방식.

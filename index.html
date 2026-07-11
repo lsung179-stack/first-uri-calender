@@ -8225,14 +8225,15 @@ function _wgShift(base, days){
 }
 async function _wgDoSync(){
   try{
-    const P=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Preferences;
-    if(!P||!_currentUser) return;
+    // capacitor-widgetsbridge-plugin: App Group UserDefaults(suiteName)에 '직접' 기록.
+    // ⚠️ @capacitor/preferences는 group 옵션을 줘도 UserDefaults.standard에 키 프리픽스만 붙여
+    //    저장하므로(별도 프로세스인 위젯이 못 읽음) 위젯 공유엔 못 씀 → 이 플러그인을 씀.
+    const W=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.WidgetsBridge;
+    if(!W||!W.setItem||!_currentUser) return;
     const payload=await buildWidgetPayload();
     if(!payload) return;
-    if(P.configure){ try{ await P.configure({group:WIDGET_GROUP}); }catch(_){} }
-    await P.set({ key:WIDGET_KEY, value:JSON.stringify(payload) });
-    const W=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.WidgetsBridge;
-    if(W&&W.reloadAllTimelines){ try{ W.reloadAllTimelines(); }catch(_){} }
+    await W.setItem({ key:WIDGET_KEY, value:JSON.stringify(payload), group:WIDGET_GROUP });
+    if(W.reloadAllTimelines){ try{ await W.reloadAllTimelines(); }catch(_){} }
   }catch(_){ /* 위젯 동기화 실패는 무시 */ }
 }
 async function buildWidgetPayload(){
@@ -8268,14 +8269,18 @@ let _wgFlushing=false;
 async function _wgFlushPendingTodos(){
   if(_wgFlushing) return; _wgFlushing=true;
   try{
-    const P=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Preferences;
-    if(!P||!_currentUser){ return; }
-    if(P.configure){ try{ await P.configure({group:WIDGET_GROUP}); }catch(_){} }
+    const W=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.WidgetsBridge;
+    if(!W||!W.getItem||!_currentUser){ return; }
     let arr=[];
-    try{ const {value}=await P.get({key:'widget.pendingTodoToggles'}); if(value){ arr=JSON.parse(value)||[]; } }
-    catch(_){ arr=[]; }
+    try{
+      // 위젯(Swift)이 [String] 네이티브 배열로 기록 → results가 배열. 혹시 문자열이면 파싱.
+      const r=await W.getItem({key:'widget.pendingTodoToggles', group:WIDGET_GROUP});
+      const v=r&&r.results;
+      if(Array.isArray(v)) arr=v;
+      else if(typeof v==='string'&&v){ try{ arr=JSON.parse(v)||[]; }catch(_){ arr=[]; } }
+    }catch(_){ arr=[]; }
     // 대기열 즉시 비우기 (재진입 중복 방지)
-    try{ await P.remove({key:'widget.pendingTodoToggles'}); }catch(_){}
+    try{ if(W.removeItem) await W.removeItem({key:'widget.pendingTodoToggles', group:WIDGET_GROUP}); }catch(_){}
     if(!Array.isArray(arr)||!arr.length){ return; }
     // id별 홀짝 판정 → 홀수번만 최종 토글
     const parity={};

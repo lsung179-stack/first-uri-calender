@@ -28,7 +28,7 @@ if project.targets.any? { |t| t.name == WIDGET_NAME }
   exit 0
 end
 
-deployment_target = '16.0'
+deployment_target = '17.0'   # AppIntentConfiguration·인터랙티브 위젯이 iOS17+ 필수 (호스트 앱은 16 유지, iOS16 사용자는 위젯만 미노출)
 
 # 1) 위젯 타깃 생성
 widget = project.new_target(:app_extension, WIDGET_NAME, :ios, deployment_target)
