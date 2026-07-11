@@ -112,24 +112,12 @@ struct MemberQuery: EntityQuery {
         return out
     }
 }
-// 큰 위젯(systemLarge) 레이아웃 선택: 콤보(오늘+미니달력) 또는 한 달 전체 그리드
-enum WidgetLayout: String, AppEnum {
-    case combo
-    case month
-    static var typeDisplayRepresentation: TypeDisplayRepresentation = "큰 위젯 보기"
-    static var caseDisplayRepresentations: [WidgetLayout: DisplayRepresentation] = [
-        .combo: "다가오는 일정 + 미니 달력",
-        .month: "한 달 전체 달력",
-    ]
-}
 struct CalConfigIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource = "우리 캘린더 위젯"
     static var description = IntentDescription("볼 방과 멤버를 선택하세요. (프로필을 눌러도 멤버별로 볼 수 있어요)")
     @Parameter(title: "방") var room: RoomEntity?
     // 멤버 필터: '전체 보기'(기본) 또는 특정 멤버 선택. 드롭다운(직접 입력 아님).
     @Parameter(title: "멤버") var member: MemberEntity?
-    // 큰 위젯일 때 보기 방식 (작은/2주 위젯엔 영향 없음)
-    @Parameter(title: "큰 위젯 보기", default: .combo) var layout: WidgetLayout
 }
 
 // MARK: - 멤버 필터 탭 인텐트 (프로필 눌러서 그 사람 일정만 보기)
@@ -187,19 +175,18 @@ struct CalEntry: TimelineEntry {
     let date: Date
     let room: WGRoom?
     let memberFilter: String?   // userId or nil(전체)
-    var layout: WidgetLayout = .combo
 }
 struct CalProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> CalEntry {
-        CalEntry(date: Date(), room: sampleRoom(), memberFilter: nil, layout: .combo)
+        CalEntry(date: Date(), room: sampleRoom(), memberFilter: nil)
     }
     func snapshot(for configuration: CalConfigIntent, in context: Context) async -> CalEntry {
         let room = pickRoom(loadWGData(), roomId: configuration.room?.id) ?? sampleRoom()
-        return CalEntry(date: Date(), room: room, memberFilter: effectiveFilter(configuration.member), layout: configuration.layout)
+        return CalEntry(date: Date(), room: room, memberFilter: effectiveFilter(configuration.member))
     }
     func timeline(for configuration: CalConfigIntent, in context: Context) async -> Timeline<CalEntry> {
         let room = pickRoom(loadWGData(), roomId: configuration.room?.id)
-        let entry = CalEntry(date: Date(), room: room, memberFilter: effectiveFilter(configuration.member), layout: configuration.layout)
+        let entry = CalEntry(date: Date(), room: room, memberFilter: effectiveFilter(configuration.member))
         // 자정에 '오늘'이 넘어가므로 자정 직후 갱신 예약(그 외는 앱이 reloadAllTimelines)
         let mid = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: 1, to: Date())!)
         return Timeline(entries: [entry], policy: .after(mid))
@@ -500,28 +487,13 @@ struct MiniMonth: View {
 
 // MARK: - 위젯 엔트리 뷰 (패밀리별 분기)
 
-struct UriCalendarEntryView: View {
-    @Environment(\.widgetFamily) var family
-    let entry: CalEntry
+// 방 없음(로그인/입장 전) 안내 화면 — 위젯 공통
+struct EmptyStateView: View {
     var body: some View {
-        if let room = entry.room {
-            switch family {
-            case .systemSmall: TodayView(room: room, filter: entry.memberFilter)
-            case .systemMedium: GridView(room: room, filter: entry.memberFilter, weeks: 2)
-            case .systemLarge:
-                // 위젯 편집의 '큰 위젯 보기'로 콤보 ↔ 한 달 전체 전환
-                if entry.layout == .month {
-                    GridView(room: room, filter: entry.memberFilter, weeks: 6)
-                } else {
-                    ComboView(room: room, filter: entry.memberFilter)
-                }
-            default: TodayView(room: room, filter: entry.memberFilter)
-            }
-        } else {
-            VStack { Text("우리 캘린더").font(.system(size: 14, weight: .bold)).foregroundColor(.terra)
-                Text("앱에서 방에 입장해 주세요").font(.system(size: 11)).foregroundColor(.mutedBrown) }
-                .frame(maxWidth: .infinity, maxHeight: .infinity).widgetBg()
-        }
+        VStack(spacing: 3) {
+            Text("우리 캘린더").font(.system(size: 14, weight: .bold)).foregroundColor(.terra)
+            Text("앱을 열어 방에 입장해 주세요").font(.system(size: 11)).foregroundColor(.mutedBrown)
+        }.frame(maxWidth: .infinity, maxHeight: .infinity).widgetBg()
     }
 }
 
@@ -532,20 +504,59 @@ extension View {
     }
 }
 
-// MARK: - 위젯 정의
+// MARK: - 위젯 정의 (종류별로 '분리' — 위젯 갤러리에 각각 따로 노출)
 
-struct UriCalendarWidget: Widget {
+// ① 오늘 (작은 위젯)
+struct TodayWidget: Widget {
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: "UriCalendarWidget", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
-            UriCalendarEntryView(entry: entry)
+        AppIntentConfiguration(kind: "UriToday", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
+            if let room = entry.room { TodayView(room: room, filter: entry.memberFilter) } else { EmptyStateView() }
         }
-        .configurationDisplayName("우리 캘린더")
-        .description("오늘·2주·한 달 일정을 홈 화면에서. 방과 멤버를 골라보세요.")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .configurationDisplayName("오늘 일정")
+        .description("오늘의 일정과 할 일을 한눈에.")
+        .supportedFamilies([.systemSmall])
+    }
+}
+// ② 2주 달력 (중간 위젯)
+struct TwoWeekWidget: Widget {
+    var body: some WidgetConfiguration {
+        AppIntentConfiguration(kind: "UriTwoWeek", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
+            if let room = entry.room { GridView(room: room, filter: entry.memberFilter, weeks: 2) } else { EmptyStateView() }
+        }
+        .configurationDisplayName("2주 달력")
+        .description("이번 주·다음 주 2주치 달력.")
+        .supportedFamilies([.systemMedium])
+    }
+}
+// ③ 다가오는 일정 + 미니 달력 (큰 위젯)
+struct ComboWidget: Widget {
+    var body: some WidgetConfiguration {
+        AppIntentConfiguration(kind: "UriCombo", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
+            if let room = entry.room { ComboView(room: room, filter: entry.memberFilter) } else { EmptyStateView() }
+        }
+        .configurationDisplayName("다가오는 일정")
+        .description("다가오는 일정 목록 + 이번 달 미니 달력.")
+        .supportedFamilies([.systemLarge])
+    }
+}
+// ④ 한 달 전체 달력 (큰 위젯)
+struct MonthWidget: Widget {
+    var body: some WidgetConfiguration {
+        AppIntentConfiguration(kind: "UriMonth", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
+            if let room = entry.room { GridView(room: room, filter: entry.memberFilter, weeks: 6) } else { EmptyStateView() }
+        }
+        .configurationDisplayName("한 달 달력")
+        .description("이번 달 전체 달력을 크게.")
+        .supportedFamilies([.systemLarge])
     }
 }
 
 @main
 struct UriCalendarWidgetBundle: WidgetBundle {
-    var body: some Widget { UriCalendarWidget() }
+    var body: some Widget {
+        TodayWidget()
+        TwoWeekWidget()
+        ComboWidget()
+        MonthWidget()
+    }
 }
