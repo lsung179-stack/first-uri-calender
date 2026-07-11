@@ -7363,6 +7363,23 @@ supa.auth.onAuthStateChange((event,session)=>{
           }catch(_){}
           return;
         }
+        // ── 위젯 날짜 탭 딥링크: com.lsung.uricalendar://open?room=<id>&date=YYYY-MM-DD ──
+        // 위젯에서 날짜를 누르면 그 방·그 날짜의 일정 시트를 열어 전부 보기(위젯은 스크롤 불가 대체).
+        if(url.indexOf('com.lsung.uricalendar://open')===0){
+          try{
+            var op=new URLSearchParams(url.split('?')[1]||'');
+            var orid=(op.get('room')||'').trim();
+            var odate=(op.get('date')||'').trim();
+            if(_currentUser){
+              var switched=false;
+              if(orid && (!_currentRoom || _currentRoom.id!==orid) && (_myRooms||[]).some(function(r){return r.id===orid;})){
+                enterRoom(orid); switched=true;
+              }
+              setTimeout(function(){ try{ if(/^\d{4}-\d{2}-\d{2}$/.test(odate)){ openDateSheet(odate); } else { openDateSheetForToday(); } }catch(_){} }, switched?450:0);
+            }
+          }catch(_){}
+          return;
+        }
         if(url.indexOf(NATIVE_AUTH_REDIRECT)!==0) return; // 우리 OAuth 콜백만 처리
         var hashPart=url.split('#')[1]||'';
         var queryPart=(url.split('?')[1]||'').split('#')[0];
@@ -8274,17 +8291,38 @@ async function _wgSealPng(mascotVal, roomName){
     return await _wgRasterize(svg);
   }catch(_){ return null; }
 }
+// 멤버 프로필 사진 URL → 48px 정사각 cover-crop PNG(dataURL). CORS 허용 이미지만(실패 시 null→색+이니셜 폴백).
+function _wgAvatarPng(url){
+  return new Promise(function(resolve){
+    if(!url){ resolve(null); return; }
+    var done=false; var to=setTimeout(function(){ if(!done){ done=true; resolve(null); } }, 2500);
+    try{
+      var img=new Image();
+      img.crossOrigin='anonymous';
+      img.onload=function(){ if(done)return; done=true; clearTimeout(to);
+        try{ var s=48; var c=document.createElement('canvas'); c.width=s; c.height=s; var x=c.getContext('2d');
+          var iw=img.naturalWidth||s, ih=img.naturalHeight||s; var sc=Math.max(s/iw, s/ih); var dw=iw*sc, dh=ih*sc;
+          x.drawImage(img,(s-dw)/2,(s-dh)/2,dw,dh); resolve(c.toDataURL('image/png'));
+        }catch(_){ resolve(null); } };
+      img.onerror=function(){ if(done)return; done=true; clearTimeout(to); resolve(null); };
+      img.src=url;
+    }catch(_){ if(!done){ done=true; clearTimeout(to); resolve(null); } }
+  });
+}
 async function buildWidgetPayload(){
   const rooms=(_myRooms||[]);
   if(!rooms.length) return { updatedAt:Date.now(), currentRoomId:null, rooms:[] };
   const roomIds=rooms.map(r=>r.id);
   const today=new Date();
-  const from=_wgShift(today,-7), to=_wgShift(today,40);
+  const from=_wgShift(today,-40), to=_wgShift(today,70);   // 이전/다음달 네비게이션 커버 위해 창 확대
   let events=[]; try{ const {data}=await supa.from('events').select('room_id,date,title,time,color,user_id').in('room_id',roomIds).gte('date',from).lte('date',to); events=data||[]; }catch(_){}
   let members=[]; try{ const {data}=await supa.from('members').select('room_id,user_id,color,is_virtual,virtual_name').in('room_id',roomIds); members=data||[]; }catch(_){}
   const realIds=[...new Set(members.filter(m=>m.user_id&&!m.is_virtual).map(m=>m.user_id))];
   let profById={};
-  if(realIds.length){ try{ const {data}=await supa.from('profiles').select('id,name,email').in('id',realIds); (data||[]).forEach(p=>{profById[p.id]=p;}); }catch(_){} }
+  if(realIds.length){ try{ const {data}=await supa.from('profiles').select('id,name,email,avatar_url').in('id',realIds); (data||[]).forEach(p=>{profById[p.id]=p;}); }catch(_){} }
+  // 멤버 프로필 사진을 작은 PNG(dataURL)로 유저별 1회 래스터화 → 위젯이 실제 사진 표시
+  const avPngById={};
+  try{ await Promise.all(realIds.map(async function(id){ const u=profById[id]&&profById[id].avatar_url; if(u){ avPngById[id]=await _wgAvatarPng(u); } })); }catch(_){}
   let todos=[]; try{ const {data}=await supa.from('todos').select('id,room_id,start_date,title,time,color,is_done').in('room_id',roomIds).gte('start_date',from).lte('start_date',to); todos=data||[]; }catch(_){}
   const hx=c=>colorHex(c||'c-vintage');
   const sealMap=_mySealByRoom||{};
@@ -8292,7 +8330,7 @@ async function buildWidgetPayload(){
     const rm=members.filter(m=>m.room_id===r.id).map(m=>{
       const name=m.is_virtual?(m.virtual_name||'멤버')
         :((profById[m.user_id]&&profById[m.user_id].name)||(profById[m.user_id]&&profById[m.user_id].email?profById[m.user_id].email.split('@')[0]:'멤버'));
-      return { userId:m.user_id||null, name, color:hx(m.color) };
+      return { userId:m.user_id||null, name, color:hx(m.color), avatarPng:(m.user_id&&avPngById[m.user_id])||null };
     });
     const re=events.filter(e=>e.room_id===r.id).map(e=>({ date:e.date, title:String(e.title||'').slice(0,60), time:String(e.time||'').trim(), color:hx(e.color), userId:e.user_id||null }));
     const rt=todos.filter(t=>t.room_id===r.id).map(t=>({ id:String(t.id), date:t.start_date, title:String(t.title||'').slice(0,60), time:String(t.time||'').trim(), color:hx(t.color), done:!!t.is_done }));
