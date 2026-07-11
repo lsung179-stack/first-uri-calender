@@ -15,6 +15,7 @@ import UIKit
 struct WGData: Codable {
     let updatedAt: Double?
     let currentRoomId: String?
+    var myUserId: String?          // 현재 로그인 사용자 — 작은 위젯 '내 일정만' 기본값
     let rooms: [WGRoom]
 }
 struct WGRoom: Codable, Identifiable {
@@ -189,7 +190,7 @@ struct ToggleTodoIntent: AppIntent {
             }
             return WGRoom(id: r.id, name: r.name, seal: r.seal, sealPng: r.sealPng, members: r.members, events: r.events, todos: todos)
         }
-        return WGData(updatedAt: data.updatedAt, currentRoomId: data.currentRoomId, rooms: rooms)
+        return WGData(updatedAt: data.updatedAt, currentRoomId: data.currentRoomId, myUserId: data.myUserId, rooms: rooms)
     }
 }
 // (WGData 등은 이미 Codable → Encodable 자동 충족. JSONEncoder().encode 그대로 사용)
@@ -200,18 +201,19 @@ struct CalEntry: TimelineEntry {
     let date: Date
     let room: WGRoom?
     let memberFilter: String?   // userId or nil(전체)
+    var myUserId: String? = nil // 현재 사용자 (작은 위젯 기본 필터)
 }
 struct CalProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> CalEntry {
-        CalEntry(date: Date(), room: sampleRoom(), memberFilter: nil)
+        CalEntry(date: Date(), room: sampleRoom(), memberFilter: nil, myUserId: "u1")
     }
     func snapshot(for configuration: CalConfigIntent, in context: Context) async -> CalEntry {
         let room = effectiveRoom(configuration.room?.id) ?? sampleRoom()
-        return CalEntry(date: Date(), room: room, memberFilter: effectiveFilter(configuration.member))
+        return CalEntry(date: Date(), room: room, memberFilter: effectiveFilter(configuration.member), myUserId: loadWGData()?.myUserId)
     }
     func timeline(for configuration: CalConfigIntent, in context: Context) async -> Timeline<CalEntry> {
         let room = effectiveRoom(configuration.room?.id)
-        let entry = CalEntry(date: Date(), room: room, memberFilter: effectiveFilter(configuration.member))
+        let entry = CalEntry(date: Date(), room: room, memberFilter: effectiveFilter(configuration.member), myUserId: loadWGData()?.myUserId)
         // 자정에 '오늘'이 넘어가므로 자정 직후 갱신 예약(그 외는 앱이 reloadAllTimelines)
         let mid = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: 1, to: Date())!)
         return Timeline(entries: [entry], policy: .after(mid))
@@ -308,7 +310,10 @@ struct SealIcon: View {
 
 struct TodayView: View {
     let room: WGRoom; let filter: String?
-    var todays: [WGEvent] { room.events.filter { $0.date == todayStr() && (filter == nil || $0.userId == filter) }
+    var myUserId: String? = nil
+    // 작은 위젯 기본 = '내 일정만'. 명시 필터(설정/탭)가 있으면 그걸 우선.
+    private var eff: String? { filter ?? myUserId }
+    var todays: [WGEvent] { room.events.filter { $0.date == todayStr() && (eff == nil || $0.userId == eff) }
         .sorted { ($0.time.isEmpty ? "zz" : $0.time) < ($1.time.isEmpty ? "zz" : $1.time) } }
     var todaysTodos: [WGTodo] { room.todos.filter { $0.date == todayStr() } }
     var body: some View {
@@ -547,10 +552,10 @@ extension View {
 struct TodayWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: "UriToday", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
-            if let room = entry.room { TodayView(room: room, filter: entry.memberFilter) } else { EmptyStateView() }
+            if let room = entry.room { TodayView(room: room, filter: entry.memberFilter, myUserId: entry.myUserId) } else { EmptyStateView() }
         }
         .configurationDisplayName("오늘 일정")
-        .description("오늘의 일정과 할 일을 한눈에.")
+        .description("오늘의 일정과 할 일을 한눈에. (기본: 내 일정)")
         .supportedFamilies([.systemSmall])
     }
 }

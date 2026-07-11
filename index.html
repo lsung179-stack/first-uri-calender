@@ -8300,7 +8300,8 @@ async function buildWidgetPayload(){
   });
   // 각 방 씰을 PNG로 래스터화(개인별 seal 기준) → 위젯이 앱과 똑같은 컬러 씰 표시
   try{ await Promise.all(outRooms.map(async function(r){ r.sealPng=await _wgSealPng(r.seal, r.name); })); }catch(_){}
-  return { updatedAt:Date.now(), currentRoomId:(_currentRoom?_currentRoom.id:(outRooms[0]?outRooms[0].id:null)), rooms:outRooms };
+  return { updatedAt:Date.now(), currentRoomId:(_currentRoom?_currentRoom.id:(outRooms[0]?outRooms[0].id:null)),
+           myUserId:(_currentUser?_currentUser.id:null), rooms:outRooms };
 }
 /* ═══ 위젯이 오프라인 낙관 토글한 할일(widget.pendingTodoToggles)을 앱 포그라운드 복귀 시 Supabase에 반영 ═══
    위젯은 iOS17+ 인터랙티브라 App Group에 todoId를 append만 하고, 실제 DB 반영은 앱이 여기서 flush.
