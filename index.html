@@ -7346,6 +7346,22 @@ supa.auth.onAuthStateChange((event,session)=>{
           }
           return;
         }
+        // ── 위젯 ＋ 딥링크: com.lsung.uricalendar://add?room=<roomId> ──
+        // 위젯의 ＋버튼이 이 스킴을 씀 → 해당 방으로 진입 후 오늘 날짜시트(추가 버튼 포함) 오픈.
+        if(url.indexOf('com.lsung.uricalendar://add')===0){
+          try{
+            var ap=new URLSearchParams(url.split('?')[1]||'');
+            var arid=(ap.get('room')||'').trim();
+            if(_currentUser){
+              if(arid && (!_currentRoom || _currentRoom.id!==arid) && (_myRooms||[]).some(function(r){return r.id===arid;})){
+                enterRoom(arid);
+              }
+              // 방 진입/멤버 로드가 끝나도록 살짝 지연 후 오늘 날짜시트 열기
+              setTimeout(function(){ try{ openDateSheetForToday(); }catch(_){} }, arid?450:0);
+            }
+          }catch(_){}
+          return;
+        }
         if(url.indexOf(NATIVE_AUTH_REDIRECT)!==0) return; // 우리 OAuth 콜백만 처리
         var hashPart=url.split('#')[1]||'';
         var queryPart=(url.split('?')[1]||'').split('#')[0];
@@ -8186,35 +8202,120 @@ function daysInMonth(y,m){return new Date(y,m+1,0).getDate()}
 function firstDow(y,m){return new Date(y,m,1).getDay()}
 
 /* ── 일정 로드 (방의 모든 일정) ── */
-/* ── 홈화면 위젯 데이터 브리지 ──
-   앱이 "오늘 일정"을 네이티브 공유 저장소(@capacitor/preferences → Android의
-   CapacitorStorage SharedPreferences)에 기록한다. 위젯은 이 값을 읽어 표시한다.
-   Preferences 플러그인이 없거나 웹이면 조용히 no-op (앱 동작에 영향 없음). */
-async function syncWidgetData(){
+/* ═══ 홈화면 위젯 데이터 브릿지 v2 (widget/bridge.js 이식) ═══
+   앱이 내가 속한 '모든 방'의 [오늘-7~오늘+40] 창 일정 + 멤버 + 할일 + 씰을
+   App Group(group.com.lsung.uricalendar)의 'widget.data' 키에 JSON으로 기록.
+   위젯이 이걸 읽어 오늘/2주/콤보/월 + 방 선택 + 멤버 필터를 표시.
+   네이티브 아니거나 Preferences 없으면 조용히 no-op (앱 영향 0).
+   스키마·자세한 설명: widget/bridge.js 참고. */
+const WIDGET_GROUP='group.com.lsung.uricalendar';
+const WIDGET_KEY='widget.data';
+let _wgSyncTimer=null;
+function syncWidgetData(){
   try{
     if(!isNativeApp()) return;
-    const P = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Preferences;
-    if(!P) return;
-    const key = _todayKeyStr();
-    let evs=[]; try{ evs=getDayEvents(key)||[]; }catch(_){ evs=[]; }
-    const items = evs
-      .filter(e=>e && e.title)
-      .map(e=>({ time:String(e.time||'').trim(), title:String(e.title).slice(0,60), color:e.color||'' }))
-      .sort((a,b)=>{
-        if(!a.time && b.time) return -1;   // 종일(시간 없음) 먼저
-        if(a.time && !b.time) return 1;
-        return a.time.localeCompare(b.time);
-      })
-      .slice(0,10);
-    const payload = {
-      updatedAt: Date.now(),
-      roomName: (_currentRoom && _currentRoom.name) ? String(_currentRoom.name) : '우리 캘린더',
-      dateLabel: key,
-      today: items
-    };
-    await P.set({ key:'widget_today', value: JSON.stringify(payload) });
+    clearTimeout(_wgSyncTimer);
+    _wgSyncTimer=setTimeout(_wgDoSync, 700);   // 디바운스: 연속 변경 몰아서 1회
+  }catch(_){}
+}
+function _wgShift(base, days){
+  const d=new Date(base.getFullYear(), base.getMonth(), base.getDate()+days);
+  const p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+}
+async function _wgDoSync(){
+  try{
+    const P=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Preferences;
+    if(!P||!_currentUser) return;
+    const payload=await buildWidgetPayload();
+    if(!payload) return;
+    if(P.configure){ try{ await P.configure({group:WIDGET_GROUP}); }catch(_){} }
+    await P.set({ key:WIDGET_KEY, value:JSON.stringify(payload) });
+    const W=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.WidgetsBridge;
+    if(W&&W.reloadAllTimelines){ try{ W.reloadAllTimelines(); }catch(_){} }
   }catch(_){ /* 위젯 동기화 실패는 무시 */ }
 }
+async function buildWidgetPayload(){
+  const rooms=(_myRooms||[]);
+  if(!rooms.length) return { updatedAt:Date.now(), currentRoomId:null, rooms:[] };
+  const roomIds=rooms.map(r=>r.id);
+  const today=new Date();
+  const from=_wgShift(today,-7), to=_wgShift(today,40);
+  let events=[]; try{ const {data}=await supa.from('events').select('room_id,date,title,time,color,user_id').in('room_id',roomIds).gte('date',from).lte('date',to); events=data||[]; }catch(_){}
+  let members=[]; try{ const {data}=await supa.from('members').select('room_id,user_id,color,is_virtual,virtual_name').in('room_id',roomIds); members=data||[]; }catch(_){}
+  const realIds=[...new Set(members.filter(m=>m.user_id&&!m.is_virtual).map(m=>m.user_id))];
+  let profById={};
+  if(realIds.length){ try{ const {data}=await supa.from('profiles').select('id,name,email').in('id',realIds); (data||[]).forEach(p=>{profById[p.id]=p;}); }catch(_){} }
+  let todos=[]; try{ const {data}=await supa.from('todos').select('id,room_id,start_date,title,time,color,is_done').in('room_id',roomIds).gte('start_date',from).lte('start_date',to); todos=data||[]; }catch(_){}
+  const hx=c=>colorHex(c||'c-vintage');
+  const sealMap=_mySealByRoom||{};
+  const outRooms=rooms.map(r=>{
+    const rm=members.filter(m=>m.room_id===r.id).map(m=>{
+      const name=m.is_virtual?(m.virtual_name||'멤버')
+        :((profById[m.user_id]&&profById[m.user_id].name)||(profById[m.user_id]&&profById[m.user_id].email?profById[m.user_id].email.split('@')[0]:'멤버'));
+      return { userId:m.user_id||null, name, color:hx(m.color) };
+    });
+    const re=events.filter(e=>e.room_id===r.id).map(e=>({ date:e.date, title:String(e.title||'').slice(0,60), time:String(e.time||'').trim(), color:hx(e.color), userId:e.user_id||null }));
+    const rt=todos.filter(t=>t.room_id===r.id).map(t=>({ id:String(t.id), date:t.start_date, title:String(t.title||'').slice(0,60), time:String(t.time||'').trim(), color:hx(t.color), done:!!t.is_done }));
+    return { id:r.id, name:r.name||'방', seal:sealMap[r.id]||null, members:rm, events:re, todos:rt };
+  });
+  return { updatedAt:Date.now(), currentRoomId:(_currentRoom?_currentRoom.id:(outRooms[0]?outRooms[0].id:null)), rooms:outRooms };
+}
+/* ═══ 위젯이 오프라인 낙관 토글한 할일(widget.pendingTodoToggles)을 앱 포그라운드 복귀 시 Supabase에 반영 ═══
+   위젯은 iOS17+ 인터랙티브라 App Group에 todoId를 append만 하고, 실제 DB 반영은 앱이 여기서 flush.
+   같은 id가 홀수번 = 최종적으로 뒤집힘(짝수번 = 상쇄). 반영 후 대기열 비움 + 위젯 재동기화. */
+let _wgFlushing=false;
+async function _wgFlushPendingTodos(){
+  if(_wgFlushing) return; _wgFlushing=true;
+  try{
+    const P=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Preferences;
+    if(!P||!_currentUser){ return; }
+    if(P.configure){ try{ await P.configure({group:WIDGET_GROUP}); }catch(_){} }
+    let arr=[];
+    try{ const {value}=await P.get({key:'widget.pendingTodoToggles'}); if(value){ arr=JSON.parse(value)||[]; } }
+    catch(_){ arr=[]; }
+    // 대기열 즉시 비우기 (재진입 중복 방지)
+    try{ await P.remove({key:'widget.pendingTodoToggles'}); }catch(_){}
+    if(!Array.isArray(arr)||!arr.length){ return; }
+    // id별 홀짝 판정 → 홀수번만 최종 토글
+    const parity={};
+    arr.forEach(id=>{ const k=String(id); parity[k]=(parity[k]||0)+1; });
+    const flipIds=Object.keys(parity).filter(k=>parity[k]%2===1);
+    if(!flipIds.length){ return; }
+    const isPrem=isEffectivePremium();
+    // 현재 DB 상태 조회 후 뒤집기 (위젯이 무엇을 봤든 서버 기준으로 정확히 반영)
+    let cur=[];
+    try{ const {data}=await supa.from('todos').select('id,is_done').in('id',flipIds); cur=data||[]; }catch(_){}
+    const curMap={}; cur.forEach(t=>{ curMap[String(t.id)]=!!t.is_done; });
+    for(const id of flipIds){
+      const turningOn=!curMap[id]; // 현재 상태의 반대
+      const updates={
+        is_done:turningOn,
+        done_by:turningOn?((_currentUser&&_currentUser.id)||null):null,
+        done_at:turningOn?new Date().toISOString():null,
+        expires_at:(turningOn&&!isPrem)?new Date(Date.now()+FREE_LIMITS.doneTodoDays*86400000).toISOString():null
+      };
+      try{ await supa.from('todos').update(updates).eq('id',id); }catch(_){}
+    }
+    // 앱 상태 재로드 + 위젯 재동기화
+    try{ if(window.loadTodos) await window.loadTodos(); if(window.safeRender) window.safeRender(); }catch(_){}
+    syncWidgetData();
+  }catch(_){ /* flush 실패는 조용히 무시 */ }
+  finally{ _wgFlushing=false; }
+}
+/* 앱 포그라운드 복귀마다 위젯 대기 토글 flush + 위젯 데이터 재동기화 (네이티브 전용) */
+(function setupWidgetForegroundFlush(){
+  if(!isNativeApp()) return;
+  try{
+    const App=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.App;
+    if(!App||!App.addListener) return;
+    App.addListener('appStateChange', function(state){
+      if(state&&state.isActive){
+        _wgFlushPendingTodos();
+      }
+    });
+  }catch(_){}
+})();
 async function loadEvents(){
   if(!_currentRoom)return;
   _events={};

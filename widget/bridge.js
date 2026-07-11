@@ -105,7 +105,7 @@ async function buildWidgetPayload() {
   let todos = [];
   try {
     const { data } = await supa.from('todos')
-      .select('id,room_id,start_date,title,time,color,done')
+      .select('id,room_id,start_date,title,time,color,is_done')
       .in('room_id', roomIds).gte('start_date', from).lte('start_date', to);
     todos = data || [];
   } catch (_) {}
@@ -134,7 +134,7 @@ async function buildWidgetPayload() {
       title: String(t.title || '').slice(0, 60),
       time: String(t.time || '').trim(),
       color: hex(t.color),
-      done: !!t.done,
+      done: !!t.is_done,
     }));
     return { id: r.id, name: r.name || '방', seal: sealMap[r.id] || null,
              members: rMembers, events: rEvents, todos: rTodos };

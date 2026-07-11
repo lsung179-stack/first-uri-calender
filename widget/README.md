@@ -51,14 +51,14 @@ npx cap sync ios                        # 플러그인 새로 깔았으면 한 �
 ```
 - ⚠️ 실제 워크플로 yaml/스크립트를 보고 정확한 위치에 끼워야 함 — 도입 시점에 Codemagic 워크플로 내용 공유 필요.
 
-### 3. index.html 이식 (bridge.js v2 — 실제 코드 작성 완료·테스트 통과)
-- [ ] `bridge.js`(v2) 내용을 index.html에 병합 — 전역 스코프(<16786 IIFE 바깥). **기존 `syncWidgetData`(line ~8193, widget_today 단일방)는 삭제하고 이걸로 교체.**
-- [ ] 호출 지점 연결: `syncWidgetData()`를 loadEvents 완료·일정 저장/수정/삭제·enterRoom·loadRooms 후에 호출(디바운스 내장).
-- [ ] **딥링크 핸들러 추가**: `com.lsung.uricalendar://add?room=<id>` 수신 시 그 방으로 일정 추가 화면 열기(iOS setupNativeAuthDeepLink ~7286, Android intent-filter). ＋버튼이 이 스킴을 씀.
-- [ ] **할일 토글 flush**: 앱 포그라운드 복귀 시 App Group의 `widget.pendingTodoToggles`(위젯이 기록한 todoId 배열)를 읽어 Supabase todos.done 반영 후 배열 비우기. (위젯은 iOS17+ 인터랙티브라 오프라인 낙관 토글만 하고, 실제 DB 반영은 앱이 flush)
-- [ ] `npm i @capacitor/preferences` (App Group group 지정: bridge가 `P.configure({group})` 호출).
+### 3. index.html 이식 — ✅ **완료 (index.html에 병합됨)**
+- [x] `bridge.js`(v2) 내용을 index.html에 병합 — 전역 스코프(<16786 IIFE 바깥, `syncWidgetData`/`buildWidgetPayload`/`_wgDoSync`/`_wgShift` @~8205). **기존 `widget_today` 단일방 버전은 교체됨.**
+- [x] 호출 지점: `syncWidgetData()`가 loadEvents 완료·일정 이동 2곳에서 호출됨(디바운스 700ms 내장). ⚠️ 필요 시 저장/삭제/enterRoom/loadRooms 후에도 추가 호출 가능(현재는 loadEvents가 커버).
+- [x] **딥링크 핸들러 추가됨**: `com.lsung.uricalendar://add?room=<id>` — `setupNativeAuthDeepLink`의 `appUrlOpen`(~7349)에 케이스 추가. 해당 방 진입(`enterRoom`) 후 오늘 날짜시트(`openDateSheetForToday`) 오픈. ＋버튼이 이 스킴을 씀.
+- [x] **할일 토글 flush 추가됨**: `setupWidgetForegroundFlush`가 `App.addListener('appStateChange', isActive)`로 포그라운드 복귀마다 `_wgFlushPendingTodos()` 호출 — App Group `widget.pendingTodoToggles`(위젯이 append한 todoId 배열)를 읽어 **id별 홀짝 판정**(홀수번만 최종 토글) 후 DB `is_done` 반영(done_by/done_at/expires_at 포함, toggleTodoDone과 동일 필드) → 대기열 비움 → 위젯 재동기화. ⚠️ **DB 컬럼은 `is_done`**(bridge가 `done`으로 잘못 읽던 버그 수정: select `is_done`, 출력 `done:!!t.is_done`).
+- [ ] `npm i @capacitor/preferences` (App Group group 지정: `P.configure({group})` 호출). — **빌드 저장소에서 설치 필요.**
 - [ ] (선택) `capacitor-widgetsbridge-plugin` 설치 시 일정 변경 즉시 위젯 갱신 — 없어도 자정 갱신 동작.
-- ✅ **데이터 계약 검증됨**: `buildWidgetPayload()` 단위 테스트(scratchpad/bridgetest.mjs)로 모든 방·멤버(프로필명+가상)·일정(hex 색)·할일·seal JSON 정확 확인.
+- ✅ **검증됨**: `buildWidgetPayload()` 단위 테스트(scratchpad/bridgetest.mjs·bridgelive.mjs) + is_done 매핑·flush 홀짝(scratchpad/widgetflush.mjs) 전부 통과.
 
 ### 3b. Swift 위젯 (widget/ios/UriCalendarWidget.swift — 작성 완료, ⚠️Xcode 컴파일 검증 필요)
 - 4종: 오늘(systemSmall)·2주 캘린더(systemMedium)·콤보=오늘+미니월(systemLarge). 월 그리드는 `GridView(weeks:6)`로 large 편집 옵션 추가 가능.
