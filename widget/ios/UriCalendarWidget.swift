@@ -84,12 +84,40 @@ struct RoomQuery: EntityQuery {
         return nil
     }
 }
+// 멤버 필터 = 드롭다운(직접 입력 X). id="" 는 '전체 보기'.
+struct MemberEntity: AppEntity {
+    let id: String     // userId ("" = 전체)
+    let name: String
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "멤버"
+    var displayRepresentation: DisplayRepresentation { DisplayRepresentation(title: "\(name)") }
+    static var defaultQuery = MemberQuery()
+}
+struct MemberQuery: EntityQuery {
+    func entities(for identifiers: [String]) async throws -> [MemberEntity] {
+        allMembers().filter { identifiers.contains($0.id) }
+    }
+    func suggestedEntities() async throws -> [MemberEntity] { allMembers() }
+    func defaultResult() async -> MemberEntity? { MemberEntity(id: "", name: "전체 보기") }
+    // 모든 방의 실제 멤버(가상 제외)를 userId로 중복 제거해 나열. 맨 앞에 '전체 보기'.
+    private func allMembers() -> [MemberEntity] {
+        var out: [MemberEntity] = [MemberEntity(id: "", name: "전체 보기")]
+        var seen = Set<String>()
+        for r in (loadWGData()?.rooms ?? []) {
+            for m in r.members {
+                guard let uid = m.userId, !uid.isEmpty, !seen.contains(uid) else { continue }
+                seen.insert(uid)
+                out.append(MemberEntity(id: uid, name: m.name))
+            }
+        }
+        return out
+    }
+}
 struct CalConfigIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource = "우리 캘린더 위젯"
     static var description = IntentDescription("볼 방과 멤버를 선택하세요.")
     @Parameter(title: "방") var room: RoomEntity?
-    // 멤버 필터: 비우면 전체. userId 문자열(없으면 '나만'은 앱이 currentUser로 처리).
-    @Parameter(title: "이 멤버만 (선택)") var memberUserId: String?
+    // 멤버 필터: '전체 보기'(기본) 또는 특정 멤버 선택. 드롭다운(직접 입력 아님).
+    @Parameter(title: "멤버") var member: MemberEntity?
 }
 
 // MARK: - 할일 체크 인텐트 (위젯에서 바로 완료 — App Group 대기열 기록, 앱이 flush)
@@ -140,15 +168,20 @@ struct CalProvider: AppIntentTimelineProvider {
     }
     func snapshot(for configuration: CalConfigIntent, in context: Context) async -> CalEntry {
         let room = pickRoom(loadWGData(), roomId: configuration.room?.id) ?? sampleRoom()
-        return CalEntry(date: Date(), room: room, memberFilter: configuration.memberUserId)
+        return CalEntry(date: Date(), room: room, memberFilter: wgMemberFilter(configuration.member))
     }
     func timeline(for configuration: CalConfigIntent, in context: Context) async -> Timeline<CalEntry> {
         let room = pickRoom(loadWGData(), roomId: configuration.room?.id)
-        let entry = CalEntry(date: Date(), room: room, memberFilter: configuration.memberUserId)
+        let entry = CalEntry(date: Date(), room: room, memberFilter: wgMemberFilter(configuration.member))
         // 자정에 '오늘'이 넘어가므로 자정 직후 갱신 예약(그 외는 앱이 reloadAllTimelines)
         let mid = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: 1, to: Date())!)
         return Timeline(entries: [entry], policy: .after(mid))
     }
+}
+// 멤버 필터 정규화: nil 또는 ""(전체 보기) → nil(전체), 그 외 userId
+func wgMemberFilter(_ m: MemberEntity?) -> String? {
+    guard let id = m?.id, !id.isEmpty else { return nil }
+    return id
 }
 func sampleRoom() -> WGRoom {
     WGRoom(id: "s", name: "가족방", seal: "navy:taegeuk",
