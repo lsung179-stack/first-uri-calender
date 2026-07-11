@@ -486,7 +486,6 @@ struct GridView: View {
     }
     var body: some View {
         let cal = Calendar.current
-        let cols = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)   // 가로 간격 0 → 기간 바 이어짐
         let allRuns = runs
         let curMonth = cal.component(.month, from: monthDate)
         VStack(spacing: 0) {
@@ -498,16 +497,21 @@ struct GridView: View {
                         .foregroundColor(i == 0 ? .sunRed : .mutedBrown).frame(maxWidth: .infinity)
                 }
             }.padding(.bottom, 2)
-            LazyVGrid(columns: cols, spacing: 2) {
-                ForEach(0..<(weeks*7), id: \.self) { i in
-                    let d = cal.date(byAdding: .day, value: i, to: startDate)!
-                    let pair = slotsFor(d, allRuns)
-                    let inM = (weeks != 6) || (cal.component(.month, from: d) == curMonth)
-                    DayCell(date: d, slots: pair.0, overflow: pair.1, isToday: fmt(d) == todayStr(),
-                            dow: cal.component(.weekday, from: d) - 1, dense: weeks > 2, roomId: room.id, inMonth: inM)
+            // 주(week)별 행을 maxHeight 무한으로 균등 분배 → 위젯 높이를 정확히 채워 '아래 잘림' 방지
+            VStack(spacing: 2) {
+                ForEach(0..<weeks, id: \.self) { w in
+                    HStack(spacing: 0) {
+                        ForEach(0..<7, id: \.self) { c in
+                            let d = cal.date(byAdding: .day, value: w*7 + c, to: startDate)!
+                            let pair = slotsFor(d, allRuns)
+                            let inM = (weeks != 6) || (cal.component(.month, from: d) == curMonth)
+                            DayCell(date: d, slots: pair.0, overflow: pair.1, isToday: fmt(d) == todayStr(),
+                                    dow: cal.component(.weekday, from: d) - 1, roomId: room.id, inMonth: inM)
+                        }
+                    }.frame(maxHeight: .infinity)
                 }
-            }
-        }.padding(.horizontal, weeks > 2 ? 12 : 13).padding(.vertical, weeks > 2 ? 10 : 11).widgetBg()
+            }.frame(maxHeight: .infinity)
+        }.padding(.horizontal, weeks > 2 ? 12 : 13).padding(.vertical, 10).widgetBg()
     }
 }
 // 기간 런: 같은 일정의 연속 날짜 묶음 + 배정된 줄(lane)
@@ -515,15 +519,15 @@ struct EvRun { let title: String; let color: String; let start: String; let end:
 // 하루치 한 줄의 바(연속 정보 포함)
 struct DayBar { let title: String; let color: String; let contLeft: Bool; let contRight: Bool }
 struct DayCell: View {
-    let date: Date; let slots: [DayBar?]; let overflow: Int; let isToday: Bool; let dow: Int; let dense: Bool; let roomId: String; let inMonth: Bool
-    private var numBox: CGFloat { dense ? 19 : 22 }
-    private var barH: CGFloat { dense ? 13 : 15 }
+    let date: Date; let slots: [DayBar?]; let overflow: Int; let isToday: Bool; let dow: Int; let roomId: String; let inMonth: Bool
+    private let numBox: CGFloat = 18
+    private let barH: CGFloat = 12
     // 기간 바: 주 안에서 이어지는 쪽은 각지게+딱 붙게, 끝/주경계는 둥글게 → 옆칸과 맞닿아 연속.
     @ViewBuilder private func barView(_ b: DayBar) -> some View {
         let roundL = !b.contLeft || dow == 0
         let roundR = !b.contRight || dow == 6
         let showTitle = !b.contLeft || dow == 0     // 시작일/주 시작에만 제목
-        Text(showTitle ? b.title : " ").font(.system(size: dense ? 8.5 : 10, weight: .bold))
+        Text(showTitle ? b.title : " ").font(.system(size: 8.5, weight: .bold))
             .foregroundColor(.white).lineLimit(1)
             .padding(.leading, roundL ? 3 : 0).padding(.trailing, roundR ? 3 : 0)
             .frame(maxWidth: .infinity, minHeight: barH, alignment: .leading)
@@ -537,9 +541,9 @@ struct DayCell: View {
     var body: some View {
         // 날짜 탭 → 앱의 그 날짜 열기(위젯은 스크롤 불가 → 많은 일정은 앱에서 전부 보기)
         Link(destination: URL(string: "com.lsung.uricalendar://open?room=\(roomId)&date=\(fmt(date))")!) {
-            VStack(spacing: 2) {
+            VStack(spacing: 1.5) {
                 Text("\(Calendar.current.component(.day, from: date))")
-                    .font(.system(size: dense ? 11 : 13, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(isToday ? .white : (dow == 0 ? .sunRed : .ink))
                     .frame(width: numBox, height: numBox)                 // ★ 항상 고정 → 모든 날짜 같은 라인
                     .background(isToday ? Circle().fill(Color.terra) : nil)
@@ -547,11 +551,13 @@ struct DayCell: View {
                     if let b = slots[idx] { barView(b) } else { Color.clear.frame(height: barH) }   // 빈 줄도 높이 유지 → 줄 정렬
                 }
                 if overflow > 0 {
-                    Text("+\(overflow)").font(.system(size: dense ? 7.5 : 9, weight: .bold)).foregroundColor(.mutedBrown)
+                    Text("+\(overflow)").font(.system(size: 7.5, weight: .bold)).foregroundColor(.mutedBrown)
                 }
                 Spacer(minLength: 0)
-            }.frame(maxWidth: .infinity, minHeight: dense ? 40 : 50, alignment: .top)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)   // 셀이 행 높이를 채움 → 위젯 밖으로 안 넘침
             .opacity(inMonth ? 1 : 0.4)   // 다음/이전달 날짜는 흐리게
+            .clipped()
         }.buttonStyle(.plain)
     }
 }
