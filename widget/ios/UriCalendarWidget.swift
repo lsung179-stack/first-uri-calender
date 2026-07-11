@@ -125,12 +125,7 @@ struct ToggleTodoIntent: AppIntent {
         return WGData(updatedAt: data.updatedAt, currentRoomId: data.currentRoomId, rooms: rooms)
     }
 }
-extension WGData { func encodableCopy() -> WGData { self } }
-extension WGTodo: Encodable {}
-extension WGData: Encodable {}
-extension WGRoom: Encodable {}
-extension WGMember: Encodable {}
-extension WGEvent: Encodable {}
+// (WGData 등은 이미 Codable → Encodable 자동 충족. JSONEncoder().encode 그대로 사용)
 
 // MARK: - 타임라인
 

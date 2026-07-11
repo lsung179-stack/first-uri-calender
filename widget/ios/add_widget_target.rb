@@ -48,6 +48,9 @@ widget.add_file_references([swift_ref])
 widget.build_configurations.each do |config|
   bs = config.build_settings
   bs['PRODUCT_BUNDLE_IDENTIFIER'] = WIDGET_BUNDLE_ID
+  # PRODUCT_NAME이 비면 산출물이 '.appex'(이름 없음)가 되어
+  # "Multiple commands produce .appex" 링크 충돌이 남 → 반드시 명시.
+  bs['PRODUCT_NAME'] = '$(TARGET_NAME)'
   bs['INFOPLIST_FILE'] = File.join('App', WIDGET_NAME, 'Info.plist')
   bs['SWIFT_VERSION'] = '5.0'
   bs['IPHONEOS_DEPLOYMENT_TARGET'] = deployment_target
