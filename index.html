@@ -8298,7 +8298,7 @@ function _wgAvatarPng(url){
     var done=false; var to=setTimeout(function(){ if(!done){ done=true; resolve(null); } }, 2500);
     try{
       var img=new Image();
-      img.crossOrigin='anonymous';
+      if(/^https?:/i.test(url)) img.crossOrigin='anonymous';   // 외부 URL만 CORS(앱 사진은 data: URL이라 불필요)
       img.onload=function(){ if(done)return; done=true; clearTimeout(to);
         try{ var s=48; var c=document.createElement('canvas'); c.width=s; c.height=s; var x=c.getContext('2d');
           var iw=img.naturalWidth||s, ih=img.naturalHeight||s; var sc=Math.max(s/iw, s/ih); var dw=iw*sc, dh=ih*sc;

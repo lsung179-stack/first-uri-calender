@@ -438,36 +438,62 @@ struct GridView: View {
             return cal.date(byAdding: .day, value: -wd, to: first)!
         }
     }
-    func eventsOn(_ d: Date) -> [WGEvent] {
+    // 특정 날짜의 '바' 목록 — 기간 일정이 이어져 보이도록 좌/우 연속 여부 계산.
+    func bars(_ d: Date) -> [DayBar] {
+        let cal = Calendar.current
         let s = fmt(d)
-        return dedupeEvents(room.events.filter { $0.date == s && (filter == nil || $0.userId == filter) })
+        let prev = fmt(cal.date(byAdding: .day, value: -1, to: d)!)
+        let next = fmt(cal.date(byAdding: .day, value: 1, to: d)!)
+        let evs = dedupeEvents(room.events.filter { $0.date == s && (filter == nil || $0.userId == filter) })
+        return evs.map { e -> DayBar in
+            let cl = room.events.contains { $0.date == prev && $0.title == e.title && $0.color == e.color && (filter == nil || $0.userId == filter) }
+            let cr = room.events.contains { $0.date == next && $0.title == e.title && $0.color == e.color && (filter == nil || $0.userId == filter) }
+            return DayBar(title: e.title, color: e.color, contLeft: cl, contRight: cr)
+        }
     }
     var body: some View {
         let cal = Calendar.current
-        let cols = Array(repeating: GridItem(.flexible(), spacing: 1), count: 7)
-        VStack(spacing: 3) {
+        let cols = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)   // 가로 간격 0 → 기간 바 이어짐
+        VStack(spacing: 0) {
             WGHeader(room: room, compact: weeks > 2, active: filter, monthNav: monthNav, monthLabel: monthLabel)
+            Color.clear.frame(height: weeks > 2 ? 9 : 7)     // 헤더 ↔ 달력 사이 여백(위아래 균형)
             HStack(spacing: 0) {
                 ForEach(0..<7) { i in
                     Text(["일","월","화","수","목","금","토"][i]).font(.system(size: 10, weight: .bold))
                         .foregroundColor(i == 0 ? .sunRed : .mutedBrown).frame(maxWidth: .infinity)
                 }
-            }
+            }.padding(.bottom, 2)
             LazyVGrid(columns: cols, spacing: 2) {
                 ForEach(0..<(weeks*7), id: \.self) { i in
                     let d = cal.date(byAdding: .day, value: i, to: startDate)!
-                    DayCell(date: d, events: eventsOn(d), isToday: fmt(d) == todayStr(),
+                    DayCell(date: d, bars: bars(d), isToday: fmt(d) == todayStr(),
                             dow: cal.component(.weekday, from: d) - 1, dense: weeks > 2, roomId: room.id)
                 }
             }
-        }.padding(weeks > 2 ? 12 : 13).widgetBg()
+        }.padding(.horizontal, weeks > 2 ? 12 : 13).padding(.vertical, weeks > 2 ? 10 : 11).widgetBg()
     }
 }
+// 하루치 바(기간 연속 정보 포함)
+struct DayBar: Identifiable { let id = UUID(); let title: String; let color: String; let contLeft: Bool; let contRight: Bool }
 struct DayCell: View {
-    let date: Date; let events: [WGEvent]; let isToday: Bool; let dow: Int; let dense: Bool; let roomId: String
+    let date: Date; let bars: [DayBar]; let isToday: Bool; let dow: Int; let dense: Bool; let roomId: String
     // 날짜 숫자는 '항상' 같은 크기 상자에 담아, 오늘 동그라미가 다른 날 일정바를 밀지 않게 함.
     private var numBox: CGFloat { dense ? 19 : 22 }
     private var maxBars: Int { dense ? 2 : 2 }
+    // 기간 바: 이어지는 쪽은 패딩 0 + 각지게, 끝나는 쪽만 여백+둥글게 → 옆칸 바와 맞닿아 연속으로 보임
+    @ViewBuilder private func barView(_ b: DayBar) -> some View {
+        let showTitle = (!b.contLeft || dow == 0)   // 시작일 또는 주 시작에만 제목
+        Text(showTitle ? b.title : " ").font(.system(size: dense ? 8.5 : 10, weight: .bold))
+            .foregroundColor(.white).lineLimit(1)
+            .padding(.leading, b.contLeft ? 0 : 3).padding(.trailing, b.contRight ? 0 : 3)
+            .padding(.vertical, 0.5).frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                UnevenRoundedRectangle(
+                    topLeadingRadius: b.contLeft ? 0 : 3, bottomLeadingRadius: b.contLeft ? 0 : 3,
+                    bottomTrailingRadius: b.contRight ? 0 : 3, topTrailingRadius: b.contRight ? 0 : 3
+                ).fill(Color(hexStr: b.color))
+            )
+    }
     var body: some View {
         // 날짜 탭 → 앱의 그 날짜 열기(위젯은 스크롤 불가 → 많은 일정은 앱에서 전부 보기)
         Link(destination: URL(string: "com.lsung.uricalendar://open?room=\(roomId)&date=\(fmt(date))")!) {
@@ -477,13 +503,9 @@ struct DayCell: View {
                     .foregroundColor(isToday ? .white : (dow == 0 ? .sunRed : .ink))
                     .frame(width: numBox, height: numBox)                 // ★ 항상 고정 → 모든 날짜 같은 라인
                     .background(isToday ? Circle().fill(Color.terra) : nil)
-                ForEach(Array(events.prefix(maxBars).enumerated()), id: \.offset) { _, e in
-                    Text(e.title).font(.system(size: dense ? 8.5 : 10, weight: .bold)).foregroundColor(.white).lineLimit(1)
-                        .padding(.horizontal, 3).padding(.vertical, 0.5).frame(maxWidth: .infinity)
-                        .background(RoundedRectangle(cornerRadius: 3).fill(Color(hexStr: e.color)))
-                }
-                if events.count > maxBars {
-                    Text("+\(events.count - maxBars)").font(.system(size: dense ? 7.5 : 9, weight: .bold)).foregroundColor(.mutedBrown)
+                ForEach(bars.prefix(maxBars)) { b in barView(b) }
+                if bars.count > maxBars {
+                    Text("+\(bars.count - maxBars)").font(.system(size: dense ? 7.5 : 9, weight: .bold)).foregroundColor(.mutedBrown)
                 }
                 Spacer(minLength: 0)
             }.frame(maxWidth: .infinity, minHeight: dense ? 40 : 50, alignment: .top)
@@ -611,6 +633,7 @@ struct TodayWidget: Widget {
         .configurationDisplayName("오늘 일정")
         .description("오늘의 일정과 할 일을 한눈에. (기본: 내 일정)")
         .supportedFamilies([.systemSmall])
+        .contentMarginsDisabled()
     }
 }
 // ② 2주 달력 (중간 위젯)
@@ -622,6 +645,7 @@ struct TwoWeekWidget: Widget {
         .configurationDisplayName("2주 달력")
         .description("이번 주·다음 주 2주치 달력.")
         .supportedFamilies([.systemMedium])
+        .contentMarginsDisabled()
     }
 }
 // ③ 다가오는 일정 + 미니 달력 (큰 위젯)
@@ -633,6 +657,7 @@ struct ComboWidget: Widget {
         .configurationDisplayName("다가오는 일정")
         .description("다가오는 일정 목록 + 이번 달 미니 달력.")
         .supportedFamilies([.systemLarge])
+        .contentMarginsDisabled()
     }
 }
 // ④ 한 달 전체 달력 (큰 위젯)
@@ -644,6 +669,7 @@ struct MonthWidget: Widget {
         .configurationDisplayName("한 달 달력")
         .description("이번 달 전체 달력을 크게.")
         .supportedFamilies([.systemLarge])
+        .contentMarginsDisabled()
     }
 }
 
