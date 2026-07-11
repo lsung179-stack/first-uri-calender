@@ -33,8 +33,11 @@ deployment_target = '17.0'   # AppIntentConfiguration·인터랙티브 위젯이
 # 1) 위젯 타깃 생성
 widget = project.new_target(:app_extension, WIDGET_NAME, :ios, deployment_target)
 
-# 2) 소스/리소스 파일 연결 (widget/ios/*.swift, Info.plist를 ios/App/UriCalendarWidget/로 복사해 참조)
-dest_dir = File.join(File.dirname(File.dirname(proj_path)), 'App', WIDGET_NAME)
+# 2) 소스/리소스 파일 연결 (widget/ios/*.swift, Info.plist를 ios/App/App/UriCalendarWidget/로 복사해 참조)
+#    ⚠️ SRCROOT = .xcodeproj가 있는 폴더(ios/App)이고 INFOPLIST_FILE 등은 'App/...' 상대경로라
+#    실제 파일은 ios/App/'App'/UriCalendarWidget/ 밑에 있어야 함(App 한 겹 더).
+#    (File.dirname(proj_path)=ios/App → + App/WIDGET_NAME)
+dest_dir = File.join(File.dirname(proj_path), 'App', WIDGET_NAME)
 require 'fileutils'
 FileUtils.mkdir_p(dest_dir)
 FileUtils.cp(File.join(SRC_DIR, 'UriCalendarWidget.swift'), dest_dir)
