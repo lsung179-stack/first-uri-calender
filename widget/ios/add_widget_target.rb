@@ -34,17 +34,19 @@ deployment_target = '17.0'   # AppIntentConfiguration·인터랙티브 위젯이
 widget = project.new_target(:app_extension, WIDGET_NAME, :ios, deployment_target)
 
 # 2) 소스/리소스 파일 연결 (widget/ios/*.swift, Info.plist를 ios/App/App/UriCalendarWidget/로 복사해 참조)
-#    ⚠️ SRCROOT = .xcodeproj가 있는 폴더(ios/App)이고 INFOPLIST_FILE 등은 'App/...' 상대경로라
-#    실제 파일은 ios/App/'App'/UriCalendarWidget/ 밑에 있어야 함(App 한 겹 더).
-#    (File.dirname(proj_path)=ios/App → + App/WIDGET_NAME)
-dest_dir = File.join(File.dirname(proj_path), 'App', WIDGET_NAME)
+#    ⚠️ 경로 기준이 두 가지 — 섞으면 xcode가 SRCROOT+group.path+file.path로 3중 결합해 실패함:
+#      · fs_dir  = 파일시스템(현재 CWD=repo root) 기준 → FileUtils 복사/쓰기용. (ios/App/App/UriCalendarWidget)
+#      · xc_dir  = SRCROOT(.xcodeproj 폴더=ios/App) 기준 → 그룹 path용.        (App/UriCalendarWidget)
+#      · 파일 ref는 '그룹 기준' 상대경로(=basename)만 줘야 함.
+xc_dir = File.join('App', WIDGET_NAME)                          # SRCROOT 기준 (INFOPLIST_FILE 등과 동일 기준)
+dest_dir = File.join(File.dirname(proj_path), 'App', WIDGET_NAME)  # repo root 기준 (파일시스템)
 require 'fileutils'
 FileUtils.mkdir_p(dest_dir)
 FileUtils.cp(File.join(SRC_DIR, 'UriCalendarWidget.swift'), dest_dir)
 FileUtils.cp(File.join(SRC_DIR, 'Info.plist'), dest_dir)
 
-group = project.main_group.new_group(WIDGET_NAME, dest_dir)
-swift_ref = group.new_file(File.join(dest_dir, 'UriCalendarWidget.swift'))
+group = project.main_group.new_group(WIDGET_NAME, xc_dir)      # 그룹 path=SRCROOT 기준
+swift_ref = group.new_file('UriCalendarWidget.swift')          # 파일=그룹 기준 basename만
 widget.add_file_references([swift_ref])
 
 # 3) 빌드 설정
@@ -77,7 +79,7 @@ File.write(widget_ent, <<~XML)
   </dict>
   </plist>
 XML
-group.new_file(widget_ent)
+group.new_file("#{WIDGET_NAME}.entitlements")   # 파일=그룹 기준 basename만 (fs 쓰기는 widget_ent 절대경로)
 
 # 앱 본체 entitlements에 App Group 추가 (기존 파일 있으면 병합, 없으면 생성)
 app_ent_path = nil
