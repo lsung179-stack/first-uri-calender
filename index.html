@@ -8237,6 +8237,43 @@ async function _wgDoSync(){
     if(W.reloadAllTimelines){ try{ await W.reloadAllTimelines(); }catch(_){} }
   }catch(_){ /* 위젯 동기화 실패는 무시 */ }
 }
+/* ── 위젯용 방 씰(컬러+문양)을 PNG로 래스터화 → 위젯이 앱과 동일한 씰 표시 ──
+   앱 CSS .seal-<key>의 색/잉크와 동일. 문양 SVG(SEAL_SYMS)는 그대로 재사용.
+   14종 문양을 Swift로 포팅하는 대신 앱이 canvas로 굽고 base64 PNG를 페이로드에 실음. */
+const _WG_SEAL_GRAD={ terra:['#d5816a','#b55c46'],rose:['#dd94a3','#bf6c7e'],gold:['#e0b46c','#c1954a'],sage:['#9ab188','#75906a'],navy:['#7c92b4','#566f8f'],plum:['#ab86b3','#84648c'],butter:['#f5e3a6','#ecca77'],mint:['#c3e8d3','#9dd3b6'],sky:['#bcdaf0','#93bdda'],lavender:['#dbcbee','#bda6db'],peach:['#f8d4bb','#f0af8d'],blush:['#f6cdd8','#e8a6b7'] };
+const _WG_SEAL_INK={ butter:'#7a5a2e',mint:'#3d6b53',sky:'#3a5f7d',lavender:'#5f4a7c',peach:'#9a5637',blush:'#96475c' };
+function _wgSealSvg(color, sym, roomName){
+  const g=_WG_SEAL_GRAD[color]; if(!g) return null;
+  const ink=_WG_SEAL_INK[color]||'#f3e6cf';
+  let inner;
+  if(sym==='ini' || !(typeof SEAL_SYMS!=='undefined'&&SEAL_SYMS[sym])){
+    const ch=(typeof escapeHtml==='function'?escapeHtml:(x=>x))((roomName||'·').trim().charAt(0)||'·');
+    inner='<text x="12" y="12.3" text-anchor="middle" dominant-baseline="middle" font-family="Georgia,Times,serif" font-weight="700" font-size="10.3" fill="'+ink+'">'+ch+'</text>';
+  } else {
+    inner='<g transform="translate(12 12) scale(0.57) translate(-12 -12)" fill="'+ink+'" stroke="'+ink+'" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">'+SEAL_SYMS[sym]+'</g>';
+  }
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="72" height="72">'
+    +'<defs><radialGradient id="wgg" cx="32%" cy="26%" r="75%"><stop offset="0" stop-color="'+g[0]+'"/><stop offset="1" stop-color="'+g[1]+'"/></radialGradient></defs>'
+    +'<circle cx="12" cy="12" r="12" fill="url(#wgg)"/>'+inner+'</svg>';
+}
+function _wgRasterize(svg){
+  return new Promise(function(resolve){
+    try{
+      const img=new Image();
+      img.onload=function(){ try{ const c=document.createElement('canvas'); c.width=72; c.height=72; const x=c.getContext('2d'); x.drawImage(img,0,0,72,72); resolve(c.toDataURL('image/png')); }catch(_){ resolve(null); } };
+      img.onerror=function(){ resolve(null); };
+      img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+    }catch(_){ resolve(null); }
+  });
+}
+async function _wgSealPng(mascotVal, roomName){
+  try{
+    if(typeof _parseSeal!=='function') return null;
+    const p=_parseSeal(mascotVal); if(!p) return null;
+    const svg=_wgSealSvg(p.color,p.sym,roomName); if(!svg) return null;
+    return await _wgRasterize(svg);
+  }catch(_){ return null; }
+}
 async function buildWidgetPayload(){
   const rooms=(_myRooms||[]);
   if(!rooms.length) return { updatedAt:Date.now(), currentRoomId:null, rooms:[] };
@@ -8261,6 +8298,8 @@ async function buildWidgetPayload(){
     const rt=todos.filter(t=>t.room_id===r.id).map(t=>({ id:String(t.id), date:t.start_date, title:String(t.title||'').slice(0,60), time:String(t.time||'').trim(), color:hx(t.color), done:!!t.is_done }));
     return { id:r.id, name:r.name||'방', seal:sealMap[r.id]||null, members:rm, events:re, todos:rt };
   });
+  // 각 방 씰을 PNG로 래스터화(개인별 seal 기준) → 위젯이 앱과 똑같은 컬러 씰 표시
+  try{ await Promise.all(outRooms.map(async function(r){ r.sealPng=await _wgSealPng(r.seal, r.name); })); }catch(_){}
   return { updatedAt:Date.now(), currentRoomId:(_currentRoom?_currentRoom.id:(outRooms[0]?outRooms[0].id:null)), rooms:outRooms };
 }
 /* ═══ 위젯이 오프라인 낙관 토글한 할일(widget.pendingTodoToggles)을 앱 포그라운드 복귀 시 Supabase에 반영 ═══

@@ -8,6 +8,7 @@
 import WidgetKit
 import SwiftUI
 import AppIntents
+import UIKit
 
 // MARK: - 데이터 모델 (bridge.js 스키마)
 
@@ -20,9 +21,17 @@ struct WGRoom: Codable, Identifiable {
     let id: String
     let name: String
     let seal: String?
+    var sealPng: String?          // 앱이 구운 씰 PNG(dataURL) — 없으면 색+이니셜 폴백
     let members: [WGMember]
     let events: [WGEvent]
     let todos: [WGTodo]
+}
+// dataURL(base64 PNG) → UIImage
+func decodeDataURLImage(_ s: String?) -> UIImage? {
+    guard let s = s, let comma = s.firstIndex(of: ",") else { return nil }
+    let b64 = String(s[s.index(after: comma)...])
+    guard let d = Data(base64Encoded: b64) else { return nil }
+    return UIImage(data: d)
 }
 struct WGMember: Codable { let userId: String?; let name: String; let color: String }
 struct WGEvent: Codable { let date: String; let title: String; let time: String; let color: String; let userId: String? }
@@ -123,6 +132,7 @@ struct CalConfigIntent: WidgetConfigurationIntent {
 // MARK: - 멤버 필터 탭 인텐트 (프로필 눌러서 그 사람 일정만 보기)
 // App Group에 'widget.memberFilter'를 기록 → 타임라인이 이걸 우선 적용. ""=전체.
 let FILTER_KEY = "widget.memberFilter"
+let ROOM_KEY = "widget.roomOverride"
 struct SetFilterIntent: AppIntent {
     static var title: LocalizedStringResource = "멤버별 보기 전환"
     @Parameter(title: "userId") var userId: String
@@ -130,6 +140,21 @@ struct SetFilterIntent: AppIntent {
     init(userId: String) { self.userId = userId }
     func perform() async throws -> some IntentResult {
         UserDefaults(suiteName: APP_GROUP)?.set(userId, forKey: FILTER_KEY)
+        return .result()
+    }
+}
+// 방 프로필(씰) 탭 → 다음 방으로 순환 전환 (방이 여러 개일 때)
+struct CycleRoomIntent: AppIntent {
+    static var title: LocalizedStringResource = "방 전환"
+    func perform() async throws -> some IntentResult {
+        guard let ud = UserDefaults(suiteName: APP_GROUP) else { return .result() }
+        let rooms = loadWGData()?.rooms ?? []
+        guard rooms.count > 1 else { return .result() }
+        let cur = ud.string(forKey: ROOM_KEY) ?? loadWGData()?.currentRoomId
+        let idx = rooms.firstIndex(where: { $0.id == cur }) ?? 0
+        let next = rooms[(idx + 1) % rooms.count]
+        ud.set(next.id, forKey: ROOM_KEY)
+        ud.set("", forKey: FILTER_KEY)   // 방 바뀌면 멤버 필터 전체로 초기화
         return .result()
     }
 }
@@ -162,7 +187,7 @@ struct ToggleTodoIntent: AppIntent {
             let todos = r.todos.map { t in
                 t.id == id ? WGTodo(id: t.id, date: t.date, title: t.title, time: t.time, color: t.color, done: !t.done) : t
             }
-            return WGRoom(id: r.id, name: r.name, seal: r.seal, members: r.members, events: r.events, todos: todos)
+            return WGRoom(id: r.id, name: r.name, seal: r.seal, sealPng: r.sealPng, members: r.members, events: r.events, todos: todos)
         }
         return WGData(updatedAt: data.updatedAt, currentRoomId: data.currentRoomId, rooms: rooms)
     }
@@ -181,11 +206,11 @@ struct CalProvider: AppIntentTimelineProvider {
         CalEntry(date: Date(), room: sampleRoom(), memberFilter: nil)
     }
     func snapshot(for configuration: CalConfigIntent, in context: Context) async -> CalEntry {
-        let room = pickRoom(loadWGData(), roomId: configuration.room?.id) ?? sampleRoom()
+        let room = effectiveRoom(configuration.room?.id) ?? sampleRoom()
         return CalEntry(date: Date(), room: room, memberFilter: effectiveFilter(configuration.member))
     }
     func timeline(for configuration: CalConfigIntent, in context: Context) async -> Timeline<CalEntry> {
-        let room = pickRoom(loadWGData(), roomId: configuration.room?.id)
+        let room = effectiveRoom(configuration.room?.id)
         let entry = CalEntry(date: Date(), room: room, memberFilter: effectiveFilter(configuration.member))
         // 자정에 '오늘'이 넘어가므로 자정 직후 갱신 예약(그 외는 앱이 reloadAllTimelines)
         let mid = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: 1, to: Date())!)
@@ -205,8 +230,15 @@ func effectiveFilter(_ configMember: MemberEntity?) -> String? {
     }
     return wgMemberFilter(configMember)
 }
+// 실효 방: 씰 탭으로 전환한 방(오버라이드)이 있으면 그 방, 없으면 설정/현재 방.
+func effectiveRoom(_ configRoomId: String?) -> WGRoom? {
+    let data = loadWGData()
+    if let ov = UserDefaults(suiteName: APP_GROUP)?.string(forKey: ROOM_KEY), !ov.isEmpty,
+       let r = data?.rooms.first(where: { $0.id == ov }) { return r }
+    return pickRoom(data, roomId: configRoomId)
+}
 func sampleRoom() -> WGRoom {
-    WGRoom(id: "s", name: "가족방", seal: "navy:taegeuk",
+    WGRoom(id: "s", name: "가족방", seal: "navy:taegeuk", sealPng: nil,
            members: [WGMember(userId: "u1", name: "나", color: "#ea4d4d")],
            events: [WGEvent(date: todayStr(), title: "가족 저녁", time: "19:00", color: "#ea4d4d", userId: "u1")],
            todos: [WGTodo(id: "t", date: todayStr(), title: "약 챙기기", time: "09:00", color: "#3d85d4", done: false)])
@@ -229,18 +261,16 @@ struct WGHeader: View {
     private var maxAvatars: Int { compact ? 3 : 4 }
     var body: some View {
         HStack(spacing: 6) {
-            // 씰 = '전체 보기'로 리셋 (탭). 전체 선택 중이면 강조.
-            Button(intent: SetFilterIntent(userId: "")) {
-                SealIcon(seal: room.seal, name: room.name, size: sealSize)
-                    .overlay(Circle().stroke(Color.terra, lineWidth: active == nil ? 2.5 : 0))
-                    .opacity(active == nil ? 1 : 0.85)
+            // 씰 = 방 프로필. 탭하면 다음 방으로 전환(방 여러 개일 때). 실제 앱 씰 이미지.
+            Button(intent: CycleRoomIntent()) {
+                SealIcon(seal: room.seal, name: room.name, pngDataURL: room.sealPng, size: sealSize)
             }.buttonStyle(.plain)
-            // 멤버 아바타 = 그 사람만 보기 (탭). 실제 멤버(userId 있는)만.
+            // 멤버 아바타 = 그 사람만 보기 (탭). 이미 선택된 사람 다시 탭하면 전체로.
             HStack(spacing: -4) {
                 ForEach(Array(room.members.filter { ($0.userId ?? "").isEmpty == false }.prefix(maxAvatars).enumerated()), id: \.offset) { _, m in
                     let uid = m.userId ?? ""
                     let on = (active == uid)
-                    Button(intent: SetFilterIntent(userId: uid)) {
+                    Button(intent: SetFilterIntent(userId: on ? "" : uid)) {
                         Circle().fill(Color(hexStr: m.color)).frame(width: avSize, height: avSize)
                             .overlay(Text(String(m.name.prefix(1))).font(.system(size: avSize*0.46, weight: .bold)).foregroundColor(.white))
                             .overlay(Circle().stroke(on ? Color.terra : Color.cream, lineWidth: on ? 2.5 : 1.5))
@@ -259,11 +289,18 @@ struct WGHeader: View {
     }
 }
 struct SealIcon: View {
-    let seal: String?; let name: String; var size: CGFloat = 26
+    let seal: String?; let name: String; var pngDataURL: String? = nil; var size: CGFloat = 26
     var body: some View {
-        Circle().fill(LinearGradient(colors: [Color(hexStr: "#7c92b4"), Color(hexStr: "#566f8f")], startPoint: .topLeading, endPoint: .bottomTrailing))
-            .frame(width: size, height: size)
-            .overlay(Text(String(name.prefix(1))).font(.system(size: size*0.45, weight: .bold)).foregroundColor(Color(hexStr: "#f3e6cf")))
+        if let img = decodeDataURLImage(pngDataURL) {
+            // 앱이 구운 실제 씰(컬러+문양) 그대로
+            Image(uiImage: img).resizable().interpolation(.high).scaledToFill()
+                .frame(width: size, height: size).clipShape(Circle())
+        } else {
+            // 폴백: 색 그라데이션 + 이니셜 (씰 PNG 없을 때)
+            Circle().fill(LinearGradient(colors: [Color(hexStr: "#7c92b4"), Color(hexStr: "#566f8f")], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .frame(width: size, height: size)
+                .overlay(Text(String(name.prefix(1))).font(.system(size: size*0.45, weight: .bold)).foregroundColor(Color(hexStr: "#f3e6cf")))
+        }
     }
 }
 
