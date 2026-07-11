@@ -2414,6 +2414,10 @@ body.has-ad .cal-tabbar{ bottom:calc(var(--ad-h) + 10px + env(safe-area-inset-bo
 body.has-ad .cal-fab{ bottom:calc(var(--ad-h) + 84px + env(safe-area-inset-bottom)) !important; }
 body.has-ad .cal-today-btn{ bottom:calc(var(--ad-h) + 84px + env(safe-area-inset-bottom)) !important; }
 body.has-ad .toast{ bottom:calc(var(--ad-h) + 84px + env(safe-area-inset-bottom)) !important; }
+/* 바텀시트(방 만들기/입장/날짜 등)의 하단 액션 버튼이 네이티브 광고 배너에 가리지 않게
+   광고 높이만큼 아래 여백 확보. 콘텐츠가 길면 overflow-y로 스크롤됨. */
+body.has-ad .mo-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-inset-bottom)) !important; }
+body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-inset-bottom)) !important; }
 .cal-tab{
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   border:none;background:transparent;cursor:pointer;color:var(--mute);font-family:inherit;
@@ -6913,6 +6917,7 @@ function openCreateRoom(){
   }
   document.getElementById('createOverlay').classList.add('on');
   document.getElementById('createCard').classList.add('on');
+  try{ hideTabbar(); }catch(_){}   // 하단 탭바가 액션 버튼 가리지 않게
   // admin 모드 토글: admin에게만 노출, 매번 OFF로 초기화
   _createAdminMode=false;
   const adminWrap=document.getElementById('createAdminModeWrap');
@@ -6927,6 +6932,7 @@ function openCreateRoom(){
 function closeCreateRoom(){
   document.getElementById('createOverlay').classList.remove('on');
   document.getElementById('createCard').classList.remove('on');
+  try{ showTabbar(); }catch(_){}
 }
 function toggleCreateCopy(){
   _createCopyOn=!_createCopyOn;
@@ -7041,6 +7047,7 @@ function openJoinRoom(){
   }
   document.getElementById('joinOverlay').classList.add('on');
   document.getElementById('joinCard').classList.add('on');
+  try{ hideTabbar(); }catch(_){}   // 하단 탭바가 액션 버튼 가리지 않게
   setTimeout(()=>{if(boxes[0])boxes[0].focus()},320);
 }
 function fillJoinCode(txt){
@@ -7080,6 +7087,7 @@ async function pasteJoinCode(){
 function closeJoinRoom(){
   document.getElementById('joinOverlay').classList.remove('on');
   document.getElementById('joinCard').classList.remove('on');
+  try{ showTabbar(); }catch(_){}
 }
 function toggleJoinCopy(){
   _joinCopyOn=!_joinCopyOn;
