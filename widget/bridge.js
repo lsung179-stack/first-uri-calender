@@ -58,7 +58,7 @@ async function _wgDoSync() {
     if (P.configure) { try { await P.configure({ group: WIDGET_GROUP }); } catch (_) {} }
     await P.set({ key: WIDGET_KEY, value: JSON.stringify(payload) });
     // 위젯 즉시 갱신(플러그인 있을 때만 — 없으면 자정/주기 갱신에 맡김)
-    const W = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WidgetsBridge;
+    const W = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WidgetsBridgePlugin;
     if (W && W.reloadAllTimelines) { try { W.reloadAllTimelines(); } catch (_) {} }
   } catch (_) { /* 위젯 실패가 앱에 영향 주지 않게 무시 */ }
 }
