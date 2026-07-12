@@ -7391,7 +7391,17 @@ supa.auth.onAuthStateChange((event,session)=>{
               if(orid && (!_currentRoom || _currentRoom.id!==orid) && (_myRooms||[]).some(function(r){return r.id===orid;})){
                 enterRoom(orid); switched=true;
               }
-              setTimeout(function(){ try{ if(/^\d{4}-\d{2}-\d{2}$/.test(odate)){ openDateSheet(odate); } else { openDateSheetForToday(); } }catch(_){} }, switched?450:0);
+              setTimeout(function(){ try{
+                if(/^\d{4}-\d{2}-\d{2}$/.test(odate)){
+                  // 캘린더도 그 날짜의 달로 이동(위젯에서 8월을 눌렀는데 뒤 캘린더가 7월이면 헷갈림)
+                  var jd=parseDateKey(odate);
+                  if(jd && (_calYear!==jd.getFullYear() || _calMonth!==jd.getMonth())){
+                    _calYear=jd.getFullYear(); _calMonth=jd.getMonth();
+                    try{ renderMonthly(); }catch(_){}
+                  }
+                  openDateSheet(odate);
+                } else { openDateSheetForToday(); }
+              }catch(_){} }, switched?450:0);
             }
           }catch(_){}
           return;
@@ -9578,7 +9588,10 @@ function closeDateSheet(){
 }
 function openDateSheetForToday(){
   const t=new Date();
-  openDateSheet(dateKey(t.getFullYear(),t.getMonth(),t.getDate()));
+  const y=t.getFullYear(), mo=t.getMonth();
+  // 오늘 시트를 열 땐 캘린더도 이번 달로 (위젯 ＋에서 진입 시 뒤 달력이 다른 달이면 헷갈림)
+  if(_calYear!==y || _calMonth!==mo){ _calYear=y; _calMonth=mo; try{ renderMonthly(); }catch(_){} }
+  openDateSheet(dateKey(y,mo,t.getDate()));
 }
 // 등록자(작성자) 프로필 칩 — 단독/함께 상관없이 누가 만들었는지 표시
 function _authorChipHtml(uid){
