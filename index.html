@@ -8408,6 +8408,9 @@ async function _wgFlushPendingTodos(){
     App.addListener('appStateChange', function(state){
       if(state&&state.isActive){
         _wgFlushPendingTodos();
+        // 앱 업데이트 후 위젯 데이터 스키마가 바뀌면(예: gid 추가) 위젯이 옛 데이터를 읽어
+        // 잘못 표시될 수 있음 — 포그라운드 복귀마다 최신 스키마로 다시 기록해 자동 복구.
+        try{ syncWidgetData(); }catch(_){}
       }
     });
   }catch(_){}
