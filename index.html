@@ -631,13 +631,6 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 
 /* 멤버 프로필 탭 (전체 + 각 멤버) */
 .cal-member-tabs{display:none;gap:13px;padding:4px 20px 2px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;-webkit-overflow-scrolling:touch}
-/* 현재 방 탭 — 멤버 탭 줄 맨 앞(전체 버튼 옆)에 씰+방이름. 탭하면 다음 방으로 전환.
-   여백은 다른 탭과 동일(구분선·추가 패딩 제거 → gap만으로 균일) */
-.cal-room-tab .cal-room-tab-seal{width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.cal-room-tab .r-card-seal{width:40px;height:40px}
-.cal-room-tab .r-card-seal-letter{font-size:16px}
-.cal-room-tab .r-card-seal.has-seal .seal-ini{font-size:17px}
-.cal-room-tab .r-card-seal.has-seal svg{width:23px;height:23px}
 /* 방 전환 안내 — 화면 중앙 상단에 씰+방이름 잠깐 떴다 사라짐 */
 .room-switch{position:fixed;left:50%;top:24%;transform:translate(-50%,-6px) scale(.96);z-index:70;
   display:flex;align-items:center;gap:10px;padding:11px 18px 11px 12px;border-radius:999px;
@@ -2399,8 +2392,17 @@ body.align-right .cal-evbar{text-align:right}
 
 /* 월 네비 행 좌측 검색 버튼 */
 .cal-month-row{position:relative}
-.cal-search-btn{position:absolute;left:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:6px;color:var(--sub);display:flex;align-items:center;z-index:2}
-.cal-search-btn:active{transform:translateY(-50%) scale(.92)}
+/* 월 표시줄 좌측 그룹: 방 씰 + 검색 (가운데 월 표시엔 영향 없음) */
+.cal-month-left{position:absolute;left:10px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:6px;z-index:2}
+.cal-search-btn{background:none;border:none;cursor:pointer;padding:6px;color:var(--sub);display:flex;align-items:center}
+.cal-room-seal-btn{background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+.cal-room-seal-btn:active{opacity:.6;transform:scale(.94)}
+.cal-room-seal-btn .r-card-seal{width:30px;height:30px}
+.cal-room-seal-btn .r-card-seal::before{inset:2px}
+.cal-room-seal-btn .r-card-seal-letter{font-size:13px}
+.cal-room-seal-btn .r-card-seal.has-seal .seal-ini{font-size:14px}
+.cal-room-seal-btn .r-card-seal.has-seal svg{width:17px;height:17px}
+.cal-search-btn:active{transform:scale(.92)}
 
 /* ── 2. 플로팅 탭바 (공유 컴포넌트) ── */
 .cal-tabbar{
@@ -2934,7 +2936,11 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
   <div class="cal-invite-nudge" id="calInviteNudge"></div>
 
   <div class="cal-month-row">
-    <button class="cal-search-btn" onclick="openSearch()" aria-label="검색"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.5" y2="16.5"/></svg></button>
+    <div class="cal-month-left">
+      <!-- 방 씰(현재 방) — 탭하면 다음 방으로 전환. 혼자 방·공유 방 모두 여기 상시 표시(세로 공간 0) -->
+      <button class="cal-room-seal-btn" id="calRoomSealBtn" onclick="cycleRoom()" aria-label="방 전환" style="display:none"></button>
+      <button class="cal-search-btn" onclick="openSearch()" aria-label="검색"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.5" y2="16.5"/></svg></button>
+    </div>
     <button class="cal-month-arrow" onclick="prevMonth()">‹</button>
     <div class="cal-month-title" onclick="openDatePicker()">
       <div class="cal-month-year" id="calYear">2026</div>
@@ -6841,6 +6847,7 @@ function enterRoom(roomId){
   _calYear=t.getFullYear();
   _calMonth=t.getMonth();
   showScreen('calendarScreen');
+  try{ renderRoomSeal(); }catch(_){}   // 방 씰 즉시 표시(월 표시줄 좌측)
   // 멤버 로드 — 끝나면 _viewingMember 강제 재설정 + 재렌더
   loadRoomMembers().then(()=>{
     if(wantedMember){
@@ -8744,13 +8751,12 @@ function _visibleMembers(){
 function renderMemberTabs(){
   const wrap=document.getElementById('calMemberTabs');
   if(!wrap)return;
+  try{ renderRoomSeal(); }catch(_){}   // 방 씰은 월 표시줄 좌측에 상시 표시(혼자 방도)
   try{ renderInviteNudge(); }catch(_){}
   const _vis=_visibleMembers();
   // 2인+ 공유방 진입 = 알림 가치가 생기는 순간 → 소프트 프리퍼미션 (내부에서 자격/세션 가드)
   if(_vis.length>=2 && !_pushAskShown){ setTimeout(function(){ try{ maybeAskPush('room'); }catch(_){} },1200); }
-  const roomTab=_roomTabHtml();   // 방 씰+이름(전환) — 멤버 줄 맨 앞
-  // 멤버 2명 미만(혼자)이면 멤버 탭 줄 자체를 숨김(원래대로) → 달력 공간 안 줄어듦.
-  // (방 탭은 '이미 떠 있던' 멤버 줄에만 얹으므로 공유 방에선 세로 공간 추가 0)
+  // 멤버 2명 미만(혼자)이면 멤버 탭 줄 자체를 숨김 → 달력 공간 안 줄어듦(씰은 월줄에 이미 있음).
   if(_vis.length<2){
     wrap.classList.remove('show');
     wrap.innerHTML='';
@@ -8771,7 +8777,7 @@ function renderMemberTabs(){
     if(!b.is_virtual && b.user_id===_currentUser?.id)return 1;
     return 0;
   });
-  let html=roomTab;   // 방 탭을 맨 앞(전체 버튼 옆)에
+  let html='';
   // 전체 탭
   const allOn=(_viewingMember==='all');
   const dotColors=sorted.slice(0,3).map(m=>colorHex(m.color||'c-vintage'));
@@ -15764,17 +15770,19 @@ async function dismissInviteNudge(){
 }
 /* 현재 방 탭 HTML (씰+이름) — 멤버 탭 줄 맨 앞에 넣어 '어느 방인지' 상시 표시.
    탭하면 방 목록으로(전환). 별도 줄을 안 만들어 달력 공간을 안 먹음. */
-function _roomTabHtml(){
-  if(!_currentRoom) return '';
+/* 월 표시줄 좌측의 방 씰 갱신 — 혼자 방·공유 방 모두 상시 표시(세로 공간 0). 탭=cycleRoom. */
+function renderRoomSeal(){
+  const btn=document.getElementById('calRoomSealBtn');
+  if(!btn) return;
+  if(!_currentRoom){ btn.style.display='none'; btn.innerHTML=''; return; }
   const name=_currentRoom.name||'방';
   const firstChar=escapeHtml(name.slice(0,1)||'방');
-  const seal=_sealInner((_mySealByRoom||{})[_currentRoom.id], name)
+  btn.innerHTML=_sealInner((_mySealByRoom||{})[_currentRoom.id], name)
     || ('<div class="r-card-seal"><span class="r-card-seal-letter">'+firstChar+'</span></div>');
-  // 씰만 표시(이름·▾ 없음) — 이름은 전환 시 중앙 안내(showRoomSwitch)로 확인
-  return '<button class="cal-member-tab cal-room-tab" onclick="cycleRoom()" aria-label="'+escapeHtml(name)+' · 방 전환">'
-    +'<div class="cal-room-tab-seal">'+seal+'</div>'
-    +'</button>';
+  try{ btn.setAttribute('aria-label', name+' · 방 전환'); }catch(_){}
+  btn.style.display='flex';
 }
+window.renderRoomSeal=renderRoomSeal;
 /* 방 탭 탭 → 다음 방으로 바로 순환 전환(방목록 안 거침). 방이 하나뿐이면 방 목록으로. */
 let _roomSwitchTimer=null;
 function cycleRoom(){
