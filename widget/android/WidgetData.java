@@ -89,6 +89,7 @@ public class WidgetData {
                     ev.color = e.optString("color", "#8b3a2a");
                     ev.userId = optStr(e, "userId");
                     ev.gid = optStr(e, "gid");
+                    ev.style = e.optString("style", "solid");
                     room.events.add(ev);
                 }
             }
@@ -109,7 +110,7 @@ public class WidgetData {
     }
 
     public static class Member { public String userId, name, color; }
-    public static class Event { public String date, title, time, color, userId, gid; }
+    public static class Event { public String date, title, time, color, userId, gid, style; }
     public static class Todo { public String date, title, color; public boolean done; }
 
     static String optStr(JSONObject o, String key) {

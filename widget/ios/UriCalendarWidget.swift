@@ -43,7 +43,7 @@ func dedupeEvents(_ evs: [WGEvent]) -> [WGEvent] {
     for e in evs { let k = e.date + "|" + e.title + "|" + e.time; if !seen.contains(k) { seen.insert(k); out.append(e) } }
     return out
 }
-struct WGEvent: Codable { let date: String; let title: String; let time: String; let color: String; let userId: String?; var gid: String? = nil }
+struct WGEvent: Codable { let date: String; let title: String; let time: String; let color: String; let userId: String?; var gid: String? = nil; var style: String = "solid" }
 struct WGTodo: Codable, Identifiable { let id: String; let date: String; let title: String; let time: String; let color: String; let done: Bool }
 
 let APP_GROUP = "group.com.lsung.uricalendar"
@@ -594,13 +594,14 @@ struct GridView: View {
         var result: [EvRun] = []
         // gid(연결 키)가 있는 것만 연속 날짜로 묶어 기간 바로. 없으면(단일·여러날) 각각 단독 칩.
         // (앱 isSameRangeGroup과 동일 — 제목이 같아도 gid 없으면 절대 안 붙음)
-        var byGid: [String: (title: String, color: String, dates: Set<String>)] = [:]
+        var byGid: [String: (title: String, color: String, outline: Bool, dates: Set<String>)] = [:]
         for e in vis {
+            let ol = e.style == "outline"
             if let g = e.gid, !g.isEmpty {
-                if byGid[g] == nil { byGid[g] = (e.title, e.color, []) }
+                if byGid[g] == nil { byGid[g] = (e.title, e.color, ol, []) }
                 byGid[g]!.dates.insert(e.date)
             } else {
-                result.append(EvRun(title: e.title, color: e.color, start: e.date, end: e.date, lane: 0))
+                result.append(EvRun(title: e.title, color: e.color, start: e.date, end: e.date, lane: 0, outline: ol))
             }
         }
         for (_, v) in byGid {
@@ -609,7 +610,7 @@ struct GridView: View {
             while i < ds.count {
                 var j = i
                 while j + 1 < ds.count, let cur = parse(ds[j]), let nd = cal.date(byAdding: .day, value: 1, to: cur), fmt(nd) == ds[j+1] { j += 1 }
-                result.append(EvRun(title: v.title, color: v.color, start: ds[i], end: ds[j], lane: 0))
+                result.append(EvRun(title: v.title, color: v.color, start: ds[i], end: ds[j], lane: 0, outline: v.outline))
                 i = j + 1
             }
         }
@@ -630,7 +631,7 @@ struct GridView: View {
         var overflow = 0
         for r in rs where r.start <= s && s <= r.end {
             if r.lane < maxLanes {
-                arr[r.lane] = DayBar(title: r.title, color: r.color, contLeft: r.start < s, contRight: r.end > s)
+                arr[r.lane] = DayBar(title: r.title, color: r.color, contLeft: r.start < s, contRight: r.end > s, outline: r.outline)
             } else { overflow += 1 }
         }
         return (arr, overflow)
@@ -639,6 +640,8 @@ struct GridView: View {
         let cal = Calendar.current
         let allRuns = runs
         let curMonth = cal.component(.month, from: monthDate)
+        // 실제로 쓰인 이벤트 줄 수만 예약(빈 줄이 할일을 셀 밖으로 밀어내지 않게) → 할일 노출 개선
+        let usedLanes = min(maxLanes, max(0, (allRuns.map { $0.lane }.max() ?? -1) + 1))
         VStack(spacing: 0) {
             WGHeader(room: room, compact: weeks > 2, active: filter, monthNav: monthNav, monthLabel: monthLabel, myUserId: myUserId, weekNav: weekNav, weekLabel: weekLabel, weekOffset: weekOffset)
             Color.clear.frame(height: weeks > 2 ? 9 : 7)     // 헤더 ↔ 달력 사이 여백(위아래 균형)
@@ -657,7 +660,7 @@ struct GridView: View {
                             let pair = slotsFor(d, allRuns)
                             let inM = (weeks != 6) || (cal.component(.month, from: d) == curMonth)
                             let dTodos = room.todos.filter { $0.date == fmt(d) }   // 할일은 공유(멤버 필터 없음)
-                            DayCell(date: d, slots: pair.0, overflow: pair.1, isToday: fmt(d) == todayStr(),
+                            DayCell(date: d, slots: Array(pair.0.prefix(usedLanes)), overflow: pair.1, isToday: fmt(d) == todayStr(),
                                     dow: cal.component(.weekday, from: d) - 1, roomId: room.id, inMonth: inM,
                                     rightLine: gridV && c < 6, bottomLine: gridH && w < rowCount - 1,
                                     todos: dTodos, maxTodos: weeks == 2 ? 3 : 1, dense: rowCount >= 6)
@@ -669,9 +672,9 @@ struct GridView: View {
     }
 }
 // 기간 런: 같은 일정의 연속 날짜 묶음 + 배정된 줄(lane)
-struct EvRun { let title: String; let color: String; let start: String; let end: String; var lane: Int }
+struct EvRun { let title: String; let color: String; let start: String; let end: String; var lane: Int; var outline: Bool = false }
 // 하루치 한 줄의 바(연속 정보 포함)
-struct DayBar { let title: String; let color: String; let contLeft: Bool; let contRight: Bool }
+struct DayBar { let title: String; let color: String; let contLeft: Bool; let contRight: Bool; var outline: Bool = false }
 struct DayCell: View {
     let date: Date; let slots: [DayBar?]; let overflow: Int; let isToday: Bool; let dow: Int; let roomId: String; let inMonth: Bool
     var rightLine: Bool = false; var bottomLine: Bool = false
@@ -693,20 +696,22 @@ struct DayCell: View {
         }.frame(minHeight: barH).opacity(t.done ? 0.6 : 1).padding(.leading, 1)
     }
     // 기간 바: 주 안에서 이어지는 쪽은 각지게+딱 붙게, 끝/주경계는 둥글게 → 옆칸과 맞닿아 연속.
+    // 테두리 일정(outline)은 채움 대신 색 테두리 + 먹색 글자(앱 .ev-outline과 동일).
     @ViewBuilder private func barView(_ b: DayBar) -> some View {
         let roundL = !b.contLeft || dow == 0
         let roundR = !b.contRight || dow == 6
         let showTitle = !b.contLeft || dow == 0     // 시작일/주 시작에만 제목
+        let shape = UnevenRoundedRectangle(
+            topLeadingRadius: roundL ? 3 : 0, bottomLeadingRadius: roundL ? 3 : 0,
+            bottomTrailingRadius: roundR ? 3 : 0, topTrailingRadius: roundR ? 3 : 0)
         Text(showTitle ? b.title : " ").font(.system(size: 8.5, weight: .bold))
-            .foregroundColor(contrastText(b.color)).lineLimit(1)   // 바 배경색에 따라 흰/검 자동
-
+            .foregroundColor(b.outline ? .ink : contrastText(b.color)).lineLimit(1)
             .padding(.leading, roundL ? 3 : 0).padding(.trailing, roundR ? 3 : 0)
             .frame(maxWidth: .infinity, minHeight: barH, alignment: .leading)
             .background(
-                UnevenRoundedRectangle(
-                    topLeadingRadius: roundL ? 3 : 0, bottomLeadingRadius: roundL ? 3 : 0,
-                    bottomTrailingRadius: roundR ? 3 : 0, topTrailingRadius: roundR ? 3 : 0
-                ).fill(Color(hexStr: b.color))
+                b.outline
+                    ? AnyView(shape.stroke(Color(hexStr: b.color), lineWidth: 1.2))
+                    : AnyView(shape.fill(Color(hexStr: b.color)))
             )
     }
     var body: some View {

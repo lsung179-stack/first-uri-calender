@@ -29,6 +29,7 @@ public class MonthWidgetFactory implements RemoteViewsService.RemoteViewsFactory
     static class Cell {
         int day; int dow; boolean inMonth; boolean isToday; String key;
         List<WidgetData.Event> evs = new ArrayList<>();
+        List<WidgetData.Todo> todos = new ArrayList<>();
     }
 
     private int id(String name, String type) {
@@ -61,13 +62,19 @@ public class MonthWidgetFactory implements RemoteViewsService.RemoteViewsFactory
         int dim = first.getActualMaximum(Calendar.DAY_OF_MONTH);
         int rows = (int) Math.ceil((offset + dim) / 7.0);
 
-        // 날짜별 이벤트
+        // 날짜별 이벤트 + 할일
         Map<String, List<WidgetData.Event>> byDate = new HashMap<>();
+        Map<String, List<WidgetData.Todo>> byTodo = new HashMap<>();
         if (room != null) {
             for (WidgetData.Event e : room.events) {
                 List<WidgetData.Event> l = byDate.get(e.date);
                 if (l == null) { l = new ArrayList<>(); byDate.put(e.date, l); }
                 l.add(e);
+            }
+            for (WidgetData.Todo t : room.todos) {
+                List<WidgetData.Todo> l = byTodo.get(t.date);
+                if (l == null) { l = new ArrayList<>(); byTodo.put(t.date, l); }
+                l.add(t);
             }
         }
 
@@ -87,6 +94,8 @@ public class MonthWidgetFactory implements RemoteViewsService.RemoteViewsFactory
             cell.isToday = cell.key.equals(todayKey);
             List<WidgetData.Event> l = byDate.get(cell.key);
             if (l != null) cell.evs = l;
+            List<WidgetData.Todo> tl = byTodo.get(cell.key);
+            if (tl != null) cell.todos = tl;
             cells.add(cell);
         }
     }
@@ -105,21 +114,48 @@ public class MonthWidgetFactory implements RemoteViewsService.RemoteViewsFactory
         rv.setTextViewText(id("cell_day", "id"), String.valueOf(cell.day));
         rv.setTextColor(id("cell_day", "id"), numColor);
 
-        // 이벤트 칩 2개 슬롯
+        // 이벤트 칩 2개 슬롯 (테두리 일정=투명 배경+색 글자, 채움=색 배경+대비 글자)
         int[] evViews = { id("cell_ev1", "id"), id("cell_ev2", "id") };
         for (int s = 0; s < 2; s++) {
             if (s < cell.evs.size()) {
                 WidgetData.Event e = cell.evs.get(s);
-                int bg = parseColor(e.color);
+                int col = parseColor(e.color);
+                boolean outline = "outline".equals(e.style);
                 rv.setViewVisibility(evViews[s], android.view.View.VISIBLE);
                 rv.setTextViewText(evViews[s], e.title);
-                rv.setInt(evViews[s], "setBackgroundColor", bg);
-                rv.setTextColor(evViews[s], contrastText(bg));
+                if (outline) {
+                    rv.setInt(evViews[s], "setBackgroundColor", 0x00000000); // 투명
+                    rv.setTextColor(evViews[s], col);                        // 색 글자(테두리 대체)
+                } else {
+                    rv.setInt(evViews[s], "setBackgroundColor", col);
+                    rv.setTextColor(evViews[s], contrastText(col));
+                }
             } else {
                 rv.setViewVisibility(evViews[s], android.view.View.GONE);
             }
         }
-        int over = cell.evs.size() - 2;
+
+        // 할일 1개 (이벤트 아래) — 체크박스 + 제목, 완료면 취소선+흐리게
+        if (!cell.todos.isEmpty()) {
+            WidgetData.Todo t = cell.todos.get(0);
+            String mark = t.done ? "☑ " : "☐ "; // ☑ / ☐
+            CharSequence label;
+            if (t.done) {
+                android.text.SpannableString sp = new android.text.SpannableString(mark + t.title);
+                sp.setSpan(new android.text.style.StrikethroughSpan(), mark.length(), sp.length(), 0);
+                label = sp;
+                rv.setTextColor(id("cell_todo", "id"), 0xFF8A6C52);
+            } else {
+                label = mark + t.title;
+                rv.setTextColor(id("cell_todo", "id"), 0xFF2A1C0F);
+            }
+            rv.setViewVisibility(id("cell_todo", "id"), android.view.View.VISIBLE);
+            rv.setTextViewText(id("cell_todo", "id"), label);
+        } else {
+            rv.setViewVisibility(id("cell_todo", "id"), android.view.View.GONE);
+        }
+
+        int over = (cell.evs.size() - 2) + (cell.todos.size() > 1 ? cell.todos.size() - 1 : 0);
         if (over > 0) {
             rv.setViewVisibility(id("cell_more", "id"), android.view.View.VISIBLE);
             rv.setTextViewText(id("cell_more", "id"), "+" + over);
