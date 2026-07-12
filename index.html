@@ -638,7 +638,6 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .cal-room-tab .r-card-seal-letter{font-size:16px}
 .cal-room-tab .r-card-seal.has-seal .seal-ini{font-size:17px}
 .cal-room-tab .r-card-seal.has-seal svg{width:23px;height:23px}
-.cal-room-tab-name{max-width:88px;overflow:hidden;text-overflow:ellipsis;font-weight:700!important;color:var(--text)!important}
 /* 방 전환 안내 — 화면 중앙 상단에 씰+방이름 잠깐 떴다 사라짐 */
 .room-switch{position:fixed;left:50%;top:24%;transform:translate(-50%,-6px) scale(.96);z-index:70;
   display:flex;align-items:center;gap:10px;padding:11px 18px 11px 12px;border-radius:999px;
@@ -15771,9 +15770,9 @@ function _roomTabHtml(){
   const firstChar=escapeHtml(name.slice(0,1)||'방');
   const seal=_sealInner((_mySealByRoom||{})[_currentRoom.id], name)
     || ('<div class="r-card-seal"><span class="r-card-seal-letter">'+firstChar+'</span></div>');
-  return '<button class="cal-member-tab cal-room-tab" onclick="cycleRoom()" aria-label="방 전환">'
+  // 씰만 표시(이름·▾ 없음) — 이름은 전환 시 중앙 안내(showRoomSwitch)로 확인
+  return '<button class="cal-member-tab cal-room-tab" onclick="cycleRoom()" aria-label="'+escapeHtml(name)+' · 방 전환">'
     +'<div class="cal-room-tab-seal">'+seal+'</div>'
-    +'<div class="cal-member-tab-name cal-room-tab-name">'+escapeHtml(name)+' ▾</div>'
     +'</button>';
 }
 /* 방 탭 탭 → 다음 방으로 바로 순환 전환(방목록 안 거침). 방이 하나뿐이면 방 목록으로. */
