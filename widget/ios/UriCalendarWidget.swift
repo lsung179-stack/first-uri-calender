@@ -248,31 +248,21 @@ struct ToggleTodoIntent: AppIntent {
     init(todoId: String) { self.todoId = todoId }
     func perform() async throws -> some IntentResult {
         guard let ud = UserDefaults(suiteName: APP_GROUP) else { return .result() }
-        // 1) 대기열에 토글 기록 → 앱이 다음 실행/포그라운드에 Supabase 반영
+        // 대기열에 토글 기록만 함(앱이 다음 포그라운드에 Supabase 반영). 위젯 표시는
+        // todoDone()이 이 대기열 홀짝으로 즉시 반영하므로 widget.data를 직접 안 건드림
+        // (전체 JSON 재인코딩은 대용량 씰/사진 PNG까지 다시 써야 해서 취약 → 제거).
         var pending = ud.stringArray(forKey: "widget.pendingTodoToggles") ?? []
         pending.append(todoId)
         ud.set(pending, forKey: "widget.pendingTodoToggles")
-        // 2) 위젯 즉시 반영(낙관): widget.data의 해당 todo.done 뒤집기
-        if let raw = ud.string(forKey: DATA_KEY), let d = raw.data(using: .utf8),
-           var data = try? JSONDecoder().decode(WGData.self, from: d) {
-            data = flipTodo(data, id: todoId)
-            if let enc = try? JSONEncoder().encode(data), let s = String(data: enc, encoding: .utf8) {
-                ud.set(s, forKey: DATA_KEY)
-            }
-        }
         return .result()
     }
-    private func flipTodo(_ data: WGData, id: String) -> WGData {
-        let rooms = data.rooms.map { r -> WGRoom in
-            let todos = r.todos.map { t in
-                t.id == id ? WGTodo(id: t.id, date: t.date, title: t.title, time: t.time, color: t.color, done: !t.done) : t
-            }
-            return WGRoom(id: r.id, name: r.name, seal: r.seal, sealPng: r.sealPng, members: r.members, events: r.events, todos: todos)
-        }
-        return WGData(updatedAt: data.updatedAt, currentRoomId: data.currentRoomId, myUserId: data.myUserId, gridV: data.gridV, gridH: data.gridH, rooms: rooms)
-    }
 }
-// (WGData 등은 이미 Codable → Encodable 자동 충족. JSONEncoder().encode 그대로 사용)
+// 위젯 표시용 완료 상태 = 서버 done XOR 대기열 홀짝(위젯에서 방금 누른 토글 즉시 반영).
+func todoDone(_ t: WGTodo) -> Bool {
+    let pending = UserDefaults(suiteName: APP_GROUP)?.stringArray(forKey: "widget.pendingTodoToggles") ?? []
+    let odd = pending.filter { $0 == t.id }.count % 2 == 1
+    return odd ? !t.done : t.done
+}
 
 // MARK: - 타임라인
 
@@ -334,6 +324,15 @@ func sampleRoom() -> WGRoom {
 func todayStr() -> String { fmt(Date()) }
 func fmt(_ d: Date) -> String { let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; return f.string(from: d) }
 func parse(_ s: String) -> Date? { let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; return f.date(from: s) }
+// start~end(포함) 날짜 문자열 목록 — 레인 점유 판정용
+func runDays(_ start: String, _ end: String) -> [String] {
+    guard var d = parse(start), let e = parse(end) else { return [start] }
+    let cal = Calendar.current
+    var out: [String] = []
+    var guardN = 0
+    while d <= e && guardN < 400 { out.append(fmt(d)); guard let nx = cal.date(byAdding: .day, value: 1, to: d) else { break }; d = nx; guardN += 1 }
+    return out
+}
 
 // MARK: - 공통 헤더 (좌 프로필+멤버 / 우 방 선택은 위젯 편집이므로 이름만 표시)
 
@@ -509,21 +508,22 @@ struct EventRow: View {
 }
 struct TodoRow: View {
     let t: WGTodo
+    private var done: Bool { todoDone(t) }
     var body: some View {
         HStack(spacing: 8) {
             if #available(iOS 17.0, *) {
                 Button(intent: ToggleTodoIntent(todoId: t.id)) { checkbox } .buttonStyle(.plain)
             } else { checkbox }
             Text(t.title).font(.system(size: 12, weight: .medium))
-                .foregroundColor(t.done ? .mutedBrown : .ink).strikethrough(t.done)
+                .foregroundColor(done ? .mutedBrown : .ink).strikethrough(done)
             Spacer(minLength: 2)
             if !t.time.isEmpty { Text(t.time).font(.system(size: 10).monospacedDigit()).foregroundColor(.mutedBrown) }
-        }
+        }.opacity(done ? 0.65 : 1)
     }
     var checkbox: some View {
         RoundedRectangle(cornerRadius: 5).stroke(Color.terra, lineWidth: 2).frame(width: 16, height: 16)
-            .background(t.done ? RoundedRectangle(cornerRadius: 5).fill(Color.terra) : nil)
-            .overlay(t.done ? Image(systemName: "checkmark").font(.system(size: 10, weight: .black)).foregroundColor(.white) : nil)
+            .background(done ? RoundedRectangle(cornerRadius: 5).fill(Color.terra) : nil)
+            .overlay(done ? Image(systemName: "checkmark").font(.system(size: 10, weight: .black)).foregroundColor(.white) : nil)
     }
 }
 
@@ -622,11 +622,15 @@ struct GridView: View {
             if $0.start != $1.start { return $0.start < $1.start }
             return $0.title < $1.title
         }
-        var laneEnd: [String] = []   // 각 줄의 마지막 런 종료일
+        // 실제 날짜 점유(occupancy) 기반 레인 배정(앱 _computeMonthLanes와 동일) —
+        // 기간 일정은 '자기가 걸친 날'만 레인을 막고, 그 외 날의 일정은 같은 레인을 재사용.
+        // (예전 laneEnd 방식은 기간 일정 종료일이 멀면 그 사이 모든 일정을 위 레인으로 밀어냈음)
+        var occ: [Set<String>] = []   // lane → 점유된 날짜들
         for idx in result.indices {
+            let days = runDays(result[idx].start, result[idx].end)
             var lane = 0
-            while lane < laneEnd.count && result[idx].start <= laneEnd[lane] { lane += 1 }   // 겹치면 다음 줄
-            if lane == laneEnd.count { laneEnd.append(result[idx].end) } else { laneEnd[lane] = result[idx].end }
+            while lane < occ.count && !occ[lane].isDisjoint(with: days) { lane += 1 }
+            if lane == occ.count { occ.append(Set(days)) } else { occ[lane].formUnion(days) }
             result[idx].lane = lane
         }
         return result
@@ -693,14 +697,15 @@ struct DayCell: View {
     private var totalOverflow: Int { overflow + max(0, todos.count - maxTodos) }   // 이벤트+할일 넘침 합산
     // 할일 한 줄: 작은 체크박스 + 제목. 완료면 취소선+흐리게. 이벤트 바와 시각적으로 구분.
     @ViewBuilder private func todoLine(_ t: WGTodo) -> some View {
+        let done = todoDone(t)
         HStack(spacing: 2) {
-            Image(systemName: t.done ? "checkmark.square.fill" : "square")
+            Image(systemName: done ? "checkmark.square.fill" : "square")
                 .font(.system(size: 7.5, weight: .bold)).foregroundColor(Color(hexStr: t.color))
             Text(t.title).font(.system(size: 8, weight: .semibold))
-                .foregroundColor(t.done ? .mutedBrown : .ink)
-                .strikethrough(t.done, color: .mutedBrown).lineLimit(1)
+                .foregroundColor(done ? .mutedBrown : .ink)
+                .strikethrough(done, color: .mutedBrown).lineLimit(1)
             Spacer(minLength: 0)
-        }.frame(minHeight: barH).opacity(t.done ? 0.6 : 1).padding(.leading, 1)
+        }.frame(minHeight: barH).opacity(done ? 0.6 : 1).padding(.leading, 1)
     }
     // 기간 바: 주 안에서 이어지는 쪽은 각지게+딱 붙게, 끝/주경계는 둥글게 → 옆칸과 맞닿아 연속.
     // 테두리 일정(outline)은 채움 대신 색 테두리 + 먹색 글자(앱 .ev-outline과 동일).
@@ -832,7 +837,7 @@ struct ComboView: View {
                         }
                     }
                     Spacer(minLength: 0)
-                    ForEach(room.todos.filter { $0.date == todayStr() && !$0.done }.prefix(1)) { t in TodoRow(t: t) }
+                    ForEach(room.todos.filter { $0.date == todayStr() }.prefix(1)) { t in TodoRow(t: t) }
                 }.frame(maxWidth: .infinity, alignment: .leading)
                 Rectangle().fill(Color.mutedBrown.opacity(0.2)).frame(width: 1)
                 MiniMonth(room: room, filter: filter).frame(maxWidth: .infinity)
