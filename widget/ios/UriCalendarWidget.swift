@@ -171,10 +171,12 @@ struct RefreshIntent: AppIntent {
     static var title: LocalizedStringResource = "새로고침"
     func perform() async throws -> some IntentResult {
         // 새로고침 = 데이터 갱신 + '오늘'로 복귀(월/2주/콤보 오프셋 모두 0으로).
+        // removeObject로 확실히 0(기본값) 상태로 만들고 synchronize로 즉시 반영 후 리로드.
         let ud = UserDefaults(suiteName: APP_GROUP)
-        ud?.set(0, forKey: MONTH_KEY)
-        ud?.set(0, forKey: WEEK_KEY)
-        ud?.set(0, forKey: COMBO_MONTH_KEY)
+        ud?.removeObject(forKey: MONTH_KEY)
+        ud?.removeObject(forKey: WEEK_KEY)
+        ud?.removeObject(forKey: COMBO_MONTH_KEY)
+        ud?.synchronize()
         WidgetCenter.shared.reloadAllTimelines()
         return .result()
     }
