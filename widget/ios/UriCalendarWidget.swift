@@ -78,6 +78,15 @@ extension Color {
     static let mutedBrown = Color(hexStr: "#8a6c52")
     static let sunRed = Color(hexStr: "#c0503f")
 }
+// 배경색 명도에 따라 가독성 있는 텍스트 색(앱 getContrastTextColor와 동일: 가중 luminance>0.62면 어두운 글자).
+func contrastText(_ hex: String) -> Color {
+    var s = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+    if s.count == 3 { s = s.map { "\($0)\($0)" }.joined() }
+    guard s.count >= 6, let v = UInt64(s.prefix(6), radix: 16) else { return .white }
+    let r = Double((v >> 16) & 0xff), g = Double((v >> 8) & 0xff), b = Double(v & 0xff)
+    let lum = (0.299*r + 0.587*g + 0.114*b) / 255.0
+    return lum > 0.62 ? Color(hexStr: "#3a2418") : .white
+}
 
 // MARK: - 설정 인텐트 (방 선택 + 멤버 필터 + 큰 위젯 레이아웃)
 
@@ -161,6 +170,11 @@ struct SetFilterIntent: AppIntent {
 struct RefreshIntent: AppIntent {
     static var title: LocalizedStringResource = "새로고침"
     func perform() async throws -> some IntentResult {
+        // 새로고침 = 데이터 갱신 + '오늘'로 복귀(월/2주/콤보 오프셋 모두 0으로).
+        let ud = UserDefaults(suiteName: APP_GROUP)
+        ud?.set(0, forKey: MONTH_KEY)
+        ud?.set(0, forKey: WEEK_KEY)
+        ud?.set(0, forKey: COMBO_MONTH_KEY)
         WidgetCenter.shared.reloadAllTimelines()
         return .result()
     }
@@ -672,7 +686,8 @@ struct DayCell: View {
         let roundR = !b.contRight || dow == 6
         let showTitle = !b.contLeft || dow == 0     // 시작일/주 시작에만 제목
         Text(showTitle ? b.title : " ").font(.system(size: 8.5, weight: .bold))
-            .foregroundColor(.white).lineLimit(1)
+            .foregroundColor(contrastText(b.color)).lineLimit(1)   // 바 배경색에 따라 흰/검 자동
+
             .padding(.leading, roundL ? 3 : 0).padding(.trailing, roundR ? 3 : 0)
             .frame(maxWidth: .infinity, minHeight: barH, alignment: .leading)
             .background(
