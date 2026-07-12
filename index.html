@@ -639,6 +639,20 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .cal-room-tab .r-card-seal.has-seal .seal-ini{font-size:17px}
 .cal-room-tab .r-card-seal.has-seal svg{width:23px;height:23px}
 .cal-room-tab-name{max-width:88px;overflow:hidden;text-overflow:ellipsis;font-weight:700!important;color:var(--text)!important}
+/* 방 전환 안내 — 화면 중앙 상단에 씰+방이름 잠깐 떴다 사라짐 */
+.room-switch{position:fixed;left:50%;top:24%;transform:translate(-50%,-6px) scale(.96);z-index:70;
+  display:flex;align-items:center;gap:10px;padding:11px 18px 11px 12px;border-radius:999px;
+  background:rgba(30,22,14,.90);color:#f6efe0;box-shadow:0 10px 30px rgba(30,20,10,.35);
+  opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;max-width:80vw;
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.room-switch.on{opacity:1;transform:translate(-50%,0) scale(1)}
+.room-switch-seal{flex-shrink:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center}
+.room-switch-seal .r-card-seal{width:32px;height:32px;border-color:rgba(246,239,224,.5)}
+.room-switch-seal .r-card-seal::before{border-color:rgba(246,239,224,.4)}
+.room-switch-seal .r-card-seal-letter{font-size:14px;color:#f6efe0}
+.room-switch-seal .r-card-seal.has-seal svg{width:18px;height:18px}
+.room-switch-name{font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (prefers-reduced-motion:reduce){ .room-switch{transition:opacity .15s ease} }
 .cal-member-tabs::-webkit-scrollbar{display:none}
 .cal-member-tabs.show{display:flex}
 .cal-member-tab{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;flex-shrink:0;background:none;border:none;padding:2px;font-family:inherit;transition:opacity .15s}
@@ -4568,6 +4582,11 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
 </div>
 
 <div class="toast" id="toast"></div>
+<!-- 방 전환 표시(씰+방이름) — 방 탭 탭할 때마다 어느 방인지 잠깐 안내(자동 사라짐) -->
+<div class="room-switch" id="roomSwitch" aria-live="polite">
+  <span class="room-switch-seal" id="roomSwitchSeal"></span>
+  <span class="room-switch-name" id="roomSwitchName"></span>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.6.11/lunar.min.js"></script>
@@ -15752,11 +15771,38 @@ function _roomTabHtml(){
   const firstChar=escapeHtml(name.slice(0,1)||'방');
   const seal=_sealInner((_mySealByRoom||{})[_currentRoom.id], name)
     || ('<div class="r-card-seal"><span class="r-card-seal-letter">'+firstChar+'</span></div>');
-  return '<button class="cal-member-tab cal-room-tab" onclick="calTabSwitch(\'rooms\')" aria-label="방 전환">'
+  return '<button class="cal-member-tab cal-room-tab" onclick="cycleRoom()" aria-label="방 전환">'
     +'<div class="cal-room-tab-seal">'+seal+'</div>'
     +'<div class="cal-member-tab-name cal-room-tab-name">'+escapeHtml(name)+' ▾</div>'
     +'</button>';
 }
+/* 방 탭 탭 → 다음 방으로 바로 순환 전환(방목록 안 거침). 방이 하나뿐이면 방 목록으로. */
+let _roomSwitchTimer=null;
+function cycleRoom(){
+  const rooms=_myRooms||[];
+  if(rooms.length<2){ calTabSwitch('rooms'); return; }  // 전환할 다른 방이 없으면 목록으로
+  const idx=rooms.findIndex(function(r){return _currentRoom&&r.id===_currentRoom.id;});
+  const next=rooms[((idx<0?0:idx)+1)%rooms.length];
+  if(!next) return;
+  enterRoom(next.id);
+  showRoomSwitch(next);   // 바뀐 방 안내(씰+이름) 잠깐 표시
+}
+/* 방 전환 시 어느 방인지 화면 중앙에 잠깐 안내(자동 사라짐 — 연속 탭에 방해 안 되게). */
+function showRoomSwitch(room){
+  const box=document.getElementById('roomSwitch');
+  if(!box||!room) return;
+  const name=room.name||'방';
+  const firstChar=escapeHtml(name.slice(0,1)||'방');
+  const seal=_sealInner((_mySealByRoom||{})[room.id], name)
+    || ('<div class="r-card-seal"><span class="r-card-seal-letter">'+firstChar+'</span></div>');
+  const sEl=document.getElementById('roomSwitchSeal'), nEl=document.getElementById('roomSwitchName');
+  if(sEl) sEl.innerHTML=seal;
+  if(nEl) nEl.textContent=name;
+  box.classList.add('on');
+  if(_roomSwitchTimer) clearTimeout(_roomSwitchTimer);
+  _roomSwitchTimer=setTimeout(function(){ box.classList.remove('on'); }, 1100);
+}
+window.cycleRoom=cycleRoom;
 function renderInviteNudge(){
   const el=document.getElementById('calInviteNudge');
   if(!el) return;
