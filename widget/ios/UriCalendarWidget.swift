@@ -674,7 +674,7 @@ struct GridView: View {
                             DayCell(date: d, slots: Array(pair.0.prefix(usedLanes)), overflow: pair.1, isToday: fmt(d) == todayStr(),
                                     dow: cal.component(.weekday, from: d) - 1, roomId: room.id, inMonth: inM,
                                     rightLine: gridV && c < 6, bottomLine: gridH && w < rowCount - 1,
-                                    todos: dTodos, maxTodos: weeks == 2 ? 3 : 1, dense: rowCount >= 6)
+                                    todos: dTodos, maxTodos: weeks == 2 ? max(0, 3 - usedLanes) : 1, dense: rowCount >= 6 || weeks == 2)
                         }
                     }.frame(maxHeight: .infinity)
                 }
