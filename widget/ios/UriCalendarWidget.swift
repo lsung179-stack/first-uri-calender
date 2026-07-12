@@ -337,6 +337,12 @@ struct WGHeader: View {
         guard let me = myUserId, !me.isEmpty else { return reals }
         return reals.sorted { ($0.userId == me ? 0 : 1) < ($1.userId == me ? 0 : 1) }
     }
+    // 멤버가 많아 다 못 담으면 마지막 한 칸은 '+N'용으로 비워 표시(나 먼저라 내 것은 항상 포함).
+    private var shownMembers: [WGMember] {
+        let all = orderedMembers
+        return all.count <= maxAvatars ? all : Array(all.prefix(maxAvatars - 1))
+    }
+    private var hiddenCount: Int { max(0, orderedMembers.count - shownMembers.count) }
     var body: some View {
         HStack(spacing: 6) {
             // 씰 = 방 프로필. 탭하면 다음 방으로 전환(방 여러 개일 때). 실제 앱 씰 이미지.
@@ -355,7 +361,7 @@ struct WGHeader: View {
                         .background(Capsule().fill(active == nil ? Color.terra : Color.mutedBrown.opacity(0.16)))
                         .overlay(Capsule().stroke(active == nil ? Color.clear : Color.cream, lineWidth: 1))
                 }.buttonStyle(.plain)
-                ForEach(Array(orderedMembers.prefix(maxAvatars).enumerated()), id: \.offset) { _, m in
+                ForEach(Array(shownMembers.enumerated()), id: \.offset) { _, m in
                     let uid = m.userId ?? ""
                     let on = (active == uid)
                     Button(intent: SetFilterIntent(userId: on ? "" : uid)) {
@@ -370,6 +376,15 @@ struct WGHeader: View {
                         .overlay(Circle().stroke(on ? Color.terra : Color.cream, lineWidth: on ? 2.5 : 1.5))
                         .opacity(active == nil || on ? 1 : 0.4)   // 필터 중이면 선택된 사람만 또렷
                     }.buttonStyle(.plain)
+                }
+                // 멤버가 많아 다 못 담을 때 '+N' — 탭하면 앱을 열어(그 방) 거기서 전체 멤버 선택 가능.
+                // (위젯 편집 화면의 '멤버' 드롭다운에도 전체 멤버가 나오므로 숨은 멤버 필터도 가능)
+                if hiddenCount > 0 {
+                    Link(destination: URL(string: "com.lsung.uricalendar://open?room=\(room.id)")!) {
+                        Circle().fill(Color.mutedBrown.opacity(0.18)).frame(width: avSize, height: avSize)
+                            .overlay(Text("+\(hiddenCount)").font(.system(size: avSize*0.4, weight: .bold)).foregroundColor(.mutedBrown))
+                            .overlay(Circle().stroke(Color.cream, lineWidth: 1.5))
+                    }
                 }
             }
             Spacer(minLength: 4)
