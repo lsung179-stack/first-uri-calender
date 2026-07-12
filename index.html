@@ -630,18 +630,15 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .cal-avatar:active{opacity:.7}
 
 /* 멤버 프로필 탭 (전체 + 각 멤버) */
-/* 현재 방 표시 바 — 씰 + 방 이름 + 전환 화살표 */
-.cal-room-bar{display:flex;align-items:center;gap:8px;padding:6px 20px 2px;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.cal-room-bar:active{opacity:.6}
-.cal-room-bar-seal{flex-shrink:0;display:flex;align-items:center;justify-content:center}
-.cal-room-bar-seal .r-card-seal{width:26px;height:26px}
-.cal-room-bar-seal .r-card-seal::before{inset:2px}
-.cal-room-bar-seal .r-card-seal-letter{font-size:12px}
-.cal-room-bar-seal .r-card-seal.has-seal .seal-ini{font-size:12px}
-.cal-room-bar-seal .r-card-seal.has-seal svg{width:15px;height:15px}
-.cal-room-bar-name{font-size:17px;font-weight:800;color:var(--text);max-width:75%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cal-room-bar-caret{color:var(--sub);flex-shrink:0;margin-left:-1px}
 .cal-member-tabs{display:none;gap:18px;padding:4px 20px 2px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;-webkit-overflow-scrolling:touch}
+/* 현재 방 탭 — 멤버 탭 줄 맨 앞(전체 버튼 옆)에 씰+방이름. 탭하면 방 목록(전환) */
+.cal-room-tab{border-right:1px solid var(--line,rgba(120,90,60,.16));padding-right:16px!important;margin-right:-4px}
+.cal-room-tab .cal-room-tab-seal{width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cal-room-tab .r-card-seal{width:40px;height:40px}
+.cal-room-tab .r-card-seal-letter{font-size:16px}
+.cal-room-tab .r-card-seal.has-seal .seal-ini{font-size:17px}
+.cal-room-tab .r-card-seal.has-seal svg{width:23px;height:23px}
+.cal-room-tab-name{max-width:88px;overflow:hidden;text-overflow:ellipsis;font-weight:700!important;color:var(--text)!important}
 .cal-member-tabs::-webkit-scrollbar{display:none}
 .cal-member-tabs.show{display:flex}
 .cal-member-tab{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;flex-shrink:0;background:none;border:none;padding:2px;font-family:inherit;transition:opacity .15s}
@@ -2919,13 +2916,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
      3-A: 캘린더 화면
      ═══════════════════════════════════ -->
 <div class="screen cal" id="calendarScreen">
-  <!-- 현재 방 표시 바 (씰+이름) — 탭하면 방 목록(전환). renderRoomHeader()가 채움 -->
-  <div class="cal-room-bar" id="calRoomBar" onclick="calTabSwitch('rooms')" role="button" style="display:none">
-    <span class="cal-room-bar-seal" id="calRoomBarSeal"></span>
-    <span class="cal-room-bar-name" id="calRoomBarName">방</span>
-    <svg class="cal-room-bar-caret" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-  </div>
-  <!-- 멤버 프로필 탭 (전체 + 각 멤버) — renderMemberTabs()가 채움 -->
+  <!-- 멤버 프로필 탭 (방 씰+이름 + 전체 + 각 멤버) — renderMemberTabs()가 채움 -->
   <div class="cal-member-tabs" id="calMemberTabs"></div>
   <div class="cal-invite-nudge" id="calInviteNudge"></div>
 
@@ -8725,15 +8716,15 @@ function _visibleMembers(){
 function renderMemberTabs(){
   const wrap=document.getElementById('calMemberTabs');
   if(!wrap)return;
-  try{ renderRoomHeader(); }catch(_){}
   try{ renderInviteNudge(); }catch(_){}
   const _vis=_visibleMembers();
   // 2인+ 공유방 진입 = 알림 가치가 생기는 순간 → 소프트 프리퍼미션 (내부에서 자격/세션 가드)
   if(_vis.length>=2 && !_pushAskShown){ setTimeout(function(){ try{ maybeAskPush('room'); }catch(_){} },1200); }
-  // 멤버 2명 이상일 때만 표시 (혼자면 의미 없음)
+  const roomTab=_roomTabHtml();   // 방 씰+이름(전환) — 항상 맨 앞
+  // 멤버 2명 미만(혼자)이면 멤버 필터는 의미 없음 → 방 탭만 표시(어느 방인지 안내는 유지)
   if(_vis.length<2){
-    wrap.classList.remove('show');
-    wrap.innerHTML='';
+    if(_currentRoom){ wrap.innerHTML=roomTab; wrap.classList.add('show'); }
+    else { wrap.classList.remove('show'); wrap.innerHTML=''; }
     return;
   }
   wrap.classList.add('show');
@@ -8751,7 +8742,7 @@ function renderMemberTabs(){
     if(!b.is_virtual && b.user_id===_currentUser?.id)return 1;
     return 0;
   });
-  let html='';
+  let html=roomTab;   // 방 탭을 맨 앞(전체 버튼 옆)에
   // 전체 탭
   const allOn=(_viewingMember==='all');
   const dotColors=sorted.slice(0,3).map(m=>colorHex(m.color||'c-vintage'));
@@ -15739,21 +15730,18 @@ async function dismissInviteNudge(){
   var el=document.getElementById('calInviteNudge');
   if(el){ el.innerHTML=''; el.classList.remove('show'); }
 }
-/* 캘린더 상단 현재 방 표시 바 (씰+이름) — 방 많이 쓰는 사람이 어느 방인지 즉시 알게 */
-function renderRoomHeader(){
-  const bar=document.getElementById('calRoomBar');
-  if(!bar) return;
-  if(!_currentRoom){ bar.style.display='none'; return; }
+/* 현재 방 탭 HTML (씰+이름) — 멤버 탭 줄 맨 앞에 넣어 '어느 방인지' 상시 표시.
+   탭하면 방 목록으로(전환). 별도 줄을 안 만들어 달력 공간을 안 먹음. */
+function _roomTabHtml(){
+  if(!_currentRoom) return '';
   const name=_currentRoom.name||'방';
-  const nameEl=document.getElementById('calRoomBarName');
-  const sealEl=document.getElementById('calRoomBarSeal');
-  if(nameEl) nameEl.textContent=name;
-  if(sealEl){
-    const firstChar=escapeHtml(name.slice(0,1)||'방');
-    sealEl.innerHTML=_sealInner((_mySealByRoom||{})[_currentRoom.id], name)
-      || ('<div class="r-card-seal"><span class="r-card-seal-letter">'+firstChar+'</span></div>');
-  }
-  bar.style.display='flex';
+  const firstChar=escapeHtml(name.slice(0,1)||'방');
+  const seal=_sealInner((_mySealByRoom||{})[_currentRoom.id], name)
+    || ('<div class="r-card-seal"><span class="r-card-seal-letter">'+firstChar+'</span></div>');
+  return '<button class="cal-member-tab cal-room-tab" onclick="calTabSwitch(\'rooms\')" aria-label="방 전환">'
+    +'<div class="cal-room-tab-seal">'+seal+'</div>'
+    +'<div class="cal-member-tab-name cal-room-tab-name">'+escapeHtml(name)+' ▾</div>'
+    +'</button>';
 }
 function renderInviteNudge(){
   const el=document.getElementById('calInviteNudge');
