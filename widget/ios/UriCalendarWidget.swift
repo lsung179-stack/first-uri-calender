@@ -115,9 +115,9 @@ struct MemberQuery: EntityQuery {
     @IntentParameterDependency<CalConfigIntent>(\.$room)
     var config
     func entities(for identifiers: [String]) async throws -> [MemberEntity] {
-        membersFor(config?.room?.id).filter { identifiers.contains($0.id) }
+        membersFor(config?.room.id).filter { identifiers.contains($0.id) }
     }
-    func suggestedEntities() async throws -> [MemberEntity] { membersFor(config?.room?.id) }
+    func suggestedEntities() async throws -> [MemberEntity] { membersFor(config?.room.id) }
     func defaultResult() async -> MemberEntity? { MemberEntity(id: "", name: "전체 보기") }
     // 선택된 방(없으면 현재/첫 방)의 실제 멤버(가상 제외)만 userId 중복 제거해 나열. 맨 앞에 '전체 보기'.
     private func membersFor(_ roomId: String?) -> [MemberEntity] {
