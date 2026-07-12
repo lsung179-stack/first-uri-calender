@@ -8302,15 +8302,28 @@ function _wgShift(base, days){
 }
 async function _wgDoSync(){
   try{
-    // capacitor-widgetsbridge-plugin: App Group UserDefaults(suiteName)에 '직접' 기록.
-    // ⚠️ @capacitor/preferences는 group 옵션을 줘도 UserDefaults.standard에 키 프리픽스만 붙여
-    //    저장하므로(별도 프로세스인 위젯이 못 읽음) 위젯 공유엔 못 씀 → 이 플러그인을 씀.
-    const W=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.WidgetsBridgePlugin;
-    if(!W||!W.setItem||!_currentUser) return;
+    if(!_currentUser) return;
+    const plat=(window.Capacitor&&window.Capacitor.getPlatform)?window.Capacitor.getPlatform():'web';
     const payload=await buildWidgetPayload();
     if(!payload) return;
-    await W.setItem({ key:WIDGET_KEY, value:JSON.stringify(payload), group:WIDGET_GROUP });
-    if(W.reloadAllTimelines){ try{ await W.reloadAllTimelines(); }catch(_){} }
+    const json=JSON.stringify(payload);
+    if(plat==='ios'){
+      // iOS: capacitor-widgetsbridge-plugin이 App Group UserDefaults(suiteName)에 '직접' 기록.
+      // ⚠️ @capacitor/preferences는 group을 줘도 UserDefaults.standard에 프리픽스만 붙여(위젯이 못 읽음) 저장 → 못 씀.
+      const W=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.WidgetsBridgePlugin;
+      if(!W||!W.setItem) return;
+      await W.setItem({ key:WIDGET_KEY, value:json, group:WIDGET_GROUP });
+      if(W.reloadAllTimelines){ try{ await W.reloadAllTimelines(); }catch(_){} }
+    }else if(plat==='android'){
+      // Android: 앱과 위젯이 같은 패키지라 SharedPreferences를 공유.
+      // @capacitor/preferences는 기본 SharedPreferences 파일 'CapacitorStorage'에 키 그대로 저장 →
+      // Glance 위젯이 getSharedPreferences("CapacitorStorage").getString("widget.data")로 읽음.
+      const P=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Preferences;
+      if(!P||!P.set) return;
+      await P.set({ key:WIDGET_KEY, value:json });
+      // 위젯 갱신 트리거: 커스텀 브로드캐스트가 있으면 호출(없으면 주기갱신/새로고침 버튼에 맡김)
+      try{ const WB=window.Capacitor.Plugins.WidgetsBridgePlugin; if(WB&&WB.reloadAllTimelines) await WB.reloadAllTimelines(); }catch(_){}
+    }
   }catch(_){ /* 위젯 동기화 실패는 무시 */ }
 }
 /* ── 위젯용 방 씰(컬러+문양)을 PNG로 래스터화 → 위젯이 앱과 동일한 씰 표시 ──

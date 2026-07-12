@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 우리 캘린더 월 위젯 루트 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/wg_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_bg"
+    android:padding="10dp">
+
+    <!-- 헤더: 방 이름 + 이번 달 + 새로고침 -->
+    <LinearLayout
+        android:id="@+id/wg_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/wg_room"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="#2A1C0F"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:text="우리 캘린더" />
+
+        <TextView
+            android:id="@+id/wg_month"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="10dp"
+            android:textColor="#8B3A2A"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:text="7월" />
+
+        <TextView
+            android:id="@+id/wg_refresh"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#8A6C52"
+            android:textSize="15sp"
+            android:text="↻" />
+    </LinearLayout>
+
+    <!-- 요일 헤더 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal">
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textColor="#C0503F" android:textSize="10sp" android:textStyle="bold" android:text="일" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textColor="#8A6C52" android:textSize="10sp" android:textStyle="bold" android:text="월" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textColor="#8A6C52" android:textSize="10sp" android:textStyle="bold" android:text="화" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textColor="#8A6C52" android:textSize="10sp" android:textStyle="bold" android:text="수" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textColor="#8A6C52" android:textSize="10sp" android:textStyle="bold" android:text="목" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textColor="#8A6C52" android:textSize="10sp" android:textStyle="bold" android:text="금" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textColor="#8A6C52" android:textSize="10sp" android:textStyle="bold" android:text="토" />
+    </LinearLayout>
+
+    <!-- 날짜 그리드 (7열 컬렉션) + 빈 상태 -->
+    <GridView
+        android:id="@+id/grid"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="2dp"
+        android:numColumns="7"
+        android:stretchMode="columnWidth"
+        android:verticalSpacing="0dp"
+        android:horizontalSpacing="0dp"
+        android:gravity="fill" />
+
+    <TextView
+        android:id="@+id/wg_empty"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:textColor="#8A6C52"
+        android:textSize="12sp"
+        android:visibility="gone"
+        android:text="앱을 열어 방에 입장해 주세요" />
+</LinearLayout>
