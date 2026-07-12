@@ -111,17 +111,22 @@ struct MemberEntity: AppEntity {
     static var defaultQuery = MemberQuery()
 }
 struct MemberQuery: EntityQuery {
+    // 위젯 편집에서 선택한 '방'에 의존 → 그 방 멤버만 후보로 뜨게(다른 방 멤버 노출 방지)
+    @IntentParameterDependency<CalConfigIntent>(\.$room)
+    var config
     func entities(for identifiers: [String]) async throws -> [MemberEntity] {
-        allMembers().filter { identifiers.contains($0.id) }
+        membersFor(config?.room?.id).filter { identifiers.contains($0.id) }
     }
-    func suggestedEntities() async throws -> [MemberEntity] { allMembers() }
+    func suggestedEntities() async throws -> [MemberEntity] { membersFor(config?.room?.id) }
     func defaultResult() async -> MemberEntity? { MemberEntity(id: "", name: "전체 보기") }
-    // 모든 방의 실제 멤버(가상 제외)를 userId로 중복 제거해 나열. 맨 앞에 '전체 보기'.
-    private func allMembers() -> [MemberEntity] {
+    // 선택된 방(없으면 현재/첫 방)의 실제 멤버(가상 제외)만 userId 중복 제거해 나열. 맨 앞에 '전체 보기'.
+    private func membersFor(_ roomId: String?) -> [MemberEntity] {
+        let d = loadWGData()
+        let rid = roomId ?? d?.currentRoomId ?? d?.rooms.first?.id
         var out: [MemberEntity] = [MemberEntity(id: "", name: "전체 보기")]
         var seen = Set<String>()
-        for r in (loadWGData()?.rooms ?? []) {
-            for m in r.members {
+        if let room = d?.rooms.first(where: { $0.id == rid }) {
+            for m in room.members {
                 guard let uid = m.userId, !uid.isEmpty, !seen.contains(uid) else { continue }
                 seen.insert(uid)
                 out.append(MemberEntity(id: uid, name: m.name))
