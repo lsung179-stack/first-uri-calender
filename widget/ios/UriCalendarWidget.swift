@@ -573,8 +573,17 @@ struct GridView: View {
         }
     }
     var maxLanes: Int { 2 }
-    // 표시 주 수 — 2주 위젯은 2, 월 위젯은 5주 고정(사용자 요청, 넉넉한 여백).
-    var rowCount: Int { weeks == 2 ? 2 : 5 }
+    // 표시 주 수 — 2주 위젯은 2. 월 위젯은 그 달이 실제 걸치는 주 수(5 또는 6, 드물게 4)로
+    // 동적 계산 → 6주 달도 마지막 날이 잘리지 않음. 2개 일정 줄(maxLanes)은 유지.
+    var rowCount: Int {
+        if weeks == 2 { return 2 }
+        let cal = Calendar.current
+        let comp = cal.dateComponents([.year, .month], from: monthDate)
+        guard let first = cal.date(from: comp) else { return 5 }
+        let offset = cal.component(.weekday, from: first) - 1        // 1일의 요일(0=일)
+        let dim = cal.range(of: .day, in: .month, for: first)?.count ?? 30
+        return Int(ceil(Double(offset + dim) / 7.0))                 // 4·5·6
+    }
     // 보이는 그리드 범위의 '기간 런(run)'을 만들고 줄(lane)을 고정 배정 →
     // 같은 일정이 날마다 같은 줄에 놓여 끊기지 않고 이어짐.
     var runs: [EvRun] {
@@ -651,7 +660,7 @@ struct GridView: View {
                             DayCell(date: d, slots: pair.0, overflow: pair.1, isToday: fmt(d) == todayStr(),
                                     dow: cal.component(.weekday, from: d) - 1, roomId: room.id, inMonth: inM,
                                     rightLine: gridV && c < 6, bottomLine: gridH && w < rowCount - 1,
-                                    todos: dTodos, maxTodos: weeks == 2 ? 3 : 1)
+                                    todos: dTodos, maxTodos: weeks == 2 ? 3 : 1, dense: rowCount >= 6)
                         }
                     }.frame(maxHeight: .infinity)
                 }
@@ -668,8 +677,9 @@ struct DayCell: View {
     var rightLine: Bool = false; var bottomLine: Bool = false
     var todos: [WGTodo] = []          // 그 날 할일 (이벤트 바 아래에 체크박스 줄로)
     var maxTodos: Int = 1             // 셀에 보일 할일 최대 수(칸 높이에 맞춤)
-    private let numBox: CGFloat = 18
-    private let barH: CGFloat = 12
+    var dense: Bool = false           // 6주 달 등 칸이 짧을 때 숫자/바를 살짝 줄여 2개 일정 확보
+    private var numBox: CGFloat { dense ? 16 : 18 }
+    private var barH: CGFloat { dense ? 10.5 : 12 }
     private var totalOverflow: Int { overflow + max(0, todos.count - maxTodos) }   // 이벤트+할일 넘침 합산
     // 할일 한 줄: 작은 체크박스 + 제목. 완료면 취소선+흐리게. 이벤트 바와 시각적으로 구분.
     @ViewBuilder private func todoLine(_ t: WGTodo) -> some View {
