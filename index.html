@@ -8395,7 +8395,8 @@ async function buildWidgetPayload(){
   // 멤버 프로필 사진을 작은 PNG(dataURL)로 유저별 1회 래스터화 → 위젯이 실제 사진 표시
   const avPngById={};
   try{ await Promise.all(realIds.map(async function(id){ const u=profById[id]&&profById[id].avatar_url; if(u){ avPngById[id]=await _wgAvatarPng(u); } })); }catch(_){}
-  let todos=[]; try{ const {data}=await supa.from('todos').select('id,room_id,start_date,title,time,color,is_done').in('room_id',roomIds).gte('start_date',from).lte('start_date',to); todos=data||[]; }catch(_){}
+  // ⚠️ todos 테이블엔 'time' 컬럼이 없음(start_time/end_time) — 예전엔 time을 select해 쿼리가 통째로 실패→할일 0
+  let todos=[]; try{ const {data}=await supa.from('todos').select('id,room_id,start_date,title,start_time,color,is_done').in('room_id',roomIds).gte('start_date',from).lte('start_date',to); todos=data||[]; }catch(_){}
   const hx=c=>colorHex(c||'c-vintage');
   const sealMap=_mySealByRoom||{};
   const outRooms=rooms.map(r=>{
@@ -8414,7 +8415,7 @@ async function buildWidgetPayload(){
       gid: e.shared_id
              ? (e.is_multi ? ('s:'+e.shared_id+'@'+e.date) : ('s:'+e.shared_id))
              : (e.is_multi ? null : (e.range_group_id ? ('r:'+e.range_group_id) : null)) }));
-    const rt=todos.filter(t=>t.room_id===r.id).map(t=>({ id:String(t.id), date:t.start_date, title:String(t.title||'').slice(0,60), time:String(t.time||'').trim(), color:hx(t.color), done:!!t.is_done }));
+    const rt=todos.filter(t=>t.room_id===r.id).map(t=>({ id:String(t.id), date:t.start_date, title:String(t.title||'').slice(0,60), time:String(t.start_time||'').trim(), color:hx(t.color), done:!!t.is_done }));
     return { id:r.id, name:r.name||'방', seal:sealMap[r.id]||null, members:rm, events:re, todos:rt };
   });
   // 각 방 씰을 PNG로 래스터화(개인별 seal 기준) → 위젯이 앱과 똑같은 컬러 씰 표시
