@@ -43,7 +43,7 @@ func dedupeEvents(_ evs: [WGEvent]) -> [WGEvent] {
     for e in evs { let k = e.date + "|" + e.title + "|" + e.time; if !seen.contains(k) { seen.insert(k); out.append(e) } }
     return out
 }
-struct WGEvent: Codable { let date: String; let title: String; let time: String; let color: String; let userId: String?; var gid: String? = nil; var style: String = "solid" }
+struct WGEvent: Codable { let date: String; let title: String; let time: String; let color: String; let userId: String?; var gid: String? = nil; var style: String = "solid"; var ord: Int = 0 }
 struct WGTodo: Codable, Identifiable { let id: String; let date: String; let title: String; let time: String; let color: String; let done: Bool }
 
 let APP_GROUP = "group.com.lsung.uricalendar"
@@ -594,14 +594,14 @@ struct GridView: View {
         var result: [EvRun] = []
         // gid(연결 키)가 있는 것만 연속 날짜로 묶어 기간 바로. 없으면(단일·여러날) 각각 단독 칩.
         // (앱 isSameRangeGroup과 동일 — 제목이 같아도 gid 없으면 절대 안 붙음)
-        var byGid: [String: (title: String, color: String, outline: Bool, dates: Set<String>)] = [:]
+        var byGid: [String: (title: String, color: String, outline: Bool, ord: Int, dates: Set<String>)] = [:]
         for e in vis {
             let ol = e.style == "outline"
             if let g = e.gid, !g.isEmpty {
-                if byGid[g] == nil { byGid[g] = (e.title, e.color, ol, []) }
+                if byGid[g] == nil { byGid[g] = (e.title, e.color, ol, e.ord, []) }
                 byGid[g]!.dates.insert(e.date)
             } else {
-                result.append(EvRun(title: e.title, color: e.color, start: e.date, end: e.date, lane: 0, outline: ol))
+                result.append(EvRun(title: e.title, color: e.color, start: e.date, end: e.date, lane: 0, outline: ol, ord: e.ord))
             }
         }
         for (_, v) in byGid {
@@ -610,11 +610,18 @@ struct GridView: View {
             while i < ds.count {
                 var j = i
                 while j + 1 < ds.count, let cur = parse(ds[j]), let nd = cal.date(byAdding: .day, value: 1, to: cur), fmt(nd) == ds[j+1] { j += 1 }
-                result.append(EvRun(title: v.title, color: v.color, start: ds[i], end: ds[j], lane: 0, outline: v.outline))
+                result.append(EvRun(title: v.title, color: v.color, start: ds[i], end: ds[j], lane: 0, outline: v.outline, ord: v.ord))
                 i = j + 1
             }
         }
-        result.sort { $0.start != $1.start ? $0.start < $1.start : $0.title < $1.title }
+        // 앱 _computeMonthLanes 순서 그대로: 기간(여러날) 상단 우선 → order_index(사용자 배치) → 시작일 → 제목
+        result.sort {
+            let ar = $0.end > $0.start, br = $1.end > $1.start
+            if ar != br { return ar }                 // 기간 바가 위 레인
+            if $0.ord != $1.ord { return $0.ord < $1.ord }
+            if $0.start != $1.start { return $0.start < $1.start }
+            return $0.title < $1.title
+        }
         var laneEnd: [String] = []   // 각 줄의 마지막 런 종료일
         for idx in result.indices {
             var lane = 0
@@ -672,7 +679,7 @@ struct GridView: View {
     }
 }
 // 기간 런: 같은 일정의 연속 날짜 묶음 + 배정된 줄(lane)
-struct EvRun { let title: String; let color: String; let start: String; let end: String; var lane: Int; var outline: Bool = false }
+struct EvRun { let title: String; let color: String; let start: String; let end: String; var lane: Int; var outline: Bool = false; var ord: Int = 0 }
 // 하루치 한 줄의 바(연속 정보 포함)
 struct DayBar { let title: String; let color: String; let contLeft: Bool; let contRight: Bool; var outline: Bool = false }
 struct DayCell: View {

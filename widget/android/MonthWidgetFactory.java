@@ -76,6 +76,14 @@ public class MonthWidgetFactory implements RemoteViewsService.RemoteViewsFactory
                 if (l == null) { l = new ArrayList<>(); byTodo.put(t.date, l); }
                 l.add(t);
             }
+            // 각 날짜 이벤트를 사용자 지정 순서(order_index)로 정렬 → 앱과 배치 순서 일치
+            for (List<WidgetData.Event> l : byDate.values()) {
+                java.util.Collections.sort(l, (a, b) -> {
+                    if (a.ord != b.ord) return Integer.compare(a.ord, b.ord);
+                    String at = a.title == null ? "" : a.title, bt = b.title == null ? "" : b.title;
+                    return at.compareTo(bt);
+                });
+            }
         }
 
         Calendar start = Calendar.getInstance();
