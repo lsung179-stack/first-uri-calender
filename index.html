@@ -634,14 +634,13 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 /* 방 전환 안내 — 화면 중앙 상단에 씰+방이름 잠깐 떴다 사라짐 */
 .room-switch{position:fixed;left:50%;top:24%;transform:translate(-50%,-6px) scale(.96);z-index:70;
   display:flex;align-items:center;gap:10px;padding:11px 18px 11px 12px;border-radius:999px;
-  background:rgba(30,22,14,.90);color:#f6efe0;box-shadow:0 10px 30px rgba(30,20,10,.35);
-  opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;max-width:80vw;
-  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+  background:var(--card);color:var(--text);border:1px solid var(--borderL);
+  box-shadow:0 10px 30px rgba(60,40,25,.22);
+  opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;max-width:80vw}
 .room-switch.on{opacity:1;transform:translate(-50%,0) scale(1)}
 .room-switch-seal{flex-shrink:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center}
-.room-switch-seal .r-card-seal{width:32px;height:32px;border-color:rgba(246,239,224,.5)}
-.room-switch-seal .r-card-seal::before{border-color:rgba(246,239,224,.4)}
-.room-switch-seal .r-card-seal-letter{font-size:14px;color:#f6efe0}
+.room-switch-seal .r-card-seal{width:32px;height:32px}
+.room-switch-seal .r-card-seal-letter{font-size:14px}
 .room-switch-seal .r-card-seal.has-seal svg{width:18px;height:18px}
 .room-switch-name{font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media (prefers-reduced-motion:reduce){ .room-switch{transition:opacity .15s ease} }
@@ -6451,6 +6450,11 @@ async function loadRooms(){
         const found=lastRoomId && (rooms||[]).some(r=>r.id===lastRoomId);
         if(found){
           enterRoom(lastRoomId);
+          // 첫 접속 시 '어느 방인지' 잠깐 안내 — 방이 2개 이상인 사용자만(1개면 헷갈릴 일 없음)
+          if((_myRooms||[]).length>=2){
+            const _lr=_myRooms.find(function(r){return r.id===lastRoomId;});
+            if(_lr) setTimeout(function(){ try{ showRoomSwitch(_lr); }catch(_){} }, 750);
+          }
         }else if(lastRoomId){
           // 미리 캘린더 화면으로 갔는데 방을 못 찾았으면 방 목록으로 fallback
           localStorage.removeItem('lastRoomId');
