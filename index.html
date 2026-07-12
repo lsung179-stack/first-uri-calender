@@ -8720,11 +8720,12 @@ function renderMemberTabs(){
   const _vis=_visibleMembers();
   // 2인+ 공유방 진입 = 알림 가치가 생기는 순간 → 소프트 프리퍼미션 (내부에서 자격/세션 가드)
   if(_vis.length>=2 && !_pushAskShown){ setTimeout(function(){ try{ maybeAskPush('room'); }catch(_){} },1200); }
-  const roomTab=_roomTabHtml();   // 방 씰+이름(전환) — 항상 맨 앞
-  // 멤버 2명 미만(혼자)이면 멤버 필터는 의미 없음 → 방 탭만 표시(어느 방인지 안내는 유지)
+  const roomTab=_roomTabHtml();   // 방 씰+이름(전환) — 멤버 줄 맨 앞
+  // 멤버 2명 미만(혼자)이면 멤버 탭 줄 자체를 숨김(원래대로) → 달력 공간 안 줄어듦.
+  // (방 탭은 '이미 떠 있던' 멤버 줄에만 얹으므로 공유 방에선 세로 공간 추가 0)
   if(_vis.length<2){
-    if(_currentRoom){ wrap.innerHTML=roomTab; wrap.classList.add('show'); }
-    else { wrap.classList.remove('show'); wrap.innerHTML=''; }
+    wrap.classList.remove('show');
+    wrap.innerHTML='';
     return;
   }
   wrap.classList.add('show');
