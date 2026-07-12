@@ -630,9 +630,9 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .cal-avatar:active{opacity:.7}
 
 /* 멤버 프로필 탭 (전체 + 각 멤버) */
-.cal-member-tabs{display:none;gap:18px;padding:4px 20px 2px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;-webkit-overflow-scrolling:touch}
-/* 현재 방 탭 — 멤버 탭 줄 맨 앞(전체 버튼 옆)에 씰+방이름. 탭하면 방 목록(전환) */
-.cal-room-tab{border-right:1px solid var(--line,rgba(120,90,60,.16));padding-right:16px!important;margin-right:-4px}
+.cal-member-tabs{display:none;gap:13px;padding:4px 20px 2px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;-webkit-overflow-scrolling:touch}
+/* 현재 방 탭 — 멤버 탭 줄 맨 앞(전체 버튼 옆)에 씰+방이름. 탭하면 다음 방으로 전환.
+   여백은 다른 탭과 동일(구분선·추가 패딩 제거 → gap만으로 균일) */
 .cal-room-tab .cal-room-tab-seal{width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .cal-room-tab .r-card-seal{width:40px;height:40px}
 .cal-room-tab .r-card-seal-letter{font-size:16px}
