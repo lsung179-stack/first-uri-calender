@@ -611,9 +611,11 @@ struct GridView: View {
                             let d = cal.date(byAdding: .day, value: w*7 + c, to: startDate)!
                             let pair = slotsFor(d, allRuns)
                             let inM = (weeks != 6) || (cal.component(.month, from: d) == curMonth)
+                            let dTodos = room.todos.filter { $0.date == fmt(d) }   // 할일은 공유(멤버 필터 없음)
                             DayCell(date: d, slots: pair.0, overflow: pair.1, isToday: fmt(d) == todayStr(),
                                     dow: cal.component(.weekday, from: d) - 1, roomId: room.id, inMonth: inM,
-                                    rightLine: gridV && c < 6, bottomLine: gridH && w < rowCount - 1)
+                                    rightLine: gridV && c < 6, bottomLine: gridH && w < rowCount - 1,
+                                    todos: dTodos, maxTodos: weeks == 2 ? 3 : 1)
                         }
                     }.frame(maxHeight: .infinity)
                 }
@@ -628,8 +630,22 @@ struct DayBar { let title: String; let color: String; let contLeft: Bool; let co
 struct DayCell: View {
     let date: Date; let slots: [DayBar?]; let overflow: Int; let isToday: Bool; let dow: Int; let roomId: String; let inMonth: Bool
     var rightLine: Bool = false; var bottomLine: Bool = false
+    var todos: [WGTodo] = []          // 그 날 할일 (이벤트 바 아래에 체크박스 줄로)
+    var maxTodos: Int = 1             // 셀에 보일 할일 최대 수(칸 높이에 맞춤)
     private let numBox: CGFloat = 18
     private let barH: CGFloat = 12
+    private var totalOverflow: Int { overflow + max(0, todos.count - maxTodos) }   // 이벤트+할일 넘침 합산
+    // 할일 한 줄: 작은 체크박스 + 제목. 완료면 취소선+흐리게. 이벤트 바와 시각적으로 구분.
+    @ViewBuilder private func todoLine(_ t: WGTodo) -> some View {
+        HStack(spacing: 2) {
+            Image(systemName: t.done ? "checkmark.square.fill" : "square")
+                .font(.system(size: 7.5, weight: .bold)).foregroundColor(Color(hexStr: t.color))
+            Text(t.title).font(.system(size: 8, weight: .semibold))
+                .foregroundColor(t.done ? .mutedBrown : .ink)
+                .strikethrough(t.done, color: .mutedBrown).lineLimit(1)
+            Spacer(minLength: 0)
+        }.frame(minHeight: barH).opacity(t.done ? 0.6 : 1).padding(.leading, 1)
+    }
     // 기간 바: 주 안에서 이어지는 쪽은 각지게+딱 붙게, 끝/주경계는 둥글게 → 옆칸과 맞닿아 연속.
     @ViewBuilder private func barView(_ b: DayBar) -> some View {
         let roundL = !b.contLeft || dow == 0
@@ -658,8 +674,9 @@ struct DayCell: View {
                 ForEach(0..<slots.count, id: \.self) { idx in
                     if let b = slots[idx] { barView(b) } else { Color.clear.frame(height: barH) }   // 빈 줄도 높이 유지 → 줄 정렬
                 }
-                if overflow > 0 {
-                    Text("+\(overflow)").font(.system(size: 7.5, weight: .bold)).foregroundColor(.mutedBrown)
+                ForEach(Array(todos.prefix(maxTodos).enumerated()), id: \.offset) { _, t in todoLine(t) }
+                if totalOverflow > 0 {
+                    Text("+\(totalOverflow)").font(.system(size: 7.5, weight: .bold)).foregroundColor(.mutedBrown)
                 }
                 Spacer(minLength: 0)
             }
