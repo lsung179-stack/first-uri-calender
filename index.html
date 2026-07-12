@@ -8341,9 +8341,14 @@ async function buildWidgetPayload(){
       return { userId:m.user_id||null, name, color:hx(m.color), avatarPng:(m.user_id&&avPngById[m.user_id])||null };
     });
     const re=events.filter(e=>e.room_id===r.id).map(e=>({ date:e.date, title:String(e.title||'').slice(0,60), time:String(e.time||'').trim(), color:hx(e.color), userId:e.user_id||null,
-      // 바 연결 키(gid) — 앱 isSameRangeGroup 규칙 그대로: 여러날(is_multi)/단일은 연결 안 함(null),
-      // 함께 기간=shared_id, 단독 기간=range_group_id. null이면 위젯에서 각각 단독 칩.
-      gid: e.is_multi ? null : (e.shared_id ? ('s:'+e.shared_id) : (e.range_group_id ? ('r:'+e.range_group_id) : null)) }));
+      // 바 연결·중복제거 키(gid) — 앱 isSameRangeGroup 규칙 그대로.
+      //  · 함께 일정(shared_id): 같은 shared_id 복사본을 하나로 합침(dedup). 단 '여러날'(is_multi)은
+      //    날짜 간 연결 금지라 날짜까지 붙여(per-day) 같은 날만 합치고 날짜끼리는 안 이어지게.
+      //    '기간'(is_multi=false) 함께 일정은 shared_id만으로 연속 날짜 연결.
+      //  · 단독 기간=range_group_id로 연결.  · 그 외 단일/단독여러날=null(각각 단독 칩).
+      gid: e.shared_id
+             ? (e.is_multi ? ('s:'+e.shared_id+'@'+e.date) : ('s:'+e.shared_id))
+             : (e.is_multi ? null : (e.range_group_id ? ('r:'+e.range_group_id) : null)) }));
     const rt=todos.filter(t=>t.room_id===r.id).map(t=>({ id:String(t.id), date:t.start_date, title:String(t.title||'').slice(0,60), time:String(t.time||'').trim(), color:hx(t.color), done:!!t.is_done }));
     return { id:r.id, name:r.name||'방', seal:sealMap[r.id]||null, members:rm, events:re, todos:rt };
   });
