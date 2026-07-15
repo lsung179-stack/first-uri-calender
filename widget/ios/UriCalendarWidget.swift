@@ -44,7 +44,15 @@ func dedupeEvents(_ evs: [WGEvent]) -> [WGEvent] {
     return out
 }
 struct WGEvent: Codable { let date: String; let title: String; let time: String; let color: String; let userId: String?; var gid: String? = nil; var style: String = "solid"; var ord: Int = 0 }
-struct WGTodo: Codable, Identifiable { let id: String; let date: String; let title: String; let time: String; let color: String; let done: Bool }
+struct WGTodo: Codable, Identifiable { let id: String; let date: String; let title: String; let time: String; let color: String; let done: Bool; var userId: String? = nil; var memberKeys: [String]? = nil }
+// 멤버 필터 기준 할일 표시 여부 — 앱 _todoVisibleForView와 동일.
+// 전체(nil)=모두, 함께 할일(memberKeys)=그 멤버 포함 시, 혼자 할일=작성자(userId) 일치 시.
+func todoVisibleFor(_ t: WGTodo, _ filter: String?) -> Bool {
+    guard let f = filter else { return true }
+    if let mk = t.memberKeys, !mk.isEmpty { return mk.contains(f) }
+    if f.hasPrefix("v-") { return false }
+    return t.userId == f
+}
 
 let APP_GROUP = "group.com.lsung.uricalendar"
 let DATA_KEY = "widget.data"
@@ -468,7 +476,7 @@ struct TodayView: View {
     private var eff: String? { filter ?? myUserId }
     var todays: [WGEvent] { dedupeEvents(room.events.filter { $0.date == todayStr() && (eff == nil || $0.userId == eff) })
         .sorted { ($0.time.isEmpty ? "zz" : $0.time) < ($1.time.isEmpty ? "zz" : $1.time) } }
-    var todaysTodos: [WGTodo] { room.todos.filter { $0.date == todayStr() } }
+    var todaysTodos: [WGTodo] { room.todos.filter { $0.date == todayStr() && todoVisibleFor($0, eff) } }
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 4) {
@@ -670,7 +678,7 @@ struct GridView: View {
                             let d = cal.date(byAdding: .day, value: w*7 + c, to: startDate)!
                             let pair = slotsFor(d, allRuns)
                             let inM = (weeks != 6) || (cal.component(.month, from: d) == curMonth)
-                            let dTodos = room.todos.filter { $0.date == fmt(d) }   // 할일은 공유(멤버 필터 없음)
+                            let dTodos = room.todos.filter { $0.date == fmt(d) && todoVisibleFor($0, filter) }   // 멤버 필터 적용(앱과 동일)
                             DayCell(date: d, slots: Array(pair.0.prefix(usedLanes)), overflow: pair.1, isToday: fmt(d) == todayStr(),
                                     dow: cal.component(.weekday, from: d) - 1, roomId: room.id, inMonth: inM,
                                     rightLine: gridV && c < 6, bottomLine: gridH && w < rowCount - 1,
@@ -837,7 +845,7 @@ struct ComboView: View {
                         }
                     }
                     Spacer(minLength: 0)
-                    ForEach(room.todos.filter { $0.date == todayStr() }.prefix(1)) { t in TodoRow(t: t) }
+                    ForEach(room.todos.filter { $0.date == todayStr() && todoVisibleFor($0, filter) }.prefix(1)) { t in TodoRow(t: t) }
                 }.frame(maxWidth: .infinity, alignment: .leading)
                 Rectangle().fill(Color.mutedBrown.opacity(0.2)).frame(width: 1)
                 MiniMonth(room: room, filter: filter).frame(maxWidth: .infinity)
