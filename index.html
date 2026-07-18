@@ -3118,6 +3118,35 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
         <button class="todo-repeat-btn" id="todoRepMonthly" onclick="setTodoRepeat('monthly',this)">매월</button>
         <button class="todo-repeat-btn" id="todoRepYearly" onclick="setTodoRepeat('yearly',this)">매년</button>
       </div>
+      <!-- 반복 상세: 매주=요일 선택, 매월=며칠/N째주 요일/말일 (일정과 동일) -->
+      <div id="tdRepeatDetail" style="display:none">
+        <div id="tdWeekdayWrap" style="display:none">
+          <div class="rep-sublabel">반복할 요일</div>
+          <div class="rep-chip-row" id="tdWeekdayChips"></div>
+        </div>
+        <div id="tdMonthlyWrap" style="display:none">
+          <div class="rep-sublabel">매월 방식</div>
+          <div class="dm-row" id="tdMonthlyMode" style="margin-top:6px">
+            <button type="button" class="dm-btn on" data-mm="dom" onclick="onTdMonthlyMode('dom')">며칠</button>
+            <button type="button" class="dm-btn" data-mm="nth" onclick="onTdMonthlyMode('nth')">N째주 요일</button>
+            <button type="button" class="dm-btn" data-mm="last" onclick="onTdMonthlyMode('last')">말일</button>
+          </div>
+          <div id="tdMonthlyDomHint" class="rep-hint"></div>
+          <div id="tdMonthlyLastHint" class="rep-hint" style="display:none">매달 마지막 날에 반복돼요.</div>
+          <div id="tdNthWrap" style="display:none">
+            <div class="rep-sublabel">몇째 주</div>
+            <div class="dm-row" id="tdNthWeekSel" style="margin-top:6px">
+              <button type="button" class="dm-btn" data-nw="1" onclick="onTdNthWeek(1)">첫째</button>
+              <button type="button" class="dm-btn" data-nw="2" onclick="onTdNthWeek(2)">둘째</button>
+              <button type="button" class="dm-btn" data-nw="3" onclick="onTdNthWeek(3)">셋째</button>
+              <button type="button" class="dm-btn" data-nw="4" onclick="onTdNthWeek(4)">넷째</button>
+              <button type="button" class="dm-btn" data-nw="-1" onclick="onTdNthWeek(-1)">마지막</button>
+            </div>
+            <div class="rep-sublabel">요일</div>
+            <div class="rep-chip-row" id="tdNthChips"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="ev-form-row">
@@ -8527,7 +8556,10 @@ async function buildWidgetPayload(){
   const avPngById={};
   try{ await Promise.all(realIds.map(async function(id){ const u=profById[id]&&profById[id].avatar_url; if(u){ avPngById[id]=await _wgAvatarPng(u); } })); }catch(_){}
   // ⚠️ todos 테이블엔 'time' 컬럼이 없음(start_time/end_time) — 예전엔 time을 select해 쿼리가 통째로 실패→할일 0
-  let todos=[]; try{ const {data}=await supa.from('todos').select('id,room_id,start_date,title,start_time,color,is_done,user_id,member_keys').in('room_id',roomIds).gte('start_date',from).lte('start_date',to); todos=data||[]; }catch(_){}
+  const _tdCols='id,room_id,start_date,title,start_time,color,is_done,user_id,member_keys,repeat_type,repeat_weekdays,repeat_monthly_mode,repeat_nth_week';
+  let todos=[]; try{ const {data}=await supa.from('todos').select(_tdCols).in('room_id',roomIds).gte('start_date',from).lte('start_date',to); todos=data||[]; }catch(_){}
+  // 반복 할일의 start_date가 창(from) 이전이면 위 쿼리에서 누락 → 따로 가져와 창 안으로 펼침
+  try{ const {data}=await supa.from('todos').select(_tdCols).in('room_id',roomIds).lt('start_date',from).in('repeat_type',['weekly','monthly','yearly']); if(data&&data.length) todos=todos.concat(data); }catch(_){}
   const hx=c=>colorHex(c||'c-vintage');
   const sealMap=_mySealByRoom||{};
   const outRooms=rooms.map(r=>{
@@ -8554,9 +8586,14 @@ async function buildWidgetPayload(){
         re.push({ date:d, title:base.title, time:base.time, color:base.color, userId:base.userId, style:base.style, ord:base.ord, gid:gid });
       });
     });
-    const rt=todos.filter(t=>t.room_id===r.id).map(t=>({ id:String(t.id), date:t.start_date, title:String(t.title||'').slice(0,60), time:String(t.start_time||'').trim(), color:hx(t.color), done:!!t.is_done,
-      // 멤버 필터용(앱 _todoVisibleForView와 동일): 함께 할일=member_keys 포함, 혼자 할일=작성자(userId)
-      userId:t.user_id||null, memberKeys:(Array.isArray(t.member_keys)&&t.member_keys.length?t.member_keys:null) }));
+    const rt=[];
+    todos.filter(t=>t.room_id===r.id).forEach(t=>{
+      // 반복 할일도 일정과 동일하게 창 안 구체 날짜로 펼침(비반복이면 [start_date])
+      const occ=_wgExpandEvent({date:t.start_date, repeat_type:t.repeat_type, repeat_weekdays:t.repeat_weekdays, repeat_monthly_mode:t.repeat_monthly_mode, repeat_nth_week:t.repeat_nth_week}, from, to);
+      if(!occ.length) return;
+      const mk=(Array.isArray(t.member_keys)&&t.member_keys.length?t.member_keys:null);   // 멤버 필터용
+      occ.forEach(d=>{ rt.push({ id:String(t.id), date:d, title:String(t.title||'').slice(0,60), time:String(t.start_time||'').trim(), color:hx(t.color), done:!!t.is_done, userId:t.user_id||null, memberKeys:mk }); });
+    });
     return { id:r.id, name:r.name||'방', seal:sealMap[r.id]||null, members:rm, events:re, todos:rt };
   });
   // 각 방 씰을 PNG로 래스터화(개인별 seal 기준) → 위젯이 앱과 똑같은 컬러 씰 표시
@@ -18033,6 +18070,7 @@ let _todoMultiDates=[];
 let _todoStartTime='', _todoEndTime='';
 let _todoColorKey='c-vintage';
 let _todoRepeat='none';
+let _tdRepeatWeekdays=[], _tdMonthlyMode='dom', _tdNthWeek=1;   // 반복 커스텀(일정과 동일)
 let _todoMiniY=2026, _todoMiniM=0;
 let _uniAwaitPhoto=false;
 let _todoReturnDate=null;   // 할일 시트를 데이 시트에서 열었을 때만 설정 (취소 시 그 날짜 시트로 복귀)
@@ -18132,8 +18170,22 @@ function todoOccursOnDate(t,key){
   if(t.repeat_type && t.repeat_type!=='none'){
     if(!t.start_date || key < t.start_date) return false;
     const s=parseDateKey(t.start_date), d=parseDateKey(key);
-    if(t.repeat_type==='weekly') return s.getDay()===d.getDay();
-    if(t.repeat_type==='monthly') return s.getDate()===d.getDate();
+    if(t.repeat_type==='weekly'){
+      const wd=(Array.isArray(t.repeat_weekdays)&&t.repeat_weekdays.length)?t.repeat_weekdays:[s.getDay()];
+      return wd.indexOf(d.getDay())>=0;
+    }
+    if(t.repeat_type==='monthly'){
+      const mode=t.repeat_monthly_mode||'dom';
+      const dim=new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+      if(mode==='last') return d.getDate()===dim;
+      if(mode==='nth'){
+        const wd=(Array.isArray(t.repeat_weekdays)&&t.repeat_weekdays.length)?t.repeat_weekdays:[s.getDay()];
+        if(wd.indexOf(d.getDay())<0) return false;
+        if(t.repeat_nth_week===-1) return (d.getDate()+7>dim);          // 마지막 등장
+        return (Math.floor((d.getDate()-1)/7)+1)===t.repeat_nth_week;    // N째 등장
+      }
+      return s.getDate()===d.getDate();   // dom(며칠, 기본)
+    }
     if(t.repeat_type==='yearly') return s.getMonth()===d.getMonth() && s.getDate()===d.getDate();
     return false;
   }
@@ -18727,9 +18779,11 @@ function openTodoAddSheet(dateKeyStr, opts){
   _todoStartTime=''; _todoEndTime='';
   _todoColorKey='c-vintage';
   _todoRepeat='none';
+  _tdRepeatWeekdays=[]; _tdMonthlyMode='dom'; _tdNthWeek=1;
   _todoTarget='self';
   _todoMembers=[_currentUser?.id];
   const d=parseDateKey(start); _todoMiniY=d.getFullYear(); _todoMiniM=d.getMonth();
+  try{ _syncTdRepeatUI(); }catch(_){}
   if($('todoTitleInput')) $('todoTitleInput').value='';
   if($('todoMemoInput')) $('todoMemoInput').value='';
   _setTypeBtns('single');
@@ -18774,6 +18828,9 @@ function openTodoEditSheet(id, opts){
   _todoStartTime=t.start_time||''; _todoEndTime=t.end_time||'';
   _todoColorKey=(function(c){ if(!c)return 'c-vintage'; const f=(EVENT_COLORS||[]).find(function(x){ return x.hex===c||x.key===c; }); return f?f.key:c; })(t.color);
   _todoRepeat=t.repeat_type||'none';
+  _tdRepeatWeekdays=Array.isArray(t.repeat_weekdays)?t.repeat_weekdays.slice():[];
+  _tdMonthlyMode=t.repeat_monthly_mode||'dom';
+  _tdNthWeek=(typeof t.repeat_nth_week==='number')?t.repeat_nth_week:1;
   if(Array.isArray(t.member_keys)&&t.member_keys.length>=2){
     _todoTarget='all'; _todoMembers=t.member_keys.slice();
   }else{
@@ -18784,6 +18841,7 @@ function openTodoEditSheet(id, opts){
   if($('todoMemoInput')) $('todoMemoInput').value=t.memo||'';
   _setTypeBtns(type);
   _setRepeatBtns(_todoRepeat);
+  try{ _syncTdRepeatUI(); }catch(_){}
   closeTodoTimePicker();
   setTodoTimeFields(_todoStartTime,_todoEndTime);
   if(typeof resetColorLabelEdit==="function") resetColorLabelEdit("todo");
@@ -18830,11 +18888,41 @@ function setTodoType(type,btn){
   renderTodoMiniCal();
   updateTodoMiniSummary();
 }
+function _tdBaseDateObj(){ try{ return parseDateKey(_todoSingleDate||_todayKeyStr()); }catch(_){ return null; } }
 function setTodoRepeat(rep,btn){
   _todoRepeat=rep;
   document.querySelectorAll('.todo-repeat-row .todo-repeat-btn').forEach(function(b){ b.classList.remove('on'); });
   if(btn) btn.classList.add('on'); else _setRepeatBtns(rep);
+  const d=_tdBaseDateObj();
+  if(rep==='weekly'){ if((!_tdRepeatWeekdays||!_tdRepeatWeekdays.length)&&d) _tdRepeatWeekdays=[d.getDay()]; }
+  else if(rep==='monthly'){ if(d){ if(!_tdMonthlyMode)_tdMonthlyMode='dom'; _tdNthWeek=Math.floor((d.getDate()-1)/7)+1; if(!_tdRepeatWeekdays||!_tdRepeatWeekdays.length)_tdRepeatWeekdays=[d.getDay()]; } }
+  _syncTdRepeatUI();
 }
+function _syncTdRepeatUI(){
+  const detail=$('tdRepeatDetail'), wWrap=$('tdWeekdayWrap'), mWrap=$('tdMonthlyWrap');
+  const showW=(_todoRepeat==='weekly'), showM=(_todoRepeat==='monthly');
+  if(detail)detail.style.display=(showW||showM)?'':'none';
+  if(wWrap)wWrap.style.display=showW?'':'none';
+  if(mWrap)mWrap.style.display=showM?'':'none';
+  if(showW)_renderTdChips('tdWeekdayChips',_tdRepeatWeekdays);
+  if(showM)_syncTdMonthlyUI();
+}
+function _syncTdMonthlyUI(){
+  document.querySelectorAll('#tdMonthlyMode .dm-btn').forEach(function(b){ b.classList.toggle('on', b.dataset.mm===_tdMonthlyMode); });
+  const nth=(_tdMonthlyMode==='nth');
+  const nthWrap=$('tdNthWrap'); if(nthWrap)nthWrap.style.display=nth?'':'none';
+  const d=_tdBaseDateObj(); const dd=d?d.getDate():'';
+  const domHint=$('tdMonthlyDomHint'); if(domHint){ domHint.style.display=(_tdMonthlyMode==='dom')?'':'none'; domHint.textContent=dd?('매달 '+dd+'일에 반복돼요.'):''; }
+  const lastHint=$('tdMonthlyLastHint'); if(lastHint)lastHint.style.display=(_tdMonthlyMode==='last')?'':'none';
+  if(nth){ document.querySelectorAll('#tdNthWeekSel .dm-btn').forEach(function(b){ b.classList.toggle('on', Number(b.dataset.nw)===_tdNthWeek); }); _renderTdChips('tdNthChips',_tdRepeatWeekdays); }
+}
+function _renderTdChips(containerId,selected){
+  const c=$(containerId); if(!c)return; const N=['일','월','화','수','목','금','토']; c.innerHTML='';
+  for(let i=0;i<7;i++){ const b=document.createElement('button'); b.type='button'; b.className='rep-chip'+((selected&&selected.indexOf(i)>=0)?' on':''); b.textContent=N[i]; (function(dow){ b.onclick=function(){ _toggleTdWeekday(dow); }; })(i); c.appendChild(b); }
+}
+function _toggleTdWeekday(dow){ const i=_tdRepeatWeekdays.indexOf(dow); if(i>=0){ if(_tdRepeatWeekdays.length>1)_tdRepeatWeekdays.splice(i,1); } else _tdRepeatWeekdays.push(dow); _tdRepeatWeekdays.sort(function(a,b){return a-b;}); _syncTdRepeatUI(); }
+function onTdMonthlyMode(m){ _tdMonthlyMode=(m==='nth'||m==='last')?m:'dom'; if(m==='nth'&&(!_tdRepeatWeekdays||!_tdRepeatWeekdays.length)){ const d=_tdBaseDateObj(); if(d)_tdRepeatWeekdays=[d.getDay()]; } _syncTdRepeatUI(); }
+function onTdNthWeek(n){ _tdNthWeek=Number(n); _syncTdRepeatUI(); }
 function buildTodoColorGrid(){ renderTodoColorPager(); } // 호환 유지: 호출처는 그대로
 function selectTodoColor(key){ _todoColorKey=key; renderTodoColorPager(); }
 function renderTodoColorPager(){
@@ -19194,6 +19282,9 @@ async function _doSaveTodo(){
     end_time:_todoEndTime||null,
     color:_curHex(),
     repeat_type:_todoRepeat||'none',
+    repeat_weekdays: ((_todoRepeat==='weekly')||(_todoRepeat==='monthly'&&_tdMonthlyMode==='nth')) ? ((_tdRepeatWeekdays&&_tdRepeatWeekdays.length)?_tdRepeatWeekdays.slice():null) : null,
+    repeat_monthly_mode: (_todoRepeat==='monthly'?(_tdMonthlyMode||'dom'):null),
+    repeat_nth_week: (_todoRepeat==='monthly'&&_tdMonthlyMode==='nth'?(_tdNthWeek||1):null),
     memo:(($('todoMemoInput')||{}).value||'').trim()||null,
     member_keys: isCo ? _todoMembers.slice() : null
   };
@@ -19470,6 +19561,8 @@ window.closeTodoAddSheet=closeTodoAddSheet;
 window.cancelTodoAddSheet=cancelTodoAddSheet;
 window.setTodoType=setTodoType;
 window.setTodoRepeat=setTodoRepeat;
+window.onTdMonthlyMode=onTdMonthlyMode;
+window.onTdNthWeek=onTdNthWeek;
 window.toggleTodoTimePicker=toggleTodoTimePicker;
 window.closeTodoTimePicker=closeTodoTimePicker;
 window.applyTodoTimePicker=applyTodoTimePicker;
