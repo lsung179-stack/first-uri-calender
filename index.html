@@ -8474,13 +8474,51 @@ function _wgAvatarPng(url){
     }catch(_){ if(!done){ done=true; clearTimeout(to); _res(null); } }
   });
 }
+// 반복 일정을 위젯 창[from,to] 안의 구체 날짜들로 펼침(앱 _getDayEventsRaw와 동일 규칙).
+// 위젯은 DB 원본 날짜만 그려서 반복이 안 보였음 → 여기서 앱이 펼쳐 넣음(위젯은 그대로 표시만).
+// 반환: 발생 날짜 문자열(YYYY-MM-DD) 배열. 비반복이면 [origin](창 안일 때만).
+function _wgExpandEvent(ev, fromStr, toStr){
+  const rt=ev.repeat_type||(ev.recurring_yearly?'yearly':'none');
+  const origin=ev.date||'';
+  const except=Array.isArray(ev.repeat_except)?ev.repeat_except:[];
+  const inWin=d=>(d>=fromStr && d<=toStr);
+  const out=new Set();
+  if(inWin(origin)) out.add(origin);                       // origin은 항상(창 안이면)
+  if(rt!=='none' && origin){
+    const p=n=>String(n).padStart(2,'0');
+    const fromD=new Date(fromStr+'T00:00:00'), toD=new Date(toStr+'T00:00:00');
+    if(rt==='weekly'){
+      const wd=Array.isArray(ev.repeat_weekdays)?ev.repeat_weekdays:[];
+      if(wd.length){ for(let t=new Date(fromD); t<=toD; t.setDate(t.getDate()+1)){ const ds=t.getFullYear()+'-'+p(t.getMonth()+1)+'-'+p(t.getDate()); if(ds>origin && wd.indexOf(t.getDay())>=0) out.add(ds); } }
+    } else if(rt==='monthly'){
+      const mode=ev.repeat_monthly_mode||'dom';
+      let y=fromD.getFullYear(), m=fromD.getMonth(); const eY=toD.getFullYear(), eM=toD.getMonth();
+      while(y<eY || (y===eY && m<=eM)){
+        const dim=new Date(y,m+1,0).getDate(); const mk=dd=>y+'-'+p(m+1)+'-'+p(dd);
+        if(mode==='last'){ const ds=mk(dim); if(ds>origin&&inWin(ds))out.add(ds); }
+        else if(mode==='nth'){
+          const wd=Array.isArray(ev.repeat_weekdays)?ev.repeat_weekdays:[]; const nth=ev.repeat_nth_week;
+          wd.forEach(dow=>{ let dd; if(nth===-1){ const lastDow=new Date(y,m,dim).getDay(); dd=dim-((lastDow-dow+7)%7); } else { const firstDow=new Date(y,m,1).getDay(); dd=1+((dow-firstDow+7)%7)+(nth-1)*7; } if(dd>=1&&dd<=dim){ const ds=mk(dd); if(ds>origin&&inWin(ds))out.add(ds); } });
+        } else { const dd=parseInt(origin.slice(8,10),10); if(dd<=dim){ const ds=mk(dd); if(ds>origin&&inWin(ds))out.add(ds); } }
+        m++; if(m>11){m=0;y++;}
+      }
+    } else if(rt==='yearly'){
+      const mmdd=origin.slice(5);
+      for(let yy=fromD.getFullYear(); yy<=toD.getFullYear(); yy++){ const ds=yy+'-'+mmdd; if(ds>origin&&inWin(ds))out.add(ds); }
+    }
+  }
+  return [...out].filter(d=>except.indexOf(d)<0);
+}
 async function buildWidgetPayload(){
   const rooms=(_myRooms||[]);
   if(!rooms.length) return { updatedAt:Date.now(), currentRoomId:null, rooms:[] };
   const roomIds=rooms.map(r=>r.id);
   const today=new Date();
   const from=_wgShift(today,-40), to=_wgShift(today,70);   // 이전/다음달 네비게이션 커버 위해 창 확대
-  let events=[]; try{ const {data}=await supa.from('events').select('room_id,date,title,time,color,user_id,range_group_id,shared_id,is_multi,bar_style,order_index').in('room_id',roomIds).gte('date',from).lte('date',to); events=data||[]; }catch(_){}
+  const _evCols='room_id,date,title,time,color,user_id,range_group_id,shared_id,is_multi,bar_style,order_index,repeat_type,repeat_weekdays,repeat_monthly_mode,repeat_nth_week,recurring_yearly,repeat_except';
+  let events=[]; try{ const {data}=await supa.from('events').select(_evCols).in('room_id',roomIds).gte('date',from).lte('date',to); events=data||[]; }catch(_){}
+  // 반복 일정의 origin이 창(from) 이전이면 위 쿼리에서 누락 → 따로 가져와 창 안으로 펼침(위젯도 반복 표시)
+  try{ const {data}=await supa.from('events').select(_evCols).in('room_id',roomIds).lt('date',from).or('repeat_type.in.(weekly,monthly,yearly),recurring_yearly.eq.true'); if(data&&data.length) events=events.concat(data); }catch(_){}
   let members=[]; try{ const {data}=await supa.from('members').select('room_id,user_id,color,is_virtual,virtual_name').in('room_id',roomIds); members=data||[]; }catch(_){}
   const realIds=[...new Set(members.filter(m=>m.user_id&&!m.is_virtual).map(m=>m.user_id))];
   let profById={};
@@ -8498,17 +8536,24 @@ async function buildWidgetPayload(){
         :((profById[m.user_id]&&profById[m.user_id].name)||(profById[m.user_id]&&profById[m.user_id].email?profById[m.user_id].email.split('@')[0]:'멤버'));
       return { userId:m.user_id||null, name, color:hx(m.color), avatarPng:(m.user_id&&avPngById[m.user_id])||null };
     });
-    const re=events.filter(e=>e.room_id===r.id).map(e=>({ date:e.date, title:String(e.title||'').slice(0,60), time:String(e.time||'').trim(), color:hx(e.color), userId:e.user_id||null,
-      style:(e.bar_style==='outline'?'outline':'solid'),   // 테두리 일정(앱 .ev-outline) 위젯에도 반영
-      ord:(typeof e.order_index==='number'?e.order_index:0),   // 사용자 지정 배치 순서(앱 order_index)
-      // 바 연결·중복제거 키(gid) — 앱 isSameRangeGroup 규칙 그대로.
-      //  · 함께 일정(shared_id): 같은 shared_id 복사본을 하나로 합침(dedup). 단 '여러날'(is_multi)은
-      //    날짜 간 연결 금지라 날짜까지 붙여(per-day) 같은 날만 합치고 날짜끼리는 안 이어지게.
-      //    '기간'(is_multi=false) 함께 일정은 shared_id만으로 연속 날짜 연결.
-      //  · 단독 기간=range_group_id로 연결.  · 그 외 단일/단독여러날=null(각각 단독 칩).
-      gid: e.shared_id
-             ? (e.is_multi ? ('s:'+e.shared_id+'@'+e.date) : ('s:'+e.shared_id))
-             : (e.is_multi ? null : (e.range_group_id ? ('r:'+e.range_group_id) : null)) }));
+    const re=[];
+    events.filter(e=>e.room_id===r.id).forEach(e=>{
+      const rtp=e.repeat_type||(e.recurring_yearly?'yearly':'none');
+      const occ=_wgExpandEvent(e, from, to);      // 반복이면 여러 날짜, 비반복이면 [origin]
+      if(!occ.length) return;
+      const base={ title:String(e.title||'').slice(0,60), time:String(e.time||'').trim(), color:hx(e.color), userId:e.user_id||null,
+        style:(e.bar_style==='outline'?'outline':'solid'),   // 테두리 일정(앱 .ev-outline) 위젯에도 반영
+        ord:(typeof e.order_index==='number'?e.order_index:0) };  // 사용자 지정 배치 순서
+      occ.forEach(d=>{
+        // 바 연결·중복제거 키(gid) — 앱 isSameRangeGroup 규칙 그대로.
+        //  · 반복 발생분(rtp!=='none')은 각각 단독 칩(gid=null) — 요일/월 반복이 연속 기간 바로 잘못 이어지지 않게.
+        //  · 비반복: 함께 일정(shared_id) 합침, 단독 기간(range_group_id) 연결, 여러날(is_multi)은 per-day.
+        const gid = (rtp!=='none') ? null
+          : (e.shared_id ? (e.is_multi ? ('s:'+e.shared_id+'@'+d) : ('s:'+e.shared_id))
+                         : (e.is_multi ? null : (e.range_group_id ? ('r:'+e.range_group_id) : null)));
+        re.push({ date:d, title:base.title, time:base.time, color:base.color, userId:base.userId, style:base.style, ord:base.ord, gid:gid });
+      });
+    });
     const rt=todos.filter(t=>t.room_id===r.id).map(t=>({ id:String(t.id), date:t.start_date, title:String(t.title||'').slice(0,60), time:String(t.start_time||'').trim(), color:hx(t.color), done:!!t.is_done,
       // 멤버 필터용(앱 _todoVisibleForView와 동일): 함께 할일=member_keys 포함, 혼자 할일=작성자(userId)
       userId:t.user_id||null, memberKeys:(Array.isArray(t.member_keys)&&t.member_keys.length?t.member_keys:null) }));
