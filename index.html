@@ -8316,11 +8316,15 @@ function firstDow(y,m){return new Date(y,m,1).getDay()}
 const WIDGET_GROUP='group.com.lsung.uricalendar';
 const WIDGET_KEY='widget.data';
 let _wgSyncTimer=null;
-function syncWidgetData(){
+function syncWidgetData(immediate){
   try{
     if(!isNativeApp()) return;
     clearTimeout(_wgSyncTimer);
-    _wgSyncTimer=setTimeout(_wgDoSync, 700);   // 디바운스: 연속 변경 몰아서 1회
+    // ⚠️ immediate=true: 사용자 명시 편집(추가/수정/삭제/이동) 직후엔 700ms 기다리지 않고 바로 기록.
+    //   앱을 곧바로 홈으로 내려 위젯을 보면 WebView가 백그라운드로 얼어 디바운스 콜백/네트워크가
+    //   완료 못해 App Group에 안 써짐 → 위젯이 옛 데이터를 계속 보여줌(새로고침해도 동일). 즉시 기록으로 해소.
+    if(immediate){ _wgDoSync(); }
+    else{ _wgSyncTimer=setTimeout(_wgDoSync, 700); }   // 로드·드래그 등 연속 변경은 몰아서 1회
   }catch(_){}
 }
 function _wgShift(base, days){
@@ -8328,7 +8332,11 @@ function _wgShift(base, days){
   const p=n=>String(n).padStart(2,'0');
   return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
 }
+let _wgSyncing=false, _wgSyncAgain=false;
 async function _wgDoSync(){
+  // 동시/연속 호출 병합: 빌드 진행 중이면 '한 번 더' 플래그만 세우고 반환(로드 시 loadEvents+loadTodos 중복 빌드 방지).
+  if(_wgSyncing){ _wgSyncAgain=true; return; }
+  _wgSyncing=true;
   try{
     if(!_currentUser) return;
     const plat=(window.Capacitor&&window.Capacitor.getPlatform)?window.Capacitor.getPlatform():'web';
@@ -8353,6 +8361,11 @@ async function _wgDoSync(){
       try{ const WB=window.Capacitor.Plugins.WidgetsBridgePlugin; if(WB&&WB.reloadAllTimelines) await WB.reloadAllTimelines(); }catch(_){}
     }
   }catch(_){ /* 위젯 동기화 실패는 무시 */ }
+  finally{
+    _wgSyncing=false;
+    // 빌드 중 들어온 재요청이 있으면 최신 데이터로 한 번 더(마지막 상태 보장).
+    if(_wgSyncAgain){ _wgSyncAgain=false; setTimeout(_wgDoSync,0); }
+  }
 }
 /* ── 위젯용 방 씰(컬러+문양)을 PNG로 래스터화 → 위젯이 앱과 동일한 씰 표시 ──
    앱 CSS .seal-<key>의 색/잉크와 동일. 문양 SVG(SEAL_SYMS)는 그대로 재사용.
@@ -8383,30 +8396,42 @@ function _wgRasterize(svg){
     }catch(_){ resolve(null); }
   });
 }
+// PNG 래스터화 결과 캐시 — 매 위젯 sync마다 재굽기/재다운로드하면 sync가 느려져(아바타는 최대 2.5s 네트워크)
+// 편집 직후 앱을 백그라운드로 내리면 sync가 중간에 얼어 App Group에 못 씀 → 위젯 미갱신. 캐시로 sync를 빠르게.
+// 키(씰값·roomName / 아바타 URL)가 바뀌면 자동 재생성되므로 stale 위험 없음(사진 변경=새 URL).
+const _wgSealPngCache={}, _wgAvatarPngCache={};
 async function _wgSealPng(mascotVal, roomName){
+  const ck=(mascotVal||'')+'|'+(roomName||'');
+  if(Object.prototype.hasOwnProperty.call(_wgSealPngCache,ck)) return _wgSealPngCache[ck];
+  let out=null;
   try{
-    if(typeof _parseSeal!=='function') return null;
-    const p=_parseSeal(mascotVal); if(!p) return null;
-    const svg=_wgSealSvg(p.color,p.sym,roomName); if(!svg) return null;
-    return await _wgRasterize(svg);
-  }catch(_){ return null; }
+    if(typeof _parseSeal==='function'){
+      const p=_parseSeal(mascotVal);
+      if(p){ const svg=_wgSealSvg(p.color,p.sym,roomName); if(svg) out=await _wgRasterize(svg); }
+    }
+  }catch(_){ out=null; }
+  _wgSealPngCache[ck]=out;
+  return out;
 }
 // 멤버 프로필 사진 URL → 48px 정사각 cover-crop PNG(dataURL). CORS 허용 이미지만(실패 시 null→색+이니셜 폴백).
 function _wgAvatarPng(url){
+  if(Object.prototype.hasOwnProperty.call(_wgAvatarPngCache,url||'')) return Promise.resolve(_wgAvatarPngCache[url||'']);
   return new Promise(function(resolve){
+    // 성공(truthy)만 캐시 — 일시적 타임아웃/에러를 null로 영구 캐시하면 느린 아바타가 영영 안 뜸.
+    const _res=function(v){ try{ if(v) _wgAvatarPngCache[url||'']=v; }catch(_){} resolve(v); };
     if(!url){ resolve(null); return; }
-    var done=false; var to=setTimeout(function(){ if(!done){ done=true; resolve(null); } }, 2500);
+    var done=false; var to=setTimeout(function(){ if(!done){ done=true; _res(null); } }, 2500);
     try{
       var img=new Image();
       if(/^https?:/i.test(url)) img.crossOrigin='anonymous';   // 외부 URL만 CORS(앱 사진은 data: URL이라 불필요)
       img.onload=function(){ if(done)return; done=true; clearTimeout(to);
         try{ var s=48; var c=document.createElement('canvas'); c.width=s; c.height=s; var x=c.getContext('2d');
           var iw=img.naturalWidth||s, ih=img.naturalHeight||s; var sc=Math.max(s/iw, s/ih); var dw=iw*sc, dh=ih*sc;
-          x.drawImage(img,(s-dw)/2,(s-dh)/2,dw,dh); resolve(c.toDataURL('image/png'));
-        }catch(_){ resolve(null); } };
-      img.onerror=function(){ if(done)return; done=true; clearTimeout(to); resolve(null); };
+          x.drawImage(img,(s-dw)/2,(s-dh)/2,dw,dh); _res(c.toDataURL('image/png'));
+        }catch(_){ _res(null); } };
+      img.onerror=function(){ if(done)return; done=true; clearTimeout(to); _res(null); };
       img.src=url;
-    }catch(_){ if(!done){ done=true; clearTimeout(to); resolve(null); } }
+    }catch(_){ if(!done){ done=true; clearTimeout(to); _res(null); } }
   });
 }
 async function buildWidgetPayload(){
@@ -8497,7 +8522,7 @@ async function _wgFlushPendingTodos(){
     }
     // 앱 상태 재로드 + 위젯 재동기화
     try{ if(window.loadTodos) await window.loadTodos(); if(window.safeRender) window.safeRender(); }catch(_){}
-    syncWidgetData();
+    syncWidgetData(true);
   }catch(_){ /* flush 실패는 조용히 무시 */ }
   finally{ _wgFlushing=false; }
 }
@@ -8511,8 +8536,9 @@ async function _wgFlushPendingTodos(){
       if(state&&state.isActive){
         _wgFlushPendingTodos();
         // 앱 업데이트 후 위젯 데이터 스키마가 바뀌면(예: gid 추가) 위젯이 옛 데이터를 읽어
-        // 잘못 표시될 수 있음 — 포그라운드 복귀마다 최신 스키마로 다시 기록해 자동 복구.
-        try{ syncWidgetData(); }catch(_){}
+        // 잘못 표시될 수 있음 — 포그라운드 복귀마다 최신 스키마로 즉시 다시 기록해 자동 복구.
+        // (편집 직후 백그라운드로 못 쓴 경우에도, 앱 재진입 시 여기서 확실히 최신화)
+        try{ syncWidgetData(true); }catch(_){}
       }
     });
   }catch(_){}
@@ -8549,7 +8575,7 @@ async function loadEvents(){
     // 일정 먼저 렌더 (반응 로딩을 기다리지 않음 → 체감 속도 ↑)
     invalidateDayEventsCache();
     renderMonthly();
-    syncWidgetData();  // 홈화면 위젯에 오늘 일정 반영 (로드·추가·수정·삭제 후 loadEvents가 다시 호출됨)
+    syncWidgetData(true);  // 홈화면 위젯에 즉시 반영 (추가·수정·삭제·이동 모두 loadEvents 경유) — 백그라운드 전에 기록 완료
     // 이모지 반응은 백그라운드로 로드 후 다시 렌더
     loadReactions().then(()=>{
       renderMonthly();
@@ -17201,7 +17227,7 @@ async function _evMove(anchorRow,fromDate,toDate){
       results=await Promise.all(dateMoves.map(m=>supa.from('events').update({date:m.nd})
         .eq('multi_group_id',mgid).eq('user_id',_currentUser.id).eq('date',m.od)));
       if((results||[]).some(r=>r&&r.error)) throw ((results.find(r=>r&&r.error)||{}).error)||new Error('multi-room move failed');
-      syncWidgetData();
+      syncWidgetData(true);
       toast(grp.length>1?'기간 일정을 여러 방에서 옮겼어요':'여러 방의 일정을 옮겼어요');
     }else{
       results=await Promise.all(moves.map(m=>supa.from('events').update({date:m.nd}).eq('id',m.id)));
@@ -17216,7 +17242,7 @@ async function _evMove(anchorRow,fromDate,toDate){
         }
         throw (results[failedIdx[0]]&&results[failedIdx[0]].error)||new Error('partial move failed');
       }
-      syncWidgetData();
+      syncWidgetData(true);
       toast(grp.length>1?'기간 일정을 옮겼어요':'일정을 옮겼어요');
     }
   }catch(err){
@@ -17831,6 +17857,7 @@ async function loadTodos(){
     if(error){ console.warn('todos load',error); _todos=[]; return; }
     const nowIso=new Date().toISOString();
     _todos=(data||[]).filter(t=> !(t.is_done && t.expires_at && t.expires_at < nowIso));
+    try{ syncWidgetData(true); }catch(_){}   // 할일 추가/수정/삭제/완료 후에도 위젯 즉시 반영(할일도 위젯에 표시됨)
   }catch(e){ console.warn('todos load ex',e); _todos=[]; }
 }
 /* 내 전체 활성(미완료) 할일 개수 — 모든 방 합산 (프리미엄 제한 판단용) */
