@@ -4598,6 +4598,8 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.6.11/lunar.min.js"></script>
+<!-- KASI(한국천문연구원) 기준 음력 — lunar-javascript(중국 표준시)가 신월 경계에서 한국 음력과 하루 어긋나는 문제 보정용. 음력 날짜 변환은 이걸 우선 쓰고, 24절기/삼복은 lunar-javascript 유지 -->
+<script src="https://cdn.jsdelivr.net/npm/korean-lunar-calendar@0.4.0/dist/korean-lunar-calendar.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
@@ -5526,12 +5528,46 @@ function parseBirthday(bd){
   return {month:m, day:d, isLunar:false};
 }
 
-/* 음력 날짜를 지정 양력 연도의 양력 날짜로 변환 → {year, month, day} 또는 null */
+/* KASI(korean-lunar-calendar) 인스턴스 — 없으면 null. 지원 범위 양력 1000~2050. */
+function _klc(){
+  if(typeof window!=='undefined' && window.KoreanLunarCalendar){
+    try{ return new window.KoreanLunarCalendar(); }catch(_){}
+  }
+  return null;
+}
+/* 양력(year,month,day) → 한국 음력 {lm, ld, isLeap}. KASI 우선, 실패 시 lunar-javascript 폴백.
+   ⚠️ lunar-javascript는 중국 표준시(UTC+8) 기준이라 신월이 자정 근처면 한국 음력과 하루 어긋남(예: 2026 중양절). */
+function solarToLunarKR(year, month, day){
+  const c=_klc();
+  if(c){
+    try{
+      c.setSolarDate(year, month, day);
+      const l=c.getLunarCalendar();
+      if(l && l.year) return { lm:l.month, ld:l.day, isLeap:!!l.intercalation };
+    }catch(_){}
+  }
+  // 폴백: lunar-javascript (KASI 라이브러리 미로드 또는 범위 밖)
+  if(typeof window!=='undefined' && window.Solar){
+    try{
+      const lunar=window.Solar.fromYmd(year, month, day).getLunar();
+      return { lm:Math.abs(lunar.getMonth()), ld:lunar.getDay(), isLeap:lunar.getMonth()<0 };
+    }catch(_){}
+  }
+  return null;
+}
+/* 음력 날짜를 지정 양력 연도의 양력 날짜로 변환 → {year, month, day} 또는 null. KASI 우선, 폴백 lunar-javascript. */
 function lunarToSolar(year, lm, ld){
+  const c=_klc();
+  if(c){
+    try{
+      c.setLunarDate(year, lm, ld, false);
+      const s=c.getSolarCalendar();
+      if(s && s.year) return {year:s.year, month:s.month, day:s.day};
+    }catch(_){}
+  }
   try{
     if(!window.Lunar)return null;
-    const lunar=window.Lunar.fromYmd(year, lm, ld);
-    const solar=lunar.getSolar();
+    const solar=window.Lunar.fromYmd(year, lm, ld).getSolar();
     return {year:solar.getYear(), month:solar.getMonth(), day:solar.getDay()};
   }catch(e){return null}
 }
@@ -7909,10 +7945,11 @@ function getDayLabel(year,month,day){
       if(key===bok.chobok)return {text:'초복',type:'term'};
       if(key===bok.jungbok)return {text:'중복',type:'term'};
       if(key===bok.malbok)return {text:'말복',type:'term'};
-      // 음력 명절 (윤달이 아닐 때만)
-      const lm=Math.abs(lunar.getMonth());
-      const ld=lunar.getDay();
-      const isLeap=lunar.getMonth()<0;
+      // 음력 명절 (윤달이 아닐 때만) — 음력 날짜는 KASI 기준(한국 음력)으로 계산
+      const _kr=solarToLunarKR(year,month,day)||{lm:Math.abs(lunar.getMonth()),ld:lunar.getDay(),isLeap:lunar.getMonth()<0};
+      const lm=_kr.lm;
+      const ld=_kr.ld;
+      const isLeap=_kr.isLeap;
       const fk=`${lm}-${ld}`;
       if(LUNAR_FESTIVALS[fk]&&!isLeap)return {text:LUNAR_FESTIVALS[fk],type:'term'};
       // 양력 매년 기념일
@@ -7932,15 +7969,11 @@ function getDayLabel(year,month,day){
 
 /* 셀 우측 작은 음력 — 매일 표시 (음력 1일이면 "월" 표시) */
 function getCellLunar(year,month,day){
-  if(!(typeof window!=='undefined'&&window.Solar))return '';
-  try{
-    const s=window.Solar.fromYmd(year,month,day);
-    const l=s.getLunar();
-    const lm=Math.abs(l.getMonth());
-    const ld=l.getDay();
-    if(ld===1)return (l.getMonth()<0?'윤':'')+lm+'.1';  // 음력 1일이면 월.1
-    return String(ld);
-  }catch{return ''}
+  const kr=solarToLunarKR(year,month,day);
+  if(!kr)return '';
+  const lm=kr.lm, ld=kr.ld;
+  if(ld===1)return (kr.isLeap?'윤':'')+lm+'.1';  // 음력 1일이면 월.1
+  return String(ld);
 }
 
 /* 시트 헤더용 풀텍스트 (음력 + 라벨) */
@@ -7949,15 +7982,10 @@ function getDayHeaderInfo(year,month,day){
   const main=getDayLabel(year,month,day);
   // main이 음력 라벨이면 아래에서 별도 추가하니 push 안 함 (중복 방지)
   if(main.text&&main.type!=='lunar')labels.push(main.text);
-  // 음력 항상 추가
-  if(typeof window!=='undefined'&&window.Solar){
-    try{
-      const s=window.Solar.fromYmd(year,month,day);
-      const l=s.getLunar();
-      const lm=Math.abs(l.getMonth());
-      const isLeap=l.getMonth()<0;
-      labels.push(`${isLeap?'윤':'음'} ${lm}.${l.getDay()}`);
-    }catch{}
+  // 음력 항상 추가 — KASI(한국 음력) 기준
+  const kr=solarToLunarKR(year,month,day);
+  if(kr){
+    labels.push(`${kr.isLeap?'윤':'음'} ${kr.lm}.${kr.ld}`);
   }
   return labels.join(' · ');
 }
@@ -14586,7 +14614,7 @@ function coBuildCover(W, key){
     +'</div>'
   +'</div>';
 }function coLunar(y,m,d){
-  try{ if(window.Solar){ const l=window.Solar.fromYmd(y,m,d).getLunar(); return `음 ${l.getMonth()}.${l.getDay()}`; } }catch(e){}
+  try{ const kr=solarToLunarKR(y,m,d); if(kr)return `${kr.isLeap?'윤':'음'} ${kr.lm}.${kr.ld}`; }catch(e){}
   return '';
 }
 function coColorHex(colorKey){
