@@ -9334,6 +9334,14 @@ function _eventItemKey(ev){
   }
   return 'e:'+(ev.id||((ev.title||'')+'|'+(ev.date||'')));
 }
+/* 레인 배치용 키 — 반복(비기간) 일정은 발생일마다 독립 레인으로(할일 spread와 동일).
+   반복 일정을 하나의 아이템으로 묶으면 가장 혼잡한 날 기준으로 한 레인이 배정돼
+   일정 없는 날에도 아래 레인(3번째 등)으로 밀림. 날짜별 키로 각 발생일을 독립 배치. */
+function _eventLaneKey(ev, dayKey){
+  const base=_eventItemKey(ev);
+  const isRepeat=!ev._isVirtual && !ev._isRangeEvent && ((ev.repeat_type && ev.repeat_type!=='none') || ev.recurring_yearly);
+  return isRepeat ? (base+'@'+dayKey) : base;
+}
 function _computeMonthLanes(gridDays){
   _laneMap={};
   const items=[], seen={};
@@ -9341,7 +9349,7 @@ function _computeMonthLanes(gridDays){
   gridDays.forEach(function(key){
     let evs; try{ evs=getDayEvents(key); }catch(e){ evs=[]; }
     evs.forEach(function(ev){
-      const k=_eventItemKey(ev);
+      const k=_eventLaneKey(ev, key);   // 반복 일정은 날짜별 독립 키 → 발생일마다 레인 재계산
       let it=seen[k];
       if(!it){
         const ord=ev._isVirtual?VIRT:((typeof ev.order_index==='number')?ev.order_index:0);
@@ -9497,7 +9505,7 @@ function _dayAbsSlots(key,y,m,d){
   // 일정
   getDayEvents(key).forEach(function(ev){
     const bar=_eventBarHTML(ev,key,y,m,d);
-    place(_laneMap[_eventItemKey(ev)], bar.html, bar.hasRangeStart);
+    place(_laneMap[_eventLaneKey(ev, key)], bar.html, bar.hasRangeStart);
   });
   // 할일 — 미완료/완료 모두 전역 레인
   const _td=(typeof window!=='undefined'&&window.__getTodos)?(window.__getTodos()||[]):[];
