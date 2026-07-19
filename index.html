@@ -3134,7 +3134,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
           <div id="tdMonthlyDomHint" class="rep-hint"></div>
           <div id="tdMonthlyLastHint" class="rep-hint" style="display:none">매달 마지막 날에 반복돼요.</div>
           <div id="tdNthWrap" style="display:none">
-            <div class="rep-sublabel">몇째 주</div>
+            <div class="rep-sublabel">몇째 · 요일</div>
             <div class="dm-row" id="tdNthWeekSel" style="margin-top:6px">
               <button type="button" class="dm-btn" data-nw="1" onclick="onTdNthWeek(1)">첫째</button>
               <button type="button" class="dm-btn" data-nw="2" onclick="onTdNthWeek(2)">둘째</button>
@@ -3142,8 +3142,8 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
               <button type="button" class="dm-btn" data-nw="4" onclick="onTdNthWeek(4)">넷째</button>
               <button type="button" class="dm-btn" data-nw="-1" onclick="onTdNthWeek(-1)">마지막</button>
             </div>
-            <div class="rep-sublabel">요일</div>
-            <div class="rep-chip-row" id="tdNthChips"></div>
+            <div class="rep-chip-row" id="tdNthChips" style="margin-top:6px"></div>
+            <div id="tdNthHint" class="rep-hint"></div>
           </div>
         </div>
       </div>
@@ -3513,7 +3513,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
           <div id="evMonthlyDomHint" class="rep-hint"></div>
           <div id="evMonthlyLastHint" class="rep-hint" style="display:none">매달 마지막 날에 반복돼요.</div>
           <div id="evNthWrap" style="display:none">
-            <div class="rep-sublabel">몇째 주</div>
+            <div class="rep-sublabel">몇째 · 요일</div>
             <div class="dm-row" id="evNthWeekSel" style="margin-top:6px">
               <button type="button" class="dm-btn" data-nw="1" onclick="onEvNthWeek(1)">첫째</button>
               <button type="button" class="dm-btn" data-nw="2" onclick="onEvNthWeek(2)">둘째</button>
@@ -3521,8 +3521,8 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
               <button type="button" class="dm-btn" data-nw="4" onclick="onEvNthWeek(4)">넷째</button>
               <button type="button" class="dm-btn" data-nw="-1" onclick="onEvNthWeek(-1)">마지막</button>
             </div>
-            <div class="rep-sublabel">요일</div>
-            <div class="rep-chip-row" id="evNthChips"></div>
+            <div class="rep-chip-row" id="evNthChips" style="margin-top:6px"></div>
+            <div id="evNthHint" class="rep-hint"></div>
           </div>
         </div>
       </div>
@@ -10278,6 +10278,28 @@ let _evRepeatWeekdays=[];   // 매주 or 매월 N째주 요일 (0=일~6=토, 다
 let _evMonthlyMode='dom';   // dom(며칠) | nth(N째주 요일) | last(말일)
 let _evNthWeek=1;           // 1~4, -1=마지막 주
 const _REP_DOW=['일','월','화','수','목','금','토'];
+const _ORD_KO={'1':'첫째','2':'둘째','3':'셋째','4':'넷째','-1':'마지막'};
+// N째주 요일이 실제로 며칠인지 계산(기준 애매함 해소용 — 앱 펼치기와 동일 규칙)
+function _nthDatesInMonth(y,m0,nth,weekdays){
+  const dim=new Date(y,m0+1,0).getDate(); const out=[];
+  (weekdays||[]).forEach(function(dow){
+    let dd;
+    if(nth===-1){ const lastDow=new Date(y,m0,dim).getDay(); dd=dim-((lastDow-dow+7)%7); }
+    else { const firstDow=new Date(y,m0,1).getDay(); dd=1+((dow-firstDow+7)%7)+(nth-1)*7; }
+    if(dd>=1&&dd<=dim) out.push(dd);
+  });
+  return out.sort(function(a,b){return a-b;});
+}
+// 힌트 문구: "매달 둘째 화·목요일 · 이번 달 10월 13·15일" — 실제 날짜로 '몇째'의 기준을 명확히
+function _nthHintText(baseD, nth, weekdays){
+  if(!baseD || !weekdays || !weekdays.length) return '';
+  const y=baseD.getFullYear(), m0=baseD.getMonth();
+  const wdNames=weekdays.slice().sort(function(a,b){return a-b;}).map(function(d){return _REP_DOW[d];}).join('·');
+  const ord=_ORD_KO[String(nth)]||('' + nth);
+  const dts=_nthDatesInMonth(y,m0,nth,weekdays);
+  const head='매달 '+ord+' '+wdNames+'요일';
+  return dts.length ? (head+' · 이번 달 '+(m0+1)+'월 '+dts.join('·')+'일') : (head+' · 이번 달은 없음');
+}
 function _evBaseDateObj(){ try{ return parseDateKey(_dayDate||_selectedDate); }catch(_){ return null; } }
 function onEvRepeatSelect(t){
   _evRepeatType=(t==='weekly'||t==='monthly'||t==='yearly')?t:'none';
@@ -10316,12 +10338,13 @@ function _syncEvMonthlyUI(){
   const nthWrap=document.getElementById('evNthWrap'); if(nthWrap)nthWrap.style.display=nth?'':'none';
   const d=_evBaseDateObj(); const dd=d?d.getDate():'';
   const domHint=document.getElementById('evMonthlyDomHint');
-  if(domHint){ domHint.style.display=(_evMonthlyMode==='dom')?'':'none'; domHint.textContent=dd?('매달 '+dd+'일에 반복돼요.'):''; }
+  if(domHint){ domHint.style.display=(_evMonthlyMode==='dom')?'':'none'; domHint.textContent=dd?('매달 '+dd+'일에 반복돼요.'+(dd>28?' (그 날이 없는 달은 건너뜀)':'')):''; }
   const lastHint=document.getElementById('evMonthlyLastHint');
   if(lastHint)lastHint.style.display=(_evMonthlyMode==='last')?'':'none';
   if(nth){
     document.querySelectorAll('#evNthWeekSel .dm-btn').forEach(b=>b.classList.toggle('on', Number(b.dataset.nw)===_evNthWeek));
     _renderRepChips('evNthChips', _evRepeatWeekdays);
+    const h=document.getElementById('evNthHint'); if(h)h.textContent=_nthHintText(_evBaseDateObj(), _evNthWeek, _evRepeatWeekdays);
   }
 }
 function _renderRepChips(containerId, selected){
@@ -18920,9 +18943,9 @@ function _syncTdMonthlyUI(){
   const nth=(_tdMonthlyMode==='nth');
   const nthWrap=$('tdNthWrap'); if(nthWrap)nthWrap.style.display=nth?'':'none';
   const d=_tdBaseDateObj(); const dd=d?d.getDate():'';
-  const domHint=$('tdMonthlyDomHint'); if(domHint){ domHint.style.display=(_tdMonthlyMode==='dom')?'':'none'; domHint.textContent=dd?('매달 '+dd+'일에 반복돼요.'):''; }
+  const domHint=$('tdMonthlyDomHint'); if(domHint){ domHint.style.display=(_tdMonthlyMode==='dom')?'':'none'; domHint.textContent=dd?('매달 '+dd+'일에 반복돼요.'+(dd>28?' (그 날이 없는 달은 건너뜀)':'')):''; }
   const lastHint=$('tdMonthlyLastHint'); if(lastHint)lastHint.style.display=(_tdMonthlyMode==='last')?'':'none';
-  if(nth){ document.querySelectorAll('#tdNthWeekSel .dm-btn').forEach(function(b){ b.classList.toggle('on', Number(b.dataset.nw)===_tdNthWeek); }); _renderTdChips('tdNthChips',_tdRepeatWeekdays); }
+  if(nth){ document.querySelectorAll('#tdNthWeekSel .dm-btn').forEach(function(b){ b.classList.toggle('on', Number(b.dataset.nw)===_tdNthWeek); }); _renderTdChips('tdNthChips',_tdRepeatWeekdays); const h=$('tdNthHint'); if(h)h.textContent=_nthHintText(_tdBaseDateObj(), _tdNthWeek, _tdRepeatWeekdays); }
 }
 function _renderTdChips(containerId,selected){
   const c=$(containerId); if(!c)return; const N=['일','월','화','수','목','금','토']; c.innerHTML='';
