@@ -762,14 +762,15 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .import-room-seal .r-card-seal{width:34px;height:34px}
 .import-room-name{flex:1;font-size:15px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .import-room-go{font-size:12.5px;font-weight:600;color:var(--accent);flex-shrink:0}
-.import-pick-head{display:flex;justify-content:flex-end;margin-top:4px}
 .import-selall{background:none;border:none;color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;padding:4px 2px}
-.import-event-list{display:flex;flex-direction:column;gap:4px;margin-top:6px;max-height:46vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.import-month-head{display:flex;align-items:center;gap:7px;padding:8px 6px 6px;cursor:pointer;position:sticky;top:0;background:var(--card);z-index:1;user-select:none}
-.import-month-head+.import-ev-item{margin-top:0}
-.import-month-arrow{font-size:11px;color:var(--sub);width:12px;flex-shrink:0}
-.import-month-lbl{font-size:13px;font-weight:700;color:var(--accent)}
-.import-month-cnt{margin-left:auto;font-size:11.5px;font-weight:600;color:var(--sub)}
+/* 년/월 좌우 페이지 네비 */
+.import-page-nav{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:8px}
+.import-page-arrow{background:none;border:none;cursor:pointer;font-size:22px;line-height:1;color:var(--sub);font-family:inherit;font-weight:300;padding:2px 8px}
+.import-page-arrow:disabled{opacity:.25;cursor:default}
+.import-page-lbl{font-size:16px;font-weight:700;color:var(--text);min-width:110px;text-align:center}
+.import-pick-sub{display:flex;align-items:center;justify-content:space-between;margin-top:2px;padding:0 2px}
+.import-page-cnt{font-size:11.5px;color:var(--sub)}
+.import-event-list{display:flex;flex-direction:column;gap:4px;margin-top:8px;max-height:44vh;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
 .import-ev-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:11px;cursor:pointer;transition:background .12s}
 .import-ev-item:active{background:var(--bg)}
 .import-ev-item input{width:19px;height:19px;flex-shrink:0;accent-color:var(--accent);cursor:pointer}
@@ -3340,10 +3341,16 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
   <div class="mo-sub" id="importSub">선택한 방의 내 일정을 이 방으로 복사해요 · 이미 있는 일정은 자동 제외</div>
   <!-- 1단계: 소스 방 선택 -->
   <div class="import-room-list" id="importRoomList"></div>
-  <!-- 2단계: 가져올 일정 선택 -->
+  <!-- 2단계: 가져올 일정 선택 (년/월 단위로 좌우로 넘기며) -->
   <div id="importPick" style="display:none">
-    <div class="import-pick-head">
-      <button class="import-selall" id="importSelAllBtn" onclick="_importSelectAll()">전체 선택</button>
+    <div class="import-page-nav">
+      <button class="import-page-arrow" id="importPrevBtn" onclick="_importPageNav(-1)" aria-label="이전 달">‹</button>
+      <span class="import-page-lbl" id="importPageLbl"></span>
+      <button class="import-page-arrow" id="importNextBtn" onclick="_importPageNav(1)" aria-label="다음 달">›</button>
+    </div>
+    <div class="import-pick-sub">
+      <span class="import-page-cnt" id="importPageCnt"></span>
+      <button class="import-selall" id="importSelAllBtn" onclick="_importSelectAll()">이 달 전체 선택</button>
     </div>
     <div class="import-event-list" id="importEventList"></div>
     <div class="mo-actions">
@@ -16345,7 +16352,7 @@ window._sealPickRoom=_sealPickRoom;
    1) 소스 방 선택 → 2) 가져올 일정 체크리스트(제외 선택) → 확인 시 복사.
    기간 일정은 하나로 묶어 보여주고, 가져올 때 새 range_group_id로 재생성(단일로 쪼개지지 않음).
    이미 있는 일정(날짜+제목+시간)은 자동 제외. 방 만들 때 깜빡해도 언제든 다시. */
-let _importSrcId=null, _importGroups=[], _importSeen=null, _importCollapsed=new Set();
+let _importSrcId=null, _importGroups=[], _importSeen=null, _importYMs=[], _importPageIdx=0;
 function _impMD(ds){ try{ const d=parseDateKey(ds); return (d.getMonth()+1)+'/'+d.getDate(); }catch(_){ return ds; } }
 function _impKeyDT(date,title,time){ return (date||'')+'|'+((title||'').trim())+'|'+(time||''); }
 function openImportEvents(){
@@ -16381,7 +16388,7 @@ function _importBackToRooms(){ _importShowRoomStep(); }
 async function _importPickRoom(srcId){
   if(!_currentRoom||!_currentUser) return;
   if(srcId===_currentRoom.id){ toast('같은 방이에요'); return; }
-  _importSrcId=srcId; _importCollapsed=new Set();
+  _importSrcId=srcId; _importPageIdx=0;
   try{
     // 현재 방 기존 내 일정 → 중복 판정 세트
     const {data:cur}=await supa.from('events').select('date,title,time').eq('room_id',_currentRoom.id).eq('user_id',_currentUser.id);
@@ -16407,6 +16414,7 @@ async function _importPickRoom(srcId){
     // 이미 다 있는 그룹은 기본 체크 해제 + 표시
     _importGroups.forEach(function(g){ g.allDup=g.dates.every(function(d){ return _importSeen.has(_impKeyDT(d,g.title,g.time)); }); if(g.allDup)g.checked=false; });
     _renderImportList();
+    _importSetupSwipe();
     const rl=document.getElementById('importRoomList'), pk=document.getElementById('importPick');
     if(rl)rl.style.display='none'; if(pk)pk.style.display='';
     const srcName=((_myRooms||[]).find(function(r){return r.id===srcId;})||{}).name||'방';
@@ -16423,38 +16431,50 @@ function _importItemHTML(g,i){
   const dupTag=g.allDup?'<span class="import-ev-dup">이미 있음</span>':'';
   return '<label class="import-ev-item'+(g.allDup?' dup':'')+'"><input type="checkbox" '+(g.checked?'checked':'')+' onchange="_importToggle('+i+',this.checked)"><span class="import-ev-dot" style="background:'+colorHex(g.color||'c-vintage')+'"></span><span class="import-ev-tx"><b>'+escapeHtml(g.title||'(제목 없음)')+'</b><span class="import-ev-date">'+label+'</span></span>'+dupTag+'</label>';
 }
+function _importCurMonthIdxs(){
+  const ym=_importYMs[_importPageIdx]; if(!ym)return [];
+  const out=[]; _importGroups.forEach(function(g,i){ if((g.dates[0]||'').slice(0,7)===ym)out.push(i); });
+  return out;
+}
 function _renderImportList(){
   const list=document.getElementById('importEventList'); if(!list)return;
-  // 년월(첫 날짜 기준)으로 나눠서 섹션 표시 — 헤더 탭하면 접기/펼치기
-  const byYM={}, yms=[];
-  _importGroups.forEach(function(g,i){
-    const ym=(g.dates[0]||'').slice(0,7);   // YYYY-MM
-    if(!byYM[ym]){ byYM[ym]=[]; yms.push(ym); }
-    byYM[ym].push(i);
-  });
-  yms.sort();
-  let html='';
-  yms.forEach(function(ym){
-    const idxs=byYM[ym];
-    const y=ym.slice(0,4), mo=parseInt(ym.slice(5,7),10)||'';
-    const collapsed=_importCollapsed.has(ym);
-    const checkedN=idxs.filter(function(i){ return _importGroups[i].checked; }).length;
-    html+='<div class="import-month-head" onclick="_importToggleMonth(\''+ym+'\')">'
-        +'<span class="import-month-arrow">'+(collapsed?'▸':'▾')+'</span>'
-        +'<span class="import-month-lbl">'+y+'년 '+mo+'월</span>'
-        +'<span class="import-month-cnt">'+checkedN+'/'+idxs.length+'</span></div>';
-    if(!collapsed){ idxs.forEach(function(i){ html+=_importItemHTML(_importGroups[i], i); }); }
-  });
-  list.innerHTML=html;
+  // 년월(첫 날짜 기준) 목록 계산 → 한 달씩 좌우로 넘겨 봄
+  const seen={}; _importYMs=[];
+  _importGroups.forEach(function(g){ const ym=(g.dates[0]||'').slice(0,7); if(!seen[ym]){ seen[ym]=1; _importYMs.push(ym); } });
+  _importYMs.sort();
+  if(_importPageIdx>=_importYMs.length)_importPageIdx=_importYMs.length-1;
+  if(_importPageIdx<0)_importPageIdx=0;
+  const ym=_importYMs[_importPageIdx]||'';
+  const y=ym.slice(0,4), mo=parseInt(ym.slice(5,7),10)||'';
+  const idxs=_importCurMonthIdxs();
+  // 헤더
+  const lbl=document.getElementById('importPageLbl'); if(lbl)lbl.textContent=_importYMs.length?(y+'년 '+mo+'월'):'일정 없음';
+  const checkedN=idxs.filter(function(i){ return _importGroups[i].checked; }).length;
+  const cnt=document.getElementById('importPageCnt'); if(cnt)cnt.textContent=_importYMs.length?((_importPageIdx+1)+' / '+_importYMs.length+'달 · 선택 '+checkedN+'/'+idxs.length):'';
+  const pv=document.getElementById('importPrevBtn'); if(pv)pv.disabled=(_importPageIdx<=0);
+  const nx=document.getElementById('importNextBtn'); if(nx)nx.disabled=(_importPageIdx>=_importYMs.length-1);
+  // 이 달 이벤트
+  let html=''; idxs.forEach(function(i){ html+=_importItemHTML(_importGroups[i], i); });
+  list.innerHTML=html||'<div style="padding:22px;text-align:center;color:var(--sub);font-size:13px">이 달 일정이 없어요</div>';
+  const allOn=idxs.length>0 && idxs.every(function(i){ return _importGroups[i].checked; });
+  const sb=document.getElementById('importSelAllBtn'); if(sb)sb.textContent=allOn?'이 달 전체 해제':'이 달 전체 선택';
   _updateImportConfirm();
 }
 function _importToggle(i,checked){ if(_importGroups[i])_importGroups[i].checked=checked; _renderImportList(); }
-function _importToggleMonth(ym){ if(_importCollapsed.has(ym))_importCollapsed.delete(ym); else _importCollapsed.add(ym); _renderImportList(); }
-function _importSelectAll(){
-  const allOn=_importGroups.every(function(g){ return g.checked; });
-  _importGroups.forEach(function(g){ g.checked=!allOn; });
+function _importPageNav(dir){ const n=_importYMs.length; if(!n)return; _importPageIdx=Math.max(0,Math.min(n-1,_importPageIdx+dir)); _renderImportList(); }
+function _importSelectAll(){   // 현재 보고 있는 달만 전체 토글
+  const idxs=_importCurMonthIdxs(); if(!idxs.length)return;
+  const allOn=idxs.every(function(i){ return _importGroups[i].checked; });
+  idxs.forEach(function(i){ _importGroups[i].checked=!allOn; });
   _renderImportList();
-  const b=document.getElementById('importSelAllBtn'); if(b)b.textContent=allOn?'전체 선택':'전체 해제';
+}
+// 이벤트 목록 좌우 스와이프로 달 넘기기(한 번만 세팅)
+function _importSetupSwipe(){
+  const el=document.getElementById('importEventList'); if(!el||el._swipeSet)return; el._swipeSet=true;
+  let sx=0, sy=0, on=false;
+  el.addEventListener('pointerdown', function(e){ sx=e.clientX; sy=e.clientY; on=true; });
+  el.addEventListener('pointerup', function(e){ if(!on)return; on=false; const dx=e.clientX-sx, dy=e.clientY-sy; if(Math.abs(dx)>48 && Math.abs(dx)>Math.abs(dy)*1.4){ _importPageNav(dx<0?1:-1); } });
+  el.addEventListener('pointercancel', function(){ on=false; });
 }
 function _updateImportConfirm(){
   const n=_importGroups.filter(function(g){ return g.checked; }).length;
@@ -16497,7 +16517,7 @@ window.closeImportEvents=closeImportEvents;
 window._importPickRoom=_importPickRoom;
 window._importBackToRooms=_importBackToRooms;
 window._importToggle=_importToggle;
-window._importToggleMonth=_importToggleMonth;
+window._importPageNav=_importPageNav;
 window._importSelectAll=_importSelectAll;
 window._confirmImport=_confirmImport;
 function renderInviteNudge(){
