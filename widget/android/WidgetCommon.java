@@ -46,8 +46,11 @@ public class WidgetCommon {
     static final String ACTION_SHIFT_WEEK = "com.lsung.uricalendar.widget.SHIFT_WEEK";
     static final String ACTION_SHIFT_COMBO = "com.lsung.uricalendar.widget.SHIFT_COMBO";
     static final String ACTION_SET_FILTER = "com.lsung.uricalendar.widget.SET_FILTER";
+    static final String ACTION_TOGGLE_TODO = "com.lsung.uricalendar.widget.TOGGLE_TODO";
     static final String EXTRA_DELTA = "delta";
     static final String EXTRA_USER = "userId";
+    static final String EXTRA_TODO = "todoId";
+    static final int RC_TODO_BASE = 1000;   // 할일 토글(요청코드=base+id해시)
 
     // 요청코드(액션·슬롯별 고유 — FLAG_UPDATE_CURRENT라 extra는 최신값으로 갱신)
     static final int RC_REFRESH = 2, RC_CYCLE = 3;
@@ -110,8 +113,48 @@ public class WidgetCommon {
             case ACTION_SET_FILTER:
                 setFilterUser(c, intent.getStringExtra(EXTRA_USER));
                 return true;
+            case ACTION_TOGGLE_TODO:
+                appendPending(c, intent.getStringExtra(EXTRA_TODO));
+                return true;
         }
         return false;
+    }
+
+    // ── 할일 낙관 토글 대기열(앱 @capacitor/preferences와 공유하는 CapacitorStorage) ──
+    static SharedPreferences capStore(Context c) { return c.getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE); }
+    static int pendingCount(Context c, String id) {
+        if (id == null) return 0;
+        try {
+            String raw = capStore(c).getString("widget.pendingTodoToggles", null);
+            if (raw == null || raw.isEmpty()) return 0;
+            org.json.JSONArray arr = new org.json.JSONArray(raw);
+            int n = 0;
+            for (int i = 0; i < arr.length(); i++) if (id.equals(arr.optString(i, ""))) n++;
+            return n;
+        } catch (Throwable t) { return 0; }
+    }
+    static void appendPending(Context c, String id) {
+        if (id == null) return;
+        try {
+            String raw = capStore(c).getString("widget.pendingTodoToggles", null);
+            org.json.JSONArray arr;
+            try { arr = (raw == null || raw.isEmpty()) ? new org.json.JSONArray() : new org.json.JSONArray(raw); }
+            catch (Throwable t) { arr = new org.json.JSONArray(); }
+            arr.put(id);
+            capStore(c).edit().putString("widget.pendingTodoToggles", arr.toString()).apply();
+        } catch (Throwable t) { /* 무시 */ }
+    }
+    // 서버 done XOR 대기열 홀짝 → 위젯 즉시 반영(누르면 회색 표시). 앱 포그라운드 복귀 시 DB flush.
+    static boolean todoDone(Context c, WidgetData.Todo t) {
+        if (t == null) return false;
+        return (pendingCount(c, t.id) % 2 == 1) ? !t.done : t.done;
+    }
+    static PendingIntent toggleTodo(Context c, String todoId) {
+        int rc = RC_TODO_BASE + (todoId == null ? 0 : (todoId.hashCode() & 0x3fffff));
+        Intent i = new Intent(c, UriCalendarWidgetProvider.class);
+        i.setAction(ACTION_TOGGLE_TODO);
+        i.putExtra(EXTRA_TODO, todoId);
+        return PendingIntent.getBroadcast(c, rc, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
     private static void cycleRoom(Context c) {

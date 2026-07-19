@@ -95,10 +95,11 @@ public class TodayWidgetProvider extends AppWidgetProvider {
             int rowId = WidgetCommon.resId(context, "tw_tdrow" + i, "id");
             if (i < todos.size()) {
                 WidgetData.Todo t = todos.get(i);
+                boolean done = WidgetCommon.todoDone(context, t);
                 rv.setViewVisibility(rowId, android.view.View.VISIBLE);
                 int tId = WidgetCommon.resId(context, "tw_tdtitle" + i, "id");
-                String mark = t.done ? "☑ " : "☐ ";
-                if (t.done) {
+                String mark = done ? "☑ " : "☐ ";
+                if (done) {
                     android.text.SpannableString sp = new android.text.SpannableString(mark + t.title);
                     sp.setSpan(new android.text.style.StrikethroughSpan(), mark.length(), sp.length(), 0);
                     rv.setTextViewText(tId, sp);
@@ -108,6 +109,8 @@ public class TodayWidgetProvider extends AppWidgetProvider {
                     rv.setTextColor(tId, 0xFF2A1C0F);
                 }
                 rv.setTextViewText(WidgetCommon.resId(context, "tw_tdtime" + i, "id"), t.time == null ? "" : t.time);
+                // 행 탭 = 완료 토글(낙관 반영 → 앱 복귀 시 DB flush)
+                rv.setOnClickPendingIntent(rowId, WidgetCommon.toggleTodo(context, t.id));
             } else {
                 rv.setViewVisibility(rowId, android.view.View.GONE);
             }

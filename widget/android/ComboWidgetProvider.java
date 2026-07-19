@@ -67,9 +67,10 @@ public class ComboWidgetProvider extends AppWidgetProvider {
             if (today.equals(t.date) && WidgetCommon.todoVisibleFor(t, filter)) { firstTd = t; break; }
         }
         if (firstTd != null) {
+            boolean done = WidgetCommon.todoDone(context, firstTd);
             rv.setViewVisibility(tdId, android.view.View.VISIBLE);
-            String mark = firstTd.done ? "☑ " : "☐ ";
-            if (firstTd.done) {
+            String mark = done ? "☑ " : "☐ ";
+            if (done) {
                 android.text.SpannableString sp = new android.text.SpannableString(mark + firstTd.title);
                 sp.setSpan(new android.text.style.StrikethroughSpan(), mark.length(), sp.length(), 0);
                 rv.setTextViewText(tdId, sp);
@@ -78,6 +79,7 @@ public class ComboWidgetProvider extends AppWidgetProvider {
                 rv.setTextViewText(tdId, mark + firstTd.title);
                 rv.setTextColor(tdId, 0xFF2A1C0F);
             }
+            rv.setOnClickPendingIntent(tdId, WidgetCommon.toggleTodo(context, firstTd.id));
         } else {
             rv.setViewVisibility(tdId, android.view.View.GONE);
         }

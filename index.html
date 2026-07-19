@@ -8682,18 +8682,27 @@ let _wgFlushing=false;
 async function _wgFlushPendingTodos(){
   if(_wgFlushing) return; _wgFlushing=true;
   try{
-    const W=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.WidgetsBridgePlugin;
-    if(!W||!W.getItem||!_currentUser){ return; }
+    if(!_currentUser) return;
+    const plat=(window.Capacitor&&window.Capacitor.getPlatform)?window.Capacitor.getPlatform():'web';
     let arr=[];
-    try{
-      // 위젯(Swift)이 [String] 네이티브 배열로 기록 → results가 배열. 혹시 문자열이면 파싱.
-      const r=await W.getItem({key:'widget.pendingTodoToggles', group:WIDGET_GROUP});
-      const v=r&&r.results;
-      if(Array.isArray(v)) arr=v;
-      else if(typeof v==='string'&&v){ try{ arr=JSON.parse(v)||[]; }catch(_){ arr=[]; } }
-    }catch(_){ arr=[]; }
-    // 대기열 즉시 비우기 (재진입 중복 방지)
-    try{ if(W.removeItem) await W.removeItem({key:'widget.pendingTodoToggles', group:WIDGET_GROUP}); }catch(_){}
+    if(plat==='ios'){
+      const W=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.WidgetsBridgePlugin;
+      if(!W||!W.getItem){ return; }
+      try{
+        // 위젯(Swift)이 [String] 네이티브 배열로 기록 → results가 배열. 혹시 문자열이면 파싱.
+        const r=await W.getItem({key:'widget.pendingTodoToggles', group:WIDGET_GROUP});
+        const v=r&&r.results;
+        if(Array.isArray(v)) arr=v;
+        else if(typeof v==='string'&&v){ try{ arr=JSON.parse(v)||[]; }catch(_){ arr=[]; } }
+      }catch(_){ arr=[]; }
+      try{ if(W.removeItem) await W.removeItem({key:'widget.pendingTodoToggles', group:WIDGET_GROUP}); }catch(_){}
+    }else if(plat==='android'){
+      // Android 위젯이 CapacitorStorage(SharedPreferences)에 JSON 배열 문자열로 append → @capacitor/preferences로 읽음.
+      const P=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Preferences;
+      if(!P||!P.get){ return; }
+      try{ const r=await P.get({key:'widget.pendingTodoToggles'}); const v=r&&r.value; if(typeof v==='string'&&v){ try{ arr=JSON.parse(v)||[]; }catch(_){ arr=[]; } } }catch(_){ arr=[]; }
+      try{ if(P.remove) await P.remove({key:'widget.pendingTodoToggles'}); }catch(_){}
+    }else{ return; }
     if(!Array.isArray(arr)||!arr.length){ return; }
     // id별 홀짝 판정 → 홀수번만 최종 토글
     const parity={};

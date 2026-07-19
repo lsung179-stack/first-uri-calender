@@ -147,9 +147,10 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
 
         if (!cell.todos.isEmpty()) {
             WidgetData.Todo t = cell.todos.get(0);
-            String mark = t.done ? "☑ " : "☐ ";
+            boolean done = WidgetCommon.todoDone(ctx, t);
+            String mark = done ? "☑ " : "☐ ";
             CharSequence label;
-            if (t.done) {
+            if (done) {
                 android.text.SpannableString sp = new android.text.SpannableString(mark + t.title);
                 sp.setSpan(new android.text.style.StrikethroughSpan(), mark.length(), sp.length(), 0);
                 label = sp;

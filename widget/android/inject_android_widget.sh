@@ -34,6 +34,7 @@ if ! grep -q "UriCalendarWidgetProvider" "$MANIFEST"; then
             <action android:name="com.lsung.uricalendar.widget.SHIFT_WEEK" />
             <action android:name="com.lsung.uricalendar.widget.SHIFT_COMBO" />
             <action android:name="com.lsung.uricalendar.widget.SET_FILTER" />
+            <action android:name="com.lsung.uricalendar.widget.TOGGLE_TODO" />
         </intent-filter>
         <meta-data android:name="android.appwidget.provider" android:resource="@xml/uri_widget_month_info" />
     </receiver>
