@@ -762,6 +762,18 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .import-room-seal .r-card-seal{width:34px;height:34px}
 .import-room-name{flex:1;font-size:15px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .import-room-go{font-size:12.5px;font-weight:600;color:var(--accent);flex-shrink:0}
+.import-pick-head{display:flex;justify-content:flex-end;margin-top:4px}
+.import-selall{background:none;border:none;color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;padding:4px 2px}
+.import-event-list{display:flex;flex-direction:column;gap:4px;margin-top:6px;max-height:46vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.import-ev-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:11px;cursor:pointer;transition:background .12s}
+.import-ev-item:active{background:var(--bg)}
+.import-ev-item input{width:19px;height:19px;flex-shrink:0;accent-color:var(--accent);cursor:pointer}
+.import-ev-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+.import-ev-tx{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+.import-ev-tx b{font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.import-ev-date{font-size:11.5px;color:var(--sub)}
+.import-ev-dup{font-size:11px;color:var(--mute);flex-shrink:0}
+.import-ev-item.dup{opacity:.55}
 .cal-today-chip{display:none;background:var(--accent);color:var(--card);border:none;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;letter-spacing:.3px;transition:transform .12s,opacity .12s;flex-shrink:0}
 .cal-today-chip.show{display:inline-block}
 .cal-today-chip:active{transform:translateY(-50%) scale(.92);opacity:.85}
@@ -3319,9 +3331,21 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
 <div class="mo-overlay" id="importOverlay" onclick="closeImportEvents()"></div>
 <div class="mo-card" id="importCard">
   <div class="mo-handle"></div>
-  <div class="mo-title">다른 방 일정 가져오기</div>
-  <div class="mo-sub">선택한 방의 내 일정을 이 방으로 복사해요 · 이미 있는 일정은 자동 제외</div>
+  <div class="mo-title" id="importTitle">다른 방 일정 가져오기</div>
+  <div class="mo-sub" id="importSub">선택한 방의 내 일정을 이 방으로 복사해요 · 이미 있는 일정은 자동 제외</div>
+  <!-- 1단계: 소스 방 선택 -->
   <div class="import-room-list" id="importRoomList"></div>
+  <!-- 2단계: 가져올 일정 선택 -->
+  <div id="importPick" style="display:none">
+    <div class="import-pick-head">
+      <button class="import-selall" id="importSelAllBtn" onclick="_importSelectAll()">전체 선택</button>
+    </div>
+    <div class="import-event-list" id="importEventList"></div>
+    <div class="mo-actions">
+      <button class="mo-cancel" onclick="_importBackToRooms()">‹ 뒤로</button>
+      <button class="btn btn-primary" id="importConfirmBtn" onclick="_confirmImport()">가져오기</button>
+    </div>
+  </div>
 </div>
 
 <!-- 할일 완료 필터 — 년/월 휠 피커 (일정 '날짜로 이동'과 동일 방식) -->
@@ -16312,22 +16336,29 @@ function _sealPointerUp(e){
 }
 window._sealPointerDown=_sealPointerDown;
 window._sealPickRoom=_sealPickRoom;
-/* ── 다른 방 일정 가져오기 (오늘 버튼 옆 ⬇) — 소스 방의 내 일정을 이 방으로 복사, 중복 제외 ──
-   방 만들 때 '기존 방 일정 가져오기'를 깜빡했어도 나중에 다시 가져올 수 있게. 여러 번 가져와도 중복 안 생김. */
+/* ── 다른 방 일정 가져오기 (오늘 버튼 옆 복사 아이콘) ──
+   1) 소스 방 선택 → 2) 가져올 일정 체크리스트(제외 선택) → 확인 시 복사.
+   기간 일정은 하나로 묶어 보여주고, 가져올 때 새 range_group_id로 재생성(단일로 쪼개지지 않음).
+   이미 있는 일정(날짜+제목+시간)은 자동 제외. 방 만들 때 깜빡해도 언제든 다시. */
+let _importSrcId=null, _importGroups=[], _importSeen=null;
+function _impMD(ds){ try{ const d=parseDateKey(ds); return (d.getMonth()+1)+'/'+d.getDate(); }catch(_){ return ds; } }
+function _impKeyDT(date,title,time){ return (date||'')+'|'+((title||'').trim())+'|'+(time||''); }
 function openImportEvents(){
   if(!_currentRoom){ toast('방에 먼저 들어가 주세요'); return; }
   const others=(_myRooms||[]).filter(function(r){ return r.id!==_currentRoom.id; });
   if(!others.length){ toast('가져올 다른 방이 없어요'); return; }
+  _importSrcId=null; _importGroups=[];
   const list=document.getElementById('importRoomList');
   if(list){
     let html='';
     others.forEach(function(r){
       const name=r.name||'방'; const fc=escapeHtml((name.slice(0,1))||'방');
       const seal=_sealInner((_mySealByRoom||{})[r.id], name) || ('<div class="r-card-seal"><span class="r-card-seal-letter">'+fc+'</span></div>');
-      html+='<div class="import-room-item" onclick="_doImportFromRoom(\''+r.id+'\')"><div class="import-room-seal">'+seal+'</div><div class="import-room-name">'+escapeHtml(name)+'</div><div class="import-room-go">가져오기 ›</div></div>';
+      html+='<div class="import-room-item" onclick="_importPickRoom(\''+r.id+'\')"><div class="import-room-seal">'+seal+'</div><div class="import-room-name">'+escapeHtml(name)+'</div><div class="import-room-go">선택 ›</div></div>';
     });
     list.innerHTML=html;
   }
+  _importShowRoomStep();
   const ov=document.getElementById('importOverlay'), cd=document.getElementById('importCard');
   if(ov)ov.classList.add('on'); if(cd)cd.classList.add('on');
 }
@@ -16335,44 +16366,114 @@ function closeImportEvents(){
   const ov=document.getElementById('importOverlay'), cd=document.getElementById('importCard');
   if(ov)ov.classList.remove('on'); if(cd)cd.classList.remove('on');
 }
-function _impKey(e){ return (e.date||'')+'|'+((e.title||'').trim())+'|'+(e.time||''); }
-async function _doImportFromRoom(srcRoomId){
+function _importShowRoomStep(){
+  const rl=document.getElementById('importRoomList'), pk=document.getElementById('importPick');
+  if(rl)rl.style.display=''; if(pk)pk.style.display='none';
+  const t=document.getElementById('importTitle'); if(t)t.textContent='다른 방 일정 가져오기';
+  const s=document.getElementById('importSub'); if(s)s.textContent='선택한 방의 내 일정을 이 방으로 복사해요 · 이미 있는 일정은 자동 제외';
+}
+function _importBackToRooms(){ _importShowRoomStep(); }
+async function _importPickRoom(srcId){
   if(!_currentRoom||!_currentUser) return;
-  if(srcRoomId===_currentRoom.id){ toast('같은 방이에요'); return; }
+  if(srcId===_currentRoom.id){ toast('같은 방이에요'); return; }
+  _importSrcId=srcId;
   try{
-    // 현재 방의 내 일정 → 중복 판정용(날짜+제목+시간)
+    // 현재 방 기존 내 일정 → 중복 판정 세트
     const {data:cur}=await supa.from('events').select('date,title,time').eq('room_id',_currentRoom.id).eq('user_id',_currentUser.id);
-    const seen=new Set((cur||[]).map(_impKey));
-    // 소스 방의 내 일정(함께 일정도 내 행만 → 이 방엔 solo로 복사)
+    _importSeen=new Set((cur||[]).map(function(e){ return _impKeyDT(e.date,e.title,e.time); }));
+    // 소스 방 내 일정 (함께 일정도 내 행만 → solo로 복사)
     const {data:src}=await supa.from('events')
-      .select('date,title,time,end_time,color,bar_style,memo,repeat_type,repeat_weekdays,repeat_monthly_mode,repeat_nth_week,recurring_yearly,range_group_id,is_multi')
-      .eq('room_id',srcRoomId).eq('user_id',_currentUser.id);
-    if(!src||!src.length){ toast('가져올 일정이 없어요'); return; }
-    let dup=0; const rows=[];
-    src.forEach(function(e){
-      const k=_impKey(e);
-      if(seen.has(k)){ dup++; return; }   // 이미 있는 일정은 제외(중복 방지)
-      seen.add(k);
-      rows.push({
-        room_id:_currentRoom.id, user_id:_currentUser.id,
-        date:e.date, title:e.title, time:e.time||null, end_time:e.end_time||null,
-        color:e.color||'c-vintage', bar_style:e.bar_style||'solid', memo:e.memo||null,
-        repeat_type:e.repeat_type||'none', repeat_weekdays:e.repeat_weekdays||null,
-        repeat_monthly_mode:e.repeat_monthly_mode||null, repeat_nth_week:(typeof e.repeat_nth_week==='number'?e.repeat_nth_week:null),
-        recurring_yearly:!!e.recurring_yearly, range_group_id:e.range_group_id||null, is_multi:!!e.is_multi
-      });
+      .select('date,title,time,end_time,color,bar_style,memo,repeat_type,repeat_weekdays,repeat_monthly_mode,repeat_nth_week,recurring_yearly,range_group_id,is_multi,shared_id')
+      .eq('room_id',srcId).eq('user_id',_currentUser.id).order('date',{ascending:true});
+    const evs=src||[];
+    if(!evs.length){ toast('가져올 일정이 없어요'); return; }
+    // 논리 일정으로 그룹핑: 함께/기간은 하나로, 나머지는 개별
+    const map={}; const order=[];
+    evs.forEach(function(e){
+      let key, kind;
+      if(e.shared_id){ key='s:'+e.shared_id; kind=e.is_multi?'multi':'range'; }
+      else if(e.range_group_id && !e.is_multi){ key='r:'+e.range_group_id; kind='range'; }
+      else { key='x:'+e.date+'|'+(e.title||'')+'|'+(e.time||''); kind=e.is_multi?'multi':'single'; }
+      if(!map[key]){ map[key]={ kind:kind, title:e.title||'', time:e.time||null, end_time:e.end_time||null, color:e.color, bar_style:e.bar_style, memo:e.memo, repeat_type:e.repeat_type, repeat_weekdays:e.repeat_weekdays, repeat_monthly_mode:e.repeat_monthly_mode, repeat_nth_week:e.repeat_nth_week, recurring_yearly:e.recurring_yearly, dates:[], checked:true }; order.push(key); }
+      map[key].dates.push(e.date);
     });
-    if(!rows.length){ toast(dup>0?('이미 다 있어요 (중복 '+dup+'개 제외)'):'가져올 일정이 없어요'); return; }
+    _importGroups=order.map(function(k){ const g=map[k]; g.dates.sort(); return g; });
+    _importGroups.sort(function(a,b){ return a.dates[0]<b.dates[0]?-1:(a.dates[0]>b.dates[0]?1:0); });
+    // 이미 다 있는 그룹은 기본 체크 해제 + 표시
+    _importGroups.forEach(function(g){ g.allDup=g.dates.every(function(d){ return _importSeen.has(_impKeyDT(d,g.title,g.time)); }); if(g.allDup)g.checked=false; });
+    _renderImportList();
+    const rl=document.getElementById('importRoomList'), pk=document.getElementById('importPick');
+    if(rl)rl.style.display='none'; if(pk)pk.style.display='';
+    const srcName=((_myRooms||[]).find(function(r){return r.id===srcId;})||{}).name||'방';
+    const t=document.getElementById('importTitle'); if(t)t.textContent='"'+srcName+'" 일정 가져오기';
+    const s=document.getElementById('importSub'); if(s)s.textContent='가져올 일정을 선택하세요 · 이미 있는 일정은 회색·자동 제외';
+  }catch(e){ console.error('가져오기 목록 실패',e); toast('가져오기 실패'); }
+}
+function _renderImportList(){
+  const list=document.getElementById('importEventList'); if(!list)return;
+  let html='';
+  _importGroups.forEach(function(g,i){
+    const n=g.dates.length;
+    let label;
+    if(g.kind==='multi'&&n>1){ label=_impMD(g.dates[0])+' 외 '+(n-1)+'일'; }
+    else if(n>1){ label=_impMD(g.dates[0])+' ~ '+_impMD(g.dates[n-1])+' ('+n+'일)'; }
+    else { label=_impMD(g.dates[0])+(g.repeat_type&&g.repeat_type!=='none'?' · 반복':''); }
+    const dupTag=g.allDup?'<span class="import-ev-dup">이미 있음</span>':'';
+    html+='<label class="import-ev-item'+(g.allDup?' dup':'')+'"><input type="checkbox" '+(g.checked?'checked':'')+' onchange="_importToggle('+i+',this.checked)"><span class="import-ev-dot" style="background:'+colorHex(g.color||'c-vintage')+'"></span><span class="import-ev-tx"><b>'+escapeHtml(g.title||'(제목 없음)')+'</b><span class="import-ev-date">'+label+'</span></span>'+dupTag+'</label>';
+  });
+  list.innerHTML=html;
+  _updateImportConfirm();
+}
+function _importToggle(i,checked){ if(_importGroups[i])_importGroups[i].checked=checked; _updateImportConfirm(); }
+function _importSelectAll(){
+  const allOn=_importGroups.every(function(g){ return g.checked; });
+  _importGroups.forEach(function(g){ g.checked=!allOn; });
+  _renderImportList();
+  const b=document.getElementById('importSelAllBtn'); if(b)b.textContent=allOn?'전체 선택':'전체 해제';
+}
+function _updateImportConfirm(){
+  const n=_importGroups.filter(function(g){ return g.checked; }).length;
+  const b=document.getElementById('importConfirmBtn'); if(b){ b.textContent=n>0?(n+'개 가져오기'):'가져오기'; b.disabled=(n===0); }
+}
+async function _confirmImport(){
+  if(!_currentRoom||!_currentUser) return;
+  const picked=_importGroups.filter(function(g){ return g.checked; });
+  if(!picked.length){ toast('가져올 일정을 선택하세요'); return; }
+  try{
+    const seen=new Set(_importSeen||[]);
+    const rows=[]; let dupDays=0, addedGroups=0;
+    picked.forEach(function(g){
+      const isRange=(g.kind==='range'&&g.dates.length>1);   // 연속 기간만 range_group_id로 묶어 재생성
+      const newRg=isRange?('rg_'+genShared()):null;
+      let any=false;
+      g.dates.forEach(function(d){
+        const k=_impKeyDT(d,g.title,g.time);
+        if(seen.has(k)){ dupDays++; return; }
+        seen.add(k);
+        rows.push({ room_id:_currentRoom.id, user_id:_currentUser.id, date:d, title:g.title, time:g.time||null, end_time:g.end_time||null,
+          color:g.color||'c-vintage', bar_style:g.bar_style||'solid', memo:g.memo||null,
+          repeat_type:g.repeat_type||'none', repeat_weekdays:g.repeat_weekdays||null,
+          repeat_monthly_mode:g.repeat_monthly_mode||null, repeat_nth_week:(typeof g.repeat_nth_week==='number'?g.repeat_nth_week:null),
+          recurring_yearly:!!g.recurring_yearly, range_group_id:newRg, is_multi:(g.kind==='multi') });
+        any=true;
+      });
+      if(any)addedGroups++;
+    });
+    if(!rows.length){ toast(dupDays>0?('이미 다 있어요 (중복 '+dupDays+'개 제외)'):'가져올 일정이 없어요'); return; }
     const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
     if(error) throw error;
     closeImportEvents();
-    toast(rows.length+'개 가져왔어요'+(dup>0?(' (중복 '+dup+'개 제외)'):''));
+    toast(addedGroups+'개 가져왔어요'+(dupDays>0?(' (중복 '+dupDays+'개 제외)'):''));
     await loadEvents();
-  }catch(e){ console.error('일정 가져오기 실패',e); toast('가져오기 실패'); }
+  }catch(e){ console.error('가져오기 실패',e); toast('가져오기 실패'); }
 }
 window.openImportEvents=openImportEvents;
 window.closeImportEvents=closeImportEvents;
-window._doImportFromRoom=_doImportFromRoom;
+window._importPickRoom=_importPickRoom;
+window._importBackToRooms=_importBackToRooms;
+window._importToggle=_importToggle;
+window._importSelectAll=_importSelectAll;
+window._confirmImport=_confirmImport;
 function renderInviteNudge(){
   const el=document.getElementById('calInviteNudge');
   if(!el) return;
