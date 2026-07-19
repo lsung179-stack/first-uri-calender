@@ -3405,6 +3405,46 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
         <button type="button" class="ev-mode-btn" id="evModeRange" onclick="setEventMode('range')">기간</button>
         <button type="button" class="ev-mode-btn" id="evModeMulti" onclick="setEventMode('multi')">여러 날</button>
       </div>
+      <!-- 반복 (안 함 / 매주 / 매월 / 매년) — 기간 토글과 달력 사이 -->
+      <input type="checkbox" id="evYearly" hidden>
+      <div class="ev-form-row" id="evRepeatRow" style="margin-top:6px">
+        <div class="ev-label">반복</div>
+        <div class="dm-row" id="evRepeatSeg" style="margin-top:4px">
+          <button type="button" class="dm-btn on" data-rep="none" onclick="onEvRepeatSelect('none')">안 함</button>
+          <button type="button" class="dm-btn" data-rep="weekly" onclick="onEvRepeatSelect('weekly')">매주</button>
+          <button type="button" class="dm-btn" data-rep="monthly" onclick="onEvRepeatSelect('monthly')">매월</button>
+          <button type="button" class="dm-btn" data-rep="yearly" onclick="onEvRepeatSelect('yearly')">매년</button>
+        </div>
+        <!-- 반복 상세: 매주=요일 선택, 매월=며칠/N째주 요일/말일 -->
+        <div id="evRepeatDetail" style="display:none">
+          <div id="evWeekdayWrap" style="display:none">
+            <div class="rep-sublabel">반복할 요일</div>
+            <div class="rep-chip-row" id="evWeekdayChips"></div>
+          </div>
+          <div id="evMonthlyWrap" style="display:none">
+            <div class="rep-sublabel">매월 방식</div>
+            <div class="dm-row" id="evMonthlyMode" style="margin-top:6px">
+              <button type="button" class="dm-btn on" data-mm="dom" onclick="onEvMonthlyMode('dom')">며칠</button>
+              <button type="button" class="dm-btn" data-mm="nth" onclick="onEvMonthlyMode('nth')">N째주 요일</button>
+              <button type="button" class="dm-btn" data-mm="last" onclick="onEvMonthlyMode('last')">말일</button>
+            </div>
+            <div id="evMonthlyDomHint" class="rep-hint"></div>
+            <div id="evMonthlyLastHint" class="rep-hint" style="display:none">매달 마지막 날에 반복돼요.</div>
+            <div id="evNthWrap" style="display:none">
+              <div class="rep-sublabel">몇째 · 요일</div>
+              <div class="dm-row" id="evNthWeekSel" style="margin-top:6px">
+                <button type="button" class="dm-btn" data-nw="1" onclick="onEvNthWeek(1)">첫째</button>
+                <button type="button" class="dm-btn" data-nw="2" onclick="onEvNthWeek(2)">둘째</button>
+                <button type="button" class="dm-btn" data-nw="3" onclick="onEvNthWeek(3)">셋째</button>
+                <button type="button" class="dm-btn" data-nw="4" onclick="onEvNthWeek(4)">넷째</button>
+                <button type="button" class="dm-btn" data-nw="-1" onclick="onEvNthWeek(-1)">마지막</button>
+              </div>
+              <div class="rep-chip-row" id="evNthChips" style="margin-top:6px"></div>
+              <div id="evNthHint" class="rep-hint"></div>
+            </div>
+          </div>
+        </div>
+      </div>
       <!-- 하루 모드 — 날짜 이동용 미니 달력 -->
       <div class="ev-day-section" id="evDaySection">
         <div class="ev-multi-cal">
@@ -3482,48 +3522,6 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
         <div class="ev-color-pager-foot">
           <div class="ev-color-page-label" id="evColorPageLabel">기본</div>
           <div class="ev-color-dots" id="evColorDots"></div>
-        </div>
-      </div>
-    </div>
-    <!-- 반복 (안 함 / 매주 / 매월 / 매년) -->
-    <input type="checkbox" id="evYearly" hidden>
-    <div class="ev-form-row" id="evRepeatRow">
-      <div class="ev-label">반복</div>
-      <div class="dm-row" id="evRepeatSeg" style="margin-top:4px">
-        <button type="button" class="dm-btn on" data-rep="none" onclick="onEvRepeatSelect('none')">안 함</button>
-        <button type="button" class="dm-btn" data-rep="weekly" onclick="onEvRepeatSelect('weekly')">매주</button>
-        <button type="button" class="dm-btn" data-rep="monthly" onclick="onEvRepeatSelect('monthly')">매월</button>
-        <button type="button" class="dm-btn" data-rep="yearly" onclick="onEvRepeatSelect('yearly')">매년</button>
-      </div>
-      <!-- 반복 상세: 매주=요일 선택, 매월=며칠/N째주 요일/말일 -->
-      <div id="evRepeatDetail" style="display:none">
-        <!-- 매주: 요일 다중 선택 -->
-        <div id="evWeekdayWrap" style="display:none">
-          <div class="rep-sublabel">반복할 요일</div>
-          <div class="rep-chip-row" id="evWeekdayChips"></div>
-        </div>
-        <!-- 매월: 모드 -->
-        <div id="evMonthlyWrap" style="display:none">
-          <div class="rep-sublabel">매월 방식</div>
-          <div class="dm-row" id="evMonthlyMode" style="margin-top:6px">
-            <button type="button" class="dm-btn on" data-mm="dom" onclick="onEvMonthlyMode('dom')">며칠</button>
-            <button type="button" class="dm-btn" data-mm="nth" onclick="onEvMonthlyMode('nth')">N째주 요일</button>
-            <button type="button" class="dm-btn" data-mm="last" onclick="onEvMonthlyMode('last')">말일</button>
-          </div>
-          <div id="evMonthlyDomHint" class="rep-hint"></div>
-          <div id="evMonthlyLastHint" class="rep-hint" style="display:none">매달 마지막 날에 반복돼요.</div>
-          <div id="evNthWrap" style="display:none">
-            <div class="rep-sublabel">몇째 · 요일</div>
-            <div class="dm-row" id="evNthWeekSel" style="margin-top:6px">
-              <button type="button" class="dm-btn" data-nw="1" onclick="onEvNthWeek(1)">첫째</button>
-              <button type="button" class="dm-btn" data-nw="2" onclick="onEvNthWeek(2)">둘째</button>
-              <button type="button" class="dm-btn" data-nw="3" onclick="onEvNthWeek(3)">셋째</button>
-              <button type="button" class="dm-btn" data-nw="4" onclick="onEvNthWeek(4)">넷째</button>
-              <button type="button" class="dm-btn" data-nw="-1" onclick="onEvNthWeek(-1)">마지막</button>
-            </div>
-            <div class="rep-chip-row" id="evNthChips" style="margin-top:6px"></div>
-            <div id="evNthHint" class="rep-hint"></div>
-          </div>
         </div>
       </div>
     </div>
