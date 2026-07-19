@@ -16286,6 +16286,9 @@ function _sealHighlight(el){
 function _sealPointerDown(e){
   const rooms=_myRooms||[];
   if(rooms.length<2){ calTabSwitch('rooms'); return; }   // 다른 방 없으면 목록 탭으로(기존 폴백)
+  // 이미 열려 있으면 한 번 더 누르면 닫기(토글) — 드래그 세션 시작 안 함
+  const _pop=document.getElementById('roomSealPicker');
+  if(_pop && _pop.classList.contains('on')){ closeRoomSealPicker(); try{ e.preventDefault(); }catch(_){} return; }
   openRoomSealPicker();
   _sealDrag={moved:false, x:e.clientX, y:e.clientY};
   document.addEventListener('pointermove', _sealPointerMove, true);
