@@ -3073,6 +3073,45 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
         <button class="todo-type-btn" id="todoTypeRange" onclick="setTodoType('range',this)">기간</button>
         <button class="todo-type-btn" id="todoTypeMulti" onclick="setTodoType('multi',this)">여러 날</button>
       </div>
+      <!-- 반복 — 기간 토글과 달력 사이 (일정과 동일 위치) -->
+      <div style="margin-top:8px">
+        <div class="ev-label">반복</div>
+        <div class="todo-repeat-row" style="margin-top:6px">
+          <button class="todo-repeat-btn on" id="todoRepNone" onclick="setTodoRepeat('none',this)">안 함</button>
+          <button class="todo-repeat-btn" id="todoRepWeekly" onclick="setTodoRepeat('weekly',this)">매주</button>
+          <button class="todo-repeat-btn" id="todoRepMonthly" onclick="setTodoRepeat('monthly',this)">매월</button>
+          <button class="todo-repeat-btn" id="todoRepYearly" onclick="setTodoRepeat('yearly',this)">매년</button>
+        </div>
+        <!-- 반복 상세: 매주=요일 선택, 매월=며칠/N째주 요일/말일 (일정과 동일) -->
+        <div id="tdRepeatDetail" style="display:none">
+          <div id="tdWeekdayWrap" style="display:none">
+            <div class="rep-sublabel">반복할 요일</div>
+            <div class="rep-chip-row" id="tdWeekdayChips"></div>
+          </div>
+          <div id="tdMonthlyWrap" style="display:none">
+            <div class="rep-sublabel">매월 방식</div>
+            <div class="dm-row" id="tdMonthlyMode" style="margin-top:6px">
+              <button type="button" class="dm-btn on" data-mm="dom" onclick="onTdMonthlyMode('dom')">며칠</button>
+              <button type="button" class="dm-btn" data-mm="nth" onclick="onTdMonthlyMode('nth')">N째주 요일</button>
+              <button type="button" class="dm-btn" data-mm="last" onclick="onTdMonthlyMode('last')">말일</button>
+            </div>
+            <div id="tdMonthlyDomHint" class="rep-hint"></div>
+            <div id="tdMonthlyLastHint" class="rep-hint" style="display:none">매달 마지막 날에 반복돼요.</div>
+            <div id="tdNthWrap" style="display:none">
+              <div class="rep-sublabel">몇째 · 요일</div>
+              <div class="dm-row" id="tdNthWeekSel" style="margin-top:6px">
+                <button type="button" class="dm-btn" data-nw="1" onclick="onTdNthWeek(1)">첫째</button>
+                <button type="button" class="dm-btn" data-nw="2" onclick="onTdNthWeek(2)">둘째</button>
+                <button type="button" class="dm-btn" data-nw="3" onclick="onTdNthWeek(3)">셋째</button>
+                <button type="button" class="dm-btn" data-nw="4" onclick="onTdNthWeek(4)">넷째</button>
+                <button type="button" class="dm-btn" data-nw="-1" onclick="onTdNthWeek(-1)">마지막</button>
+              </div>
+              <div class="rep-chip-row" id="tdNthChips" style="margin-top:6px"></div>
+              <div id="tdNthHint" class="rep-hint"></div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div id="todoRangeDateRow" style="display:none;margin-top:8px">
         <div class="todo-range-row">
           <div class="todo-date-chip active" id="todoRangeStartChip" onclick="focusTodoRangeDate('start')">시작일</div>
@@ -3106,45 +3145,6 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
         <div class="ev-color-pager-foot">
           <div class="ev-color-page-label" id="todoColorPageLabel">기본</div>
           <div class="ev-color-dots" id="todoColorDots"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="ev-form-row">
-      <div class="ev-label">반복</div>
-      <div class="todo-repeat-row">
-        <button class="todo-repeat-btn on" id="todoRepNone" onclick="setTodoRepeat('none',this)">안 함</button>
-        <button class="todo-repeat-btn" id="todoRepWeekly" onclick="setTodoRepeat('weekly',this)">매주</button>
-        <button class="todo-repeat-btn" id="todoRepMonthly" onclick="setTodoRepeat('monthly',this)">매월</button>
-        <button class="todo-repeat-btn" id="todoRepYearly" onclick="setTodoRepeat('yearly',this)">매년</button>
-      </div>
-      <!-- 반복 상세: 매주=요일 선택, 매월=며칠/N째주 요일/말일 (일정과 동일) -->
-      <div id="tdRepeatDetail" style="display:none">
-        <div id="tdWeekdayWrap" style="display:none">
-          <div class="rep-sublabel">반복할 요일</div>
-          <div class="rep-chip-row" id="tdWeekdayChips"></div>
-        </div>
-        <div id="tdMonthlyWrap" style="display:none">
-          <div class="rep-sublabel">매월 방식</div>
-          <div class="dm-row" id="tdMonthlyMode" style="margin-top:6px">
-            <button type="button" class="dm-btn on" data-mm="dom" onclick="onTdMonthlyMode('dom')">며칠</button>
-            <button type="button" class="dm-btn" data-mm="nth" onclick="onTdMonthlyMode('nth')">N째주 요일</button>
-            <button type="button" class="dm-btn" data-mm="last" onclick="onTdMonthlyMode('last')">말일</button>
-          </div>
-          <div id="tdMonthlyDomHint" class="rep-hint"></div>
-          <div id="tdMonthlyLastHint" class="rep-hint" style="display:none">매달 마지막 날에 반복돼요.</div>
-          <div id="tdNthWrap" style="display:none">
-            <div class="rep-sublabel">몇째 · 요일</div>
-            <div class="dm-row" id="tdNthWeekSel" style="margin-top:6px">
-              <button type="button" class="dm-btn" data-nw="1" onclick="onTdNthWeek(1)">첫째</button>
-              <button type="button" class="dm-btn" data-nw="2" onclick="onTdNthWeek(2)">둘째</button>
-              <button type="button" class="dm-btn" data-nw="3" onclick="onTdNthWeek(3)">셋째</button>
-              <button type="button" class="dm-btn" data-nw="4" onclick="onTdNthWeek(4)">넷째</button>
-              <button type="button" class="dm-btn" data-nw="-1" onclick="onTdNthWeek(-1)">마지막</button>
-            </div>
-            <div class="rep-chip-row" id="tdNthChips" style="margin-top:6px"></div>
-            <div id="tdNthHint" class="rep-hint"></div>
-          </div>
         </div>
       </div>
     </div>
