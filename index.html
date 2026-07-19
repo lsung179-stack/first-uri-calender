@@ -2407,6 +2407,19 @@ body.align-right .cal-evbar{text-align:right}
 .cal-room-seal-btn:active{opacity:.6;transform:scale(.94)}
 .cal-room-seal-btn .r-card-seal{width:30px;height:30px}
 .cal-room-seal-btn .r-card-seal::before{inset:2px}
+/* 방 씰 롱프레스/탭 → 방 선택 팝업 (드래그-릴리즈 또는 항목 탭으로 이동) */
+.room-seal-picker{position:absolute;top:calc(100% + 8px);left:0;z-index:80;min-width:190px;max-height:62vh;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 14px 36px rgba(80,50,25,.24);padding:6px;display:none}
+.room-seal-picker.on{display:block;animation:rspPop .16s ease}
+@keyframes rspPop{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:none}}
+.rsp-item{display:flex;align-items:center;gap:10px;padding:8px 9px;border-radius:11px;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.rsp-item+.rsp-item{margin-top:2px}
+.rsp-item.cur{background:rgba(139,58,42,.09)}
+.rsp-item.hl{background:var(--accent)}
+.rsp-item.hl .rsp-name{color:#fff}
+.rsp-item .r-card-seal{width:28px;height:28px;flex-shrink:0}
+.rsp-item .r-card-seal::before{inset:2px}
+.rsp-name{font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+@media (prefers-reduced-motion:reduce){ .room-seal-picker.on{animation:none} }
 .cal-room-seal-btn .r-card-seal-letter{font-size:13px}
 .cal-room-seal-btn .r-card-seal.has-seal .seal-ini{font-size:14px}
 .cal-room-seal-btn .r-card-seal.has-seal svg{width:17px;height:17px}
@@ -2947,9 +2960,11 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
 
   <div class="cal-month-row">
     <div class="cal-month-left">
-      <!-- 방 씰(현재 방) — 탭하면 다음 방으로 전환. 혼자 방·공유 방 모두 여기 상시 표시(세로 공간 0) -->
-      <button class="cal-room-seal-btn" id="calRoomSealBtn" onclick="cycleRoom()" aria-label="방 전환" style="display:none"></button>
+      <!-- 방 씰(현재 방) — 누르면 방 목록이 뜨고, 눌러서 드래그(놓는 방으로 이동) 또는 항목 탭으로 방 전환 -->
+      <button class="cal-room-seal-btn" id="calRoomSealBtn" onpointerdown="_sealPointerDown(event)" aria-label="방 전환" style="display:none;touch-action:none"></button>
       <button class="cal-search-btn" onclick="openSearch()" aria-label="검색"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.5" y2="16.5"/></svg></button>
+      <!-- 방 선택 팝업(씰 롱프레스/탭) -->
+      <div class="room-seal-picker" id="roomSealPicker" aria-hidden="true"><div class="rsp-list" id="rspList"></div></div>
     </div>
     <button class="cal-month-arrow" onclick="prevMonth()">‹</button>
     <div class="cal-month-title" onclick="openDatePicker()">
@@ -16146,6 +16161,71 @@ function showRoomSwitch(room){
   _roomSwitchTimer=setTimeout(function(){ box.classList.remove('on'); }, 1100);
 }
 window.cycleRoom=cycleRoom;
+/* ── 방 씰 롱프레스/탭 → 방 선택 팝업 ──
+   씰을 누르면 방 목록이 뜨고, (1) 누른 채 드래그해 원하는 방에서 손을 떼면 그 방으로 이동,
+   (2) 목록 항목을 탭해도 이동. 방이 하나뿐이면 방 목록 탭으로 폴백. */
+let _sealDrag=null;
+function openRoomSealPicker(){
+  const pop=document.getElementById('roomSealPicker'), list=document.getElementById('rspList');
+  if(!pop||!list) return;
+  const rooms=_myRooms||[]; if(!rooms.length) return;
+  let html='';
+  rooms.forEach(function(r){
+    const name=r.name||'방'; const fc=escapeHtml(name.slice(0,1)||'방');
+    const seal=_sealInner((_mySealByRoom||{})[r.id], name) || ('<div class="r-card-seal"><span class="r-card-seal-letter">'+fc+'</span></div>');
+    const cur=(_currentRoom&&r.id===_currentRoom.id)?' cur':'';
+    html+='<div class="rsp-item'+cur+'" data-roomid="'+escapeHtml(r.id)+'" onclick="_sealPickRoom(\''+r.id+'\')">'+seal+'<span class="rsp-name">'+escapeHtml(name)+'</span></div>';
+  });
+  list.innerHTML=html;
+  pop.classList.add('on'); pop.setAttribute('aria-hidden','false');
+  setTimeout(function(){ document.addEventListener('pointerdown', _sealPickerOutside, true); },0);
+}
+function closeRoomSealPicker(){
+  const pop=document.getElementById('roomSealPicker'); if(pop){ pop.classList.remove('on'); pop.setAttribute('aria-hidden','true'); }
+  document.removeEventListener('pointerdown', _sealPickerOutside, true);
+}
+function _sealPickerOutside(e){
+  const pop=document.getElementById('roomSealPicker'), seal=document.getElementById('calRoomSealBtn');
+  if(pop&&!pop.contains(e.target)&&seal&&!seal.contains(e.target)) closeRoomSealPicker();
+}
+function _sealPickRoom(id){
+  closeRoomSealPicker();
+  if(_currentRoom&&_currentRoom.id===id) return;
+  enterRoom(id);
+  const r=(_myRooms||[]).find(function(x){return x.id===id;});
+  if(r) showRoomSwitch(r);
+}
+function _sealItemAt(x,y){ const t=document.elementFromPoint(x,y); return (t&&t.closest)?t.closest('.rsp-item'):null; }
+function _sealHighlight(el){
+  document.querySelectorAll('#rspList .rsp-item.hl').forEach(function(x){ x.classList.remove('hl'); });
+  if(el) el.classList.add('hl');
+}
+function _sealPointerDown(e){
+  const rooms=_myRooms||[];
+  if(rooms.length<2){ calTabSwitch('rooms'); return; }   // 다른 방 없으면 목록 탭으로(기존 폴백)
+  openRoomSealPicker();
+  _sealDrag={moved:false, x:e.clientX, y:e.clientY};
+  document.addEventListener('pointermove', _sealPointerMove, true);
+  document.addEventListener('pointerup', _sealPointerUp, true);
+  try{ e.preventDefault(); }catch(_){}
+}
+function _sealPointerMove(e){
+  if(!_sealDrag) return;
+  if(Math.abs(e.clientX-_sealDrag.x)>6||Math.abs(e.clientY-_sealDrag.y)>6) _sealDrag.moved=true;
+  _sealHighlight(_sealItemAt(e.clientX, e.clientY));
+}
+function _sealPointerUp(e){
+  document.removeEventListener('pointermove', _sealPointerMove, true);
+  document.removeEventListener('pointerup', _sealPointerUp, true);
+  const drag=_sealDrag; _sealDrag=null;
+  const item=_sealItemAt(e.clientX, e.clientY);
+  _sealHighlight(null);
+  if(item&&item.getAttribute('data-roomid')){ _sealPickRoom(item.getAttribute('data-roomid')); return; }  // 드래그-릴리즈 선택
+  // 항목 위가 아님: 탭(안 움직임)이면 목록 유지(항목 탭 대기), 드래그였으면 닫기
+  if(drag&&drag.moved) closeRoomSealPicker();
+}
+window._sealPointerDown=_sealPointerDown;
+window._sealPickRoom=_sealPickRoom;
 function renderInviteNudge(){
   const el=document.getElementById('calInviteNudge');
   if(!el) return;
