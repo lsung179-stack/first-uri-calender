@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 우리 캘린더 월 위젯(large) 루트 -->
+<!-- 우리 캘린더 2주 위젯(medium) 루트 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/wg_root"
     android:layout_width="match_parent"
@@ -8,7 +8,6 @@
     android:background="@drawable/widget_bg"
     android:padding="10dp">
 
-    <!-- 헤더: 씰 + 전체·멤버 필터 + ‹ 달 › + 새로고침 + 추가 -->
     <LinearLayout
         android:id="@+id/wg_header"
         android:layout_width="match_parent"
@@ -16,25 +15,24 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <ImageView android:id="@+id/wg_seal" android:layout_width="26dp" android:layout_height="26dp" android:scaleType="fitCenter" android:layout_marginEnd="6dp" />
-        <TextView android:id="@+id/wg_all" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="6dp" android:paddingRight="6dp" android:paddingTop="2dp" android:paddingBottom="2dp" android:textSize="9sp" android:textStyle="bold" android:textColor="#8A6C52" android:text="전체" android:layout_marginEnd="3dp" />
-        <ImageView android:id="@+id/wg_av0" android:layout_width="22dp" android:layout_height="22dp" android:padding="2dp" android:scaleType="fitCenter" android:layout_marginEnd="2dp" android:visibility="gone" />
-        <ImageView android:id="@+id/wg_av1" android:layout_width="22dp" android:layout_height="22dp" android:padding="2dp" android:scaleType="fitCenter" android:layout_marginEnd="2dp" android:visibility="gone" />
-        <ImageView android:id="@+id/wg_av2" android:layout_width="22dp" android:layout_height="22dp" android:padding="2dp" android:scaleType="fitCenter" android:layout_marginEnd="2dp" android:visibility="gone" />
-        <ImageView android:id="@+id/wg_av3" android:layout_width="22dp" android:layout_height="22dp" android:padding="2dp" android:scaleType="fitCenter" android:layout_marginEnd="2dp" android:visibility="gone" />
+        <ImageView android:id="@+id/wg_seal" android:layout_width="24dp" android:layout_height="24dp" android:scaleType="fitCenter" android:layout_marginEnd="5dp" />
+        <TextView android:id="@+id/wg_all" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="5dp" android:paddingRight="5dp" android:paddingTop="2dp" android:paddingBottom="2dp" android:textSize="9sp" android:textStyle="bold" android:textColor="#8A6C52" android:text="전체" android:layout_marginEnd="3dp" />
+        <ImageView android:id="@+id/wg_av0" android:layout_width="21dp" android:layout_height="21dp" android:padding="2dp" android:scaleType="fitCenter" android:layout_marginEnd="2dp" android:visibility="gone" />
+        <ImageView android:id="@+id/wg_av1" android:layout_width="21dp" android:layout_height="21dp" android:padding="2dp" android:scaleType="fitCenter" android:layout_marginEnd="2dp" android:visibility="gone" />
+        <ImageView android:id="@+id/wg_av2" android:layout_width="21dp" android:layout_height="21dp" android:padding="2dp" android:scaleType="fitCenter" android:layout_marginEnd="2dp" android:visibility="gone" />
+        <ImageView android:id="@+id/wg_av3" android:layout_width="21dp" android:layout_height="21dp" android:padding="2dp" android:scaleType="fitCenter" android:layout_marginEnd="2dp" android:visibility="gone" />
         <TextView android:id="@+id/wg_more" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="9sp" android:textStyle="bold" android:textColor="#8A6C52" android:text="+0" android:visibility="gone" />
 
         <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
 
-        <TextView android:id="@+id/wg_prev" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="6dp" android:paddingRight="4dp" android:paddingTop="2dp" android:paddingBottom="2dp" android:textColor="#8B3A2A" android:textSize="16sp" android:textStyle="bold" android:text="‹" />
-        <TextView android:id="@+id/wg_month" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingTop="2dp" android:paddingBottom="2dp" android:textColor="#2A1C0F" android:textSize="14sp" android:textStyle="bold" android:text="7월" />
-        <TextView android:id="@+id/wg_next" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="4dp" android:paddingRight="6dp" android:paddingTop="2dp" android:paddingBottom="2dp" android:textColor="#8B3A2A" android:textSize="16sp" android:textStyle="bold" android:text="›" />
-        <TextView android:id="@+id/wg_refresh" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="4dp" android:paddingRight="4dp" android:textColor="#8A6C52" android:textSize="15sp" android:text="↻" />
-        <TextView android:id="@+id/wg_add" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="4dp" android:textColor="#8B3A2A" android:textSize="18sp" android:textStyle="bold" android:text="＋" />
+        <TextView android:id="@+id/wg_wprev" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="6dp" android:paddingRight="3dp" android:paddingTop="2dp" android:paddingBottom="2dp" android:textColor="#8B3A2A" android:textSize="15sp" android:textStyle="bold" android:text="‹" />
+        <TextView android:id="@+id/wg_wlabel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingTop="2dp" android:paddingBottom="2dp" android:textColor="#2A1C0F" android:textSize="12sp" android:textStyle="bold" android:text="7.6~19" />
+        <TextView android:id="@+id/wg_wnext" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="3dp" android:paddingRight="6dp" android:paddingTop="2dp" android:paddingBottom="2dp" android:textColor="#8B3A2A" android:textSize="15sp" android:textStyle="bold" android:text="›" />
+        <TextView android:id="@+id/wg_refresh" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="4dp" android:paddingRight="4dp" android:textColor="#8A6C52" android:textSize="14sp" android:text="↻" />
+        <TextView android:id="@+id/wg_add" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="3dp" android:textColor="#8B3A2A" android:textSize="17sp" android:textStyle="bold" android:text="＋" />
     </LinearLayout>
 
-    <!-- 요일 헤더 -->
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:orientation="horizontal">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:orientation="horizontal">
         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textColor="#C0503F" android:textSize="10sp" android:textStyle="bold" android:text="일" />
         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textColor="#8A6C52" android:textSize="10sp" android:textStyle="bold" android:text="월" />
         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textColor="#8A6C52" android:textSize="10sp" android:textStyle="bold" android:text="화" />

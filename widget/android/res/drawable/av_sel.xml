@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 선택된 멤버 아바타 뒤 테라 링(패딩과 함께) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <solid android:color="#8B3A2A" />
+</shape>

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 우리 캘린더 콤보 위젯(large): 다가오는 일정 + 미니 월 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_bg"
+    android:padding="12dp">
+
+    <!-- 헤더(씰 + 멤버 필터 + 새로고침 + 추가) -->
+    <LinearLayout
+        android:id="@+id/wg_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+        <ImageView android:id="@+id/wg_seal" android:layout_width="26dp" android:layout_height="26dp" android:scaleType="fitCenter" android:layout_marginEnd="6dp" />
+        <TextView android:id="@+id/wg_all" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="6dp" android:paddingRight="6dp" android:paddingTop="2dp" android:paddingBottom="2dp" android:textSize="9sp" android:textStyle="bold" android:textColor="#8A6C52" android:text="전체" android:layout_marginEnd="3dp" />
+        <ImageView android:id="@+id/wg_av0" android:layout_width="22dp" android:layout_height="22dp" android:padding="2dp" android:scaleType="fitCenter" android:layout_marginEnd="2dp" android:visibility="gone" />
+        <ImageView android:id="@+id/wg_av1" android:layout_width="22dp" android:layout_height="22dp" android:padding="2dp" android:scaleType="fitCenter" android:layout_marginEnd="2dp" android:visibility="gone" />
+        <ImageView android:id="@+id/wg_av2" android:layout_width="22dp" android:layout_height="22dp" android:padding="2dp" android:scaleType="fitCenter" android:layout_marginEnd="2dp" android:visibility="gone" />
+        <ImageView android:id="@+id/wg_av3" android:layout_width="22dp" android:layout_height="22dp" android:padding="2dp" android:scaleType="fitCenter" android:layout_marginEnd="2dp" android:visibility="gone" />
+        <TextView android:id="@+id/wg_more" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="9sp" android:textStyle="bold" android:textColor="#8A6C52" android:text="+0" android:visibility="gone" />
+        <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+        <TextView android:id="@+id/wg_refresh" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="4dp" android:paddingRight="6dp" android:textColor="#8A6C52" android:textSize="15sp" android:text="↻" />
+        <TextView android:id="@+id/wg_add" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#8B3A2A" android:textSize="18sp" android:textStyle="bold" android:text="＋" />
+    </LinearLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal" android:layout_marginTop="8dp">
+
+        <!-- 좌: 다가오는 일정 -->
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical">
+            <TextView android:id="@+id/cb_uptitlehead" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#8B3A2A" android:textSize="14sp" android:textStyle="bold" android:text="다가오는 일정" />
+            <TextView android:id="@+id/cb_upempty" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:textColor="#8A6C52" android:textSize="12sp" android:visibility="gone" android:text="예정된 일정이 없어요" />
+
+            <LinearLayout android:id="@+id/cb_up0" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="7dp" android:visibility="gone">
+                <View android:id="@+id/cb_upbar0" android:layout_width="3dp" android:layout_height="26dp" android:background="#8B3A2A" android:layout_marginEnd="7dp" />
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:id="@+id/cb_uprange0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="5dp" android:paddingRight="5dp" android:paddingTop="1dp" android:paddingBottom="1dp" android:background="@drawable/chip_off" android:textColor="#8A6C52" android:textSize="9sp" android:textStyle="bold" android:text="" />
+                    <TextView android:id="@+id/cb_uptitle0" android:layout_width="match_parent" android:layout_height="wrap_content" android:singleLine="true" android:ellipsize="end" android:textColor="#2A1C0F" android:textSize="13sp" android:textStyle="bold" android:text="" />
+                </LinearLayout>
+            </LinearLayout>
+            <LinearLayout android:id="@+id/cb_up1" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="6dp" android:visibility="gone">
+                <View android:id="@+id/cb_upbar1" android:layout_width="3dp" android:layout_height="26dp" android:background="#8B3A2A" android:layout_marginEnd="7dp" />
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:id="@+id/cb_uprange1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="5dp" android:paddingRight="5dp" android:paddingTop="1dp" android:paddingBottom="1dp" android:background="@drawable/chip_off" android:textColor="#8A6C52" android:textSize="9sp" android:textStyle="bold" android:text="" />
+                    <TextView android:id="@+id/cb_uptitle1" android:layout_width="match_parent" android:layout_height="wrap_content" android:singleLine="true" android:ellipsize="end" android:textColor="#2A1C0F" android:textSize="13sp" android:textStyle="bold" android:text="" />
+                </LinearLayout>
+            </LinearLayout>
+            <LinearLayout android:id="@+id/cb_up2" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="6dp" android:visibility="gone">
+                <View android:id="@+id/cb_upbar2" android:layout_width="3dp" android:layout_height="26dp" android:background="#8B3A2A" android:layout_marginEnd="7dp" />
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:id="@+id/cb_uprange2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="5dp" android:paddingRight="5dp" android:paddingTop="1dp" android:paddingBottom="1dp" android:background="@drawable/chip_off" android:textColor="#8A6C52" android:textSize="9sp" android:textStyle="bold" android:text="" />
+                    <TextView android:id="@+id/cb_uptitle2" android:layout_width="match_parent" android:layout_height="wrap_content" android:singleLine="true" android:ellipsize="end" android:textColor="#2A1C0F" android:textSize="13sp" android:textStyle="bold" android:text="" />
+                </LinearLayout>
+            </LinearLayout>
+            <LinearLayout android:id="@+id/cb_up3" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="6dp" android:visibility="gone">
+                <View android:id="@+id/cb_upbar3" android:layout_width="3dp" android:layout_height="26dp" android:background="#8B3A2A" android:layout_marginEnd="7dp" />
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:id="@+id/cb_uprange3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="5dp" android:paddingRight="5dp" android:paddingTop="1dp" android:paddingBottom="1dp" android:background="@drawable/chip_off" android:textColor="#8A6C52" android:textSize="9sp" android:textStyle="bold" android:text="" />
+                    <TextView android:id="@+id/cb_uptitle3" android:layout_width="match_parent" android:layout_height="wrap_content" android:singleLine="true" android:ellipsize="end" android:textColor="#2A1C0F" android:textSize="13sp" android:textStyle="bold" android:text="" />
+                </LinearLayout>
+            </LinearLayout>
+            <LinearLayout android:id="@+id/cb_up4" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="6dp" android:visibility="gone">
+                <View android:id="@+id/cb_upbar4" android:layout_width="3dp" android:layout_height="26dp" android:background="#8B3A2A" android:layout_marginEnd="7dp" />
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:id="@+id/cb_uprange4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="5dp" android:paddingRight="5dp" android:paddingTop="1dp" android:paddingBottom="1dp" android:background="@drawable/chip_off" android:textColor="#8A6C52" android:textSize="9sp" android:textStyle="bold" android:text="" />
+                    <TextView android:id="@+id/cb_uptitle4" android:layout_width="match_parent" android:layout_height="wrap_content" android:singleLine="true" android:ellipsize="end" android:textColor="#2A1C0F" android:textSize="13sp" android:textStyle="bold" android:text="" />
+                </LinearLayout>
+            </LinearLayout>
+            <LinearLayout android:id="@+id/cb_up5" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="6dp" android:visibility="gone">
+                <View android:id="@+id/cb_upbar5" android:layout_width="3dp" android:layout_height="26dp" android:background="#8B3A2A" android:layout_marginEnd="7dp" />
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:id="@+id/cb_uprange5" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="5dp" android:paddingRight="5dp" android:paddingTop="1dp" android:paddingBottom="1dp" android:background="@drawable/chip_off" android:textColor="#8A6C52" android:textSize="9sp" android:textStyle="bold" android:text="" />
+                    <TextView android:id="@+id/cb_uptitle5" android:layout_width="match_parent" android:layout_height="wrap_content" android:singleLine="true" android:ellipsize="end" android:textColor="#2A1C0F" android:textSize="13sp" android:textStyle="bold" android:text="" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <View android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
+            <TextView android:id="@+id/cb_td" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:singleLine="true" android:ellipsize="end" android:textColor="#2A1C0F" android:textSize="12sp" android:visibility="gone" android:text="" />
+        </LinearLayout>
+
+        <View android:layout_width="1dp" android:layout_height="match_parent" android:layout_marginLeft="10dp" android:layout_marginRight="10dp" android:background="#338A6C52" />
+
+        <!-- 우: 미니 월 -->
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                <TextView android:id="@+id/cb_mprev" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="4dp" android:paddingRight="4dp" android:textColor="#8B3A2A" android:textSize="14sp" android:textStyle="bold" android:text="‹" />
+                <TextView android:id="@+id/cb_mlabel" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textColor="#2A1C0F" android:textSize="14sp" android:textStyle="bold" android:text="7월" />
+                <TextView android:id="@+id/cb_mnext" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="4dp" android:paddingRight="4dp" android:textColor="#8B3A2A" android:textSize="14sp" android:textStyle="bold" android:text="›" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="2dp">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textColor="#C0503F" android:textSize="8sp" android:textStyle="bold" android:text="일" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textColor="#8A6C52" android:textSize="8sp" android:textStyle="bold" android:text="월" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textColor="#8A6C52" android:textSize="8sp" android:textStyle="bold" android:text="화" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textColor="#8A6C52" android:textSize="8sp" android:textStyle="bold" android:text="수" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textColor="#8A6C52" android:textSize="8sp" android:textStyle="bold" android:text="목" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textColor="#8A6C52" android:textSize="8sp" android:textStyle="bold" android:text="금" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textColor="#8A6C52" android:textSize="8sp" android:textStyle="bold" android:text="토" />
+            </LinearLayout>
+            <GridView
+                android:id="@+id/cb_grid"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:layout_marginTop="1dp"
+                android:numColumns="7"
+                android:stretchMode="columnWidth"
+                android:verticalSpacing="0dp"
+                android:horizontalSpacing="0dp"
+                android:gravity="fill" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

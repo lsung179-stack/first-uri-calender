@@ -6,6 +6,9 @@ package com.lsung.uricalendar.widget;
  */
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -13,6 +16,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class WidgetData {
+
+    // "data:image/png;base64,XXXX" → Bitmap (씰/아바타 PNG). 실패 시 null.
+    public static Bitmap decodeDataUrl(String dataUrl) {
+        try {
+            if (dataUrl == null || dataUrl.isEmpty()) return null;
+            int comma = dataUrl.indexOf(',');
+            String b64 = comma >= 0 ? dataUrl.substring(comma + 1) : dataUrl;
+            byte[] bytes = Base64.decode(b64, Base64.DEFAULT);
+            return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        } catch (Throwable t) { return null; }
+    }
 
     public static WData load(Context context) {
         try {
@@ -63,7 +77,7 @@ public class WidgetData {
     }
 
     public static class Room {
-        public String id, name, seal;
+        public String id, name, seal, sealPng;
         public List<Member> members = new ArrayList<>();
         public List<Event> events = new ArrayList<>();
         public List<Todo> todos = new ArrayList<>();
@@ -73,6 +87,7 @@ public class WidgetData {
             room.id = r.optString("id", "");
             room.name = r.optString("name", "방");
             room.seal = optStr(r, "seal");
+            room.sealPng = optStr(r, "sealPng");
             JSONArray ms = r.optJSONArray("members");
             if (ms != null) for (int i = 0; i < ms.length(); i++) {
                 JSONObject m = ms.optJSONObject(i);
@@ -81,6 +96,7 @@ public class WidgetData {
                     mm.userId = optStr(m, "userId");
                     mm.name = m.optString("name", "멤버");
                     mm.color = m.optString("color", "#8b3a2a");
+                    mm.avatarPng = optStr(m, "avatarPng");
                     room.members.add(mm);
                 }
             }
@@ -105,10 +121,21 @@ public class WidgetData {
                 JSONObject t = ts.optJSONObject(i);
                 if (t != null) {
                     Todo td = new Todo();
+                    td.id = optStr(t, "id");
                     td.date = t.optString("date", "");
                     td.title = t.optString("title", "");
+                    td.time = t.optString("time", "");
                     td.done = t.optBoolean("done", false);
                     td.color = t.optString("color", "#8b3a2a");
+                    td.userId = optStr(t, "userId");
+                    JSONArray mk = t.optJSONArray("memberKeys");
+                    if (mk != null) {
+                        td.memberKeys = new ArrayList<>();
+                        for (int k = 0; k < mk.length(); k++) {
+                            String s = mk.optString(k, null);
+                            if (s != null && !s.isEmpty()) td.memberKeys.add(s);
+                        }
+                    }
                     room.todos.add(td);
                 }
             }
@@ -116,9 +143,13 @@ public class WidgetData {
         }
     }
 
-    public static class Member { public String userId, name, color; }
+    public static class Member { public String userId, name, color, avatarPng; }
     public static class Event { public String date, title, time, color, userId, gid, style; public int ord; }
-    public static class Todo { public String date, title, color; public boolean done; }
+    public static class Todo {
+        public String id, date, title, time, color, userId;
+        public boolean done;
+        public List<String> memberKeys;   // 함께 할일 대상(없으면 null=혼자 할일)
+    }
 
     static String optStr(JSONObject o, String key) {
         if (o.isNull(key)) return null;
