@@ -754,7 +754,7 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .cal-month-right{position:absolute;right:12px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:7px;z-index:5}
 .cal-import-btn{background:none;border:none;cursor:pointer;padding:4px;color:var(--sub);display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-tap-highlight-color:transparent}
 .cal-import-btn:active{opacity:.6;transform:scale(.9)}
-/* 다른 방 일정 불러오기 시트 목록 */
+/* 다른 방 일정 가져오기 시트 목록 */
 .import-room-list{display:flex;flex-direction:column;gap:6px;margin-top:6px;max-height:52vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .import-room-item{display:flex;align-items:center;gap:11px;padding:11px 12px;border:1px solid var(--border);border-radius:13px;background:var(--card);cursor:pointer;transition:all .12s}
 .import-room-item:active{transform:scale(.98);background:var(--bg)}
@@ -2984,8 +2984,8 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     </div>
     <button class="cal-month-arrow" onclick="nextMonth()">›</button>
     <div class="cal-month-right">
-      <!-- 다른 방 일정 불러오기 -->
-      <button class="cal-import-btn" id="calImportBtn" onclick="openImportEvents()" aria-label="다른 방 일정 불러오기" title="다른 방 일정 불러오기"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11"/><path d="M8 10l4 4 4-4"/><path d="M4 20h16"/></svg></button>
+      <!-- 다른 방 일정 가져오기 -->
+      <button class="cal-import-btn" id="calImportBtn" onclick="openImportEvents()" aria-label="다른 방 일정 가져오기" title="다른 방 일정 가져오기"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11"/><path d="M8 10l4 4 4-4"/><path d="M4 20h16"/></svg></button>
       <button class="cal-today-chip" id="todayBtn" onclick="goToday()">오늘</button>
     </div>
   </div>
@@ -3315,11 +3315,11 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
   </div>
 </div>
 
-<!-- 다른 방 일정 불러오기 (오늘 버튼 옆 ⬇ 버튼) -->
+<!-- 다른 방 일정 가져오기 (오늘 버튼 옆 ⬇ 버튼) -->
 <div class="mo-overlay" id="importOverlay" onclick="closeImportEvents()"></div>
 <div class="mo-card" id="importCard">
   <div class="mo-handle"></div>
-  <div class="mo-title">다른 방 일정 불러오기</div>
+  <div class="mo-title">다른 방 일정 가져오기</div>
   <div class="mo-sub">선택한 방의 내 일정을 이 방으로 복사해요 · 이미 있는 일정은 자동 제외</div>
   <div class="import-room-list" id="importRoomList"></div>
 </div>
@@ -16309,19 +16309,19 @@ function _sealPointerUp(e){
 }
 window._sealPointerDown=_sealPointerDown;
 window._sealPickRoom=_sealPickRoom;
-/* ── 다른 방 일정 불러오기 (오늘 버튼 옆 ⬇) — 소스 방의 내 일정을 이 방으로 복사, 중복 제외 ──
-   방 만들 때 '기존 방 일정 가져오기'를 깜빡했어도 나중에 다시 불러올 수 있게. 여러 번 불러도 중복 안 생김. */
+/* ── 다른 방 일정 가져오기 (오늘 버튼 옆 ⬇) — 소스 방의 내 일정을 이 방으로 복사, 중복 제외 ──
+   방 만들 때 '기존 방 일정 가져오기'를 깜빡했어도 나중에 다시 가져올 수 있게. 여러 번 가져와도 중복 안 생김. */
 function openImportEvents(){
   if(!_currentRoom){ toast('방에 먼저 들어가 주세요'); return; }
   const others=(_myRooms||[]).filter(function(r){ return r.id!==_currentRoom.id; });
-  if(!others.length){ toast('불러올 다른 방이 없어요'); return; }
+  if(!others.length){ toast('가져올 다른 방이 없어요'); return; }
   const list=document.getElementById('importRoomList');
   if(list){
     let html='';
     others.forEach(function(r){
       const name=r.name||'방'; const fc=escapeHtml((name.slice(0,1))||'방');
       const seal=_sealInner((_mySealByRoom||{})[r.id], name) || ('<div class="r-card-seal"><span class="r-card-seal-letter">'+fc+'</span></div>');
-      html+='<div class="import-room-item" onclick="_doImportFromRoom(\''+r.id+'\')"><div class="import-room-seal">'+seal+'</div><div class="import-room-name">'+escapeHtml(name)+'</div><div class="import-room-go">불러오기 ›</div></div>';
+      html+='<div class="import-room-item" onclick="_doImportFromRoom(\''+r.id+'\')"><div class="import-room-seal">'+seal+'</div><div class="import-room-name">'+escapeHtml(name)+'</div><div class="import-room-go">가져오기 ›</div></div>';
     });
     list.innerHTML=html;
   }
@@ -16363,9 +16363,9 @@ async function _doImportFromRoom(srcRoomId){
     const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
     if(error) throw error;
     closeImportEvents();
-    toast(rows.length+'개 불러왔어요'+(dup>0?(' (중복 '+dup+'개 제외)'):''));
+    toast(rows.length+'개 가져왔어요'+(dup>0?(' (중복 '+dup+'개 제외)'):''));
     await loadEvents();
-  }catch(e){ console.error('일정 불러오기 실패',e); toast('불러오기 실패'); }
+  }catch(e){ console.error('일정 가져오기 실패',e); toast('가져오기 실패'); }
 }
 window.openImportEvents=openImportEvents;
 window.closeImportEvents=closeImportEvents;
