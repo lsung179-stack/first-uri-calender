@@ -10396,7 +10396,13 @@ function _syncEvMonthlyUI(){
   const domHint=document.getElementById('evMonthlyDomHint');
   if(domHint){ domHint.style.display=(_evMonthlyMode==='dom')?'':'none'; domHint.textContent=dd?('매달 '+dd+'일에 반복돼요.'+(dd>28?' (그 날이 없는 달은 건너뜀)':'')):''; }
   const lastHint=document.getElementById('evMonthlyLastHint');
-  if(lastHint)lastHint.style.display=(_evMonthlyMode==='last')?'':'none';
+  if(lastHint){
+    lastHint.style.display=(_evMonthlyMode==='last')?'':'none';
+    if(_evMonthlyMode==='last'){
+      const rd=_dayCalDate?new Date(_dayCalDate.getFullYear(),_dayCalDate.getMonth(),1):_evBaseDateObj();
+      if(rd){ const ld=new Date(rd.getFullYear(),rd.getMonth()+1,0); lastHint.textContent='매달 마지막 날에 반복돼요 ('+(ld.getMonth()+1)+'월 '+ld.getDate()+'일)'; }
+    }
+  }
   if(nth){
     document.querySelectorAll('#evNthWeekSel .dm-btn').forEach(b=>b.classList.toggle('on', Number(b.dataset.nw)===_evNthWeek));
     _renderRepChips('evNthChips', _evRepeatWeekdays);
@@ -19075,7 +19081,7 @@ function _syncTdMonthlyUI(){
   const nthWrap=$('tdNthWrap'); if(nthWrap)nthWrap.style.display=nth?'':'none';
   const d=_tdBaseDateObj(); const dd=d?d.getDate():'';
   const domHint=$('tdMonthlyDomHint'); if(domHint){ domHint.style.display=(_tdMonthlyMode==='dom')?'':'none'; domHint.textContent=dd?('매달 '+dd+'일에 반복돼요.'+(dd>28?' (그 날이 없는 달은 건너뜀)':'')):''; }
-  const lastHint=$('tdMonthlyLastHint'); if(lastHint)lastHint.style.display=(_tdMonthlyMode==='last')?'':'none';
+  const lastHint=$('tdMonthlyLastHint'); if(lastHint){ lastHint.style.display=(_tdMonthlyMode==='last')?'':'none'; if(_tdMonthlyMode==='last'){ const ld=new Date(_todoMiniY,_todoMiniM+1,0); lastHint.textContent='매달 마지막 날에 반복돼요 ('+(ld.getMonth()+1)+'월 '+ld.getDate()+'일)'; } }
   if(nth){ document.querySelectorAll('#tdNthWeekSel .dm-btn').forEach(function(b){ b.classList.toggle('on', Number(b.dataset.nw)===_tdNthWeek); }); _renderTdChips('tdNthChips',_tdRepeatWeekdays); const h=$('tdNthHint'); if(h){ const refD=new Date(_todoMiniY,_todoMiniM,1); h.textContent=_nthHintText(refD, _tdNthWeek, _tdRepeatWeekdays); } }
 }
 function _renderTdChips(containerId,selected){
