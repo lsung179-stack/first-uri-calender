@@ -8540,7 +8540,7 @@ function _wgExpandEvent(ev, fromStr, toStr){
         if(mode==='last'){ const ds=mk(dim); if(ds>origin&&inWin(ds))out.add(ds); }
         else if(mode==='nth'){
           const wd=Array.isArray(ev.repeat_weekdays)?ev.repeat_weekdays:[]; const nth=ev.repeat_nth_week;
-          wd.forEach(dow=>{ let dd; if(nth===-1){ const lastDow=new Date(y,m,dim).getDay(); dd=dim-((lastDow-dow+7)%7); } else { const firstDow=new Date(y,m,1).getDay(); dd=1+((dow-firstDow+7)%7)+(nth-1)*7; } if(dd>=1&&dd<=dim){ const ds=mk(dd); if(ds>origin&&inWin(ds))out.add(ds); } });
+          wd.forEach(dow=>{ const dd=_nthWeekdayDate(y,m,nth,dow); if(dd>=1){ const ds=mk(dd); if(ds>origin&&inWin(ds))out.add(ds); } });   // 달력 주 기준
         } else { const dd=parseInt(origin.slice(8,10),10); if(dd<=dim){ const ds=mk(dd); if(ds>origin&&inWin(ds))out.add(ds); } }
         m++; if(m>11){m=0;y++;}
       }
@@ -9058,10 +9058,13 @@ function _getDayEventsRaw(date){
   // 매월 N째주 요일 / 말일 반복
   const _yy0=parseInt(date.slice(0,4),10), _mm0=parseInt(date.slice(5,7),10), _dn=parseInt(dd,10);
   const _daysInMonth=new Date(_yy0,_mm0,0).getDate();        // 이 달의 마지막 일
-  const _nthOcc=Math.floor((_dn-1)/7)+1;                     // 이 요일의 N째 등장(1~5)
-  const _isLastOcc=(_dn+7>_daysInMonth);                     // 이 달에서 이 요일의 마지막 등장인가
+  // 달력 주(줄) 기준: 이 칸이 이 달의 몇 번째 줄인지(주 시작 설정 반영) — 같은 줄 요일들이 같은 N째주
+  const _ws0=_weekStartPref();
+  const _firstCol0=(new Date(_yy0,_mm0-1,1).getDay()-_ws0+7)%7;
+  const _nthWk=Math.floor((_dn-1+_firstCol0)/7)+1;          // 이 칸의 N번째 달력 줄(1-based)
+  const _isLastOcc=(_dn+7>_daysInMonth);                     // 이 달에서 이 요일의 마지막 등장(=마지막 줄)
   const nthOnes=[];
-  (_monthlyNthEvents[_nthOcc+'-'+cellDow]||[]).forEach(e=>{ if(e.date<date)nthOnes.push(e); });
+  (_monthlyNthEvents[_nthWk+'-'+cellDow]||[]).forEach(e=>{ if(e.date<date)nthOnes.push(e); });
   if(_isLastOcc){ (_monthlyNthEvents['-1-'+cellDow]||[]).forEach(e=>{ if(e.date<date)nthOnes.push(e); }); }
   const lastOnes=[];
   if(_dn===_daysInMonth){ _monthlyLastEvents.forEach(e=>{ if(e.date<date)lastOnes.push(e); }); }
@@ -10292,15 +10295,24 @@ let _evMonthlyMode='dom';   // dom(며칠) | nth(N째주 요일) | last(말일)
 let _evNthWeek=1;           // 1~4, -1=마지막 주
 const _REP_DOW=['일','월','화','수','목','금','토'];
 const _ORD_KO={'1':'첫째','2':'둘째','3':'셋째','4':'넷째','-1':'마지막'};
-// N째주 요일이 실제로 며칠인지 계산(기준 애매함 해소용 — 앱 펼치기와 동일 규칙)
+// 주 시작 요일(설정 연동, 기본 일요일=0)
+function _weekStartPref(){ try{ return (typeof getWeekStartPref==='function')?(Number(getWeekStartPref())||0):0; }catch(_){ return 0; } }
+/* '매달 N째주 요일'의 실제 날짜(일) 계산 — **달력 주(줄)** 기준(요일 등장 순서 X).
+   같은 N째주의 여러 요일이 같은 줄에 붙게(예: 둘째주 수·목 → 같은 주). -1=마지막 줄.
+   그 달에 해당 칸이 없으면 0(월 밖) 반환. */
+function _nthWeekdayDate(y,m0,nth,dow){
+  const dim=new Date(y,m0+1,0).getDate();
+  if(nth===-1){ const lastDow=new Date(y,m0,dim).getDay(); return dim-((lastDow-dow+7)%7); }  // 마지막 등장(=마지막 줄)
+  const ws=_weekStartPref();
+  const firstDow=new Date(y,m0,1).getDay();
+  const firstCol=(firstDow-ws+7)%7;        // 1일이 그 주에서 몇 번째 칸(주 시작 기준)
+  const col=(dow-ws+7)%7;
+  const dd=1-firstCol+(nth-1)*7+col;       // N째 줄의 그 요일 날짜
+  return (dd>=1&&dd<=dim)?dd:0;             // 월 밖(1째 줄 앞부분 등)이면 0
+}
 function _nthDatesInMonth(y,m0,nth,weekdays){
-  const dim=new Date(y,m0+1,0).getDate(); const out=[];
-  (weekdays||[]).forEach(function(dow){
-    let dd;
-    if(nth===-1){ const lastDow=new Date(y,m0,dim).getDay(); dd=dim-((lastDow-dow+7)%7); }
-    else { const firstDow=new Date(y,m0,1).getDay(); dd=1+((dow-firstDow+7)%7)+(nth-1)*7; }
-    if(dd>=1&&dd<=dim) out.push(dd);
-  });
+  const out=[];
+  (weekdays||[]).forEach(function(dow){ const dd=_nthWeekdayDate(y,m0,nth,dow); if(dd>=1) out.push(dd); });
   return out.sort(function(a,b){return a-b;});
 }
 // 힌트 문구: "매달 둘째 화·목요일 · 이번 달 10월 13·15일" — 실제 날짜로 '몇째'의 기준을 명확히
@@ -10329,10 +10341,10 @@ function _repeatFirstDate(baseStr, type, weekdays, monthlyMode, nthWeek){
     const mode=monthlyMode||'dom';
     if(mode==='dom') return baseStr;                 // 며칠은 이미 그 날이라 스냅 불필요
     const nthDatesFor=function(y,m0){
-      const dim=new Date(y,m0+1,0).getDate(); const out=[];
-      if(mode==='last'){ out.push(dim); return out; }
+      const dim=new Date(y,m0+1,0).getDate();
+      if(mode==='last'){ return [dim]; }
       const wd=(weekdays&&weekdays.length)?weekdays:[b.getDay()];
-      wd.forEach(function(dow){ let dd; if(nthWeek===-1){ const lastDow=new Date(y,m0,dim).getDay(); dd=dim-((lastDow-dow+7)%7); } else { const firstDow=new Date(y,m0,1).getDay(); dd=1+((dow-firstDow+7)%7)+(nthWeek-1)*7; } if(dd>=1&&dd<=dim) out.push(dd); });
+      const out=[]; wd.forEach(function(dow){ const dd=_nthWeekdayDate(y,m0,nthWeek,dow); if(dd>=1) out.push(dd); });   // 달력 주 기준
       return out;
     };
     let y=b.getFullYear(), m0=b.getMonth();
@@ -18327,8 +18339,8 @@ function todoOccursOnDate(t,key){
       if(mode==='nth'){
         const wd=(Array.isArray(t.repeat_weekdays)&&t.repeat_weekdays.length)?t.repeat_weekdays:[s.getDay()];
         if(wd.indexOf(d.getDay())<0) return false;
-        if(t.repeat_nth_week===-1) return (d.getDate()+7>dim);          // 마지막 등장
-        return (Math.floor((d.getDate()-1)/7)+1)===t.repeat_nth_week;    // N째 등장
+        // 달력 주(줄) 기준 — 같은 N째주 요일들이 같은 줄에 붙게(일정과 동일)
+        return _nthWeekdayDate(d.getFullYear(), d.getMonth(), t.repeat_nth_week, d.getDay())===d.getDate();
       }
       return s.getDate()===d.getDate();   // dom(며칠, 기본)
     }
