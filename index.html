@@ -10313,6 +10313,37 @@ function _nthHintText(baseD, nth, weekdays){
   const head='매달 '+ord+' '+wdNames+'요일';
   return dts.length ? (head+' · 이번 달 '+(m0+1)+'월 '+dts.join('·')+'일') : (head+' · 이번 달은 없음');
 }
+/* 반복 시작일 자동 스냅 — 선택한 패턴의 '기준 달 첫 발생일'을 반환(origin이 패턴과 안 맞아 자투리 뜨는 것 방지).
+   → 8월 아무 날에서 "둘째 월요일"을 골라도 시작일이 8월 둘째 월요일로 딱 맞춰짐. 안 바뀌면 원래 baseStr 반환. */
+function _repeatFirstDate(baseStr, type, weekdays, monthlyMode, nthWeek){
+  const b=(function(){ try{ return parseDateKey(baseStr); }catch(_){ return null; } })();
+  if(!b || isNaN(b.getTime())) return baseStr;
+  const p=function(n){ return String(n).padStart(2,'0'); };
+  const fmt=function(y,m0,d){ return y+'-'+p(m0+1)+'-'+p(d); };
+  if(type==='weekly'){
+    const wd=(weekdays&&weekdays.length)?weekdays:[b.getDay()];
+    for(let i=0;i<7;i++){ const t=new Date(b.getFullYear(),b.getMonth(),b.getDate()+i); if(wd.indexOf(t.getDay())>=0) return fmt(t.getFullYear(),t.getMonth(),t.getDate()); }
+    return baseStr;
+  }
+  if(type==='monthly'){
+    const mode=monthlyMode||'dom';
+    if(mode==='dom') return baseStr;                 // 며칠은 이미 그 날이라 스냅 불필요
+    const nthDatesFor=function(y,m0){
+      const dim=new Date(y,m0+1,0).getDate(); const out=[];
+      if(mode==='last'){ out.push(dim); return out; }
+      const wd=(weekdays&&weekdays.length)?weekdays:[b.getDay()];
+      wd.forEach(function(dow){ let dd; if(nthWeek===-1){ const lastDow=new Date(y,m0,dim).getDay(); dd=dim-((lastDow-dow+7)%7); } else { const firstDow=new Date(y,m0,1).getDay(); dd=1+((dow-firstDow+7)%7)+(nthWeek-1)*7; } if(dd>=1&&dd<=dim) out.push(dd); });
+      return out;
+    };
+    let y=b.getFullYear(), m0=b.getMonth();
+    for(let k=0;k<3;k++){                            // 기준 달→없으면 다음 달(최대 3달 탐색)
+      const days=nthDatesFor(y,m0);
+      if(days.length) return fmt(y,m0,Math.min.apply(null,days));
+      if(m0===11){ m0=0; y++; } else { m0++; }
+    }
+  }
+  return baseStr;   // yearly 등은 그대로
+}
 function _evBaseDateObj(){ try{ return parseDateKey(_dayDate||_selectedDate); }catch(_){ return null; } }
 function onEvRepeatSelect(t){
   _evRepeatType=(t==='weekly'||t==='monthly'||t==='yearly')?t:'none';
@@ -10400,12 +10431,15 @@ function getEvRepeatPayload(baseDate){
     }
   }
   const finalType=(rt==='weekly'&&(!wd||!wd.length))?'none':rt;
+  // 시작일 자동 스냅 — 선택 패턴의 기준 달 첫 발생일(며칠/매년은 그대로)
+  const snapped=(finalType==='weekly'||finalType==='monthly') ? _repeatFirstDate(baseDate, finalType, wd, mmode, nth) : baseDate;
   return {
     repeat_type: finalType,
     repeat_weekdays: wd,
     repeat_monthly_mode: (finalType==='monthly'?(mmode||'dom'):null),
     repeat_nth_week: (finalType==='monthly'&&mmode==='nth'?nth:null),
-    recurring_yearly: finalType==='yearly'
+    recurring_yearly: finalType==='yearly',
+    start_date: (finalType==='weekly'||finalType==='monthly') ? snapped : null
   };
 }
 
@@ -11308,6 +11342,9 @@ async function _doSaveEvent(){
   const repeatWeekdays=_rep.repeat_weekdays;
   const repeatMonthlyMode=_rep.repeat_monthly_mode;
   const repeatNthWeek=_rep.repeat_nth_week;
+  // 반복 시작일 자동 스냅 — 새 일정·하루 모드에서 선택 패턴의 첫 발생일로 origin(시작일)을 맞춤.
+  // (예: 8월 아무 날 + "둘째 월요일" → 8월 둘째 월요일부터 시작, 자투리 원본 없음)
+  if(!_editingEvent && _selectedMode==='day' && _rep.start_date){ _dayDate=_rep.start_date; }
   // 메모 (최대 500자 — input maxlength로 1차 보호되지만 trim 후 길이 재확인)
   const memoRaw=(document.getElementById('evMemo')?.value||'').trim();
   if(memoRaw.length>500){toast('메모는 500자 이내로');_showEvCardFromSub();return}
@@ -19368,6 +19405,10 @@ async function _doSaveTodo(){
   if(_todoType==='single'){
     start_date=_todoSingleDate;
     if(!start_date){ toast('날짜를 선택해주세요'); _showTodoSheetFromSub(); return; }
+    // 반복 시작일 자동 스냅(새 할일·하루) — 선택 패턴의 첫 발생일로 시작일 맞춤(자투리 방지, 일정과 동일)
+    if(!_editingTodoId && (_todoRepeat==='weekly'||_todoRepeat==='monthly') && typeof _repeatFirstDate==='function'){
+      try{ start_date=_repeatFirstDate(start_date, _todoRepeat, _tdRepeatWeekdays, _tdMonthlyMode, _tdNthWeek)||start_date; }catch(_){}
+    }
   } else if(_todoType==='range'){
     if(!_todoRangeStart||!_todoRangeEnd){ toast('시작일과 종료일을 선택해주세요'); _showTodoSheetFromSub(); return; }
     start_date=_todoRangeStart; end_date=_todoRangeEnd;
