@@ -765,6 +765,11 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .import-pick-head{display:flex;justify-content:flex-end;margin-top:4px}
 .import-selall{background:none;border:none;color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;padding:4px 2px}
 .import-event-list{display:flex;flex-direction:column;gap:4px;margin-top:6px;max-height:46vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.import-month-head{display:flex;align-items:center;gap:7px;padding:8px 6px 6px;cursor:pointer;position:sticky;top:0;background:var(--card);z-index:1;user-select:none}
+.import-month-head+.import-ev-item{margin-top:0}
+.import-month-arrow{font-size:11px;color:var(--sub);width:12px;flex-shrink:0}
+.import-month-lbl{font-size:13px;font-weight:700;color:var(--accent)}
+.import-month-cnt{margin-left:auto;font-size:11.5px;font-weight:600;color:var(--sub)}
 .import-ev-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:11px;cursor:pointer;transition:background .12s}
 .import-ev-item:active{background:var(--bg)}
 .import-ev-item input{width:19px;height:19px;flex-shrink:0;accent-color:var(--accent);cursor:pointer}
@@ -16340,7 +16345,7 @@ window._sealPickRoom=_sealPickRoom;
    1) 소스 방 선택 → 2) 가져올 일정 체크리스트(제외 선택) → 확인 시 복사.
    기간 일정은 하나로 묶어 보여주고, 가져올 때 새 range_group_id로 재생성(단일로 쪼개지지 않음).
    이미 있는 일정(날짜+제목+시간)은 자동 제외. 방 만들 때 깜빡해도 언제든 다시. */
-let _importSrcId=null, _importGroups=[], _importSeen=null;
+let _importSrcId=null, _importGroups=[], _importSeen=null, _importCollapsed=new Set();
 function _impMD(ds){ try{ const d=parseDateKey(ds); return (d.getMonth()+1)+'/'+d.getDate(); }catch(_){ return ds; } }
 function _impKeyDT(date,title,time){ return (date||'')+'|'+((title||'').trim())+'|'+(time||''); }
 function openImportEvents(){
@@ -16376,7 +16381,7 @@ function _importBackToRooms(){ _importShowRoomStep(); }
 async function _importPickRoom(srcId){
   if(!_currentRoom||!_currentUser) return;
   if(srcId===_currentRoom.id){ toast('같은 방이에요'); return; }
-  _importSrcId=srcId;
+  _importSrcId=srcId; _importCollapsed=new Set();
   try{
     // 현재 방 기존 내 일정 → 중복 판정 세트
     const {data:cur}=await supa.from('events').select('date,title,time').eq('room_id',_currentRoom.id).eq('user_id',_currentUser.id);
@@ -16409,22 +16414,42 @@ async function _importPickRoom(srcId){
     const s=document.getElementById('importSub'); if(s)s.textContent='가져올 일정을 선택하세요 · 이미 있는 일정은 회색·자동 제외';
   }catch(e){ console.error('가져오기 목록 실패',e); toast('가져오기 실패'); }
 }
+function _importItemHTML(g,i){
+  const n=g.dates.length;
+  let label;
+  if(g.kind==='multi'&&n>1){ label=_impMD(g.dates[0])+' 외 '+(n-1)+'일'; }
+  else if(n>1){ label=_impMD(g.dates[0])+' ~ '+_impMD(g.dates[n-1])+' ('+n+'일)'; }
+  else { label=_impMD(g.dates[0])+(g.repeat_type&&g.repeat_type!=='none'?' · 반복':''); }
+  const dupTag=g.allDup?'<span class="import-ev-dup">이미 있음</span>':'';
+  return '<label class="import-ev-item'+(g.allDup?' dup':'')+'"><input type="checkbox" '+(g.checked?'checked':'')+' onchange="_importToggle('+i+',this.checked)"><span class="import-ev-dot" style="background:'+colorHex(g.color||'c-vintage')+'"></span><span class="import-ev-tx"><b>'+escapeHtml(g.title||'(제목 없음)')+'</b><span class="import-ev-date">'+label+'</span></span>'+dupTag+'</label>';
+}
 function _renderImportList(){
   const list=document.getElementById('importEventList'); if(!list)return;
-  let html='';
+  // 년월(첫 날짜 기준)으로 나눠서 섹션 표시 — 헤더 탭하면 접기/펼치기
+  const byYM={}, yms=[];
   _importGroups.forEach(function(g,i){
-    const n=g.dates.length;
-    let label;
-    if(g.kind==='multi'&&n>1){ label=_impMD(g.dates[0])+' 외 '+(n-1)+'일'; }
-    else if(n>1){ label=_impMD(g.dates[0])+' ~ '+_impMD(g.dates[n-1])+' ('+n+'일)'; }
-    else { label=_impMD(g.dates[0])+(g.repeat_type&&g.repeat_type!=='none'?' · 반복':''); }
-    const dupTag=g.allDup?'<span class="import-ev-dup">이미 있음</span>':'';
-    html+='<label class="import-ev-item'+(g.allDup?' dup':'')+'"><input type="checkbox" '+(g.checked?'checked':'')+' onchange="_importToggle('+i+',this.checked)"><span class="import-ev-dot" style="background:'+colorHex(g.color||'c-vintage')+'"></span><span class="import-ev-tx"><b>'+escapeHtml(g.title||'(제목 없음)')+'</b><span class="import-ev-date">'+label+'</span></span>'+dupTag+'</label>';
+    const ym=(g.dates[0]||'').slice(0,7);   // YYYY-MM
+    if(!byYM[ym]){ byYM[ym]=[]; yms.push(ym); }
+    byYM[ym].push(i);
+  });
+  yms.sort();
+  let html='';
+  yms.forEach(function(ym){
+    const idxs=byYM[ym];
+    const y=ym.slice(0,4), mo=parseInt(ym.slice(5,7),10)||'';
+    const collapsed=_importCollapsed.has(ym);
+    const checkedN=idxs.filter(function(i){ return _importGroups[i].checked; }).length;
+    html+='<div class="import-month-head" onclick="_importToggleMonth(\''+ym+'\')">'
+        +'<span class="import-month-arrow">'+(collapsed?'▸':'▾')+'</span>'
+        +'<span class="import-month-lbl">'+y+'년 '+mo+'월</span>'
+        +'<span class="import-month-cnt">'+checkedN+'/'+idxs.length+'</span></div>';
+    if(!collapsed){ idxs.forEach(function(i){ html+=_importItemHTML(_importGroups[i], i); }); }
   });
   list.innerHTML=html;
   _updateImportConfirm();
 }
-function _importToggle(i,checked){ if(_importGroups[i])_importGroups[i].checked=checked; _updateImportConfirm(); }
+function _importToggle(i,checked){ if(_importGroups[i])_importGroups[i].checked=checked; _renderImportList(); }
+function _importToggleMonth(ym){ if(_importCollapsed.has(ym))_importCollapsed.delete(ym); else _importCollapsed.add(ym); _renderImportList(); }
 function _importSelectAll(){
   const allOn=_importGroups.every(function(g){ return g.checked; });
   _importGroups.forEach(function(g){ g.checked=!allOn; });
@@ -16472,6 +16497,7 @@ window.closeImportEvents=closeImportEvents;
 window._importPickRoom=_importPickRoom;
 window._importBackToRooms=_importBackToRooms;
 window._importToggle=_importToggle;
+window._importToggleMonth=_importToggleMonth;
 window._importSelectAll=_importSelectAll;
 window._confirmImport=_confirmImport;
 function renderInviteNudge(){
