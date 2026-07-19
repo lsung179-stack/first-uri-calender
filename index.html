@@ -1606,7 +1606,7 @@ body.ev-dragging .cal-cell{cursor:grabbing}
 .rep-chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .rep-chip:active{transform:scale(.94)}
 .rep-sublabel{font-size:12px;color:var(--sub);font-weight:600;margin-top:10px}
-.rep-hint{font-size:11.5px;color:var(--sub);margin-top:7px;line-height:1.4}
+.rep-hint{font-size:12px;color:var(--accent);font-weight:600;margin-top:7px;line-height:1.4}
 /* 글꼴 버튼은 각 버튼이 해당 폰트로 표시되어 미리보기 역할 */
 .dm-btn.ff-pretendard{font-family:"Pretendard Variable","Pretendard",-apple-system,sans-serif}
 .dm-btn.ff-jua{font-family:"Jua",sans-serif}
@@ -10323,7 +10323,7 @@ function _nthHintText(baseD, nth, weekdays){
   const ord=_ORD_KO[String(nth)]||('' + nth);
   const dts=_nthDatesInMonth(y,m0,nth,weekdays);
   const head='매달 '+ord+' '+wdNames+'요일';
-  return dts.length ? (head+' · 이번 달 '+(m0+1)+'월 '+dts.join('·')+'일') : (head+' · 이번 달은 없음');
+  return dts.length ? (head+' · '+(m0+1)+'월 '+dts.join('·')+'일') : (head+' · '+(m0+1)+'월엔 없음');
 }
 /* 반복 시작일 자동 스냅 — 선택한 패턴의 '기준 달 첫 발생일'을 반환(origin이 패턴과 안 맞아 자투리 뜨는 것 방지).
    → 8월 아무 날에서 "둘째 월요일"을 골라도 시작일이 8월 둘째 월요일로 딱 맞춰짐. 안 바뀌면 원래 baseStr 반환. */
@@ -10400,7 +10400,9 @@ function _syncEvMonthlyUI(){
   if(nth){
     document.querySelectorAll('#evNthWeekSel .dm-btn').forEach(b=>b.classList.toggle('on', Number(b.dataset.nw)===_evNthWeek));
     _renderRepChips('evNthChips', _evRepeatWeekdays);
-    const h=document.getElementById('evNthHint'); if(h)h.textContent=_nthHintText(_evBaseDateObj(), _evNthWeek, _evRepeatWeekdays);
+    // 힌트는 미니 달력에 '표시된 달'(_dayCalDate) 기준 → 달력을 넘기면 그 달 날짜로 갱신
+    const refD=_dayCalDate?new Date(_dayCalDate.getFullYear(),_dayCalDate.getMonth(),1):_evBaseDateObj();
+    const h=document.getElementById('evNthHint'); if(h)h.textContent=_nthHintText(refD, _evNthWeek, _evRepeatWeekdays);
   }
 }
 function _renderRepChips(containerId, selected){
@@ -12789,6 +12791,7 @@ function dayCalNav(diff){
   if(!_dayCalDate){_dayCalDate=_dayDate?parseDateKey(_dayDate):new Date();_dayCalDate.setDate(1);}
   _dayCalDate.setMonth(_dayCalDate.getMonth()+diff);
   renderDayCal();
+  try{ syncEvRepeatUI(); }catch(_){}   // 달력 월 이동 → N째주 힌트도 그 달 기준으로 갱신
 }
 function selectDayDate(key){
   _dayDate=key;
@@ -19073,7 +19076,7 @@ function _syncTdMonthlyUI(){
   const d=_tdBaseDateObj(); const dd=d?d.getDate():'';
   const domHint=$('tdMonthlyDomHint'); if(domHint){ domHint.style.display=(_tdMonthlyMode==='dom')?'':'none'; domHint.textContent=dd?('매달 '+dd+'일에 반복돼요.'+(dd>28?' (그 날이 없는 달은 건너뜀)':'')):''; }
   const lastHint=$('tdMonthlyLastHint'); if(lastHint)lastHint.style.display=(_tdMonthlyMode==='last')?'':'none';
-  if(nth){ document.querySelectorAll('#tdNthWeekSel .dm-btn').forEach(function(b){ b.classList.toggle('on', Number(b.dataset.nw)===_tdNthWeek); }); _renderTdChips('tdNthChips',_tdRepeatWeekdays); const h=$('tdNthHint'); if(h)h.textContent=_nthHintText(_tdBaseDateObj(), _tdNthWeek, _tdRepeatWeekdays); }
+  if(nth){ document.querySelectorAll('#tdNthWeekSel .dm-btn').forEach(function(b){ b.classList.toggle('on', Number(b.dataset.nw)===_tdNthWeek); }); _renderTdChips('tdNthChips',_tdRepeatWeekdays); const h=$('tdNthHint'); if(h){ const refD=new Date(_todoMiniY,_todoMiniM,1); h.textContent=_nthHintText(refD, _tdNthWeek, _tdRepeatWeekdays); } }
 }
 function _renderTdChips(containerId,selected){
   const c=$(containerId); if(!c)return; const N=['일','월','화','수','목','금','토']; c.innerHTML='';
@@ -19260,6 +19263,7 @@ function todoMiniNav(diff){
   if(m<0){ m=11; y--; } else if(m>11){ m=0; y++; }
   _todoMiniY=y; _todoMiniM=m;
   renderTodoMiniCal();
+  try{ _syncTdRepeatUI(); }catch(_){}   // 달력 월 이동 → N째주 힌트도 그 달 기준으로 갱신
 }
 function _tmcCellClass(key,dow,isOther){
   let c='tmc-cell'; if(isOther) c+=' other';
