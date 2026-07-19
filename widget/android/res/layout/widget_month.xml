@@ -8,7 +8,7 @@
     android:background="@drawable/widget_bg"
     android:padding="10dp">
 
-    <!-- 헤더: 방 이름 + 이번 달 + 새로고침 -->
+    <!-- 헤더: 방 이름(탭=방 순환) + ‹ 달 › + 새로고침 -->
     <LinearLayout
         android:id="@+id/wg_header"
         android:layout_width="match_parent"
@@ -29,14 +29,41 @@
             android:text="우리 캘린더" />
 
         <TextView
+            android:id="@+id/wg_prev"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="6dp"
+            android:paddingRight="4dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:textColor="#8A6C52"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:text="‹" />
+
+        <TextView
             android:id="@+id/wg_month"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="10dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
             android:textColor="#8B3A2A"
             android:textSize="14sp"
             android:textStyle="bold"
             android:text="7월" />
+
+        <TextView
+            android:id="@+id/wg_next"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="4dp"
+            android:paddingRight="8dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:textColor="#8A6C52"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:text="›" />
 
         <TextView
             android:id="@+id/wg_refresh"

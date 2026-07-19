@@ -33,8 +33,14 @@ public class WidgetData {
         public boolean gridV, gridH;
         public List<Room> rooms = new ArrayList<>();
 
-        public Room pickRoom() {
+        public Room pickRoom() { return pickRoom(null); }
+
+        // 위젯에서 사용자가 순환 선택한 방(override) 우선 → 앱 지정 방 → 첫 방
+        public Room pickRoom(String overrideId) {
             if (rooms.isEmpty()) return null;
+            if (overrideId != null) {
+                for (Room r : rooms) if (overrideId.equals(r.id)) return r;
+            }
             if (currentRoomId != null) {
                 for (Room r : rooms) if (currentRoomId.equals(r.id)) return r;
             }

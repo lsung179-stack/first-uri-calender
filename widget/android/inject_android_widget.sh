@@ -23,7 +23,7 @@ echo "✅ 위젯 리소스 복사 완료"
 # 3) AndroidManifest에 receiver + service 등록 (</application> 앞)
 MANIFEST="$APP/AndroidManifest.xml"
 if ! grep -q "UriCalendarWidgetProvider" "$MANIFEST"; then
-  perl -0pi -e 's#([ \t]*)</application>#$1    <receiver android:name=".widget.UriCalendarWidgetProvider" android:exported="false">\n$1        <intent-filter>\n$1            <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />\n$1            <action android:name="com.lsung.uricalendar.widget.REFRESH" />\n$1        </intent-filter>\n$1        <meta-data android:name="android.appwidget.provider" android:resource="\@xml/uri_widget_month_info" />\n$1    </receiver>\n$1    <service android:name=".widget.MonthWidgetService" android:permission="android.permission.BIND_REMOTEVIEWS" android:exported="false" />\n$1</application>#' "$MANIFEST"
+  perl -0pi -e 's#([ \t]*)</application>#$1    <receiver android:name=".widget.UriCalendarWidgetProvider" android:exported="false">\n$1        <intent-filter>\n$1            <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />\n$1            <action android:name="com.lsung.uricalendar.widget.REFRESH" />\n$1            <action android:name="com.lsung.uricalendar.widget.CYCLE_ROOM" />\n$1            <action android:name="com.lsung.uricalendar.widget.SHIFT_MONTH" />\n$1        </intent-filter>\n$1        <meta-data android:name="android.appwidget.provider" android:resource="\@xml/uri_widget_month_info" />\n$1    </receiver>\n$1    <service android:name=".widget.MonthWidgetService" android:permission="android.permission.BIND_REMOTEVIEWS" android:exported="false" />\n$1</application>#' "$MANIFEST"
   echo "✅ Manifest에 위젯 receiver/service 주입 완료"
 else
   echo "위젯이 이미 Manifest에 있음 — 스킵"
