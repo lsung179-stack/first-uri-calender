@@ -14076,12 +14076,19 @@ function _trimBg(cv){
     //    성긴 샘플로는 그 좁은 부분을 놓쳐 위가 평평하게 잘렸음(피드백). 조밀 스캔으로 방지.
     const step=Math.max(2, (W/360)|0);
     const rowBg=(y)=>{ const base=y*W*4; for(let x=0;x<W;x+=step){ const i=base+x*4; if(Math.abs(d[i]-bg[0])>12||Math.abs(d[i+1]-bg[1])>12||Math.abs(d[i+2]-bg[2])>12) return false; } return true; };
+    // 행별 콘텐츠 비율(배경과 다른 픽셀 비율) — 얇은 격자선/테두리(낮음) vs 일정 바·글자 밴드(높음) 구분
+    const frac=(y)=>{ const base=y*W*4; let hit=0,tot=0; for(let x=0;x<W;x+=step){ tot++; const i=base+x*4; if(Math.abs(d[i]-bg[0])>18||Math.abs(d[i+1]-bg[1])>18||Math.abs(d[i+2]-bg[2])>18) hit++; } return tot?hit/tot:0; };
     let top=0; while(top<H-1 && rowBg(top)) top++;
-    let bot=H; while(bot>top+1 && rowBg(bot-1)) bot--;
-    // 배경 여백을 바짝 자른 뒤, 상하좌우에 넉넉한 여백을 배경색으로 다시 채움
-    // (격자는 그대로 두고 배경 여백만 추가 → 좌우 끝 바가 이미지 가장자리에 붙어 잘린 듯 보이던 것 해소)
+    // 하단: 마지막 주 빈 셀(격자선만 있는 아래쪽 여백)을 제거하기 위해 실제 '콘텐츠 밴드'
+    //  (일정 바/글자, 최소 2px 두께)의 맨 아래를 찾아 그 밑을 잘라냄. 1px 가로 격자선/테두리는
+    //  바로 윗행이 비어(frac 낮음) 밴드로 인정 안 됨 → 빈 셀 위의 얇은 선에 안 걸림.
+    let contentBottom=top+1;
+    for(let y=top+1;y<H;y++){ if(frac(y)>0.05 && frac(y-1)>0.025) contentBottom=y; }
+    let bot=Math.min(H, contentBottom+1);
+    if(bot<=top+1) bot=H;   // 안전장치: 콘텐츠 못 찾으면 원래대로
+    // 배경 여백을 바짝 자른 뒤, 상단에 약간의 여백을 배경색으로 다시 채움
     const contentH=Math.max(1, bot-top);
-    const padT=Math.round(W*0.0275), padB=0, padX=0;   // 하단·좌우 여백 없음(상단만 약간)
+    const padT=Math.round(W*0.0275), padB=Math.round(W*0.012), padX=0;   // 상단 약간·하단 최소·좌우 0
     const c2=document.createElement('canvas'); c2.width=W+padX*2; c2.height=contentH+padT+padB;
     const g=c2.getContext('2d');
     g.fillStyle='rgb('+bg[0]+','+bg[1]+','+bg[2]+')'; g.fillRect(0,0,c2.width,c2.height);
@@ -14098,8 +14105,8 @@ function _shareImageBlob(blob){
     try{ const _on=document.querySelector('#calMemberTabs .cal-member-tab.on');
       if(_on){ const _nm=_on.querySelector('.cal-member-tab-name'); const _isAll=_on.querySelector('.cal-member-tab-all')||(_nm&&_nm.textContent.trim()==='전체');
         if(!_isAll && _nm && _nm.textContent.trim()) _who=_nm.textContent.trim()+'님의'; } }catch(_){}
-    // 캡션: 앱 이름 문구 맨 위 → 얇은 구분선 → 일정(스토어 링크 없음, 좋으면 검색해서 유입)
-    const cap='우리 캘린더 · 함께 쓰는 공유 캘린더'
+    // 캡션: 앱 이름(대괄호+콜론) 맨 위 → 얇은 구분선 → 일정(스토어 링크 없음, 좋으면 검색해서 유입)
+    const cap='[우리 캘린더 : 함께 쓰는 공유 캘린더]'
       +'\n─────────────\n'
       +_who+' '+_calYear+'년 '+MONTH_NAMES[_calMonth]+' 일정 🗓️';
     let file=null; try{ file=new File([blob],fname,{type:'image/png'}); }catch(_){}
