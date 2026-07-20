@@ -14081,7 +14081,7 @@ function _trimBg(cv){
     // 배경 여백을 바짝 자른 뒤, 상하좌우에 넉넉한 여백을 배경색으로 다시 채움
     // (격자는 그대로 두고 배경 여백만 추가 → 좌우 끝 바가 이미지 가장자리에 붙어 잘린 듯 보이던 것 해소)
     const contentH=Math.max(1, bot-top);
-    const padT=Math.round(W*0.0275), padB=Math.round(W*0.03), padX=0;   // 좌우 여백 없음(실제 앱과 동일)
+    const padT=Math.round(W*0.0275), padB=0, padX=0;   // 하단·좌우 여백 없음(상단만 약간)
     const c2=document.createElement('canvas'); c2.width=W+padX*2; c2.height=contentH+padT+padB;
     const g=c2.getContext('2d');
     g.fillStyle='rgb('+bg[0]+','+bg[1]+','+bg[2]+')'; g.fillRect(0,0,c2.width,c2.height);
@@ -14098,10 +14098,12 @@ function _shareImageBlob(blob){
     try{ const _on=document.querySelector('#calMemberTabs .cal-member-tab.on');
       if(_on){ const _nm=_on.querySelector('.cal-member-tab-name'); const _isAll=_on.querySelector('.cal-member-tab-all')||(_nm&&_nm.textContent.trim()==='전체');
         if(!_isAll && _nm && _nm.textContent.trim()) _who=_nm.textContent.trim()+'님의'; } }catch(_){}
-    // 스토어 링크 둘 다 첨부(받는 사람이 iOS/갤럭시 각자 선택)
-    const cap='[우리 캘린더 : 함께 쓰는 공유 캘린더]\n\n'+_who+' '+_calYear+'년 '+MONTH_NAMES[_calMonth]+' 일정 🗓️'
-      +'\n\n📱 App Store: https://apps.apple.com/app/id6773996160'
-      +'\n🤖 Google Play: https://play.google.com/store/apps/details?id=app.vercel.first_uri_calender.twa';
+    // 캡션: 일정(주인공) 먼저 → 얇은 구분선 → 컴팩트 앱 홍보 푸터(https:// 생략해 깔끔)
+    const cap=_who+' '+_calYear+'년 '+MONTH_NAMES[_calMonth]+' 일정 🗓️'
+      +'\n\n─────────────'
+      +'\n우리 캘린더 · 함께 쓰는 공유 캘린더'
+      +'\n📱 apps.apple.com/app/id6773996160'
+      +'\n🤖 play.google.com/store/apps/details?id=app.vercel.first_uri_calender.twa';
     let file=null; try{ file=new File([blob],fname,{type:'image/png'}); }catch(_){}
     if(file && navigator.canShare && navigator.canShare({files:[file]})){
       try{ await navigator.share({ files:[file], title:'이 달 일정', text:cap }); resolve(); return; }
