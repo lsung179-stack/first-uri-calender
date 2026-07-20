@@ -14098,7 +14098,7 @@ function _shareImageBlob(blob){
     try{ const _on=document.querySelector('#calMemberTabs .cal-member-tab.on');
       if(_on){ const _nm=_on.querySelector('.cal-member-tab-name'); const _isAll=_on.querySelector('.cal-member-tab-all')||(_nm&&_nm.textContent.trim()==='전체');
         if(!_isAll && _nm && _nm.textContent.trim()) _who=_nm.textContent.trim()+'님의'; } }catch(_){}
-    const cap=_who+' '+_calYear+'년 '+MONTH_NAMES[_calMonth]+' 일정 🗓️';
+    const cap=_who+' '+_calYear+'년 '+MONTH_NAMES[_calMonth]+' 일정 🗓️\n\n[우리 캘린더 : 함께 쓰는 공유 캘린더]';
     let file=null; try{ file=new File([blob],fname,{type:'image/png'}); }catch(_){}
     if(file && navigator.canShare && navigator.canShare({files:[file]})){
       try{ await navigator.share({ files:[file], title:'이 달 일정', text:cap }); resolve(); return; }
