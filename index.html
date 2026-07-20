@@ -664,7 +664,7 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 
 /* 월/년 타이틀 */
 .cal-month-row{display:flex;align-items:center;justify-content:center;gap:16px;padding:6px 0 3px;position:relative}
-.cal-month-arrow{background:none;border:none;cursor:pointer;font-size:22px;color:var(--sub);font-family:inherit;font-weight:300;padding:6px 10px;line-height:1}
+.cal-month-arrow{background:none;border:none;cursor:pointer;font-size:22px;color:var(--sub);font-family:inherit;font-weight:300;padding:6px 4px;line-height:1}
 .cal-month-arrow:active{opacity:.5}
 .cal-month-title{display:flex;flex-direction:column;align-items:center;cursor:pointer;min-width:90px}
 .cal-month-year{font-size:11px;color:var(--sub);letter-spacing:1px;margin-bottom:1px}
@@ -13996,41 +13996,62 @@ function _captureCalendarImage(){
       if(typeof html2canvas!=='function'){ resolve(null); return; }
       const el=document.getElementById('calendarScreen');
       if(!el){ resolve(null); return; }
-      // 캡처에 불필요한 오버레이 잠시 숨김
-      const hidden=[];
-      ['calInviteNudge','calFab','roomSealPicker'].forEach(id=>{ const e=document.getElementById(id); if(e && e.style.display!=='none'){ hidden.push([e,e.style.display]); e.style.display='none'; } });
+      let bg=''; try{ bg=getComputedStyle(document.body).backgroundColor||''; }catch(_){}
+      if(!bg || bg==='rgba(0, 0, 0, 0)' || bg==='transparent') bg='#f7f0e0';
       let cv=null;
       try{
-        let bg=''; try{ bg=getComputedStyle(document.body).backgroundColor||''; }catch(_){}
-        if(!bg || bg==='rgba(0, 0, 0, 0)' || bg==='transparent') bg='#f7f0e0';
-        cv=await html2canvas(el,{ backgroundColor:bg, scale:Math.min(2.5, Math.max(2,(window.devicePixelRatio||2))), useCORS:true, logging:false, scrollX:0, scrollY:-window.scrollY });
+        cv=await html2canvas(el,{ backgroundColor:bg, scale:Math.min(2.5, Math.max(2,(window.devicePixelRatio||2))),
+          useCORS:true, logging:false, scrollX:0, scrollY:-window.scrollY,
+          onclone:(doc)=>{ try{ _prepMonthCapture(doc); }catch(_){} } });
       }catch(_){}
-      // 콘텐츠(멤버탭/월줄~그리드 하단)만 남기고 위아래 여백 크롭
-      let out=cv;
-      try{
-        if(cv){
-          const scr=el.getBoundingClientRect();
-          const parts=[document.getElementById('calMemberTabs'), el.querySelector('.cal-month-row'), document.getElementById('calGrid')]
-            .filter(x=>x && x.offsetParent!==null);
-          if(parts.length){
-            let top=Infinity, bot=-Infinity;
-            parts.forEach(p=>{ const r=p.getBoundingClientRect(); top=Math.min(top,r.top); bot=Math.max(bot,r.bottom); });
-            const sc=cv.width/scr.width;
-            const y0=Math.max(0, Math.round((top-scr.top)*sc));
-            const y1=Math.min(cv.height, Math.round((bot-scr.top)*sc));
-            if(y1-y0>40 && (y0>2 || y1<cv.height-2)){
-              const c2=document.createElement('canvas'); c2.width=cv.width; c2.height=y1-y0;
-              c2.getContext('2d').drawImage(cv,0,y0,cv.width,y1-y0,0,0,cv.width,y1-y0);
-              out=c2;
-            }
-          }
-        }
-      }catch(_){}
-      hidden.forEach(([e,d])=>{ e.style.display=d; });
-      if(!out){ resolve(null); return; }
+      if(!cv){ resolve(null); return; }
+      const out=_trimBg(cv);   // 위아래 배경 여백 자동 트림
       out.toBlob(b=>resolve(b),'image/png');
     }catch(_){ resolve(null); }
   });
+}
+/* 캡처용 클론 DOM 정리 (실제 화면은 그대로) —
+   버튼·화살표 숨김 / 상단 프로필은 '누구의 일정'만(활성 멤버) / 년월 한 줄 / 이모지 제거 */
+function _prepMonthCapture(doc){
+  const S='#calendarScreen ';
+  ['calInviteNudge','calFab','roomSealPicker','calShareBtn','calImportBtn','todayBtn'].forEach(id=>{ const e=doc.getElementById(id); if(e) e.style.display='none'; });
+  doc.querySelectorAll(S+'.cal-search-btn, '+S+'.cal-month-arrow').forEach(e=>{ e.style.display='none'; });
+  // 년, 월을 한 줄로 (양쪽 화살표 없이)
+  const title=doc.querySelector(S+'.cal-month-title');
+  if(title){
+    const y=((title.querySelector('.cal-month-year')||{}).textContent||'').trim();
+    const mn=((title.querySelector('.cal-month-name')||{}).textContent||'').trim();
+    title.style.flexDirection='row'; title.style.gap='8px'; title.style.alignItems='baseline'; title.style.minWidth='0';
+    title.innerHTML='<div class="cal-month-name">'+(y?y+' ':'')+mn+'</div>';
+  }
+  // 상단 멤버 프로필: 현재 선택된 것(누구의 일정)만 표시
+  const mt=doc.getElementById('calMemberTabs');
+  if(mt){ const on=mt.querySelector('.cal-member-tab.on'); if(on){ Array.prototype.slice.call(mt.children).forEach(ch=>{ if(ch!==on) ch.style.display='none'; }); } }
+  // 이모지 제거 (일정 텍스트가 이모지에 가려 안 보이는 문제)
+  const grid=doc.getElementById('calGrid'); if(grid) _stripEmoji(grid);
+}
+function _stripEmoji(root){
+  try{
+    const re=/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}\u{2B00}-\u{2BFF}\u{FE00}-\u{FE0F}\u{200D}\u{2190}-\u{21FF}\u{1F1E6}-\u{1F1FF}]/gu;
+    const w=(root.ownerDocument||document).createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+    const nodes=[]; let n; while(n=w.nextNode()) nodes.push(n);
+    nodes.forEach(t=>{ const v=t.nodeValue; if(!v) return; const nv=v.replace(re,'').replace(/\s{2,}/g,' ').replace(/^\s+/,''); if(nv!==v) t.nodeValue=nv; });
+  }catch(_){}
+}
+/* 캔버스 위/아래의 균일한 배경 행을 잘라 콘텐츠만 남김(클론 레이아웃 변화에 안전) */
+function _trimBg(cv){
+  try{
+    const W=cv.width, H=cv.height, ctx=cv.getContext('2d');
+    const d=ctx.getImageData(0,0,W,H).data;
+    const bg=[d[(2*W+2)*4],d[(2*W+2)*4+1],d[(2*W+2)*4+2]];
+    const xs=[W*0.15|0,W*0.35|0,W*0.5|0,W*0.65|0,W*0.85|0];
+    const rowBg=(y)=>{ for(let k=0;k<xs.length;k++){ const i=(y*W+xs[k])*4; if(Math.abs(d[i]-bg[0])>12||Math.abs(d[i+1]-bg[1])>12||Math.abs(d[i+2]-bg[2])>12) return false; } return true; };
+    let top=0; while(top<H-1 && rowBg(top)) top++;
+    let bot=H; while(bot>top+1 && rowBg(bot-1)) bot--;
+    top=Math.max(0,top-8); bot=Math.min(H,bot+10);
+    if(top>0 || bot<H){ const h=bot-top; const c2=document.createElement('canvas'); c2.width=W; c2.height=h; c2.getContext('2d').drawImage(cv,0,top,W,h,0,0,W,h); return c2; }
+  }catch(_){}
+  return cv;
 }
 function _shareImageBlob(blob){
   return new Promise(async(resolve)=>{
