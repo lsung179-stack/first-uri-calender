@@ -35,6 +35,14 @@ public class TodayWidgetProvider extends AppWidgetProvider {
         String eff = filter != null ? filter : myUid;
         String today = WidgetCommon.todayKey();
 
+        // 좌측 상단 방 씰 (탭=방 전환)
+        int sealId = WidgetCommon.resId(context, "tw_seal", "id");
+        android.graphics.Bitmap seal = WidgetCommon.sealBitmap(room);
+        if (seal == null) seal = WidgetCommon.circleBitmap(null, 0xFF566F8F, room != null ? room.name : "방", WidgetCommon.dp(context, 22));
+        if (seal != null) rv.setImageViewBitmap(sealId, seal);
+        rv.setOnClickPendingIntent(sealId,
+            WidgetCommon.bcast(context, WidgetCommon.RC_CYCLE, WidgetCommon.ACTION_CYCLE_ROOM, Integer.MIN_VALUE, null));
+
         // 새로고침 + ＋추가
         rv.setOnClickPendingIntent(WidgetCommon.resId(context, "tw_refresh", "id"),
             WidgetCommon.bcast(context, WidgetCommon.RC_REFRESH, WidgetCommon.ACTION_REFRESH, Integer.MIN_VALUE, null));
@@ -64,11 +72,12 @@ public class TodayWidgetProvider extends AppWidgetProvider {
             }
         }
 
-        // 카운트 배지
+        // 카운트 배지 (일정 + 할일 합산)
         int cId = WidgetCommon.resId(context, "tw_count", "id");
-        if (!todays.isEmpty()) {
+        int totalCnt = todays.size() + todos.size();
+        if (totalCnt > 0) {
             rv.setViewVisibility(cId, android.view.View.VISIBLE);
-            rv.setTextViewText(cId, String.valueOf(todays.size()));
+            rv.setTextViewText(cId, String.valueOf(totalCnt));
         } else {
             rv.setViewVisibility(cId, android.view.View.GONE);
         }

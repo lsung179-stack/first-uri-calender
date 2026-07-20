@@ -479,10 +479,14 @@ struct TodayView: View {
     var todaysTodos: [WGTodo] { room.todos.filter { $0.date == todayStr() && todoVisibleFor($0, eff) } }
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            HStack(spacing: 4) {
+            HStack(spacing: 5) {
+                // 좌측 상단 방 프로필 씰 — 탭하면 다음 방으로 전환
+                Button(intent: CycleRoomIntent()) {
+                    SealIcon(seal: room.seal, name: room.name, pngDataURL: room.sealPng, size: 20)
+                }.buttonStyle(.plain)
                 Text("오늘").font(.system(size: 15, weight: .black)).foregroundColor(.terra)
-                if !todays.isEmpty {
-                    Text("\(todays.count)").font(.system(size: 10, weight: .black)).foregroundColor(.cream)
+                if todays.count + todaysTodos.count > 0 {
+                    Text("\(todays.count + todaysTodos.count)").font(.system(size: 10, weight: .black)).foregroundColor(.cream)
                         .padding(.horizontal, 5).background(Capsule().fill(Color.terra))
                 }
                 Spacer()
