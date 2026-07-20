@@ -649,18 +649,53 @@ function renderPush(m){
       <textarea id="pushBody" placeholder="알림 내용" rows="3" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid var(--line,#ddd);border-radius:10px;font-size:14px;resize:vertical;margin-bottom:9px"></textarea>
       <input id="pushUrl" placeholder="열 링크(선택, 예: /?room=아이디)" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line,#ddd);border-radius:10px;font-size:13px;margin-bottom:12px" />
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <select id="pushTarget" style="padding:10px 12px;border:1px solid var(--line,#ddd);border-radius:10px;font-size:14px">
+        <select id="pushTarget" onchange="onPushTargetChange()" style="padding:10px 12px;border:1px solid var(--line,#ddd);border-radius:10px;font-size:14px">
           <option value="me">나에게만 (테스트)</option>
+          <option value="user">특정 사용자</option>
           <option value="all">전체 사용자</option>
         </select>
         <button id="pushSendBtn" class="btn-solid" onclick="sendAdminPush()">푸시 보내기</button>
       </div>
+      <div id="pushUserRow" style="display:none;margin-top:10px">
+        <input id="pushUser" list="pushUserList" placeholder="이름 또는 이메일로 검색해 선택" oninput="onPushUserPick()" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line,#ddd);border-radius:10px;font-size:14px" />
+        <datalist id="pushUserList"></datalist>
+        <div id="pushUserHint" style="font-size:12px;color:var(--sub,#888);margin-top:5px">목록에서 사용자를 선택하세요</div>
+      </div>
       <div id="pushResult" style="display:none;margin-top:14px;padding:12px 14px;background:var(--soft,#f6f2ea);border-radius:10px;font-size:13px;line-height:1.6"></div>
     </div>
     <div class="page-sub" style="margin-top:14px;max-width:560px">
-      · <b>나에게만</b>: 내 기기에만 보내 테스트 · <b>전체 사용자</b>: 모든 회원에게 발송<br>
+      · <b>나에게만</b>: 내 기기에만 보내 테스트 · <b>특정 사용자</b>: 한 명에게만 발송 · <b>전체 사용자</b>: 모든 회원<br>
       · 결과의 <b>앱(FCM) N/N</b> = 안드로이드 전송 성공 수. <b>FCM 시크릿 경고</b>가 뜨면 서버 시크릿 미설정이에요.
     </div>`;
+}
+/* 특정 사용자 선택 — admin_users_detailed 회원 목록으로 datalist 채움 */
+let _pushUserMap={};
+async function loadPushUsers(){
+  try{
+    let rows=(_cache&&_cache.users)||[];
+    if(!rows.length){ const {data}=await supa.rpc('admin_users_detailed'); rows=(data&&data.rows)||[]; if(_cache)_cache.users=rows; }
+    _pushUserMap={};
+    const dl=document.getElementById('pushUserList'); if(!dl)return;
+    dl.innerHTML=rows.map(u=>{
+      const email=u.email||''; const idp=String(u.id||'').slice(0,8);
+      const label=(u.name||'이름없음')+(email?(' ('+email+')'):(' ['+idp+']'));
+      _pushUserMap[label]={id:u.id, has_push:u.has_push};
+      return '<option value="'+esc(label)+'"></option>';
+    }).join('');
+  }catch(_){}
+}
+function onPushTargetChange(){
+  const t=document.getElementById('pushTarget').value;
+  const row=document.getElementById('pushUserRow');
+  if(row) row.style.display=(t==='user')?'':'none';
+  if(t==='user') loadPushUsers();
+}
+function onPushUserPick(){
+  const v=document.getElementById('pushUser').value;
+  const hint=document.getElementById('pushUserHint'); if(!hint)return;
+  const u=_pushUserMap[v];
+  if(u){ hint.textContent=u.has_push?'✓ 이 사용자에게 보냅니다 (푸시 등록됨)':'⚠ 이 사용자는 등록된 알림 기기가 없어요'; hint.style.color=u.has_push?'#2e7d32':'#c0392b'; }
+  else { hint.textContent='목록에서 사용자를 선택하세요'; hint.style.color='var(--sub,#888)'; }
 }
 /* 관리자 푸시 발송(공지·이벤트) — admin-broadcast Edge Function 호출 + 도달 진단 표시 */
 async function sendAdminPush(){
@@ -671,11 +706,18 @@ async function sendAdminPush(){
   const res=document.getElementById('pushResult');
   const btn=document.getElementById('pushSendBtn');
   if(!title||!body){toast('제목과 내용을 입력해 주세요');return;}
+  let extra={};
+  if(target==='user'){
+    const v=(document.getElementById('pushUser').value||'');
+    const u=_pushUserMap[v];
+    if(!u){ toast('보낼 사용자를 목록에서 선택해 주세요'); return; }
+    extra={user_ids:[u.id]};
+  }
   if(target==='all' && !confirm('전체 사용자에게 푸시 알림을 보낼까요?'))return;
   btn.disabled=true; btn.textContent='보내는 중…';
   res.style.display=''; res.innerHTML='<span style="color:var(--sub,#888)">발송 중…</span>';
   try{
-    const {data,error}=await supa.functions.invoke('admin-broadcast',{body:{title,body,target,url,inApp:false}});
+    const {data,error}=await supa.functions.invoke('admin-broadcast',{body:Object.assign({title,body,target,url,inApp:false},extra)});
     if(error) throw error;
     const d=data||{};
     let html='';
