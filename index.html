@@ -3002,6 +3002,8 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     </div>
     <button class="cal-month-arrow" onclick="nextMonth()">›</button>
     <div class="cal-month-right">
+      <!-- 이 달 일정 공유(카톡 등) -->
+      <button class="cal-import-btn" id="calShareBtn" onclick="shareMonthKakao()" aria-label="이 달 일정 공유" title="이 달 일정 공유"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></button>
       <!-- 다른 방 일정 가져오기 -->
       <button class="cal-import-btn" id="calImportBtn" onclick="openImportEvents()" aria-label="다른 방 일정 가져오기" title="다른 방 일정 가져오기"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
       <button class="cal-today-chip" id="todayBtn" onclick="goToday()">오늘</button>
@@ -13861,6 +13863,61 @@ function shareKakao(){
     copyShareText(text);
   }
 }
+/* ─── 현재 보고 있는 달의 일정을 텍스트로 만들어 카톡 등으로 공유 ───
+   _getDayEventsRaw(달력 셀과 동일 소스: 반복·생일 포함)로 각 날짜 일정을 모으고,
+   함께 일정 복사본은 제목+시간으로 dedup, 연속 같은 제목은 'M~M일' 기간으로 묶는다.
+   Web Share API(모바일=카톡 포함 공유 시트) → 없으면 클립보드 복사(shareKakao와 동일 패턴). */
+function _buildMonthShareText(){
+  const DOWK=['일','월','화','수','목','금','토'];
+  const dim=daysInMonth(_calYear,_calMonth);
+  const perDay={};
+  for(let d=1;d<=dim;d++){
+    const dk=dateKey(_calYear,_calMonth,d);
+    let raw=[]; try{ raw=_getDayEventsRaw(dk)||[]; }catch(_){ raw=[]; }
+    const seen=new Set(); const items=[];
+    raw.forEach(e=>{
+      const t=((e&&e.title)||'').trim(); if(!t) return;
+      const tm=((e&&e.time)||'').toString().trim();
+      const k=t+'|'+tm; if(seen.has(k)) return; seen.add(k);
+      items.push({title:t,time:tm});
+    });
+    if(items.length) perDay[d]=items;
+  }
+  // 연속 같은 제목 → 기간으로 묶기 (여행/연속 휴무 등이 매일 반복 나열되지 않게)
+  const titleDays={};
+  for(let d=1;d<=dim;d++)(perDay[d]||[]).forEach(it=>{ (titleDays[it.title]=titleDays[it.title]||[]).push(d); });
+  const suppress={}, rangeStart={};
+  Object.keys(titleDays).forEach(title=>{
+    const days=[...new Set(titleDays[title])].sort((a,b)=>a-b);
+    let i=0;
+    while(i<days.length){
+      let j=i; while(j+1<days.length && days[j+1]===days[j]+1) j++;
+      if(j>i){ for(let k=i;k<=j;k++) suppress[days[k]+'|'+title]=true; (rangeStart[days[i]]=rangeStart[days[i]]||[]).push({title,s:days[i],e:days[j]}); }
+      i=j+1;
+    }
+  });
+  const lines=[];
+  for(let d=1;d<=dim;d++){
+    const parts=[];
+    (rangeStart[d]||[]).forEach(r=>parts.push(r.title+' ('+r.s+'~'+r.e+'일)'));
+    (perDay[d]||[]).forEach(it=>{ if(suppress[d+'|'+it.title]) return; parts.push(it.time?(it.time+' '+it.title):it.title); });
+    if(parts.length){ const dow=DOWK[parseDateKey(dateKey(_calYear,_calMonth,d)).getDay()]; lines.push(d+'일('+dow+') '+parts.join(' · ')); }
+  }
+  const roomName=(_currentRoom&&_currentRoom.name)||'우리 캘린더';
+  const header='📅 '+roomName+' · '+_calYear+'년 '+MONTH_NAMES[_calMonth]+' 일정';
+  return lines.length ? header+'\n\n'+lines.join('\n') : header+'\n\n등록된 일정이 없어요.';
+}
+function shareMonthKakao(){
+  if(!_currentRoom){ try{ toast&&toast('방에 입장한 뒤 공유할 수 있어요'); }catch(_){}
+    return; }
+  const text=_buildMonthShareText();
+  if(navigator.share){
+    navigator.share({ title:'이 달 일정', text:text }).catch(_=>{ copyShareText(text); });
+  }else{
+    copyShareText(text);
+  }
+}
+window.shareMonthKakao=shareMonthKakao;
 function copyShareText(text){
   if(navigator.clipboard&&navigator.clipboard.writeText){
     navigator.clipboard.writeText(text).then(()=>{
