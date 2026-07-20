@@ -307,6 +307,7 @@ const TABS=[
   {k:'subs',icon:'💳',label:'구독'},
   {k:'orders',icon:'📦',label:'주문'},
   {k:'announce',icon:'📢',label:'공지'},
+  {k:'push',icon:'📨',label:'알림'},
   {k:'users',icon:'👥',label:'회원'},
   {k:'errors',icon:'🐞',label:'에러'},
   {k:'feedback',icon:'💬',label:'피드백'},
@@ -400,6 +401,7 @@ function switchTab(k){
   else if(k==='subs')renderSubs(m);
   else if(k==='orders')renderOrders(m);
   else if(k==='announce')renderAnnounce(m);
+  else if(k==='push')renderPush(m);
   else if(k==='users')renderUsers(m);
   else if(k==='errors')renderErrors(m);
   else if(k==='feedback')renderFeedback(m);
@@ -576,21 +578,6 @@ async function renderAnnounce(m){
   if(error){m.innerHTML=errBox(error);return;}
   _cache.ann=data||[];
   m.innerHTML=`
-    <div class="page-title">푸시 알림 보내기</div>
-    <div class="page-sub">기기 알림(공지·이벤트)을 직접 발송해요 · 갤럭시 도달 확인/테스트에도 사용</div>
-    <div class="ccard" style="margin-bottom:22px">
-      <input id="pushTitle" placeholder="알림 제목" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line,#ddd);border-radius:10px;font-size:15px;margin-bottom:8px" />
-      <textarea id="pushBody" placeholder="알림 내용" rows="2" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line,#ddd);border-radius:10px;font-size:14px;resize:vertical;margin-bottom:8px"></textarea>
-      <input id="pushUrl" placeholder="열 링크(선택, 예: /?room=아이디)" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line,#ddd);border-radius:10px;font-size:13px;margin-bottom:10px" />
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <select id="pushTarget" style="padding:9px 12px;border:1px solid var(--line,#ddd);border-radius:10px;font-size:14px">
-          <option value="me">나에게만 (테스트)</option>
-          <option value="all">전체 사용자</option>
-        </select>
-        <button id="pushSendBtn" class="btn-solid" onclick="sendAdminPush()">푸시 보내기</button>
-      </div>
-      <div id="pushResult" style="display:none;margin-top:12px;padding:11px 13px;background:var(--soft,#f6f2ea);border-radius:10px;font-size:13px;line-height:1.6"></div>
-    </div>
     <div class="page-title">공지사항</div>
     <div class="page-sub">앱 종 아이콘에 표시됩니다 · 팝업 옵션을 켜면 앱 실행 시 자동으로 떠요</div>
     <div class="head-row">
@@ -651,6 +638,29 @@ async function delAnn(id){
   const {error}=await supa.from('announcements').delete().eq('id',id);
   if(error){toast('삭제 실패');return;}
   toast('공지를 삭제했어요');renderAnnounce(document.getElementById('main'));
+}
+/* 알림(푸시) 발송 탭 — 기기 알림을 직접 보내고 도달 진단 확인 */
+function renderPush(m){
+  m.innerHTML=`
+    <div class="page-title">알림 보내기</div>
+    <div class="page-sub">기기 푸시 알림(공지·이벤트)을 직접 발송해요 · 갤럭시 도달 확인/테스트에도 사용</div>
+    <div class="ccard" style="max-width:560px">
+      <input id="pushTitle" placeholder="알림 제목" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid var(--line,#ddd);border-radius:10px;font-size:15px;margin-bottom:9px" />
+      <textarea id="pushBody" placeholder="알림 내용" rows="3" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid var(--line,#ddd);border-radius:10px;font-size:14px;resize:vertical;margin-bottom:9px"></textarea>
+      <input id="pushUrl" placeholder="열 링크(선택, 예: /?room=아이디)" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line,#ddd);border-radius:10px;font-size:13px;margin-bottom:12px" />
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select id="pushTarget" style="padding:10px 12px;border:1px solid var(--line,#ddd);border-radius:10px;font-size:14px">
+          <option value="me">나에게만 (테스트)</option>
+          <option value="all">전체 사용자</option>
+        </select>
+        <button id="pushSendBtn" class="btn-solid" onclick="sendAdminPush()">푸시 보내기</button>
+      </div>
+      <div id="pushResult" style="display:none;margin-top:14px;padding:12px 14px;background:var(--soft,#f6f2ea);border-radius:10px;font-size:13px;line-height:1.6"></div>
+    </div>
+    <div class="page-sub" style="margin-top:14px;max-width:560px">
+      · <b>나에게만</b>: 내 기기에만 보내 테스트 · <b>전체 사용자</b>: 모든 회원에게 발송<br>
+      · 결과의 <b>앱(FCM) N/N</b> = 안드로이드 전송 성공 수. <b>FCM 시크릿 경고</b>가 뜨면 서버 시크릿 미설정이에요.
+    </div>`;
 }
 /* 관리자 푸시 발송(공지·이벤트) — admin-broadcast Edge Function 호출 + 도달 진단 표시 */
 async function sendAdminPush(){
