@@ -25,7 +25,7 @@ echo "✅ 위젯 리소스 복사 완료"
 MANIFEST="$APP/AndroidManifest.xml"
 if ! grep -q "UriCalendarWidgetProvider" "$MANIFEST"; then
   read -r -d '' BLOCK <<'XML' || true
-    <receiver android:name=".widget.UriCalendarWidgetProvider" android:exported="false">
+    <receiver android:name=".widget.UriCalendarWidgetProvider" android:exported="false" android:label="우리 캘린더 · 월">
         <intent-filter>
             <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             <action android:name="com.lsung.uricalendar.widget.REFRESH" />
@@ -38,19 +38,19 @@ if ! grep -q "UriCalendarWidgetProvider" "$MANIFEST"; then
         </intent-filter>
         <meta-data android:name="android.appwidget.provider" android:resource="@xml/uri_widget_month_info" />
     </receiver>
-    <receiver android:name=".widget.TwoWeekWidgetProvider" android:exported="false">
+    <receiver android:name=".widget.TwoWeekWidgetProvider" android:exported="false" android:label="우리 캘린더 · 2주">
         <intent-filter>
             <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
         </intent-filter>
         <meta-data android:name="android.appwidget.provider" android:resource="@xml/uri_widget_twoweek_info" />
     </receiver>
-    <receiver android:name=".widget.TodayWidgetProvider" android:exported="false">
+    <receiver android:name=".widget.TodayWidgetProvider" android:exported="false" android:label="우리 캘린더 · 오늘">
         <intent-filter>
             <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
         </intent-filter>
         <meta-data android:name="android.appwidget.provider" android:resource="@xml/uri_widget_today_info" />
     </receiver>
-    <receiver android:name=".widget.ComboWidgetProvider" android:exported="false">
+    <receiver android:name=".widget.ComboWidgetProvider" android:exported="false" android:label="우리 캘린더 · 콤보">
         <intent-filter>
             <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
         </intent-filter>

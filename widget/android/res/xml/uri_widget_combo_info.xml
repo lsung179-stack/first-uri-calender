@@ -8,6 +8,7 @@
     android:minResizeHeight="180dp"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_combo"
+    android:previewLayout="@layout/widget_combo"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:description="@string/app_name" />
