@@ -14081,7 +14081,7 @@ function _trimBg(cv){
     // 배경 여백을 바짝 자른 뒤, 상하좌우에 넉넉한 여백을 배경색으로 다시 채움
     // (격자는 그대로 두고 배경 여백만 추가 → 좌우 끝 바가 이미지 가장자리에 붙어 잘린 듯 보이던 것 해소)
     const contentH=Math.max(1, bot-top);
-    const padT=Math.round(W*0.0275), padB=Math.round(W*0.03), padX=Math.round(W*0.018);
+    const padT=Math.round(W*0.0275), padB=Math.round(W*0.03), padX=0;   // 좌우 여백 없음(실제 앱과 동일)
     const c2=document.createElement('canvas'); c2.width=W+padX*2; c2.height=contentH+padT+padB;
     const g=c2.getContext('2d');
     g.fillStyle='rgb('+bg[0]+','+bg[1]+','+bg[2]+')'; g.fillRect(0,0,c2.width,c2.height);
