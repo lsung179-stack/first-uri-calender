@@ -14077,7 +14077,7 @@ function _captureCalendarImage(){
       if(!bg || bg==='rgba(0, 0, 0, 0)' || bg==='transparent') bg='#f7f0e0';
       let cv=null;
       try{
-        cv=await html2canvas(el,{ backgroundColor:bg, scale:Math.min(2.5, Math.max(2,(window.devicePixelRatio||2))),
+        cv=await html2canvas(el,{ backgroundColor:bg, scale:Math.min(4, (window.devicePixelRatio||2)+1.5),   // 공유 이미지 해상도 최대(기존 2.5 → 3.5~4배)
           useCORS:true, logging:false, scrollX:0, scrollY:-window.scrollY,
           onclone:(doc)=>{ try{ _prepMonthCapture(doc); }catch(_){} } });
       }catch(_){}
