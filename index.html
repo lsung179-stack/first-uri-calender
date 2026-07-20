@@ -13980,18 +13980,72 @@ function _renderMonthImage(){
 async function shareMonthImage(){
   if(!_currentRoom){ if(typeof toast==='function') toast('방에 입장한 뒤 공유할 수 있어요'); return; }
   if(typeof toast==='function') toast('이미지 만드는 중…');
-  let blob=null; try{ blob=await _renderMonthImage(); }catch(_){}
+  // 1순위: html2canvas로 '실제 캘린더 화면' 그대로 캡처(멤버 필터·씰 등 화면 상태 그대로).
+  let blob=null; try{ blob=await _captureCalendarImage(); }catch(_){}
+  // 폴백: html2canvas 미로드/실패 시 직접 그린 달력 이미지
+  if(!blob){ try{ blob=await _renderMonthImage(); }catch(_){} }
   if(!blob){ if(typeof toast==='function') toast('이미지 생성 실패 — 텍스트로 공유할게요'); return shareMonthKakao(); }
-  const fname=_calYear+'년'+(_calMonth+1)+'월_일정.png';
-  const cap='📅 '+((_currentRoom&&_currentRoom.name)||'우리 캘린더')+' · '+_calYear+'년 '+MONTH_NAMES[_calMonth]+' 일정';
-  let file=null; try{ file=new File([blob],fname,{type:'image/png'}); }catch(_){}
-  if(file && navigator.canShare && navigator.canShare({files:[file]})){
-    try{ await navigator.share({ files:[file], title:'이 달 일정', text:cap }); return; }
-    catch(e){ if(e && e.name==='AbortError') return; }
-  }
-  // 폴백: 이미지 미리보기 오버레이(길게 눌러 저장)
-  try{ _showMonthImagePreview(URL.createObjectURL(blob), fname); }
-  catch(_){ if(typeof toast==='function') toast('공유를 지원하지 않는 기기예요'); }
+  return _shareImageBlob(blob);
+}
+/* 실제 캘린더 화면(#calendarScreen: 멤버탭+월줄(씰)+요일+그리드)을 html2canvas로 캡처.
+   하단 탭바는 형제 요소라 자동 제외. FAB·초대배너·씰팝업만 잠시 숨김.
+   멤버 필터는 현재 렌더된 화면 그대로라 '전체=전체일정 / 멤버선택=그 멤버 일정'이 자동 반영. */
+function _captureCalendarImage(){
+  return new Promise(async(resolve)=>{
+    try{
+      if(typeof html2canvas!=='function'){ resolve(null); return; }
+      const el=document.getElementById('calendarScreen');
+      if(!el){ resolve(null); return; }
+      // 캡처에 불필요한 오버레이 잠시 숨김
+      const hidden=[];
+      ['calInviteNudge','calFab','roomSealPicker'].forEach(id=>{ const e=document.getElementById(id); if(e && e.style.display!=='none'){ hidden.push([e,e.style.display]); e.style.display='none'; } });
+      let cv=null;
+      try{
+        let bg=''; try{ bg=getComputedStyle(document.body).backgroundColor||''; }catch(_){}
+        if(!bg || bg==='rgba(0, 0, 0, 0)' || bg==='transparent') bg='#f7f0e0';
+        cv=await html2canvas(el,{ backgroundColor:bg, scale:Math.min(2.5, Math.max(2,(window.devicePixelRatio||2))), useCORS:true, logging:false, scrollX:0, scrollY:-window.scrollY });
+      }catch(_){}
+      // 콘텐츠(멤버탭/월줄~그리드 하단)만 남기고 위아래 여백 크롭
+      let out=cv;
+      try{
+        if(cv){
+          const scr=el.getBoundingClientRect();
+          const parts=[document.getElementById('calMemberTabs'), el.querySelector('.cal-month-row'), document.getElementById('calGrid')]
+            .filter(x=>x && x.offsetParent!==null);
+          if(parts.length){
+            let top=Infinity, bot=-Infinity;
+            parts.forEach(p=>{ const r=p.getBoundingClientRect(); top=Math.min(top,r.top); bot=Math.max(bot,r.bottom); });
+            const sc=cv.width/scr.width;
+            const y0=Math.max(0, Math.round((top-scr.top)*sc));
+            const y1=Math.min(cv.height, Math.round((bot-scr.top)*sc));
+            if(y1-y0>40 && (y0>2 || y1<cv.height-2)){
+              const c2=document.createElement('canvas'); c2.width=cv.width; c2.height=y1-y0;
+              c2.getContext('2d').drawImage(cv,0,y0,cv.width,y1-y0,0,0,cv.width,y1-y0);
+              out=c2;
+            }
+          }
+        }
+      }catch(_){}
+      hidden.forEach(([e,d])=>{ e.style.display=d; });
+      if(!out){ resolve(null); return; }
+      out.toBlob(b=>resolve(b),'image/png');
+    }catch(_){ resolve(null); }
+  });
+}
+function _shareImageBlob(blob){
+  return new Promise(async(resolve)=>{
+    const fname=_calYear+'년'+(_calMonth+1)+'월_일정.png';
+    const cap='📅 '+((_currentRoom&&_currentRoom.name)||'우리 캘린더')+' · '+_calYear+'년 '+MONTH_NAMES[_calMonth]+' 일정';
+    let file=null; try{ file=new File([blob],fname,{type:'image/png'}); }catch(_){}
+    if(file && navigator.canShare && navigator.canShare({files:[file]})){
+      try{ await navigator.share({ files:[file], title:'이 달 일정', text:cap }); resolve(); return; }
+      catch(e){ if(e && e.name==='AbortError'){ resolve(); return; } }
+    }
+    // 폴백: 이미지 미리보기 오버레이(길게 눌러 저장)
+    try{ _showMonthImagePreview(URL.createObjectURL(blob), fname); }
+    catch(_){ if(typeof toast==='function') toast('공유를 지원하지 않는 기기예요'); }
+    resolve();
+  });
 }
 function _showMonthImagePreview(url, fname){
   const old=document.getElementById('monthImgOverlay'); if(old) old.remove();
