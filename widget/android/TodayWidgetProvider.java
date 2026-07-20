@@ -43,14 +43,11 @@ public class TodayWidgetProvider extends AppWidgetProvider {
         rv.setOnClickPendingIntent(sealId,
             WidgetCommon.bcast(context, WidgetCommon.RC_CYCLE, WidgetCommon.ACTION_CYCLE_ROOM, Integer.MIN_VALUE, null));
 
-        // 새로고침 + ＋추가 (새로고침 중이면 아이콘 강조 = 깜빡임 피드백)
+        // 새로고침 (새로고침 중이면 아이콘 강조 = 깜빡임 피드백)
         rv.setTextColor(WidgetCommon.resId(context, "tw_refresh", "id"),
             WidgetCommon.isFlash(context) ? 0xFFC0503F : 0xFF8A6C52);
         rv.setOnClickPendingIntent(WidgetCommon.resId(context, "tw_refresh", "id"),
             WidgetCommon.bcast(context, WidgetCommon.RC_REFRESH, WidgetCommon.ACTION_REFRESH, Integer.MIN_VALUE, null));
-        rv.setOnClickPendingIntent(WidgetCommon.resId(context, "tw_add", "id"),
-            WidgetCommon.openScheme(context, WidgetCommon.RC_ADD,
-                "com.lsung.uricalendar://share" + (room != null ? "?room=" + room.id : "")));
         // 헤더/전체 탭 = 앱 열기(오늘)
         rv.setOnClickPendingIntent(WidgetCommon.resId(context, "tw_head", "id"),
             WidgetCommon.openApp(context, WidgetCommon.RC_OPEN, room != null ? room.id : null, today));

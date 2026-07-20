@@ -532,10 +532,8 @@ public class WidgetCommon {
             rv.setViewVisibility(moreId, android.view.View.GONE);
         }
 
-        // 새로고침 + 보내기(월 일정 이미지 공유) (새로고침 중이면 아이콘 강조 = 깜빡임 피드백)
+        // 새로고침 (새로고침 중이면 아이콘 강조 = 깜빡임 피드백)
         rv.setTextColor(resId(c, "wg_refresh", "id"), isFlash(c) ? 0xFFC0503F : 0xFF8A6C52);
         rv.setOnClickPendingIntent(resId(c, "wg_refresh", "id"), bcast(c, RC_REFRESH, ACTION_REFRESH, Integer.MIN_VALUE, null));
-        rv.setOnClickPendingIntent(resId(c, "wg_add", "id"),
-            openScheme(c, RC_ADD, "com.lsung.uricalendar://share" + (roomId != null ? "?room=" + roomId : "")));
     }
 }

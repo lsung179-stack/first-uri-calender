@@ -18,7 +18,6 @@
         <TextView android:id="@+id/tw_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="5dp" android:paddingLeft="5dp" android:paddingRight="5dp" android:background="@drawable/chip_on" android:textColor="#F6EFE0" android:textSize="10sp" android:textStyle="bold" android:text="0" android:visibility="gone" />
         <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
         <TextView android:id="@+id/tw_refresh" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="6dp" android:paddingRight="6dp" android:textColor="#8A6C52" android:textSize="14sp" android:text="↻" />
-        <TextView android:id="@+id/tw_add" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="4dp" android:textColor="#8B3A2A" android:textSize="16sp" android:textStyle="bold" android:text="⤴" />
     </LinearLayout>
 
     <TextView android:id="@+id/tw_empty" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center" android:textColor="#8A6C52" android:textSize="11sp" android:visibility="gone" android:text="오늘 일정이 없어요" />
