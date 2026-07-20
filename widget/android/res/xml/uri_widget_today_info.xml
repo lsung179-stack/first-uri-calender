@@ -10,5 +10,7 @@
     android:initialLayout="@layout/widget_today"
     android:previewLayout="@layout/widget_today"
     android:resizeMode="horizontal|vertical"
+    android:maxResizeWidth="420dp"
+    android:maxResizeHeight="420dp"
     android:widgetCategory="home_screen"
     android:description="@string/app_name" />
