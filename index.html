@@ -10073,7 +10073,7 @@ function renderDateSheetList(){
     const sharedCls=ev._isShared?' shared':'';
     const virtualTag=isVirtual?`<span class="dp-shared-tag" style="background:rgba(216,104,128,.18);color:#a83855">프로필</span>`:'';
     const canEdit=!isVirtual&&(isMine||ev._isShared||_adminBypass());
-    const canCopy=canEdit&&!ev.shared_id&&!ev._isShared;
+    const canCopy=canEdit;   // 함께 일정도 복사 허용(대상 방 같은 멤버만 유지, 없으면 단독 전환)
     const copyBtn=canCopy?`<button class="dp-btn" onclick="event.stopPropagation();copyEventToRooms('${ev.id}')">복사</button>`:'';
     const actions=canEdit?`<div class="dp-actions"><button class="dp-btn" onclick="event.stopPropagation();openEditEvent('${ev.id}')">수정</button>${copyBtn}<button class="dp-btn del" onclick="event.stopPropagation();deleteEvent('${ev.id}')">삭제</button></div>`:'';
 
@@ -11214,7 +11214,6 @@ function copyEventToRooms(eventId){
   if(!others.length){ toast('복사할 다른 방이 없어요'); return; }
   const ev=Object.values(_events).flat().find(e=>e.id===eventId);
   if(!ev){ toast('일정을 찾을 수 없어요'); return; }
-  if(ev.shared_id||ev._isShared){ toast('함께 일정은 복사할 수 없어요'); return; }
   _copySourceEventId=eventId;
   // 상세(dp) 닫고 방 선택 모달 열기
   const dc=document.getElementById('dpCard'); if(dc)dc.classList.remove('on');
@@ -11232,6 +11231,8 @@ async function _doCopyEvent(){
   if(!eventId){ return; }
   const ev=Object.values(_events).flat().find(e=>e.id===eventId);
   if(!ev){ toast('일정을 찾을 수 없어요'); return; }
+  // 함께 일정은 멤버 매핑 복사 — 대상 방에 '같은 사람'이 있으면 함께 유지, 없으면 단독 전환
+  if(ev.shared_id){ return _doCopySharedEvent(ev, rooms); }
   try{
     // 복사할 날짜 묶음 계산 — 기간(연속)은 findEventGroup, 여러 날(is_multi)은 동일 속성 묶음
     let group;
@@ -11277,6 +11278,62 @@ async function _doCopyEvent(){
     const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
     if(error)throw error;
     toast(rooms.length+'개 방에 복사됐어요');
+    await loadEvents();
+  }catch(e){ console.error(e); toast('복사 실패: '+((e.message||'').slice(0,40))); }
+}
+/* 함께 일정 복사 — 대상 방마다: 원본 함께 멤버 중 '그 방에도 있는 같은 사람'만 유지.
+   · 2명 이상 유지 → 함께 유지(방마다 새 shared_id) · 1명 이하 → 단독 일정 전환.
+   · 가상(프로필) 멤버는 방 로컬이라 다른 방으로 못 옮김 → 제외.
+   · 원래 함께가 아니던 사람은 애초에 대상이 아니라 자동 제외. */
+async function _doCopySharedEvent(ev, rooms){
+  try{
+    const allEvents=Object.values(_events).flat();
+    const sharedRows=allEvents.filter(e=>e.shared_id===ev.shared_id);
+    if(!sharedRows.length){ toast('일정을 찾을 수 없어요'); return; }
+    const dates=[...new Set(sharedRows.map(e=>e.date))].sort();
+    // 원본 함께 멤버 중 '실제 회원'만 (가상 멤버 제외 — 방 로컬이라 매핑 불가)
+    const realMemberIds=[...new Set(sharedRows.filter(r=>!r.virtual_member_id&&r.user_id).map(r=>r.user_id))];
+    // 대상 방들의 실제 멤버 user_id 집합 조회
+    const destReal={};
+    try{
+      const {data:dm}=await supa.from('members').select('room_id,user_id,is_virtual').in('room_id',rooms);
+      (dm||[]).forEach(m=>{ if(m.user_id&&!m.is_virtual){ (destReal[m.room_id]=destReal[m.room_id]||new Set()).add(m.user_id); } });
+    }catch(_){}
+    const isMulti=!!ev.is_multi;
+    const base={ title:ev.title, time:ev.time||null, end_time:ev.end_time||null,
+      color:ev.color||'c-vintage', bar_style:ev.bar_style||'solid',
+      recurring_yearly:!!ev.recurring_yearly, repeat_type:ev.repeat_type||'none', repeat_weekdays:ev.repeat_weekdays||null,
+      repeat_monthly_mode:ev.repeat_monthly_mode||null, repeat_nth_week:ev.repeat_nth_week||null,
+      memo:ev.memo||null, photo_url:ev.photo_url||null, photo_urls:ev.photo_urls||null, is_multi:isMulti };
+    const rows=[];
+    let sharedCount=0, soloCount=0;
+    rooms.forEach(rid=>{
+      const destSet=destReal[rid]||new Set();
+      const kept=realMemberIds.filter(uid=>destSet.has(uid));   // 대상 방에도 있는 원본 함께 멤버(같은 사람)
+      if(kept.length>=2){
+        // 함께 유지 — 방마다 새 shared_id (기간=날짜에 걸쳐 동일 shared_id로 연속 바 유지)
+        const sid=genShared(); sharedCount++;
+        dates.forEach(d=>{ kept.forEach(uid=>{
+          rows.push({...base, room_id:rid, user_id:uid, virtual_member_id:null, date:d, shared_id:sid, range_group_id:null});
+        }); });
+      }else{
+        // 단독 전환 — 남은 사람(대개 본인), 없으면 본인. 단독 기간은 range_group_id로 연속 바 유지.
+        const owner=kept.includes(_currentUser.id)?_currentUser.id:(kept[0]||_currentUser.id);
+        const isRange=(!isMulti && dates.length>1);
+        const rgid=isRange?('rg_'+genShared()):null; soloCount++;
+        dates.forEach(d=>{
+          rows.push({...base, room_id:rid, user_id:owner, virtual_member_id:null, date:d, shared_id:null, range_group_id:rgid});
+        });
+      }
+    });
+    if(!rows.length){ toast('복사할 내용이 없어요'); return; }
+    const {error}=await supa.from('events').insert(rows);
+    if(error)throw error;
+    let msg=rooms.length+'개 방에 복사됐어요';
+    if(sharedCount&&soloCount) msg='복사 완료 (함께 '+sharedCount+'방·단독 '+soloCount+'방)';
+    else if(soloCount&&!sharedCount) msg='복사 완료 (대상 방에 함께 멤버가 없어 단독으로 전환됐어요)';
+    else if(sharedCount&&!soloCount) msg='함께 일정 복사 완료 ('+sharedCount+'개 방)';
+    toast(msg);
     await loadEvents();
   }catch(e){ console.error(e); toast('복사 실패: '+((e.message||'').slice(0,40))); }
 }
