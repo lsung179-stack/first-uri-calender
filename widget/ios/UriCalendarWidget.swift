@@ -184,6 +184,7 @@ struct RefreshIntent: AppIntent {
         ud?.removeObject(forKey: MONTH_KEY)
         ud?.removeObject(forKey: WEEK_KEY)
         ud?.removeObject(forKey: COMBO_MONTH_KEY)
+        ud?.set(Date().timeIntervalSince1970, forKey: FLASH_KEY)   // 깜빡임 트리거
         ud?.synchronize()
         WidgetCenter.shared.reloadAllTimelines()
         return .result()
@@ -281,7 +282,10 @@ struct CalEntry: TimelineEntry {
     var myUserId: String? = nil // 현재 사용자 (작은 위젯 기본 필터)
     var gridV: Bool = false     // 세로/가로 격자선(앱 설정)
     var gridH: Bool = false
+    var flash: Bool = false      // 새로고침 직후 잠깐 흐려짐(깜빡임 피드백)
 }
+// 새로고침 깜빡임 타임스탬프(App Group). 최근이면 타임라인이 flash 엔트리를 잠깐 넣음.
+let FLASH_KEY = "widget.flashRefresh"
 struct CalProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> CalEntry {
         CalEntry(date: Date(), room: sampleRoom(), memberFilter: nil, myUserId: "u1")
@@ -294,10 +298,19 @@ struct CalProvider: AppIntentTimelineProvider {
     func timeline(for configuration: CalConfigIntent, in context: Context) async -> Timeline<CalEntry> {
         let room = effectiveRoom(configuration.room?.id)
         let d = loadWGData()
-        let entry = CalEntry(date: Date(), room: room, memberFilter: effectiveFilter(configuration.member), myUserId: d?.myUserId, gridV: d?.gridV ?? false, gridH: d?.gridH ?? false)
+        let filter = effectiveFilter(configuration.member)
+        func mk(_ date: Date, _ flash: Bool) -> CalEntry {
+            CalEntry(date: date, room: room, memberFilter: filter, myUserId: d?.myUserId, gridV: d?.gridV ?? false, gridH: d?.gridH ?? false, flash: flash)
+        }
         // 자정에 '오늘'이 넘어가므로 자정 직후 갱신 예약(그 외는 앱이 reloadAllTimelines)
         let mid = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: 1, to: Date())!)
-        return Timeline(entries: [entry], policy: .after(mid))
+        // 새로고침 직후(0.8s 이내)면 잠깐 흐려졌다(flash) 복귀하는 엔트리 2개 → 깜빡임 피드백
+        let flashAt = UserDefaults(suiteName: APP_GROUP)?.double(forKey: FLASH_KEY) ?? 0
+        let now = Date()
+        if flashAt > 0 && (now.timeIntervalSince1970 - flashAt) < 0.8 {
+            return Timeline(entries: [mk(now, true), mk(now.addingTimeInterval(0.45), false)], policy: .after(mid))
+        }
+        return Timeline(entries: [mk(now, false)], policy: .after(mid))
     }
 }
 // 멤버 필터 정규화: nil 또는 ""(전체 보기) → nil(전체), 그 외 userId
@@ -933,7 +946,7 @@ extension View {
 struct TodayWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: "UriToday", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
-            if let room = entry.room { TodayView(room: room, filter: entry.memberFilter, myUserId: entry.myUserId) } else { EmptyStateView() }
+            Group { if let room = entry.room { TodayView(room: room, filter: entry.memberFilter, myUserId: entry.myUserId) } else { EmptyStateView() } }.opacity(entry.flash ? 0.4 : 1)
         }
         .configurationDisplayName("오늘 일정")
         .description("오늘의 일정과 할 일을 한눈에. (기본: 내 일정)")
@@ -945,7 +958,7 @@ struct TodayWidget: Widget {
 struct TwoWeekWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: "UriTwoWeek", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
-            if let room = entry.room { GridView(room: room, filter: entry.memberFilter, weeks: 2, weekNav: true, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId) } else { EmptyStateView() }
+            Group { if let room = entry.room { GridView(room: room, filter: entry.memberFilter, weeks: 2, weekNav: true, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId) } else { EmptyStateView() } }.opacity(entry.flash ? 0.4 : 1)
         }
         .configurationDisplayName("2주 달력")
         .description("이번 주·다음 주 2주치 달력.")
@@ -957,7 +970,7 @@ struct TwoWeekWidget: Widget {
 struct ComboWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: "UriCombo", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
-            if let room = entry.room { ComboView(room: room, filter: entry.memberFilter, myUserId: entry.myUserId) } else { EmptyStateView() }
+            Group { if let room = entry.room { ComboView(room: room, filter: entry.memberFilter, myUserId: entry.myUserId) } else { EmptyStateView() } }.opacity(entry.flash ? 0.4 : 1)
         }
         .configurationDisplayName("다가오는 일정")
         .description("다가오는 일정 목록 + 이번 달 미니 달력.")
@@ -969,7 +982,7 @@ struct ComboWidget: Widget {
 struct MonthWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: "UriMonth", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
-            if let room = entry.room { GridView(room: room, filter: entry.memberFilter, weeks: 6, monthNav: true, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId) } else { EmptyStateView() }
+            Group { if let room = entry.room { GridView(room: room, filter: entry.memberFilter, weeks: 6, monthNav: true, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId) } else { EmptyStateView() } }.opacity(entry.flash ? 0.4 : 1)
         }
         .configurationDisplayName("한 달 달력")
         .description("이번 달 전체 달력을 크게.")

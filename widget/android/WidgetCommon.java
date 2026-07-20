@@ -83,6 +83,9 @@ public class WidgetCommon {
     static void setWeekOffset(Context c, int n) { sp(c).edit().putInt("weekOffset", n).apply(); }
     static int comboOffset(Context c) { return sp(c).getInt("comboOffset", 0); }
     static void setComboOffset(Context c, int n) { sp(c).edit().putInt("comboOffset", n).apply(); }
+    // 새로고침 깜빡임 상태(잠깐 아이콘 강조 후 원복)
+    static boolean isFlash(Context c) { return sp(c).getBoolean("flash", false); }
+    static void setFlash(Context c, boolean on) { sp(c).edit().putBoolean("flash", on).apply(); }
 
     // 상태 브로드캐스트 적용(UriCalendarWidgetProvider.onReceive에서 호출). 처리하면 true.
     static boolean applyAction(Context c, Intent intent) {
@@ -518,7 +521,8 @@ public class WidgetCommon {
             rv.setViewVisibility(moreId, android.view.View.GONE);
         }
 
-        // 새로고침 + ＋추가
+        // 새로고침 + ＋추가 (새로고침 중이면 아이콘 강조 = 깜빡임 피드백)
+        rv.setTextColor(resId(c, "wg_refresh", "id"), isFlash(c) ? 0xFFC0503F : 0xFF8A6C52);
         rv.setOnClickPendingIntent(resId(c, "wg_refresh", "id"), bcast(c, RC_REFRESH, ACTION_REFRESH, Integer.MIN_VALUE, null));
         rv.setOnClickPendingIntent(resId(c, "wg_add", "id"), openApp(c, RC_ADD, roomId, "__add__"));
     }

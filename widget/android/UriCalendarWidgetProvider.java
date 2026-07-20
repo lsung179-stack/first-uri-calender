@@ -23,7 +23,23 @@ public class UriCalendarWidgetProvider extends AppWidgetProvider {
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
         if (WidgetCommon.applyAction(context, intent)) {
-            WidgetCommon.refreshAll(context);
+            if (WidgetCommon.ACTION_REFRESH.equals(intent.getAction())) {
+                // 새로고침 깜빡임: 아이콘 강조로 즉시 렌더 → 300ms 후 원복.
+                // (실제 데이터 새로고침은 refreshAll의 notifyAppWidgetViewDataChanged로 이미 수행됨)
+                WidgetCommon.setFlash(context, true);
+                WidgetCommon.refreshAll(context);
+                final Context ctx = context.getApplicationContext();
+                final PendingResult pr = goAsync();
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(new Runnable() {
+                    @Override public void run() {
+                        try { WidgetCommon.setFlash(ctx, false); WidgetCommon.refreshAll(ctx); }
+                        catch (Throwable t) { /* 무시 */ }
+                        finally { try { pr.finish(); } catch (Throwable t) {} }
+                    }
+                }, 300);
+            } else {
+                WidgetCommon.refreshAll(context);
+            }
         }
     }
 
