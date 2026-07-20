@@ -14024,9 +14024,25 @@ function _prepMonthCapture(doc){
     title.style.flexDirection='row'; title.style.gap='8px'; title.style.alignItems='baseline'; title.style.minWidth='0';
     title.innerHTML='<div class="cal-month-name">'+(y?y+' ':'')+mn+'</div>';
   }
-  // 상단 멤버 프로필: 현재 선택된 것(누구의 일정)만 표시
+  // 상단 멤버 프로필: 현재 선택된 것(누구의 일정)만 → 방 씰 옆(월줄 좌측)으로 이동
   const mt=doc.getElementById('calMemberTabs');
-  if(mt){ const on=mt.querySelector('.cal-member-tab.on'); if(on){ Array.prototype.slice.call(mt.children).forEach(ch=>{ if(ch!==on) ch.style.display='none'; }); } }
+  const monthLeft=doc.querySelector(S+'.cal-month-left');
+  const on=mt?mt.querySelector('.cal-member-tab.on'):null;
+  if(on && monthLeft){
+    const iconEl=on.querySelector('.cal-member-tab-icon');
+    const nameEl=on.querySelector('.cal-member-tab-name');
+    const name=nameEl?nameEl.textContent.trim():'';
+    const prof=doc.createElement('div');
+    prof.style.cssText='display:flex;align-items:center;gap:6px;margin-left:8px';
+    if(iconEl){ iconEl.style.width='30px'; iconEl.style.height='30px'; iconEl.style.minWidth='30px'; iconEl.style.fontSize='13px'; prof.appendChild(iconEl); }
+    if(name){ const nm=doc.createElement('span'); nm.textContent=name; nm.style.cssText='font-size:16px;font-weight:700;color:#2a1c0f;white-space:nowrap'; prof.appendChild(nm); }
+    monthLeft.style.alignItems='center';
+    monthLeft.appendChild(prof);
+    if(mt) mt.style.display='none';   // 원래 멤버탭 줄 숨김(씰 옆으로 옮겼으므로)
+  } else if(mt){
+    // 활성 멤버 없으면(혼자 방 등) 멤버탭 줄만 숨김
+    mt.style.display='none';
+  }
   // 반응(이모지/캐릭터) 버블 제거 — 곰돌 등 svgEmoji가 일정 위에 떠서 가림(캡처에 잡힘)
   doc.querySelectorAll(S+'.cal-reaction-bubble').forEach(e=>{ e.remove(); });
   // 이모지 제거 (일정 텍스트가 이모지에 가려 안 보이는 문제)
