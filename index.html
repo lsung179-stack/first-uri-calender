@@ -14014,7 +14014,8 @@ function _captureCalendarImage(){
    버튼·화살표 숨김 / 상단 프로필은 '누구의 일정'만(활성 멤버) / 년월 한 줄 / 이모지 제거 */
 function _prepMonthCapture(doc){
   const S='#calendarScreen ';
-  ['calInviteNudge','calFab','roomSealPicker','calShareBtn','calImportBtn','todayBtn'].forEach(id=>{ const e=doc.getElementById(id); if(e) e.style.display='none'; });
+  // 방 씰은 캡처에서 숨김(멤버 아바타+이름+년월로 충분, 동그라미 2개보다 깔끔). 되살리려면 'calRoomSealBtn' 제거.
+  ['calInviteNudge','calFab','roomSealPicker','calShareBtn','calImportBtn','todayBtn','calRoomSealBtn'].forEach(id=>{ const e=doc.getElementById(id); if(e) e.style.display='none'; });
   doc.querySelectorAll(S+'.cal-search-btn, '+S+'.cal-month-arrow').forEach(e=>{ e.style.display='none'; });
   // 년, 월을 한 줄로 (양쪽 화살표 없이)
   const title=doc.querySelector(S+'.cal-month-title');
@@ -14079,7 +14080,7 @@ function _trimBg(cv){
     // 배경 여백을 바짝 자른 뒤, 상하좌우에 넉넉한 여백을 배경색으로 다시 채움
     // (격자는 그대로 두고 배경 여백만 추가 → 좌우 끝 바가 이미지 가장자리에 붙어 잘린 듯 보이던 것 해소)
     const contentH=Math.max(1, bot-top);
-    const padT=Math.round(W*0.055), padB=Math.round(W*0.045), padX=Math.round(W*0.03);
+    const padT=Math.round(W*0.0275), padB=Math.round(W*0.03), padX=Math.round(W*0.018);
     const c2=document.createElement('canvas'); c2.width=W+padX*2; c2.height=contentH+padT+padB;
     const g=c2.getContext('2d');
     g.fillStyle='rgb('+bg[0]+','+bg[1]+','+bg[2]+')'; g.fillRect(0,0,c2.width,c2.height);
