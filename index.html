@@ -14070,9 +14070,10 @@ function _trimBg(cv){
     const W=cv.width, H=cv.height, ctx=cv.getContext('2d');
     const d=ctx.getImageData(0,0,W,H).data;
     const bg=[d[(2*W+2)*4],d[(2*W+2)*4+1],d[(2*W+2)*4+2]];
-    // ⚠️ 좌측 끝(아바타·이름·씰)까지 감지하도록 x 샘플을 넓게(안 그러면 좌측만 있는 상단 행이 배경으로 오인돼 잘림)
-    const xs=[W*0.04|0,W*0.09|0,W*0.15|0,W*0.25|0,W*0.4|0,W*0.55|0,W*0.7|0,W*0.85|0,W*0.95|0];
-    const rowBg=(y)=>{ for(let k=0;k<xs.length;k++){ const i=(y*W+xs[k])*4; if(Math.abs(d[i]-bg[0])>12||Math.abs(d[i+1]-bg[1])>12||Math.abs(d[i+2]-bg[2])>12) return false; } return true; };
+    // ⚠️ 전체 폭을 촘촘히 스캔 — 씰·아바타는 원이라 맨 윗줄이 좁은 호(arc)라서
+    //    성긴 샘플로는 그 좁은 부분을 놓쳐 위가 평평하게 잘렸음(피드백). 조밀 스캔으로 방지.
+    const step=Math.max(2, (W/360)|0);
+    const rowBg=(y)=>{ const base=y*W*4; for(let x=0;x<W;x+=step){ const i=base+x*4; if(Math.abs(d[i]-bg[0])>12||Math.abs(d[i+1]-bg[1])>12||Math.abs(d[i+2]-bg[2])>12) return false; } return true; };
     let top=0; while(top<H-1 && rowBg(top)) top++;
     let bot=H; while(bot>top+1 && rowBg(bot-1)) bot--;
     // 배경 여백을 바짝 자른 뒤, 상하좌우에 넉넉한 여백을 배경색으로 다시 채움
