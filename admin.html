@@ -576,6 +576,21 @@ async function renderAnnounce(m){
   if(error){m.innerHTML=errBox(error);return;}
   _cache.ann=data||[];
   m.innerHTML=`
+    <div class="page-title">푸시 알림 보내기</div>
+    <div class="page-sub">기기 알림(공지·이벤트)을 직접 발송해요 · 갤럭시 도달 확인/테스트에도 사용</div>
+    <div class="ccard" style="margin-bottom:22px">
+      <input id="pushTitle" placeholder="알림 제목" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line,#ddd);border-radius:10px;font-size:15px;margin-bottom:8px" />
+      <textarea id="pushBody" placeholder="알림 내용" rows="2" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line,#ddd);border-radius:10px;font-size:14px;resize:vertical;margin-bottom:8px"></textarea>
+      <input id="pushUrl" placeholder="열 링크(선택, 예: /?room=아이디)" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line,#ddd);border-radius:10px;font-size:13px;margin-bottom:10px" />
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select id="pushTarget" style="padding:9px 12px;border:1px solid var(--line,#ddd);border-radius:10px;font-size:14px">
+          <option value="me">나에게만 (테스트)</option>
+          <option value="all">전체 사용자</option>
+        </select>
+        <button id="pushSendBtn" class="btn-solid" onclick="sendAdminPush()">푸시 보내기</button>
+      </div>
+      <div id="pushResult" style="display:none;margin-top:12px;padding:11px 13px;background:var(--soft,#f6f2ea);border-radius:10px;font-size:13px;line-height:1.6"></div>
+    </div>
     <div class="page-title">공지사항</div>
     <div class="page-sub">앱 종 아이콘에 표시됩니다 · 팝업 옵션을 켜면 앱 실행 시 자동으로 떠요</div>
     <div class="head-row">
@@ -636,6 +651,39 @@ async function delAnn(id){
   const {error}=await supa.from('announcements').delete().eq('id',id);
   if(error){toast('삭제 실패');return;}
   toast('공지를 삭제했어요');renderAnnounce(document.getElementById('main'));
+}
+/* 관리자 푸시 발송(공지·이벤트) — admin-broadcast Edge Function 호출 + 도달 진단 표시 */
+async function sendAdminPush(){
+  const title=(document.getElementById('pushTitle').value||'').trim();
+  const body=(document.getElementById('pushBody').value||'').trim();
+  const target=document.getElementById('pushTarget').value; // 'me' | 'all'
+  const url=(document.getElementById('pushUrl').value||'').trim()||'/';
+  const res=document.getElementById('pushResult');
+  const btn=document.getElementById('pushSendBtn');
+  if(!title||!body){toast('제목과 내용을 입력해 주세요');return;}
+  if(target==='all' && !confirm('전체 사용자에게 푸시 알림을 보낼까요?'))return;
+  btn.disabled=true; btn.textContent='보내는 중…';
+  res.style.display=''; res.innerHTML='<span style="color:var(--sub,#888)">발송 중…</span>';
+  try{
+    const {data,error}=await supa.functions.invoke('admin-broadcast',{body:{title,body,target,url,inApp:false}});
+    if(error) throw error;
+    const d=data||{};
+    let html='';
+    if(d.saPresent===false){
+      html+='<div style="color:#c0392b;font-weight:700;margin-bottom:6px">⚠️ FCM 서비스계정 시크릿(FCM_SERVICE_ACCOUNT)이 서버에 설정되지 않았어요.<br>→ 이것이 안드로이드 미발송의 원인입니다. Supabase › Edge Functions › Secrets 에서 설정하세요.</div>';
+    }
+    html+='<b>대상 '+(d.targetUsers??0)+'명</b> · 앱(FCM) <b>'+(d.fcmSent??0)+'/'+(d.fcmTotal??0)+'</b> 전송 · 웹 <b>'+(d.webSent??0)+'/'+(d.webTotal??0)+'</b> 전송';
+    if(d.fcmTotal>0 && d.fcmSent===d.fcmTotal && d.saPresent!==false){
+      html+='<div style="color:#2e7d32;margin-top:5px">✅ 서버→FCM 전송 성공. 그래도 폰에 안 뜨면 갤럭시 기기의 배터리 최적화/절전(앱 잠자기)·알림 권한을 확인하세요.</div>';
+    }
+    if(d.sampleErrors&&d.sampleErrors.length){
+      html+='<div style="margin-top:8px;font-size:12px;color:#c0392b">실패 샘플:<br>'+d.sampleErrors.map(e=>esc(JSON.stringify(e))).join('<br>')+'</div>';
+    }
+    res.innerHTML=html;
+  }catch(e){
+    res.innerHTML='<span style="color:#c0392b">발송 실패: '+esc((e&&e.message)||String(e))+'</span>';
+  }
+  btn.disabled=false; btn.textContent='푸시 보내기';
 }
 
 async function renderUsers(m){
