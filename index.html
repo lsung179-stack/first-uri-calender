@@ -14093,7 +14093,12 @@ function _trimBg(cv){
 function _shareImageBlob(blob){
   return new Promise(async(resolve)=>{
     const fname=_calYear+'년'+(_calMonth+1)+'월_일정.png';
-    const cap='📅 '+((_currentRoom&&_currentRoom.name)||'우리 캘린더')+' · '+_calYear+'년 '+MONTH_NAMES[_calMonth]+' 일정';
+    // 캡션(사진과 함께 가는 텍스트) — 멤버 선택 시 그 멤버, 전체면 '우리'. 📅→🗓️(카톡 날짜 스티커 회피).
+    let _who='우리';
+    try{ const _on=document.querySelector('#calMemberTabs .cal-member-tab.on');
+      if(_on){ const _nm=_on.querySelector('.cal-member-tab-name'); const _isAll=_on.querySelector('.cal-member-tab-all')||(_nm&&_nm.textContent.trim()==='전체');
+        if(!_isAll && _nm && _nm.textContent.trim()) _who=_nm.textContent.trim()+'님의'; } }catch(_){}
+    const cap=_who+' '+_calYear+'년 '+MONTH_NAMES[_calMonth]+' 일정 🗓️';
     let file=null; try{ file=new File([blob],fname,{type:'image/png'}); }catch(_){}
     if(file && navigator.canShare && navigator.canShare({files:[file]})){
       try{ await navigator.share({ files:[file], title:'이 달 일정', text:cap }); resolve(); return; }
