@@ -214,6 +214,17 @@ public class WidgetCommon {
         return PendingIntent.getActivity(c, reqCode, open,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
+    // 앱을 딥링크(커스텀 스킴)로 열기 — MainActivity를 명시 대상으로 하는 ACTION_VIEW 인텐트라
+    //  매니페스트 intent-filter 없이도 Capacitor BridgeActivity가 intent.getData()를 읽어 appUrlOpen 발화.
+    //  위젯 '보내기' 버튼 등 앱측 JS 핸들러가 필요한 동작에 사용.
+    static PendingIntent openScheme(Context c, int reqCode, String uri) {
+        Intent open = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(uri));
+        open.setClassName(c, "com.lsung.uricalendar.MainActivity");
+        open.addCategory(Intent.CATEGORY_DEFAULT);
+        open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        return PendingIntent.getActivity(c, reqCode, open,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    }
     // 컬렉션 셀 fill-in 템플릿 — MUTABLE 이어야 fill-in extra가 채워짐
     static PendingIntent openAppTemplate(Context c, int reqCode, String roomId) {
         Intent open = new Intent();
@@ -521,9 +532,10 @@ public class WidgetCommon {
             rv.setViewVisibility(moreId, android.view.View.GONE);
         }
 
-        // 새로고침 + ＋추가 (새로고침 중이면 아이콘 강조 = 깜빡임 피드백)
+        // 새로고침 + 보내기(월 일정 이미지 공유) (새로고침 중이면 아이콘 강조 = 깜빡임 피드백)
         rv.setTextColor(resId(c, "wg_refresh", "id"), isFlash(c) ? 0xFFC0503F : 0xFF8A6C52);
         rv.setOnClickPendingIntent(resId(c, "wg_refresh", "id"), bcast(c, RC_REFRESH, ACTION_REFRESH, Integer.MIN_VALUE, null));
-        rv.setOnClickPendingIntent(resId(c, "wg_add", "id"), openApp(c, RC_ADD, roomId, "__add__"));
+        rv.setOnClickPendingIntent(resId(c, "wg_add", "id"),
+            openScheme(c, RC_ADD, "com.lsung.uricalendar://share" + (roomId != null ? "?room=" + roomId : "")));
     }
 }

@@ -456,10 +456,10 @@ struct WGHeader: View {
             Button(intent: RefreshIntent()) {
                 Image(systemName: "arrow.clockwise").font(.system(size: 12, weight: .bold)).foregroundColor(.mutedBrown).frame(width: 20, height: 20)
             }.buttonStyle(.plain)
-            // ＋ 빠른 추가 (앱의 추가 화면 딥링크)
-            Link(destination: URL(string: "com.lsung.uricalendar://add?room=\(room.id)")!) {
+            // 보내기 (앱을 열어 이 달 일정 이미지 공유 — 앱 내 보내기와 동일 딥링크)
+            Link(destination: URL(string: "com.lsung.uricalendar://share?room=\(room.id)")!) {
                 ZStack { Circle().fill(Color.terra).frame(width: 22, height: 22)
-                    Image(systemName: "plus").font(.system(size: 12, weight: .bold)).foregroundColor(.white) }
+                    Image(systemName: "square.and.arrow.up").font(.system(size: 11, weight: .bold)).foregroundColor(.white).offset(y: -0.5) }
             }
         }
     }
@@ -506,8 +506,8 @@ struct TodayView: View {
                 Button(intent: RefreshIntent()) {
                     Image(systemName: "arrow.clockwise").font(.system(size: 13, weight: .bold)).foregroundColor(.mutedBrown)
                 }.buttonStyle(.plain)
-                Link(destination: URL(string: "com.lsung.uricalendar://add?room=\(room.id)")!) {
-                    Image(systemName: "plus.circle.fill").font(.system(size: 17)).foregroundColor(.terra)
+                Link(destination: URL(string: "com.lsung.uricalendar://share?room=\(room.id)")!) {
+                    Image(systemName: "square.and.arrow.up.circle.fill").font(.system(size: 17)).foregroundColor(.terra)
                 }
             }
             if todays.isEmpty && todaysTodos.isEmpty {

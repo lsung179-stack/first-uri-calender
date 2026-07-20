@@ -49,7 +49,8 @@ public class TodayWidgetProvider extends AppWidgetProvider {
         rv.setOnClickPendingIntent(WidgetCommon.resId(context, "tw_refresh", "id"),
             WidgetCommon.bcast(context, WidgetCommon.RC_REFRESH, WidgetCommon.ACTION_REFRESH, Integer.MIN_VALUE, null));
         rv.setOnClickPendingIntent(WidgetCommon.resId(context, "tw_add", "id"),
-            WidgetCommon.openApp(context, WidgetCommon.RC_ADD, room != null ? room.id : null, "__add__"));
+            WidgetCommon.openScheme(context, WidgetCommon.RC_ADD,
+                "com.lsung.uricalendar://share" + (room != null ? "?room=" + room.id : "")));
         // 헤더/전체 탭 = 앱 열기(오늘)
         rv.setOnClickPendingIntent(WidgetCommon.resId(context, "tw_head", "id"),
             WidgetCommon.openApp(context, WidgetCommon.RC_OPEN, room != null ? room.id : null, today));

@@ -29,7 +29,7 @@
         <TextView android:id="@+id/wg_wlabel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingTop="2dp" android:paddingBottom="2dp" android:textColor="#2A1C0F" android:textSize="12sp" android:textStyle="bold" android:text="7.6~19" />
         <TextView android:id="@+id/wg_wnext" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="3dp" android:paddingRight="6dp" android:paddingTop="2dp" android:paddingBottom="2dp" android:textColor="#8B3A2A" android:textSize="15sp" android:textStyle="bold" android:text="›" />
         <TextView android:id="@+id/wg_refresh" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="4dp" android:paddingRight="4dp" android:textColor="#8A6C52" android:textSize="14sp" android:text="↻" />
-        <TextView android:id="@+id/wg_add" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="3dp" android:textColor="#8B3A2A" android:textSize="17sp" android:textStyle="bold" android:text="＋" />
+        <TextView android:id="@+id/wg_add" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="3dp" android:textColor="#8B3A2A" android:textSize="15sp" android:textStyle="bold" android:text="⤴" />
     </LinearLayout>
 
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:orientation="horizontal">

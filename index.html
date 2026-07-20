@@ -7590,6 +7590,26 @@ supa.auth.onAuthStateChange((event,session)=>{
           }catch(_){}
           return;
         }
+        // ── 위젯 보내기(공유) 딥링크: com.lsung.uricalendar://share?room=<roomId> ──
+        // 위젯의 보내기 버튼 → 해당 방 진입 + 캘린더 탭으로 이동 후 월 일정 이미지 공유(앱 내 보내기와 동일).
+        if(url.indexOf('com.lsung.uricalendar://share')===0){
+          try{
+            var shp=new URLSearchParams(url.split('?')[1]||'');
+            var shrid=(shp.get('room')||'').trim();
+            if(_currentUser){
+              var shswitched=false;
+              if(shrid && (!_currentRoom || _currentRoom.id!==shrid) && (_myRooms||[]).some(function(r){return r.id===shrid;})){
+                enterRoom(shrid); shswitched=true;
+              }
+              // 방 진입/멤버 로드 후 캘린더 탭 보장 → 화면 렌더 대기 → 공유(html2canvas가 보이는 화면 캡처)
+              setTimeout(function(){
+                try{ if(typeof calTabSwitch==='function' && _currentRoom) calTabSwitch('cal'); }catch(_){}
+                setTimeout(function(){ try{ shareMonthImage(); }catch(_){} }, 350);
+              }, shswitched?550:150);
+            }
+          }catch(_){}
+          return;
+        }
         // ── 위젯 날짜 탭 딥링크: com.lsung.uricalendar://open?room=<id>&date=YYYY-MM-DD ──
         // 위젯에서 날짜를 누르면 그 방·그 날짜의 일정 시트를 열어 전부 보기(위젯은 스크롤 불가 대체).
         if(url.indexOf('com.lsung.uricalendar://open')===0){
