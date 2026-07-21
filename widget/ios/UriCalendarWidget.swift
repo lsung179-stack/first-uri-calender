@@ -932,33 +932,44 @@ extension View {
     }
 }
 
-// MARK: - 위젯 정의 (종류별로 '분리' — 위젯 갤러리에 각각 따로 노출)
+// MARK: - 위젯 정의
 
-// ① 오늘 (작은 위젯)
-struct TodayWidget: Widget {
+// 크기(패밀리)에 따라 종류가 바뀌는 적응형 뷰 —
+//  iOS 18: 홈에서 위젯 모서리(오른쪽 아래)를 드래그해 크기를 바꾸면
+//  작게=오늘 / 중간=2주 / 크게=한 달 로 종류가 자동 전환된다.
+//  (한 위젯이 여러 패밀리를 지원해야 iOS18 드래그 리사이즈가 활성화됨.)
+struct AdaptiveCalView: View {
+    @Environment(\.widgetFamily) var family
+    let entry: CalEntry
+    var body: some View {
+        Group {
+            if let room = entry.room {
+                switch family {
+                case .systemSmall:
+                    TodayView(room: room, filter: entry.memberFilter, myUserId: entry.myUserId)
+                case .systemMedium:
+                    GridView(room: room, filter: entry.memberFilter, weeks: 2, weekNav: true, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId)
+                default:
+                    GridView(room: room, filter: entry.memberFilter, weeks: 6, monthNav: true, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId)
+                }
+            } else { EmptyStateView() }
+        }.opacity(entry.flash ? 0.4 : 1)
+    }
+}
+
+// ① 우리 캘린더 — 한 위젯이 3가지 크기 지원(오늘/2주/월). iOS18 드래그 리사이즈로 종류 전환.
+struct CalendarWidget: Widget {
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: "UriToday", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
-            Group { if let room = entry.room { TodayView(room: room, filter: entry.memberFilter, myUserId: entry.myUserId) } else { EmptyStateView() } }.opacity(entry.flash ? 0.4 : 1)
+        AppIntentConfiguration(kind: "UriCalendar", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
+            AdaptiveCalView(entry: entry)
         }
-        .configurationDisplayName("오늘 일정")
-        .description("오늘의 일정과 할 일을 한눈에. (기본: 내 일정)")
-        .supportedFamilies([.systemSmall])
+        .configurationDisplayName("우리 캘린더")
+        .description("작게=오늘, 중간=2주, 크게=한 달 달력. 위젯 모서리를 드래그해 크기를 바꾸면 종류가 자동 전환돼요.")
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
         .contentMarginsDisabled()
     }
 }
-// ② 2주 달력 (중간 위젯)
-struct TwoWeekWidget: Widget {
-    var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: "UriTwoWeek", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
-            Group { if let room = entry.room { GridView(room: room, filter: entry.memberFilter, weeks: 2, weekNav: true, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId) } else { EmptyStateView() } }.opacity(entry.flash ? 0.4 : 1)
-        }
-        .configurationDisplayName("2주 달력")
-        .description("이번 주·다음 주 2주치 달력.")
-        .supportedFamilies([.systemMedium])
-        .contentMarginsDisabled()
-    }
-}
-// ③ 다가오는 일정 + 미니 달력 (큰 위젯)
+// ② 다가오는 일정 + 미니 달력 (큰 위젯) — 별도 종류
 struct ComboWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: "UriCombo", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
@@ -970,25 +981,11 @@ struct ComboWidget: Widget {
         .contentMarginsDisabled()
     }
 }
-// ④ 한 달 전체 달력 (큰 위젯)
-struct MonthWidget: Widget {
-    var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: "UriMonth", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
-            Group { if let room = entry.room { GridView(room: room, filter: entry.memberFilter, weeks: 6, monthNav: true, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId) } else { EmptyStateView() } }.opacity(entry.flash ? 0.4 : 1)
-        }
-        .configurationDisplayName("한 달 달력")
-        .description("이번 달 전체 달력을 크게.")
-        .supportedFamilies([.systemLarge])
-        .contentMarginsDisabled()
-    }
-}
 
 @main
 struct UriCalendarWidgetBundle: WidgetBundle {
     var body: some Widget {
-        TodayWidget()
-        TwoWeekWidget()
+        CalendarWidget()
         ComboWidget()
-        MonthWidget()
     }
 }
