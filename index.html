@@ -4742,8 +4742,8 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
 <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.6.11/lunar.min.js"></script>
 <!-- KASI(한국천문연구원) 기준 음력 — lunar-javascript(중국 표준시)가 신월 경계에서 한국 음력과 하루 어긋나는 문제 보정용. 음력 날짜 변환은 이걸 우선 쓰고, 24절기/삼복은 lunar-javascript 유지 -->
 <script src="https://cdn.jsdelivr.net/npm/korean-lunar-calendar@0.4.0/dist/korean-lunar-calendar.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- ⚡ jspdf·html2canvas는 공유/내보내기 전용(부팅 시 불필요) → 첫 사용 때 지연 로드(ensureHtml2Canvas/ensureJsPDF). 콜드스타트 ~200KB 블로킹 제거. -->
+
 <script>
 /* ═══════════════════════════════════
    설정 (배포 시 채울 것)
@@ -5670,16 +5670,29 @@ function parseBirthday(bd){
   return {month:m, day:d, isLunar:false};
 }
 
-/* KASI(korean-lunar-calendar) 인스턴스 — 없으면 null. 지원 범위 양력 1000~2050. */
+/* KASI(korean-lunar-calendar) 인스턴스 — 없으면 null. 지원 범위 양력 1000~2050.
+   ⚡ 성능: 매 호출마다 new 하면 렌더당 수십~수백 개 할당 → 단일 인스턴스 재사용(캐시). */
+let _klcInst;
 function _klc(){
+  if(_klcInst!==undefined) return _klcInst;
+  _klcInst=null;
   if(typeof window!=='undefined' && window.KoreanLunarCalendar){
-    try{ return new window.KoreanLunarCalendar(); }catch(_){}
+    try{ _klcInst=new window.KoreanLunarCalendar(); }catch(_){ _klcInst=null; }
   }
-  return null;
+  return _klcInst;
 }
 /* 양력(year,month,day) → 한국 음력 {lm, ld, isLeap}. KASI 우선, 실패 시 lunar-javascript 폴백.
-   ⚠️ lunar-javascript는 중국 표준시(UTC+8) 기준이라 신월이 자정 근처면 한국 음력과 하루 어긋남(예: 2026 중양절). */
+   ⚠️ lunar-javascript는 중국 표준시(UTC+8) 기준이라 신월이 자정 근처면 한국 음력과 하루 어긋남(예: 2026 중양절).
+   ⚡ 성능: 결과를 (y-m-d) 키로 메모(순수 함수라 안전) → 반복 렌더/달 재방문 시 재계산 없음. */
+const _s2lCache={};
 function solarToLunarKR(year, month, day){
+  const _ck=year+'-'+month+'-'+day;
+  if(_ck in _s2lCache) return _s2lCache[_ck];
+  const _r=_solarToLunarKR_raw(year, month, day);
+  _s2lCache[_ck]=_r;
+  return _r;
+}
+function _solarToLunarKR_raw(year, month, day){
   const c=_klc();
   if(c){
     try{
@@ -8094,8 +8107,17 @@ function getBokDays(year){
 }
 
 /* 날짜 → 라벨 (우선순위: 공휴일 > 절기 > 기념일 > 음력명절 > 음력1일/15일 > 빈) */
+const _dayLabelCache={};
 function getDayLabel(year,month,day){
   const key=dateKey(year,month-1,day);
+  // ⚡ 메모: 순수 함수(HOLIDAYS 버전 반영). 42셀×여러 렌더의 음력/절기 재계산 제거.
+  const _mk=key+'|'+_holidayVer;
+  const _c=_dayLabelCache[_mk]; if(_c)return _c;
+  const _r=_getDayLabel_raw(year,month,day,key);
+  _dayLabelCache[_mk]=_r;
+  return _r;
+}
+function _getDayLabel_raw(year,month,day,key){
   if(HOLIDAYS[key])return {text:HOLIDAYS[key],type:'holiday'};
   // 24절기
   if(typeof window!=='undefined'&&window.Solar){
@@ -8415,6 +8437,7 @@ const HOLIDAYS_FALLBACK={
   '2027-08-15':'광복절','2027-08-16':'대체공휴일','2027-09-14':'추석','2027-09-15':'추석','2027-09-16':'추석','2027-10-03':'개천절','2027-10-04':'대체공휴일','2027-10-09':'한글날','2027-10-11':'대체공휴일','2027-12-25':'성탄절'
 };
 let HOLIDAYS={...HOLIDAYS_FALLBACK};
+let _holidayVer=0;   // ⚡ HOLIDAYS 변경 시 증가 → getDayLabel 메모 무효화 키
 const _loadedYears=new Set();
 
 /* Nager.Date API에서 한국 공휴일 가져오기 (1주일 캐시) */
@@ -8429,7 +8452,7 @@ async function loadHolidaysForYear(year){
     if(cached){
       const obj=JSON.parse(cached);
       if(obj.expires>Date.now()&&obj.data){
-        Object.assign(HOLIDAYS,obj.data);
+        Object.assign(HOLIDAYS,obj.data); _holidayVer++;
         return;
       }
     }
@@ -8447,7 +8470,7 @@ async function loadHolidaysForYear(year){
       // fallback에 있는 날짜는 한글 정확 데이터 우선, 없으면 API의 localName 사용
       data[h.date]=HOLIDAYS_FALLBACK[h.date]||h.localName||h.name||'공휴일';
     });
-    Object.assign(HOLIDAYS,data);
+    Object.assign(HOLIDAYS,data); _holidayVer++;
     // 캐시 저장 (1주일)
     try{
       localStorage.setItem(cacheKey,JSON.stringify({
@@ -11897,6 +11920,21 @@ function loadHeic2Any(){
   });
   return _heic2anyPromise;
 }
+/* ⚡ 공유/내보내기 전용 라이브러리 지연 로드 (첫 사용 때만) — 콜드스타트 블로킹 제거 */
+const _scriptPromises={};
+function _loadScriptOnce(src, ready){
+  try{ if(ready&&ready())return Promise.resolve(); }catch(_){}
+  if(_scriptPromises[src])return _scriptPromises[src];
+  _scriptPromises[src]=new Promise((resolve,reject)=>{
+    const s=document.createElement('script'); s.src=src; s.async=true;
+    s.onload=()=>resolve();
+    s.onerror=()=>{ delete _scriptPromises[src]; reject(new Error('script load fail')); };
+    document.head.appendChild(s);
+  });
+  return _scriptPromises[src];
+}
+function ensureHtml2Canvas(){ return _loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', ()=>typeof window.html2canvas==='function'); }
+function ensureJsPDF(){ return _loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', ()=>!!(window.jspdf&&window.jspdf.jsPDF)); }
 
 /* 사진 큰 보기 모달 */
 function openPhotoView(url){
@@ -14070,6 +14108,7 @@ async function shareMonthImage(){
 function _captureCalendarImage(){
   return new Promise(async(resolve)=>{
     try{
+      try{ await ensureHtml2Canvas(); }catch(_){}   // ⚡ 지연 로드
       if(typeof html2canvas!=='function'){ resolve(null); return; }
       const el=document.getElementById('calendarScreen');
       if(!el){ resolve(null); return; }
@@ -16046,6 +16085,7 @@ async function coSubmitOrder(){
 
 /* 레드프린팅 규격 PDF 생성 — 214×154mm, 26페이지(표지+12개월 앞/뒤+뒤표지) */
 async function coGeneratePDF(prog){
+  try{ await ensureJsPDF(); await ensureHtml2Canvas(); }catch(_){}   // ⚡ 지연 로드
   const {jsPDF}=window.jspdf;
   // 214 x 154 mm 가로형 탁상 달력 (레드프린팅 규격, 블리드 포함)
   const PW=214, PH=154;
