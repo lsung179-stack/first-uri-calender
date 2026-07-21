@@ -1131,6 +1131,11 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 }
 .cal-reaction-bubble span{font-size:30px;line-height:1;display:inline-block}
 .cal-reaction-bubble svg{width:38px;height:38px;display:block}
+/* ===== [TEST-ANIMAL] 동물 리액션 테스트 이미지 (2026-07-21) — 삭제 시 이 블록 제거 ===== */
+.rx-animal-img{width:100%;height:100%;object-fit:contain;display:block}
+.cal-reaction-bubble .rx-animal-img{width:48px;height:48px}
+.emoji-btn .rx-animal-img{width:40px;height:40px;margin:0 auto}
+/* ===== [/TEST-ANIMAL] ===== */
 
 /* 변종 3종 — 떠오르는 방향이 각자 다름 */
 /* 정중앙 위로 */
@@ -13504,6 +13509,11 @@ function renderEmojiPager(){
   const pages=[
     {key:'default',name:'기본',emojis:REACTIONS},
   ];
+  /* ===== [TEST-ANIMAL] 동물 리액션 테스트 페이지 — 관리자에게만 노출 (2026-07-21) ===== */
+  if(_currentUser && _currentUser.id===ANN_ADMIN_USER_ID){
+    pages.push({key:'testanimal',name:'🐯 동물 테스트',emojis:['test:tiger3d','test:tigermatte']});
+  }
+  /* ===== [/TEST-ANIMAL] ===== */
   // 해제된 캐릭터 팩 자동 추가 (무료 체험 / 추후 유료 구매)
   const unlocked=getUnlockedCharPacks();
   unlocked.forEach(ch=>{
@@ -15296,8 +15306,21 @@ const CHAR_SVG={
   'dalkong:wish':'<svg viewBox="0 0 200 200"><line x1="20" y1="20" x2="60" y2="55" stroke="#ffd23f" stroke-width="3" stroke-linecap="round" opacity=".7"/><line x1="30" y1="20" x2="62" y2="50" stroke="#ffd23f" stroke-width="2" stroke-linecap="round" opacity=".5"/><path d="M65 60 L69 68 L78 69 L72 75 L73 84 L65 79 L57 84 L58 75 L52 69 L61 68 Z" fill="#ffd23f" stroke="#5e3a1d" stroke-width="2.5"/><circle cx="100" cy="115" r="55" fill="#ffe9a8" stroke="#5e3a1d" stroke-width="3.5"/><circle cx="170" cy="160" r="2.5" fill="#ffd23f"/><circle cx="160" cy="65" r="2" fill="#ffd23f"/><ellipse cx="65" cy="130" rx="9" ry="7" fill="#f5b8b8" opacity=".75"/><ellipse cx="135" cy="130" rx="9" ry="7" fill="#f5b8b8" opacity=".75"/><ellipse cx="83" cy="113" rx="5" ry="6" fill="#5e3a1d"/><ellipse cx="117" cy="113" rx="5" ry="6" fill="#5e3a1d"/><circle cx="85" cy="110" r="1.5" fill="#ffe9a8"/><circle cx="119" cy="110" r="1.5" fill="#ffe9a8"/><path d="M88 135 Q100 145 112 135" stroke="#5e3a1d" stroke-width="3" stroke-linecap="round" fill="none"/></svg>',
 };
 
+/* ===== [TEST-ANIMAL] 동물 리액션 실사용 테스트 (2026-07-21, 요청) =====
+   삭제 방법: (1) 이 TEST_ANIMAL_EMOJI 상수 블록, (2) svgEmoji 안 [TEST-ANIMAL] 줄,
+   (3) renderEmojiPager 안 [TEST-ANIMAL] 블록, (4) CSS .rx-animal-img 블록 — 네 곳만 제거하면 원복.
+   이미지는 힉스필드 CDN URL 직참조(임시). 관리자에게만 피커 노출, 렌더는 모두에게. */
+var TEST_ANIMAL_EMOJI={
+  'test:tiger3d':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_082857_74cf6760-d6c3-4f56-8bdf-018aac79113d.png',
+  'test:tigermatte':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_082904_b7f3be5b-3564-4f8a-b3bd-055d47d29331.png'
+};
+/* ===== [/TEST-ANIMAL] ===== */
+
 /* SVG 이모지 헬퍼 — preview 키('mochi:basic')로 SVG 문자열 반환 */
-function svgEmoji(key){ return CHAR_SVG[key]||''; }
+function svgEmoji(key){
+  /* [TEST-ANIMAL] */ if(TEST_ANIMAL_EMOJI&&TEST_ANIMAL_EMOJI[key]) return '<img src="'+TEST_ANIMAL_EMOJI[key]+'" class="rx-animal-img" alt="">';
+  return CHAR_SVG[key]||'';
+}
 /* 캐릭터별 8개 표정 키 (캐릭터마다 다름) */
 const CHAR_EXPRESSIONS={
   mochi:  ['basic','warm','bounce','dusty','chew','puff','twins','shy'],
