@@ -8,7 +8,6 @@
     android:minResizeHeight="110dp"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_today"
-    android:previewLayout="@layout/widget_today"
     android:resizeMode="horizontal|vertical"
     android:maxResizeWidth="420dp"
     android:maxResizeHeight="420dp"

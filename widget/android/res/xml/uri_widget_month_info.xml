@@ -8,7 +8,6 @@
     android:minResizeHeight="110dp"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_month"
-    android:previewLayout="@layout/widget_month"
     android:resizeMode="horizontal|vertical"
     android:maxResizeWidth="640dp"
     android:maxResizeHeight="760dp"
