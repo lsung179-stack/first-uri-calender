@@ -15436,8 +15436,20 @@ var ANIMAL_STICKER={
 };
 /* 이모지 헬퍼 — 동물 키('dog:like')는 <img>, (레거시 캐릭터 SVG는 CHAR_SVG 폴백) */
 function svgEmoji(key){
-  if(ANIMAL_STICKER[key]) return '<img src="'+ANIMAL_STICKER[key]+'" class="rx-animal-img" alt="" loading="lazy">';
+  if(ANIMAL_STICKER[key]) return '<img src="'+ANIMAL_STICKER[key]+'" class="rx-animal-img" alt="" loading="eager" decoding="async">';
   return (typeof CHAR_SVG!=='undefined' && CHAR_SVG[key])||'';
+}
+/* 스토어 이모지·배너 이미지 프리로드 — 원격 CDN 이미지라 처음 볼 때 로딩 지연. 미리 받아 캐시. */
+var _storeAssetsPreloaded=false;
+function preloadStoreAssets(){
+  if(_storeAssetsPreloaded)return; _storeAssetsPreloaded=true;
+  try{
+    var urls=[];
+    if(typeof ANIMAL_STICKER!=='undefined'){ for(var k in ANIMAL_STICKER){ if(ANIMAL_STICKER[k])urls.push(ANIMAL_STICKER[k]); } }
+    if(typeof FRUIT_HERO_IMG!=='undefined'&&FRUIT_HERO_IMG)urls.push(FRUIT_HERO_IMG);
+    if(typeof EMOJI_HERO_IMG!=='undefined'&&EMOJI_HERO_IMG)urls.push(EMOJI_HERO_IMG);
+    urls.forEach(function(u){ try{ var im=new Image(); im.decoding='async'; im.src=u; }catch(_){} });
+  }catch(_){}
 }
 /* 캐릭터(동물)별 6개 표정 키 (동물마다 다름) */
 const CHAR_EXPRESSIONS={
@@ -17723,6 +17735,7 @@ function openStore(){
   setStoreTab('theme');
   document.getElementById('storeCard').classList.add('on');
   _subScreenEnter();
+  preloadStoreAssets();   // 이모지·배너 미리 받아 캐시(탭 전환 시 즉시 표시)
 }
 function closeStore(){
   document.getElementById('storeCard').classList.remove('on');
