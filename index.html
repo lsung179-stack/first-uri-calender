@@ -469,6 +469,17 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .ssh-seal.s3 svg{width:24px;height:24px}
 @keyframes sshPop{from{transform:rotate(-8deg) scale(.4);opacity:0}60%{transform:rotate(-8deg) scale(1.12)}to{transform:rotate(-8deg) scale(1);opacity:1}}
 @media (prefers-reduced-motion:reduce){.ssh-seal.s1{animation:none}}
+/* 여름 과일 컬러 출시 히어로 (컬러 탭 상단) */
+.store-fruit-hero{position:relative;overflow:hidden;border-radius:18px;padding:20px 132px 20px 18px;margin-bottom:22px;background:radial-gradient(130% 150% at 86% 14%,#f2a65a,#e2683e 50%,#9c3b6e 100%);box-shadow:0 6px 16px rgba(156,59,110,.30)}
+.sfh-eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.16em;color:#ffe9b0;margin-bottom:7px}
+.sfh-title{font-family:var(--ff-serif);font-size:21px;line-height:1.32;font-weight:700;color:#fff6ea;margin-bottom:7px}
+.sfh-desc{font-size:12px;color:rgba(255,244,232,.9);margin-bottom:12px}
+.sfh-chips{display:flex;gap:6px;flex-wrap:wrap}
+.sfh-chip{font-size:11px;font-weight:700;color:#fff6ea;background:rgba(255,255,255,.18);border-radius:99px;padding:5px 11px}
+.sfh-art{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:120px;height:120px;pointer-events:none;filter:drop-shadow(0 5px 10px rgba(0,0,0,.28));animation:sfhPop .55s cubic-bezier(.2,1.4,.4,1) both}
+.sfh-art img{width:100%;height:100%;object-fit:contain}
+@keyframes sfhPop{from{transform:translateY(-50%) scale(.5);opacity:0}60%{transform:translateY(-50%) scale(1.08)}to{transform:translateY(-50%) scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.sfh-art{animation:none}}
 .rs-mascot-thumb{width:34px;height:34px;border-radius:50%;overflow:hidden;display:none;align-items:center;justify-content:center;flex:none;margin-right:6px;position:relative}
 .rs-mascot-thumb.has-seal .seal-ini{font-size:15px}
 .rs-mascot-thumb.has-seal svg{width:19px;height:19px}
@@ -15256,13 +15267,13 @@ const STORE_THEMES=[
 const STORE_COLORS=[
   /* 🌴 여름 과일 톤 (2026 여름) */
   {key:'grape',     name:'포도',    price:'₩2,900',
-   colors:['#F0E4F5','#D0A8E0','#A860C8','#8438A8','#5E1E7A','#3A0F52','#C89AD8','#9E58B8','#6E2E90','#5C9A3A','#3E7A28','#E8D4F0']},
+   colors:['#F0E4F5','#DCC4EE','#C89AD8','#B27CCE','#9E58B8','#8438A8','#6E2E90','#4A1568','#86C464','#5C9A3A','#3E7A28','#2A5E1C']},
   {key:'watermelon',name:'수박',    price:'₩2,900',
    colors:['#F8D4CE','#F2B4AC','#F2645A','#E8392E','#EDF3C8','#D2E87E','#C0DC50','#9CB828','#8EE08C','#66CC70','#40C062','#2A9448']},
   {key:'boksung',   name:'복숭아',  price:'₩2,900',
-   colors:['#FFF3E8','#FFD9C0','#FFB894','#FF9A6E','#F5744A','#E88A9A','#F7B8C8','#F5C0B0','#FBD9B8','#E8A0A8','#F0A878','#FCE8DA']},
+   colors:['#FFF3E8','#FFDCC4','#FFC09E','#FFA478','#FB8858','#F0703C','#DC5A2C','#B8461E','#F8C8D4','#F0A0B4','#E87890','#D85070']},
   {key:'melon',     name:'메론',    price:'₩2,900',
-   colors:['#F0F8E0','#D0E8A8','#A8D878','#7EC04E','#5A9E36','#3E7A24','#F5D89A','#F0B860','#E89848','#C8E8C0','#8ABF6A','#EEF6E0']},
+   colors:['#F0F8E0','#D8ECB0','#B8DC84','#98CC5C','#74B23E','#5A9E36','#3E7A24','#2A5E18','#FBE2A8','#F5C878','#EDA850','#E08838']},
   {key:'vivid',   name:'비비드',    price:'₩2,900',
    colors:['#ff4d4d','#ff7a33','#ffaa33','#ffd633','#aacc33','#33cc55','#33b3a8','#3399ff','#5566cc','#9966cc','#cc66cc','#ff66aa']},
   {key:'jelly',   name:'젤리 팩',   price:'₩2,900',
@@ -17810,10 +17821,18 @@ function openSealShowcase(){
   },180);
 }
 /* ── 컬러 팩 (곧 출시) ── */
+var FRUIT_HERO_IMG='https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_142331_63922560-1e2a-44f3-b81d-62dac7d0cce5.png';
 function renderStoreColors(){
   const body=document.getElementById('storeBody');
   if(!body)return;
-  let html='<div class="store-section-title">컬러 팩 <small>COLOR PACK</small></div>';
+  let html=`<div class="store-fruit-hero">
+    <div class="sfh-eyebrow">NEW · SUMMER COLORS</div>
+    <div class="sfh-title">여름 제철 과일<br>컬러 팩 출시</div>
+    <div class="sfh-desc">새콤달콤한 여름 색으로 우리 방 물들이기</div>
+    <div class="sfh-chips"><span class="sfh-chip">포도</span><span class="sfh-chip">수박</span><span class="sfh-chip">복숭아</span><span class="sfh-chip">메론</span></div>
+    <div class="sfh-art"><img src="${FRUIT_HERO_IMG}" alt="" loading="lazy"></div>
+  </div>`;
+  html+='<div class="store-section-title">컬러 팩 <small>COLOR PACK</small></div>';
   html+=`<div class="theme-grid-store">`;
   STORE_COLORS.forEach(item=>{
     const unlocked=hasColorPack(item.key);
