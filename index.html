@@ -1134,7 +1134,7 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 /* ===== [TEST-ANIMAL] 동물 리액션 테스트 이미지 (2026-07-21) — 삭제 시 이 블록 제거 ===== */
 .rx-animal-img{width:20px;height:20px;object-fit:contain;display:inline-block;vertical-align:middle}
 .dp-reaction-chip-emoji .rx-animal-img{width:22px;height:22px;display:block}
-.cal-reaction-bubble .rx-animal-img{width:60px;height:60px;display:block}
+.cal-reaction-bubble .rx-animal-img{width:65px;height:65px;display:block}
 .emoji-btn .rx-animal-img{width:100%;height:100%;display:block}
 .emoji-pack-preview .emoji-cell .rx-animal-img{width:100%;height:100%}
 .char-expr-svg .rx-animal-img{width:100%;height:100%;max-width:60px;max-height:60px}
@@ -1789,7 +1789,7 @@ body.ff-jua{letter-spacing:-.2px}
 
 /* 이모지 팩 미리보기 — 4개 그리드 (2×2) */
 .emoji-pack-preview{background:#fbf2e0;padding:8px}
-.emoji-pack-preview .emoji-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;width:100%;max-width:80px}
+.emoji-pack-preview .emoji-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;width:100%;max-width:118px}
 .emoji-pack-preview .emoji-cell{
   aspect-ratio:1;background:#fff;border-radius:10px;
   display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1;
@@ -13502,6 +13502,10 @@ function openEmojiPick(eventId){
   _emojiTargetEvent._currentReaction=myR?myR.emoji:null;
   document.getElementById('emojiSubject').textContent=`"${(ev.title||'').slice(0,20)}" 에 반응`;
   renderEmojiPager();
+  // 뒤에 열려 있던 날짜시트(dpCard)는 숨김 — 리액션 피커만 깔끔하게 보이게
+  const _dc=document.getElementById('dpCard'), _do=document.getElementById('dpOverlay');
+  _emojiHidDateSheet = !!(_dc && _dc.classList.contains('on'));
+  if(_emojiHidDateSheet){ _dc.classList.remove('on'); if(_do)_do.classList.remove('on'); }
   document.getElementById('emojiOverlay').classList.add('on');
   document.getElementById('emojiCard').classList.add('on');
 }
@@ -13560,9 +13564,16 @@ function renderEmojiPager(){
   // 첫 페이지로 리셋
   pager.scrollLeft=0;
 }
+var _emojiHidDateSheet=false;
 function closeEmojiPick(){
   document.getElementById('emojiOverlay').classList.remove('on');
   document.getElementById('emojiCard').classList.remove('on');
+  // 피커가 숨겼던 날짜시트 복원
+  if(_emojiHidDateSheet){
+    const _dc=document.getElementById('dpCard'); if(_dc)_dc.classList.add('on');
+    const _do=document.getElementById('dpOverlay'); if(_do)_do.classList.add('on');
+    _emojiHidDateSheet=false;
+  }
   _emojiTargetEvent=null;
 }
 async function setMyReaction(emoji){
