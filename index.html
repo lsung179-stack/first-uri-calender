@@ -2070,6 +2070,7 @@ body.align-right .cal-evbar{text-align:right}
 
 /* 이모지 선택 모달 — 가로 스와이프 페이저 */
 .emoji-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0}
+.emoji-grid.emoji-grid-3{grid-template-columns:repeat(3,1fr)}
 .emoji-btn{
   aspect-ratio:1;background:var(--bg);border:1.5px solid var(--border);
   border-radius:12px;font-size:28px;cursor:pointer;transition:all .12s;
@@ -13533,7 +13534,8 @@ function renderEmojiPager(){
       const content=isCharEmoji?svgEmoji(em):em;
       return `<button class="emoji-btn${isOn?' on':''}" onclick="setMyReaction('${em}')">${content}</button>`;
     }).join('');
-    return `<div class="emoji-page" data-page-key="${p.key}"><div class="emoji-grid">${cells}</div></div>`;
+    const gridCls = (p.key!=='default') ? 'emoji-grid emoji-grid-3' : 'emoji-grid';
+    return `<div class="emoji-page" data-page-key="${p.key}"><div class="${gridCls}">${cells}</div></div>`;
   }).join('');
   
   // 1페이지면 라벨/dots 숨김 (단순 그리드처럼 보이게)
