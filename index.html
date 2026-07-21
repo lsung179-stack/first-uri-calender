@@ -479,6 +479,12 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .sfh-desc{font-size:12px;color:rgba(255,255,255,.96);margin-bottom:12px;text-shadow:0 1px 4px rgba(10,45,85,.55)}
 .sfh-chips{display:flex;gap:6px;flex-wrap:wrap}
 .sfh-chip{font-size:11px;font-weight:700;color:#fff;background:rgba(255,255,255,.22);border-radius:99px;padding:5px 11px;backdrop-filter:blur(2px);text-shadow:0 1px 2px rgba(10,45,85,.4)}
+/* 동물 캐릭터 이모지 출시 히어로 (이모지 탭 상단) — 실사/일러스트 동물 사진 배경, 따뜻한 스크림 */
+.store-emoji-hero{position:relative;overflow:hidden;border-radius:18px;min-height:138px;padding:20px 40% 20px 18px;margin-bottom:22px;background:#e8b774 center right/cover no-repeat;box-shadow:0 6px 16px rgba(120,72,30,.30)}
+.store-emoji-hero::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(100deg,rgba(92,52,20,.78) 0%,rgba(118,70,28,.54) 34%,rgba(140,88,40,.12) 62%,rgba(140,88,40,0) 82%)}
+.store-emoji-hero .sfh-eyebrow{color:#ffe1a0;text-shadow:0 1px 4px rgba(60,32,10,.6)}
+.store-emoji-hero .sfh-title,.store-emoji-hero .sfh-desc{text-shadow:0 1px 5px rgba(60,32,10,.62)}
+.store-emoji-hero .sfh-chip{text-shadow:0 1px 2px rgba(60,32,10,.45)}
 .rs-mascot-thumb{width:34px;height:34px;border-radius:50%;overflow:hidden;display:none;align-items:center;justify-content:center;flex:none;margin-right:6px;position:relative}
 .rs-mascot-thumb.has-seal .seal-ini{font-size:15px}
 .rs-mascot-thumb.has-seal svg{width:19px;height:19px}
@@ -17985,10 +17991,17 @@ async function applyTextTheme(key){
 }
 
 /* ── 이모지 팩 (캐릭터 미리보기 — 곧 일정 반응에 적용) ── */
+var EMOJI_HERO_IMG='https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_144716_97d4a1b2-6b47-49cd-9673-08fc13bb7dc1.png';
 function renderStoreEmoji(){
   const body=document.getElementById('storeBody');
   if(!body)return;
-  let html='<div class="store-section-title">캐릭터 이모지 <small>CHARACTER PACK</small></div>';
+  let html=`<div class="store-emoji-hero" style="background-image:url('${EMOJI_HERO_IMG}')">
+    <div class="sfh-eyebrow">NEW · ANIMAL STICKERS</div>
+    <div class="sfh-title">동물 친구들의<br>귀여운 반응 이모지</div>
+    <div class="sfh-desc">일정에 콕 찍는 8가지 동물 캐릭터 팩</div>
+    <div class="sfh-chips"><span class="sfh-chip">강아지</span><span class="sfh-chip">고양이</span><span class="sfh-chip">호랑이</span><span class="sfh-chip">토끼</span></div>
+  </div>`;
+  html+='<div class="store-section-title">캐릭터 이모지 <small>CHARACTER PACK</small></div>';
   html+=`<div class="theme-grid-store">`;
   STORE_EMOJI.forEach(item=>{
     const unlocked=hasCharPack(item.key);
