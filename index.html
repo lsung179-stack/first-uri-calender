@@ -17767,20 +17767,7 @@ function renderStoreThemes(){
   if(!body)return;
   const curTheme=_myTheme||'vintage';
   
-  // Pick 배너
-  let html=`
-    <div class="store-pick-banner">
-      <div class="store-pick-label">우리 캘린더 PICK</div>
-      <div class="store-pick-title">빈티지 감성으로<br>오래도록 함께</div>
-      <div class="store-pick-sub">크림빛 종이 위에 갈색 잉크로 적는 우리 가족의 시간</div>
-      <button class="store-pick-cta" onclick="applyStoreTheme('vintage')">사용하기</button>
-      <div class="store-pick-deco">
-        <div class="store-pick-deco-dot" style="background:#fbf2e0"></div>
-        <div class="store-pick-deco-dot" style="background:#8b3a2a;border-color:#8b3a2a"></div>
-        <div class="store-pick-deco-dot" style="background:#c2a06b;border-color:#c2a06b"></div>
-      </div>
-    </div>
-  `;
+  let html='';
   
   // 방 프로필 히어로 — 스토어 첫 화면에서 바로 눈에 띄게 (탭하면 피커로)
   html+=`<div class="store-seal-hero" onclick="openSealShowcase()">
