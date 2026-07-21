@@ -1126,7 +1126,7 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .theme-card.unlocked .theme-card-name{color:var(--text)}
 
 /* 캐릭터 상세 모달 체험 버튼 영역 */
-.char-detail-action{margin:4px 0 8px;text-align:center;display:flex;justify-content:center}
+.char-detail-action{margin:14px 0 8px;text-align:center;display:flex;justify-content:center}
 
 /* 스토어 카드 "사용 중" 배지 (기존 — 호환성 유지, 새 UI에서는 미사용) */
 .theme-card-using{
@@ -1153,7 +1153,7 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .cal-reaction-bubble .rx-animal-img{width:65px;height:65px;display:block}
 .emoji-btn .rx-animal-img{width:100%;height:100%;display:block}
 .emoji-pack-preview .emoji-cell .rx-animal-img{width:100%;height:100%}
-.char-expr-svg .rx-animal-img{width:100%;height:100%;max-width:none;max-height:none}
+.char-expr-svg .rx-animal-img{width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain}
 .rx-animal-preview{max-height:62vh;overflow-y:auto;padding:4px 2px 10px;-webkit-overflow-scrolling:touch}
 .rx-ap-cap{font-size:12px;color:var(--sub);text-align:center;line-height:1.5;margin-bottom:12px}
 .rx-ap-item{margin-bottom:16px}
@@ -2136,10 +2136,11 @@ body.align-right .cal-evbar{text-align:right}
   background:var(--bg);border:1px solid var(--border);
   border-radius:14px;padding:10px 4px 8px;
   display:flex;flex-direction:column;align-items:center;gap:4px;
-  aspect-ratio:1;
+  aspect-ratio:1;overflow:hidden;
 }
 .char-expr-svg{
-  width:92%;flex:1;display:flex;align-items:center;justify-content:center;
+  width:92%;flex:1;min-height:0;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
 }
 .char-expr-svg svg{width:100%;height:100%;max-width:60px;max-height:60px;display:block}
 .char-expr-label{
