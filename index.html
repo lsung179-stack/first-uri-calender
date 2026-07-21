@@ -4395,7 +4395,8 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     <button class="store-tab" data-tab="color" onclick="setStoreTab('color')">컬러</button>
     <button class="store-tab" data-tab="text" onclick="setStoreTab('text')">텍스트</button>
     <button class="store-tab" data-tab="emoji" onclick="setStoreTab('emoji')">이모지</button>
-    <button class="store-tab" data-tab="calorder" onclick="setStoreTab('calorder')">달력 주문</button>
+    <!-- 달력 주문 임시 숨김 (2026-07-21, 요청) — 되돌리려면 style 제거 -->
+    <button class="store-tab" data-tab="calorder" onclick="setStoreTab('calorder')" style="display:none">달력 주문</button>
   </div>
   <div class="store-body" id="storeBody"></div>
 </div>
