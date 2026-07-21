@@ -15216,8 +15216,13 @@ async function _ntfRenderSys(){
   try{ st=await getPushStatus(); }catch(_){}
   const isAnd=isAndroidNative()||/android/i.test(navigator.userAgent||'');
   if(st==='granted'||st==='subscribed'){
-    el.className='ntf-sys ok';
-    el.innerHTML='<span class="ntf-sys-ic">✅</span><div class="ntf-sys-tx"><b>기기 알림이 켜져 있어요</b>아래에서 받고 싶은 알림 종류를 고를 수 있어요.</div>';
+    if(_notifMasterOn){
+      el.className='ntf-sys ok';
+      el.innerHTML='<span class="ntf-sys-ic">✅</span><div class="ntf-sys-tx"><b>알림이 켜져 있어요</b>아래에서 받고 싶은 알림 종류를 고를 수 있어요.</div>';
+    }else{
+      el.className='ntf-sys warn';
+      el.innerHTML='<span class="ntf-sys-ic">🔕</span><div class="ntf-sys-tx"><b>지금은 알림을 받지 않아요</b>휴대폰 알림 권한은 허용됐지만, 아래 \'앱 전체 알림\'이 꺼져 있어요. 켜면 알림을 받을 수 있어요.</div>';
+    }
     el.style.display='flex';
   }else if(st==='default'){
     el.className='ntf-sys warn';
