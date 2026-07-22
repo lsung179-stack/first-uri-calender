@@ -838,6 +838,11 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 /* 오늘로 가기 플로팅 버튼 (다른 달일 때만 표시) */
 .cal-today-btn{display:none;position:fixed;bottom:calc(56px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:25;background:var(--aL);color:#fff;border:none;padding:10px 22px;border-radius:99px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;box-shadow:0 4px 20px rgba(30,28,24,.18);letter-spacing:.3px;white-space:nowrap;transition:transform .12s}
 .cal-today-btn.show{display:block}
+/* ── 방 캐릭터 꾸미기(카드 스킨 연동) 마스코트 — FAB 반대쪽(좌하단), 탭바 위, 비상호작용 ── */
+.rc-mascot{position:fixed;left:6px;bottom:calc(70px + env(safe-area-inset-bottom));width:76px;height:76px;object-fit:contain;pointer-events:none;z-index:19;opacity:.9;filter:drop-shadow(0 3px 6px rgba(40,60,25,.22));animation:rcBob 3.4s ease-in-out infinite;will-change:transform}
+body.has-ad .rc-mascot{bottom:calc(var(--ad-h) + 84px + env(safe-area-inset-bottom))}
+@keyframes rcBob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-7px) rotate(3deg)}}
+@media (prefers-reduced-motion:reduce){.rc-mascot{animation:none}}
 .cal-today-btn:active{transform:translateX(-50%) scale(.96)}
 /* 헤더 우측 작은 '오늘' 칩 — cal-month-row 우측 끝, 오늘 보고 있을 땐 숨김 */
 .cal-month-right{position:absolute;right:12px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:7px;z-index:5}
@@ -5266,7 +5271,7 @@ function showScreen(id){
   // 인증 화면(로그인 전)에선 광고 숨김, 메인 화면이면 정상 판정에 맡김
   try{
     const _authScreens=['welcomeScreen','emailScreen','otpScreen','resetScreen'];
-    if(_authScreens.indexOf(id)>=0){ if(typeof hideAdBanner==='function') hideAdBanner(); }
+    if(_authScreens.indexOf(id)>=0){ if(typeof hideAdBanner==='function') hideAdBanner(); if(typeof _clearRoomCharDecor==='function') _clearRoomCharDecor(); }
     else { if(typeof showAdBannerIfNeeded==='function') showAdBannerIfNeeded(); }
   }catch(_){}
 }
@@ -7239,6 +7244,7 @@ function exitRoom(){
   _events={};
   _viewingMember='all';  // 멤버 뷰도 리셋
   applyTheme(_myTheme||'vintage');  // 내 개인 테마 유지
+  try{ _clearRoomCharDecor(); }catch(_){}   // 방 나가면 캐릭터 마스코트/테마 꾸미기 제거
   showScreen('roomsScreen');
   loadRooms();
 }
@@ -8330,7 +8336,9 @@ const THEMES={
   peach:{bg:'#fdf6f0',card:'#ffffff',text:'#2a1d18',sub:'#8a6850',mute:'#c5a895',accent:'#e0855a',aL:'#e8a880',aP:'#fde8d8',gold:'#b08742',border:'rgba(230,200,180,.4)',borderL:'rgba(230,200,180,.22)',sun:'#d47060',sat:'#6080c8',dotRGB:'224,133,90'},
   mint:{bg:'#f2f9f7',card:'#ffffff',text:'#162520',sub:'#5e8276',mute:'#a8bdb5',accent:'#4aaa8a',aL:'#7ac0a8',aP:'#d8f0e8',gold:'#b08742',border:'rgba(170,215,200,.4)',borderL:'rgba(170,215,200,.22)',sun:'#c86070',sat:'#5080b8',dotRGB:'74,170,138'},
   rose:{bg:'#fdf4f6',card:'#ffffff',text:'#2a1820',sub:'#8a5e6c',mute:'#c5a5b0',accent:'#d86880',aL:'#e8a0b0',aP:'#fde0e8',gold:'#b08742',border:'rgba(230,190,200,.4)',borderL:'rgba(230,190,200,.22)',sun:'#d06070',sat:'#6878c0',dotRGB:'216,104,128'},
-  sky:{bg:'#f0f6fd',card:'#ffffff',text:'#142028',sub:'#5e7088',mute:'#a5b5c5',accent:'#4880c0',aL:'#78b0e0',aP:'#d8ecf8',gold:'#b08742',border:'rgba(170,205,240,.4)',borderL:'rgba(170,205,240,.22)',sun:'#c86878',sat:'#4870b8',dotRGB:'72,128,192'}
+  sky:{bg:'#f0f6fd',card:'#ffffff',text:'#142028',sub:'#5e7088',mute:'#a5b5c5',accent:'#4880c0',aL:'#78b0e0',aP:'#d8ecf8',gold:'#b08742',border:'rgba(170,205,240,.4)',borderL:'rgba(170,205,240,.22)',sun:'#c86878',sat:'#4870b8',dotRGB:'72,128,192'},
+  /* 캐릭터 자동 테마(카드 스킨 연동) — 스토어 목록엔 없음 */
+  dino:{bg:'#eef7e6',card:'#ffffff',text:'#20301a',sub:'#5f7d4e',mute:'#a6bd92',accent:'#4f9d3a',aL:'#77c05e',aP:'#d9efc9',gold:'#b08742',border:'rgba(79,157,58,.24)',borderL:'rgba(79,157,58,.12)',sun:'#c8503a',sat:'#4880c0',dotRGB:'79,157,58'}
 };
 
 /* 일정 색상 12가지 — 6 원색(선명) + 6 파스텔(부드러움). key는 호환성을 위해 유지 */
@@ -18697,16 +18705,39 @@ async function changeRoomTheme(themeKey){
 }
 /* ───────── 방별 테마 (개인 설정 — user_room_themes, 나에게만 적용) ───────── */
 let _currentRoomTheme=null;
+/* 방 카드 스킨(캐릭터) → 자동 테마 + 마스코트 꾸미기 매핑.
+   대표 1종(두두 공룡)만 우선 구현 — 다른 캐릭터는 여기에 추가하면 자동 확장. */
+const ROOM_CHAR_THEME={
+  a_dino:{theme:'dino', cls:'rc-dino', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_231336_caee7c1e-3f39-462e-b3ee-6b102cd3906e.png'}
+};
+function _clearRoomCharDecor(){
+  try{
+    Array.prototype.slice.call(document.body.classList).forEach(function(c){ if(c.indexOf('rc-')===0) document.body.classList.remove(c); });
+    var m=document.getElementById('rcMascot'); if(m) m.remove();
+  }catch(_){}
+}
+function _applyRoomCharDecor(ct){
+  _clearRoomCharDecor();
+  if(!ct) return;
+  document.body.classList.add('rc-on');
+  if(ct.cls) document.body.classList.add(ct.cls);
+  if(ct.mascot){ var img=document.createElement('img'); img.id='rcMascot'; img.className='rc-mascot'; img.decoding='async'; img.alt=''; img.src=ct.mascot; document.body.appendChild(img); }
+}
 async function applyRoomThemeFor(roomId){
-  let theme=_myTheme||'vintage';
+  const skin=(_myCardSkinByRoom&&roomId)?_myCardSkinByRoom[roomId]:null;
+  const ct=skin?ROOM_CHAR_THEME[skin]:null;
+  let theme=_myTheme||'vintage'; let explicit=false;
   try{
     if(_currentUser&&roomId){
       const {data}=await supa.from('user_room_themes').select('theme').eq('user_id',_currentUser.id).eq('room_id',roomId).maybeSingle();
-      if(data&&data.theme&&THEMES[data.theme])theme=data.theme;
+      if(data&&data.theme&&THEMES[data.theme]){theme=data.theme;explicit=true;}
     }
   }catch(_){}
+  // 사용자가 이 방에 별도 테마를 고르지 않았으면 카드 캐릭터 테마 자동 적용
+  if(ct&&!explicit&&THEMES[ct.theme]) theme=ct.theme;
   _currentRoomTheme=theme;
   applyTheme(theme);
+  _applyRoomCharDecor(ct);   // 마스코트 + 캐릭터 클래스(테마 색과 별개로 스킨 있으면 표시)
   try{ renderRoomThemeGrid(); }catch(_){}
 }
 function renderRoomThemeGrid(){
