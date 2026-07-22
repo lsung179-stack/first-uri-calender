@@ -478,6 +478,32 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .rm-cardprev-name{font-size:15.5px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rm-cardprev .rm-bpname{margin:3px 0 0;text-align:left}
 .rm-cardprev-chev{color:var(--sub);font-size:18px;flex:none;opacity:.6}
+/* ── 방 카드 배경 스킨 (r-card + 미리보기 + 선택 그리드 공용) ── */
+.rcs-butter{background:linear-gradient(135deg,#fbf0d0,#f5e0a6)!important}
+.rcs-blush{background:linear-gradient(135deg,#fae1e7,#f2c8d2)!important}
+.rcs-mint{background:linear-gradient(135deg,#e3f4e9,#c7e6d3)!important}
+.rcs-sky{background:linear-gradient(135deg,#e4f1fb,#c7ddf0)!important}
+.rcs-lavender{background:linear-gradient(135deg,#ede5f7,#d7c8ee)!important}
+.rcs-peach{background:linear-gradient(135deg,#fbe9da,#f4d1b8)!important}
+.rcs-sage{background:linear-gradient(135deg,#eaf0e1,#d3dfc5)!important}
+.rcs-moonlight{background:radial-gradient(circle at 82% 18%,rgba(236,201,114,.28),transparent 34%),radial-gradient(circle at 68% 62%,rgba(255,255,255,.12) 0 1.5px,transparent 2.5px),radial-gradient(circle at 30% 30%,rgba(255,255,255,.15) 0 1px,transparent 2px),radial-gradient(circle at 88% 78%,rgba(255,255,255,.12) 0 1px,transparent 2px),radial-gradient(circle at 14% 82%,rgba(255,255,255,.10) 0 1px,transparent 2px),linear-gradient(135deg,#31446a,#1d2b47)!important;border-color:rgba(236,201,114,.28)!important}
+.rcs-silk{background:linear-gradient(120deg,rgba(255,255,255,0) 42%,rgba(255,255,255,.09) 50%,rgba(255,255,255,0) 58%),linear-gradient(135deg,#4c3324,#2c1c13)!important;border-color:rgba(255,255,255,.12)!important}
+.rcs-hanji{background:repeating-linear-gradient(0deg,rgba(160,128,86,.05) 0 1px,transparent 1px 7px),repeating-linear-gradient(90deg,rgba(160,128,86,.04) 0 1px,transparent 1px 9px),linear-gradient(135deg,#f9f1de,#efe2c4)!important}
+.rcs-sakura{background:radial-gradient(circle at 80% 22%,rgba(255,255,255,.8) 0 2.5px,transparent 4px),radial-gradient(circle at 64% 70%,rgba(255,255,255,.65) 0 2px,transparent 3.5px),radial-gradient(circle at 22% 40%,rgba(255,255,255,.6) 0 1.8px,transparent 3px),radial-gradient(circle at 40% 16%,rgba(255,255,255,.5) 0 1.5px,transparent 2.6px),linear-gradient(135deg,#fdecef,#f7d3da)!important}
+.rcs-ocean{background:radial-gradient(circle at 78% 20%,rgba(255,255,255,.35),transparent 42%),linear-gradient(180deg,#dcedf2 0%,#bcdde6 55%,#93c4d2 100%)!important}
+.rcs-forest{background:radial-gradient(circle at 84% 22%,rgba(214,232,182,.22),transparent 40%),radial-gradient(circle at 22% 76%,rgba(214,232,182,.10),transparent 34%),linear-gradient(135deg,#42604a,#2a4232)!important;border-color:rgba(214,232,182,.2)!important}
+.rcs-goldfoil{background:radial-gradient(circle at 84% 24%,rgba(206,168,96,.4) 0 2px,transparent 3.5px),radial-gradient(circle at 68% 74%,rgba(206,168,96,.32) 0 1.5px,transparent 3px),radial-gradient(circle at 24% 34%,rgba(206,168,96,.28) 0 1.5px,transparent 3px),linear-gradient(135deg,#f8efd8,#eeddb6)!important;box-shadow:inset 0 0 0 1.5px rgba(194,160,107,.5)!important}
+.rcs-aurora{background:radial-gradient(circle at 76% 18%,rgba(126,222,196,.28),transparent 42%),radial-gradient(circle at 30% 70%,rgba(160,132,222,.3),transparent 46%),linear-gradient(135deg,#1f2f4c,#2c4658 45%,#3b3a5e 80%,#22304c)!important;border-color:rgba(126,222,196,.22)!important}
+.rcs-dark .r-card-name,.rcs-dark .rm-cardprev-name{color:#f6efdc!important}
+.rcs-dark .r-card-meta,.rcs-dark .rm-cardprev-chev,.rcs-dark .r-card-arrow,.rcs-dark .rm-bpname{color:rgba(246,239,220,.72)!important}
+.rcs-dark .r-card-seal-letter{color:#f6efdc}
+.rcs-dark .r-card-grip{color:rgba(246,239,220,.6)}
+.rm-skingrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.rm-skin{position:relative;height:58px;border-radius:14px;border:1.5px solid var(--borderL);background:var(--card);display:flex;align-items:center;justify-content:center;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;overflow:hidden}
+.rm-skin.on{outline:2.5px solid var(--accent);outline-offset:2px}
+.rm-skin-name{font-size:12.5px;font-weight:800;color:var(--text)}
+.rm-skin.rcs-dark .rm-skin-name{color:#f6efdc}
+.rm-skin .rm-set-lock{right:6px;top:6px}
 .rm-field-label{font-size:11.5px;font-weight:800;color:var(--sub);letter-spacing:.03em;margin:0 2px 11px}
 .rm-swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px}
 .rm-sw{width:100%;aspect-ratio:1;border-radius:50%;cursor:pointer;position:relative;border:none;padding:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 1px 3px rgba(60,40,25,.22)}
@@ -4464,9 +4490,9 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     <div class="mo-sub" style="margin:0 0 4px">내 화면에만 적용돼요 · 방 카드를 나만의 컨셉으로 꾸며보세요</div>
     <div class="rm-cats" id="rmCats">
       <button type="button" class="rm-cat on" data-rmcat="seal" onclick="setRmCat('seal')">씰</button>
-      <button type="button" class="rm-cat soon" onclick="toast('카드 배경 꾸미기는 준비 중이에요')">카드 배경 <small>준비 중</small></button>
+      <button type="button" class="rm-cat" data-rmcat="cardbg" onclick="setRmCat('cardbg')">카드 배경</button>
     </div>
-    <div class="rm-cardprev">
+    <div class="rm-cardprev" id="rmCardPrev">
       <div class="rm-bigprev" id="rmBigPrev"></div>
       <div class="rm-cardprev-body">
         <div class="rm-cardprev-name" id="rmPrevRoomName">방</div>
@@ -6699,10 +6725,10 @@ async function loadRooms(){
   try{
     // 내가 속한 방들의 room_id + 내 순서(sort_order) 가져오기
     const {data:myMems,error:e1}=await supa
-      .from('members').select('room_id,sort_order,seal')
+      .from('members').select('room_id,sort_order,seal,card_skin')
       .eq('user_id',_currentUser.id);
     if(e1)throw e1;
-    _mySealByRoom={}; (myMems||[]).forEach(function(m){ _mySealByRoom[m.room_id]=m.seal||null; });
+    _mySealByRoom={}; _myCardSkinByRoom={}; (myMems||[]).forEach(function(m){ _mySealByRoom[m.room_id]=m.seal||null; _myCardSkinByRoom[m.room_id]=m.card_skin||null; });
 
     if(!myMems||myMems.length===0){
       renderEmpty();
@@ -6903,7 +6929,7 @@ function renderRooms(rooms,countMap){
     const sealHtml=_sealInner(_mySealByRoom[r.id], r.name)
       || `<div class="r-card-seal"><span class="r-card-seal-letter">${firstChar}</span></div>`;
     html+=`
-      <div class="r-card" data-roomid="${r.id}" onclick="enterRoom('${r.id}')">
+      <div class="r-card${_cardSkinCls(_myCardSkinByRoom[r.id])}" data-roomid="${r.id}" onclick="enterRoom('${r.id}')">
         <div class="r-card-sealwrap">
           ${sealHtml}
           <button type="button" class="r-card-pencil" aria-label="방 프로필 변경" onpointerdown="event.stopPropagation()" onclick="event.stopPropagation();openRoomMascotForRoom('${r.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
@@ -13787,6 +13813,16 @@ const SEAL_SETS={
   cherry:{name:'벚꽃',zoom:1.48,img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_083719_175d16b7-d396-4a64-ab9c-fd1656725710.png',svg:'<defs><radialGradient id="sg_ce" cx="34%" cy="28%" r="80%"><stop offset="0" stop-color="#f8dee1"/><stop offset="1" stop-color="#ecb6bf"/></radialGradient></defs><circle cx="24" cy="24" r="24" fill="url(#sg_ce)"/><circle cx="24" cy="24" r="21.7" fill="none" stroke="#b56b78" stroke-opacity=".33" stroke-width="1.4"/><circle cx="24" cy="24" r="20.5" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width=".8"/><path d="M40 9C33 12.5 27.5 17 23 23.5c-2.8 4.2-4.8 8.8-6 14" fill="none" stroke="#8a5a44" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M23.5 22.5c-3.4-.4-6.2-1.6-8.5-3.6M18.5 30c-2.9.4-5.5-.1-7.9-1.5" fill="none" stroke="#8a5a44" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><g transform="translate(13.5 17) rotate(0) scale(1)"><circle cx="1.4916198013614764e-16" cy="-2.436" r="1.8900000000000001" fill="#fbeff0" stroke="#d98a96" stroke-width="0.5"/><circle cx="2.316773673694994" cy="-0.7527653982973719" r="1.8900000000000001" fill="#fbeff0" stroke="#d98a96" stroke-width="0.5"/><circle cx="1.4318448745844645" cy="1.970765398297372" r="1.8900000000000001" fill="#fbeff0" stroke="#d98a96" stroke-width="0.5"/><circle cx="-1.4318448745844643" cy="1.970765398297372" r="1.8900000000000001" fill="#fbeff0" stroke="#d98a96" stroke-width="0.5"/><circle cx="-2.316773673694994" cy="-0.7527653982973727" r="1.8900000000000001" fill="#fbeff0" stroke="#d98a96" stroke-width="0.5"/><circle cx="0" cy="0" r="1.26" fill="#e8bd63" stroke="#d98a96" stroke-width="0.4"/></g><g transform="translate(9.5 27.5) rotate(0) scale(1)"><circle cx="1.2785312583098366e-16" cy="-2.088" r="1.62" fill="#f6ccd3" stroke="#d98a96" stroke-width="0.5"/><circle cx="1.9858060060242804" cy="-0.6452274842548902" r="1.62" fill="#f6ccd3" stroke="#d98a96" stroke-width="0.5"/><circle cx="1.2272956067866838" cy="1.6892274842548902" r="1.62" fill="#f6ccd3" stroke="#d98a96" stroke-width="0.5"/><circle cx="-1.2272956067866836" cy="1.6892274842548902" r="1.62" fill="#f6ccd3" stroke="#d98a96" stroke-width="0.5"/><circle cx="-1.9858060060242804" cy="-0.6452274842548908" r="1.62" fill="#f6ccd3" stroke="#d98a96" stroke-width="0.5"/><circle cx="0" cy="0" r="1.08" fill="#e8bd63" stroke="#d98a96" stroke-width="0.4"/></g><g transform="translate(24.5 33.5) rotate(0) scale(1)"><circle cx="1.562649315712023e-16" cy="-2.552" r="1.9800000000000002" fill="#fbeff0" stroke="#d98a96" stroke-width="0.5"/><circle cx="2.4270962295852314" cy="-0.7886113696448658" r="1.9800000000000002" fill="#fbeff0" stroke="#d98a96" stroke-width="0.5"/><circle cx="1.5000279638503913" cy="2.064611369644866" r="1.9800000000000002" fill="#fbeff0" stroke="#d98a96" stroke-width="0.5"/><circle cx="-1.500027963850391" cy="2.064611369644866" r="1.9800000000000002" fill="#fbeff0" stroke="#d98a96" stroke-width="0.5"/><circle cx="-2.4270962295852314" cy="-0.7886113696448667" r="1.9800000000000002" fill="#fbeff0" stroke="#d98a96" stroke-width="0.5"/><circle cx="0" cy="0" r="1.32" fill="#e8bd63" stroke="#d98a96" stroke-width="0.4"/></g><g transform="translate(33.5 14.5) rotate(0) scale(1)"><circle cx="1.0654427152581971e-16" cy="-1.7399999999999998" r="1.35" fill="#f6ccd3" stroke="#d98a96" stroke-width="0.5"/><circle cx="1.654838338353567" cy="-0.5376895702124084" r="1.35" fill="#f6ccd3" stroke="#d98a96" stroke-width="0.5"/><circle cx="1.022746338988903" cy="1.4076895702124084" r="1.35" fill="#f6ccd3" stroke="#d98a96" stroke-width="0.5"/><circle cx="-1.022746338988903" cy="1.4076895702124084" r="1.35" fill="#f6ccd3" stroke="#d98a96" stroke-width="0.5"/><circle cx="-1.654838338353567" cy="-0.537689570212409" r="1.35" fill="#f6ccd3" stroke="#d98a96" stroke-width="0.5"/><circle cx="0" cy="0" r="0.8999999999999999" fill="#e8bd63" stroke="#d98a96" stroke-width="0.4"/></g><circle cx="20" cy="12.5" r="1" fill="#eda4b2"/><circle cx="30.5" cy="25.5" r="1" fill="#eda4b2"/><circle cx="36.5" cy="31.5" r="0.85" fill="#eda4b2"/><g transform="translate(39.5 21) rotate(0) scale(0.8)"><path d="M0 -1.6L.45 -.45 1.6 0 .45 .45 0 1.6 -.45 .45 -1.6 0 -.45 -.45Z" fill="#d9a24e" stroke-linecap="round" stroke-linejoin="round"/></g>'}
 };
 const SEAL_SET_ORDER=['nabi', 'rosewreath', 'plum', 'moon', 'lotus', 'crane', 'tulip', 'snow', 'camellia', 'koi', 'chrysw', 'cherry'];
+/* ── 방 카드 배경 스킨 (members.card_skin, 마이그레이션 add_members_card_skin) — 무료 7 + 프리미엄 8 ── */
+const CARD_SKINS={
+  butter:{name:'버터',free:true}, blush:{name:'블러쉬',free:true}, mint:{name:'민트',free:true},
+  sky:{name:'하늘',free:true}, lavender:{name:'라벤더',free:true}, peach:{name:'피치',free:true}, sage:{name:'세이지',free:true},
+  moonlight:{name:'달빛 별밤',dark:true}, silk:{name:'딥 실크',dark:true}, hanji:{name:'한지'},
+  sakura:{name:'벚꽃'}, ocean:{name:'바다'}, forest:{name:'숲',dark:true}, goldfoil:{name:'골드'}, aurora:{name:'오로라',dark:true}
+};
+const CARD_SKIN_FREE=['butter','blush','mint','sky','lavender','peach','sage'];
+const CARD_SKIN_PREM=['moonlight','silk','hanji','sakura','ocean','forest','goldfoil','aurora'];
+function _cardSkinCls(k){ const sk=k&&CARD_SKINS[k]; return sk?(' rcs-'+k+(sk.dark?' rcs-dark':'')):''; }
 function _sealSetSvg(key){ const st=SEAL_SETS[key]; return st?'<svg class="sealset" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">'+st.svg+'</svg>':''; }
 function _sealSetArt(key){ const st=SEAL_SETS[key]; if(!st) return ''; if(st.img) return '<img class="sealimg" src="'+st.img+'" alt="" draggable="false" decoding="async" style="--sz:'+(st.zoom||1)+'">'; return _sealSetSvg(key); }
 var _sealSetsPreloaded=false;
@@ -13805,7 +13841,7 @@ function _sealInner(mascotVal, roomName){
   return '<div class="r-card-seal has-seal seal-'+p.color+'">'+_sealGlyph(p.sym, roomName)+'</div>';
 }
 
-let _mascotRoomId=null, _mascotRoomName='', _sealColor='terra', _sealSym='ini', _sealSet=null, _sealHad=false, _mySealByRoom={};
+let _mascotRoomId=null, _mascotRoomName='', _sealColor='terra', _sealSym='ini', _sealSet=null, _sealHad=false, _mySealByRoom={}, _cardSkin=null, _myCardSkinByRoom={};
 function openRoomMascotForRoom(roomId){
   const room=(_myRooms||[]).find(function(r){return r.id===roomId})
     || ((_currentRoom&&_currentRoom.id===roomId)?_currentRoom:null);
@@ -13820,8 +13856,10 @@ function openRoomMascotForRoom(roomId){
   _sealSym   = (p&&p.sym)?p.sym:'ini';
   _preloadSealSets();
   const _pn=document.getElementById('rmPrevRoomName'); if(_pn)_pn.textContent=_mascotRoomName||'방';
+  _cardSkin=_myCardSkinByRoom[room.id]||null;
   _rmTab = _sealSet ? 'prem' : 'basic';   // 저장된 게 세트면 프리미엄 탭에서 시작
   _rmSyncSeg();
+  _rmCat='seal'; _rmSyncCats();
   renderRoomMascotPicker();
   const c=document.getElementById('roomMascotCard');
   if(c)c.classList.add('on');
@@ -13838,11 +13876,10 @@ function closeRoomMascot(){
 /* 꾸미기 카테고리 — 지금은 'seal'뿐, 추후 카드 배경('cardbg') 등 확장 예정.
    renderRoomMascotPicker가 카테고리별로 분기하고, 저장값도 카테고리별 필드로 확장(멤버별 members.seal 외 추가 컬럼) 계획. */
 let _rmCat='seal';
-function setRmCat(c){
-  _rmCat=c;
-  document.querySelectorAll('#rmCats .rm-cat').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-rmcat')===c); });
-  renderRoomMascotPicker();
+function _rmSyncCats(){
+  document.querySelectorAll('#rmCats .rm-cat').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-rmcat')===_rmCat); });
 }
+function setRmCat(c){ _rmCat=c; _rmSyncCats(); renderRoomMascotPicker(); }
 window.setRmCat=setRmCat;
 /* 기본/프리미엄 탭 */
 let _rmTab='basic';
@@ -13855,7 +13892,24 @@ function renderRoomMascotPicker(){
   _rmSyncPreview();
   const g=document.getElementById('rmGroups');
   if(!g)return;
-  if(_rmCat!=='seal'){ g.innerHTML='<div class="rm-prem-note">준비 중이에요</div>'; return; }   // 추후 카테고리 확장 지점
+  if(_rmCat==='cardbg'){
+    const premB=isEffectivePremium();
+    let items='';
+    if(_rmTab!=='prem'){
+      items+='<button type="button" data-skin="" class="rm-skin'+(!_cardSkin?' on':'')+'" onclick="pickCardSkin(\'\')"><span class="rm-skin-name">기본</span></button>';
+      items+=CARD_SKIN_FREE.map(k=>{ const sk=CARD_SKINS[k];
+        return '<button type="button" data-skin="'+k+'" class="rm-skin rcs-'+k+(sk.dark?' rcs-dark':'')+(k===_cardSkin?' on':'')+'" onclick="pickCardSkin(\''+k+'\')"><span class="rm-skin-name">'+sk.name+'</span></button>'; }).join('');
+      g.innerHTML='<div class="rm-field-label">기본 배경 · 무료</div><div class="rm-skingrid">'+items+'</div>';
+    } else {
+      items+=CARD_SKIN_PREM.map(k=>{ const sk=CARD_SKINS[k];
+        return '<button type="button" data-skin="'+k+'" class="rm-skin rcs-'+k+(sk.dark?' rcs-dark':'')+(k===_cardSkin?' on':'')+'" onclick="pickCardSkin(\''+k+'\')">'
+          +(premB?'':'<span class="rm-set-lock">\uD83D\uDD12</span>')+'<span class="rm-skin-name">'+sk.name+'</span></button>'; }).join('');
+      g.innerHTML='<div class="rm-field-label">컨셉 배경'+(premB?'':' · 프리미엄 전용')+'</div><div class="rm-skingrid">'+items+'</div>'
+        +(premB?'':'<div class="rm-prem-note">프리미엄을 시작하면 바로 사용할 수 있어요 · 첫 7일 무료</div>');
+    }
+    const clr2=document.getElementById('rmClearBtn'); if(clr2)clr2.style.display=_sealHad?'block':'none';
+    return;
+  }
   if(_rmTab==='prem'){
     const prem=isEffectivePremium();
     const setBtns=SEAL_SET_ORDER.map(k=>
@@ -13877,6 +13931,8 @@ function renderRoomMascotPicker(){
 }
 /* 큰 미리보기+이름 갱신 (세트/커스텀 겸용) */
 function _rmSyncPreview(){
+  const cp=document.getElementById('rmCardPrev');
+  if(cp) cp.className='rm-cardprev'+_cardSkinCls(_cardSkin);
   const big=document.getElementById('rmBigPrev'), nm=document.getElementById('rmBpName');
   if(big){
     if(_sealSet){
@@ -13908,6 +13964,18 @@ function pickSealSet(k){
   g.querySelectorAll('.rm-sw.on,.rm-sym.on').forEach(function(b){ b.classList.remove('on'); });
   _rmSyncPreview();
 }
+function pickCardSkin(k){
+  const sk=k?CARD_SKINS[k]:null;
+  if(sk&&!sk.free&&!isEffectivePremium()){
+    showUpgradeModal({message:'컨셉 카드 배경은 프리미엄 전용이에요.', feature:'달빛·실크·한지 등 8가지 배경으로 방 카드를 꾸밀 수 있어요.'});
+    return;
+  }
+  _cardSkin=k||null;
+  const g=document.getElementById('rmGroups');
+  if(g) g.querySelectorAll('.rm-skin').forEach(function(b){ b.classList.toggle('on',(b.getAttribute('data-skin')||'')===(k||'')); });
+  _rmSyncPreview();
+}
+window.pickCardSkin=pickCardSkin;
 function pickSealColor(c){ _sealColor=c; _rmPickCustom(); }
 function pickSealSym(sy){ _sealSym=sy; _rmPickCustom(); }
 function _rmPickCustom(){
@@ -13921,23 +13989,24 @@ function _rmPickCustom(){
 }
 /* 방 프로필(컬러 씰)은 무료 기능 — 프리미엄 게이트 제거(2026-07, 사용자 결정) */
 async function saveRoomMascot(){
-  if(_sealSet){
-    if(!isEffectivePremium()){ showUpgradeModal({message:'고급 씰은 프리미엄 전용이에요.', feature:'입체 왁스 씰 12종으로 방 프로필을 꾸밀 수 있어요.'}); return; }
-    await _saveMascotValue('set:'+_sealSet); return;
-  }
-  await _saveMascotValue(_sealColor+':'+_sealSym);   // 직접 꾸미기(색+문양)는 무료
+  if(_sealSet&&!isEffectivePremium()){ showUpgradeModal({message:'고급 씰은 프리미엄 전용이에요.', feature:'입체 왁스 씰 12종으로 방 프로필을 꾸밀 수 있어요.'}); return; }
+  const _sk=_cardSkin?CARD_SKINS[_cardSkin]:null;
+  if(_sk&&!_sk.free&&!isEffectivePremium()){ showUpgradeModal({message:'컨셉 카드 배경은 프리미엄 전용이에요.', feature:'달빛·실크·한지 등 8가지 배경으로 방 카드를 꾸밀 수 있어요.'}); return; }
+  const sealVal=_sealSet?('set:'+_sealSet):(_sealColor+':'+_sealSym);   // 직접 꾸미기(색+문양)는 무료
+  await _saveMascotValue(sealVal, _cardSkin);
 }
 async function clearRoomMascot(){
-  await _saveMascotValue(null);
+  await _saveMascotValue(null, null);
 }
-async function _saveMascotValue(val){
+async function _saveMascotValue(val, skin){
   if(!_mascotRoomId||!_currentUser)return;
   try{
-    // 개인별 설정 — 내 members 행의 seal만 갱신 (RLS members_update_self)
-    const {error}=await supa.from('members').update({seal:val})
+    // 개인별 설정 — 내 members 행의 seal+card_skin 갱신 (RLS members_update_self)
+    const {error}=await supa.from('members').update({seal:val, card_skin:skin||null})
       .eq('room_id',_mascotRoomId).eq('user_id',_currentUser.id);
     if(error)throw error;
     _mySealByRoom[_mascotRoomId]=val;
+    _myCardSkinByRoom[_mascotRoomId]=skin||null;
     try{ if(_myRooms) renderRooms(_myRooms,_roomCountMap); }catch(_){}
     try{ _syncRoomSetMascot(); }catch(_){}
     toast(val?'방 프로필이 바뀌었어요':'기본으로 되돌렸어요');
