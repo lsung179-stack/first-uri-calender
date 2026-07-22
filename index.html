@@ -479,6 +479,10 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 /* 스토어 방 프로필 히어로 배너 (테마 탭 최상단) */
 .store-seal-hero{position:relative;overflow:hidden;border-radius:18px;padding:20px 128px 20px 18px;margin-bottom:24px;cursor:pointer;background:radial-gradient(130% 150% at 88% 12%,#b55c46,#8b3a2a 52%,#6a2a1e 100%);box-shadow:0 6px 16px rgba(106,42,30,.32);transition:transform .12s ease;-webkit-tap-highlight-color:transparent}
 .store-seal-hero:active{transform:scale(.98)}
+.seal-hero-lux{cursor:pointer;transition:transform .12s ease}
+.seal-hero-lux:active{transform:scale(.98)}
+.seal-hero-lux::before{background:linear-gradient(90deg,rgba(26,16,10,.82) 0%,rgba(26,16,10,.45) 48%,rgba(26,16,10,0) 72%)!important}
+.seal-hero-lux .ssh-cta{margin-top:10px}
 .ssh-eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.16em;color:#f0d089;margin-bottom:7px}
 .ssh-title{font-family:var(--ff-serif);font-size:21px;line-height:1.32;font-weight:700;color:#faf3e3;margin-bottom:7px}
 .ssh-desc{font-size:12px;color:rgba(243,230,207,.82);margin-bottom:13px}
@@ -15639,6 +15643,8 @@ function preloadStoreAssets(){
     if(typeof ANIMAL_STICKER!=='undefined'){ for(var k in ANIMAL_STICKER){ if(ANIMAL_STICKER[k])urls.push(ANIMAL_STICKER[k]); } }
     if(typeof FRUIT_HERO_IMG!=='undefined'&&FRUIT_HERO_IMG)urls.push(FRUIT_HERO_IMG);
     if(typeof EMOJI_HERO_IMG!=='undefined'&&EMOJI_HERO_IMG)urls.push(EMOJI_HERO_IMG);
+    if(typeof SEAL_HERO_IMG!=='undefined'&&SEAL_HERO_IMG)urls.push(SEAL_HERO_IMG);
+    if(typeof SEAL_SETS!=='undefined'){ for(var sk in SEAL_SETS){ if(SEAL_SETS[sk]&&SEAL_SETS[sk].img)urls.push(SEAL_SETS[sk].img); } }
     urls.forEach(function(u){ try{ var im=new Image(); im.decoding='async'; im.src=u; }catch(_){} });
   }catch(_){}
 }
@@ -17975,17 +17981,12 @@ function renderStoreSeal(){
   const body=document.getElementById('storeBody');
   if(!body)return;
   let html='';
-  // 방 프로필 히어로 — 스토어 첫 화면에서 바로 눈에 띄게 (탭하면 피커로)
-  html+=`<div class="store-seal-hero" onclick="openSealShowcase()">
-    <div class="ssh-eyebrow">NEW · ROOM SEAL</div>
-    <div class="ssh-title">방마다 찍는<br>나만의 전통 문양 씰</div>
-    <div class="ssh-desc">무료 색·문양 꾸미기 + 프리미엄 왁스 씰 12종</div>
+  // 씰 히어로 — 힉스필드 실사 배너(왁스씰 클러스터+실크), 풀블리드 + 좌측 스크림
+  html+=`<div class="store-fruit-hero seal-hero-lux" style="background-image:url('${SEAL_HERO_IMG}')" onclick="openSealShowcase()">
+    <div class="sfh-eyebrow">PREMIUM · WAX SEAL</div>
+    <div class="sfh-title">방마다 찍는<br>나만의 왁스 씰</div>
+    <div class="sfh-desc">입체 부조 씰 12종 — 프리미엄 전용</div>
     <span class="ssh-cta">꾸미러 가기 ›</span>
-    <div class="ssh-seals">
-      <span class="ssh-seal s1 has-seal seal-set">${_sealSetArt('nabi')}</span>
-      <span class="ssh-seal s2 has-seal seal-set">${_sealSetArt('moon')}</span>
-      <span class="ssh-seal s3 has-seal seal-set">${_sealSetArt('rosewreath')}</span>
-    </div>
   </div>`;
 
   // 고급 씰(프리미엄) — 히어로 아래 상시 진열
@@ -18059,6 +18060,7 @@ function openSealShowcase(){
   },180);
 }
 /* ── 컬러 팩 (곧 출시) ── */
+var SEAL_HERO_IMG='https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_091450_c7694e03-df3e-48e8-ae20-5f9f5f7fa893.png';
 var FRUIT_HERO_IMG='https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_143855_dc7a5f69-24f0-4b11-aee8-6f7879c89a42.png';
 function renderStoreColors(){
   const body=document.getElementById('storeBody');
