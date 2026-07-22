@@ -5943,9 +5943,16 @@ async function showUpgradeModal(opts){
   }
 }
 
-/* 관리자 전용 — 플랜 체험 토글(유료 ↔ 무료). 화면 표시용이라 DB·실제 구독은 안 건드림 */
+/* 관리자 전용 — 플랜 체험 토글(유료 ↔ 무료). 화면 표시용이라 DB·실제 구독은 안 건드림.
+   값은 localStorage['uricalv2.adminPlanOverride']에 저장 — 앱을 껐다 켜도 유지(사용자 요청). */
 function toggleAdminPlan(){
   _adminPlanOverride=!_adminPlanOverride;
+  try{ localStorage.setItem('uricalv2.adminPlanOverride', _adminPlanOverride?'1':'0'); }catch(_){}
+  _applyAdminPlanUI();
+  toast(_adminPlanOverride ? '유료 플랜으로 체험 중이에요' : '무료 플랜으로 체험 중이에요 (편집 시 안내 모달)');
+}
+/* 저장된 토글 상태를 버튼 UI·광고에 반영 (토글 시 + 앱 시작 시) */
+function _applyAdminPlanUI(){
   const btn=document.getElementById('planToggleBtn');
   const lab=document.getElementById('planToggleBtnLabel');
   const sw=document.getElementById('planSwitch');
@@ -5961,7 +5968,6 @@ function toggleAdminPlan(){
   try{ if(typeof window.renderTodoColorPager==='function') window.renderTodoColorPager(); }catch(_){}
   // 광고 갱신: 유료면 숨기고, 무료면 표시
   try{ if(_adminPlanOverride){ hideAdBanner(); } else { showAdBannerIfNeeded(); } }catch(_){}
-  toast(_adminPlanOverride ? '유료 플랜으로 체험 중이에요' : '무료 플랜으로 체험 중이에요 (편집 시 안내 모달)');
 }
 
 /* 프리미엄 수동부여(전체체험·개별관리) UI 제거 — 필요 시 관리자가 subscriptions에
@@ -6557,8 +6563,11 @@ async function ensurePremiumLoaded(){
   await loadPremiumStatus();
 }
 
-/* 관리자 플랜 체험 토글 — true=유료, false=무료 (화면 표시용, DB·실제 구독 무관) */
+/* 관리자 플랜 체험 토글 — true=유료, false=무료 (화면 표시용, DB·실제 구독 무관).
+   앱 재시작에도 유지되도록 localStorage에서 복원 (관리자 외 유저는 isEffectivePremium이 무시). */
 let _adminPlanOverride=false;
+try{ _adminPlanOverride = localStorage.getItem('uricalv2.adminPlanOverride')==='1'; }catch(_){}
+try{ if(_adminPlanOverride && typeof _applyAdminPlanUI==='function') _applyAdminPlanUI(); }catch(_){}
 /* 유효 프리미엄: 관리자는 토글 값을 따르고(유료/무료 체험), 일반 유저는 실제 프리미엄 여부 */
 function isEffectivePremium(){
   if(isAdmin()) return _adminPlanOverride;
