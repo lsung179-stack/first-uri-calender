@@ -1807,6 +1807,15 @@ body.ff-jua{letter-spacing:-.2px}
 .color-swatch-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%;max-width:120px}
 .color-swatch{width:100%;aspect-ratio:1;border-radius:50%;display:block;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
 
+/* 이모지 팩 리스트(카카오샵식) — 대표 스티커 + 풀 타이틀 + 상태 pill */
+.ep-row{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px 14px;margin-bottom:10px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ep-row:active{transform:scale(.985)}
+.ep-th{width:74px;height:74px;border-radius:14px;background:#fbf2e0;flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:7px}
+.ep-th .rx-animal-img{width:100%;height:100%;object-fit:contain}
+.ep-body{flex:1;min-width:0}
+.ep-t1{font-size:14px;font-weight:800;line-height:1.35;margin-bottom:3px;color:var(--text)}
+.ep-t2{font-size:11.5px;color:var(--sub)}
+.ep-act{flex:none;margin-left:4px}
 /* 이모지 팩 미리보기 — 4개 그리드 (2×2) */
 .emoji-pack-preview{background:#fbf2e0;padding:16px 8px 10px}
 .emoji-pack-preview .emoji-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;width:100%;max-width:118px}
@@ -18026,28 +18035,25 @@ function renderStoreEmoji(){
     <div class="sfh-desc">일정에 콕 찍는 10가지 동물 캐릭터 팩</div>
   </div>`;
   html+='<div class="store-section-title">캐릭터 이모지 <small>CHARACTER PACK</small></div>';
-  html+=`<div class="theme-grid-store">`;
+  // 카카오샵식 리스트: 한 팩=한 행(대표 스티커 74px + 풀 타이틀 + 부제 + 상태 pill). 행 탭=상세 시트.
   STORE_EMOJI.forEach(item=>{
     const unlocked=hasCharPack(item.key);
-    const cells=item.preview.map(k=>`<span class="emoji-cell">${svgEmoji(k)}</span>`).join('');
     const btn=unlocked
       ? `<button class="pack-btn pack-btn-using" onclick="event.stopPropagation();onLockCharClick('${escapeHtml(item.key)}')">사용 중</button>`
       : (isEffectivePremium()
           ? `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();onUnlockCharClick('${escapeHtml(item.key)}')">사용하기</button>`
           : `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();onUnlockCharClick('${escapeHtml(item.key)}')"><span class="pack-btn-lock">🔒</span>프리미엄</button>`);
     html+=`
-      <div class="theme-card${unlocked?' unlocked':''}" onclick="openCharDetail('${escapeHtml(item.key)}')">
-        <div class="theme-preview emoji-pack-preview">
-          <div class="emoji-grid">${cells}</div>
+      <div class="ep-row" onclick="openCharDetail('${escapeHtml(item.key)}')">
+        <div class="ep-th">${svgEmoji(item.preview[0])}</div>
+        <div class="ep-body">
+          <div class="ep-t1">${escapeHtml(item.name)}</div>
+          <div class="ep-t2">표정 6종 · ${escapeHtml(item.desc)}</div>
         </div>
-        <div class="theme-card-info">
-          <div class="theme-card-name">${escapeHtml(item.name)}</div>
-          <div class="theme-card-action">${btn}</div>
-        </div>
+        <div class="ep-act">${btn}</div>
       </div>
     `;
   });
-  html+=`</div>`;
   body.innerHTML=html;
 }
 function onUnlockCharClick(key){
