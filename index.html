@@ -435,6 +435,10 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .rm-set-name{font-size:11.5px;color:var(--text);font-weight:600;letter-spacing:.2px}
 .rm-set.on .rm-set-name{color:var(--accent);font-weight:800}
 .rm-set-lock{position:absolute;right:2px;top:2px;width:22px;height:22px;border-radius:50%;background:rgba(58,42,28,.72);display:flex;align-items:center;justify-content:center;font-size:11px;z-index:2;pointer-events:none}
+.rm-seg{display:flex;background:var(--bg);border:1px solid var(--borderL);border-radius:13px;padding:4px;gap:4px;margin:14px 0 4px}
+.rm-seg-btn{flex:1;padding:10px 0;border:none;border-radius:10px;background:none;font-family:inherit;font-size:13.5px;font-weight:700;color:var(--sub);-webkit-tap-highlight-color:transparent}
+.rm-seg-btn.on{background:var(--card);color:var(--accent);box-shadow:0 1px 4px rgba(60,40,25,.14)}
+.rm-prem-note{font-size:12px;color:var(--sub);text-align:center;margin:12px 0 2px;line-height:1.5}
 .store-sealgrid{margin-bottom:14px}
 .store-seal-cta{display:block;width:100%;padding:11px 0;margin-bottom:26px;font-size:13px}
 .seal-ini{font-family:var(--ff-serif);font-weight:700;color:inherit;position:relative;z-index:1;line-height:1}
@@ -4433,19 +4437,26 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
 </div>
 
 <!-- 방 프로필(컬러 씰) 선택 시트 (무료) -->
-<div class="mo-overlay" id="roomMascotOverlay" onclick="closeRoomMascot()"></div>
-<div class="mo-card" id="roomMascotCard">
-  <div class="mo-handle"></div>
-  <div class="mo-title">방 프로필</div>
-  <div class="mo-sub">내 화면에만 적용돼요 · 방마다 나만의 씰로 꾸며보세요</div>
-  <div class="rm-bigprev" id="rmBigPrev"></div>
-  <div class="rm-bpname" id="rmBpName"></div>
-  <div id="rmGroups"></div>
-  <div class="mo-actions">
-    <button class="btn btn-primary" onclick="saveRoomMascot()">저장하기</button>
-    <button class="mo-cancel" id="rmClearBtn" onclick="clearRoomMascot()" style="display:none">기본(첫 글자)으로 되돌리기</button>
-    <button class="mo-cancel" onclick="closeRoomMascot()">취소</button>
+<div class="ann-card" id="roomMascotCard">
+  <div class="ann-head">
+    <button class="ann-back" onclick="closeRoomMascot()" aria-label="뒤로">‹</button>
+    <div class="ann-title">방 프로필</div>
+    <div style="width:36px;flex-shrink:0"></div>
   </div>
+  <div class="ann-body"><div class="ann-form">
+    <div class="mo-sub" style="margin:0 0 4px">내 화면에만 적용돼요 · 방마다 나만의 씰로 꾸며보세요</div>
+    <div class="rm-bigprev" id="rmBigPrev"></div>
+    <div class="rm-bpname" id="rmBpName"></div>
+    <div class="rm-seg" id="rmSeg">
+      <button type="button" class="rm-seg-btn on" data-rmtab="basic" onclick="setRmTab('basic')">기본</button>
+      <button type="button" class="rm-seg-btn" data-rmtab="prem" onclick="setRmTab('prem')">프리미엄</button>
+    </div>
+    <div id="rmGroups"></div>
+    <div class="mo-actions" style="margin-top:16px">
+      <button class="btn btn-primary" onclick="saveRoomMascot()">저장하기</button>
+      <button class="mo-cancel" id="rmClearBtn" onclick="clearRoomMascot()" style="display:none">기본(첫 글자)으로 되돌리기</button>
+    </div>
+  </div></div>
 </div>
 
 <!-- 스토어 (테마 등 꾸미기) -->
@@ -13781,31 +13792,49 @@ function openRoomMascotForRoom(roomId){
   _sealColor = (p&&p.color)?p.color:'terra';
   _sealSym   = (p&&p.sym)?p.sym:'ini';
   _preloadSealSets();
+  _rmTab = _sealSet ? 'prem' : 'basic';   // 저장된 게 세트면 프리미엄 탭에서 시작
+  _rmSyncSeg();
   renderRoomMascotPicker();
-  const o=document.getElementById('roomMascotOverlay'),c=document.getElementById('roomMascotCard');
-  if(o)o.classList.add('on'); if(c)c.classList.add('on');
+  const c=document.getElementById('roomMascotCard');
+  if(c)c.classList.add('on');
+  try{ hideTabbar(); }catch(_){}
+  try{ _subScreenEnter(); }catch(_){}
 }
 function openRoomMascot(){ if(_currentRoom) openRoomMascotForRoom(_currentRoom.id); }
 function closeRoomMascot(){
-  const o=document.getElementById('roomMascotOverlay'),c=document.getElementById('roomMascotCard');
-  if(o)o.classList.remove('on'); if(c)c.classList.remove('on');
+  const c=document.getElementById('roomMascotCard');
+  if(c)c.classList.remove('on');
+  try{ showTabbar(); }catch(_){}
+  try{ _subScreenExit(); }catch(_){}
 }
+/* 기본/프리미엄 탭 */
+let _rmTab='basic';
+function _rmSyncSeg(){
+  document.querySelectorAll('#rmSeg .rm-seg-btn').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-rmtab')===_rmTab); });
+}
+function setRmTab(t){ _rmTab=t; _rmSyncSeg(); renderRoomMascotPicker(); }
+window.setRmTab=setRmTab;
 function renderRoomMascotPicker(){
   _rmSyncPreview();
-  const prem=isEffectivePremium();
-  const setBtns=SEAL_SET_ORDER.map(k=>
-    '<button type="button" data-set="'+k+'" class="rm-set'+(k===_sealSet?' on':'')+'" onclick="pickSealSet(\''+k+'\')">'
-    +'<span class="rm-set-prev">'+_sealSetArt(k)+(prem?'':'<span class="rm-set-lock">\uD83D\uDD12</span>')+'</span><span class="rm-set-name">'+SEAL_SETS[k].name+'</span></button>').join('');
-  const swatches='<div class="rm-field-label">직접 꾸미기 · 무료</div><div class="rm-swatches">'
-    + SEAL_COLORS.map(c=>'<button type="button" class="rm-sw seal-'+c.key+((!_sealSet&&c.key===_sealColor)?' on':'')+'" aria-label="'+c.name+'" onclick="pickSealColor(\''+c.key+'\')"></button>').join('')
-    + '</div>';
-  const symBtns=['ini'].concat(SEAL_SYM_ORDER).map(s=>{
-    const inner = s==='ini' ? '<span class="rm-sym-ini">'+escapeHtml((_mascotRoomName||'·').trim().charAt(0))+'</span>' : _sealSvg(s);
-    return '<button type="button" data-sym="'+s+'" class="rm-sym'+((!_sealSet&&s===_sealSym)?' on':'')+'" aria-label="'+(SEAL_SYM_NAMES[s]||s)+'" onclick="pickSealSym(\''+s+'\')">'+inner+'</button>';
-  }).join('');
   const g=document.getElementById('rmGroups');
-  if(g)g.innerHTML='<div class="rm-field-label">고급 씰 · 프리미엄</div><div class="rm-setgrid">'+setBtns+'</div>'
-    +swatches+'<div class="rm-symrow">'+symBtns+'</div>';
+  if(!g)return;
+  if(_rmTab==='prem'){
+    const prem=isEffectivePremium();
+    const setBtns=SEAL_SET_ORDER.map(k=>
+      '<button type="button" data-set="'+k+'" class="rm-set'+(k===_sealSet?' on':'')+(prem?'':' rm-set-view')+'" onclick="pickSealSet(\''+k+'\')">'
+      +'<span class="rm-set-prev">'+_sealSetArt(k)+(prem?'':'<span class="rm-set-lock">\uD83D\uDD12</span>')+'</span><span class="rm-set-name">'+SEAL_SETS[k].name+'</span></button>').join('');
+    g.innerHTML='<div class="rm-field-label">고급 왁스 씰 12종'+(prem?'':' · 프리미엄 전용')+'</div><div class="rm-setgrid">'+setBtns+'</div>'
+      +(prem?'':'<div class="rm-prem-note">프리미엄을 시작하면 바로 사용할 수 있어요 · 첫 7일 무료</div>');
+  } else {
+    const swatches='<div class="rm-field-label">배경 색</div><div class="rm-swatches">'
+      + SEAL_COLORS.map(c=>'<button type="button" class="rm-sw seal-'+c.key+((!_sealSet&&c.key===_sealColor)?' on':'')+'" aria-label="'+c.name+'" onclick="pickSealColor(\''+c.key+'\')"></button>').join('')
+      + '</div>';
+    const symBtns=['ini'].concat(SEAL_SYM_ORDER).map(s=>{
+      const inner = s==='ini' ? '<span class="rm-sym-ini">'+escapeHtml((_mascotRoomName||'·').trim().charAt(0))+'</span>' : _sealSvg(s);
+      return '<button type="button" data-sym="'+s+'" class="rm-sym'+((!_sealSet&&s===_sealSym)?' on':'')+'" aria-label="'+(SEAL_SYM_NAMES[s]||s)+'" onclick="pickSealSym(\''+s+'\')">'+inner+'</button>';
+    }).join('');
+    g.innerHTML=swatches+'<div class="rm-field-label">문양</div><div class="rm-symrow">'+symBtns+'</div>';
+  }
   const clr=document.getElementById('rmClearBtn'); if(clr)clr.style.display=_sealHad?'block':'none';
 }
 /* 큰 미리보기+이름 갱신 (세트/커스텀 겸용) */
@@ -13829,6 +13858,7 @@ function _rmSyncPreview(){
 }
 function pickSealSet(k){
   if(!isEffectivePremium()){
+    // 무료: 구경은 자유, 선택은 불가
     showUpgradeModal({message:'고급 씰은 프리미엄 전용이에요.', feature:'입체 왁스 씰 12종으로 방 프로필을 꾸밀 수 있어요.'});
     return;
   }
