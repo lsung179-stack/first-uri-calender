@@ -7629,8 +7629,8 @@ supa.auth.onAuthStateChange((event,session)=>{
               if(arid && (!_currentRoom || _currentRoom.id!==arid) && (_myRooms||[]).some(function(r){return r.id===arid;})){
                 enterRoom(arid);
               }
-              // 방 진입/멤버 로드가 끝나도록 살짝 지연 후 오늘 날짜시트 열기
-              setTimeout(function(){ try{ openDateSheetForToday(); }catch(_){} }, arid?450:0);
+              // 위젯 진입 시 설정 등 다른 화면 위에 모달이 뜨지 않게 캘린더 화면(이번 달)으로 이동
+              setTimeout(function(){ try{ if(typeof calTabSwitch==='function' && _currentRoom) calTabSwitch('cal'); }catch(_){} }, arid?450:0);
             }
           }catch(_){}
           return;
@@ -7668,15 +7668,14 @@ supa.auth.onAuthStateChange((event,session)=>{
                 enterRoom(orid); switched=true;
               }
               setTimeout(function(){ try{
+                // 위젯에서 누른 날짜의 '달'로 캘린더 이동 (모달 없이 해당 월 캘린더 화면을 보여줌)
                 if(/^\d{4}-\d{2}-\d{2}$/.test(odate)){
-                  // 캘린더도 그 날짜의 달로 이동(위젯에서 8월을 눌렀는데 뒤 캘린더가 7월이면 헷갈림)
                   var jd=parseDateKey(odate);
-                  if(jd && (_calYear!==jd.getFullYear() || _calMonth!==jd.getMonth())){
-                    _calYear=jd.getFullYear(); _calMonth=jd.getMonth();
-                    try{ renderMonthly(); }catch(_){}
-                  }
-                  openDateSheet(odate);
-                } else { openDateSheetForToday(); }
+                  if(jd){ _calYear=jd.getFullYear(); _calMonth=jd.getMonth(); }
+                }
+                // 설정 등 다른 화면 위가 아니라 캘린더 화면으로 전환
+                if(typeof calTabSwitch==='function' && _currentRoom) calTabSwitch('cal');
+                try{ renderMonthly(); }catch(_){}
               }catch(_){} }, switched?450:0);
             }
           }catch(_){}
