@@ -838,11 +838,12 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 /* 오늘로 가기 플로팅 버튼 (다른 달일 때만 표시) */
 .cal-today-btn{display:none;position:fixed;bottom:calc(56px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:25;background:var(--aL);color:#fff;border:none;padding:10px 22px;border-radius:99px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;box-shadow:0 4px 20px rgba(30,28,24,.18);letter-spacing:.3px;white-space:nowrap;transition:transform .12s}
 .cal-today-btn.show{display:block}
-/* ── 방 캐릭터 꾸미기(카드 스킨 연동) 마스코트 — FAB 반대쪽(좌하단), 탭바 위, 비상호작용 ── */
-.rc-mascot{position:fixed;left:6px;bottom:calc(70px + env(safe-area-inset-bottom));width:76px;height:76px;object-fit:contain;pointer-events:none;z-index:19;opacity:.9;filter:drop-shadow(0 3px 6px rgba(40,60,25,.22));animation:rcBob 3.4s ease-in-out infinite;will-change:transform}
-body.has-ad .rc-mascot{bottom:calc(var(--ad-h) + 84px + env(safe-area-inset-bottom))}
-@keyframes rcBob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-7px) rotate(3deg)}}
-@media (prefers-reduced-motion:reduce){.rc-mascot{animation:none}}
+/* ── 방 캐릭터 테마(카드 스킨 연동) — 콘텐츠 뒤에 큰 캐릭터 워터마크(타입블럭 스타일) ── */
+/* 화면(.screen)·그리드·셀이 전부 투명이라, body 배경(--bg) 위·화면 콘텐츠 아래(z-index:-1)에 깔면
+   날짜/일정 뒤로 은은하게 비쳐 보임. pointer-events 없음(터치 방해 0). */
+.rc-watermark{position:fixed;z-index:-1;left:50%;top:55%;transform:translate(-50%,-50%);width:min(84vw,380px);height:min(84vw,380px);background-position:center;background-size:contain;background-repeat:no-repeat;opacity:.15;pointer-events:none}
+/* 은은한 구름 글로우(오른쪽) — 캐릭터 워터마크와 독립 투명도 */
+body.rc-on::before{content:'';position:fixed;z-index:-1;right:-16%;top:32%;width:82vw;height:58vh;background:radial-gradient(50% 50% at 56% 46%,rgba(255,255,255,.55),rgba(255,255,255,0) 70%);pointer-events:none}
 .cal-today-btn:active{transform:translateX(-50%) scale(.96)}
 /* 헤더 우측 작은 '오늘' 칩 — cal-month-row 우측 끝, 오늘 보고 있을 땐 숨김 */
 .cal-month-right{position:absolute;right:12px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:7px;z-index:5}
@@ -18713,7 +18714,7 @@ const ROOM_CHAR_THEME={
 function _clearRoomCharDecor(){
   try{
     Array.prototype.slice.call(document.body.classList).forEach(function(c){ if(c.indexOf('rc-')===0) document.body.classList.remove(c); });
-    var m=document.getElementById('rcMascot'); if(m) m.remove();
+    var m=document.getElementById('rcWatermark'); if(m) m.remove();
   }catch(_){}
 }
 function _applyRoomCharDecor(ct){
@@ -18721,7 +18722,7 @@ function _applyRoomCharDecor(ct){
   if(!ct) return;
   document.body.classList.add('rc-on');
   if(ct.cls) document.body.classList.add(ct.cls);
-  if(ct.mascot){ var img=document.createElement('img'); img.id='rcMascot'; img.className='rc-mascot'; img.decoding='async'; img.alt=''; img.src=ct.mascot; document.body.appendChild(img); }
+  if(ct.mascot){ var w=document.createElement('div'); w.id='rcWatermark'; w.className='rc-watermark'; w.style.backgroundImage='url("'+ct.mascot+'")'; document.body.appendChild(w); }
 }
 async function applyRoomThemeFor(roomId){
   const skin=(_myCardSkinByRoom&&roomId)?_myCardSkinByRoom[roomId]:null;
