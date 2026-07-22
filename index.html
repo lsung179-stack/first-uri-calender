@@ -4458,6 +4458,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
   <div class="store-trial-banner" id="storeTrialBanner"></div>
   <div class="store-tabs" id="storeTabs">
     <button class="store-tab on" data-tab="theme" onclick="setStoreTab('theme')">테마</button>
+    <button class="store-tab" data-tab="seal" onclick="setStoreTab('seal')">씰</button>
     <button class="store-tab" data-tab="color" onclick="setStoreTab('color')">컬러</button>
     <button class="store-tab" data-tab="text" onclick="setStoreTab('text')">텍스트</button>
     <button class="store-tab" data-tab="emoji" onclick="setStoreTab('emoji')">이모지</button>
@@ -17910,6 +17911,7 @@ function setStoreTab(tab){
   tabs.forEach(b=>b.classList.toggle('on', b.dataset.tab===tab));
   _storeCurrentTab=tab;
   if(tab==='theme')renderStoreThemes();
+  else if(tab==='seal')renderStoreSeal();
   else if(tab==='color')renderStoreColors();
   else if(tab==='text')renderStoreText();
   else if(tab==='emoji')renderStoreEmoji();
@@ -17939,13 +17941,10 @@ function renderTrialBanner(){
 }
 /* (구) onActivateTrialClick — 호환성 위해 남겨둠 (이제 호출되지 않음) */
 function onActivateTrialClick(){/* deprecated */}
-function renderStoreThemes(){
+function renderStoreSeal(){
   const body=document.getElementById('storeBody');
   if(!body)return;
-  const curTheme=_myTheme||'vintage';
-  
   let html='';
-  
   // 방 프로필 히어로 — 스토어 첫 화면에서 바로 눈에 띄게 (탭하면 피커로)
   html+=`<div class="store-seal-hero" onclick="openSealShowcase()">
     <div class="ssh-eyebrow">NEW · ROOM SEAL</div>
@@ -17969,6 +17968,15 @@ function renderStoreThemes(){
   html+=`</div>`;
   html+=`<button type="button" class="pack-btn store-seal-cta" onclick="onStoreSealClick()">${_premSeal?'방 꾸미러 가기 ›':'<span class="pack-btn-lock">\uD83D\uDD12</span>프리미엄으로 모두 사용하기'}</button>`;
 
+  body.innerHTML=html;
+}
+function renderStoreThemes(){
+  const body=document.getElementById('storeBody');
+  if(!body)return;
+  const curTheme=_myTheme||'vintage';
+  
+  let html='';
+  
   // 테마 섹션 — 무료는 기본(빈티지)만, 나머지는 프리미엄 잠금
   const _premTheme=isEffectivePremium();
   html+=`<div class="store-section-title">테마 <small>THEME</small></div>`;
