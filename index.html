@@ -13891,7 +13891,7 @@ CARD_SKINS.a_monkey={name:'몽당이',char:'https://d8j0ntlcm91z4.cloudfront.net
 CARD_SKINS.a_mouse={name:'콩이',char:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_145358_c03f560b-5481-416f-a6da-73ce0073b144.png',grad:['#efeaf5','#dcd0e6'],scene:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_151432_81a6a19c-f1c9-4fbe-93a5-2adb0acf598d.png'};
 CARD_SKINS.a_chicken={name:'꼬꼬',char:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_025000_9d2c6a13-0131-47d9-9c1f-5874b54ce0e3.png',grad:['#fbf0c4','#f2df8e'],scene:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_151434_3f4cbaeb-f557-4cde-a053-7a2edd7c1d14.png'};
 /* 장난꾸러기 캐릭터(크레파스 낙서) */
-CARD_SKINS.c_gaegu={name:'개구쟁이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_134644_4c65fcf5-73a4-4fb1-9b5a-1db1b5797f6b.png'};
+CARD_SKINS.c_gaegu={name:'개구쟁이',char:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_152621_1ab76ca8-8e56-446e-9af4-44cd028d1bae.png',scene:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_152546_78e85e35-e6a8-4a64-8567-74e1d47600c6.png'};
 CARD_SKINS.c_simsul={name:'심술이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_143004_1c85bdab-07e1-4042-b3aa-17212d290697.png'};
 CARD_SKINS.c_kkalkal={name:'깔깔이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_143001_bda96b6b-4448-4757-9830-140f684e737f.png'};
 const CARD_SKIN_PREM=['a_dog', 'a_cat', 'a_tiger', 'a_rabbit', 'a_bear', 'a_penguin', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'c_girl', 'c_boy', 'c_gaegu', 'nabi', 'ribbon', 'moon', 'daisy', 'star', 'snow', 'heart', 'koi', 'cherry'];
@@ -14011,7 +14011,7 @@ function _rmSyncPreview(){
   if(cp){
     cp.className='rm-cardprev'+_cardSkinCls(_cardSkin);
     const skk=_cardSkin&&CARD_SKINS[_cardSkin];
-    if(skk&&skk.char){ const g=skk.grad||['#f3e6cf','#e6d3ad']; cp.style.background='url("'+skk.char+'") no-repeat right 3% center/auto 94%,linear-gradient(100deg,'+g[0]+' 0%,'+g[0]+' 40%,'+g[1]+' 100%)'; }
+    if(skk&&skk.char){ const g=skk.grad||['#f3e6cf','#e6d3ad']; const bg=skk.scene?('url("'+skk.scene+'") center/cover'):('linear-gradient(100deg,'+g[0]+' 0%,'+g[0]+' 40%,'+g[1]+' 100%)'); cp.style.background='url("'+skk.char+'") no-repeat right 3% center/auto 94%,'+bg; }
     else { cp.style.background=''; cp.style.backgroundImage=(skk&&skk.img)?('url("'+skk.img+'")'):''; }
   }
   const big=document.getElementById('rmBigPrev'), nm=document.getElementById('rmBpName');
