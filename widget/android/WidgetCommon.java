@@ -193,7 +193,9 @@ public class WidgetCommon {
 
     // ── PendingIntent 헬퍼 ──
     static int resId(Context c, String name, String type) {
-        return c.getResources().getIdentifier(name, type, c.getPackageName());
+        int id = c.getResources().getIdentifier(name, type, c.getPackageName());
+        if (id == 0) id = c.getResources().getIdentifier(name, type, "com.lsung.uricalendar");
+        return id;
     }
     static PendingIntent bcast(Context c, int reqCode, String action, int delta, String user) {
         Intent i = new Intent(c, UriCalendarWidgetProvider.class);
