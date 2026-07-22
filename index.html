@@ -1149,6 +1149,8 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .cal-reaction-bubble svg{width:38px;height:38px;display:block}
 /* ===== [TEST-ANIMAL] 동물 리액션 테스트 이미지 (2026-07-21) — 삭제 시 이 블록 제거 ===== */
 .rx-animal-img{width:20px;height:20px;object-fit:contain;display:inline-block;vertical-align:middle}
+/* 닭은 원본이 캔버스를 꽉 채워 다른 동물보다 커 보임 → 살짝 축소(모든 컨텍스트 공통) */
+.rx-a-chicken{transform:scale(.78);transform-origin:center}
 .dp-reaction-chip-emoji .rx-animal-img{width:22px;height:22px;display:block}
 .cal-reaction-bubble .rx-animal-img{width:65px;height:65px;display:block}
 .emoji-btn .rx-animal-img{width:100%;height:100%;display:block}
@@ -15441,7 +15443,7 @@ var ANIMAL_STICKER={
 };
 /* 이모지 헬퍼 — 동물 키('dog:like')는 <img>, (레거시 캐릭터 SVG는 CHAR_SVG 폴백) */
 function svgEmoji(key){
-  if(ANIMAL_STICKER[key]) return '<img src="'+ANIMAL_STICKER[key]+'" class="rx-animal-img" alt="" loading="eager" decoding="async">';
+  if(ANIMAL_STICKER[key]) return '<img src="'+ANIMAL_STICKER[key]+'" class="rx-animal-img rx-a-'+key.split(':')[0]+'" alt="" loading="eager" decoding="async">';
   return (typeof CHAR_SVG!=='undefined' && CHAR_SVG[key])||'';
 }
 /* 스토어 이모지·배너 이미지 프리로드 — 원격 CDN 이미지라 처음 볼 때 로딩 지연. 미리 받아 캐시. */
