@@ -1149,8 +1149,10 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .cal-reaction-bubble svg{width:38px;height:38px;display:block}
 /* ===== [TEST-ANIMAL] 동물 리액션 테스트 이미지 (2026-07-21) — 삭제 시 이 블록 제거 ===== */
 .rx-animal-img{width:20px;height:20px;object-fit:contain;display:inline-block;vertical-align:middle}
-/* 닭은 원본이 캔버스를 꽉 채워 다른 동물보다 커 보임 → 살짝 축소(모든 컨텍스트 공통) */
-.rx-a-chicken{transform:scale(.78);transform-origin:center}
+/* 동물별 크기 보정 다이얼 — 원본이 캔버스를 채우는 비율이 달라 커 보이는 동물만 축소(모든 컨텍스트 공통).
+   닭·곰은 통일 재생성(프레임 70%)이라 보정 불필요. 필요 시 .rx-a-<동물>로 추가 조정. */
+.rx-a-cat{transform:scale(.86);transform-origin:center}
+.rx-a-mouse{transform:scale(.9);transform-origin:center}
 .dp-reaction-chip-emoji .rx-animal-img{width:22px;height:22px;display:block}
 .cal-reaction-bubble .rx-animal-img{width:65px;height:65px;display:block}
 .emoji-btn .rx-animal-img{width:100%;height:100%;display:block}
@@ -15404,12 +15406,12 @@ var ANIMAL_STICKER={
   'rabbit:surprised':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131426_756c9ea4-ef56-4e78-b8f3-fccd0a894f8f.png',
   'rabbit:teary':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131427_6d0cec42-a2b9-49f2-9dff-6a9364e075f5.png',
   'rabbit:cheer':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131429_0858a707-4959-4cae-986a-a2c8e09cf1fa.png',
-  'bear:like':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131430_62ba49b6-4038-48ad-abcc-9bf02392bbb9.png',
-  'bear:hug':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131526_defa9b32-56bc-4b0b-b1c0-f16363d80cb4.png',
-  'bear:sleepy':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131528_163b3a69-60b9-4c0d-9fe7-3e57dd8b03ea.png',
-  'bear:full':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131529_837bc52e-a447-41c8-9281-3789f2d6c392.png',
-  'bear:comfort':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131541_75c70e80-f81a-4852-a76d-5ad28f569572.png',
-  'bear:cheer':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131545_c8128aab-c403-4704-9249-faa06f22db5f.png',
+  'bear:like':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_025005_8b200819-757f-4f5f-a55e-a6c5c50fb899.png',
+  'bear:hug':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_025006_11509136-79fd-4388-91f3-eb1ab2f52510.png',
+  'bear:sleepy':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_025022_13a873db-accb-4c6c-8087-4c552dcd77ed.png',
+  'bear:full':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_025024_53d00326-5abf-4ce8-a76f-ff902e420825.png',
+  'bear:comfort':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_025025_026d6e42-caac-4093-b582-ee5bfb421c0c.png',
+  'bear:cheer':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_025025_4b74dad0-d908-421f-8864-d7a14d7b6896.png',
   'penguin:like':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131549_d2a78c0a-9c91-479a-a38e-37088030b46c.png',
   'penguin:excited':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131550_9f7baf80-5183-4b45-b859-76afaa704307.png',
   'penguin:laugh':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131552_399fbded-6f74-4af6-be5d-f0abc83d4e92.png',
@@ -15434,12 +15436,12 @@ var ANIMAL_STICKER={
   'mouse:surprised':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_145356_64050188-d5e4-45ba-b84e-0c26aa38758a.png',
   'mouse:sad':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_145357_69b82589-b56a-40f1-b3e0-f10f022f2969.png',
   'mouse:cheer':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_145358_c03f560b-5481-416f-a6da-73ce0073b144.png',
-  'chicken:like':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_145955_cf3b57a8-ac8a-4656-9a0a-d222eae60a7c.png',
-  'chicken:proud':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_145956_92fb15d4-a04e-47c2-82fa-b312d4acd177.png',
-  'chicken:excited':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_145957_12c0729c-1ff6-4f20-8b7f-66b5e0c06d03.png',
-  'chicken:laugh':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_145959_55fb7fcb-6187-42eb-a276-3979bf441ce9.png',
-  'chicken:sulk':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_150000_ca087207-a914-4e02-9f5d-88469ef93925.png',
-  'chicken:cheer':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_150002_765a0c10-bbbb-498f-ba6d-3da174029bb2.png',
+  'chicken:like':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_024958_dbc53b41-cdc5-4ceb-8bda-cc04bf22e2e5.png',
+  'chicken:proud':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_024959_1775ec02-cab3-4e7b-ae64-e85ad7d9dfa5.png',
+  'chicken:excited':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_025000_9d2c6a13-0131-47d9-9c1f-5874b54ce0e3.png',
+  'chicken:laugh':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_025001_f2ecebb1-7bdb-40bc-8871-bb4f6c04b75a.png',
+  'chicken:sulk':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_025003_06ddb589-a4e2-4a98-8fcc-7c14cc2e98e5.png',
+  'chicken:cheer':'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_025004_71f1c5d4-26c4-4401-8cc6-506e02bd3658.png',
 };
 /* 이모지 헬퍼 — 동물 키('dog:like')는 <img>, (레거시 캐릭터 SVG는 CHAR_SVG 폴백) */
 function svgEmoji(key){
