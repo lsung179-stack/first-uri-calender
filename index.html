@@ -504,6 +504,10 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .rm-skin-name{font-size:12.5px;font-weight:800;color:var(--text)}
 .rm-skin.rcs-dark .rm-skin-name{color:#f6efdc}
 .rm-skin .rm-set-lock{right:6px;top:6px}
+.rcs-img{background-size:cover;background-position:center;background-repeat:no-repeat}
+.rm-skin.rcs-img{height:64px;border-color:rgba(60,40,25,.14)}
+.rm-skin.rcs-img .rm-skin-name{background:rgba(253,247,236,.9);padding:4px 12px;border-radius:99px;color:#3a2a1c}
+.rm-skin.rcs-img.rcs-dark .rm-skin-name{background:rgba(24,26,40,.55);color:#f6efdc}
 .rm-field-label{font-size:11.5px;font-weight:800;color:var(--sub);letter-spacing:.03em;margin:0 2px 11px}
 .rm-swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px}
 .rm-sw{width:100%;aspect-ratio:1;border-radius:50%;cursor:pointer;position:relative;border:none;padding:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 1px 3px rgba(60,40,25,.22)}
@@ -6929,7 +6933,7 @@ function renderRooms(rooms,countMap){
     const sealHtml=_sealInner(_mySealByRoom[r.id], r.name)
       || `<div class="r-card-seal"><span class="r-card-seal-letter">${firstChar}</span></div>`;
     html+=`
-      <div class="r-card${_cardSkinCls(_myCardSkinByRoom[r.id])}" data-roomid="${r.id}" onclick="enterRoom('${r.id}')">
+      <div class="r-card${_cardSkinCls(_myCardSkinByRoom[r.id])}"${_cardSkinStyle(_myCardSkinByRoom[r.id])} data-roomid="${r.id}" onclick="enterRoom('${r.id}')">
         <div class="r-card-sealwrap">
           ${sealHtml}
           <button type="button" class="r-card-pencil" aria-label="방 프로필 변경" onpointerdown="event.stopPropagation()" onclick="event.stopPropagation();openRoomMascotForRoom('${r.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
@@ -13817,16 +13821,27 @@ const SEAL_SET_ORDER=['nabi', 'rosewreath', 'plum', 'moon', 'lotus', 'crane', 't
 const CARD_SKINS={
   butter:{name:'버터',free:true}, blush:{name:'블러쉬',free:true}, mint:{name:'민트',free:true},
   sky:{name:'하늘',free:true}, lavender:{name:'라벤더',free:true}, peach:{name:'피치',free:true}, sage:{name:'세이지',free:true},
-  moonlight:{name:'달빛 별밤',dark:true}, silk:{name:'딥 실크',dark:true}, hanji:{name:'한지'},
-  sakura:{name:'벚꽃'}, ocean:{name:'바다'}, forest:{name:'숲',dark:true}, goldfoil:{name:'골드'}, aurora:{name:'오로라',dark:true}
+  nabi:{name:'나비 정원',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_093008_558b4b84-f394-4a32-b632-d49620517bb3.png'},
+  rosewreath:{name:'장미 리스',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_093010_b7b68045-e3d1-4765-85a2-7b11115d61fb.png'},
+  plum:{name:'매화',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_093024_303c7d7b-3b89-45bf-82ce-335ced34640b.png'},
+  moon:{name:'달빛',dark:true,img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_093026_2deb5b76-0bd9-42fc-9ab0-48ccc192194c.png'},
+  lotus:{name:'연꽃',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_093040_d13c3c01-6cea-4890-b7e3-6c4c36852668.png'},
+  crane:{name:'학',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_093043_443087d1-3c52-4564-ac9c-9c27957cd753.png'},
+  tulip:{name:'튤립',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_093050_7c6bb2a9-1019-4cc2-94c7-fa96f0aa1034.png'},
+  snow:{name:'눈꽃',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_093052_8cb9627b-3669-465a-b51b-36e9aad832c7.png'},
+  camellia:{name:'동백',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_093110_eee173ef-8fe5-4769-af93-6877704c3d26.png'},
+  koi:{name:'잉어',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_092931_01b398d9-db8a-4604-8c81-28d1c6322307.png'},
+  chrysw:{name:'국화',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_093112_dccf6cc7-8a5d-41d1-a535-c6ffdc649e80.png'},
+  cherry:{name:'벚꽃',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_093115_99e21119-26a8-4eeb-bdcd-cbe53a16c97a.png'}
 };
 const CARD_SKIN_FREE=['butter','blush','mint','sky','lavender','peach','sage'];
-const CARD_SKIN_PREM=['moonlight','silk','hanji','sakura','ocean','forest','goldfoil','aurora'];
-function _cardSkinCls(k){ const sk=k&&CARD_SKINS[k]; return sk?(' rcs-'+k+(sk.dark?' rcs-dark':'')):''; }
+const CARD_SKIN_PREM=['nabi', 'rosewreath', 'plum', 'moon', 'lotus', 'crane', 'tulip', 'snow', 'camellia', 'koi', 'chrysw', 'cherry'];
+function _cardSkinCls(k){ const sk=k&&CARD_SKINS[k]; if(!sk)return ''; if(sk.img) return ' rcs-img'+(sk.dark?' rcs-dark':''); return ' rcs-'+k+(sk.dark?' rcs-dark':''); }
+function _cardSkinStyle(k){ const sk=k&&CARD_SKINS[k]; return (sk&&sk.img)?(' style="background-image:url(&quot;'+sk.img+'&quot;)"'):''; }
 function _sealSetSvg(key){ const st=SEAL_SETS[key]; return st?'<svg class="sealset" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">'+st.svg+'</svg>':''; }
 function _sealSetArt(key){ const st=SEAL_SETS[key]; if(!st) return ''; if(st.img) return '<img class="sealimg" src="'+st.img+'" alt="" draggable="false" decoding="async" style="--sz:'+(st.zoom||1)+'">'; return _sealSetSvg(key); }
 var _sealSetsPreloaded=false;
-function _preloadSealSets(){ if(_sealSetsPreloaded) return; _sealSetsPreloaded=true; try{ SEAL_SET_ORDER.forEach(function(k){ var st=SEAL_SETS[k]; if(st&&st.img){ var im=new Image(); im.src=st.img; } }); }catch(_){}} 
+function _preloadSealSets(){ if(_sealSetsPreloaded) return; _sealSetsPreloaded=true; try{ SEAL_SET_ORDER.forEach(function(k){ var st=SEAL_SETS[k]; if(st&&st.img){ var im=new Image(); im.src=st.img; } }); if(typeof CARD_SKINS!=='undefined'){ for(var ck in CARD_SKINS){ if(CARD_SKINS[ck]&&CARD_SKINS[ck].img){ var im2=new Image(); im2.src=CARD_SKINS[ck].img; } } } }catch(_){}} 
 function _sealSvg(sym){ return SEAL_SYMS[sym]?'<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">'+SEAL_SYMS[sym]+'</svg>':''; }
 function _parseSeal(v){ if(!v||typeof v!=='string'||v.indexOf(':')<0)return null; const a=v.split(':'); const c=a[0], s=a[1]; if(c==='set') return SEAL_SETS[s]?{set:s}:null; if(!SEAL_COLORS.some(x=>x.key===c))return null; return {color:c,sym:s}; }
 function _sealGlyph(sym, roomName){
@@ -13902,7 +13917,7 @@ function renderRoomMascotPicker(){
       g.innerHTML='<div class="rm-field-label">기본 배경 · 무료</div><div class="rm-skingrid">'+items+'</div>';
     } else {
       items+=CARD_SKIN_PREM.map(k=>{ const sk=CARD_SKINS[k];
-        return '<button type="button" data-skin="'+k+'" class="rm-skin rcs-'+k+(sk.dark?' rcs-dark':'')+(k===_cardSkin?' on':'')+'" onclick="pickCardSkin(\''+k+'\')">'
+        return '<button type="button" data-skin="'+k+'" class="rm-skin'+_cardSkinCls(k)+(k===_cardSkin?' on':'')+'"'+_cardSkinStyle(k)+' onclick="pickCardSkin(\''+k+'\')">'
           +(premB?'':'<span class="rm-set-lock">\uD83D\uDD12</span>')+'<span class="rm-skin-name">'+sk.name+'</span></button>'; }).join('');
       g.innerHTML='<div class="rm-field-label">컨셉 배경'+(premB?'':' · 프리미엄 전용')+'</div><div class="rm-skingrid">'+items+'</div>'
         +(premB?'':'<div class="rm-prem-note">프리미엄을 시작하면 바로 사용할 수 있어요 · 첫 7일 무료</div>');
@@ -13932,7 +13947,11 @@ function renderRoomMascotPicker(){
 /* 큰 미리보기+이름 갱신 (세트/커스텀 겸용) */
 function _rmSyncPreview(){
   const cp=document.getElementById('rmCardPrev');
-  if(cp) cp.className='rm-cardprev'+_cardSkinCls(_cardSkin);
+  if(cp){
+    cp.className='rm-cardprev'+_cardSkinCls(_cardSkin);
+    const skk=_cardSkin&&CARD_SKINS[_cardSkin];
+    cp.style.backgroundImage=(skk&&skk.img)?('url("'+skk.img+'")'):'';
+  }
   const big=document.getElementById('rmBigPrev'), nm=document.getElementById('rmBpName');
   if(big){
     if(_sealSet){
@@ -15748,6 +15767,7 @@ function preloadStoreAssets(){
     if(typeof EMOJI_HERO_IMG!=='undefined'&&EMOJI_HERO_IMG)urls.push(EMOJI_HERO_IMG);
     if(typeof SEAL_HERO_IMG!=='undefined'&&SEAL_HERO_IMG)urls.push(SEAL_HERO_IMG);
     if(typeof SEAL_SETS!=='undefined'){ for(var sk in SEAL_SETS){ if(SEAL_SETS[sk]&&SEAL_SETS[sk].img)urls.push(SEAL_SETS[sk].img); } }
+    if(typeof CARD_SKINS!=='undefined'){ for(var ck in CARD_SKINS){ if(CARD_SKINS[ck]&&CARD_SKINS[ck].img)urls.push(CARD_SKINS[ck].img); } }
     urls.forEach(function(u){ try{ var im=new Image(); im.decoding='async'; im.src=u; }catch(_){} });
   }catch(_){}
 }
