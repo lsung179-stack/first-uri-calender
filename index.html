@@ -465,6 +465,19 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .rm-bigprev .seal-ini{font-size:42px}
 .rm-bigprev svg{width:48px;height:48px}
 .rm-bpname{text-align:center;font-size:13px;font-weight:700;color:var(--sub);margin-bottom:20px}
+.rm-cats{display:flex;gap:8px;margin:14px 0 2px}
+.rm-cat{border:1.5px solid var(--borderL);background:var(--card);border-radius:99px;padding:7px 16px;font-family:inherit;font-size:13px;font-weight:700;color:var(--sub);-webkit-tap-highlight-color:transparent}
+.rm-cat.on{border-color:var(--accent);color:var(--accent);background:rgba(139,58,42,.07)}
+.rm-cat.soon{opacity:.55}
+.rm-cat small{font-size:10px;font-weight:600;margin-left:2px}
+.rm-cardprev{display:flex;align-items:center;gap:13px;background:var(--card);border:1px solid var(--borderL);border-radius:16px;padding:14px;margin:12px 0 2px;box-shadow:0 2px 8px rgba(60,40,25,.08)}
+.rm-cardprev .rm-bigprev{width:54px;height:54px;margin:0;flex:none}
+.rm-cardprev .rm-bigprev .seal-ini{font-size:24px}
+.rm-cardprev .rm-bigprev svg{width:28px;height:28px}
+.rm-cardprev-body{flex:1;min-width:0}
+.rm-cardprev-name{font-size:15.5px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rm-cardprev .rm-bpname{margin:3px 0 0;text-align:left}
+.rm-cardprev-chev{color:var(--sub);font-size:18px;flex:none;opacity:.6}
 .rm-field-label{font-size:11.5px;font-weight:800;color:var(--sub);letter-spacing:.03em;margin:0 2px 11px}
 .rm-swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px}
 .rm-sw{width:100%;aspect-ratio:1;border-radius:50%;cursor:pointer;position:relative;border:none;padding:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 1px 3px rgba(60,40,25,.22)}
@@ -4448,9 +4461,19 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     <div style="width:36px;flex-shrink:0"></div>
   </div>
   <div class="ann-body"><div class="ann-form">
-    <div class="mo-sub" style="margin:0 0 4px">내 화면에만 적용돼요 · 방마다 나만의 씰로 꾸며보세요</div>
-    <div class="rm-bigprev" id="rmBigPrev"></div>
-    <div class="rm-bpname" id="rmBpName"></div>
+    <div class="mo-sub" style="margin:0 0 4px">내 화면에만 적용돼요 · 방 카드를 나만의 컨셉으로 꾸며보세요</div>
+    <div class="rm-cats" id="rmCats">
+      <button type="button" class="rm-cat on" data-rmcat="seal" onclick="setRmCat('seal')">씰</button>
+      <button type="button" class="rm-cat soon" onclick="toast('카드 배경 꾸미기는 준비 중이에요')">카드 배경 <small>준비 중</small></button>
+    </div>
+    <div class="rm-cardprev">
+      <div class="rm-bigprev" id="rmBigPrev"></div>
+      <div class="rm-cardprev-body">
+        <div class="rm-cardprev-name" id="rmPrevRoomName">방</div>
+        <div class="rm-bpname" id="rmBpName"></div>
+      </div>
+      <span class="rm-cardprev-chev">›</span>
+    </div>
     <div class="rm-seg" id="rmSeg">
       <button type="button" class="rm-seg-btn on" data-rmtab="basic" onclick="setRmTab('basic')">기본</button>
       <button type="button" class="rm-seg-btn" data-rmtab="prem" onclick="setRmTab('prem')">프리미엄</button>
@@ -13796,6 +13819,7 @@ function openRoomMascotForRoom(roomId){
   _sealColor = (p&&p.color)?p.color:'terra';
   _sealSym   = (p&&p.sym)?p.sym:'ini';
   _preloadSealSets();
+  const _pn=document.getElementById('rmPrevRoomName'); if(_pn)_pn.textContent=_mascotRoomName||'방';
   _rmTab = _sealSet ? 'prem' : 'basic';   // 저장된 게 세트면 프리미엄 탭에서 시작
   _rmSyncSeg();
   renderRoomMascotPicker();
@@ -13811,6 +13835,15 @@ function closeRoomMascot(){
   try{ showTabbar(); }catch(_){}
   try{ _subScreenExit(); }catch(_){}
 }
+/* 꾸미기 카테고리 — 지금은 'seal'뿐, 추후 카드 배경('cardbg') 등 확장 예정.
+   renderRoomMascotPicker가 카테고리별로 분기하고, 저장값도 카테고리별 필드로 확장(멤버별 members.seal 외 추가 컬럼) 계획. */
+let _rmCat='seal';
+function setRmCat(c){
+  _rmCat=c;
+  document.querySelectorAll('#rmCats .rm-cat').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-rmcat')===c); });
+  renderRoomMascotPicker();
+}
+window.setRmCat=setRmCat;
 /* 기본/프리미엄 탭 */
 let _rmTab='basic';
 function _rmSyncSeg(){
@@ -13822,6 +13855,7 @@ function renderRoomMascotPicker(){
   _rmSyncPreview();
   const g=document.getElementById('rmGroups');
   if(!g)return;
+  if(_rmCat!=='seal'){ g.innerHTML='<div class="rm-prem-note">준비 중이에요</div>'; return; }   // 추후 카테고리 확장 지점
   if(_rmTab==='prem'){
     const prem=isEffectivePremium();
     const setBtns=SEAL_SET_ORDER.map(k=>
