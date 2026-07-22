@@ -13845,7 +13845,11 @@ CARD_SKINS.cherryf={name:'체리',img:'https://d8j0ntlcm91z4.cloudfront.net/user
 CARD_SKINS.daisy={name:'데이지',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_124211_21f3b017-85d2-4239-8dad-32b26e6f4df1.png'};
 CARD_SKINS.star={name:'별똥별',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_124230_3d4f9461-e76d-4f42-aba2-714c99a74b37.png'};
 CARD_SKINS.heart={name:'하트',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_124234_aa7a2f1e-fe09-40fb-a814-b66c7c85429e.png'};
-const CARD_SKIN_PREM=['nabi', 'rosewreath', 'ribbon', 'moon', 'daisy', 'star', 'tulip', 'snow', 'heart', 'koi', 'cherryf', 'cherry'];
+/* 캐릭터 카드 배경(초안 3종, 2026-07-22) — 웹툰 고양이·크레파스 꼬마·산리오 토끼 */
+CARD_SKINS.c_cat={name:'냥이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_134633_09874e6d-0ad5-48c7-9f22-4d8ee49c91fe.png'};
+CARD_SKINS.c_kid={name:'엉뚱이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_134644_4c65fcf5-73a4-4fb1-9b5a-1db1b5797f6b.png'};
+CARD_SKINS.c_bunny={name:'토끼',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_134704_195eef31-6015-45d5-a67d-f55475ed9de2.png'};
+const CARD_SKIN_PREM=['c_cat', 'c_kid', 'c_bunny', 'nabi', 'rosewreath', 'ribbon', 'moon', 'daisy', 'star', 'tulip', 'snow', 'heart', 'koi', 'cherryf', 'cherry'];
 function _cardSkinCls(k){ const sk=k&&CARD_SKINS[k]; if(!sk)return ''; if(sk.img) return ' rcs-img'+(sk.dark?' rcs-dark':''); return ' rcs-'+k+(sk.dark?' rcs-dark':''); }
 function _cardSkinStyle(k){ const sk=k&&CARD_SKINS[k]; return (sk&&sk.img)?(' style="background-image:url(&quot;'+sk.img+'&quot;)"'):''; }
 function _sealSetSvg(key){ const st=SEAL_SETS[key]; return st?'<svg class="sealset" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">'+st.svg+'</svg>':''; }
