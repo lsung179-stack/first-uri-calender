@@ -21,7 +21,7 @@
         <ImageView android:id="@+id/wg_av2" android:layout_width="22dp" android:layout_height="22dp" android:padding="2dp" android:scaleType="fitCenter" android:layout_marginEnd="2dp" android:visibility="gone" />
         <ImageView android:id="@+id/wg_av3" android:layout_width="22dp" android:layout_height="22dp" android:padding="2dp" android:scaleType="fitCenter" android:layout_marginEnd="2dp" android:visibility="gone" />
         <TextView android:id="@+id/wg_more" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="9sp" android:textStyle="bold" android:textColor="#8A6C52" android:text="+0" android:visibility="gone" />
-        <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+        <FrameLayout android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
         <TextView android:id="@+id/wg_refresh" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="4dp" android:paddingRight="6dp" android:textColor="#8A6C52" android:textSize="15sp" android:text="↻" />
     </LinearLayout>
 
@@ -33,53 +33,53 @@
             <TextView android:id="@+id/cb_upempty" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:textColor="#8A6C52" android:textSize="12sp" android:visibility="gone" android:text="예정된 일정이 없어요" />
 
             <LinearLayout android:id="@+id/cb_up0" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="7dp" android:visibility="gone">
-                <View android:id="@+id/cb_upbar0" android:layout_width="3dp" android:layout_height="26dp" android:background="#8B3A2A" android:layout_marginEnd="7dp" />
+                <FrameLayout android:id="@+id/cb_upbar0" android:layout_width="3dp" android:layout_height="26dp" android:background="#8B3A2A" android:layout_marginEnd="7dp" />
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
                     <TextView android:id="@+id/cb_uprange0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="5dp" android:paddingRight="5dp" android:paddingTop="1dp" android:paddingBottom="1dp" android:background="@drawable/chip_off" android:textColor="#8A6C52" android:textSize="9sp" android:textStyle="bold" android:text="" />
                     <TextView android:id="@+id/cb_uptitle0" android:layout_width="match_parent" android:layout_height="wrap_content" android:singleLine="true" android:ellipsize="end" android:textColor="#2A1C0F" android:textSize="13sp" android:textStyle="bold" android:text="" />
                 </LinearLayout>
             </LinearLayout>
             <LinearLayout android:id="@+id/cb_up1" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="6dp" android:visibility="gone">
-                <View android:id="@+id/cb_upbar1" android:layout_width="3dp" android:layout_height="26dp" android:background="#8B3A2A" android:layout_marginEnd="7dp" />
+                <FrameLayout android:id="@+id/cb_upbar1" android:layout_width="3dp" android:layout_height="26dp" android:background="#8B3A2A" android:layout_marginEnd="7dp" />
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
                     <TextView android:id="@+id/cb_uprange1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="5dp" android:paddingRight="5dp" android:paddingTop="1dp" android:paddingBottom="1dp" android:background="@drawable/chip_off" android:textColor="#8A6C52" android:textSize="9sp" android:textStyle="bold" android:text="" />
                     <TextView android:id="@+id/cb_uptitle1" android:layout_width="match_parent" android:layout_height="wrap_content" android:singleLine="true" android:ellipsize="end" android:textColor="#2A1C0F" android:textSize="13sp" android:textStyle="bold" android:text="" />
                 </LinearLayout>
             </LinearLayout>
             <LinearLayout android:id="@+id/cb_up2" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="6dp" android:visibility="gone">
-                <View android:id="@+id/cb_upbar2" android:layout_width="3dp" android:layout_height="26dp" android:background="#8B3A2A" android:layout_marginEnd="7dp" />
+                <FrameLayout android:id="@+id/cb_upbar2" android:layout_width="3dp" android:layout_height="26dp" android:background="#8B3A2A" android:layout_marginEnd="7dp" />
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
                     <TextView android:id="@+id/cb_uprange2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="5dp" android:paddingRight="5dp" android:paddingTop="1dp" android:paddingBottom="1dp" android:background="@drawable/chip_off" android:textColor="#8A6C52" android:textSize="9sp" android:textStyle="bold" android:text="" />
                     <TextView android:id="@+id/cb_uptitle2" android:layout_width="match_parent" android:layout_height="wrap_content" android:singleLine="true" android:ellipsize="end" android:textColor="#2A1C0F" android:textSize="13sp" android:textStyle="bold" android:text="" />
                 </LinearLayout>
             </LinearLayout>
             <LinearLayout android:id="@+id/cb_up3" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="6dp" android:visibility="gone">
-                <View android:id="@+id/cb_upbar3" android:layout_width="3dp" android:layout_height="26dp" android:background="#8B3A2A" android:layout_marginEnd="7dp" />
+                <FrameLayout android:id="@+id/cb_upbar3" android:layout_width="3dp" android:layout_height="26dp" android:background="#8B3A2A" android:layout_marginEnd="7dp" />
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
                     <TextView android:id="@+id/cb_uprange3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="5dp" android:paddingRight="5dp" android:paddingTop="1dp" android:paddingBottom="1dp" android:background="@drawable/chip_off" android:textColor="#8A6C52" android:textSize="9sp" android:textStyle="bold" android:text="" />
                     <TextView android:id="@+id/cb_uptitle3" android:layout_width="match_parent" android:layout_height="wrap_content" android:singleLine="true" android:ellipsize="end" android:textColor="#2A1C0F" android:textSize="13sp" android:textStyle="bold" android:text="" />
                 </LinearLayout>
             </LinearLayout>
             <LinearLayout android:id="@+id/cb_up4" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="6dp" android:visibility="gone">
-                <View android:id="@+id/cb_upbar4" android:layout_width="3dp" android:layout_height="26dp" android:background="#8B3A2A" android:layout_marginEnd="7dp" />
+                <FrameLayout android:id="@+id/cb_upbar4" android:layout_width="3dp" android:layout_height="26dp" android:background="#8B3A2A" android:layout_marginEnd="7dp" />
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
                     <TextView android:id="@+id/cb_uprange4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="5dp" android:paddingRight="5dp" android:paddingTop="1dp" android:paddingBottom="1dp" android:background="@drawable/chip_off" android:textColor="#8A6C52" android:textSize="9sp" android:textStyle="bold" android:text="" />
                     <TextView android:id="@+id/cb_uptitle4" android:layout_width="match_parent" android:layout_height="wrap_content" android:singleLine="true" android:ellipsize="end" android:textColor="#2A1C0F" android:textSize="13sp" android:textStyle="bold" android:text="" />
                 </LinearLayout>
             </LinearLayout>
             <LinearLayout android:id="@+id/cb_up5" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="6dp" android:visibility="gone">
-                <View android:id="@+id/cb_upbar5" android:layout_width="3dp" android:layout_height="26dp" android:background="#8B3A2A" android:layout_marginEnd="7dp" />
+                <FrameLayout android:id="@+id/cb_upbar5" android:layout_width="3dp" android:layout_height="26dp" android:background="#8B3A2A" android:layout_marginEnd="7dp" />
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
                     <TextView android:id="@+id/cb_uprange5" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="5dp" android:paddingRight="5dp" android:paddingTop="1dp" android:paddingBottom="1dp" android:background="@drawable/chip_off" android:textColor="#8A6C52" android:textSize="9sp" android:textStyle="bold" android:text="" />
                     <TextView android:id="@+id/cb_uptitle5" android:layout_width="match_parent" android:layout_height="wrap_content" android:singleLine="true" android:ellipsize="end" android:textColor="#2A1C0F" android:textSize="13sp" android:textStyle="bold" android:text="" />
                 </LinearLayout>
             </LinearLayout>
 
-            <View android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
+            <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
             <TextView android:id="@+id/cb_td" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:singleLine="true" android:ellipsize="end" android:textColor="#2A1C0F" android:textSize="12sp" android:visibility="gone" android:text="" />
         </LinearLayout>
 
-        <View android:layout_width="1dp" android:layout_height="match_parent" android:layout_marginLeft="10dp" android:layout_marginRight="10dp" android:background="#338A6C52" />
+        <FrameLayout android:layout_width="1dp" android:layout_height="match_parent" android:layout_marginLeft="10dp" android:layout_marginRight="10dp" android:background="#338A6C52" />
 
         <!-- 우: 미니 월 -->
         <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical">
