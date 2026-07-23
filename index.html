@@ -14227,6 +14227,7 @@ async function _saveMascotValue(val, skin, keepOpen){
     if(keepOpen){
       _sealHad=!!(val||skin);
       const clr=document.getElementById('rmClearBtn'); if(clr)clr.style.display=_sealHad?'block':'none';
+      if(val||skin){ try{ toast('저장되었습니다'); }catch(_){} }
     } else {
       toast(val?'방 프로필이 바뀌었어요':'기본으로 되돌렸어요');
       closeRoomMascot();
