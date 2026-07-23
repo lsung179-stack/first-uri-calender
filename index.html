@@ -18271,6 +18271,8 @@ let _storeCurrentTab='theme';
 function openStore(){
   closeMainModals();
   _storeCurrentTab='theme';
+  // 스토어는 방 캐릭터 테마(초록 등) 말고 원래(개인 기본) 테마 색으로 — 카드 배경은 각 항목이 자체 이미지로 보여줌
+  try{ applyTheme(_myTheme||'vintage'); }catch(_){}
   renderTrialBanner();
   setStoreTab('theme');
   document.getElementById('storeCard').classList.add('on');
@@ -18280,6 +18282,8 @@ function openStore(){
 function closeStore(){
   document.getElementById('storeCard').classList.remove('on');
   _subScreenExit();
+  // 닫으면 방 캐릭터 테마 색 복원
+  try{ applyTheme(_currentRoomTheme||_myTheme||'vintage'); }catch(_){}
 }
 function setStoreTab(tab){
   const tabs=document.querySelectorAll('#storeTabs .store-tab');
