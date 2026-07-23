@@ -488,11 +488,11 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .rcs-sage{background:linear-gradient(135deg,#eaf0e1,#d3dfc5)!important}
 /* 기본 배경 = 테마 6종(앱 색과 연동). 각 테마 hue로 구분되는 파스텔 그라데이션 */
 .rcs-t_vintage{background:linear-gradient(135deg,#fbf2e0,#ecdcc2,#e0cba9)!important}
-.rcs-t_lavender{background:linear-gradient(135deg,#f3eefb,#e8dff8,#d9c9f2)!important}
-.rcs-t_peach{background:linear-gradient(135deg,#fdf1e7,#fde8d8,#f8d3ba)!important}
-.rcs-t_mint{background:linear-gradient(135deg,#eaf7f2,#d8f0e8,#bfe6d6)!important}
-.rcs-t_rose{background:linear-gradient(135deg,#fdeef2,#fde0e8,#f8ccd9)!important}
-.rcs-t_sky{background:linear-gradient(135deg,#e9f2fc,#d8ecf8,#bfddf2)!important}
+.rcs-t_lavender{background:linear-gradient(135deg,#efe7fd,#e2d3fc,#d0b6f8)!important}
+.rcs-t_peach{background:linear-gradient(135deg,#ffeee0,#ffe3ce,#ffcaa6)!important}
+.rcs-t_mint{background:linear-gradient(135deg,#e4f8f0,#cef3e6,#aeead2)!important}
+.rcs-t_rose{background:linear-gradient(135deg,#ffe7ed,#ffd6e2,#ffb8cd)!important}
+.rcs-t_sky{background:linear-gradient(135deg,#e1efff,#cbeafd,#aad9fa)!important}
 .rcs-moonlight{background:radial-gradient(circle at 82% 18%,rgba(236,201,114,.28),transparent 34%),radial-gradient(circle at 68% 62%,rgba(255,255,255,.12) 0 1.5px,transparent 2.5px),radial-gradient(circle at 30% 30%,rgba(255,255,255,.15) 0 1px,transparent 2px),radial-gradient(circle at 88% 78%,rgba(255,255,255,.12) 0 1px,transparent 2px),radial-gradient(circle at 14% 82%,rgba(255,255,255,.10) 0 1px,transparent 2px),linear-gradient(135deg,#31446a,#1d2b47)!important;border-color:rgba(236,201,114,.28)!important}
 .rcs-silk{background:linear-gradient(120deg,rgba(255,255,255,0) 42%,rgba(255,255,255,.09) 50%,rgba(255,255,255,0) 58%),linear-gradient(135deg,#4c3324,#2c1c13)!important;border-color:rgba(255,255,255,.12)!important}
 .rcs-hanji{background:repeating-linear-gradient(0deg,rgba(160,128,86,.05) 0 1px,transparent 1px 7px),repeating-linear-gradient(90deg,rgba(160,128,86,.04) 0 1px,transparent 1px 9px),linear-gradient(135deg,#f9f1de,#efe2c4)!important}
@@ -8391,11 +8391,11 @@ function getDayHeaderInfo(year,month,day){
 /* ── 테마 시스템 (V2 8가지) ── */
 const THEMES={
   vintage:{bg:'#f3e6cf',card:'#fbf2e0',text:'#3a2418',sub:'#8a6a4d',mute:'#b8a285',accent:'#8b3a2a',aL:'#a85040',aP:'#e8d4be',gold:'#b08742',border:'rgba(139,58,42,.18)',borderL:'rgba(139,58,42,.10)',sun:'#8b3a2a',sat:'#3a5a8b',dotRGB:'139,58,42'},
-  lavender:{bg:'#f5f3fa',card:'#ffffff',text:'#1e1c25',sub:'#7e7090',mute:'#b5acc4',accent:'#9b7fc7',aL:'#b49ad4',aP:'#e8dff8',gold:'#b08742',border:'rgba(200,190,220,.4)',borderL:'rgba(200,190,220,.22)',sun:'#d47090',sat:'#7090d4',dotRGB:'155,127,199'},
-  peach:{bg:'#fdf6f0',card:'#ffffff',text:'#2a1d18',sub:'#8a6850',mute:'#c5a895',accent:'#e0855a',aL:'#e8a880',aP:'#fde8d8',gold:'#b08742',border:'rgba(230,200,180,.4)',borderL:'rgba(230,200,180,.22)',sun:'#d47060',sat:'#6080c8',dotRGB:'224,133,90'},
-  mint:{bg:'#f2f9f7',card:'#ffffff',text:'#162520',sub:'#5e8276',mute:'#a8bdb5',accent:'#4aaa8a',aL:'#7ac0a8',aP:'#d8f0e8',gold:'#b08742',border:'rgba(170,215,200,.4)',borderL:'rgba(170,215,200,.22)',sun:'#c86070',sat:'#5080b8',dotRGB:'74,170,138'},
-  rose:{bg:'#fdf4f6',card:'#ffffff',text:'#2a1820',sub:'#8a5e6c',mute:'#c5a5b0',accent:'#d86880',aL:'#e8a0b0',aP:'#fde0e8',gold:'#b08742',border:'rgba(230,190,200,.4)',borderL:'rgba(230,190,200,.22)',sun:'#d06070',sat:'#6878c0',dotRGB:'216,104,128'},
-  sky:{bg:'#f0f6fd',card:'#ffffff',text:'#142028',sub:'#5e7088',mute:'#a5b5c5',accent:'#4880c0',aL:'#78b0e0',aP:'#d8ecf8',gold:'#b08742',border:'rgba(170,205,240,.4)',borderL:'rgba(170,205,240,.22)',sun:'#c86878',sat:'#4870b8',dotRGB:'72,128,192'},
+  lavender:{bg:'#efebfb',card:'#ffffff',text:'#1e1c25',sub:'#7e7090',mute:'#b5acc4',accent:'#9b7fc7',aL:'#b49ad4',aP:'#e2d3fc',gold:'#b08742',border:'rgba(200,190,220,.4)',borderL:'rgba(200,190,220,.22)',sun:'#d47090',sat:'#7090d4',dotRGB:'155,127,199'},
+  peach:{bg:'#fff2e6',card:'#ffffff',text:'#2a1d18',sub:'#8a6850',mute:'#c5a895',accent:'#e0855a',aL:'#e8a880',aP:'#ffe3ce',gold:'#b08742',border:'rgba(230,200,180,.4)',borderL:'rgba(230,200,180,.22)',sun:'#d47060',sat:'#6080c8',dotRGB:'224,133,90'},
+  mint:{bg:'#eaf9f5',card:'#ffffff',text:'#162520',sub:'#5e8276',mute:'#a8bdb5',accent:'#4aaa8a',aL:'#7ac0a8',aP:'#cef3e6',gold:'#b08742',border:'rgba(170,215,200,.4)',borderL:'rgba(170,215,200,.22)',sun:'#c86070',sat:'#5080b8',dotRGB:'74,170,138'},
+  rose:{bg:'#ffeaef',card:'#ffffff',text:'#2a1820',sub:'#8a5e6c',mute:'#c5a5b0',accent:'#d86880',aL:'#e8a0b0',aP:'#ffd6e2',gold:'#b08742',border:'rgba(230,190,200,.4)',borderL:'rgba(230,190,200,.22)',sun:'#d06070',sat:'#6878c0',dotRGB:'216,104,128'},
+  sky:{bg:'#e6f2ff',card:'#ffffff',text:'#142028',sub:'#5e7088',mute:'#a5b5c5',accent:'#4880c0',aL:'#78b0e0',aP:'#cbeafd',gold:'#b08742',border:'rgba(170,205,240,.4)',borderL:'rgba(170,205,240,.22)',sun:'#c86878',sat:'#4870b8',dotRGB:'72,128,192'},
   /* 캐릭터 자동 테마(카드 스킨 연동) — 스토어 목록엔 없음 */
   dino:{bg:'#eef7e6',card:'#ffffff',text:'#20301a',sub:'#5f7d4e',mute:'#a6bd92',accent:'#4f9d3a',aL:'#77c05e',aP:'#d9efc9',gold:'#b08742',border:'rgba(79,157,58,.24)',borderL:'rgba(79,157,58,.12)',sun:'#c8503a',sat:'#4880c0',dotRGB:'79,157,58'}
 };
