@@ -8377,10 +8377,9 @@ const THEMES={
   /* 캐릭터 자동 테마(카드 스킨 연동) — 스토어 목록엔 없음 */
   dino:{bg:'#eef7e6',card:'#ffffff',text:'#20301a',sub:'#5f7d4e',mute:'#a6bd92',accent:'#4f9d3a',aL:'#77c05e',aP:'#d9efc9',gold:'#b08742',border:'rgba(79,157,58,.24)',borderL:'rgba(79,157,58,.12)',sun:'#c8503a',sat:'#4880c0',dotRGB:'79,157,58'}
 };
-/* 캐릭터 자동 테마 — 10동물 카드 스킨 연동(스토어 목록엔 없음). 각 동물 대표색 기반 파스텔 팔레트. */
-THEMES.a_dog={bg:'#fbf3e6',card:'#ffffff',text:'#33261a',sub:'#8a6a48',mute:'#c3ab88',accent:'#c8863a',aL:'#d9a866',aP:'#f2e2c8',gold:'#b08742',border:'rgba(200,134,58,.22)',borderL:'rgba(200,134,58,.11)',sun:'#c8503a',sat:'#4880c0',dotRGB:'200,134,58'};
+/* 캐릭터 자동 테마 — 동물 카드 스킨 연동(스토어 목록엔 없음). 각 동물 대표색 기반 파스텔 팔레트.
+   (보리 강아지·호담 호랑이 팔레트는 삭제됨 — 사용자 요청 2026-07-23) */
 THEMES.a_cat={bg:'#f2f4f8',card:'#ffffff',text:'#232a33',sub:'#6c7688',mute:'#aab4c4',accent:'#7f8fa6',aL:'#a3b0c4',aP:'#dde3ee',gold:'#b08742',border:'rgba(127,143,166,.26)',borderL:'rgba(127,143,166,.13)',sun:'#c8503a',sat:'#4880c0',dotRGB:'127,143,166'};
-THEMES.a_tiger={bg:'#fdf3e8',card:'#ffffff',text:'#33230f',sub:'#8a6a48',mute:'#c9ab86',accent:'#e07a1e',aL:'#ee9f52',aP:'#fbe0c6',gold:'#b08742',border:'rgba(224,122,30,.22)',borderL:'rgba(224,122,30,.11)',sun:'#c8503a',sat:'#4880c0',dotRGB:'224,122,30'};
 THEMES.a_rabbit={bg:'#fdf2f6',card:'#ffffff',text:'#33202a',sub:'#8a5e6c',mute:'#c9a5b2',accent:'#e08aa8',aL:'#eda9c0',aP:'#fbdde8',gold:'#b08742',border:'rgba(224,138,168,.26)',borderL:'rgba(224,138,168,.13)',sun:'#c8503a',sat:'#4880c0',dotRGB:'224,138,168'};
 THEMES.a_bear={bg:'#fdf7e6',card:'#ffffff',text:'#332a12',sub:'#8a7340',mute:'#cbb47e',accent:'#cf9a2e',aL:'#e0bb5e',aP:'#f6e6bd',gold:'#b08742',border:'rgba(207,154,46,.24)',borderL:'rgba(207,154,46,.12)',sun:'#c8503a',sat:'#4880c0',dotRGB:'207,154,46'};
 THEMES.a_penguin={bg:'#eef5fb',card:'#ffffff',text:'#14232e',sub:'#5a7488',mute:'#a1b6c6',accent:'#4a90c0',aL:'#79b0da',aP:'#cfe3f2',gold:'#b08742',border:'rgba(74,144,192,.24)',borderL:'rgba(74,144,192,.12)',sun:'#c8503a',sat:'#4880c0',dotRGB:'74,144,192'};
@@ -13903,7 +13902,7 @@ SEAL_SETS.a_dino={name:'두두',zoom:1.05,img:'https://d8j0ntlcm91z4.cloudfront.
 SEAL_SETS.c_gaegu={name:'개구쟁이',zoom:1.2,img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_150343_803e9739-57ab-4415-9e49-68f84594732a.png'};
 SEAL_SETS.c_simsul={name:'심술이',zoom:1.2,img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_143127_b098cc5d-4c1e-46fc-a642-b3b1cb827def.png'};
 SEAL_SETS.c_kkalkal={name:'깔깔이',zoom:1.2,img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_143149_1960a50c-f638-4954-80ae-e9d7ea6051fe.png'};
-const SEAL_SET_ORDER=['a_dog', 'a_cat', 'a_tiger', 'a_rabbit', 'a_bear', 'a_penguin', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'a_dino', 'c_girl', 'c_boy', 'c_gaegu', 'nabi', 'ribbon', 'moon', 'daisy', 'star', 'snow', 'heart', 'koi', 'cherry'];   // 구 전통 5종(plum·lotus·crane·camellia·chrysw)은 데이터만 잔존(레거시 저장값 렌더용)
+const SEAL_SET_ORDER=['a_cat', 'a_rabbit', 'a_bear', 'a_penguin', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'a_dino', 'c_gaegu', 'nabi', 'ribbon', 'moon', 'daisy', 'star', 'heart', 'koi', 'cherry'];   // 보리·호담·소녀·소년·눈꽃 제거(2026-07-23, 사용자 요청). 데이터는 잔존(레거시 저장값 렌더용)   // 구 전통 5종(plum·lotus·crane·camellia·chrysw)은 데이터만 잔존(레거시 저장값 렌더용)
 /* ── 방 카드 배경 스킨 (members.card_skin, 마이그레이션 add_members_card_skin) — 무료 7 + 프리미엄 8 ── */
 const CARD_SKINS={
   butter:{name:'버터',free:true}, blush:{name:'블러쉬',free:true}, mint:{name:'민트',free:true},
@@ -13963,7 +13962,7 @@ CARD_SKINS.a_dino={name:'두두',img:'https://d8j0ntlcm91z4.cloudfront.net/user_
 CARD_SKINS.c_gaegu={name:'개구쟁이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_153032_a4c62025-d47b-4e56-a059-f82da277e932.png'};
 CARD_SKINS.c_simsul={name:'심술이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_143004_1c85bdab-07e1-4042-b3aa-17212d290697.png'};
 CARD_SKINS.c_kkalkal={name:'깔깔이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_143001_bda96b6b-4448-4757-9830-140f684e737f.png'};
-const CARD_SKIN_PREM=['a_dog', 'a_cat', 'a_tiger', 'a_rabbit', 'a_bear', 'a_penguin', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'a_dino', 'c_girl', 'c_boy', 'c_gaegu', 'nabi', 'ribbon', 'moon', 'daisy', 'star', 'snow', 'heart', 'koi', 'cherry'];
+const CARD_SKIN_PREM=['a_cat', 'a_rabbit', 'a_bear', 'a_penguin', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'a_dino', 'c_gaegu', 'nabi', 'ribbon', 'moon', 'daisy', 'star', 'heart', 'koi', 'cherry'];   // 보리·호담·소녀·소년·눈꽃 제거(2026-07-23, 사용자 요청). CARD_SKINS 데이터는 잔존
 function _cardSkinCls(k){ const sk=k&&CARD_SKINS[k]; if(!sk)return ''; if(sk.char) return ' rcs-char'+(sk.dark?' rcs-dark':''); if(sk.img) return ' rcs-img'+(sk.dark?' rcs-dark':''); return ' rcs-'+k+(sk.dark?' rcs-dark':''); }
 function _cardSkinStyle(k){ const sk=k&&CARD_SKINS[k]; if(!sk)return '';
   if(sk.char){ const g=sk.grad||['#f3e6cf','#e6d3ad']; const bg=sk.scene?('url(&quot;'+sk.scene+'&quot;) center/cover'):('linear-gradient(100deg,'+g[0]+' 0%,'+g[0]+' 40%,'+g[1]+' 100%)'); return ' style="background:url(&quot;'+sk.char+'&quot;) no-repeat right 3% center/auto 94%,'+bg+'"'; }
@@ -15960,9 +15959,7 @@ function emojiDisplayName(em){
 const STORE_EMOJI=[
   {key:'calli', name:'감정은 붓글씨로 대신함', desc:'먹붓 유행어 캘리', preview:['calli:yar','calli:yaho','calli:crazy','calli:lucky']},
   {key:'weather', name:'오늘 날씨: 대체로 귀여움', desc:'몽글몽글 날씨 친구', preview:['weather:sun','weather:rain','weather:snow','weather:rainbow']},
-  {key:'dog', name:'산책 두 글자에 진심인 보리', desc:'크레용 강아지', preview:['dog:like','dog:excited','dog:laugh','dog:love']},
   {key:'cat', name:'애교는 만렙, 눈치는 빵점 코코', desc:'플랫벡터 고양이', preview:['cat:like','cat:meh','cat:sulk','cat:smug']},
-  {key:'tiger', name:'작아도 기세는 호랑이, 호담', desc:'민화 호랑이', preview:['tiger:like','tiger:proud','tiger:celebrate','tiger:moved']},
   {key:'rabbit', name:'부끄러움 담당 토끼 달이', desc:'수채화 토끼', preview:['rabbit:like','rabbit:love','rabbit:bashful','rabbit:surprised']},
   {key:'bear', name:'포근함 맛집, 꿀곰이', desc:'허니 스토리북 곰', preview:['bear:like','bear:hug','bear:sleepy','bear:full']},
   {key:'penguin', name:'급할 거 없는 펭귄 뽀글이', desc:'말랑 클레이 펭귄', preview:['penguin:like','penguin:excited','penguin:laugh','penguin:love']},
@@ -18506,7 +18503,7 @@ function renderStoreEmoji(){
   let html=`<div class="store-emoji-hero" style="background-image:url('${EMOJI_HERO_IMG}')">
     <div class="sfh-eyebrow">NEW · ANIMAL STICKERS</div>
     <div class="sfh-title">동물 친구들의<br>귀여운 반응 이모지</div>
-    <div class="sfh-desc">일정에 콕 찍는 13가지 캐릭터 팩</div>
+    <div class="sfh-desc">일정에 콕 찍는 11가지 캐릭터 팩</div>
   </div>`;
   html+='<div class="store-section-title">캐릭터 이모지 <small>CHARACTER PACK</small></div>';
   // 카카오샵식 리스트: 한 팩=한 행(대표 스티커 74px + 풀 타이틀 + 부제 + 상태 pill). 행 탭=상세 시트.
@@ -18779,17 +18776,16 @@ let _currentRoomTheme=null;
    대표 1종(두두 공룡)만 우선 구현 — 다른 캐릭터는 여기에 추가하면 자동 확장. */
 const ROOM_CHAR_THEME={
   a_dino:{theme:'dino', cls:'rc-dino', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_231336_caee7c1e-3f39-462e-b3ee-6b102cd3906e.png', bgScene:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260723_015928_1b83402b-ff92-44e5-badc-274b770fcea3.png', charInScene:true},
-  // 10동물 — 색 테마 + 캐릭터 워터마크(기존 like 스티커 재활용, 크레딧 0). 배경 씬·전용 아이콘은 추후 유료 단계.
-  a_dog:{theme:'a_dog', cls:'rc-a_dog', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131042_886b63ac-0632-42d0-a0a9-ba48b6c7d3ce.png'},
-  a_cat:{theme:'a_cat', cls:'rc-a_cat', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131049_2edab854-1187-4526-aa8c-4154d6134f77.png'},
-  a_tiger:{theme:'a_tiger', cls:'rc-a_tiger', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131316_9afa8f91-f824-4a71-a7d0-aa9dfa0d7578.png'},
-  a_rabbit:{theme:'a_rabbit', cls:'rc-a_rabbit', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131423_1abae10c-557e-40d4-b274-784d983cd97d.png'},
-  a_bear:{theme:'a_bear', cls:'rc-a_bear', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_062518_1ae49953-c3dd-4ea9-ab4d-5b95d144f02c.png'},
-  a_penguin:{theme:'a_penguin', cls:'rc-a_penguin', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_062526_2fc2259d-3ecb-4963-ae1b-2b2daf96fa61.png'},
-  a_fox:{theme:'a_fox', cls:'rc-a_fox', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131649_8ad71c7b-5a63-43ce-b824-9d7b955c5a01.png'},
-  a_monkey:{theme:'a_monkey', cls:'rc-a_monkey', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_062549_7f21fbf8-ade4-4e48-95c7-82f2fdfa445e.png'},
-  a_mouse:{theme:'a_mouse', cls:'rc-a_mouse', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_145353_adb117fe-8d47-491b-9e6c-354a19419a9b.png'},
-  a_chicken:{theme:'a_chicken', cls:'rc-a_chicken', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_024958_dbc53b41-cdc5-4ceb-8bda-cc04bf22e2e5.png'}
+  // 동물 8종 — 색 테마 + 캐릭터 워터마크(캐릭터마다 다른 감정 스티커 재활용, 크레딧 0). 배경 씬·전용 아이콘은 추후 유료 단계.
+  // (보리 강아지·호담 호랑이는 삭제됨 — 사용자 요청 2026-07-23)
+  a_cat:{theme:'a_cat', cls:'rc-a_cat', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131313_a25de53a-96f2-4cb2-a0e9-a1570004da30.png'},
+  a_rabbit:{theme:'a_rabbit', cls:'rc-a_rabbit', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131425_bd6c0b47-f86f-47c0-bb9f-5bece3064652.png'},
+  a_bear:{theme:'a_bear', cls:'rc-a_bear', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_062519_fb00cd08-88c9-47cf-b714-44d020a1faae.png'},
+  a_penguin:{theme:'a_penguin', cls:'rc-a_penguin', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_062527_9f014570-e1e9-4833-a39b-96c2b4f03087.png'},
+  a_fox:{theme:'a_fox', cls:'rc-a_fox', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131651_bb8cb757-f36e-43b7-a695-85a644ac218c.png'},
+  a_monkey:{theme:'a_monkey', cls:'rc-a_monkey', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_062552_11483751-6a2f-4f26-bad5-8bd410c6bef8.png'},
+  a_mouse:{theme:'a_mouse', cls:'rc-a_mouse', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_145355_21845e00-a3b8-4bcd-b4e8-d2b2c9a0e281.png'},
+  a_chicken:{theme:'a_chicken', cls:'rc-a_chicken', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_024959_1775ec02-cab3-4e7b-ae64-e85ad7d9dfa5.png'}
 };
 /* 카드 스킨 → 앱 테마 매핑(캐릭터 스킨=ROOM_CHAR_THEME.theme, 기본 배경=CARD_SKINS[k].theme). 없으면 null. */
 function _cardSkinTheme(skin){
