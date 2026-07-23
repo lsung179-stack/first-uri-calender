@@ -838,12 +838,14 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 /* 오늘로 가기 플로팅 버튼 (다른 달일 때만 표시) */
 .cal-today-btn{display:none;position:fixed;bottom:calc(56px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:25;background:var(--aL);color:#fff;border:none;padding:10px 22px;border-radius:99px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;box-shadow:0 4px 20px rgba(30,28,24,.18);letter-spacing:.3px;white-space:nowrap;transition:transform .12s}
 .cal-today-btn.show{display:block}
-/* ── 방 캐릭터 테마(카드 스킨 연동) — 콘텐츠 뒤에 큰 캐릭터 워터마크(타입블럭 스타일) ── */
-/* 화면(.screen)·그리드·셀이 전부 투명이라, body 배경(--bg) 위·화면 콘텐츠 아래(z-index:-1)에 깔면
-   날짜/일정 뒤로 은은하게 비쳐 보임. pointer-events 없음(터치 방해 0). */
-.rc-watermark{position:fixed;z-index:-1;left:50%;top:55%;transform:translate(-50%,-50%);width:min(84vw,380px);height:min(84vw,380px);background-position:center;background-size:contain;background-repeat:no-repeat;opacity:.15;pointer-events:none}
-/* 은은한 구름 글로우(오른쪽) — 캐릭터 워터마크와 독립 투명도 */
-body.rc-on::before{content:'';position:fixed;z-index:-1;right:-16%;top:32%;width:82vw;height:58vh;background:radial-gradient(50% 50% at 56% 46%,rgba(255,255,255,.55),rgba(255,255,255,0) 70%);pointer-events:none}
+/* ── 방 캐릭터 테마(카드 스킨 연동) — 콘텐츠 뒤에 큰 캐릭터 워터마크+구름(타입블럭 스타일) ── */
+/* .app이 position:fixed로 스택 컨텍스트를 만들어 body의 z-index:-1은 가려짐 → 데코를 .app 안 첫 자식으로 넣어
+   투명한 .screen/그리드보다 먼저 그려 날짜/일정 뒤로 비치게 함. pointer-events 없음(터치 방해 0). */
+.rc-decor{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.rc-decor .rc-char{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);width:min(88vw,410px);height:min(88vw,410px);background-position:center;background-size:contain;background-repeat:no-repeat;opacity:.17}
+.rc-decor .rc-cloud{position:absolute;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.7),rgba(255,255,255,0) 72%)}
+.rc-decor .rc-cloud1{right:-22%;top:26%;width:86%;height:48%;opacity:.85}
+.rc-decor .rc-cloud2{left:-26%;bottom:4%;width:74%;height:40%;opacity:.6}
 .cal-today-btn:active{transform:translateX(-50%) scale(.96)}
 /* 헤더 우측 작은 '오늘' 칩 — cal-month-row 우측 끝, 오늘 보고 있을 땐 숨김 */
 .cal-month-right{position:absolute;right:12px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:7px;z-index:5}
@@ -18714,7 +18716,7 @@ const ROOM_CHAR_THEME={
 function _clearRoomCharDecor(){
   try{
     Array.prototype.slice.call(document.body.classList).forEach(function(c){ if(c.indexOf('rc-')===0) document.body.classList.remove(c); });
-    var m=document.getElementById('rcWatermark'); if(m) m.remove();
+    var m=document.getElementById('rcDecor'); if(m) m.remove();
   }catch(_){}
 }
 function _applyRoomCharDecor(ct){
@@ -18722,7 +18724,12 @@ function _applyRoomCharDecor(ct){
   if(!ct) return;
   document.body.classList.add('rc-on');
   if(ct.cls) document.body.classList.add(ct.cls);
-  if(ct.mascot){ var w=document.createElement('div'); w.id='rcWatermark'; w.className='rc-watermark'; w.style.backgroundImage='url("'+ct.mascot+'")'; document.body.appendChild(w); }
+  // .app 스택 컨텍스트 안 첫 자식으로 데코 삽입(콘텐츠 뒤에 그려짐)
+  var host=document.querySelector('.app')||document.body;
+  var d=document.createElement('div'); d.id='rcDecor'; d.className='rc-decor';
+  d.innerHTML='<div class="rc-cloud rc-cloud1"></div><div class="rc-cloud rc-cloud2"></div><div class="rc-char"></div>';
+  if(ct.mascot){ var c=d.querySelector('.rc-char'); if(c) c.style.backgroundImage='url("'+ct.mascot+'")'; }
+  host.insertBefore(d, host.firstChild);
 }
 async function applyRoomThemeFor(roomId){
   const skin=(_myCardSkinByRoom&&roomId)?_myCardSkinByRoom[roomId]:null;
