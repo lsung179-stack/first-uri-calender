@@ -8377,6 +8377,17 @@ const THEMES={
   /* 캐릭터 자동 테마(카드 스킨 연동) — 스토어 목록엔 없음 */
   dino:{bg:'#eef7e6',card:'#ffffff',text:'#20301a',sub:'#5f7d4e',mute:'#a6bd92',accent:'#4f9d3a',aL:'#77c05e',aP:'#d9efc9',gold:'#b08742',border:'rgba(79,157,58,.24)',borderL:'rgba(79,157,58,.12)',sun:'#c8503a',sat:'#4880c0',dotRGB:'79,157,58'}
 };
+/* 캐릭터 자동 테마 — 10동물 카드 스킨 연동(스토어 목록엔 없음). 각 동물 대표색 기반 파스텔 팔레트. */
+THEMES.a_dog={bg:'#fbf3e6',card:'#ffffff',text:'#33261a',sub:'#8a6a48',mute:'#c3ab88',accent:'#c8863a',aL:'#d9a866',aP:'#f2e2c8',gold:'#b08742',border:'rgba(200,134,58,.22)',borderL:'rgba(200,134,58,.11)',sun:'#c8503a',sat:'#4880c0',dotRGB:'200,134,58'};
+THEMES.a_cat={bg:'#f2f4f8',card:'#ffffff',text:'#232a33',sub:'#6c7688',mute:'#aab4c4',accent:'#7f8fa6',aL:'#a3b0c4',aP:'#dde3ee',gold:'#b08742',border:'rgba(127,143,166,.26)',borderL:'rgba(127,143,166,.13)',sun:'#c8503a',sat:'#4880c0',dotRGB:'127,143,166'};
+THEMES.a_tiger={bg:'#fdf3e8',card:'#ffffff',text:'#33230f',sub:'#8a6a48',mute:'#c9ab86',accent:'#e07a1e',aL:'#ee9f52',aP:'#fbe0c6',gold:'#b08742',border:'rgba(224,122,30,.22)',borderL:'rgba(224,122,30,.11)',sun:'#c8503a',sat:'#4880c0',dotRGB:'224,122,30'};
+THEMES.a_rabbit={bg:'#fdf2f6',card:'#ffffff',text:'#33202a',sub:'#8a5e6c',mute:'#c9a5b2',accent:'#e08aa8',aL:'#eda9c0',aP:'#fbdde8',gold:'#b08742',border:'rgba(224,138,168,.26)',borderL:'rgba(224,138,168,.13)',sun:'#c8503a',sat:'#4880c0',dotRGB:'224,138,168'};
+THEMES.a_bear={bg:'#fdf7e6',card:'#ffffff',text:'#332a12',sub:'#8a7340',mute:'#cbb47e',accent:'#cf9a2e',aL:'#e0bb5e',aP:'#f6e6bd',gold:'#b08742',border:'rgba(207,154,46,.24)',borderL:'rgba(207,154,46,.12)',sun:'#c8503a',sat:'#4880c0',dotRGB:'207,154,46'};
+THEMES.a_penguin={bg:'#eef5fb',card:'#ffffff',text:'#14232e',sub:'#5a7488',mute:'#a1b6c6',accent:'#4a90c0',aL:'#79b0da',aP:'#cfe3f2',gold:'#b08742',border:'rgba(74,144,192,.24)',borderL:'rgba(74,144,192,.12)',sun:'#c8503a',sat:'#4880c0',dotRGB:'74,144,192'};
+THEMES.a_fox={bg:'#fdf1eb',card:'#ffffff',text:'#331e14',sub:'#8a5e48',mute:'#c9a690',accent:'#d8663a',aL:'#e89068',aP:'#f9d6c6',gold:'#b08742',border:'rgba(216,102,58,.22)',borderL:'rgba(216,102,58,.11)',sun:'#c8503a',sat:'#4880c0',dotRGB:'216,102,58'};
+THEMES.a_monkey={bg:'#f8f0e6',card:'#ffffff',text:'#2e2113',sub:'#7d6142',mute:'#c0a582',accent:'#a5713e',aL:'#c39a6a',aP:'#ecd8be',gold:'#b08742',border:'rgba(165,113,62,.24)',borderL:'rgba(165,113,62,.12)',sun:'#c8503a',sat:'#4880c0',dotRGB:'165,113,62'};
+THEMES.a_mouse={bg:'#f5f2f8',card:'#ffffff',text:'#262230',sub:'#756c80',mute:'#b3a9bd',accent:'#9a86a8',aL:'#bcabca',aP:'#e3dcec',gold:'#b08742',border:'rgba(154,134,168,.26)',borderL:'rgba(154,134,168,.13)',sun:'#c8503a',sat:'#4880c0',dotRGB:'154,134,168'};
+THEMES.a_chicken={bg:'#fdf8e8',card:'#ffffff',text:'#332b12',sub:'#8a7540',mute:'#cbb87e',accent:'#e0a52e',aL:'#ecc65e',aP:'#f8e9bd',gold:'#b08742',border:'rgba(224,165,46,.26)',borderL:'rgba(224,165,46,.13)',sun:'#c8503a',sat:'#4880c0',dotRGB:'224,165,46'};
 
 /* 일정 색상 12가지 — 6 원색(선명) + 6 파스텔(부드러움). key는 호환성을 위해 유지 */
 const EVENT_COLORS=[
@@ -18767,7 +18778,18 @@ let _currentRoomTheme=null;
 /* 방 카드 스킨(캐릭터) → 자동 테마 + 마스코트 꾸미기 매핑.
    대표 1종(두두 공룡)만 우선 구현 — 다른 캐릭터는 여기에 추가하면 자동 확장. */
 const ROOM_CHAR_THEME={
-  a_dino:{theme:'dino', cls:'rc-dino', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_231336_caee7c1e-3f39-462e-b3ee-6b102cd3906e.png', bgScene:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260723_015928_1b83402b-ff92-44e5-badc-274b770fcea3.png', charInScene:true}
+  a_dino:{theme:'dino', cls:'rc-dino', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_231336_caee7c1e-3f39-462e-b3ee-6b102cd3906e.png', bgScene:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260723_015928_1b83402b-ff92-44e5-badc-274b770fcea3.png', charInScene:true},
+  // 10동물 — 색 테마 + 캐릭터 워터마크(기존 like 스티커 재활용, 크레딧 0). 배경 씬·전용 아이콘은 추후 유료 단계.
+  a_dog:{theme:'a_dog', cls:'rc-a_dog', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131042_886b63ac-0632-42d0-a0a9-ba48b6c7d3ce.png'},
+  a_cat:{theme:'a_cat', cls:'rc-a_cat', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131049_2edab854-1187-4526-aa8c-4154d6134f77.png'},
+  a_tiger:{theme:'a_tiger', cls:'rc-a_tiger', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131316_9afa8f91-f824-4a71-a7d0-aa9dfa0d7578.png'},
+  a_rabbit:{theme:'a_rabbit', cls:'rc-a_rabbit', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131423_1abae10c-557e-40d4-b274-784d983cd97d.png'},
+  a_bear:{theme:'a_bear', cls:'rc-a_bear', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_062518_1ae49953-c3dd-4ea9-ab4d-5b95d144f02c.png'},
+  a_penguin:{theme:'a_penguin', cls:'rc-a_penguin', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_062526_2fc2259d-3ecb-4963-ae1b-2b2daf96fa61.png'},
+  a_fox:{theme:'a_fox', cls:'rc-a_fox', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131649_8ad71c7b-5a63-43ce-b824-9d7b955c5a01.png'},
+  a_monkey:{theme:'a_monkey', cls:'rc-a_monkey', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_062549_7f21fbf8-ade4-4e48-95c7-82f2fdfa445e.png'},
+  a_mouse:{theme:'a_mouse', cls:'rc-a_mouse', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_145353_adb117fe-8d47-491b-9e6c-354a19419a9b.png'},
+  a_chicken:{theme:'a_chicken', cls:'rc-a_chicken', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_024958_dbc53b41-cdc5-4ceb-8bda-cc04bf22e2e5.png'}
 };
 /* 카드 스킨 → 앱 테마 매핑(캐릭터 스킨=ROOM_CHAR_THEME.theme, 기본 배경=CARD_SKINS[k].theme). 없으면 null. */
 function _cardSkinTheme(skin){
