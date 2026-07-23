@@ -486,6 +486,13 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .rcs-lavender{background:linear-gradient(135deg,#ede5f7,#d7c8ee)!important}
 .rcs-peach{background:linear-gradient(135deg,#fbe9da,#f4d1b8)!important}
 .rcs-sage{background:linear-gradient(135deg,#eaf0e1,#d3dfc5)!important}
+/* 기본 배경 = 테마 6종(앱 색과 연동). 각 테마 hue로 구분되는 파스텔 그라데이션 */
+.rcs-t_vintage{background:linear-gradient(135deg,#fbf2e0,#ecdcc2,#e0cba9)!important}
+.rcs-t_lavender{background:linear-gradient(135deg,#f3eefb,#e8dff8,#d9c9f2)!important}
+.rcs-t_peach{background:linear-gradient(135deg,#fdf1e7,#fde8d8,#f8d3ba)!important}
+.rcs-t_mint{background:linear-gradient(135deg,#eaf7f2,#d8f0e8,#bfe6d6)!important}
+.rcs-t_rose{background:linear-gradient(135deg,#fdeef2,#fde0e8,#f8ccd9)!important}
+.rcs-t_sky{background:linear-gradient(135deg,#e9f2fc,#d8ecf8,#bfddf2)!important}
 .rcs-moonlight{background:radial-gradient(circle at 82% 18%,rgba(236,201,114,.28),transparent 34%),radial-gradient(circle at 68% 62%,rgba(255,255,255,.12) 0 1.5px,transparent 2.5px),radial-gradient(circle at 30% 30%,rgba(255,255,255,.15) 0 1px,transparent 2px),radial-gradient(circle at 88% 78%,rgba(255,255,255,.12) 0 1px,transparent 2px),radial-gradient(circle at 14% 82%,rgba(255,255,255,.10) 0 1px,transparent 2px),linear-gradient(135deg,#31446a,#1d2b47)!important;border-color:rgba(236,201,114,.28)!important}
 .rcs-silk{background:linear-gradient(120deg,rgba(255,255,255,0) 42%,rgba(255,255,255,.09) 50%,rgba(255,255,255,0) 58%),linear-gradient(135deg,#4c3324,#2c1c13)!important;border-color:rgba(255,255,255,.12)!important}
 .rcs-hanji{background:repeating-linear-gradient(0deg,rgba(160,128,86,.05) 0 1px,transparent 1px 7px),repeating-linear-gradient(90deg,rgba(160,128,86,.04) 0 1px,transparent 1px 9px),linear-gradient(135deg,#f9f1de,#efe2c4)!important}
@@ -3414,10 +3421,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
       <div class="uni-row-grow"><div class="lbl">코드</div><div class="val" id="uniRoomCode">—</div></div>
       <button class="uni-mini-btn" onclick="copyRoomCode()">복사</button>
     </div>
-    <div class="uni-row" id="uniRoomThemeRow" style="display:block;padding-top:2px">
-      <div class="lbl" style="margin-bottom:8px">이 방 테마 <span style="font-size:11px;color:var(--sub);font-weight:600">· 나에게만 적용돼요</span></div>
-      <div id="uniRoomThemeGrid" class="uni-room-theme-grid"></div>
-    </div>
+    <!-- '이 방 테마' 섹션은 방 프로필 카드 배경(기본 배경=테마 6종)으로 통합됨(2026-07-23). 색 섞임 방지. -->
     <button class="uni-nav" style="background:var(--kakao);color:var(--kakaoText)" onclick="shareKakao()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 9.06 9.06 0 0 1-3.6-.7L3 21l1.7-5.4A8.38 8.38 0 0 1 4 11.5 8.5 8.5 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5z"/></svg>카카오톡으로 초대</span><span class="chev">›</span></button>
 
     <div class="uni-divider"></div>
@@ -13905,7 +13909,17 @@ const CARD_SKINS={
   chrysw:{name:'국화',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_093112_dccf6cc7-8a5d-41d1-a535-c6ffdc649e80.png'},
   cherry:{name:'벚꽃',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_093115_99e21119-26a8-4eeb-bdcd-cbe53a16c97a.png'}
 };
-const CARD_SKIN_FREE=['butter','blush','mint','sky','lavender','peach','sage'];
+/* 기본 배경 = 앱 테마 6종 연동 — 선택 시 그 테마 색이 앱 전체에 적용됨(설정 '이 방 테마'를 방 프로필로 통합).
+   theme 필드가 있으면 applyRoomThemeFor가 그 테마를 우선 적용 → 카드 배경과 앱 색이 항상 일치(색 섞임 방지). */
+CARD_SKINS.t_vintage={name:'빈티지',free:true,theme:'vintage'};
+CARD_SKINS.t_lavender={name:'라벤더',free:true,theme:'lavender'};
+CARD_SKINS.t_peach={name:'피치',free:true,theme:'peach'};
+CARD_SKINS.t_mint={name:'민트',free:true,theme:'mint'};
+CARD_SKINS.t_rose={name:'로즈',free:true,theme:'rose'};
+CARD_SKINS.t_sky={name:'스카이',free:true,theme:'sky'};
+/* 옛 파스텔 무료 스킨(butter·blush·mint·sky·lavender·peach·sage)은 테마 미연동 → 피커에서 제외.
+   데이터는 잔존(레거시 저장값 렌더용). 기본 배경 = 테마 6종으로 교체. */
+const CARD_SKIN_FREE=['t_vintage','t_lavender','t_peach','t_mint','t_rose','t_sky'];
 CARD_SKINS.ribbon={name:'리본',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_124201_ec823a28-a36e-4b31-8720-1418a4346342.png'};
 CARD_SKINS.cherryf={name:'체리',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_124209_1d81f0cc-5ae7-485e-bd0a-da3e21416c4e.png'};
 CARD_SKINS.daisy={name:'데이지',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_124211_21f3b017-85d2-4239-8dad-32b26e6f4df1.png'};
@@ -13960,7 +13974,7 @@ function _sealInner(mascotVal, roomName){
   return '<div class="r-card-seal has-seal seal-'+p.color+'">'+_sealGlyph(p.sym, roomName)+'</div>';
 }
 
-let _mascotRoomId=null, _mascotRoomName='', _sealColor='terra', _sealSym='ini', _sealSet=null, _sealHad=false, _mySealByRoom={}, _cardSkin=null, _myCardSkinByRoom={};
+let _mascotRoomId=null, _mascotRoomName='', _sealColor='terra', _sealSym='ini', _sealSet=null, _sealHad=false, _mySealByRoom={}, _cardSkin=null, _myCardSkinByRoom={}, _rmBaseTheme=null;
 function openRoomMascotForRoom(roomId){
   const room=(_myRooms||[]).find(function(r){return r.id===roomId})
     || ((_currentRoom&&_currentRoom.id===roomId)?_currentRoom:null);
@@ -13976,6 +13990,7 @@ function openRoomMascotForRoom(roomId){
   _preloadSealSets();
   const _pn=document.getElementById('rmPrevRoomName'); if(_pn)_pn.textContent=_mascotRoomName||'방';
   _cardSkin=_myCardSkinByRoom[room.id]||null;
+  _rmBaseTheme=_currentRoomTheme||_myTheme||'vintage';   // 편집 취소 시 되돌릴 기준 테마
   _rmTab = _sealSet ? 'prem' : 'basic';   // 저장된 게 세트면 프리미엄 탭에서 시작
   _rmSyncSeg();
   _rmCat='seal'; _rmSyncCats();
@@ -13991,6 +14006,8 @@ function closeRoomMascot(){
   if(c)c.classList.remove('on');
   try{ showTabbar(); }catch(_){}
   try{ _subScreenExit(); }catch(_){}
+  // 라이브 미리보기로 바뀐 테마를 저장된 진실로 확정/복원(저장=새 스킨 테마, 취소=기존 스킨 테마).
+  try{ if(_currentRoom&&_mascotRoomId===_currentRoom.id) applyRoomThemeFor(_currentRoom.id); }catch(_){}
 }
 /* 꾸미기 카테고리 — 지금은 'seal'뿐, 추후 카드 배경('cardbg') 등 확장 예정.
    renderRoomMascotPicker가 카테고리별로 분기하고, 저장값도 카테고리별 필드로 확장(멤버별 members.seal 외 추가 컬럼) 계획. */
@@ -14098,6 +14115,13 @@ function pickCardSkin(k){
   const g=document.getElementById('rmGroups');
   if(g) g.querySelectorAll('.rm-skin').forEach(function(b){ b.classList.toggle('on',(b.getAttribute('data-skin')||'')===(k||'')); });
   _rmSyncPreview();
+  // 현재 들어와 있는 방을 편집 중이면, 선택한 카드 배경의 테마를 앱 전체에 즉시 미리보기(색 연동 피드백)
+  try{
+    if(_currentRoom&&_mascotRoomId===_currentRoom.id){
+      const th=_cardSkinTheme(_cardSkin)||_rmBaseTheme||_myTheme||'vintage';
+      if(THEMES[th]) applyTheme(th);
+    }
+  }catch(_){}
 }
 window.pickCardSkin=pickCardSkin;
 function pickSealColor(c){ _sealColor=c; _rmPickCustom(); }
@@ -18743,6 +18767,13 @@ let _currentRoomTheme=null;
 const ROOM_CHAR_THEME={
   a_dino:{theme:'dino', cls:'rc-dino', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_231336_caee7c1e-3f39-462e-b3ee-6b102cd3906e.png', bgScene:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260723_015928_1b83402b-ff92-44e5-badc-274b770fcea3.png', charInScene:true}
 };
+/* 카드 스킨 → 앱 테마 매핑(캐릭터 스킨=ROOM_CHAR_THEME.theme, 기본 배경=CARD_SKINS[k].theme). 없으면 null. */
+function _cardSkinTheme(skin){
+  if(!skin) return null;
+  var ct=ROOM_CHAR_THEME[skin]; if(ct&&ct.theme&&THEMES[ct.theme]) return ct.theme;
+  var sk=(typeof CARD_SKINS!=='undefined')?CARD_SKINS[skin]:null; if(sk&&sk.theme&&THEMES[sk.theme]) return sk.theme;
+  return null;
+}
 function _clearRoomCharDecor(){
   try{
     Array.prototype.slice.call(document.body.classList).forEach(function(c){ if(c.indexOf('rc-')===0) document.body.classList.remove(c); });
@@ -18778,9 +18809,10 @@ async function applyRoomThemeFor(roomId){
       if(data&&data.theme&&THEMES[data.theme]){theme=data.theme;explicit=true;}
     }
   }catch(_){}
-  // 캐릭터 카드 스킨이 있으면 그 캐릭터 테마를 우선 적용(색+데코 항상 일치 — 저장된 방 테마보다 우선).
-  // 캐릭터 스킨이 없을 때만 저장된 방 테마/개인 테마 사용.
-  if(ct&&THEMES[ct.theme]) theme=ct.theme;
+  // 카드 배경(기본 테마 배경 or 캐릭터 스킨)이 있으면 그 테마를 우선 적용(색+데코 항상 일치 — 저장된 방 테마보다 우선).
+  // 카드 배경이 없을 때만 저장된 방 테마/개인 테마 사용. → 설정 '이 방 테마'를 카드 배경으로 통합, 색 섞임 방지.
+  var _skTheme=_cardSkinTheme(skin);
+  if(_skTheme) theme=_skTheme;
   _currentRoomTheme=theme;
   applyTheme(theme);
   _applyRoomCharDecor(ct);   // 마스코트 + 캐릭터 클래스(테마 색과 별개로 스킨 있으면 표시)
