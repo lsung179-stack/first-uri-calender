@@ -1940,6 +1940,15 @@ body.ff-jua{letter-spacing:-.2px}
 .rm-uset.on{border-color:var(--accent);box-shadow:0 0 0 1.5px var(--accent) inset}
 .rm-uset-pill{font-size:12.5px;font-weight:800;color:var(--accent);background:var(--aP);border-radius:99px;padding:5px 13px;white-space:nowrap}
 .rm-uset-pill.on{background:var(--accent);color:#fff}
+/* 통합 세트 행 촘촘하게(방편집 목록) */
+.rm-uset{padding:8px 12px;margin-bottom:7px}
+.rm-uset .ep-th{width:54px;height:54px;border-radius:12px;padding:5px}
+/* 방 프로필 시트 — 미리보기+세그먼트 상단 고정, 리스트(#rmGroups)만 스크롤 */
+#roomMascotCard .ann-body{overflow:hidden;display:flex;flex-direction:column}
+#roomMascotCard .ann-form{flex:1;min-height:0;display:flex;flex-direction:column;padding-bottom:0}
+#roomMascotCard .rm-fixtop{flex:none}
+#roomMascotCard #rmGroups{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:8px -20px 0;padding:4px 20px}
+#roomMascotCard .rm-fixactions{flex:none;padding:12px 0 max(20px,env(safe-area-inset-bottom))}
 /* 이모지 팩 미리보기 — 4개 그리드 (2×2) */
 .emoji-pack-preview{background:#fbf2e0;padding:16px 8px 10px}
 .emoji-pack-preview .emoji-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;width:100%;max-width:118px}
@@ -4540,21 +4549,23 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     <div style="width:36px;flex-shrink:0"></div>
   </div>
   <div class="ann-body"><div class="ann-form">
-    <div class="mo-sub" style="margin:0 0 4px">내 화면에만 적용돼요 · 방 카드를 나만의 컨셉으로 꾸며보세요</div>
-    <div class="rm-cardprev" id="rmCardPrev">
-      <div class="rm-bigprev" id="rmBigPrev"></div>
-      <div class="rm-cardprev-body">
-        <div class="rm-cardprev-name" id="rmPrevRoomName">방</div>
-        <div class="rm-bpname" id="rmBpName"></div>
+    <div class="rm-fixtop">
+      <div class="mo-sub" style="margin:0 0 4px">내 화면에만 적용돼요 · 방 카드를 나만의 컨셉으로 꾸며보세요</div>
+      <div class="rm-cardprev" id="rmCardPrev">
+        <div class="rm-bigprev" id="rmBigPrev"></div>
+        <div class="rm-cardprev-body">
+          <div class="rm-cardprev-name" id="rmPrevRoomName">방</div>
+          <div class="rm-bpname" id="rmBpName"></div>
+        </div>
+        <span class="rm-cardprev-chev">›</span>
       </div>
-      <span class="rm-cardprev-chev">›</span>
-    </div>
-    <div class="rm-seg" id="rmSeg">
-      <button type="button" class="rm-seg-btn on" data-rmtab="basic" onclick="setRmTab('basic')">기본</button>
-      <button type="button" class="rm-seg-btn" data-rmtab="prem" onclick="setRmTab('prem')">프리미엄</button>
+      <div class="rm-seg" id="rmSeg">
+        <button type="button" class="rm-seg-btn on" data-rmtab="basic" onclick="setRmTab('basic')">기본</button>
+        <button type="button" class="rm-seg-btn" data-rmtab="prem" onclick="setRmTab('prem')">프리미엄</button>
+      </div>
     </div>
     <div id="rmGroups"></div>
-    <div class="mo-actions" style="margin-top:16px">
+    <div class="mo-actions rm-fixactions" style="margin-top:0">
       <button class="btn btn-primary" onclick="saveRoomMascot()">저장하기</button>
       <button class="mo-cancel" id="rmClearBtn" onclick="clearRoomMascot()" style="display:none">기본(첫 글자)으로 되돌리기</button>
     </div>
