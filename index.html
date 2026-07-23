@@ -846,6 +846,13 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .rc-decor .rc-cloud{position:absolute;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.7),rgba(255,255,255,0) 72%)}
 .rc-decor .rc-cloud1{right:-22%;top:26%;width:86%;height:48%;opacity:.85}
 .rc-decor .rc-cloud2{left:-26%;bottom:4%;width:74%;height:40%;opacity:.6}
+/* 탭바 아이콘 캐릭터 테마 — 전체 초록 틴트 + 활성 탭은 캐릭터 스티커로 */
+body.rc-on .cal-tab{color:var(--aL)}
+body.rc-on .cal-tab.on{color:var(--accent);background:transparent}
+body.rc-on .cal-tab.on .cal-tab-ico svg{visibility:hidden}
+body.rc-on .cal-tab.on .cal-tab-ico::after{content:"";position:absolute;inset:-4px;background:var(--rc-char-url) center/contain no-repeat;filter:drop-shadow(0 1px 1.5px rgba(30,50,20,.25))}
+/* 설정 목록 아이콘 캐릭터색(강조) 틴트 */
+body.rc-on .uni-nav-l svg{color:var(--accent);stroke:var(--accent)}
 .cal-today-btn:active{transform:translateX(-50%) scale(.96)}
 /* 헤더 우측 작은 '오늘' 칩 — cal-month-row 우측 끝, 오늘 보고 있을 땐 숨김 */
 .cal-month-right{position:absolute;right:12px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:7px;z-index:5}
@@ -18717,6 +18724,7 @@ function _clearRoomCharDecor(){
   try{
     Array.prototype.slice.call(document.body.classList).forEach(function(c){ if(c.indexOf('rc-')===0) document.body.classList.remove(c); });
     var m=document.getElementById('rcDecor'); if(m) m.remove();
+    document.body.style.removeProperty('--rc-char-url');
   }catch(_){}
 }
 function _applyRoomCharDecor(ct){
@@ -18728,7 +18736,7 @@ function _applyRoomCharDecor(ct){
   var host=document.querySelector('.app')||document.body;
   var d=document.createElement('div'); d.id='rcDecor'; d.className='rc-decor';
   d.innerHTML='<div class="rc-cloud rc-cloud1"></div><div class="rc-cloud rc-cloud2"></div><div class="rc-char"></div>';
-  if(ct.mascot){ var c=d.querySelector('.rc-char'); if(c) c.style.backgroundImage='url("'+ct.mascot+'")'; }
+  if(ct.mascot){ var c=d.querySelector('.rc-char'); if(c) c.style.backgroundImage='url("'+ct.mascot+'")'; document.body.style.setProperty('--rc-char-url','url("'+ct.mascot+'")'); }
   host.insertBefore(d, host.firstChild);
 }
 async function applyRoomThemeFor(roomId){
