@@ -8390,6 +8390,8 @@ THEMES.a_chicken={bg:'#fdf8e8',card:'#ffffff',text:'#332b12',sub:'#8a7540',mute:
 /* 무늬형 프로필(씰) 테마 — 나비정원(로즈·라벤더 플로럴)·별똥별(페리윙클 인디고). 모티프 색에 맞춘 파스텔. */
 THEMES.nabi={bg:'#faf3f6',card:'#ffffff',text:'#2e2028',sub:'#8a6c7c',mute:'#c9aebb',accent:'#c07f9a',aL:'#d9abc4',aP:'#f3e2ec',gold:'#b08742',border:'rgba(192,127,154,.24)',borderL:'rgba(192,127,154,.12)',sun:'#c8503a',sat:'#4880c0',dotRGB:'192,127,154'};
 THEMES.star={bg:'#f1f2fb',card:'#ffffff',text:'#1e2033',sub:'#6c7088',mute:'#a8adc6',accent:'#6a72c0',aL:'#969ddb',aP:'#dcdef4',gold:'#b08742',border:'rgba(106,114,192,.24)',borderL:'rgba(106,114,192,.12)',sun:'#c8503a',sat:'#4880c0',dotRGB:'106,114,192'};
+/* 개구쟁이(크레파스 낙서 장난꾸러기) — 밝은 코랄 */
+THEMES.c_gaegu={bg:'#fdf4ee',card:'#ffffff',text:'#33241b',sub:'#8a6a54',mute:'#c9ab96',accent:'#e37a56',aL:'#ee9e80',aP:'#fbe0d2',gold:'#b08742',border:'rgba(227,122,86,.24)',borderL:'rgba(227,122,86,.12)',sun:'#c8503a',sat:'#4880c0',dotRGB:'227,122,86'};
 
 /* 일정 색상 12가지 — 6 원색(선명) + 6 파스텔(부드러움). key는 호환성을 위해 유지 */
 const EVENT_COLORS=[
@@ -18791,7 +18793,8 @@ const ROOM_CHAR_THEME={
   a_chicken:{theme:'a_chicken', cls:'rc-a_chicken', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_024959_1775ec02-cab3-4e7b-ae64-e85ad7d9dfa5.png'},
   // 무늬형 프로필(씰) — 씰 이미지를 워터마크로 재활용(크레딧 0)
   nabi:{theme:'nabi', cls:'rc-nabi', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_083643_f20e7c87-e6f0-4ccb-b9a3-dea85086d559.png'},
-  star:{theme:'star', cls:'rc-star', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_124248_348e4aec-0fae-441a-9115-71c2347e0653.png'}
+  star:{theme:'star', cls:'rc-star', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_124248_348e4aec-0fae-441a-9115-71c2347e0653.png'},
+  c_gaegu:{theme:'c_gaegu', cls:'rc-c_gaegu', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_150343_803e9739-57ab-4415-9e49-68f84594732a.png'}
 };
 /* 카드 스킨 → 앱 테마 매핑(캐릭터 스킨=ROOM_CHAR_THEME.theme, 기본 배경=CARD_SKINS[k].theme). 없으면 null. */
 function _cardSkinTheme(skin){
