@@ -1597,9 +1597,11 @@ body.ev-dragging .cal-cell{cursor:grabbing}
 
 /* 캘린더 셀 — 기간 일정 바 (시작·중간·끝) */
 .cal-evbar.ev-l-open{border-top-left-radius:3px;border-bottom-left-radius:3px;margin-left:3px}
-.cal-evbar.ev-l-join{border-top-left-radius:0;border-bottom-left-radius:0;margin-left:0}
+/* 연결(join) 변은 인접 셀의 같은 기간 바와 1px 겹치게 늘려 서브픽셀 이음새(안티에일리어싱 실틈)를 없앤다.
+   — 갤럭시 등 특정 DPR 기기에서 기간 바가 칸 경계에서 끊겨 보이던 문제 방지. 같은 색·직각변이라 겹침이 안 보임. */
+.cal-evbar.ev-l-join{border-top-left-radius:0;border-bottom-left-radius:0;margin-left:-1px}
 .cal-evbar.ev-r-open{border-top-right-radius:3px;border-bottom-right-radius:3px;margin-right:3px}
-.cal-evbar.ev-r-join{border-top-right-radius:0;border-bottom-right-radius:0;margin-right:0}
+.cal-evbar.ev-r-join{border-top-right-radius:0;border-bottom-right-radius:0;margin-right:-1px}
 
 /* 이모지 반응 */
 .dp-reaction-row{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
