@@ -1940,14 +1940,14 @@ body.ff-jua{letter-spacing:-.2px}
 .rm-uset.on{border-color:var(--accent);box-shadow:0 0 0 1.5px var(--accent) inset}
 .rm-uset-pill{font-size:12.5px;font-weight:800;color:var(--accent);background:var(--aP);border-radius:99px;padding:5px 13px;white-space:nowrap}
 .rm-uset-pill.on{background:var(--accent);color:#fff}
-/* 통합 세트 행 촘촘하게(방편집 목록) */
-.rm-uset{padding:8px 12px;margin-bottom:7px}
+/* 통합 세트 행 촘촘하게(방편집 목록) — 버튼이라 기본 fit-content → 가로 꽉 채움 */
+.rm-uset{width:100%;box-sizing:border-box;padding:8px 12px;margin-bottom:7px}
 .rm-uset .ep-th{width:54px;height:54px;border-radius:12px;padding:5px}
 /* 방 프로필 시트 — 미리보기+세그먼트 상단 고정, 리스트(#rmGroups)만 스크롤 */
 #roomMascotCard .ann-body{overflow:hidden;display:flex;flex-direction:column}
 #roomMascotCard .ann-form{flex:1;min-height:0;display:flex;flex-direction:column;padding-bottom:0}
 #roomMascotCard .rm-fixtop{flex:none}
-#roomMascotCard #rmGroups{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:8px -20px 0;padding:4px 20px}
+#roomMascotCard #rmGroups{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:8px -20px 0;padding:4px 14px}
 #roomMascotCard .rm-fixactions{flex:none;padding:12px 0 max(20px,env(safe-area-inset-bottom))}
 /* 이모지 팩 미리보기 — 4개 그리드 (2×2) */
 .emoji-pack-preview{background:#fbf2e0;padding:16px 8px 10px}
