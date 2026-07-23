@@ -197,6 +197,12 @@ public class WidgetCommon {
         if (id == 0) id = c.getResources().getIdentifier(name, type, "com.lsung.uricalendar");
         return id;
     }
+    // 위젯 build 중 예외가 나도 절대 빈 화면이 되지 않게 — '탭하여 열기' 폴백 RemoteViews.
+    static RemoteViews fallbackRV(Context c) {
+        RemoteViews rv = new RemoteViews(c.getPackageName(), resId(c, "widget_fallback", "layout"));
+        try { rv.setOnClickPendingIntent(resId(c, "wg_fb_root", "id"), openApp(c, RC_OPEN, null, null)); } catch (Throwable t) {}
+        return rv;
+    }
     static PendingIntent bcast(Context c, int reqCode, String action, int delta, String user) {
         Intent i = new Intent(c, UriCalendarWidgetProvider.class);
         i.setAction(action);

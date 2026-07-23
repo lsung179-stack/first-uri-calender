@@ -19,9 +19,13 @@ public class TwoWeekWidgetProvider extends AppWidgetProvider {
 
     static void updateAll(Context context, AppWidgetManager mgr, int[] ids) {
         for (int id : ids) {
-            RemoteViews rv = build(context, id);
-            mgr.updateAppWidget(id, rv);
-            mgr.notifyAppWidgetViewDataChanged(id, WidgetCommon.resId(context, "grid", "id"));
+            try {
+                RemoteViews rv = build(context, id);
+                mgr.updateAppWidget(id, rv);
+                mgr.notifyAppWidgetViewDataChanged(id, WidgetCommon.resId(context, "grid", "id"));
+            } catch (Throwable t) {
+                try { mgr.updateAppWidget(id, WidgetCommon.fallbackRV(context)); } catch (Throwable t2) {}
+            }
         }
     }
 

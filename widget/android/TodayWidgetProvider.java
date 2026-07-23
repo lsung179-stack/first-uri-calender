@@ -23,7 +23,10 @@ public class TodayWidgetProvider extends AppWidgetProvider {
     }
 
     static void updateAll(Context context, AppWidgetManager mgr, int[] ids) {
-        for (int id : ids) mgr.updateAppWidget(id, build(context, id));
+        for (int id : ids) {
+            try { mgr.updateAppWidget(id, build(context, id)); }
+            catch (Throwable t) { try { mgr.updateAppWidget(id, WidgetCommon.fallbackRV(context)); } catch (Throwable t2) {} }
+        }
     }
 
     private static RemoteViews build(Context context, int id) {

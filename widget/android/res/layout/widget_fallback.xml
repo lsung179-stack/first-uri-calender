@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 위젯 build 중 예외 발생 시 폴백 — 절대 빈 화면이 되지 않게 탭하여 열기 카드 표시.
+     RemoteViews 허용 뷰(FrameLayout+TextView)만 사용. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/wg_fb_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg"
+    android:padding="14dp">
+    <TextView
+        android:id="@+id/wg_fb_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:textColor="#8A6C52"
+        android:textSize="13sp"
+        android:text="우리 캘린더\n탭하여 열기" />
+</FrameLayout>

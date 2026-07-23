@@ -21,9 +21,13 @@ public class ComboWidgetProvider extends AppWidgetProvider {
 
     static void updateAll(Context context, AppWidgetManager mgr, int[] ids) {
         for (int id : ids) {
-            RemoteViews rv = build(context, id);
-            mgr.updateAppWidget(id, rv);
-            mgr.notifyAppWidgetViewDataChanged(id, WidgetCommon.resId(context, "cb_grid", "id"));
+            try {
+                RemoteViews rv = build(context, id);
+                mgr.updateAppWidget(id, rv);
+                mgr.notifyAppWidgetViewDataChanged(id, WidgetCommon.resId(context, "cb_grid", "id"));
+            } catch (Throwable t) {
+                try { mgr.updateAppWidget(id, WidgetCommon.fallbackRV(context)); } catch (Throwable t2) {}
+            }
         }
     }
 
