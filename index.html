@@ -8392,6 +8392,12 @@ THEMES.nabi={bg:'#faf3f6',card:'#ffffff',text:'#2e2028',sub:'#8a6c7c',mute:'#c9a
 THEMES.star={bg:'#f1f2fb',card:'#ffffff',text:'#1e2033',sub:'#6c7088',mute:'#a8adc6',accent:'#6a72c0',aL:'#969ddb',aP:'#dcdef4',gold:'#b08742',border:'rgba(106,114,192,.24)',borderL:'rgba(106,114,192,.12)',sun:'#c8503a',sat:'#4880c0',dotRGB:'106,114,192'};
 /* 개구쟁이(크레파스 낙서 장난꾸러기) — 밝은 코랄 */
 THEMES.c_gaegu={bg:'#fdf4ee',card:'#ffffff',text:'#33241b',sub:'#8a6a54',mute:'#c9ab96',accent:'#e37a56',aL:'#ee9e80',aP:'#fbe0d2',gold:'#b08742',border:'rgba(227,122,86,.24)',borderL:'rgba(227,122,86,.12)',sun:'#c8503a',sat:'#4880c0',dotRGB:'227,122,86'};
+/* 나머지 무늬형 프로필 테마 — 달빛(슬레이트블루)·데이지(선샤인옐로)·하트(로즈)·잉어(주홍)·벚꽃(사쿠라핑크) */
+THEMES.moon={bg:'#f1f3f9',card:'#ffffff',text:'#1c2130',sub:'#667088',mute:'#a6adc4',accent:'#7482b0',aL:'#a2adcf',aP:'#dbe0ef',gold:'#b08742',border:'rgba(116,130,176,.24)',borderL:'rgba(116,130,176,.12)',sun:'#c8503a',sat:'#4880c0',dotRGB:'116,130,176'};
+THEMES.daisy={bg:'#fdfaec',card:'#ffffff',text:'#33290f',sub:'#857239',mute:'#cbbb7c',accent:'#d8a828',aL:'#e8c85e',aP:'#f6ecbe',gold:'#b08742',border:'rgba(216,168,40,.26)',borderL:'rgba(216,168,40,.13)',sun:'#c8503a',sat:'#4880c0',dotRGB:'216,168,40'};
+THEMES.heart={bg:'#fdf1f5',card:'#ffffff',text:'#2e1c24',sub:'#8a5b6a',mute:'#c9a3b1',accent:'#e0688a',aL:'#ed9bb4',aP:'#f9dce6',gold:'#b08742',border:'rgba(224,104,138,.26)',borderL:'rgba(224,104,138,.13)',sun:'#c8503a',sat:'#4880c0',dotRGB:'224,104,138'};
+THEMES.koi={bg:'#fdf3ef',card:'#ffffff',text:'#331e15',sub:'#8a5c4a',mute:'#c9a695',accent:'#d85f45',aL:'#e88c72',aP:'#f8d7ca',gold:'#b08742',border:'rgba(216,95,69,.24)',borderL:'rgba(216,95,69,.12)',sun:'#c8503a',sat:'#4880c0',dotRGB:'216,95,69'};
+THEMES.cherry={bg:'#fdf4f8',card:'#ffffff',text:'#2e2028',sub:'#8a6675',mute:'#cbaebc',accent:'#e293b1',aL:'#efaecb',aP:'#f9e1ec',gold:'#b08742',border:'rgba(226,147,177,.26)',borderL:'rgba(226,147,177,.13)',sun:'#c8503a',sat:'#4880c0',dotRGB:'226,147,177'};
 
 /* 일정 색상 12가지 — 6 원색(선명) + 6 파스텔(부드러움). key는 호환성을 위해 유지 */
 const EVENT_COLORS=[
@@ -18794,7 +18800,13 @@ const ROOM_CHAR_THEME={
   // 무늬형 프로필(씰) — 씰 이미지를 워터마크로 재활용(크레딧 0)
   nabi:{theme:'nabi', cls:'rc-nabi', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_083643_f20e7c87-e6f0-4ccb-b9a3-dea85086d559.png'},
   star:{theme:'star', cls:'rc-star', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_124248_348e4aec-0fae-441a-9115-71c2347e0653.png'},
-  c_gaegu:{theme:'c_gaegu', cls:'rc-c_gaegu', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_150343_803e9739-57ab-4415-9e49-68f84594732a.png'}
+  c_gaegu:{theme:'c_gaegu', cls:'rc-c_gaegu', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_150343_803e9739-57ab-4415-9e49-68f84594732a.png'},
+  // 나머지 무늬형 프로필 — 씰 이미지를 워터마크로 재활용(크레딧 0)
+  moon:{theme:'moon', cls:'rc-moon', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_083708_42e5158f-2678-462c-84d3-5db89a660305.png'},
+  daisy:{theme:'daisy', cls:'rc-daisy', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_124306_4f1352dc-8b79-4b19-b5de-87e4363aad99.png'},
+  heart:{theme:'heart', cls:'rc-heart', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_124353_650c2dc2-ee7d-40f3-8d5d-be6a6f06b6f9.png'},
+  koi:{theme:'koi', cls:'rc-koi', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_083737_979f19ba-c2a1-4fd7-a1e9-82d32e1c194d.png'},
+  cherry:{theme:'cherry', cls:'rc-cherry', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_083719_175d16b7-d396-4a64-ab9c-fd1656725710.png'}
 };
 /* 카드 스킨 → 앱 테마 매핑(캐릭터 스킨=ROOM_CHAR_THEME.theme, 기본 배경=CARD_SKINS[k].theme). 없으면 null. */
 function _cardSkinTheme(skin){
