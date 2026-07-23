@@ -1934,6 +1934,12 @@ body.ff-jua{letter-spacing:-.2px}
 .ep-t1{font-size:14px;font-weight:800;line-height:1.35;margin-bottom:3px;color:var(--text)}
 .ep-t2{font-size:11.5px;color:var(--sub)}
 .ep-act{flex:none;margin-left:4px}
+/* 통합 프로필·테마 세트 행(방편집) — 이모지 행 스타일 재사용 */
+.ep-th .sealimg{width:88%;height:88%;object-fit:contain}
+.ep-th svg.sealset{width:88%;height:88%}
+.rm-uset.on{border-color:var(--accent);box-shadow:0 0 0 1.5px var(--accent) inset}
+.rm-uset-pill{font-size:12.5px;font-weight:800;color:var(--accent);background:var(--aP);border-radius:99px;padding:5px 13px;white-space:nowrap}
+.rm-uset-pill.on{background:var(--accent);color:#fff}
 /* 이모지 팩 미리보기 — 4개 그리드 (2×2) */
 .emoji-pack-preview{background:#fbf2e0;padding:16px 8px 10px}
 .emoji-pack-preview .emoji-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;width:100%;max-width:118px}
@@ -4535,10 +4541,6 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
   </div>
   <div class="ann-body"><div class="ann-form">
     <div class="mo-sub" style="margin:0 0 4px">내 화면에만 적용돼요 · 방 카드를 나만의 컨셉으로 꾸며보세요</div>
-    <div class="rm-cats" id="rmCats">
-      <button type="button" class="rm-cat on" data-rmcat="seal" onclick="setRmCat('seal')">프로필</button>
-      <button type="button" class="rm-cat" data-rmcat="cardbg" onclick="setRmCat('cardbg')">테마</button>
-    </div>
     <div class="rm-cardprev" id="rmCardPrev">
       <div class="rm-bigprev" id="rmBigPrev"></div>
       <div class="rm-cardprev-body">
@@ -4569,7 +4571,6 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
   <div class="store-trial-banner" id="storeTrialBanner"></div>
   <div class="store-tabs" id="storeTabs">
     <button class="store-tab on" data-tab="theme" onclick="setStoreTab('theme')">테마</button>
-    <button class="store-tab" data-tab="seal" onclick="setStoreTab('seal')">프로필</button>
     <button class="store-tab" data-tab="color" onclick="setStoreTab('color')">컬러</button>
     <button class="store-tab" data-tab="text" onclick="setStoreTab('text')">텍스트</button>
     <button class="store-tab" data-tab="emoji" onclick="setStoreTab('emoji')">이모지</button>
@@ -14047,33 +14048,22 @@ function renderRoomMascotPicker(){
   _rmSyncPreview();
   const g=document.getElementById('rmGroups');
   if(!g)return;
-  if(_rmCat==='cardbg'){
-    const premB=isEffectivePremium();
-    let items='';
-    if(_rmTab!=='prem'){
-      // '기본' = 빈티지(앱 기본 테마)로 통합 — 별도 '기본'(none) 버튼 제거. 미선택(null)도 '기본'으로 표시.
-      items+=CARD_SKIN_FREE.map(k=>{ const sk=CARD_SKINS[k];
-        const on=(k===_cardSkin)||(k==='t_vintage'&&!_cardSkin);
-        return '<button type="button" data-skin="'+k+'" class="rm-skin rcs-'+k+(sk.dark?' rcs-dark':'')+(on?' on':'')+'" onclick="pickCardSkin(\''+k+'\')"><span class="rm-skin-name">'+sk.name+'</span></button>'; }).join('');
-      g.innerHTML='<div class="rm-field-label">기본 테마 · 무료</div><div class="rm-skingrid">'+items+'</div>';
-    } else {
-      items+=CARD_SKIN_PREM.map(k=>{ const sk=CARD_SKINS[k];
-        return '<button type="button" data-skin="'+k+'" class="rm-skin'+_cardSkinCls(k)+(k===_cardSkin?' on':'')+'"'+_cardSkinStyle(k)+' onclick="pickCardSkin(\''+k+'\')">'
-          +(premB?'':'<span class="rm-set-lock">\uD83D\uDD12</span>')+'<span class="rm-skin-name">'+sk.name+'</span></button>'; }).join('');
-      g.innerHTML='<div class="rm-field-label">컨셉 테마'+(premB?'':' · 프리미엄 전용')+'</div><div class="rm-skingrid">'+items+'</div>'
-        +(premB?'':'<div class="rm-prem-note">프리미엄을 시작하면 바로 사용할 수 있어요 · 첫 7일 무료</div>');
-    }
-    const clr2=document.getElementById('rmClearBtn'); if(clr2)clr2.style.display=_sealHad?'block':'none';
-    return;
-  }
+  const prem=isEffectivePremium();
   if(_rmTab==='prem'){
-    const prem=isEffectivePremium();
-    const setBtns=SEAL_SET_ORDER.map(k=>
-      '<button type="button" data-set="'+k+'" class="rm-set'+(k===_sealSet?' on':'')+(prem?'':' rm-set-view')+'" onclick="pickSealSet(\''+k+'\')">'
-      +'<span class="rm-set-prev">'+_sealSetArt(k)+(prem?'':'<span class="rm-set-lock">\uD83D\uDD12</span>')+'</span><span class="rm-set-name">'+SEAL_SETS[k].name+'</span></button>').join('');
-    g.innerHTML='<div class="rm-field-label">고급 프로필 12종'+(prem?'':' · 프리미엄 전용')+'</div><div class="rm-setgrid">'+setBtns+'</div>'
+    // 통합 프리미엄 세트 — 하나 고르면 프로필(씰)+테마(카드·앱색)가 함께 적용. 이모지식 행 리스트.
+    let rows='';
+    SEAL_SET_ORDER.forEach(function(k){
+      const on=(k===_sealSet);
+      rows+='<button type="button" data-set="'+k+'" class="ep-row rm-uset'+(on?' on':'')+'" onclick="pickUnifiedSet(\''+k+'\')">'
+        +'<div class="ep-th">'+_sealSetArt(k)+'</div>'
+        +'<div class="ep-body"><div class="ep-t1">'+escapeHtml(_setDisplayName(k))+'</div><div class="ep-t2">프로필 + 테마</div></div>'
+        +'<div class="ep-act">'+(on?'<span class="rm-uset-pill on">사용</span>':(prem?'<span class="rm-uset-pill">선택</span>':'<span class="rm-set-lock">\uD83D\uDD12</span>'))+'</div>'
+        +'</button>';
+    });
+    g.innerHTML='<div class="rm-field-label">프로필 · 테마'+(prem?'':' · 프리미엄 전용')+'</div>'+rows
       +(prem?'':'<div class="rm-prem-note">프리미엄을 시작하면 바로 사용할 수 있어요 · 첫 7일 무료</div>');
   } else {
+    // 무료: 색 + 문양(커스텀 프로필) + 기본 테마 6색
     const swatches='<div class="rm-field-label">배경 색</div><div class="rm-swatches">'
       + SEAL_COLORS.map(c=>'<button type="button" class="rm-sw seal-'+c.key+((!_sealSet&&c.key===_sealColor)?' on':'')+'" aria-label="'+c.name+'" onclick="pickSealColor(\''+c.key+'\')"></button>').join('')
       + '</div>';
@@ -14081,10 +14071,31 @@ function renderRoomMascotPicker(){
       const inner = s==='ini' ? '<span class="rm-sym-ini">'+escapeHtml((_mascotRoomName||'·').trim().charAt(0))+'</span>' : _sealSvg(s);
       return '<button type="button" data-sym="'+s+'" class="rm-sym'+((!_sealSet&&s===_sealSym)?' on':'')+'" aria-label="'+(SEAL_SYM_NAMES[s]||s)+'" onclick="pickSealSym(\''+s+'\')">'+inner+'</button>';
     }).join('');
-    g.innerHTML=swatches+'<div class="rm-field-label">문양</div><div class="rm-symrow">'+symBtns+'</div>';
+    const themeColors='<div class="rm-field-label">기본 테마 · 무료</div><div class="rm-skingrid">'
+      + CARD_SKIN_FREE.map(k=>{ const sk=CARD_SKINS[k]; const on=(!_sealSet)&&((k===_cardSkin)||(k==='t_vintage'&&!_cardSkin));
+        return '<button type="button" data-skin="'+k+'" class="rm-skin rcs-'+k+(on?' on':'')+'" onclick="pickCardSkin(\''+k+'\')"><span class="rm-skin-name">'+sk.name+'</span></button>'; }).join('')
+      + '</div>';
+    g.innerHTML=swatches+'<div class="rm-field-label">문양</div><div class="rm-symrow">'+symBtns+'</div>'+themeColors;
   }
   const clr=document.getElementById('rmClearBtn'); if(clr)clr.style.display=_sealHad?'block':'none';
 }
+function _setDisplayName(k){ return (typeof CARD_SKINS!=='undefined'&&CARD_SKINS[k]&&CARD_SKINS[k].name)||(SEAL_SETS[k]&&SEAL_SETS[k].name)||k; }
+/* 통합 프리미엄 세트 선택 — 프로필(씰)+테마(카드·앱색)를 함께 적용 */
+function pickUnifiedSet(k){
+  if(!isEffectivePremium()){
+    showUpgradeModal({message:'프로필·테마 세트는 프리미엄 전용이에요.', feature:'캐릭터·무늬 세트를 고르면 방 프로필·카드·앱 색이 한 번에 꾸며져요.'});
+    return;
+  }
+  _sealSet=k; _cardSkin=k;
+  const g=document.getElementById('rmGroups');
+  if(g) g.querySelectorAll('.rm-uset').forEach(function(b){
+    const on=(b.getAttribute('data-set')===k); b.classList.toggle('on',on);
+    const act=b.querySelector('.ep-act'); if(act) act.innerHTML = on?'<span class="rm-uset-pill on">사용</span>':'<span class="rm-uset-pill">선택</span>';
+  });
+  _rmSyncPreview();
+  try{ if(_currentRoom&&_mascotRoomId===_currentRoom.id){ const th=_cardSkinTheme(k)||_rmBaseTheme||_myTheme||'vintage'; if(THEMES[th]) applyTheme(th); } }catch(_){}
+}
+window.pickUnifiedSet=pickUnifiedSet;
 /* 큰 미리보기+이름 갱신 (세트/커스텀 겸용) */
 function _rmSyncPreview(){
   const cp=document.getElementById('rmCardPrev');
@@ -14131,9 +14142,14 @@ function pickCardSkin(k){
     showUpgradeModal({message:'컨셉 테마는 프리미엄 전용이에요.', feature:'달빛·실크·한지 등 8가지 배경으로 방 카드를 꾸밀 수 있어요.'});
     return;
   }
+  _sealSet=null;   // 무료 기본 테마 색 선택 = 프리미엄 세트 해제(무료 모드)
   _cardSkin=k||null;
   const g=document.getElementById('rmGroups');
-  if(g) g.querySelectorAll('.rm-skin').forEach(function(b){ b.classList.toggle('on',(b.getAttribute('data-skin')||'')===(k||'')); });
+  if(g){
+    g.querySelectorAll('.rm-skin').forEach(function(b){ b.classList.toggle('on',(b.getAttribute('data-skin')||'')===(k||'')); });
+    g.querySelectorAll('.rm-sw').forEach(function(b){ b.classList.toggle('on', b.classList.contains('seal-'+_sealColor)); });
+    g.querySelectorAll('.rm-sym').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-sym')===_sealSym); });
+  }
   _rmSyncPreview();
   // 현재 들어와 있는 방을 편집 중이면, 선택한 카드 배경의 테마를 앱 전체에 즉시 미리보기(색 연동 피드백)
   try{
@@ -14148,9 +14164,12 @@ function pickSealColor(c){ _sealColor=c; _rmPickCustom(); }
 function pickSealSym(sy){ _sealSym=sy; _rmPickCustom(); }
 function _rmPickCustom(){
   _sealSet=null;
+  // 커스텀 프로필(색+문양) 선택 = 무료 모드 → 프리미엄 카드 스킨은 해제(무료 테마 색은 유지)
+  if(_cardSkin && CARD_SKINS[_cardSkin] && !CARD_SKINS[_cardSkin].free) _cardSkin=null;
   const g=document.getElementById('rmGroups');
   if(!g||!g.querySelector('.rm-sw')){ renderRoomMascotPicker(); return; }
-  g.querySelectorAll('.rm-set.on').forEach(function(b){ b.classList.remove('on'); });
+  g.querySelectorAll('.rm-uset.on,.rm-set.on').forEach(function(b){ b.classList.remove('on'); });
+  g.querySelectorAll('.rm-skin.on').forEach(function(b){ if((b.getAttribute('data-skin')||'')!==(_cardSkin||'')) b.classList.remove('on'); });
   g.querySelectorAll('.rm-sw').forEach(function(b){ b.classList.toggle('on', b.classList.contains('seal-'+_sealColor)); });
   g.querySelectorAll('.rm-sym').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-sym')===_sealSym); });
   _rmSyncPreview();
@@ -18281,43 +18300,25 @@ function renderStoreSeal(){
 function renderStoreThemes(){
   const body=document.getElementById('storeBody');
   if(!body)return;
-  const curTheme=_myTheme||'vintage';
-  
-  let html='';
-  
-  // 테마 섹션 — 무료는 기본(빈티지)만, 나머지는 프리미엄 잠금
-  const _premTheme=isEffectivePremium();
-  html+=`<div class="store-section-title">테마 <small>THEME</small></div>`;
-  html+=`<div class="theme-grid-store">`;
-  STORE_THEMES.forEach(item=>{
-    const t=THEMES[item.key];
-    if(!t)return;
-    const applied=item.key===curTheme;
-    const isFreeTheme=item.key==='vintage';           // 빈티지=무료 기본
-    const locked=!_premTheme && !isFreeTheme && !applied;
-    const handler=`onclick="applyStoreTheme('${item.key}')"`;
-    html+=`
-      <div class="theme-card${applied?' on':''}${locked?' locked':''}" ${handler}>
-        ${applied?'<div class="theme-card-applied-tag">사용 중</div>':''}
-        ${locked?'<div class="theme-card-lock-tag"><span class="pack-btn-lock">🔒</span>프리미엄</div>':''}
-        <div class="theme-preview" style="background:${t.bg}">
-          <div class="theme-preview-circle" style="border-color:${t.accent};background:${t.card}">
-            <svg class="theme-preview-logo" viewBox="0 0 24 24" fill="none" stroke="${t.accent}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="5" width="18" height="16" rx="2"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
-              <line x1="8" y1="3" x2="8" y2="7"/>
-              <line x1="16" y1="3" x2="16" y2="7"/>
-            </svg>
-          </div>
-        </div>
-        <div class="theme-card-info">
-          <div class="theme-card-name">${escapeHtml(item.name)}</div>
-        </div>
-      </div>
-    `;
+  const prem=isEffectivePremium();
+  // 프로필+테마 통합 — 프리미엄 세트만 이모지식 리스트로. 세트 하나 = 프로필 씰 + 카드 배경 + 앱 색.
+  let html=`<div class="store-fruit-hero seal-hero-lux" style="background-image:url('${SEAL_HERO_IMG}')" onclick="onStoreSealClick()">
+    <div class="sfh-eyebrow">PREMIUM · PROFILE + THEME</div>
+    <div class="sfh-title">방마다 꾸미는<br>프로필 · 테마 세트</div>
+    <div class="sfh-desc">세트 하나로 프로필·카드·앱 색까지 — 프리미엄 전용</div>
+    <span class="ssh-cta">꾸미러 가기 ›</span>
+  </div>`;
+  html+='<div class="store-section-title">프로필 · 테마 <small>PREMIUM SET</small></div>';
+  SEAL_SET_ORDER.forEach(function(k){
+    const btn = prem
+      ? `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();onStoreSealClick()">꾸미기</button>`
+      : `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();onStoreSealClick()"><span class="pack-btn-lock">\uD83D\uDD12</span>프리미엄</button>`;
+    html+=`<div class="ep-row" onclick="onStoreSealClick()">
+      <div class="ep-th">${_sealSetArt(k)}</div>
+      <div class="ep-body"><div class="ep-t1">${escapeHtml(_setDisplayName(k))}</div><div class="ep-t2">프로필 + 테마</div></div>
+      <div class="ep-act">${btn}</div>
+    </div>`;
   });
-  html+=`</div>`;
-
   body.innerHTML=html;
 }
 function onStoreSealClick(){
