@@ -847,7 +847,7 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .rc-decor .rc-cloud1{right:-22%;top:26%;width:86%;height:48%;opacity:.85}
 .rc-decor .rc-cloud2{left:-26%;bottom:4%;width:74%;height:40%;opacity:.6}
 /* 옅은 선사시대 doodle 배경 패턴(일정 가독성 방해 없게 아주 낮은 투명도) */
-.rc-decor .rc-bg{position:absolute;inset:0;background-repeat:repeat;background-position:center;background-size:50% auto;opacity:.16;pointer-events:none}
+.rc-decor .rc-bg{position:absolute;inset:0;background-repeat:repeat;background-position:center;background-size:50% auto;opacity:.22;pointer-events:none}
 /* 방 캐릭터 테마 — 탭바/설정 색 틴트(제네릭, 모든 캐릭터) */
 body.rc-on .cal-tab{color:var(--aL)}
 body.rc-on .cal-tab.on{color:var(--accent);background:transparent}
@@ -864,7 +864,7 @@ body.rc-dino .cal-tab[data-rci="cal"] .cal-tab-ico{background-image:url("https:/
 body.rc-dino .cal-tab[data-rci="todo"] .cal-tab-ico{background-image:url("https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260723_002824_3559be1d-dcdb-4854-a9b5-56b415cc61f8.png")}
 body.rc-dino .cal-tab[data-rci="settings"] .cal-tab-ico{background-image:url("https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260723_002825_9ba4f583-bb77-4801-a3da-66d6cca76f9d.png")}
 body.rc-dino .uni-nav[data-rci] .uni-nav-l > svg{display:none}
-body.rc-dino .uni-nav[data-rci] .uni-nav-l::before{content:"";width:23px;height:23px;flex-shrink:0;background-repeat:no-repeat;background-position:center;background-size:contain}
+body.rc-dino .uni-nav[data-rci] .uni-nav-l::before{content:"";width:26px;height:26px;flex-shrink:0;background-repeat:no-repeat;background-position:center;background-size:122%}
 body.rc-dino .uni-nav[data-rci="premium"] .uni-nav-l::before{background-image:url("https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260723_002257_d9ca2fcf-0a66-497d-b857-882d51f4737b.png")}
 body.rc-dino .uni-nav[data-rci="store"] .uni-nav-l::before{background-image:url("https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260723_002258_79578943-3245-48d2-bc8f-b2a193f2ac86.png")}
 body.rc-dino .uni-nav[data-rci="orders"] .uni-nav-l::before{background-image:url("https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260723_002829_89b3a0fd-6d6f-48ae-9f4d-d630ff68686e.png")}
@@ -18739,7 +18739,7 @@ let _currentRoomTheme=null;
 /* 방 카드 스킨(캐릭터) → 자동 테마 + 마스코트 꾸미기 매핑.
    대표 1종(두두 공룡)만 우선 구현 — 다른 캐릭터는 여기에 추가하면 자동 확장. */
 const ROOM_CHAR_THEME={
-  a_dino:{theme:'dino', cls:'rc-dino', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_231336_caee7c1e-3f39-462e-b3ee-6b102cd3906e.png', bg:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260723_003650_a6df4561-02e6-4a38-9f24-724c96a0245b.png'}
+  a_dino:{theme:'dino', cls:'rc-dino', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_231336_caee7c1e-3f39-462e-b3ee-6b102cd3906e.png', bg:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260723_005520_b8f69e6d-e5b0-4ed9-9581-54de675c99f7.png'}
 };
 function _clearRoomCharDecor(){
   try{
