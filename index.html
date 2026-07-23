@@ -13911,7 +13911,7 @@ const CARD_SKINS={
 };
 /* 기본 배경 = 앱 테마 6종 연동 — 선택 시 그 테마 색이 앱 전체에 적용됨(설정 '이 방 테마'를 방 프로필로 통합).
    theme 필드가 있으면 applyRoomThemeFor가 그 테마를 우선 적용 → 카드 배경과 앱 색이 항상 일치(색 섞임 방지). */
-CARD_SKINS.t_vintage={name:'빈티지',free:true,theme:'vintage'};
+CARD_SKINS.t_vintage={name:'기본',free:true,theme:'vintage'};
 CARD_SKINS.t_lavender={name:'라벤더',free:true,theme:'lavender'};
 CARD_SKINS.t_peach={name:'피치',free:true,theme:'peach'};
 CARD_SKINS.t_mint={name:'민트',free:true,theme:'mint'};
@@ -14032,9 +14032,10 @@ function renderRoomMascotPicker(){
     const premB=isEffectivePremium();
     let items='';
     if(_rmTab!=='prem'){
-      items+='<button type="button" data-skin="" class="rm-skin'+(!_cardSkin?' on':'')+'" onclick="pickCardSkin(\'\')"><span class="rm-skin-name">기본</span></button>';
+      // '기본' = 빈티지(앱 기본 테마)로 통합 — 별도 '기본'(none) 버튼 제거. 미선택(null)도 '기본'으로 표시.
       items+=CARD_SKIN_FREE.map(k=>{ const sk=CARD_SKINS[k];
-        return '<button type="button" data-skin="'+k+'" class="rm-skin rcs-'+k+(sk.dark?' rcs-dark':'')+(k===_cardSkin?' on':'')+'" onclick="pickCardSkin(\''+k+'\')"><span class="rm-skin-name">'+sk.name+'</span></button>'; }).join('');
+        const on=(k===_cardSkin)||(k==='t_vintage'&&!_cardSkin);
+        return '<button type="button" data-skin="'+k+'" class="rm-skin rcs-'+k+(sk.dark?' rcs-dark':'')+(on?' on':'')+'" onclick="pickCardSkin(\''+k+'\')"><span class="rm-skin-name">'+sk.name+'</span></button>'; }).join('');
       g.innerHTML='<div class="rm-field-label">기본 배경 · 무료</div><div class="rm-skingrid">'+items+'</div>';
     } else {
       items+=CARD_SKIN_PREM.map(k=>{ const sk=CARD_SKINS[k];
