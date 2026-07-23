@@ -4566,7 +4566,6 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     </div>
     <div id="rmGroups"></div>
     <div class="mo-actions rm-fixactions" style="margin-top:0">
-      <button class="btn btn-primary" onclick="saveRoomMascot()">저장하기</button>
       <button class="mo-cancel" id="rmClearBtn" onclick="clearRoomMascot()" style="display:none">기본(첫 글자)으로 되돌리기</button>
     </div>
   </div></div>
@@ -14105,6 +14104,7 @@ function pickUnifiedSet(k){
   });
   _rmSyncPreview();
   try{ if(_currentRoom&&_mascotRoomId===_currentRoom.id){ const th=_cardSkinTheme(k)||_rmBaseTheme||_myTheme||'vintage'; if(THEMES[th]) applyTheme(th); } }catch(_){}
+  _autoSaveMascot();
 }
 window.pickUnifiedSet=pickUnifiedSet;
 /* 큰 미리보기+이름 갱신 (세트/커스텀 겸용) */
@@ -14169,10 +14169,11 @@ function pickCardSkin(k){
       if(THEMES[th]) applyTheme(th);
     }
   }catch(_){}
+  _autoSaveMascot();
 }
 window.pickCardSkin=pickCardSkin;
-function pickSealColor(c){ _sealColor=c; _rmPickCustom(); }
-function pickSealSym(sy){ _sealSym=sy; _rmPickCustom(); }
+function pickSealColor(c){ _sealColor=c; _rmPickCustom(); _autoSaveMascot(); }
+function pickSealSym(sy){ _sealSym=sy; _rmPickCustom(); _autoSaveMascot(); }
 function _rmPickCustom(){
   _sealSet=null;
   // 커스텀 프로필(색+문양) 선택 = 무료 모드 → 프리미엄 카드 스킨은 해제(무료 테마 색은 유지)
@@ -14194,9 +14195,25 @@ async function saveRoomMascot(){
   await _saveMascotValue(sealVal, _cardSkin);
 }
 async function clearRoomMascot(){
-  await _saveMascotValue(null, null);
+  _sealSet=null; _cardSkin=null; _sealColor='terra'; _sealSym='ini';
+  await _saveMascotValue(null, null, true);
+  try{ if(_currentRoom&&_mascotRoomId===_currentRoom.id) applyRoomThemeFor(_currentRoom.id); }catch(_){}
+  try{ renderRoomMascotPicker(); }catch(_){}
+  try{ toast('기본으로 되돌렸어요'); }catch(_){}
 }
-async function _saveMascotValue(val, skin){
+/* 선택 즉시 자동 저장(디바운스) — 저장 버튼 없이 클릭만으로 반영 */
+let _autoSaveMascotT=null;
+function _autoSaveMascot(){
+  const sealVal=_sealSet?('set:'+_sealSet):(_sealColor+':'+_sealSym);
+  const skin=_cardSkin;
+  // 로컬 맵 즉시 반영 → 곧바로 닫아도 applyRoomThemeFor가 최신값을 읽음. DB 쓰기만 디바운스.
+  if(_mascotRoomId){ _mySealByRoom[_mascotRoomId]=sealVal; _myCardSkinByRoom[_mascotRoomId]=skin||null; }
+  _sealHad=!!(sealVal||skin);
+  const clr=document.getElementById('rmClearBtn'); if(clr)clr.style.display=_sealHad?'block':'none';
+  clearTimeout(_autoSaveMascotT);
+  _autoSaveMascotT=setTimeout(function(){ _saveMascotValue(sealVal, skin, true); }, 220);
+}
+async function _saveMascotValue(val, skin, keepOpen){
   if(!_mascotRoomId||!_currentUser)return;
   try{
     // 개인별 설정 — 내 members 행의 seal+card_skin 갱신 (RLS members_update_self)
@@ -14207,8 +14224,13 @@ async function _saveMascotValue(val, skin){
     _myCardSkinByRoom[_mascotRoomId]=skin||null;
     try{ if(_myRooms) renderRooms(_myRooms,_roomCountMap); }catch(_){}
     try{ _syncRoomSetMascot(); }catch(_){}
-    toast(val?'방 프로필이 바뀌었어요':'기본으로 되돌렸어요');
-    closeRoomMascot();
+    if(keepOpen){
+      _sealHad=!!(val||skin);
+      const clr=document.getElementById('rmClearBtn'); if(clr)clr.style.display=_sealHad?'block':'none';
+    } else {
+      toast(val?'방 프로필이 바뀌었어요':'기본으로 되돌렸어요');
+      closeRoomMascot();
+    }
   }catch(e){ console.error('seal save',e); toast('저장 실패: '+((e.message||'').slice(0,40))); }
 }
 function _syncRoomSetMascot(){
