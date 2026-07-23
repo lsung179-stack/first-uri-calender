@@ -4537,7 +4537,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     <div class="mo-sub" style="margin:0 0 4px">내 화면에만 적용돼요 · 방 카드를 나만의 컨셉으로 꾸며보세요</div>
     <div class="rm-cats" id="rmCats">
       <button type="button" class="rm-cat on" data-rmcat="seal" onclick="setRmCat('seal')">프로필</button>
-      <button type="button" class="rm-cat" data-rmcat="cardbg" onclick="setRmCat('cardbg')">카드 배경</button>
+      <button type="button" class="rm-cat" data-rmcat="cardbg" onclick="setRmCat('cardbg')">테마</button>
     </div>
     <div class="rm-cardprev" id="rmCardPrev">
       <div class="rm-bigprev" id="rmBigPrev"></div>
@@ -14036,12 +14036,12 @@ function renderRoomMascotPicker(){
       items+=CARD_SKIN_FREE.map(k=>{ const sk=CARD_SKINS[k];
         const on=(k===_cardSkin)||(k==='t_vintage'&&!_cardSkin);
         return '<button type="button" data-skin="'+k+'" class="rm-skin rcs-'+k+(sk.dark?' rcs-dark':'')+(on?' on':'')+'" onclick="pickCardSkin(\''+k+'\')"><span class="rm-skin-name">'+sk.name+'</span></button>'; }).join('');
-      g.innerHTML='<div class="rm-field-label">기본 배경 · 무료</div><div class="rm-skingrid">'+items+'</div>';
+      g.innerHTML='<div class="rm-field-label">기본 테마 · 무료</div><div class="rm-skingrid">'+items+'</div>';
     } else {
       items+=CARD_SKIN_PREM.map(k=>{ const sk=CARD_SKINS[k];
         return '<button type="button" data-skin="'+k+'" class="rm-skin'+_cardSkinCls(k)+(k===_cardSkin?' on':'')+'"'+_cardSkinStyle(k)+' onclick="pickCardSkin(\''+k+'\')">'
           +(premB?'':'<span class="rm-set-lock">\uD83D\uDD12</span>')+'<span class="rm-skin-name">'+sk.name+'</span></button>'; }).join('');
-      g.innerHTML='<div class="rm-field-label">컨셉 배경'+(premB?'':' · 프리미엄 전용')+'</div><div class="rm-skingrid">'+items+'</div>'
+      g.innerHTML='<div class="rm-field-label">컨셉 테마'+(premB?'':' · 프리미엄 전용')+'</div><div class="rm-skingrid">'+items+'</div>'
         +(premB?'':'<div class="rm-prem-note">프리미엄을 시작하면 바로 사용할 수 있어요 · 첫 7일 무료</div>');
     }
     const clr2=document.getElementById('rmClearBtn'); if(clr2)clr2.style.display=_sealHad?'block':'none';
@@ -14109,7 +14109,7 @@ function pickSealSet(k){
 function pickCardSkin(k){
   const sk=k?CARD_SKINS[k]:null;
   if(sk&&!sk.free&&!isEffectivePremium()){
-    showUpgradeModal({message:'컨셉 카드 배경은 프리미엄 전용이에요.', feature:'달빛·실크·한지 등 8가지 배경으로 방 카드를 꾸밀 수 있어요.'});
+    showUpgradeModal({message:'컨셉 테마는 프리미엄 전용이에요.', feature:'달빛·실크·한지 등 8가지 배경으로 방 카드를 꾸밀 수 있어요.'});
     return;
   }
   _cardSkin=k||null;
@@ -14140,7 +14140,7 @@ function _rmPickCustom(){
 async function saveRoomMascot(){
   if(_sealSet&&!isEffectivePremium()){ showUpgradeModal({message:'고급 프로필은 프리미엄 전용이에요.', feature:'입체 프로필 12종으로 방 카드를 꾸밀 수 있어요.'}); return; }
   const _sk=_cardSkin?CARD_SKINS[_cardSkin]:null;
-  if(_sk&&!_sk.free&&!isEffectivePremium()){ showUpgradeModal({message:'컨셉 카드 배경은 프리미엄 전용이에요.', feature:'달빛·실크·한지 등 8가지 배경으로 방 카드를 꾸밀 수 있어요.'}); return; }
+  if(_sk&&!_sk.free&&!isEffectivePremium()){ showUpgradeModal({message:'컨셉 테마는 프리미엄 전용이에요.', feature:'달빛·실크·한지 등 8가지 배경으로 방 카드를 꾸밀 수 있어요.'}); return; }
   const sealVal=_sealSet?('set:'+_sealSet):(_sealColor+':'+_sealSym);   // 직접 꾸미기(색+문양)는 무료
   await _saveMascotValue(sealVal, _cardSkin);
 }
