@@ -848,6 +848,8 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .rc-decor .rc-cloud2{left:-26%;bottom:4%;width:74%;height:40%;opacity:.6}
 /* 옅은 선사시대 doodle 배경 패턴(일정 가독성 방해 없게 아주 낮은 투명도) */
 .rc-decor .rc-bg{position:absolute;inset:0;background-repeat:repeat;background-position:center;background-size:178px 178px;opacity:.24;pointer-events:none}
+/* 카드배경처럼 자연스러운 풀 씬 배경(타일 아님) — cover, 하단 정렬(풍경이 아래), 옅게 */
+.rc-decor .rc-bg.rc-bg-scene{background-repeat:no-repeat;background-position:bottom center;background-size:cover;opacity:.5}
 /* 방 캐릭터 테마 — 탭바/설정 색 틴트(제네릭, 모든 캐릭터) */
 body.rc-on .cal-tab{color:var(--aL)}
 body.rc-on .cal-tab.on{color:var(--accent);background:transparent}
@@ -18739,7 +18741,7 @@ let _currentRoomTheme=null;
 /* 방 카드 스킨(캐릭터) → 자동 테마 + 마스코트 꾸미기 매핑.
    대표 1종(두두 공룡)만 우선 구현 — 다른 캐릭터는 여기에 추가하면 자동 확장. */
 const ROOM_CHAR_THEME={
-  a_dino:{theme:'dino', cls:'rc-dino', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_231336_caee7c1e-3f39-462e-b3ee-6b102cd3906e.png', bgSvg:'<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><g fill="none" stroke="#4f9d3a" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M30 12v44"/><path d="M30 20c-6-4-11-3-15 1"/><path d="M30 20c6-4 11-3 15 1"/><path d="M30 31c-5-3-9-2-13 2"/><path d="M30 31c5-3 9-2 13 2"/><path d="M30 42c-4-2-7-1-10 2"/><path d="M30 42c4-2 7-1 10 2"/><ellipse cx="112" cy="30" rx="3.2" ry="4.2"/><ellipse cx="121" cy="27" rx="3.2" ry="4.2"/><ellipse cx="130" cy="30" rx="3.2" ry="4.2"/><ellipse cx="121" cy="43" rx="8.5" ry="7.5"/><path d="M18 132l12-30h8l12 30"/><path d="M30 103c-1-4 1-7 4-8"/><path d="M112 104c16 4 20 24 6 32-13-9-9-28-6-32Z"/><path d="M112 108c3 9 5 18 5 27"/></g></svg>'}
+  a_dino:{theme:'dino', cls:'rc-dino', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_231336_caee7c1e-3f39-462e-b3ee-6b102cd3906e.png', bgScene:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260723_012945_6721778a-a7fb-4b51-898a-ccf96d91206c.png'}
 };
 function _clearRoomCharDecor(){
   try{
@@ -18756,8 +18758,9 @@ function _applyRoomCharDecor(ct){
   // .app 스택 컨텍스트 안 첫 자식으로 데코 삽입(콘텐츠 뒤에 그려짐)
   var host=document.querySelector('.app')||document.body;
   var d=document.createElement('div'); d.id='rcDecor'; d.className='rc-decor';
-  var _bgUrl = ct.bgSvg ? ('data:image/svg+xml,'+encodeURIComponent(ct.bgSvg)) : (ct.bg||'');
-  d.innerHTML=(_bgUrl?'<div class="rc-bg"></div>':'')+'<div class="rc-cloud rc-cloud1"></div><div class="rc-cloud rc-cloud2"></div><div class="rc-char"></div>';
+  var _bgScene = !!ct.bgScene;
+  var _bgUrl = _bgScene ? ct.bgScene : (ct.bgSvg ? ('data:image/svg+xml,'+encodeURIComponent(ct.bgSvg)) : (ct.bg||''));
+  d.innerHTML=(_bgUrl?('<div class="rc-bg'+(_bgScene?' rc-bg-scene':'')+'"></div>'):'')+'<div class="rc-cloud rc-cloud1"></div><div class="rc-cloud rc-cloud2"></div><div class="rc-char"></div>';
   if(_bgUrl){ var bgEl=d.querySelector('.rc-bg'); if(bgEl) bgEl.style.backgroundImage='url("'+_bgUrl+'")'; }
   if(ct.mascot){ var c=d.querySelector('.rc-char'); if(c) c.style.backgroundImage='url("'+ct.mascot+'")'; document.body.style.setProperty('--rc-char-url','url("'+ct.mascot+'")'); }
   host.insertBefore(d, host.firstChild);
