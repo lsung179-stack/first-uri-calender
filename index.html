@@ -13907,7 +13907,7 @@ SEAL_SETS.a_dino={name:'두두',zoom:1.05,img:'https://d8j0ntlcm91z4.cloudfront.
 SEAL_SETS.c_gaegu={name:'개구쟁이',zoom:1.2,img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_150343_803e9739-57ab-4415-9e49-68f84594732a.png'};
 SEAL_SETS.c_simsul={name:'심술이',zoom:1.2,img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_143127_b098cc5d-4c1e-46fc-a642-b3b1cb827def.png'};
 SEAL_SETS.c_kkalkal={name:'깔깔이',zoom:1.2,img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_143149_1960a50c-f638-4954-80ae-e9d7ea6051fe.png'};
-const SEAL_SET_ORDER=['a_cat', 'a_rabbit', 'a_bear', 'a_penguin', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'a_dino', 'c_gaegu', 'nabi', 'ribbon', 'moon', 'daisy', 'star', 'heart', 'koi', 'cherry'];   // 보리·호담·소녀·소년·눈꽃 제거(2026-07-23, 사용자 요청). 데이터는 잔존(레거시 저장값 렌더용)   // 구 전통 5종(plum·lotus·crane·camellia·chrysw)은 데이터만 잔존(레거시 저장값 렌더용)
+const SEAL_SET_ORDER=['a_cat', 'a_rabbit', 'a_bear', 'a_penguin', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'a_dino', 'c_gaegu', 'nabi', 'moon', 'daisy', 'star', 'heart', 'koi', 'cherry'];   // 보리·호담·소녀·소년·눈꽃 제거(2026-07-23, 사용자 요청). 데이터는 잔존(레거시 저장값 렌더용)   // 구 전통 5종(plum·lotus·crane·camellia·chrysw)은 데이터만 잔존(레거시 저장값 렌더용)
 /* ── 방 카드 배경 스킨 (members.card_skin, 마이그레이션 add_members_card_skin) — 무료 7 + 프리미엄 8 ── */
 const CARD_SKINS={
   butter:{name:'버터',free:true}, blush:{name:'블러쉬',free:true}, mint:{name:'민트',free:true},
@@ -13967,7 +13967,7 @@ CARD_SKINS.a_dino={name:'두두',img:'https://d8j0ntlcm91z4.cloudfront.net/user_
 CARD_SKINS.c_gaegu={name:'개구쟁이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_153032_a4c62025-d47b-4e56-a059-f82da277e932.png'};
 CARD_SKINS.c_simsul={name:'심술이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_143004_1c85bdab-07e1-4042-b3aa-17212d290697.png'};
 CARD_SKINS.c_kkalkal={name:'깔깔이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_143001_bda96b6b-4448-4757-9830-140f684e737f.png'};
-const CARD_SKIN_PREM=['a_cat', 'a_rabbit', 'a_bear', 'a_penguin', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'a_dino', 'c_gaegu', 'nabi', 'ribbon', 'moon', 'daisy', 'star', 'heart', 'koi', 'cherry'];   // 보리·호담·소녀·소년·눈꽃 제거(2026-07-23, 사용자 요청). CARD_SKINS 데이터는 잔존
+const CARD_SKIN_PREM=['a_cat', 'a_rabbit', 'a_bear', 'a_penguin', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'a_dino', 'c_gaegu', 'nabi', 'moon', 'daisy', 'star', 'heart', 'koi', 'cherry'];   // 보리·호담·소녀·소년·눈꽃 제거(2026-07-23, 사용자 요청). CARD_SKINS 데이터는 잔존
 function _cardSkinCls(k){ const sk=k&&CARD_SKINS[k]; if(!sk)return ''; if(sk.char) return ' rcs-char'+(sk.dark?' rcs-dark':''); if(sk.img) return ' rcs-img'+(sk.dark?' rcs-dark':''); return ' rcs-'+k+(sk.dark?' rcs-dark':''); }
 function _cardSkinStyle(k){ const sk=k&&CARD_SKINS[k]; if(!sk)return '';
   if(sk.char){ const g=sk.grad||['#f3e6cf','#e6d3ad']; const bg=sk.scene?('url(&quot;'+sk.scene+'&quot;) center/cover'):('linear-gradient(100deg,'+g[0]+' 0%,'+g[0]+' 40%,'+g[1]+' 100%)'); return ' style="background:url(&quot;'+sk.char+'&quot;) no-repeat right 3% center/auto 94%,'+bg+'"'; }
