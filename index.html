@@ -1829,9 +1829,6 @@ body.ff-jua{letter-spacing:-.2px}
 .store-tab.on{color:var(--accent);border-bottom-color:var(--accent)}
 .store-tab.disabled{opacity:.4;cursor:not-allowed}
 .store-body{flex:1;overflow-y:auto;padding:14px;-webkit-overflow-scrolling:touch}
-/* 방 캐릭터 테마일 때 — 스토어에도 캐릭터 워터마크(방 화면처럼). 색은 var(--)로 이미 상속됨. */
-body.rc-on .store-card::before{content:'';position:absolute;left:50%;bottom:3%;transform:translateX(-50%);width:min(80vw,360px);height:min(80vw,360px);background:var(--rc-char-url) center/contain no-repeat;opacity:.1;pointer-events:none;z-index:0}
-body.rc-on .store-head,body.rc-on .store-tabs,body.rc-on .store-trial-banner,body.rc-on .store-body{position:relative;z-index:1}
 
 /* 추천 픽 큰 배너 */
 .store-pick-banner{
