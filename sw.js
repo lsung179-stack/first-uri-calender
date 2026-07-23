@@ -1,5 +1,5 @@
-/* 우리 캘린더 V2 — Service Worker (v5: 프리캐시 교정 + SKIP_WAITING + 알림 옵션 정리) */
-const CACHE_NAME = 'uri-cal-v2-v9';
+/* 우리 캘린더 V2 — Service Worker (v10: HTML은 항상 최신 네트워크 우선(HTTP 캐시 우회) — 스토어/테마 등 코드 변경 즉시 반영) */
+const CACHE_NAME = 'uri-cal-v2-v10';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
@@ -42,7 +42,28 @@ self.addEventListener('fetch', (e) => {
   if (!req.url.startsWith('http')) return;
   if (req.url.includes('supabase.co')) return;
   if (req.url.includes('kakao')) return;
-  
+
+  // HTML 문서(내비게이션 / index.html)는 항상 네트워크에서 새로 받아옴 —
+  // HTTP 캐시까지 우회(cache:'reload')해서 코드 변경(스토어·테마 등)이 즉시 반영되게 함.
+  // 오프라인일 때만 캐시된 셸로 폴백.
+  const isDoc = req.mode === 'navigate'
+    || (req.destination === 'document')
+    || (req.url.includes(self.location.origin) && /\/(index\.html)?(\?.*)?$/.test(new URL(req.url).pathname + (new URL(req.url).search || '')));
+  if (isDoc) {
+    e.respondWith(
+      fetch(new Request(req.url, { cache: 'reload', credentials: 'same-origin' }))
+        .then((res) => {
+          if (res && res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', clone)).catch(() => {});
+          }
+          return res;
+        })
+        .catch(() => caches.match(req).then((c) => c || caches.match('/index.html')))
+    );
+    return;
+  }
+
   e.respondWith(
     fetch(req).then((res) => {
       if (res.ok && (req.url.includes(self.location.origin) || req.url.includes('cdn.jsdelivr.net') || req.url.includes('fonts.googleapis.com') || req.url.includes('fonts.gstatic.com'))) {
