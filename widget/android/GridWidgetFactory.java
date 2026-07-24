@@ -84,14 +84,13 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
             float density = ctx.getResources().getDisplayMetrics().density;
             int hDp = WidgetCommon.gridHeightDp(ctx, kind);
             if (hDp > 0) {
-                int headerDp = 56; // 씰 헤더 + 요일 줄 + 여백 대략치
+                int headerDp = 52; // 씰 헤더 + 요일 줄 + 여백 대략치
                 int gridDp = hDp - headerDp;
-                if (gridDp < rows * 44) gridDp = rows * 44;
                 int cellDp = gridDp / rows;
-                if (cellDp < 44) cellDp = 44;
+                if (cellDp < 30) cellDp = 30;   // 최소 셀 높이(날짜+1줄) — 작은 위젯도 전체 주 표시
                 cellMinPx = Math.round(cellDp * density);
-                // 날짜 숫자(~16dp) + 할일 여지(~13dp)를 빼고 남는 공간을 이벤트 줄(~13dp)로
-                int lanes = (cellDp - 16 - 13) / 13;
+                // 날짜 숫자(~18dp) 뺀 나머지를 이벤트 줄(~12dp)로 → 셀 클수록 일정 더 노출
+                int lanes = (cellDp - 18) / 12;
                 laneCap = Math.max(2, Math.min(MAX_LANE_VIEWS, lanes));
             }
         } catch (Throwable t) { laneCap = 2; cellMinPx = 0; }
@@ -166,7 +165,20 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
                     rv.setInt(evViews[s], "setBackgroundColor", 0x00000000);
                     rv.setTextColor(evViews[s], b.color);
                 } else {
-                    rv.setInt(evViews[s], "setBackgroundColor", b.color);
+                    // 단일 일정 = 양끝 여백 + 살짝 둥근 칩 / 기간 = 이어지는 변만 각지게(연결 유지).
+                    // (rounded chip은 tint 필요 → API 31+에서만, 미만은 기존 flat 색으로 폴백)
+                    boolean lR = !b.contLeft || cell.dow == 0;   // 왼쪽 끝(둥글게)
+                    boolean rR = !b.contRight || cell.dow == 6;   // 오른쪽 끝(둥글게)
+                    if ((lR || rR) && android.os.Build.VERSION.SDK_INT >= 31) {
+                        int shape = (lR && rR) ? id("ev_chip_single", "drawable")
+                                  : lR ? id("ev_chip_start", "drawable")
+                                       : id("ev_chip_end", "drawable");
+                        rv.setInt(evViews[s], "setBackgroundResource", shape);
+                        rv.setColorStateList(evViews[s], "setBackgroundTintList",
+                            android.content.res.ColorStateList.valueOf(b.color));
+                    } else {
+                        rv.setInt(evViews[s], "setBackgroundColor", b.color); // 기간 중간 or API<31 폴백
+                    }
                     rv.setTextColor(evViews[s], WidgetCommon.contrastText(b.color));
                 }
             } else {
