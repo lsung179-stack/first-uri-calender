@@ -4546,7 +4546,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     <button class="btn-danger-full" onclick="leaveRoomConfirm()">이 방 나가기</button>
   </div>
   
-  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.1.5 (43)</div>
+  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.1.5 (44)</div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeRoomSettings()">닫기</button>
   </div>
@@ -7004,7 +7004,7 @@ function renderRooms(rooms,countMap){
     const sealHtml=_sealInner(_mySealByRoom[r.id], r.name)
       || `<div class="r-card-seal"><span class="r-card-seal-letter">${firstChar}</span></div>`;
     html+=`
-      <div class="r-card${_cardSkinCls(_myCardSkinByRoom[r.id])}"${_cardSkinStyle(_myCardSkinByRoom[r.id])} data-roomid="${r.id}" onclick="enterRoom('${r.id}')">
+      <div class="r-card${_cardSkinCls(_effSkin(_myCardSkinByRoom[r.id]))}"${_cardSkinStyle(_effSkin(_myCardSkinByRoom[r.id]))} data-roomid="${r.id}" onclick="enterRoom('${r.id}')">
         <div class="r-card-sealwrap">
           ${sealHtml}
           <button type="button" class="r-card-pencil" aria-label="방 프로필 변경" onpointerdown="event.stopPropagation()" onclick="event.stopPropagation();openRoomMascotForRoom('${r.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
@@ -7690,7 +7690,7 @@ async function init(){
   }finally{
     initAdMob(); // AdMob 초기화 (네이티브에서만 동작)
     setTimeout(()=>document.getElementById('loading').classList.add('hide'),200);
-    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 1.1.5 (43) · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
+    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 1.1.5 (44) · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
     // in-app browser(카톡·네이버·페이스북 등)에서 열렸을 때 한 줄 안내
     setTimeout(maybeShowInAppBrowserHint,800);
   }
@@ -18863,6 +18863,22 @@ function _cardSkinTheme(skin){
   var sk=(typeof CARD_SKINS!=='undefined')?CARD_SKINS[skin]:null; if(sk&&sk.theme&&THEMES[sk.theme]) return sk.theme;
   return null;
 }
+/* ── 프리미엄 테마/스킨 만료 처리 ──
+   구독 만료(비프리미엄) 시: 프리미엄 테마/카드배경/캐릭터 데코는 '기본 테마'로 복귀.
+   저장값(members.card_skin)은 지우지 않음 → 재구독하면 자동 복원.
+   (컬러·이모지는 저장된 값이 그대로 렌더되고 신규 선택만 차단 — 만료 시 유지가 정책이라 별도 처리 불필요) */
+var _FREE_THEMES=['vintage','lavender','peach','mint','rose','sky'];
+function _isFreeTheme(t){ return !t || _FREE_THEMES.indexOf(t)>=0; }
+function _isPremiumSkin(skin){
+  if(!skin) return false;
+  if(typeof CARD_SKIN_FREE!=='undefined' && CARD_SKIN_FREE.indexOf(skin)>=0) return false; // 무료 기본 테마 6종
+  var sk=(typeof CARD_SKINS!=='undefined')?CARD_SKINS[skin]:null;
+  if(sk&&sk.free) return false;   // 레거시 무료 스킨
+  return true;                    // 캐릭터·무늬·컨셉 = 프리미엄
+}
+function _premOn(){ return (typeof isEffectivePremium==='function') && isEffectivePremium(); }
+/* 만료 시 프리미엄 스킨은 미적용(null=기본). 프리미엄이면 그대로. */
+function _effSkin(skin){ return (_isPremiumSkin(skin) && !_premOn()) ? null : skin; }
 function _clearRoomCharDecor(){
   try{
     Array.prototype.slice.call(document.body.classList).forEach(function(c){ if(c.indexOf('rc-')===0) document.body.classList.remove(c); });
@@ -18889,8 +18905,9 @@ function _applyRoomCharDecor(ct){
   host.insertBefore(d, host.firstChild);
 }
 async function applyRoomThemeFor(roomId){
-  const skin=(_myCardSkinByRoom&&roomId)?_myCardSkinByRoom[roomId]:null;
-  const ct=skin?ROOM_CHAR_THEME[skin]:null;
+  const rawSkin=(_myCardSkinByRoom&&roomId)?_myCardSkinByRoom[roomId]:null;
+  const skin=_effSkin(rawSkin);   // 만료 시 프리미엄 스킨→null(기본 복귀). 저장값은 유지.
+  let ct=skin?ROOM_CHAR_THEME[skin]:null;
   let theme=_myTheme||'vintage'; let explicit=false;
   try{
     if(_currentUser&&roomId){
@@ -18902,6 +18919,11 @@ async function applyRoomThemeFor(roomId){
   // 카드 배경이 없을 때만 저장된 방 테마/개인 테마 사용. → 설정 '이 방 테마'를 카드 배경으로 통합, 색 섞임 방지.
   var _skTheme=_cardSkinTheme(skin);
   if(_skTheme) theme=_skTheme;
+  // 만료: 저장된 방 테마/개인 테마가 프리미엄이면 기본으로 복귀 + 데코 숨김
+  if(!_premOn() && !_isFreeTheme(theme)){
+    theme=_isFreeTheme(_myTheme)?_myTheme:'vintage';
+    ct=null;
+  }
   _currentRoomTheme=theme;
   applyTheme(theme);
   _applyRoomCharDecor(ct);   // 마스코트 + 캐릭터 클래스(테마 색과 별개로 스킨 있으면 표시)
