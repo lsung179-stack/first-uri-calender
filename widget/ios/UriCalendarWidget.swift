@@ -742,6 +742,8 @@ struct DayCell: View {
                     ? AnyView(shape.stroke(Color(hexStr: b.color), lineWidth: 1.2))
                     : AnyView(shape.fill(Color(hexStr: b.color)))
             )
+            // 양끝(둥근 쪽)에만 1.5pt 바깥 여백 — 안드로이드 1.5dp inset과 육안 동일. 기간 중간은 0(연속 유지).
+            .padding(.leading, roundL ? 1.5 : 0).padding(.trailing, roundR ? 1.5 : 0)
     }
     var body: some View {
         // 날짜 탭 → 앱의 그 날짜 열기(위젯은 스크롤 불가 → 많은 일정은 앱에서 전부 보기)
