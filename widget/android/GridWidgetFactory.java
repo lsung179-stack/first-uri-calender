@@ -22,17 +22,19 @@ import java.util.Map;
 public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory {
 
     static final int MONTH = 0, TWOWEEK = 1;
-    private static final int MAX_LANES = 2;
+    private static final int MAX_LANE_VIEWS = 5; // 레이아웃의 이벤트 줄(cell_ev1~cell_ev5) 수
 
     private final Context ctx;
     private final int kind;
     private final List<Cell> cells = new ArrayList<>();
+    private int laneCap = 2;    // 위젯 높이에 맞춰 산정되는 셀당 표시 줄 수(여백만큼 일정 더 노출)
+    private int cellMinPx = 0;  // 셀 최소 높이(px) — 0이면 미적용(기존 동작)
 
     GridWidgetFactory(Context c, int kind) { this.ctx = c; this.kind = kind; }
 
     static class Cell {
         int day; int dow; boolean inMonth; boolean isToday; String key;
-        WidgetCommon.DayBar[] bars = new WidgetCommon.DayBar[MAX_LANES];
+        WidgetCommon.DayBar[] bars = new WidgetCommon.DayBar[0];
         int overflow;
         List<WidgetData.Todo> todos = new ArrayList<>();
     }
@@ -76,6 +78,24 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
             start.add(Calendar.DAY_OF_MONTH, -offset);
         }
 
+        // 위젯 실제 높이에 맞춰 셀 높이·표시 줄 수 산정 (여백만큼 일정을 더 노출)
+        laneCap = 2; cellMinPx = 0;
+        try {
+            float density = ctx.getResources().getDisplayMetrics().density;
+            int hDp = WidgetCommon.gridHeightDp(ctx, kind);
+            if (hDp > 0) {
+                int headerDp = 56; // 씰 헤더 + 요일 줄 + 여백 대략치
+                int gridDp = hDp - headerDp;
+                if (gridDp < rows * 44) gridDp = rows * 44;
+                int cellDp = gridDp / rows;
+                if (cellDp < 44) cellDp = 44;
+                cellMinPx = Math.round(cellDp * density);
+                // 날짜 숫자(~16dp) + 할일 여지(~13dp)를 빼고 남는 공간을 이벤트 줄(~13dp)로
+                int lanes = (cellDp - 16 - 13) / 13;
+                laneCap = Math.max(2, Math.min(MAX_LANE_VIEWS, lanes));
+            }
+        } catch (Throwable t) { laneCap = 2; cellMinPx = 0; }
+
         String startKey = WidgetCommon.fmt(start);
         Calendar endCal = (Calendar) start.clone();
         endCal.add(Calendar.DAY_OF_MONTH, rows * 7 - 1);
@@ -104,7 +124,7 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
             cell.key = WidgetCommon.fmt(d);
             cell.isToday = cell.key.equals(todayKey);
             int[] ov = new int[]{0};
-            cell.bars = WidgetCommon.cellBars(runs, cell.key, cell.dow, MAX_LANES, ov);
+            cell.bars = WidgetCommon.cellBars(runs, cell.key, cell.dow, laneCap, ov);
             cell.overflow = ov[0];
             List<WidgetData.Todo> tl = byTodo.get(cell.key);
             if (tl != null) cell.todos = tl;
@@ -114,9 +134,12 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
 
     @Override
     public RemoteViews getViewAt(int position) {
-        RemoteViews rv = new RemoteViews(ctx.getPackageName(), id(kind == TWOWEEK ? "widget_cell_tw" : "widget_cell", "layout"));
+        RemoteViews rv = new RemoteViews(ctx.getPackageName(), id("widget_cell", "layout"));
         if (position < 0 || position >= cells.size()) return rv;
         Cell cell = cells.get(position);
+
+        // 위젯 높이에 맞춘 셀 최소 높이 → GridView 행이 위젯을 꽉 채움(하단 여백 제거)
+        if (cellMinPx > 0) rv.setInt(id("cell_root", "id"), "setMinimumHeight", cellMinPx);
 
         rv.setTextViewText(id("cell_day", "id"), String.valueOf(cell.day));
         if (cell.isToday) {
@@ -132,9 +155,9 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
             rv.setTextColor(id("cell_day", "id"), numColor);
         }
 
-        int[] evViews = { id("cell_ev1", "id"), id("cell_ev2", "id") };
-        for (int s = 0; s < MAX_LANES; s++) {
-            WidgetCommon.DayBar b = s < cell.bars.length ? cell.bars[s] : null;
+        int[] evViews = { id("cell_ev1", "id"), id("cell_ev2", "id"), id("cell_ev3", "id"), id("cell_ev4", "id"), id("cell_ev5", "id") };
+        for (int s = 0; s < evViews.length; s++) {
+            WidgetCommon.DayBar b = (s < laneCap && s < cell.bars.length) ? cell.bars[s] : null;
             if (b != null) {
                 boolean showTitle = !b.contLeft || cell.dow == 0;
                 rv.setViewVisibility(evViews[s], android.view.View.VISIBLE);

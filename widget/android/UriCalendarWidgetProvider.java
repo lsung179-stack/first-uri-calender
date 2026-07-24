@@ -19,6 +19,16 @@ public class UriCalendarWidgetProvider extends AppWidgetProvider {
         updateAll(context, mgr, ids);
     }
 
+    // 위젯 크기 변경(리사이즈) 시 실제 높이를 저장 → 셀 높이·표시 줄 수 자동 재산정
+    @Override
+    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager mgr, int appWidgetId, android.os.Bundle newOptions) {
+        try {
+            int h = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0);
+            if (h > 0) WidgetCommon.setGridHeightDp(context, GridWidgetFactory.MONTH, h);
+        } catch (Throwable t) { /* 무시 */ }
+        updateAll(context, mgr, new int[]{ appWidgetId });
+    }
+
     @Override
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
@@ -56,6 +66,12 @@ public class UriCalendarWidgetProvider extends AppWidgetProvider {
     }
 
     private static RemoteViews build(Context context, int id) {
+        // 초기 배치 시에도 위젯 높이 확보(리사이즈 이벤트 전) → 셀 높이 자동 산정
+        try {
+            android.os.Bundle o = AppWidgetManager.getInstance(context).getAppWidgetOptions(id);
+            int h = o != null ? o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0) : 0;
+            if (h > 0) WidgetCommon.setGridHeightDp(context, GridWidgetFactory.MONTH, h);
+        } catch (Throwable t) { /* 무시 */ }
         RemoteViews rv = new RemoteViews(context.getPackageName(), WidgetCommon.resId(context, "widget_month", "layout"));
         WidgetData.WData data = WidgetData.load(context);
         WidgetData.Room room = data != null ? data.pickRoom(WidgetCommon.selectedRoomId(context)) : null;

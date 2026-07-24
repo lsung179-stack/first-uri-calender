@@ -17,6 +17,15 @@ public class TwoWeekWidgetProvider extends AppWidgetProvider {
         updateAll(context, mgr, ids);
     }
 
+    @Override
+    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager mgr, int appWidgetId, android.os.Bundle newOptions) {
+        try {
+            int h = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0);
+            if (h > 0) WidgetCommon.setGridHeightDp(context, GridWidgetFactory.TWOWEEK, h);
+        } catch (Throwable t) { /* 무시 */ }
+        updateAll(context, mgr, new int[]{ appWidgetId });
+    }
+
     static void updateAll(Context context, AppWidgetManager mgr, int[] ids) {
         for (int id : ids) {
             try {
@@ -30,6 +39,11 @@ public class TwoWeekWidgetProvider extends AppWidgetProvider {
     }
 
     private static RemoteViews build(Context context, int id) {
+        try {
+            android.os.Bundle o = AppWidgetManager.getInstance(context).getAppWidgetOptions(id);
+            int h = o != null ? o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0) : 0;
+            if (h > 0) WidgetCommon.setGridHeightDp(context, GridWidgetFactory.TWOWEEK, h);
+        } catch (Throwable t) { /* 무시 */ }
         RemoteViews rv = new RemoteViews(context.getPackageName(), WidgetCommon.resId(context, "widget_twoweek", "layout"));
         WidgetData.WData data = WidgetData.load(context);
         WidgetData.Room room = data != null ? data.pickRoom(WidgetCommon.selectedRoomId(context)) : null;

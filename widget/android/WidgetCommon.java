@@ -83,6 +83,9 @@ public class WidgetCommon {
     static void setWeekOffset(Context c, int n) { sp(c).edit().putInt("weekOffset", n).apply(); }
     static int comboOffset(Context c) { return sp(c).getInt("comboOffset", 0); }
     static void setComboOffset(Context c, int n) { sp(c).edit().putInt("comboOffset", n).apply(); }
+    // 위젯 실제 높이(dp) — 종류별(0=월,1=2주). 셀 높이·표시 줄 수를 위젯 크기에 맞춰 자동 산정하는 데 사용.
+    static int gridHeightDp(Context c, int kind) { return sp(c).getInt(kind == 1 ? "twHdp" : "mHdp", 0); }
+    static void setGridHeightDp(Context c, int kind, int dp) { sp(c).edit().putInt(kind == 1 ? "twHdp" : "mHdp", dp).apply(); }
     // 새로고침 깜빡임 상태(잠깐 아이콘 강조 후 원복)
     static boolean isFlash(Context c) { return sp(c).getBoolean("flash", false); }
     static void setFlash(Context c, boolean on) { sp(c).edit().putBoolean("flash", on).apply(); }

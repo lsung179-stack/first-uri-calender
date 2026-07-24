@@ -52,6 +52,54 @@
         android:text="" />
 
     <TextView
+        android:id="@+id/cell_ev3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:paddingLeft="2dp"
+        android:paddingRight="2dp"
+        android:background="#8B3A2A"
+        android:textColor="#FFFFFF"
+        android:textSize="7sp"
+        android:textStyle="bold"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:visibility="gone"
+        android:text="" />
+
+    <TextView
+        android:id="@+id/cell_ev4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:paddingLeft="2dp"
+        android:paddingRight="2dp"
+        android:background="#8B3A2A"
+        android:textColor="#FFFFFF"
+        android:textSize="7sp"
+        android:textStyle="bold"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:visibility="gone"
+        android:text="" />
+
+    <TextView
+        android:id="@+id/cell_ev5"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:paddingLeft="2dp"
+        android:paddingRight="2dp"
+        android:background="#8B3A2A"
+        android:textColor="#FFFFFF"
+        android:textSize="7sp"
+        android:textStyle="bold"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:visibility="gone"
+        android:text="" />
+
+    <TextView
         android:id="@+id/cell_todo"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
