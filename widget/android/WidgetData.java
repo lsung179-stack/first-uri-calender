@@ -113,6 +113,7 @@ public class WidgetData {
                     ev.gid = optStr(e, "gid");
                     ev.style = e.optString("style", "solid");
                     ev.ord = e.optInt("ord", 0);
+                    ev.shared = e.optBoolean("shared", false);
                     room.events.add(ev);
                 }
             }
@@ -144,7 +145,7 @@ public class WidgetData {
     }
 
     public static class Member { public String userId, name, color, avatarPng; }
-    public static class Event { public String date, title, time, color, userId, gid, style; public int ord; }
+    public static class Event { public String date, title, time, color, userId, gid, style; public int ord; public boolean shared; }
     public static class Todo {
         public String id, date, title, time, color, userId;
         public boolean done;

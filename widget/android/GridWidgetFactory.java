@@ -159,8 +159,11 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
             WidgetCommon.DayBar b = (s < laneCap && s < cell.bars.length) ? cell.bars[s] : null;
             if (b != null) {
                 boolean showTitle = !b.contLeft || cell.dow == 0;
+                boolean showMark = b.shared && !b.contLeft;   // 함께 일정: 시작 칸 왼쪽에 얇은 띠(▎, 텍스트색=대비색)
                 rv.setViewVisibility(evViews[s], android.view.View.VISIBLE);
-                rv.setTextViewText(evViews[s], showTitle ? (b.title == null ? "" : b.title) : " ");
+                String _bt = showTitle ? (b.title == null ? "" : b.title) : " ";
+                if (showMark) _bt = "▎ " + _bt;
+                rv.setTextViewText(evViews[s], _bt);
                 if (b.outline) {
                     rv.setInt(evViews[s], "setBackgroundColor", 0x00000000);
                     rv.setTextColor(evViews[s], b.color);

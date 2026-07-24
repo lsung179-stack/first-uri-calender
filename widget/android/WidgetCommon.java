@@ -314,9 +314,9 @@ public class WidgetCommon {
     }
 
     // ── 기간 런(run) / 레인(lane) — iOS GridView.runs + occupancy와 동일 ──
-    static class DayBar { String title; int color; boolean outline, contLeft, contRight; }
+    static class DayBar { String title; int color; boolean outline, contLeft, contRight, shared; }
     static class Run {
-        String title; int color; boolean outline; int ord; String start, end; int lane;
+        String title; int color; boolean outline, shared; int ord; String start, end; int lane;
         Set<String> days = new HashSet<>();
     }
 
@@ -333,13 +333,13 @@ public class WidgetCommon {
                 Run acc = byGid.get(e.gid);
                 if (acc == null) {
                     acc = new Run();
-                    acc.title = e.title; acc.color = parseColor(e.color); acc.outline = ol; acc.ord = e.ord;
+                    acc.title = e.title; acc.color = parseColor(e.color); acc.outline = ol; acc.ord = e.ord; acc.shared = e.shared;
                     byGid.put(e.gid, acc);
                 }
                 acc.days.add(e.date);
             } else {
                 Run r = new Run();
-                r.title = e.title; r.color = parseColor(e.color); r.outline = ol; r.ord = e.ord;
+                r.title = e.title; r.color = parseColor(e.color); r.outline = ol; r.ord = e.ord; r.shared = e.shared;
                 r.start = e.date; r.end = e.date; r.days.add(e.date);
                 all.add(r);
             }
@@ -352,7 +352,7 @@ public class WidgetCommon {
                 int j = i;
                 while (j + 1 < ds.size() && addDays(ds.get(j), 1).equals(ds.get(j + 1))) j++;
                 Run r = new Run();
-                r.title = acc.title; r.color = acc.color; r.outline = acc.outline; r.ord = acc.ord;
+                r.title = acc.title; r.color = acc.color; r.outline = acc.outline; r.ord = acc.ord; r.shared = acc.shared;
                 r.start = ds.get(i); r.end = ds.get(j);
                 for (int k = i; k <= j; k++) r.days.add(ds.get(k));
                 all.add(r);
@@ -385,7 +385,7 @@ public class WidgetCommon {
             if (r.start.compareTo(cellKey) <= 0 && cellKey.compareTo(r.end) <= 0) {
                 if (r.lane < maxLanes) {
                     DayBar b = new DayBar();
-                    b.title = r.title; b.color = r.color; b.outline = r.outline;
+                    b.title = r.title; b.color = r.color; b.outline = r.outline; b.shared = r.shared;
                     b.contLeft = r.start.compareTo(cellKey) < 0;
                     b.contRight = r.end.compareTo(cellKey) > 0;
                     bars[r.lane] = b;
