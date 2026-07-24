@@ -7858,10 +7858,16 @@ supa.auth.onAuthStateChange((event,session)=>{
                   var jd=parseDateKey(odate);
                   if(jd){ _calYear=jd.getFullYear(); _calMonth=jd.getMonth(); }
                 }
-                // 설정 등 다른 화면 위가 아니라 캘린더 화면으로 전환
-                if(typeof calTabSwitch==='function' && _currentRoom) calTabSwitch('cal');
+                // 마지막 화면(설정 등) 위가 아니라 반드시 캘린더 화면으로 전환.
+                // calTabSwitch('cal')=showScreen('calendarScreen')이라 설정 화면을 벗어나고 열린 모달도 정리됨.
+                if(typeof calTabSwitch==='function') calTabSwitch('cal');
+                // 그 달이 반영되도록 탭 전환 후 다시 월을 세팅해 재렌더(enterRoom/showScreen이 이번 달로 되돌리는 경우 방지)
+                if(/^\d{4}-\d{2}-\d{2}$/.test(odate)){
+                  var jd2=parseDateKey(odate);
+                  if(jd2){ _calYear=jd2.getFullYear(); _calMonth=jd2.getMonth(); }
+                }
                 try{ renderMonthly(); }catch(_){}
-              }catch(_){} }, switched?450:0);
+              }catch(_){} }, switched?450:80);
             }
           }catch(_){}
           return;

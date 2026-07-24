@@ -236,13 +236,18 @@ public class WidgetCommon {
         return PendingIntent.getActivity(c, reqCode, open,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
-    // 컬렉션 셀 fill-in 템플릿 — MUTABLE 이어야 fill-in extra가 채워짐
+    // 컬렉션 셀 fill-in 템플릿 — ACTION_VIEW(데이터 URI 없음)로 둬야
+    //  셀별 fill-in 이 date URI(com.lsung.uricalendar://open?room=&date=)를 채워 넣는다.
+    //  (템플릿 data 가 null 이어야 Intent.fillIn 이 셀의 data URI를 적용 → 그 날짜의 '달'로 이동)
+    //  ACTION_MAIN+LAUNCHER 였을 땐 앱이 '마지막 화면(설정 등)'으로 그냥 복귀해 날짜가 무시됐음.
+    //  MUTABLE 이어야 fill-in 이 채워지고, NEW_TASK|SINGLE_TOP 로 열어야 BridgeActivity 가
+    //  intent.getData()를 읽어 appUrlOpen(://open) 을 발화(보내기 버튼 openScheme 과 동일 경로).
     static PendingIntent openAppTemplate(Context c, int reqCode, String roomId) {
-        Intent open = new Intent();
+        Intent open = new Intent(Intent.ACTION_VIEW);
         open.setClassName(c, "com.lsung.uricalendar.MainActivity");
-        open.setAction(Intent.ACTION_MAIN);
-        open.addCategory(Intent.CATEGORY_LAUNCHER);
-        if (roomId != null) open.putExtra("widgetRoom", roomId);
+        open.addCategory(Intent.CATEGORY_DEFAULT);
+        open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        if (roomId != null) open.putExtra("widgetRoom", roomId); // 백업(data URI 에도 room 포함)
         return PendingIntent.getActivity(c, reqCode, open,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
     }

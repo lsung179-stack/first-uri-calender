@@ -20,6 +20,7 @@ public class MiniMonthFactory implements RemoteViewsService.RemoteViewsFactory {
 
     private final Context ctx;
     private final List<Cell> cells = new ArrayList<>();
+    private String roomId = null; // 셀 탭 딥링크(://open?room=&date=)용
 
     MiniMonthFactory(Context c) { this.ctx = c; }
 
@@ -43,6 +44,7 @@ public class MiniMonthFactory implements RemoteViewsService.RemoteViewsFactory {
         cells.clear();
         WidgetData.WData data = WidgetData.load(ctx);
         WidgetData.Room room = data != null ? data.pickRoom(WidgetCommon.selectedRoomId(ctx)) : null;
+        roomId = room != null ? room.id : null;
         String filter = WidgetCommon.filterUser(ctx);
         String todayKey = WidgetCommon.todayKey();
 
@@ -108,7 +110,10 @@ public class MiniMonthFactory implements RemoteViewsService.RemoteViewsFactory {
             }
         }
 
+        // 셀 탭 → 그 방·그 날짜의 '달' 캘린더로 이동(://open 딥링크). 템플릿 data 가 null 이라 여기 URI 가 적용됨.
         Intent fill = new Intent();
+        String u = "com.lsung.uricalendar://open?" + (roomId != null ? "room=" + roomId + "&" : "") + "date=" + cell.key;
+        fill.setData(android.net.Uri.parse(u));
         fill.putExtra("widgetDate", cell.key);
         rv.setOnClickFillInIntent(id("mini_root", "id"), fill);
         return rv;

@@ -29,6 +29,7 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
     private final List<Cell> cells = new ArrayList<>();
     private int laneCap = 2;    // 위젯 높이에 맞춰 산정되는 셀당 표시 줄 수(여백만큼 일정 더 노출)
     private int cellMinPx = 0;  // 셀 최소 높이(px) — 0이면 미적용(기존 동작)
+    private String roomId = null; // 셀 탭 딥링크(://open?room=&date=)용
 
     GridWidgetFactory(Context c, int kind) { this.ctx = c; this.kind = kind; }
 
@@ -54,6 +55,7 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
         cells.clear();
         WidgetData.WData data = WidgetData.load(ctx);
         WidgetData.Room room = data != null ? data.pickRoom(WidgetCommon.selectedRoomId(ctx)) : null;
+        roomId = room != null ? room.id : null;
         String filter = WidgetCommon.filterUser(ctx);
         String todayKey = WidgetCommon.todayKey();
 
@@ -217,7 +219,10 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
             rv.setViewVisibility(id("cell_more", "id"), android.view.View.GONE);
         }
 
+        // 셀 탭 → 그 방·그 날짜의 '달' 캘린더로 이동(://open 딥링크). 템플릿 data 가 null 이라 여기 URI 가 적용됨.
         Intent fill = new Intent();
+        String u = "com.lsung.uricalendar://open?" + (roomId != null ? "room=" + roomId + "&" : "") + "date=" + cell.key;
+        fill.setData(android.net.Uri.parse(u));
         fill.putExtra("widgetDate", cell.key);
         rv.setOnClickFillInIntent(id("cell_root", "id"), fill);
         return rv;
