@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 그리드 오늘 표시: 채운 원 + 안쪽 여백(숫자가 원 안에 들어가게) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <solid android:color="#8B3A2A" />
+    <padding android:left="6dp" android:top="2dp" android:right="6dp" android:bottom="2dp" />
+</shape>

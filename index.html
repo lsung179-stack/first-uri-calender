@@ -2664,13 +2664,13 @@ body.align-right .cal-evbar{text-align:right}
    AdMob 배너의 실제 높이를 --ad-h(JS가 배너 로드 시 측정해 갱신)에 담아,
    사용자 기기 크기에 맞춰 자동 조정. 탭바는 배너 바로 위에 딱 붙고(여백 없음),
    콘텐츠·FAB는 배너+탭바 높이만큼만 확보. 광고 사라지면 클래스 제거로 원복. */
-:root{ --ad-h:56px; } /* AdMob 배너 기본 높이 (배너 로드 시 실제 값으로 갱신됨) */
+:root{ --ad-h:62px; } /* AdMob 배너 기본 높이 (배너 로드 시 실제 값으로 갱신됨; Android 적응형 배너가 더 높을 수 있어 기본값 상향) */
 body.has-ad .cal-grid{ padding-bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)) !important; }
 body.has-ad .todo-list{ padding-bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)) !important; }
 body.has-ad #roomsContent{ padding-bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)) !important; }
 body.has-ad .uni-scroll{ padding-bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)) !important; }
 /* 탭바를 배너 바로 위에 딱 붙임 (배너 실제 높이만큼만 올림 → 사이 여백 없음) */
-body.has-ad .cal-tabbar{ bottom:calc(var(--ad-h) + 10px + env(safe-area-inset-bottom)) !important; }
+body.has-ad .cal-tabbar{ bottom:calc(var(--ad-h) + 16px + env(safe-area-inset-bottom)) !important; }
 /* FAB(+버튼)·오늘버튼·토스트는 탭바 위로 (배너+탭바 높이, 여유 확보) */
 body.has-ad .cal-fab{ bottom:calc(var(--ad-h) + 84px + env(safe-area-inset-bottom)) !important; }
 body.has-ad .cal-today-btn{ bottom:calc(var(--ad-h) + 84px + env(safe-area-inset-bottom)) !important; }
@@ -6547,7 +6547,13 @@ async function initAdMob() {
         try{
           var h = size && (size.height!=null ? size.height : (size.size && size.size.height));
           h = parseFloat(h);
-          if(h && h>0){ document.documentElement.style.setProperty('--ad-h', Math.round(h)+'px'); }
+          if(h && h>0){
+            // 일부 Android 기기/플러그인이 device px로 보고 → CSS px(dp)로 환산
+            if(h > 200){ var dpr = window.devicePixelRatio || 1; if(dpr > 1) h = h / dpr; }
+            // 비정상값 방지: 최소 배너 여백 확보 + 과대값 클램프
+            h = Math.max(52, Math.min(160, h));
+            document.documentElement.style.setProperty('--ad-h', Math.round(h)+'px');
+          }
         }catch(_){}
       });
     }catch(_){}

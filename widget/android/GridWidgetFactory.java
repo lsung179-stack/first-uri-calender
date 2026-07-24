@@ -114,17 +114,23 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
 
     @Override
     public RemoteViews getViewAt(int position) {
-        RemoteViews rv = new RemoteViews(ctx.getPackageName(), id("widget_cell", "layout"));
+        RemoteViews rv = new RemoteViews(ctx.getPackageName(), id(kind == TWOWEEK ? "widget_cell_tw" : "widget_cell", "layout"));
         if (position < 0 || position >= cells.size()) return rv;
         Cell cell = cells.get(position);
 
-        int numColor;
-        if (!cell.inMonth) numColor = 0x552A1C0F;
-        else if (cell.isToday) numColor = 0xFF8B3A2A;
-        else if (cell.dow == 0) numColor = 0xFFC0503F;
-        else numColor = 0xFF2A1C0F;
         rv.setTextViewText(id("cell_day", "id"), String.valueOf(cell.day));
-        rv.setTextColor(id("cell_day", "id"), numColor);
+        if (cell.isToday) {
+            // 오늘 = 채운 원 + 흰 숫자 (iOS 파리티)
+            rv.setInt(id("cell_day", "id"), "setBackgroundResource", id("cell_today_bg", "drawable"));
+            rv.setTextColor(id("cell_day", "id"), 0xFFFFFFFF);
+        } else {
+            rv.setInt(id("cell_day", "id"), "setBackgroundColor", 0x00000000);
+            int numColor;
+            if (!cell.inMonth) numColor = 0x552A1C0F;
+            else if (cell.dow == 0) numColor = 0xFFC0503F;
+            else numColor = 0xFF2A1C0F;
+            rv.setTextColor(id("cell_day", "id"), numColor);
+        }
 
         int[] evViews = { id("cell_ev1", "id"), id("cell_ev2", "id") };
         for (int s = 0; s < MAX_LANES; s++) {
