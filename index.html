@@ -4847,7 +4847,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     <button class="btn-danger-full" onclick="leaveRoomConfirm()">이 방 나가기</button>
   </div>
   
-  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.1.5 (65)</div>
+  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.1.5 (66)</div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeRoomSettings()">닫기</button>
   </div>
@@ -8005,7 +8005,7 @@ async function init(){
   }finally{
     initAdMob(); // AdMob 초기화 (네이티브에서만 동작)
     setTimeout(()=>document.getElementById('loading').classList.add('hide'),200);
-    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 1.1.5 (65) · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
+    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 1.1.5 (66) · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
     // in-app browser(카톡·네이버·페이스북 등)에서 열렸을 때 한 줄 안내
     setTimeout(maybeShowInAppBrowserHint,800);
   }
@@ -20004,7 +20004,6 @@ function fmtClock(t){ if(!t) return ''; const p=t.split(':'); const h=parseInt(p
 /* ---------- 상태 ---------- */
 let _todos=[];
 let _todoFilter='all';
-let _todoRangeMeta={};
 let _dayTab='events';
 // 추가 시트 상태
 let _todoType='single';
@@ -20141,144 +20140,15 @@ function todoOccursOnDate(t,key){
   }
   return t.start_date===key;
 }
-function isRangeType(t){
-  return t.todo_type==='range' && (!t.repeat_type||t.repeat_type==='none')
-    && t.start_date && t.end_date && t.end_date!==t.start_date;
-}
-
 /* ============================================================
    캘린더 셀 렌더
    ============================================================ */
-function rangeLabelInfo(t){
-  const ws=getWeekStartPref();
-  const s=parseDateKey(t.start_date);
-  const sCol=(s.getDay()-ws+7)%7;
-  const weekStart=shiftDateKey(t.start_date,-sCol);
-  const weekEnd=shiftDateKey(weekStart,6);
-  const total=_dayDiff(t.start_date,t.end_date);
-  const mid=shiftDateKey(t.start_date, Math.floor(total/2));
-  let labelKey;
-  if(mid>=weekStart && mid<=weekEnd) labelKey=mid;
-  else labelKey=(t.end_date<weekEnd ? t.end_date : weekEnd);
-  const lk=parseDateKey(labelKey);
-  const lcol=(lk.getDay()-ws+7)%7;
-  return { labelKey, align:(lcol===6?'r':'c') };
-}
-function computeTodoRangeMeta(){
-  _todoRangeMeta={};
-  const ranges=_todos.filter(isRangeType).slice().sort(function(a,b){
-    return a.start_date<b.start_date?-1:(a.start_date>b.start_date?1:0);
-  });
-  const laneEnds=[];
-  ranges.forEach(function(r){
-    let lane=-1;
-    for(let i=0;i<laneEnds.length;i++){ if(r.start_date>laneEnds[i]){ lane=i; laneEnds[i]=r.end_date; break; } }
-    if(lane<0){ lane=laneEnds.length; laneEnds.push(r.end_date); }
-    const info=rangeLabelInfo(r);
-    _todoRangeMeta[r.id]={ lane:lane, labelKey:info.labelKey, align:info.align };
-  });
-}
-function buildRangeCellHTML(t,key,top,meta){
-  const hex=todoHex(t.color);
-  const isStart=key===t.start_date, isEnd=key===t.end_date;
-  const left=isStart?5:0, right=isEnd?5:0;
-  let h='<div class="td-range" style="top:'+top+'px">';
-  h+='<span class="rline" style="left:'+left+'px;right:'+right+'px;background:'+hex+'"></span>';
-  if(isStart) h+='<span class="start-dot" style="background:'+hex+'"></span>';
-  if(isEnd) h+='<span class="end-dot" style="background:'+hex+'"></span>';
-  if(key===meta.labelKey){
-    const done=t.is_done;
-    h+='<span class="range-label '+meta.align+'">'
-      +'<span class="rchk '+(done?'on':'')+'" style="color:'+hex+'" onclick="event.stopPropagation();window.toggleTodoDone(\''+t.id+'\')"></span>'
-      +'<span class="rtxt '+(done?'done':'')+'">'+escapeHtml(t.title||'')+'</span>'
-      +'</span>';
-  }
-  h+='</div>';
-  return h;
-}
-function buildSingleCellHTML(t,key,top){
-  const hex=todoHex(t.color);
-  const done=t.is_done;
-  const rep=(t.repeat_type&&t.repeat_type!=='none')?'<span class="td-rep-ico">↻</span>':'';
-  return '<div class="td-single" style="top:'+top+'px">'
-    +'<span class="td-box '+(done?'on':'')+'" style="border-color:'+hex+';'+(done?'background:'+hex:'')+'" onclick="event.stopPropagation();window.toggleTodoDone(\''+t.id+'\')"></span>'
-    +rep
-    +'<span class="td-txt '+(done?'done':'')+'">'+escapeHtml(t.title||'')+'</span>'
-    +'</div>';
-}
-// 셀에 할일을 baseTop(일정 아래)부터 렌더. 사용한 줄 수 반환.
-function renderCellTodos(cell,key,baseTop){
-  baseTop = baseTop || 34;
-  const ranges=[], singles=[];
-  for(let i=0;i<_todos.length;i++){
-    const t=_todos[i];
-    if(!todoOccursOnDate(t,key)) continue;
-    if(!_todoVisibleForView(t)) continue;
-    if(isRangeType(t)) ranges.push(t); else singles.push(t);
-  }
-  if(!ranges.length && !singles.length) return 0;
-  let more=0, usedRows=0;
-  ranges.forEach(function(r){
-    const meta=_todoRangeMeta[r.id]||{ lane:0, labelKey:r.start_date, align:'c' };
-    if(meta.lane>=2){ more++; return; }
-    const top=baseTop+meta.lane*15;
-    cell.insertAdjacentHTML('beforeend', buildRangeCellHTML(r,key,top,meta));
-    if(meta.lane+1>usedRows) usedRows=meta.lane+1;
-  });
-  let slot=usedRows;
-  singles.forEach(function(s){
-    if(slot>=2){ more++; return; }
-    const top=baseTop+slot*15;
-    cell.insertAdjacentHTML('beforeend', buildSingleCellHTML(s,key,top));
-    slot++;
-  });
-  if(more>0) cell.insertAdjacentHTML('beforeend','<span class="td-more" style="top:'+(baseTop+slot*15)+'px">+'+more+'</span>');
-  return slot;
-}
 // 할일을 일정 바로 아래로 유동 배치. 한 주(행) 안에서는 같은 baseTop을 써서 기간 라인이 어긋나지 않게 정렬.
 function renderTodosIntoCells(){
   // 통합 레인 시스템으로 대체됨 — 할일은 cellHtml에서 일정과 같은 레인으로 렌더됨.
   // 배지만 갱신.
   try{ updateTodoBadge(); }catch(e){}
   return;
-}
-function _renderTodosIntoCells_legacy(){
-  const grid=$('calGrid'); if(!grid) return;
-  computeTodoRangeMeta();
-  const cells=Array.prototype.slice.call(grid.querySelectorAll('.cal-cell[data-date]'));
-  if(!cells.length) return;
-  // 1) 기존 할일/스페이서/높이 초기화
-  cells.forEach(function(cell){
-    const old=cell.querySelectorAll('.td-range,.td-single,.td-more,.td-spacer');
-    for(let i=0;i<old.length;i++) old[i].remove();
-    cell.style.minHeight='';
-  });
-  // 2) 행별 일정 하단 높이 측정 (할일 시작 기준점)
-  const cols=7, rows=Math.ceil(cells.length/cols);
-  const rowBase=[];
-  for(let r=0;r<rows;r++){
-    let base=34;
-    for(let c2=0;c2<cols;c2++){
-      const cell=cells[r*cols+c2]; if(!cell) continue;
-      const ev=cell.querySelector('.cal-events');
-      if(ev){ const b=ev.offsetTop+ev.offsetHeight; if(b>base) base=b; }
-    }
-    rowBase[r]=base+3;
-  }
-  // 3) 렌더 + 행별 최대 줄 수 추적
-  const rowMaxRows=[];
-  cells.forEach(function(cell,i){
-    const r=Math.floor(i/cols);
-    const used=renderCellTodos(cell, cell.getAttribute('data-date'), rowBase[r]);
-    if(!rowMaxRows[r] || used>rowMaxRows[r]) rowMaxRows[r]=used;
-  });
-  // 4) 할일이 있는 행은 셀 높이를 키워 잘리지 않게
-  for(let r=0;r<rows;r++){
-    if(!rowMaxRows[r]) continue;
-    const h=Math.round(rowBase[r]+rowMaxRows[r]*15+12);
-    for(let c2=0;c2<cols;c2++){ const cell=cells[r*cols+c2]; if(cell) cell.style.minHeight=h+'px'; }
-  }
-  updateTodoBadge();
 }
 
 /* ============================================================
