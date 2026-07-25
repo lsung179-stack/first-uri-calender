@@ -11,10 +11,15 @@
     android:paddingRight="0dp"
     android:paddingTop="2dp">
 
+    <!-- 날짜 숫자칸은 오늘/평일 구분 없이 항상 정사각 고정 (iOS numBox 파리티).
+         · 정사각이라 오늘 표시 oval이 타원이 되지 않고 정원으로 그려짐
+         · 높이가 항상 같아서 오늘 칸의 일정 줄이 아래로 밀리지 않음(같은 주 날짜끼리 정렬 유지) -->
     <TextView
         android:id="@+id/cell_day"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="17dp"
+        android:layout_height="17dp"
+        android:gravity="center"
+        android:includeFontPadding="false"
         android:textColor="#2A1C0F"
         android:textSize="11sp"
         android:text="1" />

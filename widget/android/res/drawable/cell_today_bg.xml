@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 그리드 오늘 표시: 채운 원 + 안쪽 여백(숫자가 원 안에 들어가게) -->
+<!-- 그리드 오늘 표시: 채운 정원(正圓).
+     ※ padding 속성을 넣으면 안 된다 — background로 설정된 '오늘' 칸의 TextView에만
+        상/하 패딩이 붙어 날짜칸 높이가 커지고, 그 칸의 일정 줄이 아래로 밀려서
+        같은 주 다른 날짜의 일정과 줄이 어긋난다. 게다가 좌/우 패딩으로 폭이
+        높이보다 커져 원이 타원으로 늘어난다.
+        → 크기는 widget_cell.xml의 cell_day 정사각(17dp) 고정으로 잡는다. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
     <solid android:color="#8B3A2A" />
-    <padding android:left="6dp" android:top="2dp" android:right="6dp" android:bottom="2dp" />
 </shape>
