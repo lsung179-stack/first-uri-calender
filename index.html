@@ -4845,7 +4845,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     <button class="btn-danger-full" onclick="leaveRoomConfirm()">이 방 나가기</button>
   </div>
   
-  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.1.5 (62)</div>
+  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.1.5 (63)</div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeRoomSettings()">닫기</button>
   </div>
@@ -7997,7 +7997,7 @@ async function init(){
   }finally{
     initAdMob(); // AdMob 초기화 (네이티브에서만 동작)
     setTimeout(()=>document.getElementById('loading').classList.add('hide'),200);
-    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 1.1.5 (62) · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
+    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 1.1.5 (63) · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
     // in-app browser(카톡·네이버·페이스북 등)에서 열렸을 때 한 줄 안내
     setTimeout(maybeShowInAppBrowserHint,800);
   }
@@ -14256,16 +14256,16 @@ const SEAL_SET_ORDER=['a_cat', 'a_rabbit', 'a_bear', 'a_fox', 'a_monkey', 'a_mou
 const CARD_SKINS={
   butter:{name:'버터',free:true}, blush:{name:'블러쉬',free:true}, mint:{name:'민트',free:true},
   sky:{name:'하늘',free:true}, lavender:{name:'라벤더',free:true}, peach:{name:'피치',free:true}, sage:{name:'세이지',free:true},
-  nabi:{name:'나비 정원',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_113411_822c474e-ba07-476c-a26b-b3e93072662d.png'},
+  nabi:{name:'나비 정원',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_090420_6427601b-09d7-46c2-b434-841e898099df.png'},
   rosewreath:{name:'장미 리스',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_093010_b7b68045-e3d1-4765-85a2-7b11115d61fb.png'},
   plum:{name:'매화',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_093024_303c7d7b-3b89-45bf-82ce-335ced34640b.png'},
-  moon:{name:'달빛',dark:true,img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_113451_59b1ff34-b053-4a4c-8ab0-246330f44e75.png'},
+  moon:{name:'달빛',dark:true,img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_092202_4118ca1b-67f0-45a0-8bb2-59800f289ea5.png'},
   lotus:{name:'연꽃',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_093040_d13c3c01-6cea-4890-b7e3-6c4c36852668.png'},
   crane:{name:'학',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_093043_443087d1-3c52-4564-ac9c-9c27957cd753.png'},
   tulip:{name:'튤립',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_093050_7c6bb2a9-1019-4cc2-94c7-fa96f0aa1034.png'},
   snow:{name:'눈꽃',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_093052_8cb9627b-3669-465a-b51b-36e9aad832c7.png'},
   camellia:{name:'동백',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_093110_eee173ef-8fe5-4769-af93-6877704c3d26.png'},
-  koi:{name:'잉어',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_113452_07992e20-31a9-4f4e-94a5-fbf61d5be720.png'},
+  koi:{name:'잉어',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_093442_7eb10dc9-8b3b-4c3c-865c-8e70df319011.png'},
   chrysw:{name:'국화',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_093112_dccf6cc7-8a5d-41d1-a535-c6ffdc649e80.png'},
   cherry:{name:'벚꽃',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_093115_99e21119-26a8-4eeb-bdcd-cbe53a16c97a.png'}
 };
@@ -14282,8 +14282,8 @@ CARD_SKINS.t_sky={name:'스카이',free:true,theme:'sky'};
 const CARD_SKIN_FREE=['t_vintage','t_lavender','t_peach','t_mint','t_rose','t_sky'];
 CARD_SKINS.ribbon={name:'리본',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_124201_ec823a28-a36e-4b31-8720-1418a4346342.png'};
 CARD_SKINS.cherryf={name:'체리',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_124209_1d81f0cc-5ae7-485e-bd0a-da3e21416c4e.png'};
-CARD_SKINS.daisy={name:'데이지',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_113534_bc01345b-620b-42d3-ad87-b6c624e27830.png'};
-CARD_SKINS.star={name:'별똥별',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_113535_fc7b1285-4d3a-47a3-ba48-6c7815394b7b.png'};
+CARD_SKINS.daisy={name:'데이지',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_092743_5d9d3aee-d532-4f58-8aa3-3b2555daaa1c.png'};
+CARD_SKINS.star={name:'별똥별',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_091013_aec5db6e-c81e-490c-a5f0-cd7cdbd04b82.png'};
 CARD_SKINS.heart={name:'하트',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_124234_aa7a2f1e-fe09-40fb-a814-b66c7c85429e.png'};
 /* 캐릭터 카드 배경 6종(2026-07-22, 부드러운 그라데이션 화풍) — 씰과 매칭 세트 */
 CARD_SKINS.c_cat={name:'냥이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_141210_ebdad9a1-6f73-4235-8696-821e8e09a979.png'};
@@ -14297,18 +14297,18 @@ CARD_SKINS.c_boy={name:'소년',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3
 CARD_SKINS.c_baby={name:'아기',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_141813_468a1367-c953-4b09-9ae1-483bcb6de223.png'};
 /* 스토어 동물 카드 = 그라데이션 + 캐릭터 스티커 합성 */
 CARD_SKINS.a_dog={name:'보리',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_152946_99603264-d535-48b4-97e6-42155d905ebb.png'};
-CARD_SKINS.a_cat={name:'코코',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_113616_bde6a379-3a13-4ea7-9cda-1d63dba123d8.png'};
+CARD_SKINS.a_cat={name:'코코',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_152949_6cba002c-1f8c-4fe6-b1cb-7bf52be2ecc5.png'};
 CARD_SKINS.a_tiger={name:'호담',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_152952_e227b281-e8c3-4ec5-b7a9-7c4e568f85ab.png'};
-CARD_SKINS.a_rabbit={name:'달이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_113617_83b56648-9c02-45ca-ae11-061986b9b797.png'};
-CARD_SKINS.a_bear={name:'꿀곰이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_113619_32a49127-637c-478a-8b73-63f88441cb94.png'};
+CARD_SKINS.a_rabbit={name:'달이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_084219_1d3ad05a-cd4d-4510-8eb7-d6eebc4856f8.png'};
+CARD_SKINS.a_bear={name:'꿀곰이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_084231_ce9f889d-f63e-454f-a349-af93b4fdad0b.png'};
 CARD_SKINS.a_penguin={name:'뽀글이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_153003_f3864e64-c46d-4cae-b48b-dc54b2f19090.png'};
-CARD_SKINS.a_fox={name:'여우비',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_113701_77aa1e34-8801-4c2e-bda4-4ddbd39f617b.png'};
-CARD_SKINS.a_monkey={name:'몽당이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_113702_65c80718-d571-4e96-ae2c-fe895d860cfc.png'};
-CARD_SKINS.a_mouse={name:'콩이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_113737_c7346761-90f2-45ad-ac85-a9eb94b739c6.png'};
-CARD_SKINS.a_chicken={name:'꼬꼬',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_113738_d7828df3-4abc-4a6f-9208-8d9cf7889843.png'};
-CARD_SKINS.a_dino={name:'두두',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_113739_22e47781-b346-4a0f-ad2b-016a1b8b3e99.png'};
+CARD_SKINS.a_fox={name:'여우비',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_072853_ad8c1917-5bf1-4168-993c-e938ed538a3b.png'};
+CARD_SKINS.a_monkey={name:'몽당이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_084244_7d27cdd2-789a-42bb-b00d-4692ccb4bcd8.png'};
+CARD_SKINS.a_mouse={name:'콩이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_084256_9140998d-7bdd-4eeb-9964-5c46c81d82ad.png'};
+CARD_SKINS.a_chicken={name:'꼬꼬',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_084308_591df859-66cf-4da9-a9ac-d0c329006ed5.png'};
+CARD_SKINS.a_dino={name:'두두',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_231302_a8899169-2f22-4271-9ab9-966cf4b5db9c.png'};
 /* 장난꾸러기 캐릭터(크레파스 낙서) */
-CARD_SKINS.c_gaegu={name:'개구쟁이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_113814_c6449fb5-6bb7-42e1-aae1-28e459dc886c.png'};
+CARD_SKINS.c_gaegu={name:'개구쟁이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_091552_1ebf4f6c-c9df-4fd9-9781-8aa85a288520.png'};
 CARD_SKINS.c_simsul={name:'심술이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_143004_1c85bdab-07e1-4042-b3aa-17212d290697.png'};
 CARD_SKINS.c_kkalkal={name:'깔깔이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_143001_bda96b6b-4448-4757-9830-140f684e737f.png'};
 const CARD_SKIN_PREM=['a_cat', 'a_rabbit', 'a_bear', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'a_dino', 'c_gaegu', 'nabi', 'moon', 'daisy', 'star', 'koi'];   // 보리·호담·소녀·소년·눈꽃 제거(2026-07-23, 사용자 요청). CARD_SKINS 데이터는 잔존
