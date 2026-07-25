@@ -4847,7 +4847,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     <button class="btn-danger-full" onclick="leaveRoomConfirm()">이 방 나가기</button>
   </div>
   
-  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.1.5 (64)</div>
+  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.1.5 (65)</div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeRoomSettings()">닫기</button>
   </div>
@@ -7040,6 +7040,7 @@ function isEffectivePremium(){
 /* 사용자 정보 표시 (헤더 아바타) */
 let _currentUser=null;
 let _currentProfile=null;  // { birthday: 'MM-DD', ... } — 캘린더에 생일 자동 표시용
+let _profileLoaded=false;  // 프로필 세션 캐시 플래그(방 입장마다 재조회 방지)
 let _myTheme='vintage';    // 개인 전역 테마(profiles.theme) — 내가 참여한 모든 방에 공통 적용, 다른 사람에겐 영향 없음
 let _myThemeLoaded=false;  // 세션당 1회 로드 가드
 function renderUser(user){
@@ -7493,11 +7494,15 @@ document.addEventListener('pointercancel',_shEnd,{passive:true});
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 
 /* 본인 프로필 정보를 미리 로드 (생일·사진을 캘린더에 반영하기 위해) */
-async function loadCurrentProfile(){
+async function loadCurrentProfile(force){
   if(!_currentUser)return;
+  // 세션 캐시: 프로필·unlocks는 사용자 전역(방마다 안 바뀜) → 방 입장마다 재조회 안 함(입장 지연 제거).
+  // 프로필 수정은 _currentProfile를 직접 갱신하므로 캐시로 충분. 명시적 새로고침은 force=true.
+  if(_profileLoaded && !force){ updateUserAvatar(); return; }
+  let ok=false;
   try{
     const {data}=await supa.from('profiles').select('avatar_url,name,birthday,agreed_at').eq('id',_currentUser.id).maybeSingle();
-    _currentProfile=data||{};
+    _currentProfile=data||{}; ok=true;
   }catch(e){
     console.warn('프로필 로드 실패',e);
     _currentProfile=_currentProfile||{};
@@ -7506,6 +7511,7 @@ async function loadCurrentProfile(){
   await loadMyDbUnlocks();
   // 방 목록 화면 아바타도 같이 갱신
   updateUserAvatar();
+  if(ok) _profileLoaded=true;
 }
 
 /* 헤더 우측 아바타 갱신 (사진 있으면 사진, 없으면 첫 글자) */
@@ -7999,7 +8005,7 @@ async function init(){
   }finally{
     initAdMob(); // AdMob 초기화 (네이티브에서만 동작)
     setTimeout(()=>document.getElementById('loading').classList.add('hide'),200);
-    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 1.1.5 (64) · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
+    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 1.1.5 (65) · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
     // in-app browser(카톡·네이버·페이스북 등)에서 열렸을 때 한 줄 안내
     setTimeout(maybeShowInAppBrowserHint,800);
   }
@@ -8069,6 +8075,7 @@ supa.auth.onAuthStateChange((event,session)=>{
       _currentUser=session.user;
       return;
     }
+    _profileLoaded=false;  // 새 유저 로그인 → 프로필 캐시 무효화(다른 계정 프로필 유지 방지)
     renderUser(session.user);
     initRevenueCat(session.user.id); // RevenueCat: Supabase user_id 연결 (결제 식별용)
     // 마지막 방 ID가 있으면 방 목록 깜빡임 없이 바로 캘린더 화면으로 (loadRooms 후 enterRoom이 데이터 채움)
@@ -8084,6 +8091,7 @@ supa.auth.onAuthStateChange((event,session)=>{
     document.getElementById('loading').classList.add('hide');
   }else if(event==='SIGNED_OUT'){
     _currentUser=null;
+    _profileLoaded=false;  // 프로필 세션 캐시 리셋
     _isPremium=false;_premiumInfo=null;_premiumLoaded=false;  // 프리미엄 상태 리셋
     _serverPremium=false;_serverPremiumInfo=null;_rcPremiumActive=false;_rcPremiumInfo=null;  // 서버·기기 병합 상태도 리셋
     try{ const P=_rcPlugin(); if(P&&_rcConfigured){ P.logOut(); } }catch(_){} // RevenueCat 로그아웃 (다음 유저와 구독 섞임 방지)
@@ -19224,16 +19232,20 @@ async function applyRoomThemeFor(roomId){
   const skin=_effSkin(rawSkin);   // 만료 시 프리미엄 스킨→null(기본 복귀). 저장값은 유지.
   let ct=skin?ROOM_CHAR_THEME[skin]:null;
   let theme=_myTheme||'vintage'; let explicit=false;
-  try{
-    if(_currentUser&&roomId){
-      const {data}=await supa.from('user_room_themes').select('theme').eq('user_id',_currentUser.id).eq('room_id',roomId).maybeSingle();
-      if(data&&data.theme&&THEMES[data.theme]){theme=data.theme;explicit=true;}
-    }
-  }catch(_){}
   // 카드 배경(기본 테마 배경 or 캐릭터 스킨)이 있으면 그 테마를 우선 적용(색+데코 항상 일치 — 저장된 방 테마보다 우선).
   // 카드 배경이 없을 때만 저장된 방 테마/개인 테마 사용. → 설정 '이 방 테마'를 카드 배경으로 통합, 색 섞임 방지.
+  // 카드 스킨이 테마를 정하면 user_room_themes 조회 불필요(방 입장 네트워크 왕복 제거).
   var _skTheme=_cardSkinTheme(skin);
-  if(_skTheme) theme=_skTheme;
+  if(_skTheme){
+    theme=_skTheme;
+  }else{
+    try{
+      if(_currentUser&&roomId){
+        const {data}=await supa.from('user_room_themes').select('theme').eq('user_id',_currentUser.id).eq('room_id',roomId).maybeSingle();
+        if(data&&data.theme&&THEMES[data.theme]){theme=data.theme;explicit=true;}
+      }
+    }catch(_){}
+  }
   // 만료: 저장된 방 테마/개인 테마가 프리미엄이면 기본으로 복귀 + 데코 숨김
   if(!_premOn() && !_isFreeTheme(theme)){
     theme=_isFreeTheme(_myTheme)?_myTheme:'vintage';
