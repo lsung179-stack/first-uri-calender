@@ -748,11 +748,11 @@ struct DayCell: View {
                     RoundedRectangle(cornerRadius: 1)
                         .fill(b.outline ? Color(hexStr: b.color) : contrastText(b.color))
                         .frame(width: 2.5, height: barH * 0.52)
-                        .padding(.leading, roundL ? 3.5 : 1.5)
+                        .padding(.leading, roundL ? 3 : 1)
                 }
             }
-            // 양끝(둥근 쪽)에만 1.5pt 바깥 여백 — 안드로이드 1.5dp inset과 육안 동일. 기간 중간은 0(연속 유지).
-            .padding(.leading, roundL ? 1.5 : 0).padding(.trailing, roundR ? 1.5 : 0)
+            // 양끝(둥근 쪽)에만 1pt 바깥 여백 — 안드로이드 1dp inset과 육안 동일. 기간 중간은 0(연속 유지).
+            .padding(.leading, roundL ? 1 : 0).padding(.trailing, roundR ? 1 : 0)
     }
     var body: some View {
         // 날짜 탭 → 앱의 그 날짜 열기(위젯은 스크롤 불가 → 많은 일정은 앱에서 전부 보기)
