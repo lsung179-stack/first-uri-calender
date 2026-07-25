@@ -1656,6 +1656,9 @@ body.ev-dragging .cal-cell{cursor:grabbing}
 .cal-evbar.ev-l-join{border-top-left-radius:0;border-bottom-left-radius:0;margin-left:-1px}
 .cal-evbar.ev-r-open{border-top-right-radius:3px;border-bottom-right-radius:3px;margin-right:3px}
 .cal-evbar.ev-r-join{border-top-right-radius:0;border-bottom-right-radius:0;margin-right:-1px}
+/* 다음달(흐림 opacity .35) 셀에선 기간 바 조인 겹침(-1px)이 반투명으로 두 겹 → 칸 경계마다 진해짐. 겹침 0으로(바는 이어지되 진해짐 제거) */
+.cal-cell.other .cal-evbar.ev-l-join{margin-left:0}
+.cal-cell.other .cal-evbar.ev-r-join{margin-right:0}
 
 /* 이모지 반응 */
 .dp-reaction-row{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
@@ -4600,7 +4603,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     <button class="btn-danger-full" onclick="leaveRoomConfirm()">이 방 나가기</button>
   </div>
   
-  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.1.5 (47)</div>
+  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.1.5 (48)</div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeRoomSettings()">닫기</button>
   </div>
@@ -7752,7 +7755,7 @@ async function init(){
   }finally{
     initAdMob(); // AdMob 초기화 (네이티브에서만 동작)
     setTimeout(()=>document.getElementById('loading').classList.add('hide'),200);
-    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 1.1.5 (47) · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
+    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 1.1.5 (48) · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
     // in-app browser(카톡·네이버·페이스북 등)에서 열렸을 때 한 줄 안내
     setTimeout(maybeShowInAppBrowserHint,800);
   }
