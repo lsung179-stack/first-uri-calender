@@ -4847,7 +4847,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     <button class="btn-danger-full" onclick="leaveRoomConfirm()">이 방 나가기</button>
   </div>
   
-  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.1.5 (66)</div>
+  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.1.5 (67)</div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeRoomSettings()">닫기</button>
   </div>
@@ -6425,6 +6425,8 @@ function _applyAdminPlanUI(){
   try{ if(typeof window.renderTodoColorPager==='function') window.renderTodoColorPager(); }catch(_){}
   // 광고 갱신: 유료면 숨기고, 무료면 표시
   try{ if(_adminPlanOverride){ hideAdBanner(); } else { showAdBannerIfNeeded(); } }catch(_){}
+  // 씰·테마·카드 게이트 즉시 반영 (무료 토글 시 프리미엄 씰/테마 → 기본으로 바로 전환)
+  try{ if(typeof _refreshPremiumGatedUI==='function') _refreshPremiumGatedUI(); }catch(_){}
 }
 
 /* 프리미엄 수동부여(전체체험·개별관리) UI 제거 — 필요 시 관리자가 subscriptions에
@@ -7009,6 +7011,7 @@ function photoKeepDaysLeft(ev){
 }
 
 async function loadPremiumStatus(){
+  const _prevPrem = (typeof isEffectivePremium==='function') ? isEffectivePremium() : _isPremium;  // 게이트 기준(관리자 override 포함) 변화 감지용
   try{
     if(!_currentUser){ _isPremium=false; _premiumInfo=null; _premiumLoaded=false; _serverPremium=false; _serverPremiumInfo=null; _rcPremiumActive=false; _rcPremiumInfo=null; return; }
     const {data,error}=await supa.rpc('my_premium_status');
@@ -7018,6 +7021,8 @@ async function loadPremiumStatus(){
     _premiumLoaded=true;
     _recomputePremium();  // 서버가 '무료'라도 기기에 활성 구독 있으면 프리미엄 유지 (덮어쓰기 금지)
     try{ renderRoomThemeGrid(); }catch(_){} // 프리미엄 확정 후 이 방 테마 섹션 표시/숨김 갱신
+    // 프리미엄 상태가 바뀌었으면 씰·테마·카드 게이트 즉시 반영(만료→기본, 재구독→복원)
+    try{ const _nowPrem=(typeof isEffectivePremium==='function')?isEffectivePremium():_isPremium; if(_nowPrem!==_prevPrem) _refreshPremiumGatedUI(); }catch(_){}
   }catch(e){ console.warn('프리미엄 상태 오류:',e); }
 }
 /* 제한 체크 직전 호출 — 아직 로드 안 됐으면 1회 로드 (진입 경로 누락 대비) */
@@ -7621,10 +7626,10 @@ function exitRoom(){
   loadRooms();
   // 방목록에서도 '마지막 입장한 방'의 테마(색+캐릭터 꾸미기)를 유지 (기본테마로 리셋하지 않음)
   if(_lastId){
-    if(_lastTheme && typeof THEMES!=='undefined' && THEMES[_lastTheme]){ try{ applyTheme(_lastTheme); }catch(_){} }  // 즉시 색 유지(async 전 깜빡임 방지)
-    try{ applyRoomThemeFor(_lastId); }catch(_){ try{ applyTheme(_myTheme||'vintage'); _clearRoomCharDecor(); }catch(e){} }  // 색+꾸미기 정확 재적용
+    if(_lastTheme && typeof THEMES!=='undefined' && THEMES[_lastTheme]){ try{ applyTheme(_effTheme(_lastTheme)); }catch(_){} }  // 즉시 색 유지(async 전 깜빡임 방지, 만료 프리미엄은 기본으로)
+    try{ applyRoomThemeFor(_lastId); }catch(_){ try{ applyTheme(_effTheme(_myTheme)||'vintage'); _clearRoomCharDecor(); }catch(e){} }  // 색+꾸미기 정확 재적용
   } else {
-    try{ applyTheme(_myTheme||'vintage'); }catch(_){}
+    try{ applyTheme(_effTheme(_myTheme)||'vintage'); }catch(_){}
     try{ _clearRoomCharDecor(); }catch(_){}
   }
 }
@@ -8005,7 +8010,7 @@ async function init(){
   }finally{
     initAdMob(); // AdMob 초기화 (네이티브에서만 동작)
     setTimeout(()=>document.getElementById('loading').classList.add('hide'),200);
-    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 1.1.5 (66) · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
+    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 1.1.5 (67) · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
     // in-app browser(카톡·네이버·페이스북 등)에서 열렸을 때 한 줄 안내
     setTimeout(maybeShowInAppBrowserHint,800);
   }
@@ -14340,7 +14345,11 @@ function _sealGlyph(sym, roomName){
 /* 방 목록 씰 inner (색 지정된 경우만, 아니면 null) */
 function _sealInner(mascotVal, roomName){
   const p=_parseSeal(mascotVal); if(!p)return null;
-  if(p.set) return '<div class="r-card-seal has-seal seal-set">'+_sealSetArt(p.set)+'</div>';
+  if(p.set){
+    // 프리미엄 세트 씰: 구독 만료 시 기본(첫 글자)으로 복귀 — 저장값은 유지(재구독 시 자동 복원)
+    if(typeof _isPremiumSkin==='function' && _isPremiumSkin(p.set) && typeof _premOn==='function' && !_premOn()) return null;
+    return '<div class="r-card-seal has-seal seal-set">'+_sealSetArt(p.set)+'</div>';
+  }
   return '<div class="r-card-seal has-seal seal-'+p.color+'">'+_sealGlyph(p.sym, roomName)+'</div>';
 }
 
@@ -19129,7 +19138,7 @@ async function loadMyTheme(){
     const {data}=await supa.from('profiles').select('theme').eq('id',_currentUser.id).maybeSingle();
     if(data&&data.theme&&THEMES[data.theme])_myTheme=data.theme;
   }catch(_){}
-  applyTheme(_myTheme);
+  applyTheme(_effTheme(_myTheme));   // 프리미엄 개인 테마는 만료 시 기본으로(저장값은 유지)
 }
 async function changeRoomTheme(themeKey){
   if(!THEMES[themeKey])return;
@@ -19202,6 +19211,16 @@ function _isPremiumSkin(skin){
 function _premOn(){ return (typeof isEffectivePremium==='function') && isEffectivePremium(); }
 /* 만료 시 프리미엄 스킨은 미적용(null=기본). 프리미엄이면 그대로. */
 function _effSkin(skin){ return (_isPremiumSkin(skin) && !_premOn()) ? null : skin; }
+/* 만료 시 프리미엄 테마(색)는 기본으로 복귀. _myTheme이 무료면 그걸로, 아니면 vintage. 저장값은 유지. */
+function _effTheme(theme){ if(!_premOn() && !_isFreeTheme(theme)) return _isFreeTheme(_myTheme)?_myTheme:'vintage'; return theme; }
+/* 프리미엄 상태 변화(만료·재구독·관리자 토글) 시 씰·테마·카드 게이트를 화면에 즉시 반영 */
+function _refreshPremiumGatedUI(){
+  try{ if(typeof _myRooms!=='undefined' && _myRooms && _myRooms.length && typeof renderRooms==='function') renderRooms(); }catch(_){}
+  try{
+    if(typeof _currentRoom!=='undefined' && _currentRoom && typeof applyRoomThemeFor==='function') applyRoomThemeFor(_currentRoom.id);
+    else if(typeof applyTheme==='function') applyTheme(_effTheme(typeof _myTheme!=='undefined'?_myTheme:'vintage'));
+  }catch(_){}
+}
 function _clearRoomCharDecor(){
   try{
     Array.prototype.slice.call(document.body.classList).forEach(function(c){ if(c.indexOf('rc-')===0) document.body.classList.remove(c); });
