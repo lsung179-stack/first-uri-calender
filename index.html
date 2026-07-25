@@ -857,6 +857,8 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .rc-decor .rc-bg{position:absolute;inset:0;background-repeat:repeat;background-position:center;background-size:178px 178px;opacity:.24;pointer-events:none}
 /* 카드배경처럼 자연스러운 풀 씬 배경(타일 아님) — 캐릭터가 풍경에 녹아든 통짜 씬, 중앙 정렬(캐릭터 중앙), 옅게 */
 .rc-decor .rc-bg.rc-bg-scene{background-repeat:no-repeat;background-position:center 38%;background-size:auto 116%;opacity:.5}
+/* 코코 씬 — 고양이가 이미지 하단이라 화면에서 위로 올림(디자인 그대로, 위치만) */
+body.rc-a_cat .rc-decor .rc-bg-scene{background-position:center bottom;transform:translateY(-11%)}
 /* 방 캐릭터 테마 — 탭바/설정 색 틴트(제네릭, 모든 캐릭터) */
 body.rc-on .cal-tab{color:var(--aL)}
 body.rc-on .cal-tab.on{color:var(--accent);background:transparent}
@@ -18884,7 +18886,7 @@ const ROOM_CHAR_THEME={
   a_dino:{theme:'dino', cls:'rc-dino', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_231336_caee7c1e-3f39-462e-b3ee-6b102cd3906e.png', bgScene:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260723_015928_1b83402b-ff92-44e5-badc-274b770fcea3.png', charInScene:true},
   // 동물 8종 — 색 테마 + 캐릭터 워터마크(캐릭터마다 다른 감정 스티커 재활용, 크레딧 0). 배경 씬·전용 아이콘은 추후 유료 단계.
   // (보리 강아지·호담 호랑이는 삭제됨 — 사용자 요청 2026-07-23)
-  a_cat:{theme:'a_cat', cls:'rc-a_cat', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131313_a25de53a-96f2-4cb2-a0e9-a1570004da30.png', bgScene:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_011403_4fc899d0-8de8-455b-b38a-34c4e3cdbbb5.png', charInScene:true},
+  a_cat:{theme:'a_cat', cls:'rc-a_cat', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131313_a25de53a-96f2-4cb2-a0e9-a1570004da30.png', bgScene:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_010815_9d890071-3a56-4606-851f-2fc431507002.png', charInScene:true},
   a_rabbit:{theme:'a_rabbit', cls:'rc-a_rabbit', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131425_bd6c0b47-f86f-47c0-bb9f-5bece3064652.png'},
   a_bear:{theme:'a_bear', cls:'rc-a_bear', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_062519_fb00cd08-88c9-47cf-b714-44d020a1faae.png'},
   a_fox:{theme:'a_fox', cls:'rc-a_fox', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_131651_bb8cb757-f36e-43b7-a695-85a644ac218c.png'},
