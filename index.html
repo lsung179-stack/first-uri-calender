@@ -7335,13 +7335,21 @@ function enterRoom(roomId){
 }
 
 function exitRoom(){
+  const _lastId=_currentRoom&&_currentRoom.id;      // 마지막 입장 방 (테마 유지용)
+  const _lastTheme=_currentRoomTheme;               // 마지막 방 테마(색) — 깜빡임 없이 즉시 유지
   _currentRoom=null;
   _events={};
   _viewingMember='all';  // 멤버 뷰도 리셋
-  applyTheme(_myTheme||'vintage');  // 내 개인 테마 유지
-  try{ _clearRoomCharDecor(); }catch(_){}   // 방 나가면 캐릭터 마스코트/테마 꾸미기 제거
   showScreen('roomsScreen');
   loadRooms();
+  // 방목록에서도 '마지막 입장한 방'의 테마(색+캐릭터 꾸미기)를 유지 (기본테마로 리셋하지 않음)
+  if(_lastId){
+    if(_lastTheme && typeof THEMES!=='undefined' && THEMES[_lastTheme]){ try{ applyTheme(_lastTheme); }catch(_){} }  // 즉시 색 유지(async 전 깜빡임 방지)
+    try{ applyRoomThemeFor(_lastId); }catch(_){ try{ applyTheme(_myTheme||'vintage'); _clearRoomCharDecor(); }catch(e){} }  // 색+꾸미기 정확 재적용
+  } else {
+    try{ applyTheme(_myTheme||'vintage'); }catch(_){}
+    try{ _clearRoomCharDecor(); }catch(_){}
+  }
 }
 
 /* ── 방 추가 팝오버 (+ 버튼) ── */
