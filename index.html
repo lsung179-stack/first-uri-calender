@@ -859,6 +859,8 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .rc-decor .rc-bg.rc-bg-scene{background-repeat:no-repeat;background-position:center 38%;background-size:auto 116%;opacity:.5}
 /* 코코 씬 — 고양이가 이미지 하단이라 화면에서 위로 올림(디자인 그대로, 위치만) */
 body.rc-a_cat .rc-decor .rc-bg-scene{background-position:center bottom;transform:translateY(-11%)}
+/* 위로 올려 생긴 하단 여백을 씬과 어울리는 따뜻한 크림/우드톤으로 마감(흰 배경 방지) */
+body.rc-a_cat .rc-decor{background:linear-gradient(to bottom,#f6efe1 0%,#f6efe1 70%,#ecdcc0 100%)}
 /* 방 캐릭터 테마 — 탭바/설정 색 틴트(제네릭, 모든 캐릭터) */
 body.rc-on .cal-tab{color:var(--aL)}
 body.rc-on .cal-tab.on{color:var(--accent);background:transparent}
