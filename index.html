@@ -4847,7 +4847,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     <button class="btn-danger-full" onclick="leaveRoomConfirm()">이 방 나가기</button>
   </div>
   
-  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.1.5 (70)</div>
+  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.1.5 (71)</div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeRoomSettings()">닫기</button>
   </div>
@@ -8011,7 +8011,7 @@ async function init(){
   }finally{
     initAdMob(); // AdMob 초기화 (네이티브에서만 동작)
     setTimeout(()=>document.getElementById('loading').classList.add('hide'),200);
-    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 1.1.5 (70) · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
+    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 1.1.5 (71) · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
     // in-app browser(카톡·네이버·페이스북 등)에서 열렸을 때 한 줄 안내
     setTimeout(maybeShowInAppBrowserHint,800);
   }
@@ -19258,26 +19258,26 @@ async function applyRoomThemeFor(roomId){
   const rawSkin=(_myCardSkinByRoom&&roomId)?_myCardSkinByRoom[roomId]:null;
   const skin=_effSkin(rawSkin);   // 만료 시 프리미엄 스킨→null(기본 복귀). 저장값은 유지.
   let ct=skin?ROOM_CHAR_THEME[skin]:null;
-  let theme=_myTheme||'vintage'; let explicit=false;
-  // 카드 배경(기본 테마 배경 or 캐릭터 스킨)이 있으면 그 테마를 우선 적용(색+데코 항상 일치 — 저장된 방 테마보다 우선).
-  // 카드 배경이 없을 때만 저장된 방 테마/개인 테마 사용. → 설정 '이 방 테마'를 카드 배경으로 통합, 색 섞임 방지.
-  // 카드 스킨이 테마를 정하면 user_room_themes 조회 불필요(방 입장 네트워크 왕복 제거).
-  var _skTheme=_cardSkinTheme(skin);
-  if(_skTheme){
-    theme=_skTheme;
+  let theme=_myTheme||'vintage';
+  // 이 방이 '카드 배경(스킨)'으로 테마가 정해지는 방인가 — 게이트 전(raw) 기준으로 판정(코드 60: 카드 배경 우선).
+  // ⚠️ 게이트된 skin(만료 시 null)으로 판정하면 옛 user_room_themes로 잘못 폴백됨 → 반드시 rawSkin 사용.
+  var _rawSkTheme=_cardSkinTheme(rawSkin);
+  if(_rawSkTheme){
+    // 카드 배경 테마 방 → 그 테마 사용. 프리미엄 만료 시 _effTheme으로 기본(vintage/개인 무료테마) 복귀.
+    // 옛 user_room_themes(레거시)는 무시 — 카드 배경이 우선(색 섞임/잔존 방지).
+    theme=_effTheme(_rawSkTheme);
   }else{
+    // 카드 배경이 없는 방만 저장된 방 테마/개인 테마 사용
     try{
       if(_currentUser&&roomId){
         const {data}=await supa.from('user_room_themes').select('theme').eq('user_id',_currentUser.id).eq('room_id',roomId).maybeSingle();
-        if(data&&data.theme&&THEMES[data.theme]){theme=data.theme;explicit=true;}
+        if(data&&data.theme&&THEMES[data.theme])theme=data.theme;
       }
     }catch(_){}
+    theme=_effTheme(theme);   // 개인/방 테마가 프리미엄이면 기본으로 복귀
   }
-  // 만료: 저장된 방 테마/개인 테마가 프리미엄이면 기본으로 복귀 + 데코 숨김
-  if(!_premOn() && !_isFreeTheme(theme)){
-    theme=_isFreeTheme(_myTheme)?_myTheme:'vintage';
-    ct=null;
-  }
+  // 프리미엄 만료로 스킨이 게이트되면(skin=null) 캐릭터 데코 숨김 — ct는 이미 null이지만 명시적으로 보장
+  if(!skin) ct=null;
   _currentRoomTheme=theme;
   applyTheme(theme);
   _applyRoomCharDecor(ct);   // 마스코트 + 캐릭터 클래스(테마 색과 별개로 스킨 있으면 표시)
