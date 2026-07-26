@@ -4847,7 +4847,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     <button class="btn-danger-full" onclick="leaveRoomConfirm()">이 방 나가기</button>
   </div>
   
-  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.1.5 (69)</div>
+  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.1.5 (70)</div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeRoomSettings()">닫기</button>
   </div>
@@ -7111,6 +7111,7 @@ async function loadRooms(){
       .eq('user_id',_currentUser.id);
     if(e1)throw e1;
     _mySealByRoom={}; _myCardSkinByRoom={}; (myMems||[]).forEach(function(m){ _mySealByRoom[m.room_id]=m.seal||null; _myCardSkinByRoom[m.room_id]=m.card_skin||null; });
+    try{ _preloadRoomScenes(); }catch(_){}   // 방 입장 전에 각 방 배경씬 미리 캐시(입장 즉시 표시)
 
     if(!myMems||myMems.length===0){
       renderEmpty();
@@ -8010,7 +8011,7 @@ async function init(){
   }finally{
     initAdMob(); // AdMob 초기화 (네이티브에서만 동작)
     setTimeout(()=>document.getElementById('loading').classList.add('hide'),200);
-    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 1.1.5 (69) · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
+    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 1.1.5 (70) · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
     // in-app browser(카톡·네이버·페이스북 등)에서 열렸을 때 한 줄 안내
     setTimeout(maybeShowInAppBrowserHint,800);
   }
@@ -14446,6 +14447,7 @@ function pickUnifiedSet(k){
     return;
   }
   _sealSet=k; _cardSkin=k;
+  try{ _preloadSkinScene(k); }catch(_){}   // 선택 즉시 배경씬 프리로드 → 저장·입장 시 즉시 표시
   const g=document.getElementById('rmGroups');
   if(g) g.querySelectorAll('.rm-uset').forEach(function(b){
     const on=(b.getAttribute('data-set')===k); b.classList.toggle('on',on);
@@ -14504,6 +14506,7 @@ function pickCardSkin(k){
   }
   _sealSet=null;   // 무료 기본 테마 색 선택 = 프리미엄 세트 해제(무료 모드)
   _cardSkin=k||null;
+  try{ _preloadSkinScene(k); }catch(_){}   // 선택 즉시 배경씬 프리로드 → 저장·입장 시 즉시 표시
   const g=document.getElementById('rmGroups');
   if(g){
     g.querySelectorAll('.rm-skin').forEach(function(b){ b.classList.toggle('on',(b.getAttribute('data-skin')||'')===(k||'')); });
@@ -19188,6 +19191,11 @@ const ROOM_CHAR_THEME={
   daisy:{theme:'daisy', cls:'rc-daisy', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_124306_4f1352dc-8b79-4b19-b5de-87e4363aad99.png', bgScene:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_113408_01e0b42b-5b36-4516-b421-a90d8338cbfb_min.webp', charInScene:true},
   koi:{theme:'koi', cls:'rc-koi', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_083737_979f19ba-c2a1-4fd7-a1e9-82d32e1c194d.png', bgScene:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_113410_5f9c78c2-4d14-4318-a86c-bbd425a17182_min.webp', charInScene:true}
 };
+/* 테마 배경씬 프리로드 — 방 입장 전에 미리 캐시해서 입장 즉시 표시(첫 네트워크 대기 제거) */
+var _scenesPreloaded={};
+function _preloadSceneUrl(url){ if(!url||_scenesPreloaded[url])return; _scenesPreloaded[url]=1; try{ var im=new Image(); im.decoding='async'; im.src=url; }catch(_){} }
+function _preloadSkinScene(skin){ try{ if(!skin||typeof ROOM_CHAR_THEME==='undefined')return; var ct=ROOM_CHAR_THEME[skin]; if(ct&&ct.bgScene)_preloadSceneUrl(ct.bgScene); }catch(_){} }
+function _preloadRoomScenes(){ try{ var m=(typeof _myCardSkinByRoom!=='undefined')?_myCardSkinByRoom:null; if(!m)return; Object.keys(m).forEach(function(rid){ _preloadSkinScene(m[rid]); }); }catch(_){} }
 /* 카드 스킨 → 앱 테마 매핑(캐릭터 스킨=ROOM_CHAR_THEME.theme, 기본 배경=CARD_SKINS[k].theme). 없으면 null. */
 function _cardSkinTheme(skin){
   if(!skin) return null;
