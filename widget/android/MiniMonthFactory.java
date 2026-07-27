@@ -21,11 +21,12 @@ public class MiniMonthFactory implements RemoteViewsService.RemoteViewsFactory {
     private final Context ctx;
     private final List<Cell> cells = new ArrayList<>();
     private String roomId = null; // 셀 탭 딥링크(://open?room=&date=)용
+    private Map<String,String> holidays = new HashMap<>(); // 빨간날(공휴일)
 
     MiniMonthFactory(Context c) { this.ctx = c; }
 
     static class Cell {
-        int day; boolean inMonth; boolean isToday; int dow; String key;
+        int day; boolean inMonth; boolean isToday; int dow; String key; boolean holiday;
         List<Integer> dots = new ArrayList<>();  // 색상 최대 3
     }
 
@@ -45,6 +46,7 @@ public class MiniMonthFactory implements RemoteViewsService.RemoteViewsFactory {
         WidgetData.WData data = WidgetData.load(ctx);
         WidgetData.Room room = data != null ? data.pickRoom(WidgetCommon.selectedRoomId(ctx)) : null;
         roomId = room != null ? room.id : null;
+        holidays = (data != null && data.holidays != null) ? data.holidays : new HashMap<String,String>();
         String filter = WidgetCommon.filterUser(ctx);
         String todayKey = WidgetCommon.todayKey();
 
@@ -81,6 +83,7 @@ public class MiniMonthFactory implements RemoteViewsService.RemoteViewsFactory {
             cell.inMonth = d.get(Calendar.MONTH) == month0;
             cell.key = WidgetCommon.fmt(d);
             cell.isToday = cell.key.equals(todayKey);
+            cell.holiday = holidays.containsKey(cell.key);
             List<Integer> dots = dotByDate.get(cell.key);
             if (dots != null) cell.dots = dots;
             cells.add(cell);
@@ -93,8 +96,9 @@ public class MiniMonthFactory implements RemoteViewsService.RemoteViewsFactory {
         if (position < 0 || position >= cells.size()) return rv;
         Cell cell = cells.get(position);
 
+        boolean red = cell.dow == 0 || cell.holiday;   // 일요일/공휴일
         int numColor = cell.isToday ? 0xFFFFFFFF
-            : (!cell.inMonth ? 0x552A1C0F : (cell.dow == 0 ? 0xFFC0503F : 0xFF2A1C0F));
+            : (!cell.inMonth ? (red ? 0x59C0503F : 0x552A1C0F) : (red ? 0xFFC0503F : 0xFF2A1C0F));
         rv.setTextViewText(id("mini_day", "id"), String.valueOf(cell.day));
         rv.setTextColor(id("mini_day", "id"), numColor);
         rv.setInt(id("mini_day", "id"), "setBackgroundResource",

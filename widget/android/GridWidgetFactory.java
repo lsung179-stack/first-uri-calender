@@ -30,6 +30,7 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
     private int laneCap = 2;    // 위젯 높이에 맞춰 산정되는 셀당 표시 줄 수(여백만큼 일정 더 노출)
     private int cellMinPx = 0;  // 셀 최소 높이(px) — 0이면 미적용(기존 동작)
     private String roomId = null; // 셀 탭 딥링크(://open?room=&date=)용
+    private Map<String,String> holidays = new HashMap<>(); // 빨간날(공휴일) 'YYYY-MM-DD'→이름
 
     GridWidgetFactory(Context c, int kind) { this.ctx = c; this.kind = kind; }
 
@@ -37,6 +38,7 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
         int day; int dow; boolean inMonth; boolean isToday; String key;
         WidgetCommon.DayBar[] bars = new WidgetCommon.DayBar[0];
         int overflow;
+        String holiday; // 빨간날 이름(있으면 빨간 바 + 빨간 숫자)
         List<WidgetData.Todo> todos = new ArrayList<>();
     }
 
@@ -56,6 +58,7 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
         WidgetData.WData data = WidgetData.load(ctx);
         WidgetData.Room room = data != null ? data.pickRoom(WidgetCommon.selectedRoomId(ctx)) : null;
         roomId = room != null ? room.id : null;
+        holidays = (data != null && data.holidays != null) ? data.holidays : new HashMap<String,String>();
         String filter = WidgetCommon.filterUser(ctx);
         String todayKey = WidgetCommon.todayKey();
 
@@ -124,6 +127,7 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
             cell.inMonth = (dispMonth0 < 0) || d.get(Calendar.MONTH) == dispMonth0;
             cell.key = WidgetCommon.fmt(d);
             cell.isToday = cell.key.equals(todayKey);
+            cell.holiday = holidays.get(cell.key);
             int[] ov = new int[]{0};
             cell.bars = WidgetCommon.cellBars(runs, cell.key, cell.dow, laneCap, ov);
             cell.overflow = ov[0];
@@ -150,10 +154,18 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
         } else {
             rv.setInt(id("cell_day", "id"), "setBackgroundColor", 0x00000000);
             int numColor;
-            if (!cell.inMonth) numColor = 0x552A1C0F;
-            else if (cell.dow == 0) numColor = 0xFFC0503F;
+            if (!cell.inMonth) numColor = (cell.dow == 0 || cell.holiday != null) ? 0x59C0503F : 0x552A1C0F;
+            else if (cell.dow == 0 || cell.holiday != null) numColor = 0xFFC0503F;   // 일요일/공휴일 빨강
             else numColor = 0xFF2A1C0F;
             rv.setTextColor(id("cell_day", "id"), numColor);
+        }
+
+        // 빨간날(공휴일) 바 — 앱은 텍스트 라벨만, 위젯은 빨간 바로 자동 표시
+        if (cell.holiday != null) {
+            rv.setViewVisibility(id("cell_holiday", "id"), android.view.View.VISIBLE);
+            rv.setTextViewText(id("cell_holiday", "id"), cell.holiday);
+        } else {
+            rv.setViewVisibility(id("cell_holiday", "id"), android.view.View.GONE);
         }
 
         int[] evViews = { id("cell_ev1", "id"), id("cell_ev2", "id"), id("cell_ev3", "id"), id("cell_ev4", "id"), id("cell_ev5", "id") };

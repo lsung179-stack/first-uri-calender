@@ -4847,7 +4847,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     <button class="btn-danger-full" onclick="leaveRoomConfirm()">이 방 나가기</button>
   </div>
   
-  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.1.6 (72)</div>
+  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.1.6 (73)</div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeRoomSettings()">닫기</button>
   </div>
@@ -8011,7 +8011,7 @@ async function init(){
   }finally{
     initAdMob(); // AdMob 초기화 (네이티브에서만 동작)
     setTimeout(()=>document.getElementById('loading').classList.add('hide'),200);
-    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 1.1.6 (72) · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
+    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 1.1.6 (73) · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
     // in-app browser(카톡·네이버·페이스북 등)에서 열렸을 때 한 줄 안내
     setTimeout(maybeShowInAppBrowserHint,800);
   }
@@ -9304,8 +9304,16 @@ async function buildWidgetPayload(){
   // 각 방 씰을 PNG로 래스터화(개인별 seal 기준) → 위젯이 앱과 똑같은 컬러 씰 표시
   try{ await Promise.all(outRooms.map(async function(r){ r.sealPng=await _wgSealPng(r.seal, r.name); })); }catch(_){}
   var gv=false, gh=false; try{ gv=(getGridPref('v')==='on'); gh=(getGridPref('h')==='on'); }catch(_){}
+  // 빨간날(공휴일) — 위젯에서 날짜 빨간색 + 빨간 일정바 자동 표시. 앱 HOLIDAYS 맵(공휴일만; 절기·기념일 제외) 사용.
+  const holidays={};
+  try{
+    const _hy1=parseInt(from.slice(0,4),10), _hy2=parseInt(to.slice(0,4),10);
+    try{ await loadHolidaysForYear(_hy1); if(_hy2!==_hy1) await loadHolidaysForYear(_hy2); }catch(_){}
+    let _hk=from;
+    for(let _hi=0; _hi<=140 && _hk<=to; _hi++){ if(HOLIDAYS[_hk]) holidays[_hk]=HOLIDAYS[_hk]; _hk=shiftDateKey(_hk,1); }
+  }catch(_){}
   return { updatedAt:Date.now(), currentRoomId:(_currentRoom?_currentRoom.id:(outRooms[0]?outRooms[0].id:null)),
-           myUserId:(_currentUser?_currentUser.id:null), gridV:gv, gridH:gh, rooms:outRooms };
+           myUserId:(_currentUser?_currentUser.id:null), gridV:gv, gridH:gh, holidays:holidays, rooms:outRooms };
 }
 /* ═══ 위젯이 오프라인 낙관 토글한 할일(widget.pendingTodoToggles)을 앱 포그라운드 복귀 시 Supabase에 반영 ═══
    위젯은 iOS17+ 인터랙티브라 App Group에 todoId를 append만 하고, 실제 DB 반영은 앱이 여기서 flush.

@@ -45,6 +45,7 @@ public class WidgetData {
         public String currentRoomId;
         public String myUserId;
         public boolean gridV, gridH;
+        public java.util.Map<String,String> holidays = new java.util.HashMap<>();   // 빨간날(공휴일) 'YYYY-MM-DD'→이름
         public List<Room> rooms = new ArrayList<>();
 
         public Room pickRoom() { return pickRoom(null); }
@@ -67,6 +68,11 @@ public class WidgetData {
             d.myUserId = optStr(o, "myUserId");
             d.gridV = o.optBoolean("gridV", false);
             d.gridH = o.optBoolean("gridH", false);
+            JSONObject ho = o.optJSONObject("holidays");
+            if (ho != null) {
+                java.util.Iterator<String> it = ho.keys();
+                while (it.hasNext()) { String k = it.next(); String v = ho.optString(k, ""); if (!v.isEmpty()) d.holidays.put(k, v); }
+            }
             JSONArray ra = o.optJSONArray("rooms");
             if (ra != null) for (int i = 0; i < ra.length(); i++) {
                 JSONObject r = ra.optJSONObject(i);

@@ -18,6 +18,7 @@ struct WGData: Codable {
     var myUserId: String?          // 현재 로그인 사용자 — 작은 위젯 '내 일정만' 기본값
     var gridV: Bool? = nil         // 세로 격자선(앱 설정 연동)
     var gridH: Bool? = nil         // 가로 격자선
+    var holidays: [String:String]? = nil   // 빨간날(공휴일) 'YYYY-MM-DD'→이름 — 날짜 빨간색 + 빨간 일정바
     let rooms: [WGRoom]
 }
 struct WGRoom: Codable, Identifiable {
@@ -282,6 +283,7 @@ struct CalEntry: TimelineEntry {
     var myUserId: String? = nil // 현재 사용자 (작은 위젯 기본 필터)
     var gridV: Bool = false     // 세로/가로 격자선(앱 설정)
     var gridH: Bool = false
+    var holidays: [String:String] = [:]   // 빨간날(공휴일)
     var flash: Bool = false      // 새로고침 직후 잠깐 흐려짐(깜빡임 피드백)
 }
 // 새로고침 깜빡임 타임스탬프(App Group). 최근이면 타임라인이 flash 엔트리를 잠깐 넣음.
@@ -293,14 +295,14 @@ struct CalProvider: AppIntentTimelineProvider {
     func snapshot(for configuration: CalConfigIntent, in context: Context) async -> CalEntry {
         let room = effectiveRoom(configuration.room?.id) ?? sampleRoom()
         let d = loadWGData()
-        return CalEntry(date: Date(), room: room, memberFilter: effectiveFilter(configuration.member), myUserId: d?.myUserId, gridV: d?.gridV ?? false, gridH: d?.gridH ?? false)
+        return CalEntry(date: Date(), room: room, memberFilter: effectiveFilter(configuration.member), myUserId: d?.myUserId, gridV: d?.gridV ?? false, gridH: d?.gridH ?? false, holidays: d?.holidays ?? [:])
     }
     func timeline(for configuration: CalConfigIntent, in context: Context) async -> Timeline<CalEntry> {
         let room = effectiveRoom(configuration.room?.id)
         let d = loadWGData()
         let filter = effectiveFilter(configuration.member)
         func mk(_ date: Date, _ flash: Bool) -> CalEntry {
-            CalEntry(date: date, room: room, memberFilter: filter, myUserId: d?.myUserId, gridV: d?.gridV ?? false, gridH: d?.gridH ?? false, flash: flash)
+            CalEntry(date: date, room: room, memberFilter: filter, myUserId: d?.myUserId, gridV: d?.gridV ?? false, gridH: d?.gridH ?? false, holidays: d?.holidays ?? [:], flash: flash)
         }
         // 자정에 '오늘'이 넘어가므로 자정 직후 갱신 예약(그 외는 앱이 reloadAllTimelines)
         let mid = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: 1, to: Date())!)
@@ -553,6 +555,7 @@ struct GridView: View {
     var gridV: Bool = false           // 세로/가로 격자선(앱 설정 연동)
     var gridH: Bool = false
     var myUserId: String? = nil       // 헤더 아바타 '나 먼저' 정렬용
+    var holidays: [String:String] = [:]   // 빨간날(공휴일) 'YYYY-MM-DD'→이름
     private var weekOffset: Int { weekNav ? readWeekOffset() : 0 }   // 2주 페이지(1=14일)
     // 월 위젯 기준 달 (오프셋 적용)
     var monthDate: Date {
@@ -691,6 +694,7 @@ struct GridView: View {
                             DayCell(date: d, slots: Array(pair.0.prefix(usedLanes)), overflow: pair.1, isToday: fmt(d) == todayStr(),
                                     dow: cal.component(.weekday, from: d) - 1, roomId: room.id, inMonth: inM,
                                     rightLine: gridV && c < 6, bottomLine: gridH && w < rowCount - 1,
+                                    holiday: holidays[fmt(d)],
                                     todos: dTodos, maxTodos: weeks == 2 ? max(0, 3 - usedLanes) : 1, dense: rowCount >= 6 || weeks == 2)
                         }
                     }.frame(maxHeight: .infinity)
@@ -706,6 +710,7 @@ struct DayBar { let title: String; let color: String; let contLeft: Bool; let co
 struct DayCell: View {
     let date: Date; let slots: [DayBar?]; let overflow: Int; let isToday: Bool; let dow: Int; let roomId: String; let inMonth: Bool
     var rightLine: Bool = false; var bottomLine: Bool = false
+    var holiday: String? = nil        // 빨간날(공휴일) 이름 — 있으면 날짜 빨강 + 빨간 바 자동 표시
     var todos: [WGTodo] = []          // 그 날 할일 (이벤트 바 아래에 체크박스 줄로)
     var maxTodos: Int = 1             // 셀에 보일 할일 최대 수(칸 높이에 맞춤)
     var dense: Bool = false           // 6주 달 등 칸이 짧을 때 숫자/바를 살짝 줄여 2개 일정 확보
@@ -760,9 +765,17 @@ struct DayCell: View {
             VStack(spacing: 1.5) {
                 Text("\(Calendar.current.component(.day, from: date))")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(isToday ? .white : (dow == 0 ? .sunRed : .ink))
+                    .foregroundColor(isToday ? .white : ((dow == 0 || holiday != nil) ? .sunRed : .ink))
                     .frame(width: numBox, height: numBox)                 // ★ 항상 고정 → 모든 날짜 같은 라인
                     .background(isToday ? Circle().fill(Color.terra) : nil)
+                if let hn = holiday {   // 빨간날: 이름을 빨간 바로 자동 표시(앱은 텍스트만 → 위젯은 바)
+                    Text(hn).font(.system(size: 8.5, weight: .bold))
+                        .foregroundColor(.white).lineLimit(1)
+                        .padding(.leading, 3).padding(.trailing, 3)
+                        .frame(maxWidth: .infinity, minHeight: barH, alignment: .leading)
+                        .background(RoundedRectangle(cornerRadius: 3).fill(Color.sunRed))
+                        .padding(.leading, 1).padding(.trailing, 1)
+                }
                 ForEach(0..<slots.count, id: \.self) { idx in
                     if let b = slots[idx] { barView(b) } else { Color.clear.frame(height: barH) }   // 빈 줄도 높이 유지 → 줄 정렬
                 }
@@ -805,6 +818,7 @@ func rangeLabel(_ s: String, _ e: String) -> String {
 struct UpRun { let title: String; let color: String; let start: String; let end: String; let time: String }
 struct ComboView: View {
     let room: WGRoom; let filter: String?; var myUserId: String? = nil
+    var holidays: [String:String] = [:]
     // 오늘부터 앞으로의 일정. 같은 제목+색의 '연속 날짜'는 하나의 기간(run)으로 묶음.
     var upcoming: [UpRun] {
         let cal = Calendar.current
@@ -868,13 +882,14 @@ struct ComboView: View {
                     ForEach(room.todos.filter { $0.date == todayStr() && todoVisibleFor($0, filter) }.prefix(1)) { t in TodoRow(t: t) }
                 }.frame(maxWidth: .infinity, alignment: .leading)
                 Rectangle().fill(Color.mutedBrown.opacity(0.2)).frame(width: 1)
-                MiniMonth(room: room, filter: filter).frame(maxWidth: .infinity)
+                MiniMonth(room: room, filter: filter, holidays: holidays).frame(maxWidth: .infinity)
             }
         }.padding(16).widgetBg()
     }
 }
 struct MiniMonth: View {
     let room: WGRoom; let filter: String?
+    var holidays: [String:String] = [:]
     func hasEvent(_ d: Date) -> [Color] {
         let s = fmt(d)
         return dedupeEvents(room.events.filter { $0.date == s && (filter == nil || $0.userId == filter) }).prefix(3).map { Color(hexStr: $0.color) }
@@ -910,9 +925,10 @@ struct MiniMonth: View {
                     let d = cal.date(byAdding: .day, value: i, to: start)!
                     let inMonth = cal.component(.month, from: d) == baseMonth
                     let isToday = fmt(d) == todayStr()
+                    let isRed = (cal.component(.weekday, from: d) == 1) || (holidays[fmt(d)] != nil)   // 일요일/공휴일
                     VStack(spacing: 1) {
                         Text("\(cal.component(.day, from: d))").font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(isToday ? .white : (inMonth ? .ink : Color.ink.opacity(0.3)))
+                            .foregroundColor(isToday ? .white : (isRed ? (inMonth ? .sunRed : Color.sunRed.opacity(0.35)) : (inMonth ? .ink : Color.ink.opacity(0.3))))
                             .frame(width: 16, height: 16)                 // ★ 항상 고정 → 오늘 동그라미 정렬
                             .background(isToday ? Circle().fill(Color.terra) : nil)
                         HStack(spacing: 1) { ForEach(Array(hasEvent(d).enumerated()), id: \.offset) { _, c in
@@ -959,9 +975,9 @@ struct AdaptiveCalView: View {
                 case .systemSmall:
                     TodayView(room: room, filter: entry.memberFilter, myUserId: entry.myUserId)
                 case .systemMedium:
-                    GridView(room: room, filter: entry.memberFilter, weeks: 2, weekNav: true, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId)
+                    GridView(room: room, filter: entry.memberFilter, weeks: 2, weekNav: true, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId, holidays: entry.holidays)
                 default:
-                    GridView(room: room, filter: entry.memberFilter, weeks: 6, monthNav: true, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId)
+                    GridView(room: room, filter: entry.memberFilter, weeks: 6, monthNav: true, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId, holidays: entry.holidays)
                 }
             } else { EmptyStateView() }
         }.opacity(entry.flash ? 0.4 : 1)
@@ -984,7 +1000,7 @@ struct CalendarWidget: Widget {
 struct ComboWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: "UriCombo", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
-            Group { if let room = entry.room { ComboView(room: room, filter: entry.memberFilter, myUserId: entry.myUserId) } else { EmptyStateView() } }.opacity(entry.flash ? 0.4 : 1)
+            Group { if let room = entry.room { ComboView(room: room, filter: entry.memberFilter, myUserId: entry.myUserId, holidays: entry.holidays) } else { EmptyStateView() } }.opacity(entry.flash ? 0.4 : 1)
         }
         .configurationDisplayName("다가오는 일정")
         .description("다가오는 일정 목록 + 이번 달 미니 달력.")

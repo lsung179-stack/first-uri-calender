@@ -24,6 +24,26 @@
         android:textSize="11sp"
         android:text="1" />
 
+    <!-- 빨간날(공휴일) 바: 앱은 텍스트만 표시하지만 위젯은 빨간 바로 자동 표시 -->
+    <TextView
+        android:id="@+id/cell_holiday"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:paddingLeft="2dp"
+        android:paddingRight="2dp"
+        android:minHeight="13dp"
+        android:gravity="center_vertical"
+        android:includeFontPadding="false"
+        android:background="#C0503F"
+        android:textColor="#FFFFFF"
+        android:textSize="7sp"
+        android:textStyle="bold"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:visibility="gone"
+        android:text="" />
+
     <TextView
         android:id="@+id/cell_ev1"
         android:layout_width="match_parent"
