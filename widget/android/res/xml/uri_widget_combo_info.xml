@@ -7,6 +7,7 @@
     android:minResizeWidth="250dp"
     android:minResizeHeight="180dp"
     android:updatePeriodMillis="1800000"
+    android:previewImage="@drawable/widget_preview_combo"
     android:initialLayout="@layout/widget_combo"
     android:resizeMode="horizontal|vertical"
     android:maxResizeWidth="640dp"

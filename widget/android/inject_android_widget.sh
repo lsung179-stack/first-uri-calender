@@ -14,11 +14,15 @@ mkdir -p "$JAVA_DIR"
 cp "$WSRC"/*.java "$JAVA_DIR/"
 echo "✅ 위젯 Java 파일 복사: $(ls "$WSRC"/*.java | wc -l)개"
 
-# 2) 리소스 (layout / xml / drawable)
-mkdir -p "$APP/res/layout" "$APP/res/xml" "$APP/res/drawable"
+# 2) 리소스 (layout / xml / drawable + 위젯 피커 미리보기 PNG)
+mkdir -p "$APP/res/layout" "$APP/res/xml" "$APP/res/drawable" "$APP/res/drawable-nodpi"
 cp "$WSRC/res/layout/"*.xml "$APP/res/layout/"
 cp "$WSRC/res/xml/"*.xml "$APP/res/xml/"
 cp "$WSRC/res/drawable/"*.xml "$APP/res/drawable/"
+# 위젯 피커 미리보기 이미지(previewImage) — 삼성/안드로이드 위젯 추가화면 썸네일
+if ls "$WSRC/res/drawable-nodpi/"*.png >/dev/null 2>&1; then
+  cp "$WSRC/res/drawable-nodpi/"*.png "$APP/res/drawable-nodpi/"
+fi
 echo "✅ 위젯 리소스 복사 완료"
 
 # 3) AndroidManifest에 receiver 4종 + service 3종 등록 (</application> 앞)
