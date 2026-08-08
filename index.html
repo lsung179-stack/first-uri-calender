@@ -10700,7 +10700,7 @@ function renderDateSheetList(){
     }
     const sharedCls=ev._isShared?' shared':'';
     const virtualTag=isVirtual?`<span class="dp-shared-tag" style="background:rgba(216,104,128,.18);color:#a83855">프로필</span>`:'';
-    const canEdit=!isVirtual&&(isMine||ev._isShared||_adminBypass());
+    const canEdit=!isVirtual;   // 방 멤버 누구나 서로의 일정을 수정/복사/삭제 가능(사용자 요청, 2026-07-27) — RLS도 방 멤버 전체 허용
     const canCopy=canEdit;   // 함께 일정도 복사 허용(대상 방 같은 멤버만 유지, 없으면 단독 전환)
     const copyBtn=canCopy?`<button class="dp-btn" onclick="event.stopPropagation();copyEventToRooms('${ev.id}')">복사</button>`:'';
     const actions=canEdit?`<div class="dp-actions"><button class="dp-btn" onclick="event.stopPropagation();openEditEvent('${ev.id}')">수정</button>${copyBtn}<button class="dp-btn del" onclick="event.stopPropagation();deleteEvent('${ev.id}')">삭제</button></div>`:'';
