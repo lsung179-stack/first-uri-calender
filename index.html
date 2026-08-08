@@ -466,6 +466,11 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .rm-bigprev::after{content:"";position:absolute;inset:7px;border:1px solid var(--seal-ring,rgba(243,230,207,.5));border-radius:50%;pointer-events:none}
 .rm-bigprev .seal-ini{font-size:42px}
 .rm-bigprev svg{width:48px;height:48px}
+/* 아무 색도 안 고른 중립(=기본) 미리보기 — 방목록 기본 씰과 동일한 톤 */
+.rm-bigprev.rm-bp-none{background:var(--card);box-shadow:inset 0 0 0 1.5px var(--border)}
+.rm-bigprev.rm-bp-none::after{display:none}
+.rm-bigprev-letter{font-family:var(--ff-serif);font-weight:700;font-size:42px;color:var(--accent);position:relative;z-index:1}
+.rm-cardprev .rm-bigprev-letter{font-size:24px}
 .rm-bpname{text-align:center;font-size:13px;font-weight:700;color:var(--sub);margin-bottom:20px}
 .rm-cats{display:flex;gap:8px;margin:14px 0 2px}
 .rm-cat{border:1.5px solid var(--borderL);background:var(--card);border-radius:99px;padding:7px 16px;font-family:inherit;font-size:13px;font-weight:700;color:var(--sub);-webkit-tap-highlight-color:transparent}
@@ -489,7 +494,7 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .rcs-peach{background:linear-gradient(135deg,#fbe9da,#f4d1b8)!important}
 .rcs-sage{background:linear-gradient(135deg,#eaf0e1,#d3dfc5)!important}
 /* 기본 배경 = 테마 6종(앱 색과 연동). 각 테마 hue로 구분되는 파스텔 그라데이션 */
-.rcs-t_vintage{background:linear-gradient(135deg,#fbf2e0,#ecdcc2,#e0cba9)!important}
+.rcs-t_vintage{background:#ffffff!important}
 .rcs-t_lavender{background:linear-gradient(135deg,#efe7fd,#e2d3fc,#d0b6f8)!important}
 .rcs-t_peach{background:linear-gradient(135deg,#ffeee0,#ffe3ce,#ffcaa6)!important}
 .rcs-t_mint{background:linear-gradient(135deg,#e2fbf3,#c2f6e6,#96edd4)!important}
@@ -14367,7 +14372,7 @@ function _sealInner(mascotVal, roomName){
   return '<div class="r-card-seal has-seal seal-'+p.color+'">'+_sealGlyph(p.sym, roomName)+'</div>';
 }
 
-let _mascotRoomId=null, _mascotRoomName='', _sealColor='terra', _sealSym='ini', _sealSet=null, _sealHad=false, _mySealByRoom={}, _cardSkin=null, _myCardSkinByRoom={}, _rmBaseTheme=null;
+let _mascotRoomId=null, _mascotRoomName='', _sealColor='terra', _sealSym='ini', _sealSet=null, _sealHad=false, _sealCustomPicked=false, _mySealByRoom={}, _cardSkin=null, _myCardSkinByRoom={}, _rmBaseTheme=null;
 function openRoomMascotForRoom(roomId){
   const room=(_myRooms||[]).find(function(r){return r.id===roomId})
     || ((_currentRoom&&_currentRoom.id===roomId)?_currentRoom:null);
@@ -14380,6 +14385,7 @@ function openRoomMascotForRoom(roomId){
   _sealSet = (p&&p.set)?p.set:null;
   _sealColor = (p&&p.color)?p.color:'terra';
   _sealSym   = (p&&p.sym)?p.sym:'ini';
+  _sealCustomPicked = !!(p&&!p.set);   // 저장된 게 커스텀(색+문양)일 때만 색 미리보기, 아니면 중립(기본)
   _preloadSealSets();
   const _pn=document.getElementById('rmPrevRoomName'); if(_pn)_pn.textContent=_mascotRoomName||'방';
   _cardSkin=_myCardSkinByRoom[room.id]||null;
@@ -14438,11 +14444,11 @@ function renderRoomMascotPicker(){
   } else {
     // 무료: 색 + 문양(커스텀 프로필) + 기본 테마 6색
     const swatches='<div class="rm-field-label">배경 색</div><div class="rm-swatches">'
-      + SEAL_COLORS.map(c=>'<button type="button" class="rm-sw seal-'+c.key+((!_sealSet&&c.key===_sealColor)?' on':'')+'" aria-label="'+c.name+'" onclick="pickSealColor(\''+c.key+'\')"></button>').join('')
+      + SEAL_COLORS.map(c=>'<button type="button" class="rm-sw seal-'+c.key+((!_sealSet&&_sealCustomPicked&&c.key===_sealColor)?' on':'')+'" aria-label="'+c.name+'" onclick="pickSealColor(\''+c.key+'\')"></button>').join('')
       + '</div>';
     const symBtns=['ini'].concat(SEAL_SYM_ORDER).map(s=>{
       const inner = s==='ini' ? '<span class="rm-sym-ini">'+escapeHtml((_mascotRoomName||'·').trim().charAt(0))+'</span>' : _sealSvg(s);
-      return '<button type="button" data-sym="'+s+'" class="rm-sym'+((!_sealSet&&s===_sealSym)?' on':'')+'" aria-label="'+(SEAL_SYM_NAMES[s]||s)+'" onclick="pickSealSym(\''+s+'\')">'+inner+'</button>';
+      return '<button type="button" data-sym="'+s+'" class="rm-sym'+((!_sealSet&&_sealCustomPicked&&s===_sealSym)?' on':'')+'" aria-label="'+(SEAL_SYM_NAMES[s]||s)+'" onclick="pickSealSym(\''+s+'\')">'+inner+'</button>';
     }).join('');
     const themeColors='<div class="rm-field-label">기본 테마 · 무료</div><div class="rm-skingrid">'
       + CARD_SKIN_FREE.map(k=>{ const sk=CARD_SKINS[k]; const on=(!_sealSet)&&((k===_cardSkin)||(k==='t_vintage'&&!_cardSkin));
@@ -14487,14 +14493,19 @@ function _rmSyncPreview(){
       const st=SEAL_SETS[_sealSet]; const im=big.querySelector('img.sealimg');
       if(im&&st&&st.img){ if(im.getAttribute('src')!==st.img) im.src=st.img; im.style.setProperty('--sz',String(st.zoom||1)); }
       else big.innerHTML=_sealSetArt(_sealSet);
-    } else {
+    } else if(_sealCustomPicked){
       big.className='rm-bigprev has-seal seal-'+_sealColor;
       big.innerHTML=_sealGlyph(_sealSym, _mascotRoomName);
+    } else {
+      // 아직 아무 색도 고르지 않음(=기본으로 되돌린 직후 포함) → 중립 미리보기(방목록 기본과 동일)
+      big.className='rm-bigprev rm-bp-none';
+      big.innerHTML='<span class="rm-bigprev-letter">'+escapeHtml((_mascotRoomName||'·').trim().charAt(0))+'</span>';
     }
   }
   if(nm){
     nm.textContent = _sealSet ? (SEAL_SETS[_sealSet].name+' 프로필 · 프리미엄')
-      : (((SEAL_COLORS.find(x=>x.key===_sealColor)||{}).name||'')+' · '+(SEAL_SYM_NAMES[_sealSym]||''));
+      : _sealCustomPicked ? (((SEAL_COLORS.find(x=>x.key===_sealColor)||{}).name||'')+' · '+(SEAL_SYM_NAMES[_sealSym]||''))
+      : '기본 (첫 글자)';
   }
 }
 function pickSealSet(k){
@@ -14541,6 +14552,7 @@ function pickSealColor(c){ _sealColor=c; _rmPickCustom(); _autoSaveMascot(); }
 function pickSealSym(sy){ _sealSym=sy; _rmPickCustom(); _autoSaveMascot(); }
 function _rmPickCustom(){
   _sealSet=null;
+  _sealCustomPicked=true;   // 색/문양을 실제로 만졌음 → 미리보기 중립→색상으로 즉시 전환
   // 커스텀 프로필(색+문양) 선택 = 무료 모드 → 프리미엄 카드 스킨은 해제(무료 테마 색은 유지)
   if(_cardSkin && CARD_SKINS[_cardSkin] && !CARD_SKINS[_cardSkin].free) _cardSkin=null;
   const g=document.getElementById('rmGroups');
@@ -14560,8 +14572,16 @@ async function saveRoomMascot(){
   await _saveMascotValue(sealVal, _cardSkin);
 }
 async function clearRoomMascot(){
-  _sealSet=null; _cardSkin=null; _sealColor='terra'; _sealSym='ini';
+  _sealSet=null; _cardSkin=null; _sealColor='terra'; _sealSym='ini'; _sealCustomPicked=false;
   await _saveMascotValue(null, null, true);
+  // 옛 '이 방 테마'(user_room_themes) 잔존값도 함께 제거 — 안 그러면 카드배경 없는 방이
+  // 레거시 테마로 폴백돼(applyRoomThemeFor) '기본으로 되돌리기'가 색은 안 바뀌는 버그가 남음.
+  try{
+    if(_currentUser&&_mascotRoomId){
+      await supa.from('user_room_themes').delete().eq('user_id',_currentUser.id).eq('room_id',_mascotRoomId);
+      if(_currentRoom&&_mascotRoomId===_currentRoom.id) _currentRoomTheme=null;
+    }
+  }catch(_){}
   try{ if(_currentRoom&&_mascotRoomId===_currentRoom.id) applyRoomThemeFor(_currentRoom.id); }catch(_){}
   try{ renderRoomMascotPicker(); }catch(_){}
   try{ toast('기본으로 되돌렸어요'); }catch(_){}
