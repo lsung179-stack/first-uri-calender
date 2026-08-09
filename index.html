@@ -766,12 +766,16 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .cal-avatar.has-photo img{width:100%;height:100%;object-fit:cover;display:block}
 
 /* 월/년 타이틀 */
-.cal-month-row{display:flex;align-items:center;justify-content:center;gap:16px;padding:6px 0 3px;position:relative}
-.cal-month-arrow{background:none;border:none;cursor:pointer;font-size:22px;color:var(--sub);font-family:inherit;font-weight:300;padding:6px 4px;line-height:1}
+/* 그리드 3열(좌/중앙/우) — 시스템 글자 크기가 커져 가운데(‹ 연월 ›)가 넓어져도
+   좌우 아이콘(씰·검색 / 공유·가져오기·오늘)과 절대 겹치지 않게 각자 칸에 고정.
+   가운데 칸만 1fr(가변)+overflow:hidden이라 넘치면 좌우를 침범하는 대신 스스로 줄어듦. */
+.cal-month-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:4px;padding:6px 10px 3px;position:relative}
+.cal-month-center{grid-column:2;display:flex;align-items:center;justify-content:center;gap:10px;min-width:0;overflow:hidden}
+.cal-month-arrow{background:none;border:none;cursor:pointer;font-size:22px;color:var(--sub);font-family:inherit;font-weight:300;padding:6px 4px;line-height:1;flex:none}
 .cal-month-arrow:active{opacity:.5}
-.cal-month-title{display:flex;flex-direction:column;align-items:center;cursor:pointer;min-width:90px}
-.cal-month-year{font-size:11px;color:var(--sub);letter-spacing:1px;margin-bottom:1px}
-.cal-month-name{font-family:var(--ff-serif);font-size:21px;font-weight:700;color:var(--text);letter-spacing:.5px;line-height:1.1}
+.cal-month-title{display:flex;flex-direction:column;align-items:center;cursor:pointer;min-width:0;overflow:hidden}
+.cal-month-year{font-size:11px;color:var(--sub);letter-spacing:1px;margin-bottom:1px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-month-name{font-family:var(--ff-serif);font-size:21px;font-weight:700;color:var(--text);letter-spacing:.5px;line-height:1.1;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* 요일 헤더 */
 .cal-week-head{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:4px 4px 2px}
@@ -1188,7 +1192,7 @@ body.rc-dino .cal-import-btn[data-rci="cshare"]{background-image:url("https://d8
 body.rc-dino .cal-import-btn[data-rci="cimport"]{background-image:url("https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260724_231611_a3425333-7ac8-483c-a09b-50f9fc6ceffe.png")}
 .cal-today-btn:active{transform:translateX(-50%) scale(.96)}
 /* 헤더 우측 작은 '오늘' 칩 — cal-month-row 우측 끝, 오늘 보고 있을 땐 숨김 */
-.cal-month-right{position:absolute;right:12px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:7px;z-index:5}
+.cal-month-right{grid-column:3;position:relative;display:flex;align-items:center;gap:7px;flex:none;z-index:5}
 .cal-import-btn{background:none;border:none;cursor:pointer;padding:4px;color:var(--sub);display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-tap-highlight-color:transparent}
 .cal-import-btn:active{opacity:.6;transform:scale(.9)}
 /* 다른 방 일정 가져오기 시트 목록 */
@@ -2658,9 +2662,11 @@ body.align-right .cal-evbar{text-align:right}
   margin-top:-2px;margin-bottom:2px;
   /* 높이를 '고정'(min-height 아님)해 라벨 유무와 무관하게 이벤트 시작 Y를 항상 동일하게 유지.
      → 기간 일정 바가 공휴일/절기 라벨이 있는 칸에서만 아래로 밀려 삐뚤빼뚤해지던 문제 방지.
-     box-sizing:border-box + overflow:hidden으로 어떤 폰트/기기에서도 9px를 넘지 않게 clamp. */
-  height:11px;box-sizing:border-box;
-  line-height:11px;
+     ⚠️ px 고정이면 안드로이드 '글자 크기 크게' 설정에서 글자가 11px 박스보다 커져
+     세로로 짤려 보임('추석'이 획 일부만 보임) → font-size와 함께 늘어나는 em 단위로 변경.
+     em이라 같은 렌더에서는 모든 셀이 동일 배율로 커져 정렬은 그대로 유지됨. */
+  height:1.375em;box-sizing:border-box;
+  line-height:1.375em;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   padding:0 2px;
 }
@@ -2924,7 +2930,7 @@ body.align-right .cal-evbar{text-align:right}
 /* 월 네비 행 좌측 검색 버튼 */
 .cal-month-row{position:relative}
 /* 월 표시줄 좌측 그룹: 방 씰 + 검색 (가운데 월 표시엔 영향 없음) */
-.cal-month-left{position:absolute;left:10px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:6px;z-index:2}
+.cal-month-left{grid-column:1;position:relative;display:flex;align-items:center;gap:6px;flex:none;z-index:2}
 .cal-search-btn{background:none;border:none;cursor:pointer;padding:6px;color:var(--sub);display:flex;align-items:center}
 .cal-room-seal-btn{background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-tap-highlight-color:transparent}
 .cal-room-seal-btn:active{opacity:.6;transform:scale(.94)}
@@ -3489,12 +3495,14 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
       <!-- 방 선택 팝업(씰 롱프레스/탭) -->
       <div class="room-seal-picker" id="roomSealPicker" aria-hidden="true"><div class="rsp-list" id="rspList"></div></div>
     </div>
-    <button class="cal-month-arrow" onclick="prevMonth()">‹</button>
-    <div class="cal-month-title" onclick="openDatePicker()">
-      <div class="cal-month-year" id="calYear">2026</div>
-      <div class="cal-month-name" id="calMonthName">5월</div>
+    <div class="cal-month-center">
+      <button class="cal-month-arrow" onclick="prevMonth()">‹</button>
+      <div class="cal-month-title" onclick="openDatePicker()">
+        <div class="cal-month-year" id="calYear">2026</div>
+        <div class="cal-month-name" id="calMonthName">5월</div>
+      </div>
+      <button class="cal-month-arrow" onclick="nextMonth()">›</button>
     </div>
-    <button class="cal-month-arrow" onclick="nextMonth()">›</button>
     <div class="cal-month-right">
       <!-- 이 달 일정 공유(카톡 등) -->
       <button class="cal-import-btn" id="calShareBtn" data-rci="cshare" onclick="shareMonthImage()" aria-label="이 달 일정 공유" title="이 달 일정 공유"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></button>
