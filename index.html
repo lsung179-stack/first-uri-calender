@@ -14568,7 +14568,7 @@ async function saveRoomMascot(){
   if(_sealSet&&!isEffectivePremium()){ showUpgradeModal({message:'고급 프로필은 프리미엄 전용이에요.', feature:'입체 프로필 12종으로 방 카드를 꾸밀 수 있어요.'}); return; }
   const _sk=_cardSkin?CARD_SKINS[_cardSkin]:null;
   if(_sk&&!_sk.free&&!isEffectivePremium()){ showUpgradeModal({message:'컨셉 테마는 프리미엄 전용이에요.', feature:'달빛·실크·한지 등 8가지 배경으로 방 카드를 꾸밀 수 있어요.'}); return; }
-  const sealVal=_sealSet?('set:'+_sealSet):(_sealColor+':'+_sealSym);   // 직접 꾸미기(색+문양)는 무료
+  const sealVal=_sealSet?('set:'+_sealSet):(_sealCustomPicked?(_sealColor+':'+_sealSym):null);   // 직접 꾸미기(색+문양)는 무료
   await _saveMascotValue(sealVal, _cardSkin);
 }
 async function clearRoomMascot(){
@@ -14589,7 +14589,9 @@ async function clearRoomMascot(){
 /* 선택 즉시 자동 저장(디바운스) — 저장 버튼 없이 클릭만으로 반영 */
 let _autoSaveMascotT=null;
 function _autoSaveMascot(){
-  const sealVal=_sealSet?('set:'+_sealSet):(_sealColor+':'+_sealSym);
+  // 씰(색+문양)은 사용자가 실제로 만졌을 때만 저장 — 아니면 테마/카드배경만 골라도
+  // 기본값(terra:ini)이 씰로 함께 저장돼 '테마만 바꿨는데 씰 색도 바뀜' 버그가 남.
+  const sealVal=_sealSet?('set:'+_sealSet):(_sealCustomPicked?(_sealColor+':'+_sealSym):null);
   const skin=_cardSkin;
   // 로컬 맵 즉시 반영 → 곧바로 닫아도 applyRoomThemeFor가 최신값을 읽음. DB 쓰기만 디바운스.
   if(_mascotRoomId){ _mySealByRoom[_mascotRoomId]=sealVal; _myCardSkinByRoom[_mascotRoomId]=skin||null; }
