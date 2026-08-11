@@ -5368,8 +5368,13 @@ function urlBase64ToUint8Array(base64String){
 
 /* 현재 푸시 상태 확인 */
 async function getPushStatus(){
-  // 안드로이드 네이티브 앱: 웹푸시가 아닌 FCM 권한 기준으로 판정 (iOS는 아래 웹푸시 경로 유지)
-  if(isAndroidNative()){
+  // 네이티브 앱(iOS·Android 모두): 웹푸시가 아닌 네이티브(FCM/APNs) 권한 기준으로 판정.
+  // ⚠️ 예전엔 안드로이드만 이 경로를 타고 iOS 네이티브 앱도 아래 웹푸시(PushManager) 경로로
+  //    빠졌는데, Capacitor iOS의 WKWebView는 PushManager를 지원하지 않아(Safari 홈화면 PWA
+  //    전용 기능) 실제 App Store 앱에서도 '이 브라우저는 알림을 지원하지 않아요'가 떴음
+  //    (2026-08-11 사용자 실기기 제보로 발견). APNs 키는 이미 provisioning돼 있어(appstore
+  //    repo AuthKey_APNs_*.p8) 네이티브 경로로 돌리면 정상 동작.
+  if(isNativeApp()){
     const perm=await getNativePushPerm();
     if(perm==='denied')return 'denied';
     if(perm==='prompt'||perm==='prompt-with-rationale')return 'default';
@@ -5444,8 +5449,8 @@ async function registerPushNotification(silent){
 async function autoRegisterPush(){
   if(!_currentUser)return;
 
-  // ── 안드로이드 네이티브 앱: FCM 경로 (iOS 네이티브는 아래 웹푸시 경로 유지) ──
-  if(isAndroidNative()){
+  // ── 네이티브 앱(iOS·Android 모두): FCM/APNs 경로 [2026-08-11: iOS도 네이티브 경로로 통합] ──
+  if(isNativeApp()){
     const perm=await getNativePushPerm();
     if(perm==='denied'||perm==='unsupported'||perm==='error')return;
     // 미결정(prompt): 자동으로 OS 팝업을 쏘지 않음 — 가치 순간의 소프트 프리퍼미션(maybeAskPush)이 담당
@@ -5497,7 +5502,7 @@ async function _pushAskEligible(){
   const s=_pushAskState();
   if((s.c||0)>=3)return false;              // 소프트 모달 평생 최대 3회
   if(s.n&&Date.now()<s.n)return false;      // 스누즈 중
-  if(isAndroidNative()){
+  if(isNativeApp()){
     const p=await getNativePushPerm();
     return p==='prompt'||p==='prompt-with-rationale';
   }
@@ -5513,7 +5518,7 @@ async function maybeAskPush(trigger){
       : '멤버가 일정을 올리면 바로 알려드릴까요?\n다가오는 약속 리마인드도 함께 챙겨드려요.';
     const ok=await vConfirm(msg,{title:'알림 켜기',okText:'알림 받기',cancelText:'다음에'});
     if(!ok){ _pushAskSnooze(); return; }
-    const granted = isAndroidNative() ? await registerNativePush(false) : await registerPushNotification(false);
+    const granted = isNativeApp() ? await registerNativePush(false) : await registerPushNotification(false);
     if(!granted) _pushAskSnooze();   // OS 팝업 거절/실패도 동일하게 스누즈
   }catch(e){ console.warn('push soft-ask',e); }
 }
@@ -16304,7 +16309,7 @@ async function toggleNotifMaster(){
       const st=await getPushStatus();
       if(st!=='granted'&&st!=='subscribed'){
         let ok;
-        if(isAndroidNative()){
+        if(isNativeApp()){
           ok=await registerNativePush(false);
         }else{
           ok=await registerPushNotification(true);
@@ -16369,7 +16374,7 @@ async function _ntfRenderSys(){
 }
 async function ntfEnablePush(){
   let ok=false;
-  try{ ok=isAndroidNative()?await registerNativePush(false):await registerPushNotification(false); }catch(_){}
+  try{ ok=isNativeApp()?await registerNativePush(false):await registerPushNotification(false); }catch(_){}
   if(ok)toast('알림을 켰어요');
   _ntfRenderSys();
 }
