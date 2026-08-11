@@ -3663,6 +3663,15 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
             </div>
           </div>
         </div>
+        <!-- 반복 종료 — 언제까지 반복할지(선택사항). 일정과 동일. [초안 · 2026-08-10] -->
+        <div id="tdUntilWrap" style="display:none;margin-top:10px">
+          <div class="rep-sublabel">반복 종료일 <span style="font-weight:400">· 비워두면 계속 반복</span></div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+            <input type="date" class="fi" id="tdUntilDate" style="flex:1;padding:11px 12px;font-size:14px" onchange="onTdUntilDateChange(this.value)">
+            <button type="button" class="dm-btn" style="flex:none;padding:11px 14px" onclick="onTdUntilDateChange('')">지우기</button>
+          </div>
+          <div id="tdUntilHint" class="rep-hint"></div>
+        </div>
       </div>
       <div id="todoRangeDateRow" style="display:none;margin-top:8px">
         <div class="todo-range-row">
@@ -4019,6 +4028,15 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
               <div id="evNthHint" class="rep-hint"></div>
             </div>
           </div>
+        </div>
+        <!-- 반복 종료 — 언제까지 반복할지(선택사항). 매주/매월/매년 공통. [초안 · 2026-08-10] -->
+        <div id="evUntilWrap" style="display:none;margin-top:10px">
+          <div class="rep-sublabel">반복 종료일 <span style="font-weight:400">· 비워두면 계속 반복</span></div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+            <input type="date" class="fi" id="evUntilDate" style="flex:1;padding:11px 12px;font-size:14px" onchange="onEvUntilDateChange(this.value)">
+            <button type="button" class="dm-btn" style="flex:none;padding:11px 14px" onclick="onEvUntilDateChange('')">지우기</button>
+          </div>
+          <div id="evUntilHint" class="rep-hint"></div>
         </div>
       </div>
       <!-- 하루 모드 — 날짜 이동용 미니 달력 -->
@@ -9254,7 +9272,8 @@ function _wgExpandEvent(ev, fromStr, toStr){
       for(let yy=fromD.getFullYear(); yy<=toD.getFullYear(); yy++){ const ds=yy+'-'+mmdd; if(ds>origin&&inWin(ds))out.add(ds); }
     }
   }
-  return [...out].filter(d=>except.indexOf(d)<0);
+  const until=ev.repeat_until||null;   // 반복 종료일 [초안 · 2026-08-10]
+  return [...out].filter(d=>except.indexOf(d)<0 && (!until||d<=until));
 }
 async function buildWidgetPayload(){
   const rooms=(_myRooms||[]);
@@ -9262,7 +9281,7 @@ async function buildWidgetPayload(){
   const roomIds=rooms.map(r=>r.id);
   const today=new Date();
   const from=_wgShift(today,-40), to=_wgShift(today,70);   // 이전/다음달 네비게이션 커버 위해 창 확대
-  const _evCols='room_id,date,title,time,color,user_id,range_group_id,shared_id,is_multi,bar_style,order_index,repeat_type,repeat_weekdays,repeat_monthly_mode,repeat_nth_week,recurring_yearly,repeat_except';
+  const _evCols='room_id,date,title,time,color,user_id,range_group_id,shared_id,is_multi,bar_style,order_index,repeat_type,repeat_weekdays,repeat_monthly_mode,repeat_nth_week,repeat_until,recurring_yearly,repeat_except';
   let events=[]; try{ const {data}=await supa.from('events').select(_evCols).in('room_id',roomIds).gte('date',from).lte('date',to); events=data||[]; }catch(_){}
   // 반복 일정의 origin이 창(from) 이전이면 위 쿼리에서 누락 → 따로 가져와 창 안으로 펼침(위젯도 반복 표시)
   try{ const {data}=await supa.from('events').select(_evCols).in('room_id',roomIds).lt('date',from).or('repeat_type.in.(weekly,monthly,yearly),recurring_yearly.eq.true'); if(data&&data.length) events=events.concat(data); }catch(_){}
@@ -9274,7 +9293,7 @@ async function buildWidgetPayload(){
   const avPngById={};
   try{ await Promise.all(realIds.map(async function(id){ const u=profById[id]&&profById[id].avatar_url; if(u){ avPngById[id]=await _wgAvatarPng(u); } })); }catch(_){}
   // ⚠️ todos 테이블엔 'time' 컬럼이 없음(start_time/end_time) — 예전엔 time을 select해 쿼리가 통째로 실패→할일 0
-  const _tdCols='id,room_id,start_date,title,start_time,color,is_done,user_id,member_keys,repeat_type,repeat_weekdays,repeat_monthly_mode,repeat_nth_week';
+  const _tdCols='id,room_id,start_date,title,start_time,color,is_done,user_id,member_keys,repeat_type,repeat_weekdays,repeat_monthly_mode,repeat_nth_week,repeat_until';
   let todos=[]; try{ const {data}=await supa.from('todos').select(_tdCols).in('room_id',roomIds).gte('start_date',from).lte('start_date',to); todos=data||[]; }catch(_){}
   // 반복 할일의 start_date가 창(from) 이전이면 위 쿼리에서 누락 → 따로 가져와 창 안으로 펼침
   try{ const {data}=await supa.from('todos').select(_tdCols).in('room_id',roomIds).lt('start_date',from).in('repeat_type',['weekly','monthly','yearly']); if(data&&data.length) todos=todos.concat(data); }catch(_){}
@@ -9307,7 +9326,7 @@ async function buildWidgetPayload(){
     const rt=[];
     todos.filter(t=>t.room_id===r.id).forEach(t=>{
       // 반복 할일도 일정과 동일하게 창 안 구체 날짜로 펼침(비반복이면 [start_date])
-      const occ=_wgExpandEvent({date:t.start_date, repeat_type:t.repeat_type, repeat_weekdays:t.repeat_weekdays, repeat_monthly_mode:t.repeat_monthly_mode, repeat_nth_week:t.repeat_nth_week}, from, to);
+      const occ=_wgExpandEvent({date:t.start_date, repeat_type:t.repeat_type, repeat_weekdays:t.repeat_weekdays, repeat_monthly_mode:t.repeat_monthly_mode, repeat_nth_week:t.repeat_nth_week, repeat_until:t.repeat_until}, from, to);
       if(!occ.length) return;
       const mk=(Array.isArray(t.member_keys)&&t.member_keys.length?t.member_keys:null);   // 멤버 필터용
       occ.forEach(d=>{ rt.push({ id:String(t.id), date:d, title:String(t.title||'').slice(0,60), time:String(t.start_time||'').trim(), color:hx(t.color), done:!!t.is_done, userId:t.user_id||null, memberKeys:mk }); });
@@ -9834,7 +9853,8 @@ function _getDayEventsRaw(date){
     .concat(nthOnes.map(e=>({...e,_yearlyDisplay:true})))
     .concat(lastOnes.map(e=>({...e,_yearlyDisplay:true})))
     .concat(virtual)
-    .filter(e=>!(Array.isArray(e.repeat_except)&&e.repeat_except.includes(date)));
+    .filter(e=>!(Array.isArray(e.repeat_except)&&e.repeat_except.includes(date)))
+    .filter(e=>!(e.repeat_until && date>e.repeat_until));   // 반복 종료일 지남 [초안 · 2026-08-10]
   const seen=new Set();
   const result=[];
   evs.forEach(ev=>{
@@ -11020,6 +11040,7 @@ let _evRepeatType='none';
 let _evRepeatWeekdays=[];   // 매주 or 매월 N째주 요일 (0=일~6=토, 다중)
 let _evMonthlyMode='dom';   // dom(며칠) | nth(N째주 요일) | last(말일)
 let _evNthWeek=1;           // 1~4, -1=마지막 주
+let _evRepeatUntil=null;    // 반복 종료일('YYYY-MM-DD') — null이면 계속 반복 [초안 · 2026-08-10]
 const _REP_DOW=['일','월','화','수','목','금','토'];
 const _ORD_KO={'1':'첫째','2':'둘째','3':'셋째','4':'넷째','-1':'마지막'};
 // 주 시작 요일(설정 연동, 기본 일요일=0)
@@ -11114,6 +11135,22 @@ function syncEvRepeatUI(){
   if(mWrap)mWrap.style.display=showM?'':'none';
   if(showW) _renderRepChips('evWeekdayChips', _evRepeatWeekdays);
   if(showM) _syncEvMonthlyUI();
+  _syncEvUntilUI();
+}
+/* 반복 종료일 UI 동기화 — 매주/매월/매년 공통, '안 함'이면 통째로 숨김 [초안 · 2026-08-10] */
+function _syncEvUntilUI(){
+  const wrap=document.getElementById('evUntilWrap'); if(!wrap)return;
+  const on=(_evRepeatType!=='none');
+  wrap.style.display=on?'':'none';
+  if(!on)return;
+  const inp=document.getElementById('evUntilDate'); if(inp)inp.value=_evRepeatUntil||'';
+  const h=document.getElementById('evUntilHint');
+  if(h)h.textContent=_evRepeatUntil?('이 날짜까지만 반복돼요 ('+_korFullSafe(_evRepeatUntil)+')'):'';
+}
+function _korFullSafe(ds){ try{ return (typeof _korFull==='function')?_korFull(ds):ds; }catch(_){ return ds; } }
+function onEvUntilDateChange(v){
+  _evRepeatUntil=v||null;
+  _syncEvUntilUI();
 }
 function _syncEvMonthlyUI(){
   document.querySelectorAll('#evMonthlyMode .dm-btn').forEach(b=>b.classList.toggle('on', b.dataset.mm===_evMonthlyMode));
@@ -11162,7 +11199,7 @@ function onEvMonthlyMode(m){
   syncEvRepeatUI();
 }
 function onEvNthWeek(n){ _evNthWeek=Number(n); syncEvRepeatUI(); }
-function resetEvRepeat(){ _evRepeatType='none'; _evRepeatWeekdays=[]; _evMonthlyMode='dom'; _evNthWeek=1; syncEvRepeatUI(); }
+function resetEvRepeat(){ _evRepeatType='none'; _evRepeatWeekdays=[]; _evMonthlyMode='dom'; _evNthWeek=1; _evRepeatUntil=null; syncEvRepeatUI(); }
 function getEvRepeatPayload(baseDate){
   const rt=_evRepeatType||'none';
   let wd=null, mmode=null, nth=null;
@@ -11180,12 +11217,15 @@ function getEvRepeatPayload(baseDate){
   const finalType=(rt==='weekly'&&(!wd||!wd.length))?'none':rt;
   // 시작일 자동 스냅 — 선택 패턴의 기준 달 첫 발생일(며칠/매년은 그대로)
   const snapped=(finalType==='weekly'||finalType==='monthly') ? _repeatFirstDate(baseDate, finalType, wd, mmode, nth) : baseDate;
+  // 반복 종료일 — 시작일보다 이르면 무효(계속 반복으로 폴백) [초안 · 2026-08-10]
+  const until=(finalType!=='none'&&_evRepeatUntil&&_evRepeatUntil>=(snapped||baseDate))?_evRepeatUntil:null;
   return {
     repeat_type: finalType,
     repeat_weekdays: wd,
     repeat_monthly_mode: (finalType==='monthly'?(mmode||'dom'):null),
     repeat_nth_week: (finalType==='monthly'&&mmode==='nth'?nth:null),
     recurring_yearly: finalType==='yearly',
+    repeat_until: until,
     start_date: (finalType==='weekly'||finalType==='monthly') ? snapped : null
   };
 }
@@ -11290,6 +11330,7 @@ function openEditEvent(eventId){
   _evRepeatWeekdays=Array.isArray(ev.repeat_weekdays)?ev.repeat_weekdays.slice():[];
   _evMonthlyMode=ev.repeat_monthly_mode||'dom';
   _evNthWeek=(typeof ev.repeat_nth_week==='number')?ev.repeat_nth_week:1;
+  _evRepeatUntil=ev.repeat_until||null;
   syncEvRepeatUI();
   // 메모/사진 — 기존 값 로드
   const memoEl=document.getElementById('evMemo');
@@ -12146,6 +12187,7 @@ async function _doSaveEvent(){
   const repeatWeekdays=_rep.repeat_weekdays;
   const repeatMonthlyMode=_rep.repeat_monthly_mode;
   const repeatNthWeek=_rep.repeat_nth_week;
+  const repeatUntil=_rep.repeat_until;
   // 반복 시작일 자동 스냅 — 새 일정·하루 모드에서 선택 패턴의 첫 발생일로 origin(시작일)을 맞춤.
   // (예: 8월 아무 날 + "둘째 월요일" → 8월 둘째 월요일부터 시작, 자투리 원본 없음)
   if(!_editingEvent && _selectedMode==='day' && _rep.start_date){ _dayDate=_rep.start_date; }
@@ -12201,7 +12243,7 @@ async function _doSaveEvent(){
               room_id:_currentRoom.id, date:d,
               title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
               shared_id:sharedId,
-              recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,
+              recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,
               memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
               is_multi:true,
             }));
@@ -12217,7 +12259,7 @@ async function _doSaveEvent(){
               extraRows.push({
                 room_id:rid,user_id:_currentUser.id,date:d,
                 title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
-                recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,
+                recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,
                 memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
                 is_multi:true,
               });
@@ -12249,7 +12291,7 @@ async function _doSaveEvent(){
               room_id:_currentRoom.id, date:d,
               title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
               shared_id:sharedId,range_group_id:rangeGid,
-              recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,
+              recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,
               memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
             }));
           });
@@ -12266,7 +12308,7 @@ async function _doSaveEvent(){
                 room_id:rid,user_id:_currentUser.id,date:d,
                 title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
                 range_group_id:extraRgid,
-                recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,
+                recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,
                 memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
               });
             });
@@ -12283,7 +12325,7 @@ async function _doSaveEvent(){
         const rows=_selectedMembers.map(key=>_buildCoEventRow(key, {
           room_id:_currentRoom.id, date:(_dayDate||_selectedDate),
           title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,shared_id:sharedId,
-          recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,
+          recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,
           memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
         }));
         const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
@@ -12294,7 +12336,7 @@ async function _doSaveEvent(){
         const {error}=await supa.from('events').insert(_attachVirtualMember({
           room_id:_currentRoom.id,user_id:_currentUser.id,date:(_dayDate||_selectedDate),
           title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
-          recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,
+          recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,
           memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
         }));
         if(error)throw error;
@@ -12303,7 +12345,7 @@ async function _doSaveEvent(){
           const extraRows=extraRoomIds.map(rid=>({
             room_id:rid,user_id:_currentUser.id,date:(_dayDate||_selectedDate),
             title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
-            recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,
+            recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,
             memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
           }));
           const {error:eX}=await supa.from('events').insert(_attachVirtualMember(extraRows));
@@ -13697,6 +13739,7 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
   const repeatWeekdays=_rep.repeat_weekdays;
   const repeatMonthlyMode=_rep.repeat_monthly_mode;
   const repeatNthWeek=_rep.repeat_nth_week;
+  const repeatUntil=_rep.repeat_until;
 
   // 함께 일정에는 multi 모드 금지 (안전판)
   if((wasShared||isNowShared)&&_selectedMode==='multi'){
@@ -13727,7 +13770,7 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
       memberIds.forEach(key=>{
         rows.push(_buildCoEventRow(key, {
           room_id:_currentRoom.id, date:d,
-          title,time,end_time:endTime,color,bar_style:barStyle,shared_id:ev.shared_id,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,
+          title,time,end_time:endTime,color,bar_style:barStyle,shared_id:ev.shared_id,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,
           memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
         }));
       });
@@ -13797,7 +13840,7 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
           room_id:rid,user_id:_currentUser.id,date:d,
           title,time,end_time:endTime,color,bar_style:barStyle,
           multi_group_id:mgid,range_group_id:rgid,
-          recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,
+          recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,
           memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
           is_multi:isMultiMode,
         });
@@ -13821,7 +13864,7 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
   if(!wasShared&&!isNowShared){
     // Case 4: 혼자 → 혼자 (이 row만 단순 수정) — 명의 변경 시 virtual_member_id 반영
     // 다른 방에도 등록된 일정(multi_group_id 존재)이면 적용 범위 선택
-    const _fields={date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls};
+    const _fields={date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls};
     if(ev.multi_group_id){
       // 그룹(다른 방에도 등록된 동일 일정)에 속한 방 목록 조회 — 방 선택 UI용
       let groupRooms=[];
@@ -13833,7 +13876,7 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
       }catch(_){}
       const scope=await askMultiRoomScope('이 일정은 여러 방에 등록돼 있어요.<br>어느 방에 수정 내용을 적용할까요?',false,groupRooms);
       if(scope===null)return 'cancelled';  // 취소 → 수정 모달 유지
-      const _f2={date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls};
+      const _f2={date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls};
       if(scope==='all'){
         // 그룹 전체(모든 방의 내 복사본) 일괄 수정
         const {error}=await supa.from('events').update(_f2)
@@ -13881,7 +13924,7 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
       _selectedMembers.forEach(key=>{
         rows.push(_buildCoEventRow(key, {
           room_id:_currentRoom.id, date:d,
-          title,time,end_time:endTime,color,bar_style:barStyle,shared_id:sharedId,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,
+          title,time,end_time:endTime,color,bar_style:barStyle,shared_id:sharedId,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,
           memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
         }));
       });
@@ -13895,7 +13938,7 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
     if(e1)throw e1;
     const {error:e2}=await supa.from('events').insert(_attachVirtualMember({
       room_id:_currentRoom.id,user_id:_currentUser.id,
-      date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,
+      date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,
       memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
     }));
     if(e2)throw e2;
@@ -13914,13 +13957,13 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
     const toRemoveVirtual=toRemove.filter(k=>typeof k==='string'&&k.startsWith('v-')).map(k=>k.slice(2));
     
     if(toKeepReal.length){
-      const {error}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls})
+      const {error}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls})
         .eq('shared_id',ev.shared_id).in('user_id',toKeepReal);
       if(error)throw error;
     }
     if(toKeepVirtual.length){
       // 가상 멤버 row UPDATE (virtual_member_id 기준)
-      const {error}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls})
+      const {error}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls})
         .eq('shared_id',ev.shared_id).in('virtual_member_id',toKeepVirtual);
       if(error)throw error;
     }
@@ -13941,7 +13984,7 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
     if(toAdd.length){
       const rows=toAdd.map(key=>_buildCoEventRow(key, {
         room_id:_currentRoom.id, date:(_dayDate||_selectedDate),
-        title,time,end_time:endTime,color,bar_style:barStyle,shared_id:ev.shared_id,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,
+        title,time,end_time:endTime,color,bar_style:barStyle,shared_id:ev.shared_id,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,
         memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
       }));
       const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
@@ -20084,6 +20127,7 @@ let _todoStartTime='', _todoEndTime='';
 let _todoColorKey='c-vintage';
 let _todoRepeat='none';
 let _tdRepeatWeekdays=[], _tdMonthlyMode='dom', _tdNthWeek=1;   // 반복 커스텀(일정과 동일)
+let _tdRepeatUntil=null;   // 반복 종료일('YYYY-MM-DD') — null이면 계속 반복 [초안 · 2026-08-10]
 let _todoMiniY=2026, _todoMiniM=0;
 let _uniAwaitPhoto=false;
 let _todoReturnDate=null;   // 할일 시트를 데이 시트에서 열었을 때만 설정 (취소 시 그 날짜 시트로 복귀)
@@ -20182,6 +20226,7 @@ function _todoVisibleForView(t){
 function todoOccursOnDate(t,key){
   if(t.repeat_type && t.repeat_type!=='none'){
     if(!t.start_date || key < t.start_date) return false;
+    if(t.repeat_until && key > t.repeat_until) return false;   // 반복 종료일 지남 [초안 · 2026-08-10]
     const s=parseDateKey(t.start_date), d=parseDateKey(key);
     if(t.repeat_type==='weekly'){
       const wd=(Array.isArray(t.repeat_weekdays)&&t.repeat_weekdays.length)?t.repeat_weekdays:[s.getDay()];
@@ -20663,7 +20708,7 @@ function openTodoAddSheet(dateKeyStr, opts){
   _todoStartTime=''; _todoEndTime='';
   _todoColorKey='c-vintage';
   _todoRepeat='none';
-  _tdRepeatWeekdays=[]; _tdMonthlyMode='dom'; _tdNthWeek=1;
+  _tdRepeatWeekdays=[]; _tdMonthlyMode='dom'; _tdNthWeek=1; _tdRepeatUntil=null;
   _todoTarget='self';
   _todoMembers=[_currentUser?.id];
   const d=parseDateKey(start); _todoMiniY=d.getFullYear(); _todoMiniM=d.getMonth();
@@ -20715,6 +20760,7 @@ function openTodoEditSheet(id, opts){
   _tdRepeatWeekdays=Array.isArray(t.repeat_weekdays)?t.repeat_weekdays.slice():[];
   _tdMonthlyMode=t.repeat_monthly_mode||'dom';
   _tdNthWeek=(typeof t.repeat_nth_week==='number')?t.repeat_nth_week:1;
+  _tdRepeatUntil=t.repeat_until||null;
   if(Array.isArray(t.member_keys)&&t.member_keys.length>=2){
     _todoTarget='all'; _todoMembers=t.member_keys.slice();
   }else{
@@ -20790,6 +20836,21 @@ function _syncTdRepeatUI(){
   if(mWrap)mWrap.style.display=showM?'':'none';
   if(showW)_renderTdChips('tdWeekdayChips',_tdRepeatWeekdays);
   if(showM)_syncTdMonthlyUI();
+  _syncTdUntilUI();
+}
+/* 반복 종료일 UI 동기화 — 일정과 동일 [초안 · 2026-08-10] */
+function _syncTdUntilUI(){
+  const wrap=$('tdUntilWrap'); if(!wrap)return;
+  const on=(_todoRepeat!=='none');
+  wrap.style.display=on?'':'none';
+  if(!on)return;
+  const inp=$('tdUntilDate'); if(inp)inp.value=_tdRepeatUntil||'';
+  const h=$('tdUntilHint');
+  if(h)h.textContent=_tdRepeatUntil?('이 날짜까지만 반복돼요 ('+_korFullSafe(_tdRepeatUntil)+')'):'';
+}
+function onTdUntilDateChange(v){
+  _tdRepeatUntil=v||null;
+  _syncTdUntilUI();
 }
 function _syncTdMonthlyUI(){
   document.querySelectorAll('#tdMonthlyMode .dm-btn').forEach(function(b){ b.classList.toggle('on', b.dataset.mm===_tdMonthlyMode); });
@@ -21175,6 +21236,7 @@ async function _doSaveTodo(){
     repeat_weekdays: ((_todoRepeat==='weekly')||(_todoRepeat==='monthly'&&_tdMonthlyMode==='nth')) ? ((_tdRepeatWeekdays&&_tdRepeatWeekdays.length)?_tdRepeatWeekdays.slice():null) : null,
     repeat_monthly_mode: (_todoRepeat==='monthly'?(_tdMonthlyMode||'dom'):null),
     repeat_nth_week: (_todoRepeat==='monthly'&&_tdMonthlyMode==='nth'?(_tdNthWeek||1):null),
+    repeat_until: (_todoRepeat!=='none'&&_tdRepeatUntil&&_tdRepeatUntil>=start_date)?_tdRepeatUntil:null,
     memo:(($('todoMemoInput')||{}).value||'').trim()||null,
     member_keys: isCo ? _todoMembers.slice() : null
   };
