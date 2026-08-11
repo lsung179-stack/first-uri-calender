@@ -1282,7 +1282,7 @@ body.rc-dino .cal-import-btn[data-rci="cimport"]{background-image:url("https://d
 /* 시간 직접 입력 칸 + 시계 버튼 */
 .time-range-wrap{flex:1;display:flex;align-items:center;gap:6px;min-width:0}
 .time-range-tilde{color:var(--sub);font-weight:700;font-size:15px;flex:none}
-.time-input-box{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:1px;padding:11px 8px;border:1px solid var(--border);border-radius:12px;background:var(--card);transition:border-color .15s ease}
+.time-input-box{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:1px;padding:11px 8px;border:1px solid var(--border);border-radius:12px;background:var(--card);transition:border-color .15s ease;cursor:text}
 .time-input-box.focused{border-color:var(--accent)}
 .time-input{width:28px;border:none;background:none;font-family:inherit;font-size:16px;font-weight:600;color:var(--text);text-align:center;padding:0;outline:none;font-variant-numeric:tabular-nums;-webkit-appearance:none}
 .time-input::placeholder{color:var(--mute);font-weight:400}
@@ -1297,6 +1297,8 @@ body.rc-dino .cal-import-btn[data-rci="cimport"]{background-image:url("https://d
 .time-trigger:active{border-color:var(--accent)}
 .time-picker{display:none;flex-direction:column;gap:10px;margin-top:8px;background:var(--bg);border:1px solid var(--borderL);border-radius:12px;padding:12px}
 .time-picker.show{display:flex}
+/* 시계 아이콘이 시작/종료 중 무엇을 편집하는지 — 라벨 + 해당 입력칸 테두리 강조로 항상 명시 [2026-08-11] */
+.tp-target-label{text-align:center;font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.2px}
 .tp-cols{display:flex;gap:10px;height:160px;position:relative;justify-content:center;align-items:center}
 .tp-mid{position:absolute;top:60px;left:8px;right:8px;height:40px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);pointer-events:none;background:rgba(176,135,66,.06);border-radius:6px}
 .tp-col{width:64px;height:160px;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none;-ms-overflow-style:none;text-align:center;font-family:-apple-system,sans-serif;-webkit-overflow-scrolling:touch}
@@ -3596,13 +3598,13 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
       <div class="ev-label">시간 (선택)</div>
       <div class="ev-time-row">
         <div class="time-range-wrap">
-          <div class="time-input-box" id="todoTimeStartBox" data-which="start">
+          <div class="time-input-box" id="todoTimeStartBox" data-which="start" onclick="_todoTimeBoxTap(event,'start')">
             <input type="text" class="time-input" id="todoStartHour" inputmode="numeric" maxlength="2" placeholder="--" aria-label="시작 시">
             <span class="time-input-colon">:</span>
             <input type="text" class="time-input" id="todoStartMin" inputmode="numeric" maxlength="2" placeholder="--" aria-label="시작 분">
           </div>
           <span class="time-range-tilde">~</span>
-          <div class="time-input-box" id="todoTimeEndBox" data-which="end">
+          <div class="time-input-box" id="todoTimeEndBox" data-which="end" onclick="_todoTimeBoxTap(event,'end')">
             <input type="text" class="time-input" id="todoEndHour" inputmode="numeric" maxlength="2" placeholder="--" aria-label="종료 시">
             <span class="time-input-colon">:</span>
             <input type="text" class="time-input" id="todoEndMin" inputmode="numeric" maxlength="2" placeholder="--" aria-label="종료 분">
@@ -3614,6 +3616,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
         <button class="ev-time-clear" onclick="clearTodoTime()">지우기</button>
       </div>
       <div class="time-picker" id="todoTimePicker">
+        <div class="tp-target-label" id="todoTpTargetLabel">시작 시간</div>
         <div class="tp-cols">
           <div class="tp-col" id="todoTpHourCol"></div>
           <div class="tp-sep">:</div>
@@ -3973,13 +3976,13 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
       <div class="ev-label">시간 (선택)</div>
       <div class="ev-time-row">
         <div class="time-range-wrap">
-          <div class="time-input-box" id="evTimeStartBox" data-which="start">
+          <div class="time-input-box" id="evTimeStartBox" data-which="start" onclick="_evTimeBoxTap(event,'start')">
             <input type="text" class="time-input" id="evStartHour" inputmode="numeric" maxlength="2" placeholder="--" aria-label="시작 시">
             <span class="time-input-colon">:</span>
             <input type="text" class="time-input" id="evStartMin" inputmode="numeric" maxlength="2" placeholder="--" aria-label="시작 분">
           </div>
           <span class="time-range-tilde">~</span>
-          <div class="time-input-box" id="evTimeEndBox" data-which="end">
+          <div class="time-input-box" id="evTimeEndBox" data-which="end" onclick="_evTimeBoxTap(event,'end')">
             <input type="text" class="time-input" id="evEndHour" inputmode="numeric" maxlength="2" placeholder="--" aria-label="종료 시">
             <span class="time-input-colon">:</span>
             <input type="text" class="time-input" id="evEndMin" inputmode="numeric" maxlength="2" placeholder="--" aria-label="종료 분">
@@ -3993,6 +3996,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
         <button class="ev-time-clear" onclick="clearEventTime()">지우기</button>
       </div>
       <div class="time-picker" id="timePicker">
+        <div class="tp-target-label" id="tpTargetLabel">시작 시간</div>
         <div class="tp-cols">
           <div class="tp-col" id="tpHourCol"></div>
           <div class="tp-sep">:</div>
@@ -11644,6 +11648,7 @@ function toggleTimePicker(){
   }
   p.classList.add('show');
   const cbtn=document.getElementById('evTimeBtn'); if(cbtn)cbtn.classList.add('on');
+  _syncEvTpTarget();   // 시계가 시작/종료 중 어느 칸을 편집하는지 라벨+테두리로 표시
   // 스크롤 위치 설정 (40px * idx)
   setTimeout(()=>{
     const hCol=document.getElementById('tpHourCol');
@@ -11654,12 +11659,43 @@ function toggleTimePicker(){
     setActiveItem(mCol,_tpMin);
   },50);
 }
+/* 시계 picker가 지금 편집 중인 칸(시작/종료)을 라벨 텍스트 + 해당 상자 테두리 강조로 표시.
+   picker가 열려있는 동안 다른 칸을 탭해 _activeTimeField가 바뀌면(포커스 리스너에서 재호출)
+   휠 스크롤 위치도 그 칸의 값으로 다시 맞춤. [2026-08-11] */
+function _syncEvTpTarget(){
+  const lbl=document.getElementById('tpTargetLabel');
+  if(lbl) lbl.textContent=(_activeTimeField==='start'?'시작 시간':'종료 시간');
+  document.querySelectorAll('.time-input-box').forEach(b=>b.classList.remove('focused'));
+  const activeBox=document.getElementById(_activeTimeField==='start'?'evTimeStartBox':'evTimeEndBox');
+  if(activeBox)activeBox.classList.add('focused');
+  const p=document.getElementById('timePicker');
+  if(!p||!p.classList.contains('show'))return;   // picker가 열려있을 때만 휠도 재동기화
+  const cur=_readTimeBox(_activeTimeField);
+  if(cur&&cur.includes(':')){
+    const [h,m]=cur.split(':').map(Number);
+    _tpHour=h; _tpMin=m;
+  }
+  const hCol=document.getElementById('tpHourCol'), mCol=document.getElementById('tpMinCol');
+  if(hCol&&mCol){
+    hCol.scrollTop=_tpHour*40+60;
+    mCol.scrollTop=_tpMin*40+60;
+    setActiveItem(hCol,_tpHour);
+    setActiveItem(mCol,_tpMin);
+  }
+}
+// 상자 안 여백(입력칸 사이 콜론 등)을 탭해도 그 칸이 활성화되도록 — 정확히 숫자 위만 눌러야 하는 제약 해소
+function _evTimeBoxTap(e,which){
+  if(e&&e.target&&e.target.tagName==='INPUT')return;   // 입력칸 직접 탭은 포커스 이벤트가 처리
+  const h=document.getElementById(which==='start'?'evStartHour':'evEndHour');
+  if(h)h.focus();
+}
 function setActiveItem(col,idx){
   col.querySelectorAll('.tp-item').forEach((el,i)=>el.classList.toggle('active',i===idx));
 }
 function closeTimePicker(){
   document.getElementById('timePicker').classList.remove('show');
   const cbtn=document.getElementById('evTimeBtn'); if(cbtn)cbtn.classList.remove('on');
+  document.querySelectorAll('.time-input-box').forEach(b=>b.classList.remove('focused'));
 }
 function applyTimePicker(){
   // 활성 칸(시작/종료)에 적용
@@ -11681,7 +11717,7 @@ function bindEvTimeInputs(){
     const hEl=document.getElementById(g.h), mEl=document.getElementById(g.m), box=document.getElementById(g.box);
     if(!hEl||!mEl)return;
     [hEl,mEl].forEach(el=>{
-      el.addEventListener('focus',()=>{ _activeTimeField=g.which; if(box)box.classList.add('focused'); });
+      el.addEventListener('focus',()=>{ _activeTimeField=g.which; _syncEvTpTarget(); });
       el.addEventListener('blur',()=>{
         let v=el.value.replace(/\D/g,'');
         if(v!==''){ let n=parseInt(v,10); const max=(el===hEl)?23:59; if(isNaN(n)||n>max)n=max; el.value=_padTime(n); }
@@ -21180,15 +21216,39 @@ function toggleTodoTimePicker(){
   if(cur&&cur.indexOf(':')>=0){ const a=cur.split(':'); _todoTpHour=parseInt(a[0],10); _todoTpMin=parseInt(a[1],10); }
   p.classList.add('show');
   const cbtn=$('todoTimeBtn'); if(cbtn)cbtn.classList.add('on');
+  _syncTodoTpTarget();   // 시계가 시작/종료 중 어느 칸을 편집하는지 라벨+테두리로 표시
   setTimeout(function(){
     const hCol=$('todoTpHourCol'), mCol=$('todoTpMinCol');
     if(hCol){ hCol.scrollTop=_todoTpHour*40+60; setActiveItem(hCol,_todoTpHour); }
     if(mCol){ mCol.scrollTop=_todoTpMin*40+60; setActiveItem(mCol,_todoTpMin); }
   },50);
 }
+/* 일정 폼의 _syncEvTpTarget와 동일한 역할(할일 폼) — 라벨 텍스트+상자 테두리 강조,
+   picker가 열려있으면 휠 스크롤도 재동기화. [2026-08-11] */
+function _syncTodoTpTarget(){
+  const lbl=$('todoTpTargetLabel');
+  if(lbl) lbl.textContent=(_todoActiveTimeField==='start'?'시작 시간':'종료 시간');
+  ['todoTimeStartBox','todoTimeEndBox'].forEach(function(id){ const b=$(id); if(b) b.classList.remove('focused'); });
+  const activeBox=$(_todoActiveTimeField==='start'?'todoTimeStartBox':'todoTimeEndBox');
+  if(activeBox) activeBox.classList.add('focused');
+  const p=$('todoTimePicker');
+  if(!p||!p.classList.contains('show'))return;
+  const cur=_readTodoTimeBox(_todoActiveTimeField);
+  if(cur&&cur.indexOf(':')>=0){ const a=cur.split(':'); _todoTpHour=parseInt(a[0],10); _todoTpMin=parseInt(a[1],10); }
+  const hCol=$('todoTpHourCol'), mCol=$('todoTpMinCol');
+  if(hCol){ hCol.scrollTop=_todoTpHour*40+60; setActiveItem(hCol,_todoTpHour); }
+  if(mCol){ mCol.scrollTop=_todoTpMin*40+60; setActiveItem(mCol,_todoTpMin); }
+}
+// 상자 안 여백을 탭해도 그 칸이 활성화되도록
+function _todoTimeBoxTap(e,which){
+  if(e&&e.target&&e.target.tagName==='INPUT')return;
+  const h=$(which==='start'?'todoStartHour':'todoEndHour');
+  if(h)h.focus();
+}
 function closeTodoTimePicker(){
   const p=$('todoTimePicker'); if(p)p.classList.remove('show');
   const cbtn=$('todoTimeBtn'); if(cbtn)cbtn.classList.remove('on');
+  ['todoTimeStartBox','todoTimeEndBox'].forEach(function(id){ const b=$(id); if(b) b.classList.remove('focused'); });
 }
 function applyTodoTimePicker(){
   const hId=_todoActiveTimeField==='start'?'todoStartHour':'todoEndHour';
@@ -21209,7 +21269,7 @@ function bindTodoTimeInputs(){
     const hEl=$(g.h), mEl=$(g.m), box=$(g.box);
     if(!hEl||!mEl) return;
     [hEl,mEl].forEach(function(el){
-      el.addEventListener('focus',function(){ _todoActiveTimeField=g.which; if(box)box.classList.add('focused'); });
+      el.addEventListener('focus',function(){ _todoActiveTimeField=g.which; _syncTodoTpTarget(); });
       el.addEventListener('blur',function(){
         let v=el.value.replace(/\D/g,'');
         if(v!==''){ let n=parseInt(v,10); const max=(el===hEl)?23:59; if(isNaN(n)||n>max)n=max; el.value=_padTime(n); }
