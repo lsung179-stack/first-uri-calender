@@ -3663,24 +3663,22 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
             </div>
           </div>
         </div>
-        <!-- 반복 종료 — 언제까지 반복할지(선택사항). 일정과 동일, 앱 미니 달력 재사용. [초안 · 2026-08-10 → 2026-08-11 리디자인] -->
+        <!-- 반복 종료 — 언제까지 반복할지(선택사항). 일정과 동일, 생일 선택과 같은 년/월/일 드롭다운.
+             [초안 · 2026-08-10 → 2026-08-11 드롭다운으로 재리디자인] -->
         <div id="tdUntilWrap" style="display:none;margin-top:10px">
           <div class="rep-sublabel">반복 종료일 <span style="font-weight:400">· 비워두면 계속 반복</span></div>
-          <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
-            <button type="button" class="fi" id="tdUntilBtn" style="flex:1;text-align:left;cursor:pointer" onclick="toggleTdUntilCal()">종료일 선택 안 함</button>
-            <button type="button" class="dm-btn" style="flex:none;padding:11px 14px" onclick="onTdUntilDateChange('')">지우기</button>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+            <select class="fi pf-bd-select" id="tdUntilY" style="flex:1.3 1 0;min-width:0" onchange="onTdUntilYMDChange()"><option value="">년</option></select>
+            <select class="fi pf-bd-select" id="tdUntilM" style="flex:1 1 0;min-width:0" onchange="onTdUntilYMDChange()">
+              <option value="">월</option>
+              <option value="1">1월</option><option value="2">2월</option><option value="3">3월</option><option value="4">4월</option>
+              <option value="5">5월</option><option value="6">6월</option><option value="7">7월</option><option value="8">8월</option>
+              <option value="9">9월</option><option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
+            </select>
+            <select class="fi pf-bd-select" id="tdUntilD" style="flex:1 1 0;min-width:0" onchange="onTdUntilYMDChange()"><option value="">일</option></select>
+            <button type="button" class="dm-btn" style="flex:none;padding:11px 12px" onclick="clearTdUntil()">지우기</button>
           </div>
-          <div class="ev-multi-cal" id="tdUntilCal" style="display:none;margin-top:8px">
-            <div class="ev-multi-nav">
-              <button type="button" class="ev-multi-nav-btn" onclick="tdUntilCalNav(-1)">‹</button>
-              <span class="ev-multi-nav-title" id="tdUntilNavTitle">2026년 8월</span>
-              <button type="button" class="ev-multi-nav-btn" onclick="tdUntilCalNav(1)">›</button>
-            </div>
-            <div class="ev-multi-dows">
-              <div class="ev-multi-dow sun">일</div><div class="ev-multi-dow">월</div><div class="ev-multi-dow">화</div><div class="ev-multi-dow">수</div><div class="ev-multi-dow">목</div><div class="ev-multi-dow">금</div><div class="ev-multi-dow sat">토</div>
-            </div>
-            <div class="ev-multi-grid" id="tdUntilGrid"></div>
-          </div>
+          <div id="tdUntilHint" class="rep-hint"></div>
         </div>
       </div>
       <div id="todoRangeDateRow" style="display:none;margin-top:8px">
@@ -4039,25 +4037,23 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
             </div>
           </div>
         </div>
-        <!-- 반복 종료 — 언제까지 반복할지(선택사항). 매주/매월/매년 공통. 네이티브 date input 대신
-             앱 자체 미니 달력(ev-multi-*) 재사용 — 우리 캘린더 크림톤 컨셉과 맞춤. [초안 · 2026-08-10 → 2026-08-11 리디자인] -->
+        <!-- 반복 종료 — 언제까지 반복할지(선택사항). 매주/매월/매년 공통.
+             생일 선택(uniBdMonth/Day)과 동일한 년/월/일 드롭다운(.fi.pf-bd-select) — 앱 기존 컨셉 재사용,
+             새 미니 달력을 추가로 만들지 않음. [초안 · 2026-08-10 → 2026-08-11 드롭다운으로 재리디자인] -->
         <div id="evUntilWrap" style="display:none;margin-top:10px">
           <div class="rep-sublabel">반복 종료일 <span style="font-weight:400">· 비워두면 계속 반복</span></div>
-          <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
-            <button type="button" class="fi" id="evUntilBtn" style="flex:1;text-align:left;cursor:pointer" onclick="toggleEvUntilCal()">종료일 선택 안 함</button>
-            <button type="button" class="dm-btn" style="flex:none;padding:11px 14px" onclick="onEvUntilDateChange('')">지우기</button>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+            <select class="fi pf-bd-select" id="evUntilY" style="flex:1.3 1 0;min-width:0" onchange="onEvUntilYMDChange()"><option value="">년</option></select>
+            <select class="fi pf-bd-select" id="evUntilM" style="flex:1 1 0;min-width:0" onchange="onEvUntilYMDChange()">
+              <option value="">월</option>
+              <option value="1">1월</option><option value="2">2월</option><option value="3">3월</option><option value="4">4월</option>
+              <option value="5">5월</option><option value="6">6월</option><option value="7">7월</option><option value="8">8월</option>
+              <option value="9">9월</option><option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
+            </select>
+            <select class="fi pf-bd-select" id="evUntilD" style="flex:1 1 0;min-width:0" onchange="onEvUntilYMDChange()"><option value="">일</option></select>
+            <button type="button" class="dm-btn" style="flex:none;padding:11px 12px" onclick="clearEvUntil()">지우기</button>
           </div>
-          <div class="ev-multi-cal" id="evUntilCal" style="display:none;margin-top:8px">
-            <div class="ev-multi-nav">
-              <button type="button" class="ev-multi-nav-btn" onclick="evUntilCalNav(-1)">‹</button>
-              <span class="ev-multi-nav-title" id="evUntilNavTitle">2026년 8월</span>
-              <button type="button" class="ev-multi-nav-btn" onclick="evUntilCalNav(1)">›</button>
-            </div>
-            <div class="ev-multi-dows">
-              <div class="ev-multi-dow sun">일</div><div class="ev-multi-dow">월</div><div class="ev-multi-dow">화</div><div class="ev-multi-dow">수</div><div class="ev-multi-dow">목</div><div class="ev-multi-dow">금</div><div class="ev-multi-dow sat">토</div>
-            </div>
-            <div class="ev-multi-grid" id="evUntilGrid"></div>
-          </div>
+          <div id="evUntilHint" class="rep-hint"></div>
         </div>
       </div>
       <!-- 하루 모드 — 날짜 이동용 미니 달력 -->
@@ -11062,7 +11058,6 @@ let _evRepeatWeekdays=[];   // 매주 or 매월 N째주 요일 (0=일~6=토, 다
 let _evMonthlyMode='dom';   // dom(며칠) | nth(N째주 요일) | last(말일)
 let _evNthWeek=1;           // 1~4, -1=마지막 주
 let _evRepeatUntil=null;    // 반복 종료일('YYYY-MM-DD') — null이면 계속 반복 [초안 · 2026-08-10]
-let _evUntilCalDate=null;   // 반복 종료일 미니 달력이 보여주는 달(월 이동용 커서) [2026-08-11]
 const _REP_DOW=['일','월','화','수','목','금','토'];
 const _ORD_KO={'1':'첫째','2':'둘째','3':'셋째','4':'넷째','-1':'마지막'};
 // 주 시작 요일(설정 연동, 기본 일요일=0)
@@ -11160,75 +11155,68 @@ function syncEvRepeatUI(){
   _syncEvUntilUI();
 }
 /* 반복 종료일 UI 동기화 — 매주/매월/매년 공통, '안 함'이면 통째로 숨김.
-   네이티브 date input 대신 앱 자체 미니 달력(ev-multi-* 재사용) 버튼+팝다운.
-   [초안 · 2026-08-10 → 2026-08-11 우리 캘린더 컨셉 리디자인] */
+   년/월/일 드롭다운(생일 선택 uniBdMonth/Day와 동일한 .fi.pf-bd-select 컴포넌트 재사용,
+   새 미니 달력 추가 없음). [초안 · 2026-08-10 → 2026-08-11 드롭다운으로 재리디자인] */
 function _syncEvUntilUI(){
   const wrap=document.getElementById('evUntilWrap'); if(!wrap)return;
   const on=(_evRepeatType!=='none');
   wrap.style.display=on?'':'none';
-  const cal=document.getElementById('evUntilCal'); if(cal)cal.style.display='none';   // 반복종류 바뀌면 접기
   if(!on)return;
-  const btn=document.getElementById('evUntilBtn');
-  if(btn){
-    if(_evRepeatUntil){ btn.textContent=_korFullSafe(_evRepeatUntil)+'까지'; btn.style.color='var(--text)'; btn.style.fontWeight='700'; }
-    else{ btn.textContent='종료일 선택 안 함 · 탭해서 지정'; btn.style.color='var(--sub)'; btn.style.fontWeight='400'; }
+  _fillEvUntilYear();
+  const ys=document.getElementById('evUntilY'), ms=document.getElementById('evUntilM');
+  if(_evRepeatUntil){
+    const p=_evRepeatUntil.split('-');
+    if(ys)ys.value=String(Number(p[0]));
+    if(ms)ms.value=String(Number(p[1]));
+    _fillEvUntilDay(p[0],p[1]);
+    const ds=document.getElementById('evUntilD'); if(ds)ds.value=String(Number(p[2]));
+  }else{
+    if(ys)ys.value=''; if(ms)ms.value='';
+    _fillEvUntilDay('','');
   }
-  _evUntilCalDate=(function(){ try{ return _evRepeatUntil?parseDateKey(_evRepeatUntil):(_dayDate?parseDateKey(_dayDate):new Date()); }catch(_){ return new Date(); } })();
-  _evUntilCalDate.setDate(1);
+  _refreshEvUntilHint();
 }
 function _korFullSafe(ds){ try{ return (typeof _korFull==='function')?_korFull(ds):ds; }catch(_){ return ds; } }
-function onEvUntilDateChange(v){
-  _evRepeatUntil=v||null;
-  _syncEvUntilUI();
+// 년 옵션 — 기준일(폼에서 고른 날짜) 연도부터 +6년. 기존 저장값 연도가 그 밖이면 범위 확장.
+function _fillEvUntilYear(){
+  const ys=document.getElementById('evUntilY'); if(!ys)return;
+  const base=(function(){ try{ return _dayDate?parseDateKey(_dayDate):new Date(); }catch(_){ return new Date(); } })();
+  let startY=base.getFullYear();
+  const untilY=_evRepeatUntil?Number(_evRepeatUntil.slice(0,4)):null;
+  if(untilY&&untilY<startY) startY=untilY;
+  const endY=Math.max(startY+6, untilY||0);
+  const cur=ys.value;
+  ys.innerHTML='<option value="">년</option>';
+  for(let y=startY;y<=endY;y++) ys.add(new Option(y+'년', y));
+  if(cur) ys.value=cur;
 }
-function toggleEvUntilCal(){
-  const cal=document.getElementById('evUntilCal'); if(!cal)return;
-  const show=(cal.style.display==='none');
-  if(show) renderEvUntilCal();
-  cal.style.display=show?'':'none';
+// 일 옵션 — 선택된 년/월 기준 실제 말일까지만(윤년 2월 등 정확히 반영), 월 미선택 시 31일까지
+function _fillEvUntilDay(y,m){
+  const ds=document.getElementById('evUntilD'); if(!ds)return;
+  const cur=ds.value;
+  const maxDay=(y&&m)?new Date(Number(y),Number(m),0).getDate():31;
+  ds.innerHTML='<option value="">일</option>';
+  for(let d=1;d<=maxDay;d++) ds.add(new Option(d+'일', d));
+  if(cur&&Number(cur)<=maxDay) ds.value=cur;
 }
-function evUntilCalNav(diff){
-  if(!_evUntilCalDate){_evUntilCalDate=new Date();_evUntilCalDate.setDate(1);}
-  _evUntilCalDate.setMonth(_evUntilCalDate.getMonth()+diff);
-  renderEvUntilCal();
+function _refreshEvUntilHint(){
+  const h=document.getElementById('evUntilHint');
+  if(h)h.textContent=_evRepeatUntil?(_korFullSafe(_evRepeatUntil)+'까지 반복돼요'):'';
 }
-function renderEvUntilCal(){
-  const grid=document.getElementById('evUntilGrid');
-  const title=document.getElementById('evUntilNavTitle');
-  if(!grid)return;
-  if(!_evUntilCalDate){_evUntilCalDate=new Date();_evUntilCalDate.setDate(1);}
-  const y=_evUntilCalDate.getFullYear(), m=_evUntilCalDate.getMonth();
-  if(title)title.textContent=`${y}년 ${m+1}월`;
-  const first=new Date(y,m,1), last=new Date(y,m+1,0);
-  const startDow=first.getDay(), totalDays=last.getDate();
-  const td=new Date();
-  const todayKey=dateKey(td.getFullYear(),td.getMonth(),td.getDate());
-  let html='';
-  const prevLast=new Date(y,m,0).getDate();
-  for(let i=startDow-1;i>=0;i--){
-    const d=prevLast-i; const dt=new Date(y,m-1,d);
-    const k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
-    html+=`<div class="ev-multi-day other${k===_evRepeatUntil?' on':''}" onclick="pickEvUntilDate('${k}')">${d}</div>`;
-  }
-  for(let d=1;d<=totalDays;d++){
-    const k=dateKey(y,m,d); const dow=new Date(y,m,d).getDay();
-    let cls='ev-multi-day';
-    if(dow===0)cls+=' sun'; else if(dow===6)cls+=' sat';
-    if(k===todayKey)cls+=' today';
-    if(k===_evRepeatUntil)cls+=' on';
-    html+=`<div class="${cls}" onclick="pickEvUntilDate('${k}')">${d}</div>`;
-  }
-  const filled=startDow+totalDays, need=Math.ceil(filled/7)*7;
-  for(let i=1;i<=need-filled;i++){
-    const dt=new Date(y,m+1,i);
-    const k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
-    html+=`<div class="ev-multi-day other${k===_evRepeatUntil?' on':''}" onclick="pickEvUntilDate('${k}')">${i}</div>`;
-  }
-  grid.innerHTML=html;
+function onEvUntilYMDChange(){
+  const y=document.getElementById('evUntilY').value;
+  const m=document.getElementById('evUntilM').value;
+  _fillEvUntilDay(y,m);
+  const d=document.getElementById('evUntilD').value;
+  const p=(n)=>String(n).padStart(2,'0');
+  _evRepeatUntil=(y&&m&&d)?(y+'-'+p(m)+'-'+p(d)):null;
+  _refreshEvUntilHint();
 }
-function pickEvUntilDate(key){
-  onEvUntilDateChange(key);
-  const cal=document.getElementById('evUntilCal'); if(cal)cal.style.display='none';
+function clearEvUntil(){
+  ['evUntilY','evUntilM','evUntilD'].forEach(function(id){ const el=document.getElementById(id); if(el)el.value=''; });
+  _fillEvUntilDay('','');
+  _evRepeatUntil=null;
+  _refreshEvUntilHint();
 }
 function _syncEvMonthlyUI(){
   document.querySelectorAll('#evMonthlyMode .dm-btn').forEach(b=>b.classList.toggle('on', b.dataset.mm===_evMonthlyMode));
@@ -20206,7 +20194,6 @@ let _todoColorKey='c-vintage';
 let _todoRepeat='none';
 let _tdRepeatWeekdays=[], _tdMonthlyMode='dom', _tdNthWeek=1;   // 반복 커스텀(일정과 동일)
 let _tdRepeatUntil=null;   // 반복 종료일('YYYY-MM-DD') — null이면 계속 반복 [초안 · 2026-08-10]
-let _tdUntilCalDate=null;  // 반복 종료일 미니 달력 커서 [2026-08-11]
 let _todoMiniY=2026, _todoMiniM=0;
 let _uniAwaitPhoto=false;
 let _todoReturnDate=null;   // 할일 시트를 데이 시트에서 열었을 때만 설정 (취소 시 그 날짜 시트로 복귀)
@@ -20917,73 +20904,64 @@ function _syncTdRepeatUI(){
   if(showM)_syncTdMonthlyUI();
   _syncTdUntilUI();
 }
-/* 반복 종료일 UI 동기화 — 일정과 동일, 앱 미니 달력 재사용(네이티브 date input X). [초안 · 2026-08-10 → 2026-08-11 리디자인] */
+/* 반복 종료일 UI 동기화 — 일정과 동일, 생일 선택과 같은 년/월/일 드롭다운.
+   [초안 · 2026-08-10 → 2026-08-11 드롭다운으로 재리디자인] */
 function _syncTdUntilUI(){
   const wrap=$('tdUntilWrap'); if(!wrap)return;
   const on=(_todoRepeat!=='none');
   wrap.style.display=on?'':'none';
-  const cal=$('tdUntilCal'); if(cal)cal.style.display='none';
   if(!on)return;
-  const btn=$('tdUntilBtn');
-  if(btn){
-    if(_tdRepeatUntil){ btn.textContent=_korFullSafe(_tdRepeatUntil)+'까지'; btn.style.color='var(--text)'; btn.style.fontWeight='700'; }
-    else{ btn.textContent='종료일 선택 안 함 · 탭해서 지정'; btn.style.color='var(--sub)'; btn.style.fontWeight='400'; }
+  _fillTdUntilYear();
+  const ys=$('tdUntilY'), ms=$('tdUntilM');
+  if(_tdRepeatUntil){
+    const p=_tdRepeatUntil.split('-');
+    if(ys)ys.value=String(Number(p[0]));
+    if(ms)ms.value=String(Number(p[1]));
+    _fillTdUntilDay(p[0],p[1]);
+    const ds=$('tdUntilD'); if(ds)ds.value=String(Number(p[2]));
+  }else{
+    if(ys)ys.value=''; if(ms)ms.value='';
+    _fillTdUntilDay('','');
   }
-  _tdUntilCalDate=(function(){ try{ return _tdRepeatUntil?parseDateKey(_tdRepeatUntil):(_tdBaseDateObj()||new Date()); }catch(_){ return new Date(); } })();
-  _tdUntilCalDate.setDate(1);
+  _refreshTdUntilHint();
 }
-function onTdUntilDateChange(v){
-  _tdRepeatUntil=v||null;
-  _syncTdUntilUI();
+function _fillTdUntilYear(){
+  const ys=$('tdUntilY'); if(!ys)return;
+  const base=_tdBaseDateObj()||new Date();
+  let startY=base.getFullYear();
+  const untilY=_tdRepeatUntil?Number(_tdRepeatUntil.slice(0,4)):null;
+  if(untilY&&untilY<startY) startY=untilY;
+  const endY=Math.max(startY+6, untilY||0);
+  const cur=ys.value;
+  ys.innerHTML='<option value="">년</option>';
+  for(let y=startY;y<=endY;y++) ys.add(new Option(y+'년', y));
+  if(cur) ys.value=cur;
 }
-function toggleTdUntilCal(){
-  const cal=$('tdUntilCal'); if(!cal)return;
-  const show=(cal.style.display==='none');
-  if(show) renderTdUntilCal();
-  cal.style.display=show?'':'none';
+function _fillTdUntilDay(y,m){
+  const ds=$('tdUntilD'); if(!ds)return;
+  const cur=ds.value;
+  const maxDay=(y&&m)?new Date(Number(y),Number(m),0).getDate():31;
+  ds.innerHTML='<option value="">일</option>';
+  for(let d=1;d<=maxDay;d++) ds.add(new Option(d+'일', d));
+  if(cur&&Number(cur)<=maxDay) ds.value=cur;
 }
-function tdUntilCalNav(diff){
-  if(!_tdUntilCalDate){_tdUntilCalDate=new Date();_tdUntilCalDate.setDate(1);}
-  _tdUntilCalDate.setMonth(_tdUntilCalDate.getMonth()+diff);
-  renderTdUntilCal();
+function _refreshTdUntilHint(){
+  const h=$('tdUntilHint');
+  if(h)h.textContent=_tdRepeatUntil?(_korFullSafe(_tdRepeatUntil)+'까지 반복돼요'):'';
 }
-function renderTdUntilCal(){
-  const grid=$('tdUntilGrid');
-  const title=$('tdUntilNavTitle');
-  if(!grid)return;
-  if(!_tdUntilCalDate){_tdUntilCalDate=new Date();_tdUntilCalDate.setDate(1);}
-  const y=_tdUntilCalDate.getFullYear(), m=_tdUntilCalDate.getMonth();
-  if(title)title.textContent=`${y}년 ${m+1}월`;
-  const first=new Date(y,m,1), last=new Date(y,m+1,0);
-  const startDow=first.getDay(), totalDays=last.getDate();
-  const td=new Date();
-  const todayKey=dateKey(td.getFullYear(),td.getMonth(),td.getDate());
-  let html='';
-  const prevLast=new Date(y,m,0).getDate();
-  for(let i=startDow-1;i>=0;i--){
-    const d=prevLast-i; const dt=new Date(y,m-1,d);
-    const k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
-    html+=`<div class="ev-multi-day other${k===_tdRepeatUntil?' on':''}" onclick="pickTdUntilDate('${k}')">${d}</div>`;
-  }
-  for(let d=1;d<=totalDays;d++){
-    const k=dateKey(y,m,d); const dow=new Date(y,m,d).getDay();
-    let cls='ev-multi-day';
-    if(dow===0)cls+=' sun'; else if(dow===6)cls+=' sat';
-    if(k===todayKey)cls+=' today';
-    if(k===_tdRepeatUntil)cls+=' on';
-    html+=`<div class="${cls}" onclick="pickTdUntilDate('${k}')">${d}</div>`;
-  }
-  const filled=startDow+totalDays, need=Math.ceil(filled/7)*7;
-  for(let i=1;i<=need-filled;i++){
-    const dt=new Date(y,m+1,i);
-    const k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
-    html+=`<div class="ev-multi-day other${k===_tdRepeatUntil?' on':''}" onclick="pickTdUntilDate('${k}')">${i}</div>`;
-  }
-  grid.innerHTML=html;
+function onTdUntilYMDChange(){
+  const y=$('tdUntilY').value, m=$('tdUntilM').value;
+  _fillTdUntilDay(y,m);
+  const d=$('tdUntilD').value;
+  const p=(n)=>String(n).padStart(2,'0');
+  _tdRepeatUntil=(y&&m&&d)?(y+'-'+p(m)+'-'+p(d)):null;
+  _refreshTdUntilHint();
 }
-function pickTdUntilDate(key){
-  onTdUntilDateChange(key);
-  const cal=$('tdUntilCal'); if(cal)cal.style.display='none';
+function clearTdUntil(){
+  ['tdUntilY','tdUntilM','tdUntilD'].forEach(function(id){ const el=$(id); if(el)el.value=''; });
+  _fillTdUntilDay('','');
+  _tdRepeatUntil=null;
+  _refreshTdUntilHint();
 }
 function _syncTdMonthlyUI(){
   document.querySelectorAll('#tdMonthlyMode .dm-btn').forEach(function(b){ b.classList.toggle('on', b.dataset.mm===_tdMonthlyMode); });
