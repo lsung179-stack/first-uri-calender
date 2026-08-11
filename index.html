@@ -734,6 +734,10 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .ymd-row.cur{background:var(--aP)}
 .ymd-row-name{flex:1;font-size:14px;font-weight:600;color:var(--text)}
 .ymd-row-check{color:var(--accent);font-size:13px;font-weight:700;flex-shrink:0}
+/* 반복 종료일 팝업 — 각 년/월/일 상자를 감싼 position:relative 박스의 자식으로
+   position:absolute 배치 → 뷰포트 좌표 계산 없이 항상 그 상자 바로 아래·같은 폭으로 뜸. */
+.ymd-pop{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.15);max-height:220px;overflow-y:auto;padding:6px;z-index:30;display:none}
+.ymd-pop.on{display:block}
 .cal-avatar{width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--card);cursor:pointer;border:none;font-family:inherit;flex-shrink:0;transition:opacity .15s;position:relative;z-index:2}
 .cal-actions{display:flex;align-items:center;gap:4px;flex-shrink:0;position:relative;z-index:2}
 .cal-avatar:active{opacity:.7}
@@ -3670,14 +3674,23 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
           </div>
         </div>
         <!-- 반복 종료 — 언제까지 반복할지(선택사항). 일정과 동일.
-             네이티브 <select>는 iOS/Android에서 OS 기본 팝업(다크·체크마크)으로 뜨고 CSS로 못 바꿔서
-             앱 자체 드롭다운(rs-dropdown 재사용, ymd-row 전용)으로 교체. [초안 · 2026-08-10 → 2026-08-11 커스텀 드롭다운] -->
+             각 년/월/일 상자 바로 아래로 펼쳐지는 앱 자체 드롭다운(.ymd-pop, 상자 기준 position:absolute).
+             [초안 · 2026-08-10 → 2026-08-11 커스텀 드롭다운 → 상자 기준 앵커링] -->
         <div id="tdUntilWrap" style="display:none;margin-top:10px">
           <div class="rep-sublabel">반복 종료일 <span style="font-weight:400">· 비워두면 계속 반복</span></div>
           <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
-            <button type="button" class="fi pf-bd-select" id="tdUntilY" style="flex:1.3 1 0;min-width:0" onclick="openTdUntilYSel()">년</button>
-            <button type="button" class="fi pf-bd-select" id="tdUntilM" style="flex:1 1 0;min-width:0" onclick="openTdUntilMSel()">월</button>
-            <button type="button" class="fi pf-bd-select" id="tdUntilD" style="flex:1 1 0;min-width:0" onclick="openTdUntilDSel()">일</button>
+            <div style="position:relative;flex:1.3 1 0;min-width:0">
+              <button type="button" class="fi pf-bd-select" id="tdUntilY" onclick="openTdUntilYSel()">년</button>
+              <div class="ymd-pop" id="tdUntilYPop"></div>
+            </div>
+            <div style="position:relative;flex:1 1 0;min-width:0">
+              <button type="button" class="fi pf-bd-select" id="tdUntilM" onclick="openTdUntilMSel()">월</button>
+              <div class="ymd-pop" id="tdUntilMPop"></div>
+            </div>
+            <div style="position:relative;flex:1 1 0;min-width:0">
+              <button type="button" class="fi pf-bd-select" id="tdUntilD" onclick="openTdUntilDSel()">일</button>
+              <div class="ymd-pop" id="tdUntilDPop"></div>
+            </div>
             <button type="button" class="dm-btn" style="flex:none;padding:11px 12px" onclick="clearTdUntil()">지우기</button>
           </div>
           <div id="tdUntilHint" class="rep-hint"></div>
@@ -3931,10 +3944,6 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
 <div class="rs-dropdown-overlay" id="roomSwitcherOverlay" onclick="closeRoomSwitcher()"></div>
 <div class="rs-dropdown" id="roomSwitcherDropdown"></div>
 
-<!-- 반복 종료일 년/월/일 커스텀 드롭다운 — 일정·할일 폼 공용 (네이티브 select 대체) [2026-08-11] -->
-<div class="rs-dropdown-overlay" id="ymdSelOverlay" onclick="_closeYmdSel()"></div>
-<div class="rs-dropdown" id="ymdSelDropdown"></div>
-
 <!-- 날짜 시트 (그 날 일정 보기) -->
 <div class="mo-overlay" id="dpOverlay" onclick="closeDateSheet()"></div>
 <div class="dp-card" id="dpCard">
@@ -4045,13 +4054,23 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
         </div>
         <!-- 반복 종료 — 언제까지 반복할지(선택사항). 매주/매월/매년 공통.
              네이티브 <select>는 iOS/Android에서 OS 기본 팝업(다크·체크마크)으로 뜨고 CSS로 못 바꿔서
-             앱 자체 드롭다운(rs-dropdown 재사용, ymd-row 전용)으로 교체. [초안 · 2026-08-10 → 2026-08-11 커스텀 드롭다운] -->
+             각 년/월/일 상자 바로 아래로 펼쳐지는 앱 자체 드롭다운(.ymd-pop, 상자 기준 position:absolute)으로 교체.
+             [초안 · 2026-08-10 → 2026-08-11 커스텀 드롭다운 → 상자 기준 앵커링] -->
         <div id="evUntilWrap" style="display:none;margin-top:10px">
           <div class="rep-sublabel">반복 종료일 <span style="font-weight:400">· 비워두면 계속 반복</span></div>
           <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
-            <button type="button" class="fi pf-bd-select" id="evUntilY" style="flex:1.3 1 0;min-width:0" onclick="openEvUntilYSel()">년</button>
-            <button type="button" class="fi pf-bd-select" id="evUntilM" style="flex:1 1 0;min-width:0" onclick="openEvUntilMSel()">월</button>
-            <button type="button" class="fi pf-bd-select" id="evUntilD" style="flex:1 1 0;min-width:0" onclick="openEvUntilDSel()">일</button>
+            <div style="position:relative;flex:1.3 1 0;min-width:0">
+              <button type="button" class="fi pf-bd-select" id="evUntilY" onclick="openEvUntilYSel()">년</button>
+              <div class="ymd-pop" id="evUntilYPop"></div>
+            </div>
+            <div style="position:relative;flex:1 1 0;min-width:0">
+              <button type="button" class="fi pf-bd-select" id="evUntilM" onclick="openEvUntilMSel()">월</button>
+              <div class="ymd-pop" id="evUntilMPop"></div>
+            </div>
+            <div style="position:relative;flex:1 1 0;min-width:0">
+              <button type="button" class="fi pf-bd-select" id="evUntilD" onclick="openEvUntilDSel()">일</button>
+              <div class="ymd-pop" id="evUntilDPop"></div>
+            </div>
             <button type="button" class="dm-btn" style="flex:none;padding:11px 12px" onclick="clearEvUntil()">지우기</button>
           </div>
           <div id="evUntilHint" class="rep-hint"></div>
@@ -11158,12 +11177,13 @@ function syncEvRepeatUI(){
 }
 /* 반복 종료일 UI 동기화 — 매주/매월/매년 공통, '안 함'이면 통째로 숨김.
    네이티브 <select>는 iOS/Android에서 OS 기본 팝업(다크·체크마크, CSS로 스타일 불가)으로 뜨므로
-   앱 자체 드롭다운(공용 _openYmdSel, ymd-row 클래스)으로 대체 — 버튼 3개(년/월/일)를 탭하면
+   앱 자체 드롭다운(공용 _toggleYmdPop, ymd-row 클래스)으로 대체 — 버튼 3개(년/월/일)를 탭하면
    그 아래 크림 카드 목록이 뜸. [초안 · 2026-08-10 → 2026-08-11 커스텀 드롭다운] */
 function _syncEvUntilUI(){
   const wrap=document.getElementById('evUntilWrap'); if(!wrap)return;
   const on=(_evRepeatType!=='none');
   wrap.style.display=on?'':'none';
+  try{ _closeAllYmdPops(); }catch(_){}   // 반복종류 전환/폼 재오픈 시 열려있던 팝업 정리
   if(!on)return;
   if(_evRepeatUntil){
     const p=_evRepeatUntil.split('-');
@@ -11214,67 +11234,65 @@ function _evUntilYearRange(){
 function openEvUntilYSel(){
   const r=_evUntilYearRange();
   const items=[]; for(let y=r.startY;y<=r.endY;y++) items.push({value:String(y),label:y+'년'});
-  _openYmdSel('evUntilY', items, _evUntilY, function(v){ _evUntilY=v; _applyEvUntilYMD(); });
+  _toggleYmdPop('evUntilYPop', items, _evUntilY, function(v){ _evUntilY=v; _applyEvUntilYMD(); });
 }
 function openEvUntilMSel(){
   const items=[]; for(let m=1;m<=12;m++) items.push({value:String(m),label:m+'월'});
-  _openYmdSel('evUntilM', items, _evUntilM, function(v){ _evUntilM=v; _applyEvUntilYMD(); });
+  _toggleYmdPop('evUntilMPop', items, _evUntilM, function(v){ _evUntilM=v; _applyEvUntilYMD(); });
 }
 function openEvUntilDSel(){
   const maxDay=(_evUntilY&&_evUntilM)?new Date(Number(_evUntilY),Number(_evUntilM),0).getDate():31;
   const items=[]; for(let d=1;d<=maxDay;d++) items.push({value:String(d),label:d+'일'});
-  _openYmdSel('evUntilD', items, _evUntilD, function(v){ _evUntilD=v; _applyEvUntilYMD(); });
+  _toggleYmdPop('evUntilDPop', items, _evUntilD, function(v){ _evUntilD=v; _applyEvUntilYMD(); });
 }
-/* ── 공용 커스텀 드롭다운(rs-dropdown 재사용) — 일정·할일 반복 종료일 6개 버튼이 공유.
-   방 전환 드롭다운(openRoomSwitcher)과 같은 시각 언어, 행 클래스만 전용(ymd-row, 2624줄 .rs-row
-   재정의와의 충돌 방지). [2026-08-11] ── */
-let _ymdSelOnPick=null;
-function _openYmdSel(btnId, items, curVal, onPick){
-  const btn=document.getElementById(btnId); if(!btn)return;
-  const overlay=document.getElementById('ymdSelOverlay');
-  const dd=document.getElementById('ymdSelDropdown');
-  if(!overlay||!dd)return;
-  _ymdSelOnPick=onPick;
+/* ── 공용 커스텀 드롭다운 — 일정·할일 반복 종료일 6개 버튼이 공유.
+   각 팝업(.ymd-pop)은 자기 버튼을 감싼 position:relative 박스의 자식이라
+   position:absolute로 **그 박스 기준** 바로 아래에 펼쳐짐(뷰포트 좌표 계산 불필요,
+   시트 슬라이드 애니메이션 등 transform 조상이 있어도 항상 정확히 상자 밑에 붙음).
+   [2026-08-11 rs-dropdown 기반 → 상자 기준 앵커링으로 재작업] ── */
+let _ymdOpenPopId=null;
+let _ymdOnPick=null;
+function _closeAllYmdPops(){
+  document.querySelectorAll('.ymd-pop.on').forEach(function(el){ el.classList.remove('on'); el.innerHTML=''; });
+  _ymdOpenPopId=null; _ymdOnPick=null;
+}
+function _toggleYmdPop(popId, items, curVal, onPick){
+  const pop=document.getElementById(popId); if(!pop)return;
+  const wasOpen=(_ymdOpenPopId===popId);
+  _closeAllYmdPops();
+  if(wasOpen) return;   // 같은 상자를 다시 탭하면 닫기만
   let html='';
   if(!items||!items.length){
     html='<div class="rs-empty">옵션 없음</div>';
   }else{
     items.forEach(function(it){
       const isCur=String(it.value)===String(curVal);
-      html+='<div class="ymd-row'+(isCur?' cur':'')+'" onclick="_pickYmdSel(\''+it.value+'\')">'
+      html+='<div class="ymd-row'+(isCur?' cur':'')+'" onclick="_pickYmdPop(\''+popId+'\',\''+it.value+'\')">'
         +'<div class="ymd-row-name">'+it.label+'</div>'
         +(isCur?'<div class="ymd-row-check">✓</div>':'')
         +'</div>';
     });
   }
-  dd.innerHTML=html;
-  const rect=btn.getBoundingClientRect();
-  dd.style.top=(rect.bottom+6)+'px';
-  dd.style.left=rect.left+'px';
-  dd.style.transform='none';
-  dd.style.minWidth=Math.max(rect.width,110)+'px';
-  overlay.classList.add('on'); dd.classList.add('on');
+  pop.innerHTML=html;
+  pop.classList.add('on');
+  _ymdOpenPopId=popId; _ymdOnPick=onPick;
   requestAnimationFrame(function(){
-    const dRect=dd.getBoundingClientRect();
-    const pad=8;
-    if(dRect.right>window.innerWidth-pad) dd.style.left=Math.max(pad,window.innerWidth-pad-dRect.width)+'px';
-    if(dRect.bottom>window.innerHeight-pad){
-      const upTop=rect.top-dRect.height-6;
-      dd.style.top=(upTop>pad?upTop:pad)+'px';
-    }
-    try{ const curEl=dd.querySelector('.ymd-row.cur'); if(curEl) curEl.scrollIntoView({block:'center'}); }catch(_){}
+    try{ const curEl=pop.querySelector('.ymd-row.cur'); if(curEl) curEl.scrollIntoView({block:'center'}); }catch(_){}
   });
 }
-function _closeYmdSel(){
-  document.getElementById('ymdSelOverlay')?.classList.remove('on');
-  document.getElementById('ymdSelDropdown')?.classList.remove('on');
-  _ymdSelOnPick=null;
-}
-function _pickYmdSel(value){
-  const cb=_ymdSelOnPick;
-  _closeYmdSel();
+function _pickYmdPop(popId, value){
+  const cb=_ymdOnPick;
+  _closeAllYmdPops();
   if(typeof cb==='function') cb(value);
 }
+// 팝업 바깥을 탭하면 닫힘 (열려있는 팝업/그 트리거 버튼 안쪽 탭은 예외)
+document.addEventListener('pointerdown', function(e){
+  if(!_ymdOpenPopId) return;
+  const pop=document.getElementById(_ymdOpenPopId);
+  const btn=document.getElementById(_ymdOpenPopId.replace(/Pop$/,''));
+  if((pop&&pop.contains(e.target))||(btn&&btn.contains(e.target))) return;
+  _closeAllYmdPops();
+}, true);
 function _syncEvMonthlyUI(){
   document.querySelectorAll('#evMonthlyMode .dm-btn').forEach(b=>b.classList.toggle('on', b.dataset.mm===_evMonthlyMode));
   const nth=(_evMonthlyMode==='nth');
@@ -20962,12 +20980,13 @@ function _syncTdRepeatUI(){
   if(showM)_syncTdMonthlyUI();
   _syncTdUntilUI();
 }
-/* 반복 종료일 UI 동기화 — 일정과 동일, 커스텀 드롭다운(_openYmdSel 공용) 재사용.
+/* 반복 종료일 UI 동기화 — 일정과 동일, 커스텀 드롭다운(_toggleYmdPop 공용) 재사용.
    [초안 · 2026-08-10 → 2026-08-11 커스텀 드롭다운] */
 function _syncTdUntilUI(){
   const wrap=$('tdUntilWrap'); if(!wrap)return;
   const on=(_todoRepeat!=='none');
   wrap.style.display=on?'':'none';
+  try{ _closeAllYmdPops(); }catch(_){}   // 반복종류 전환/폼 재오픈 시 열려있던 팝업 정리
   if(!on)return;
   if(_tdRepeatUntil){
     const p=_tdRepeatUntil.split('-');
@@ -21013,16 +21032,16 @@ function _tdUntilYearRange(){
 function openTdUntilYSel(){
   const r=_tdUntilYearRange();
   const items=[]; for(let y=r.startY;y<=r.endY;y++) items.push({value:String(y),label:y+'년'});
-  _openYmdSel('tdUntilY', items, _tdUntilY, function(v){ _tdUntilY=v; _applyTdUntilYMD(); });
+  _toggleYmdPop('tdUntilYPop', items, _tdUntilY, function(v){ _tdUntilY=v; _applyTdUntilYMD(); });
 }
 function openTdUntilMSel(){
   const items=[]; for(let m=1;m<=12;m++) items.push({value:String(m),label:m+'월'});
-  _openYmdSel('tdUntilM', items, _tdUntilM, function(v){ _tdUntilM=v; _applyTdUntilYMD(); });
+  _toggleYmdPop('tdUntilMPop', items, _tdUntilM, function(v){ _tdUntilM=v; _applyTdUntilYMD(); });
 }
 function openTdUntilDSel(){
   const maxDay=(_tdUntilY&&_tdUntilM)?new Date(Number(_tdUntilY),Number(_tdUntilM),0).getDate():31;
   const items=[]; for(let d=1;d<=maxDay;d++) items.push({value:String(d),label:d+'일'});
-  _openYmdSel('tdUntilD', items, _tdUntilD, function(v){ _tdUntilD=v; _applyTdUntilYMD(); });
+  _toggleYmdPop('tdUntilDPop', items, _tdUntilD, function(v){ _tdUntilD=v; _applyTdUntilYMD(); });
 }
 function _syncTdMonthlyUI(){
   document.querySelectorAll('#tdMonthlyMode .dm-btn').forEach(function(b){ b.classList.toggle('on', b.dataset.mm===_tdMonthlyMode); });
