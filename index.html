@@ -11635,9 +11635,18 @@ function onTpScroll(col,kind){
     if(Math.abs(col.scrollTop-target)>1)col.scrollTop=target;
   },80);
 }
+// 휠이 열려있는 동안 입력칸을 readonly로 — 탭해서 활성 칸을 바꿔도 키보드가 안 뜨게(휠과 키보드 동시 노출 방지)
+function _setEvTimeInputsReadonly(ro){
+  ['evStartHour','evStartMin','evEndHour','evEndMin'].forEach(id=>{
+    const el=document.getElementById(id); if(el)el.readOnly=ro;
+  });
+}
 function toggleTimePicker(){
   const p=document.getElementById('timePicker');
   if(p.classList.contains('show')){closeTimePicker();return}
+  // 직접입력 중 키보드가 떠 있었다면 먼저 내림(휠+키보드 동시 노출 방지)
+  const ae=document.activeElement;
+  if(ae&&ae.classList&&ae.classList.contains('time-input'))ae.blur();
   buildTimePicker();
   // 활성 칸의 현재 값으로 초기 위치 (없으면 시작칸 값)
   const cur=_readTimeBox(_activeTimeField) || _readTimeBox('start');
@@ -11647,6 +11656,7 @@ function toggleTimePicker(){
     _tpMin=m;
   }
   p.classList.add('show');
+  _setEvTimeInputsReadonly(true);
   const cbtn=document.getElementById('evTimeBtn'); if(cbtn)cbtn.classList.add('on');
   _syncEvTpTarget();   // 시계가 시작/종료 중 어느 칸을 편집하는지 라벨+테두리로 표시
   // 스크롤 위치 설정 (40px * idx)
@@ -11696,6 +11706,7 @@ function closeTimePicker(){
   document.getElementById('timePicker').classList.remove('show');
   const cbtn=document.getElementById('evTimeBtn'); if(cbtn)cbtn.classList.remove('on');
   document.querySelectorAll('.time-input-box').forEach(b=>b.classList.remove('focused'));
+  _setEvTimeInputsReadonly(false);   // 닫으면 다시 직접 입력(타이핑) 가능하게
 }
 function applyTimePicker(){
   // 활성 칸(시작/종료)에 적용
@@ -21208,13 +21219,23 @@ function onTodoTpScroll(col,kind){
     const target=idx*40+60; if(Math.abs(col.scrollTop-target)>1)col.scrollTop=target;
   },80);
 }
+// 휠이 열려있는 동안 입력칸을 readonly로 — 탭해서 활성 칸을 바꿔도 키보드가 안 뜨게
+function _setTodoTimeInputsReadonly(ro){
+  ['todoStartHour','todoStartMin','todoEndHour','todoEndMin'].forEach(function(id){
+    const el=$(id); if(el)el.readOnly=ro;
+  });
+}
 function toggleTodoTimePicker(){
   const p=$('todoTimePicker'); if(!p) return;
   if(p.classList.contains('show')){ closeTodoTimePicker(); return; }
+  // 직접입력 중 키보드가 떠 있었다면 먼저 내림(휠+키보드 동시 노출 방지)
+  const ae=document.activeElement;
+  if(ae&&ae.classList&&ae.classList.contains('time-input'))ae.blur();
   buildTodoTimePicker();
   const cur=_readTodoTimeBox(_todoActiveTimeField)||_readTodoTimeBox('start');
   if(cur&&cur.indexOf(':')>=0){ const a=cur.split(':'); _todoTpHour=parseInt(a[0],10); _todoTpMin=parseInt(a[1],10); }
   p.classList.add('show');
+  _setTodoTimeInputsReadonly(true);
   const cbtn=$('todoTimeBtn'); if(cbtn)cbtn.classList.add('on');
   _syncTodoTpTarget();   // 시계가 시작/종료 중 어느 칸을 편집하는지 라벨+테두리로 표시
   setTimeout(function(){
@@ -21249,6 +21270,7 @@ function closeTodoTimePicker(){
   const p=$('todoTimePicker'); if(p)p.classList.remove('show');
   const cbtn=$('todoTimeBtn'); if(cbtn)cbtn.classList.remove('on');
   ['todoTimeStartBox','todoTimeEndBox'].forEach(function(id){ const b=$(id); if(b) b.classList.remove('focused'); });
+  _setTodoTimeInputsReadonly(false);   // 닫으면 다시 직접 입력(타이핑) 가능하게
 }
 function applyTodoTimePicker(){
   const hId=_todoActiveTimeField==='start'?'todoStartHour':'todoEndHour';
