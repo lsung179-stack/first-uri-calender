@@ -11407,6 +11407,18 @@ function getEvRepeatPayload(baseDate){
     start_date: (finalType==='weekly'||finalType==='monthly') ? snapped : null
   };
 }
+/* 기간(range) 일정의 반복 필드 — 여러 날짜에 반복 값을 그대로 복제하면 날짜마다 독립된
+   반복 origin이 돼 같은 요일에 겹쳐 중복 표시됨(예: 월~금 5일 기간+매주 반복 → 다음 주 같은
+   칸에 5개가 겹쳐 뜸, 2026-08-12 실사용자 제보로 발견). → 기간의 **첫날에만** 반복 적용,
+   나머지 날은 repeat_type='none'으로 저장해 origin이 하나뿐이게 함.
+   ⚠️ 알려진 제약: 이 경우 반복돼도 기간 전체(며칠 폭)가 아니라 **첫날 하루만** 매주/매월/매년
+   반복됨 — "기간 전체가 통째로 반복"은 별도 기능 설계가 필요해 이번엔 다루지 않음(중복 버그만 제거). */
+function _rangeRepeatFields(d, firstD, repeatType, repeatWeekdays, repeatMonthlyMode, repeatNthWeek, repeatUntil, recurringYearly){
+  if(d!==firstD){
+    return {recurring_yearly:false, repeat_type:'none', repeat_weekdays:null, repeat_monthly_mode:null, repeat_nth_week:null, repeat_until:null};
+  }
+  return {recurring_yearly:recurringYearly, repeat_type:repeatType, repeat_weekdays:repeatWeekdays, repeat_monthly_mode:repeatMonthlyMode, repeat_nth_week:repeatNthWeek, repeat_until:repeatUntil};
+}
 
 function openAddEvent(){
   if(!_selectedDate){toast('날짜를 먼저 선택해주세요');return}
@@ -12460,14 +12472,13 @@ async function _doSaveEvent(){
           // 같은 날짜에 함께 일정이면 그 날짜만 sharedId 묶음
           const sharedId=(_selectedTarget==='all'&&targetUsers.length>1)?genShared():null;
           targetUsers.forEach(key=>{
-            rows.push(_buildCoEventRow(key, {
+            rows.push(_buildCoEventRow(key, Object.assign({
               room_id:_currentRoom.id, date:d,
               title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
               shared_id:sharedId,
-              recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,
               memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
               is_multi:true,
-            }));
+            }, _rangeRepeatFields(d,dates[0],repeatType,repeatWeekdays,repeatMonthlyMode,repeatNthWeek,repeatUntil,recurringYearly))));
           });
         });
         const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
@@ -12477,13 +12488,12 @@ async function _doSaveEvent(){
           const extraRows=[];
           extraRoomIds.forEach(rid=>{
             dates.forEach(d=>{
-              extraRows.push({
+              extraRows.push(Object.assign({
                 room_id:rid,user_id:_currentUser.id,date:d,
                 title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
-                recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,
                 memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
                 is_multi:true,
-              });
+              }, _rangeRepeatFields(d,dates[0],repeatType,repeatWeekdays,repeatMonthlyMode,repeatNthWeek,repeatUntil,recurringYearly)));
             });
           });
           if(extraRows.length){
@@ -12508,13 +12518,12 @@ async function _doSaveEvent(){
         const rows=[];
         dates.forEach(d=>{
           targetUsers.forEach(key=>{
-            rows.push(_buildCoEventRow(key, {
+            rows.push(_buildCoEventRow(key, Object.assign({
               room_id:_currentRoom.id, date:d,
               title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
               shared_id:sharedId,range_group_id:rangeGid,
-              recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,
               memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
-            }));
+            }, _rangeRepeatFields(d,dates[0],repeatType,repeatWeekdays,repeatMonthlyMode,repeatNthWeek,repeatUntil,recurringYearly))));
           });
         });
         const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
@@ -12525,13 +12534,12 @@ async function _doSaveEvent(){
           extraRoomIds.forEach(rid=>{
             const extraRgid='rg_'+genShared();
             dates.forEach(d=>{
-              extraRows.push({
+              extraRows.push(Object.assign({
                 room_id:rid,user_id:_currentUser.id,date:d,
                 title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
                 range_group_id:extraRgid,
-                recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,
                 memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
-              });
+              }, _rangeRepeatFields(d,dates[0],repeatType,repeatWeekdays,repeatMonthlyMode,repeatNthWeek,repeatUntil,recurringYearly)));
             });
           });
           if(extraRows.length){
@@ -13989,11 +13997,11 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
     const rows=[];
     dates.forEach(d=>{
       memberIds.forEach(key=>{
-        rows.push(_buildCoEventRow(key, {
+        rows.push(_buildCoEventRow(key, Object.assign({
           room_id:_currentRoom.id, date:d,
-          title,time,end_time:endTime,color,bar_style:barStyle,shared_id:ev.shared_id,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,
+          title,time,end_time:endTime,color,bar_style:barStyle,shared_id:ev.shared_id,
           memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
-        }));
+        }, _rangeRepeatFields(d,dates[0],repeatType,repeatWeekdays,repeatMonthlyMode,repeatNthWeek,repeatUntil,ry))));
       });
     });
     const {error:eIns}=await supa.from('events').insert(_attachVirtualMember(rows));
@@ -14057,14 +14065,13 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
         ? ((targetRooms.length===1 && ev.range_group_id) ? ev.range_group_id : ('rg_'+genShared()))
         : null;
       newDates.forEach(d=>{
-        rows.push({
+        rows.push(Object.assign({
           room_id:rid,user_id:_currentUser.id,date:d,
           title,time,end_time:endTime,color,bar_style:barStyle,
           multi_group_id:mgid,range_group_id:rgid,
-          recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,
           memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
           is_multi:isMultiMode,
-        });
+        }, _rangeRepeatFields(d,newDates[0],repeatType,repeatWeekdays,repeatMonthlyMode,repeatNthWeek,repeatUntil,ry)));
       });
     });
     const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
@@ -14143,11 +14150,11 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
     const rows=[];
     coDates.forEach(d=>{
       _selectedMembers.forEach(key=>{
-        rows.push(_buildCoEventRow(key, {
+        rows.push(_buildCoEventRow(key, Object.assign({
           room_id:_currentRoom.id, date:d,
-          title,time,end_time:endTime,color,bar_style:barStyle,shared_id:sharedId,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,
+          title,time,end_time:endTime,color,bar_style:barStyle,shared_id:sharedId,
           memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
-        }));
+        }, _rangeRepeatFields(d,coDates[0],repeatType,repeatWeekdays,repeatMonthlyMode,repeatNthWeek,repeatUntil,ry))));
       });
     });
     const {error:eIns}=await supa.from('events').insert(_attachVirtualMember(rows));
