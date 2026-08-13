@@ -2111,6 +2111,15 @@ body.ev-dragging .cal-cell{cursor:grabbing}
 .rep-chip:active{transform:scale(.94)}
 .rep-sublabel{font-size:12px;color:var(--sub);font-weight:600;margin-top:10px}
 .rep-hint{font-size:12px;color:var(--accent);font-weight:600;margin-top:7px;line-height:1.4}
+/* 반복 요약 버튼 + 팝업(아이폰 캘린더 스타일) — 인라인 반복 컨트롤을 접어 담는 진입점.
+   [2026-08-13] 내부 컨트롤(.dm-row/.rep-chip 등)은 그대로 재사용, 껍데기만 팝업으로. */
+.rep-summary-btn{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;font-family:inherit;cursor:pointer}
+.rep-summary-btn:active{transform:scale(.98)}
+.rep-summary-chev{color:var(--sub);font-size:17px;font-weight:400;margin-left:8px;flex-shrink:0}
+.rep-sheet-card{max-width:360px}
+.rep-sheet-card .todo-repeat-row{margin-top:18px}
+.rep-sheet-actions{display:flex;gap:10px;margin-top:22px}
+.rep-sheet-actions .mo-cancel{padding:12px 0;border:1.5px solid var(--border);border-radius:12px}
 /* 글꼴 버튼은 각 버튼이 해당 폰트로 표시되어 미리보기 역할 */
 .dm-btn.ff-pretendard{font-family:"Pretendard Variable","Pretendard",-apple-system,sans-serif}
 .dm-btn.ff-jua{font-family:"Jua",sans-serif}
@@ -3458,6 +3467,139 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
   </div>
 </div>
 
+<!-- 반복 사용자화 팝업(일정) — 아이폰 캘린더 스타일. 내부 컨트롤은 기존 인라인 UI를
+     그대로 옮긴 것(반복 로직/state 무변경), 취소 시 열기 전 상태로 완전히 되돌아감. [2026-08-13] -->
+<div class="vc-overlay" id="evRepSheetOverlay">
+  <div class="vc-card rep-sheet-card">
+    <div class="mo-title">반복</div>
+    <div class="dm-row" id="evRepeatSeg" style="margin-top:18px">
+      <button type="button" class="dm-btn on" data-rep="none" onclick="onEvRepeatSelect('none')">안 함</button>
+      <button type="button" class="dm-btn" data-rep="weekly" onclick="onEvRepeatSelect('weekly')">매주</button>
+      <button type="button" class="dm-btn" data-rep="monthly" onclick="onEvRepeatSelect('monthly')">매월</button>
+      <button type="button" class="dm-btn" data-rep="yearly" onclick="onEvRepeatSelect('yearly')">매년</button>
+    </div>
+    <!-- 반복 상세: 매주=요일 선택, 매월=며칠/N째주 요일/말일 -->
+    <div id="evRepeatDetail" style="display:none">
+      <div id="evWeekdayWrap" style="display:none">
+        <div class="rep-sublabel">반복할 요일</div>
+        <div class="rep-chip-row" id="evWeekdayChips"></div>
+      </div>
+      <div id="evMonthlyWrap" style="display:none">
+        <div class="rep-sublabel">매월 방식</div>
+        <div class="dm-row" id="evMonthlyMode" style="margin-top:6px">
+          <button type="button" class="dm-btn on" data-mm="dom" onclick="onEvMonthlyMode('dom')">며칠</button>
+          <button type="button" class="dm-btn" data-mm="nth" onclick="onEvMonthlyMode('nth')">N째주 요일</button>
+          <button type="button" class="dm-btn" data-mm="last" onclick="onEvMonthlyMode('last')">말일</button>
+        </div>
+        <div id="evMonthlyDomHint" class="rep-hint"></div>
+        <div id="evMonthlyLastHint" class="rep-hint" style="display:none">매달 마지막 날에 반복돼요.</div>
+        <div id="evNthWrap" style="display:none">
+          <div class="rep-sublabel">몇째 · 요일</div>
+          <div class="dm-row" id="evNthWeekSel" style="margin-top:6px">
+            <button type="button" class="dm-btn" data-nw="1" onclick="onEvNthWeek(1)">첫째</button>
+            <button type="button" class="dm-btn" data-nw="2" onclick="onEvNthWeek(2)">둘째</button>
+            <button type="button" class="dm-btn" data-nw="3" onclick="onEvNthWeek(3)">셋째</button>
+            <button type="button" class="dm-btn" data-nw="4" onclick="onEvNthWeek(4)">넷째</button>
+            <button type="button" class="dm-btn" data-nw="-1" onclick="onEvNthWeek(-1)">마지막</button>
+          </div>
+          <div class="rep-chip-row" id="evNthChips" style="margin-top:6px"></div>
+          <div id="evNthHint" class="rep-hint"></div>
+        </div>
+      </div>
+    </div>
+    <!-- 반복 종료 — 언제까지 반복할지(선택사항). 매주/매월/매년 공통. -->
+    <div id="evUntilWrap" style="display:none;margin-top:10px">
+      <div class="rep-sublabel">반복 종료일 <span style="font-weight:400">· 비워두면 계속 반복</span></div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+        <div style="position:relative;flex:1.3 1 0;min-width:0">
+          <button type="button" class="fi pf-bd-select" id="evUntilY" onclick="openEvUntilYSel()">년</button>
+          <div class="ymd-pop" id="evUntilYPop"></div>
+        </div>
+        <div style="position:relative;flex:1 1 0;min-width:0">
+          <button type="button" class="fi pf-bd-select" id="evUntilM" onclick="openEvUntilMSel()">월</button>
+          <div class="ymd-pop" id="evUntilMPop"></div>
+        </div>
+        <div style="position:relative;flex:1 1 0;min-width:0">
+          <button type="button" class="fi pf-bd-select" id="evUntilD" onclick="openEvUntilDSel()">일</button>
+          <div class="ymd-pop" id="evUntilDPop"></div>
+        </div>
+        <button type="button" class="dm-btn" style="flex:none;padding:11px 12px" onclick="clearEvUntil()">지우기</button>
+      </div>
+      <div id="evUntilHint" class="rep-hint"></div>
+    </div>
+    <div class="rep-sheet-actions">
+      <button type="button" class="mo-cancel" style="flex:1;margin:0" onclick="cancelEvRepeatSheet()">취소</button>
+      <button type="button" class="btn btn-primary" style="flex:1" onclick="confirmEvRepeatSheet()">확인</button>
+    </div>
+  </div>
+</div>
+
+<!-- 반복 사용자화 팝업(할일) — 일정과 동일 구조/대칭. [2026-08-13] -->
+<div class="vc-overlay" id="tdRepSheetOverlay">
+  <div class="vc-card rep-sheet-card">
+    <div class="mo-title">반복</div>
+    <div class="todo-repeat-row" style="margin-top:18px">
+      <button class="todo-repeat-btn on" id="todoRepNone" onclick="setTodoRepeat('none',this)">안 함</button>
+      <button class="todo-repeat-btn" id="todoRepWeekly" onclick="setTodoRepeat('weekly',this)">매주</button>
+      <button class="todo-repeat-btn" id="todoRepMonthly" onclick="setTodoRepeat('monthly',this)">매월</button>
+      <button class="todo-repeat-btn" id="todoRepYearly" onclick="setTodoRepeat('yearly',this)">매년</button>
+    </div>
+    <!-- 반복 상세: 매주=요일 선택, 매월=며칠/N째주 요일/말일 (일정과 동일) -->
+    <div id="tdRepeatDetail" style="display:none">
+      <div id="tdWeekdayWrap" style="display:none">
+        <div class="rep-sublabel">반복할 요일</div>
+        <div class="rep-chip-row" id="tdWeekdayChips"></div>
+      </div>
+      <div id="tdMonthlyWrap" style="display:none">
+        <div class="rep-sublabel">매월 방식</div>
+        <div class="dm-row" id="tdMonthlyMode" style="margin-top:6px">
+          <button type="button" class="dm-btn on" data-mm="dom" onclick="onTdMonthlyMode('dom')">며칠</button>
+          <button type="button" class="dm-btn" data-mm="nth" onclick="onTdMonthlyMode('nth')">N째주 요일</button>
+          <button type="button" class="dm-btn" data-mm="last" onclick="onTdMonthlyMode('last')">말일</button>
+        </div>
+        <div id="tdMonthlyDomHint" class="rep-hint"></div>
+        <div id="tdMonthlyLastHint" class="rep-hint" style="display:none">매달 마지막 날에 반복돼요.</div>
+        <div id="tdNthWrap" style="display:none">
+          <div class="rep-sublabel">몇째 · 요일</div>
+          <div class="dm-row" id="tdNthWeekSel" style="margin-top:6px">
+            <button type="button" class="dm-btn" data-nw="1" onclick="onTdNthWeek(1)">첫째</button>
+            <button type="button" class="dm-btn" data-nw="2" onclick="onTdNthWeek(2)">둘째</button>
+            <button type="button" class="dm-btn" data-nw="3" onclick="onTdNthWeek(3)">셋째</button>
+            <button type="button" class="dm-btn" data-nw="4" onclick="onTdNthWeek(4)">넷째</button>
+            <button type="button" class="dm-btn" data-nw="-1" onclick="onTdNthWeek(-1)">마지막</button>
+          </div>
+          <div class="rep-chip-row" id="tdNthChips" style="margin-top:6px"></div>
+          <div id="tdNthHint" class="rep-hint"></div>
+        </div>
+      </div>
+    </div>
+    <!-- 반복 종료 — 언제까지 반복할지(선택사항). 일정과 동일. -->
+    <div id="tdUntilWrap" style="display:none;margin-top:10px">
+      <div class="rep-sublabel">반복 종료일 <span style="font-weight:400">· 비워두면 계속 반복</span></div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+        <div style="position:relative;flex:1.3 1 0;min-width:0">
+          <button type="button" class="fi pf-bd-select" id="tdUntilY" onclick="openTdUntilYSel()">년</button>
+          <div class="ymd-pop" id="tdUntilYPop"></div>
+        </div>
+        <div style="position:relative;flex:1 1 0;min-width:0">
+          <button type="button" class="fi pf-bd-select" id="tdUntilM" onclick="openTdUntilMSel()">월</button>
+          <div class="ymd-pop" id="tdUntilMPop"></div>
+        </div>
+        <div style="position:relative;flex:1 1 0;min-width:0">
+          <button type="button" class="fi pf-bd-select" id="tdUntilD" onclick="openTdUntilDSel()">일</button>
+          <div class="ymd-pop" id="tdUntilDPop"></div>
+        </div>
+        <button type="button" class="dm-btn" style="flex:none;padding:11px 12px" onclick="clearTdUntil()">지우기</button>
+      </div>
+      <div id="tdUntilHint" class="rep-hint"></div>
+    </div>
+    <div class="rep-sheet-actions">
+      <button type="button" class="mo-cancel" style="flex:1;margin:0" onclick="cancelTdRepeatSheet()">취소</button>
+      <button type="button" class="btn btn-primary" style="flex:1" onclick="confirmTdRepeatSheet()">확인</button>
+    </div>
+  </div>
+</div>
+
 <!-- 코드 입장 모달 -->
 <div class="ann-card" id="joinCard">
   <div class="ann-head">
@@ -3638,66 +3780,15 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
         <button class="todo-type-btn" id="todoTypeRange" onclick="setTodoType('range',this)">기간</button>
         <button class="todo-type-btn" id="todoTypeMulti" onclick="setTodoType('multi',this)">여러 날</button>
       </div>
-      <!-- 반복 — 기간 토글과 달력 사이 (일정과 동일 위치) -->
-      <div style="margin-top:8px">
+      <!-- 반복 — 기간 토글과 달력 사이 (일정과 동일 위치).
+           [2026-08-13 재설계] 일정과 동일하게 요약 버튼 하나로 접고, 탭하면 팝업(#tdRepSheetOverlay)에서
+           설정. 내부 컨트롤/state는 그대로(반복 로직 무변경). -->
+      <div class="ev-form-row" id="todoRepeatRow" style="margin-top:8px">
         <div class="ev-label">반복</div>
-        <div class="todo-repeat-row" style="margin-top:6px">
-          <button class="todo-repeat-btn on" id="todoRepNone" onclick="setTodoRepeat('none',this)">안 함</button>
-          <button class="todo-repeat-btn" id="todoRepWeekly" onclick="setTodoRepeat('weekly',this)">매주</button>
-          <button class="todo-repeat-btn" id="todoRepMonthly" onclick="setTodoRepeat('monthly',this)">매월</button>
-          <button class="todo-repeat-btn" id="todoRepYearly" onclick="setTodoRepeat('yearly',this)">매년</button>
-        </div>
-        <!-- 반복 상세: 매주=요일 선택, 매월=며칠/N째주 요일/말일 (일정과 동일) -->
-        <div id="tdRepeatDetail" style="display:none">
-          <div id="tdWeekdayWrap" style="display:none">
-            <div class="rep-sublabel">반복할 요일</div>
-            <div class="rep-chip-row" id="tdWeekdayChips"></div>
-          </div>
-          <div id="tdMonthlyWrap" style="display:none">
-            <div class="rep-sublabel">매월 방식</div>
-            <div class="dm-row" id="tdMonthlyMode" style="margin-top:6px">
-              <button type="button" class="dm-btn on" data-mm="dom" onclick="onTdMonthlyMode('dom')">며칠</button>
-              <button type="button" class="dm-btn" data-mm="nth" onclick="onTdMonthlyMode('nth')">N째주 요일</button>
-              <button type="button" class="dm-btn" data-mm="last" onclick="onTdMonthlyMode('last')">말일</button>
-            </div>
-            <div id="tdMonthlyDomHint" class="rep-hint"></div>
-            <div id="tdMonthlyLastHint" class="rep-hint" style="display:none">매달 마지막 날에 반복돼요.</div>
-            <div id="tdNthWrap" style="display:none">
-              <div class="rep-sublabel">몇째 · 요일</div>
-              <div class="dm-row" id="tdNthWeekSel" style="margin-top:6px">
-                <button type="button" class="dm-btn" data-nw="1" onclick="onTdNthWeek(1)">첫째</button>
-                <button type="button" class="dm-btn" data-nw="2" onclick="onTdNthWeek(2)">둘째</button>
-                <button type="button" class="dm-btn" data-nw="3" onclick="onTdNthWeek(3)">셋째</button>
-                <button type="button" class="dm-btn" data-nw="4" onclick="onTdNthWeek(4)">넷째</button>
-                <button type="button" class="dm-btn" data-nw="-1" onclick="onTdNthWeek(-1)">마지막</button>
-              </div>
-              <div class="rep-chip-row" id="tdNthChips" style="margin-top:6px"></div>
-              <div id="tdNthHint" class="rep-hint"></div>
-            </div>
-          </div>
-        </div>
-        <!-- 반복 종료 — 언제까지 반복할지(선택사항). 일정과 동일.
-             각 년/월/일 상자 바로 아래로 펼쳐지는 앱 자체 드롭다운(.ymd-pop, 상자 기준 position:absolute).
-             [초안 · 2026-08-10 → 2026-08-11 커스텀 드롭다운 → 상자 기준 앵커링] -->
-        <div id="tdUntilWrap" style="display:none;margin-top:10px">
-          <div class="rep-sublabel">반복 종료일 <span style="font-weight:400">· 비워두면 계속 반복</span></div>
-          <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
-            <div style="position:relative;flex:1.3 1 0;min-width:0">
-              <button type="button" class="fi pf-bd-select" id="tdUntilY" onclick="openTdUntilYSel()">년</button>
-              <div class="ymd-pop" id="tdUntilYPop"></div>
-            </div>
-            <div style="position:relative;flex:1 1 0;min-width:0">
-              <button type="button" class="fi pf-bd-select" id="tdUntilM" onclick="openTdUntilMSel()">월</button>
-              <div class="ymd-pop" id="tdUntilMPop"></div>
-            </div>
-            <div style="position:relative;flex:1 1 0;min-width:0">
-              <button type="button" class="fi pf-bd-select" id="tdUntilD" onclick="openTdUntilDSel()">일</button>
-              <div class="ymd-pop" id="tdUntilDPop"></div>
-            </div>
-            <button type="button" class="dm-btn" style="flex:none;padding:11px 12px" onclick="clearTdUntil()">지우기</button>
-          </div>
-          <div id="tdUntilHint" class="rep-hint"></div>
-        </div>
+        <button type="button" class="fi rep-summary-btn" id="todoRepeatSummaryBtn" onclick="openTdRepeatSheet()">
+          <span id="todoRepeatSummaryText">안 함</span>
+          <span class="rep-summary-chev">›</span>
+        </button>
       </div>
       <div id="todoRangeDateRow" style="display:none;margin-top:8px">
         <div class="todo-range-row">
@@ -4024,68 +4115,17 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
         <button type="button" class="ev-mode-btn" id="evModeRange" onclick="setEventMode('range')">기간</button>
         <button type="button" class="ev-mode-btn" id="evModeMulti" onclick="setEventMode('multi')">여러 날</button>
       </div>
-      <!-- 반복 (안 함 / 매주 / 매월 / 매년) — 기간 토글과 달력 사이 -->
+      <!-- 반복 (안 함 / 매주 / 매월 / 매년) — 기간 토글과 달력 사이.
+           [2026-08-13 재설계] 인라인 컨트롤이 너무 복잡하다는 사용자 피드백 → 요약 버튼 하나로
+           접고, 탭하면 아이폰 캘린더 스타일 팝업(#evRepSheetOverlay)에서 설정. 내부 컨트롤/state는
+           그대로(반복 로직 무변경) — 팝업으로 옮겨 담았을 뿐. -->
       <input type="checkbox" id="evYearly" hidden>
       <div class="ev-form-row" id="evRepeatRow" style="margin-top:6px">
         <div class="ev-label">반복</div>
-        <div class="dm-row" id="evRepeatSeg" style="margin-top:4px">
-          <button type="button" class="dm-btn on" data-rep="none" onclick="onEvRepeatSelect('none')">안 함</button>
-          <button type="button" class="dm-btn" data-rep="weekly" onclick="onEvRepeatSelect('weekly')">매주</button>
-          <button type="button" class="dm-btn" data-rep="monthly" onclick="onEvRepeatSelect('monthly')">매월</button>
-          <button type="button" class="dm-btn" data-rep="yearly" onclick="onEvRepeatSelect('yearly')">매년</button>
-        </div>
-        <!-- 반복 상세: 매주=요일 선택, 매월=며칠/N째주 요일/말일 -->
-        <div id="evRepeatDetail" style="display:none">
-          <div id="evWeekdayWrap" style="display:none">
-            <div class="rep-sublabel">반복할 요일</div>
-            <div class="rep-chip-row" id="evWeekdayChips"></div>
-          </div>
-          <div id="evMonthlyWrap" style="display:none">
-            <div class="rep-sublabel">매월 방식</div>
-            <div class="dm-row" id="evMonthlyMode" style="margin-top:6px">
-              <button type="button" class="dm-btn on" data-mm="dom" onclick="onEvMonthlyMode('dom')">며칠</button>
-              <button type="button" class="dm-btn" data-mm="nth" onclick="onEvMonthlyMode('nth')">N째주 요일</button>
-              <button type="button" class="dm-btn" data-mm="last" onclick="onEvMonthlyMode('last')">말일</button>
-            </div>
-            <div id="evMonthlyDomHint" class="rep-hint"></div>
-            <div id="evMonthlyLastHint" class="rep-hint" style="display:none">매달 마지막 날에 반복돼요.</div>
-            <div id="evNthWrap" style="display:none">
-              <div class="rep-sublabel">몇째 · 요일</div>
-              <div class="dm-row" id="evNthWeekSel" style="margin-top:6px">
-                <button type="button" class="dm-btn" data-nw="1" onclick="onEvNthWeek(1)">첫째</button>
-                <button type="button" class="dm-btn" data-nw="2" onclick="onEvNthWeek(2)">둘째</button>
-                <button type="button" class="dm-btn" data-nw="3" onclick="onEvNthWeek(3)">셋째</button>
-                <button type="button" class="dm-btn" data-nw="4" onclick="onEvNthWeek(4)">넷째</button>
-                <button type="button" class="dm-btn" data-nw="-1" onclick="onEvNthWeek(-1)">마지막</button>
-              </div>
-              <div class="rep-chip-row" id="evNthChips" style="margin-top:6px"></div>
-              <div id="evNthHint" class="rep-hint"></div>
-            </div>
-          </div>
-        </div>
-        <!-- 반복 종료 — 언제까지 반복할지(선택사항). 매주/매월/매년 공통.
-             네이티브 <select>는 iOS/Android에서 OS 기본 팝업(다크·체크마크)으로 뜨고 CSS로 못 바꿔서
-             각 년/월/일 상자 바로 아래로 펼쳐지는 앱 자체 드롭다운(.ymd-pop, 상자 기준 position:absolute)으로 교체.
-             [초안 · 2026-08-10 → 2026-08-11 커스텀 드롭다운 → 상자 기준 앵커링] -->
-        <div id="evUntilWrap" style="display:none;margin-top:10px">
-          <div class="rep-sublabel">반복 종료일 <span style="font-weight:400">· 비워두면 계속 반복</span></div>
-          <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
-            <div style="position:relative;flex:1.3 1 0;min-width:0">
-              <button type="button" class="fi pf-bd-select" id="evUntilY" onclick="openEvUntilYSel()">년</button>
-              <div class="ymd-pop" id="evUntilYPop"></div>
-            </div>
-            <div style="position:relative;flex:1 1 0;min-width:0">
-              <button type="button" class="fi pf-bd-select" id="evUntilM" onclick="openEvUntilMSel()">월</button>
-              <div class="ymd-pop" id="evUntilMPop"></div>
-            </div>
-            <div style="position:relative;flex:1 1 0;min-width:0">
-              <button type="button" class="fi pf-bd-select" id="evUntilD" onclick="openEvUntilDSel()">일</button>
-              <div class="ymd-pop" id="evUntilDPop"></div>
-            </div>
-            <button type="button" class="dm-btn" style="flex:none;padding:11px 12px" onclick="clearEvUntil()">지우기</button>
-          </div>
-          <div id="evUntilHint" class="rep-hint"></div>
-        </div>
+        <button type="button" class="fi rep-summary-btn" id="evRepeatSummaryBtn" onclick="openEvRepeatSheet()">
+          <span id="evRepeatSummaryText">안 함</span>
+          <span class="rep-summary-chev">›</span>
+        </button>
       </div>
       <!-- 하루 모드 — 날짜 이동용 미니 달력 -->
       <div class="ev-day-section" id="evDaySection">
@@ -7055,7 +7095,7 @@ async function hideAdBanner() {
    AdMob 배너는 OS 별도 레이어라 서브 화면 위에도 떠서 버튼/콘텐츠를 가린다.
    서브 시트가 열려 있으면 광고를 숨기고, 모두 닫히면 다시 표시한다.
    DOM의 .on 상태를 직접 보므로 닫는 경로가 어디든(닫기버튼·탭전환·뒤로) 항상 정합. */
-const _AD_HIDE_SHEET_IDS = ['premiumCard','storeCard','advCard','notifSetCard','annCard','csCard','evCard','todoAddCard','dpCard','myOrdersCard','vcOverlay','upgOverlay','rdOverlay'];
+const _AD_HIDE_SHEET_IDS = ['premiumCard','storeCard','advCard','notifSetCard','annCard','csCard','evCard','todoAddCard','dpCard','myOrdersCard','vcOverlay','upgOverlay','rdOverlay','evRepSheetOverlay','tdRepSheetOverlay'];
 /* 요소가 실제로 화면에 보이는지(display:none이 아닌지) — 잔여 .on 클래스 오판 방지 */
 function _elVisible(el){
   try{ return !!(el && (el.offsetWidth>0 || el.offsetHeight>0 || el.getClientRects().length>0)); }catch(_){ return true; }
@@ -11634,7 +11674,79 @@ function resetEvRepeat(){ _evRepeatType='none'; _evRepeatWeekdays=[]; _evMonthly
   // 폼을 새로 열 때마다 리셋 — 안 하면 세션 중 이미 한 번 '기간+반복' 전환을 겪은 뒤엔
   // _evRangeCalHidden이 계속 true로 남아 다음 폼에서 플레이스홀더 리셋(reseed)이 다시 안 일어남. [2026-08-13]
   _evRangeCalHidden=false; _evRangeWeekdaysUserTouched=false;
-  syncEvRepeatUI(); }
+  syncEvRepeatUI();
+  updateEvRepeatSummaryText(); }
+
+/* 반복 사용자화 팝업(일정) — [2026-08-13] 인라인 컨트롤을 요약 버튼+팝업으로 재설계.
+   팝업 안의 컨트롤/state(_evRepeatType 등)는 기존 그대로라 반복 로직은 무변경 — 열 때 스냅샷을
+   떠 두고, '취소'/배경탭 시 그 스냅샷으로 완전히 되돌린다(확인만 실제로 적용). */
+let _evRepSheetSnapshot=null;
+function openEvRepeatSheet(){
+  _evRepSheetSnapshot={
+    type:_evRepeatType, weekdays:(_evRepeatWeekdays||[]).slice(), monthlyMode:_evMonthlyMode, nthWeek:_evNthWeek,
+    until:_evRepeatUntil, rangeCalHidden:_evRangeCalHidden, rangeTouched:_evRangeWeekdaysUserTouched,
+    rangeStart:_rangeStart, rangeEnd:_rangeEnd
+  };
+  const ov=document.getElementById('evRepSheetOverlay');
+  if(!ov)return;
+  document.body.appendChild(ov); // 변형(transform) 레이어인 evCard 위에 확실히 표시
+  syncEvRepeatUI();
+  try{ if(typeof hideAdBanner==='function') hideAdBanner(); }catch(_){}
+  ov.classList.add('on');
+  ov.onclick=function(e){ if(e.target===ov) cancelEvRepeatSheet(); };
+}
+function _closeEvRepeatSheetUI(){
+  const ov=document.getElementById('evRepSheetOverlay');
+  if(ov){ ov.classList.remove('on'); ov.onclick=null; }
+}
+function confirmEvRepeatSheet(){
+  _evRepSheetSnapshot=null;
+  _closeEvRepeatSheetUI();
+  updateEvRepeatSummaryText();
+}
+function cancelEvRepeatSheet(){
+  const s=_evRepSheetSnapshot;
+  if(s){
+    _evRepeatType=s.type; _evRepeatWeekdays=s.weekdays.slice(); _evMonthlyMode=s.monthlyMode; _evNthWeek=s.nthWeek;
+    _evRepeatUntil=s.until; _evRangeCalHidden=s.rangeCalHidden; _evRangeWeekdaysUserTouched=s.rangeTouched;
+    _rangeStart=s.rangeStart; _rangeEnd=s.rangeEnd;
+    syncEvRepeatUI();
+  }
+  _evRepSheetSnapshot=null;
+  _closeEvRepeatSheetUI();
+  updateEvRepeatSummaryText();
+}
+function _evRepeatSummaryText(){
+  if(_evRepeatType==='none')return '안 함';
+  const N=['일','월','화','수','목','금','토'];
+  const wdList=function(){ return (_evRepeatWeekdays&&_evRepeatWeekdays.length)?_evRepeatWeekdays.slice().sort(function(a,b){return a-b;}).map(function(d){return N[d];}).join(','):''; };
+  let base='';
+  if(_evRepeatType==='weekly'){
+    const days=wdList();
+    base='매주'+(days?(' '+days+'요일'):'');
+  }else if(_evRepeatType==='monthly'){
+    if(_evMonthlyMode==='nth'){
+      const nwNames={1:'첫째',2:'둘째',3:'셋째',4:'넷째','-1':'마지막'};
+      const nw=nwNames[String(_evNthWeek)]||'';
+      const days=wdList();
+      base='매월 '+nw+(days?(' '+days):'')+'요일';
+    }else if(_evMonthlyMode==='last'){
+      base='매월 마지막 날';
+    }else{
+      try{ const d=_evBaseDateObj(); const dd=d?d.getDate():''; base='매월'+(dd?(' '+dd+'일'):''); }catch(_){ base='매월'; }
+    }
+  }else if(_evRepeatType==='yearly'){
+    base='매년';
+  }
+  if(_evRepeatUntil){
+    try{ const u=parseDateKey(_evRepeatUntil); base+=' · '+(u.getMonth()+1)+'월 '+u.getDate()+'일까지'; }catch(_){}
+  }
+  return base||'반복';
+}
+function updateEvRepeatSummaryText(){
+  const el=document.getElementById('evRepeatSummaryText');
+  if(el)el.textContent=_evRepeatSummaryText();
+}
 function getEvRepeatPayload(baseDate){
   const rt=_evRepeatType||'none';
   let wd=null, mmode=null, nth=null;
@@ -11799,6 +11911,7 @@ async function openEditEvent(eventId){
   _evRangeCalHidden=!!(ev.range_group_id&&_evRepeatUsesWeekday());
   _evRangeWeekdaysUserTouched=true;
   syncEvRepeatUI();
+  updateEvRepeatSummaryText();
   // 메모/사진 — 기존 값 로드
   const memoEl=document.getElementById('evMemo');
   if(memoEl)memoEl.value=ev.memo||'';
@@ -21409,6 +21522,7 @@ function openTodoAddSheet(dateKeyStr, opts){
   _todoMembers=[_currentUser?.id];
   const d=parseDateKey(start); _todoMiniY=d.getFullYear(); _todoMiniM=d.getMonth();
   try{ _syncTdRepeatUI(); }catch(_){}
+  updateTdRepeatSummaryText();
   if($('todoTitleInput')) $('todoTitleInput').value='';
   if($('todoMemoInput')) $('todoMemoInput').value='';
   _setTypeBtns('single');
@@ -21472,6 +21586,7 @@ function openTodoEditSheet(id, opts){
   _setTypeBtns(type);
   _setRepeatBtns(_todoRepeat);
   try{ _syncTdRepeatUI(); }catch(_){}
+  updateTdRepeatSummaryText();
   closeTodoTimePicker();
   setTodoTimeFields(_todoStartTime,_todoEndTime);
   if(typeof resetColorLabelEdit==="function") resetColorLabelEdit("todo");
@@ -21527,6 +21642,76 @@ function setTodoRepeat(rep,btn){
   if(rep==='weekly'){ if((!_tdRepeatWeekdays||!_tdRepeatWeekdays.length)&&d) _tdRepeatWeekdays=[d.getDay()]; }
   else if(rep==='monthly'){ if(d){ if(!_tdMonthlyMode)_tdMonthlyMode='dom'; _tdNthWeek=Math.floor((d.getDate()-1)/7)+1; if(!_tdRepeatWeekdays||!_tdRepeatWeekdays.length)_tdRepeatWeekdays=[d.getDay()]; } }
   _syncTdRepeatUI();
+}
+/* 반복 사용자화 팝업(할일) — 일정 evCard의 openEvRepeatSheet와 완전히 대칭 구조. [2026-08-13] */
+let _tdRepSheetSnapshot=null;
+function openTdRepeatSheet(){
+  _tdRepSheetSnapshot={
+    type:_todoRepeat, weekdays:(_tdRepeatWeekdays||[]).slice(), monthlyMode:_tdMonthlyMode, nthWeek:_tdNthWeek,
+    until:_tdRepeatUntil, rangeCalHidden:_tdRangeCalHidden, rangeTouched:_tdRangeWeekdaysUserTouched,
+    rangeStart:_todoRangeStart, rangeEnd:_todoRangeEnd
+  };
+  const ov=document.getElementById('tdRepSheetOverlay');
+  if(!ov)return;
+  document.body.appendChild(ov); // 변형(transform) 레이어인 todoAddCard 위에 확실히 표시
+  _setRepeatBtns(_todoRepeat);
+  _syncTdRepeatUI();
+  try{ if(typeof hideAdBanner==='function') hideAdBanner(); }catch(_){}
+  ov.classList.add('on');
+  ov.onclick=function(e){ if(e.target===ov) cancelTdRepeatSheet(); };
+}
+function _closeTdRepeatSheetUI(){
+  const ov=document.getElementById('tdRepSheetOverlay');
+  if(ov){ ov.classList.remove('on'); ov.onclick=null; }
+}
+function confirmTdRepeatSheet(){
+  _tdRepSheetSnapshot=null;
+  _closeTdRepeatSheetUI();
+  updateTdRepeatSummaryText();
+}
+function cancelTdRepeatSheet(){
+  const s=_tdRepSheetSnapshot;
+  if(s){
+    _todoRepeat=s.type; _tdRepeatWeekdays=s.weekdays.slice(); _tdMonthlyMode=s.monthlyMode; _tdNthWeek=s.nthWeek;
+    _tdRepeatUntil=s.until; _tdRangeCalHidden=s.rangeCalHidden; _tdRangeWeekdaysUserTouched=s.rangeTouched;
+    _todoRangeStart=s.rangeStart; _todoRangeEnd=s.rangeEnd;
+    _setRepeatBtns(_todoRepeat);
+    _syncTdRepeatUI();
+  }
+  _tdRepSheetSnapshot=null;
+  _closeTdRepeatSheetUI();
+  updateTdRepeatSummaryText();
+}
+function _tdRepeatSummaryText(){
+  if(_todoRepeat==='none')return '안 함';
+  const N=['일','월','화','수','목','금','토'];
+  const wdList=function(){ return (_tdRepeatWeekdays&&_tdRepeatWeekdays.length)?_tdRepeatWeekdays.slice().sort(function(a,b){return a-b;}).map(function(d){return N[d];}).join(','):''; };
+  let base='';
+  if(_todoRepeat==='weekly'){
+    const days=wdList();
+    base='매주'+(days?(' '+days+'요일'):'');
+  }else if(_todoRepeat==='monthly'){
+    if(_tdMonthlyMode==='nth'){
+      const nwNames={1:'첫째',2:'둘째',3:'셋째',4:'넷째','-1':'마지막'};
+      const nw=nwNames[String(_tdNthWeek)]||'';
+      const days=wdList();
+      base='매월 '+nw+(days?(' '+days):'')+'요일';
+    }else if(_tdMonthlyMode==='last'){
+      base='매월 마지막 날';
+    }else{
+      try{ const d=_tdBaseDateObj(); const dd=d?d.getDate():''; base='매월'+(dd?(' '+dd+'일'):''); }catch(_){ base='매월'; }
+    }
+  }else if(_todoRepeat==='yearly'){
+    base='매년';
+  }
+  if(_tdRepeatUntil){
+    try{ const u=parseDateKey(_tdRepeatUntil); base+=' · '+(u.getMonth()+1)+'월 '+u.getDate()+'일까지'; }catch(_){}
+  }
+  return base||'반복';
+}
+function updateTdRepeatSummaryText(){
+  const el=$('todoRepeatSummaryText');
+  if(el)el.textContent=_tdRepeatSummaryText();
 }
 function _syncTdRepeatUI(){
   const detail=$('tdRepeatDetail'), wWrap=$('tdWeekdayWrap'), mWrap=$('tdMonthlyWrap');
@@ -22364,6 +22549,9 @@ window.closeTodoAddSheet=closeTodoAddSheet;
 window.cancelTodoAddSheet=cancelTodoAddSheet;
 window.setTodoType=setTodoType;
 window.setTodoRepeat=setTodoRepeat;
+window.openTdRepeatSheet=openTdRepeatSheet;
+window.confirmTdRepeatSheet=confirmTdRepeatSheet;
+window.cancelTdRepeatSheet=cancelTdRepeatSheet;
 window.onTdMonthlyMode=onTdMonthlyMode;
 window.onTdNthWeek=onTdNthWeek;
 window.toggleTodoTimePicker=toggleTodoTimePicker;
