@@ -3851,7 +3851,6 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
            주 단위 이동만 제공(일정 evCard의 evRangeWeekNav와 대칭). [2026-08-13] -->
       <div class="ev-multi-nav" id="todoRangeWeekNav" style="display:none;margin-top:8px">
         <button type="button" class="ev-multi-nav-btn" onclick="_tdRangeShiftWeek(-1)">‹ 이전 주</button>
-        <span class="ev-multi-nav-title" style="font-size:12px">반복 요일로 기간 자동 계산</span>
         <button type="button" class="ev-multi-nav-btn" onclick="_tdRangeShiftWeek(1)">다음 주 ›</button>
       </div>
       <div id="todoMultiDateRow" style="display:none;margin-top:8px">
@@ -4204,7 +4203,6 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
              주 단위 이동만 제공(날짜가 직접 탭 선택과 어긋나는 문제 방지). [2026-08-13] -->
         <div class="ev-multi-nav" id="evRangeWeekNav" style="display:none">
           <button type="button" class="ev-multi-nav-btn" onclick="_evRangeShiftWeek(-1)">‹ 이전 주</button>
-          <span class="ev-multi-nav-title" style="font-size:12px">반복 요일로 기간 자동 계산</span>
           <button type="button" class="ev-multi-nav-btn" onclick="_evRangeShiftWeek(1)">다음 주 ›</button>
         </div>
         <div class="ev-multi-cal" id="evRangeMiniCal">
@@ -10063,7 +10061,12 @@ function _originMatchesDate(ev, d){
     if(mmode==='nth'){
       if(!Array.isArray(ev.repeat_weekdays)||!ev.repeat_weekdays.length||!ev.repeat_nth_week)return false;
       const dt=parseDateKey(d);
-      if(!ev.repeat_weekdays.includes(dt.getDay()))return false;
+      // 기간(range)+반복 결합(_rangeSpanDays>1)이면 여러 요일 중 최소 요일(사이클 시작일)만
+      // "새 사이클"로 인정 — 나머지 요일은 그 사이클의 연속일(continuation)로만 이어짐(안 그러면
+      // 화·수를 모두 고른 기간이 매 사이클마다 화-수·수-목 두 겹으로 투영됨). 일반(비기간) 다중요일
+      // 반복은 요일마다 독립 발생이라 기존대로 전부 매치. [2026-08-13 버그수정]
+      if((ev._rangeSpanDays||1)>1){ if(dt.getDay()!==ev.repeat_weekdays[0])return false; }
+      else if(!ev.repeat_weekdays.includes(dt.getDay()))return false;
       const y=dt.getFullYear(),m=dt.getMonth(),dn=dt.getDate();
       const daysInMonth=new Date(y,m+1,0).getDate();
       const ws=_weekStartPref();
@@ -10080,7 +10083,9 @@ function _originMatchesDate(ev, d){
     }
   }else if(rt==='weekly'){
     if(!Array.isArray(ev.repeat_weekdays)||!ev.repeat_weekdays.length)return false;
-    matched=ev.repeat_weekdays.includes(parseDateKey(d).getDay());
+    const _dow=parseDateKey(d).getDay();
+    // 기간(range)+반복 결합이면 최소 요일(사이클 시작일)만 매치 — 위 monthly-nth와 동일 이유. [2026-08-13]
+    matched=((ev._rangeSpanDays||1)>1)?(_dow===ev.repeat_weekdays[0]):ev.repeat_weekdays.includes(_dow);
   }
   if(!matched)return false;
   return _repeatIntervalCountOk(ev,d);
@@ -10153,6 +10158,11 @@ function _getDayEventsRaw(date){
   // 전체 판정을 거침 — 기존(interval=1·무제한) origin은 버킷 매치만으로 그대로 통과(무회귀). [2026-08-13]
   const _repHasExtra=e=>((e.repeat_interval&&e.repeat_interval>1)||e.repeat_count);
   const _repOk=e=>(!_repHasExtra(e)||_originMatchesDate(e,date));
+  // 기간(range)+반복(다중요일)이면 이 요일버킷 매치를 "새 사이클 시작"으로 인정할지 게이트 —
+  // spanDays>1인 origin은 최소 요일(사이클 시작일)만 자기 버킷에서 새 사이클을 열고, 나머지
+  // 선택 요일(예: 화,수 중 수)은 continuationOnes(아래)가 화의 사이클에 이어붙임. 게이트 없이
+  // 두면 화·수 매 사이클마다 화-수 그룹과 수-목 그룹이 겹쳐 뜨는 버그가 생김. [2026-08-13 버그수정]
+  const _isSpanCycleStartDow=(e,dow)=>((e._rangeSpanDays||1)<=1)||(dow===(e.repeat_weekdays&&e.repeat_weekdays[0]));
   // 매년 반복 일정 펼치기 — 이 날짜의 (월,일)에 등록된 반복 일정 중 origin이 아닌 것
   const md=date.slice(5);  // 'MM-DD'
   const dd=date.slice(8,10);  // 'DD'
@@ -10160,7 +10170,7 @@ function _getDayEventsRaw(date){
   const yearlyOnes=(_yearlyEvents[md]||[]).filter(e=>e.date!==date).filter(_repOk);
   // 매월/매주 반복 — origin 날짜 이후의 칸에만 표시 (과거엔 안 뜸, origin 칸은 _events로 이미 표시)
   const monthlyOnes=(_monthlyEvents[dd]||[]).filter(e=>e.date<date).filter(_repOk);
-  const weeklyOnes=(_weeklyEvents[cellDow]||[]).filter(e=>e.date<date).filter(_repOk);
+  const weeklyOnes=(_weeklyEvents[cellDow]||[]).filter(e=>e.date<date).filter(e=>_isSpanCycleStartDow(e,cellDow)).filter(_repOk);
   // 매일 반복 — 버킷 인덱스가 없어 origin 목록을 직접 판정(항상 _originMatchesDate 경유). [2026-08-13]
   const dailyOnes=(_dailyEvents||[]).filter(e=>e.date<date && _originMatchesDate(e,date));
   // 매월 N째주 요일 / 말일 반복
@@ -10172,8 +10182,8 @@ function _getDayEventsRaw(date){
   const _nthWk=Math.floor((_dn-1+_firstCol0)/7)+1;          // 이 칸의 N번째 달력 줄(1-based)
   const _isLastOcc=(_dn+7>_daysInMonth);                     // 이 달에서 이 요일의 마지막 등장(=마지막 줄)
   const nthOnes=[];
-  (_monthlyNthEvents[_nthWk+'-'+cellDow]||[]).forEach(e=>{ if(e.date<date&&_repOk(e))nthOnes.push(e); });
-  if(_isLastOcc){ (_monthlyNthEvents['-1-'+cellDow]||[]).forEach(e=>{ if(e.date<date&&_repOk(e))nthOnes.push(e); }); }
+  (_monthlyNthEvents[_nthWk+'-'+cellDow]||[]).forEach(e=>{ if(e.date<date&&_isSpanCycleStartDow(e,cellDow)&&_repOk(e))nthOnes.push(e); });
+  if(_isLastOcc){ (_monthlyNthEvents['-1-'+cellDow]||[]).forEach(e=>{ if(e.date<date&&_isSpanCycleStartDow(e,cellDow)&&_repOk(e))nthOnes.push(e); }); }
   const lastOnes=[];
   if(_dn===_daysInMonth){ _monthlyLastEvents.forEach(e=>{ if(e.date<date&&_repOk(e))lastOnes.push(e); }); }
   // 본인 생일 가상 일정 (프로필의 birthday — DB events에 안 저장, 매년 자동 표시)
@@ -11562,6 +11572,11 @@ function _refreshEvUntilHint(){
   else h.textContent='';
 }
 /* 반복 종료 방식 전환(없음/횟수/날짜, 상호배타) — [2026-08-13] */
+/* 기간+반복 미리보기(_evRangePreviewCache)는 주기/횟수/종료일이 바뀔 때마다 다시 그려야
+   최신 설정을 반영함 — 기간 모드+요일기반 반복일 때만, 무의미한 렌더 방지. [2026-08-13] */
+function _refreshEvRangePreview(){
+  try{ if(_selectedMode==='range'&&_evRepeatUsesWeekday())renderRangeCal(); }catch(_){}
+}
 function setEvUntilMode(mode){
   _evUntilMode=(mode==='count'||mode==='date')?mode:'none';
   if(_evUntilMode==='count'&&!_evRepeatCount) _evRepeatCount=10;
@@ -11569,18 +11584,21 @@ function setEvUntilMode(mode){
   if(_evUntilMode!=='date') _evRepeatUntil=null;
   _evUntilCalDate=null;   // 달력이 다시 열릴 때 기준일부터 새로 계산되도록
   _syncEvUntilUI();
+  _refreshEvRangePreview();
 }
 /* 반복 횟수 — 직접 입력(숫자 인풋). 입력 중엔 자유롭게, blur 시 1~999로 정리. [2026-08-13] */
 function onEvCountInput(v){
   const n=parseInt(v,10);
   _evRepeatCount=(!isNaN(n)&&n>0)?n:null;
   _refreshEvUntilHint();
+  _refreshEvRangePreview();
 }
 function onEvCountBlur(el){
   let n=parseInt(el.value,10);
   if(isNaN(n)||n<1)n=1; if(n>999)n=999;
   _evRepeatCount=n; el.value=String(n);
   _refreshEvUntilHint();
+  _refreshEvRangePreview();
 }
 /* 반복 주기(interval) UI — 매 N일/N주/N개월/N년마다. 직접 입력. [2026-08-13] */
 function _evIntervalUnitLabel(){
@@ -11600,11 +11618,13 @@ function _syncEvIntervalUI(){
 function onEvIntervalInput(v){
   const n=parseInt(v,10);
   _evRepeatInterval=(!isNaN(n)&&n>0)?n:1;
+  _refreshEvRangePreview();
 }
 function onEvIntervalBlur(el){
   let n=parseInt(el.value,10);
   if(isNaN(n)||n<1)n=1; if(n>365)n=365;
   _evRepeatInterval=n; el.value=String(n);
+  _refreshEvRangePreview();
 }
 /* 반복 종료일 미니 달력 — 하루 모드(evDayGrid)와 완전히 동일한 렌더 패턴 재사용, 대상만 _evRepeatUntil. */
 function _evUntilCalBase(){
@@ -11658,6 +11678,7 @@ function pickEvUntilDate(key){
   _evRepeatUntil=key;
   renderEvUntilCal();
   _refreshEvUntilHint();
+  _refreshEvRangePreview();
 }
 /* ── 공용 커스텀 드롭다운 — 일정·할일 반복 종료일 6개 버튼이 공유.
    각 팝업(.ymd-pop)은 자기 버튼을 감싼 position:relative 박스의 자식이라
@@ -11816,7 +11837,11 @@ function _updateRangeCalVisibility(){
       }catch(_){}
       _evRangeWeekdaysUserTouched=false;  // 리셋된 플레이스홀더 — 다음 첫 클릭은 추가가 아니라 교체
     }
-    _evRangeAutoFromWeekdays();
+    _evRangeAutoFromWeekdays();  // 내부에서 renderRangeCal() 호출(사이클 미리보기 반영)
+  }else if(_evRangeCalHidden){
+    // 방금 '미리보기' 모드에서 일반 탭식 기간 모드로 전환됨 — 그리드에 직전 다중 사이클
+    // 하이라이트가 남아있을 수 있어(스테일) 일반 로직으로 다시 그려줌. [2026-08-13]
+    try{ renderRangeCal(); }catch(_){}
   }
   _evRangeCalHidden=hide;
 }
@@ -14306,6 +14331,51 @@ function applyModeUI(){
   }
 }
 
+/* 기간+반복(요일기반) 실제 생성 미리보기 — 화면에 보이는 달(+경계 걸침 대비 버퍼)에서
+   실제로 반복이 만들어낼 모든 날짜(원본 사이클 + 향후/과거 반복 사이클)를 계산해
+   dateKey -> 'start'|'mid'|'end'|'one' 맵으로 반환. 저장 시 실제 발생을 판정하는
+   `_originMatchesDate`를 그대로 재사용해 "저장하면 진짜 여기에 생긴다"를 보장.
+   [2026-08-13, 사용자 요청 "선택한 날짜를 시작으로 어디에 일정이 생성되는지 미리보기로"] */
+let _evRangePreviewCache={};
+function _evRangePreviewCompute(viewY,viewM){
+  const map={};
+  if(!_evRepeatWeekdays||!_evRepeatWeekdays.length||!_rangeStart)return map;
+  const minDow=_evRepeatWeekdays[0], maxDow=_evRepeatWeekdays[_evRepeatWeekdays.length-1];
+  const spanLen=maxDow-minDow+1;
+  const virtEv={
+    date:_rangeStart,
+    repeat_type:(_evRepeatType==='monthly'&&_evMonthlyMode==='nth')?'monthly':_evRepeatType,
+    repeat_weekdays:_evRepeatWeekdays,
+    repeat_monthly_mode:_evMonthlyMode,
+    repeat_nth_week:_evNthWeek,
+    repeat_interval:_evRepeatInterval,
+    repeat_count:(_evUntilMode==='count')?_evRepeatCount:null,
+    _rangeSpanDays:spanLen  // _originMatchesDate가 다중요일 사이클 시작 게이트에 씀(코드 상단 버그수정 참고)
+  };
+  const untilCap=(_evUntilMode==='date'&&_evRepeatUntil)?_evRepeatUntil:null;
+  try{
+    const first=new Date(viewY,viewM,1), last=new Date(viewY,viewM+1,0);
+    const buf=spanLen-1+7;  // 사이클 시작이 보이는 달 바깥이어도 기간이 걸쳐 들어올 수 있는 여유
+    let from=dateKey(first.getFullYear(),first.getMonth(),first.getDate());
+    let to=dateKey(last.getFullYear(),last.getMonth(),last.getDate());
+    from=shiftDateKey(from,-buf); to=shiftDateKey(to,buf);
+    const cycleStarts=[];
+    if(_rangeStart>=from&&_rangeStart<=to)cycleStarts.push(_rangeStart);
+    let d=from, guard=0;
+    while(d<=to&&guard<400){
+      if((!untilCap||d<=untilCap)&&_originMatchesDate(virtEv,d))cycleStarts.push(d);
+      d=shiftDateKey(d,1); guard++;
+    }
+    cycleStarts.forEach(function(start){
+      for(let i=0;i<spanLen;i++){
+        const k=shiftDateKey(start,i);
+        if(untilCap&&k>untilCap)continue;
+        map[k]=(spanLen===1)?'one':(i===0?'start':(i===spanLen-1?'end':'mid'));
+      }
+    });
+  }catch(_){}
+  return map;
+}
 /* 기간 모드 — V1식 미니 달력 */
 function renderRangeCal(){
   const grid=document.getElementById('evRangeMiniGrid');
@@ -14313,7 +14383,8 @@ function renderRangeCal(){
   const y=_rangeCalDate.getFullYear();
   const m=_rangeCalDate.getMonth();
   title.textContent=`${y}년 ${m+1}월`;
-  
+  _evRangePreviewCache=_evRepeatUsesWeekday()?_evRangePreviewCompute(y,m):{};
+
   const first=new Date(y,m,1);
   const last=new Date(y,m+1,0);
   const startDow=first.getDay();
@@ -14348,6 +14419,14 @@ function renderRangeCal(){
   grid.innerHTML=html;
 }
 function rangeCellClass(k){
+  if(_evRepeatUsesWeekday()){
+    const c=_evRangePreviewCache[k];
+    if(c==='start')return ' range-start';
+    if(c==='end')return ' range-end';
+    if(c==='mid')return ' range-mid';
+    if(c==='one')return ' on';
+    return '';
+  }
   if(_rangeStart&&_rangeEnd){
     if(k===_rangeStart)return ' range-start';
     if(k===_rangeEnd)return ' range-end';
@@ -21955,6 +22034,10 @@ function _refreshTdUntilHint(){
   else h.textContent='';
 }
 /* 반복 종료 방식 전환(없음/횟수/날짜) — 일정과 동일. [2026-08-13] */
+/* 기간+반복 미리보기 새로고침 — 일정 `_refreshEvRangePreview`와 대칭. [2026-08-13] */
+function _refreshTdRangePreview(){
+  try{ if(_todoType==='range'&&_tdRepeatUsesWeekday())renderTodoMiniCal(); }catch(_){}
+}
 function setTdUntilMode(mode){
   _tdUntilMode=(mode==='count'||mode==='date')?mode:'none';
   if(_tdUntilMode==='count'&&!_tdRepeatCount) _tdRepeatCount=10;
@@ -21962,18 +22045,21 @@ function setTdUntilMode(mode){
   if(_tdUntilMode!=='date') _tdRepeatUntil=null;
   _tdUntilCalDate=null;
   _syncTdUntilUI();
+  _refreshTdRangePreview();
 }
 /* 반복 횟수 — 직접 입력. [2026-08-13] */
 function onTdCountInput(v){
   const n=parseInt(v,10);
   _tdRepeatCount=(!isNaN(n)&&n>0)?n:null;
   _refreshTdUntilHint();
+  _refreshTdRangePreview();
 }
 function onTdCountBlur(el){
   let n=parseInt(el.value,10);
   if(isNaN(n)||n<1)n=1; if(n>999)n=999;
   _tdRepeatCount=n; el.value=String(n);
   _refreshTdUntilHint();
+  _refreshTdRangePreview();
 }
 /* 반복 주기(interval) UI — 일정과 동일, 직접 입력. [2026-08-13] */
 function _tdIntervalUnitLabel(){
@@ -21993,11 +22079,13 @@ function _syncTdIntervalUI(){
 function onTdIntervalInput(v){
   const n=parseInt(v,10);
   _tdRepeatInterval=(!isNaN(n)&&n>0)?n:1;
+  _refreshTdRangePreview();
 }
 function onTdIntervalBlur(el){
   let n=parseInt(el.value,10);
   if(isNaN(n)||n<1)n=1; if(n>365)n=365;
   _tdRepeatInterval=n; el.value=String(n);
+  _refreshTdRangePreview();
 }
 /* 반복 종료일 미니 달력 — 일정 evUntilCal과 완전히 동일 구조, 기준일만 _tdBaseDateObj. [2026-08-13] */
 function _tdUntilCalBase(){
@@ -22051,6 +22139,7 @@ function pickTdUntilDate(key){
   _tdRepeatUntil=key;
   renderTdUntilCal();
   _refreshTdUntilHint();
+  _refreshTdRangePreview();
 }
 function _syncTdMonthlyUI(){
   document.querySelectorAll('#tdMonthlyMode .dm-btn').forEach(function(b){ b.classList.toggle('on', b.dataset.mm===_tdMonthlyMode); });
@@ -22354,18 +22443,68 @@ function todoMiniNav(diff){
   renderTodoMiniCal();
   try{ _syncTdRepeatUI(); }catch(_){}   // 달력 월 이동 → N째주 힌트도 그 달 기준으로 갱신
 }
+/* 기간+반복(요일기반) 실제 생성 미리보기 — 일정 evCard의 `_evRangePreviewCompute`와 완전
+   대칭(같은 `_originMatchesDate`를 재사용해 "저장하면 진짜 여기에 생긴다"를 보장). [2026-08-13] */
+let _tdRangePreviewCache={};
+function _tdRangePreviewCompute(viewY,viewM){
+  const map={};
+  if(!_tdRepeatWeekdays||!_tdRepeatWeekdays.length||!_todoRangeStart)return map;
+  const minDow=_tdRepeatWeekdays[0], maxDow=_tdRepeatWeekdays[_tdRepeatWeekdays.length-1];
+  const spanLen=maxDow-minDow+1;
+  const virtEv={
+    date:_todoRangeStart,
+    repeat_type:(_todoRepeat==='monthly'&&_tdMonthlyMode==='nth')?'monthly':_todoRepeat,
+    repeat_weekdays:_tdRepeatWeekdays,
+    repeat_monthly_mode:_tdMonthlyMode,
+    repeat_nth_week:_tdNthWeek,
+    repeat_interval:_tdRepeatInterval,
+    repeat_count:(_tdUntilMode==='count')?_tdRepeatCount:null,
+    _rangeSpanDays:spanLen  // _originMatchesDate가 다중요일 사이클 시작 게이트에 씀
+  };
+  const untilCap=(_tdUntilMode==='date'&&_tdRepeatUntil)?_tdRepeatUntil:null;
+  try{
+    const first=new Date(viewY,viewM,1), last=new Date(viewY,viewM+1,0);
+    const buf=spanLen-1+7;
+    let from=dateKey(first.getFullYear(),first.getMonth(),first.getDate());
+    let to=dateKey(last.getFullYear(),last.getMonth(),last.getDate());
+    from=shiftDateKey(from,-buf); to=shiftDateKey(to,buf);
+    const cycleStarts=[];
+    if(_todoRangeStart>=from&&_todoRangeStart<=to)cycleStarts.push(_todoRangeStart);
+    let d=from, guard=0;
+    while(d<=to&&guard<400){
+      if((!untilCap||d<=untilCap)&&_originMatchesDate(virtEv,d))cycleStarts.push(d);
+      d=shiftDateKey(d,1); guard++;
+    }
+    cycleStarts.forEach(function(start){
+      for(let i=0;i<spanLen;i++){
+        const k=shiftDateKey(start,i);
+        if(untilCap&&k>untilCap)continue;
+        map[k]=(spanLen===1)?'one':(i===0?'start':(i===spanLen-1?'end':'mid'));
+      }
+    });
+  }catch(_){}
+  return map;
+}
 function _tmcCellClass(key,dow,isOther){
   let c='tmc-cell'; if(isOther) c+=' other';
   if(dow===0) c+=' sun'; else if(dow===6) c+=' sat';
   if(_todoType==='single'){ if(key===_todoSingleDate) c+=' sel'; }
   else if(_todoType==='range'){
-    const s=_todoRangeStart, e=_todoRangeEnd;
-    if(s&&e){
-      if(key===s&&key===e) c+=' range-one';
-      else if(key===s) c+=' range-start';
-      else if(key===e) c+=' range-end';
-      else if(key>s&&key<e) c+=' in-range';
-    } else if(s&&key===s){ c+=' range-one'; }
+    if(_tdRepeatUsesWeekday()){
+      const p=_tdRangePreviewCache[key];
+      if(p==='start') c+=' range-start';
+      else if(p==='end') c+=' range-end';
+      else if(p==='mid') c+=' in-range';
+      else if(p==='one') c+=' range-one';
+    }else{
+      const s=_todoRangeStart, e=_todoRangeEnd;
+      if(s&&e){
+        if(key===s&&key===e) c+=' range-one';
+        else if(key===s) c+=' range-start';
+        else if(key===e) c+=' range-end';
+        else if(key>s&&key<e) c+=' in-range';
+      } else if(s&&key===s){ c+=' range-one'; }
+    }
   } else if(_todoType==='multi'){ if(_todoMultiDates.indexOf(key)>=0) c+=' sel'; }
   return c;
 }
@@ -22373,6 +22512,7 @@ function renderTodoMiniCal(){
   const wrap=$('todoMiniCal'); if(!wrap) return;
   try{ _updateTdRangeCalVisibility(); }catch(_){}
   if(wrap.style.display==='none')return;  // 안전장치(현재는 항상 보임, 2026-08-13부터 미리보기로 전환)
+  _tdRangePreviewCache=(_todoType==='range'&&_tdRepeatUsesWeekday())?_tdRangePreviewCompute(_todoMiniY,_todoMiniM):{};
   const ws=getWeekStartPref();
   const y=_todoMiniY, m=_todoMiniM;
   const first=new Date(y,m,1);
