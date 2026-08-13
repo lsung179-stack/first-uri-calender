@@ -8552,6 +8552,7 @@ let _monthlyEvents={};    // {DD: [eventObj, ...]} — 매월 반복 며칠 기�
 let _weeklyEvents={};     // {dow: [eventObj, ...]} — 매주 반복 (요일 0=일~6=토, 다중 요일 지원)
 let _monthlyNthEvents={}; // {'N-dow': [eventObj, ...]} — 매월 N째주 요일 반복 (N=1~4, -1=마지막)
 let _monthlyLastEvents=[];// 매월 말일 반복
+let _allRecurringOrigins=[]; // 반복 활성 origin row 전체(기간+반복 사이클 투영용, 2026-08-13)
 let _reactions={};        // {target_id: [{user_id, emoji}]} — target_id는 단독=events.id, 함께=events.shared_id
 let _calYear=new Date().getFullYear();
 let _calMonth=new Date().getMonth();
@@ -9512,6 +9513,7 @@ async function loadEvents(){
   _weeklyEvents={};
   _monthlyNthEvents={};
   _monthlyLastEvents=[];
+  _allRecurringOrigins=[];
   invalidateSearchCache();  // 일정 재로드 시 검색 캐시 무효화
   invalidateDayEventsCache();  // 일정 재로드 시 getDayEvents 캐시 무효화
   renderMonthly();  // 일단 빈 상태로 그려놓고
@@ -9541,8 +9543,23 @@ async function loadEvents(){
         }else if(rt==='weekly'&&Array.isArray(ev.repeat_weekdays)){
           ev.repeat_weekdays.forEach(d=>{ (_weeklyEvents[d]=_weeklyEvents[d]||[]).push(ev); });
         }
+        _allRecurringOrigins.push(ev);
       }
     });
+    // 기간(range)+반복 origin의 기간 길이(spanDays) 계산 — 이미 로드된 같은 room의 전체 row에서
+    // 같은 range_group_id를 가진 물리 row 개수를 세어, 이 origin이 매 주기 몇 일짜리 기간으로
+    // 투영돼야 하는지 구함(반복 없는 기간이나 spanDays===1이면 기존 동작과 완전히 동일). [2026-08-13]
+    if(_allRecurringOrigins.length){
+      const _allRows=Object.values(_events).flat();
+      _allRecurringOrigins.forEach(ev=>{
+        if(ev.range_group_id){
+          const cnt=_allRows.filter(e=>e.range_group_id===ev.range_group_id).length;
+          ev._rangeSpanDays=Math.max(1,cnt);
+        }else{
+          ev._rangeSpanDays=1;
+        }
+      });
+    }
     // 일정 먼저 렌더 (반응 로딩을 기다리지 않음 → 체감 속도 ↑)
     invalidateDayEventsCache();
     renderMonthly();
@@ -9870,6 +9887,98 @@ function setViewingMember(uid){
   renderMonthly();
 }
 
+/* 기간(range)+반복 origin 투영용 — 임의 날짜 d가 이 origin의 반복 패턴과 일치하는 '사이클 시작일'인지
+   판정. loadEvents()가 origin을 _yearlyEvents/_monthlyEvents/_weeklyEvents/_monthlyNthEvents/
+   _monthlyLastEvents에 인덱싱할 때 쓰는 것과 동일한 규칙을 임의 날짜에 대해 재사용 가능하게 일반화.
+   (기존 5개 인덱스는 "이 셀 자신"이 곧 사이클 시작일인 경우만 빠르게 찾아주므로 그대로 유지하고,
+   기간의 2일째부터는 이 함수로 "며칠 전 날짜가 사이클 시작일이었는가"를 거꾸로 확인한다.) [2026-08-13]
+function _originMatchesDate(ev, d){
+  if(d<=ev.date)return false;  // origin 자기 날짜(또는 그 이전)는 발생으로 안 침(물리 row가 이미 표시)
+  const rt=ev.repeat_type||(ev.recurring_yearly?'yearly':'none');
+  if(rt==='yearly'){
+    return d.slice(5)===ev.date.slice(5);
+  }
+  if(rt==='monthly'){
+    const mmode=ev.repeat_monthly_mode||'dom';
+    if(mmode==='nth'){
+      if(!Array.isArray(ev.repeat_weekdays)||!ev.repeat_weekdays.length||!ev.repeat_nth_week)return false;
+      const dt=parseDateKey(d);
+      if(!ev.repeat_weekdays.includes(dt.getDay()))return false;
+      const y=dt.getFullYear(),m=dt.getMonth(),dn=dt.getDate();
+      const daysInMonth=new Date(y,m+1,0).getDate();
+      const ws=_weekStartPref();
+      const firstCol=(new Date(y,m,1).getDay()-ws+7)%7;
+      const nthWk=Math.floor((dn-1+firstCol)/7)+1;
+      const isLastOcc=(dn+7>daysInMonth);
+      return ev.repeat_nth_week===-1?isLastOcc:(nthWk===ev.repeat_nth_week);
+    }else if(mmode==='last'){
+      const dt=parseDateKey(d);
+      const daysInMonth=new Date(dt.getFullYear(),dt.getMonth()+1,0).getDate();
+      return dt.getDate()===daysInMonth;
+    }else{
+      return d.slice(8,10)===ev.date.slice(8,10);
+    }
+  }
+  if(rt==='weekly'){
+    if(!Array.isArray(ev.repeat_weekdays)||!ev.repeat_weekdays.length)return false;
+    return ev.repeat_weekdays.includes(parseDateKey(d).getDay());
+  }
+  return false;
+}
+/* 이 셀(date)이 spanDays>1인 origin의 어느 사이클의 몇 번째 날(offset)에 해당하는지 찾음.
+   i=1(2일째)부터 spanDays-1까지만 확인 — i=0(사이클 시작일=기존 5개 인덱스가 이미 찾아줌)은 호출부에서 별도 처리. */
+function _findSpanContinuation(ev, date){
+  const span=ev._rangeSpanDays||1;
+  if(span<=1)return null;
+  for(let i=1;i<span;i++){
+    const anchor=shiftDateKey(date,-i);
+    if(_originMatchesDate(ev,anchor))return {offset:i, anchor:anchor};
+  }
+  return null;
+}
+/* 임의 날짜(occDate)가 origin의 어느 사이클에 속하는지 찾아 그 사이클의 시작일(anchor)을 반환.
+   occDate 자체가 사이클 시작일(offset0)이거나, 그 사이클의 연속일(offset>0)이면 매치.
+   삭제/편집에서 "지금 보고 있는 가상 발생이 어느 기간 사이클인지" 역산할 때 사용. [2026-08-13] */
+function _resolveVirtualCycleAnchor(ev, occDate){
+  if(!ev||!occDate)return null;
+  const span=ev._rangeSpanDays||1;
+  if(span<=1)return _originMatchesDate(ev,occDate)?occDate:null;
+  if(_originMatchesDate(ev,occDate))return occDate;
+  const c=_findSpanContinuation(ev,occDate);
+  return c?c.anchor:null;
+}
+/* 기간+반복 가상 사이클의 _rangePos('start'|'mid'|'end'|'single') — 물리 기간(range)과 동일한 주 경계
+   wrap 규칙(_getDayEventsRaw 아래쪽 물리 그룹 계산과 동일)을 오프셋 기반으로 직접 계산.
+   물리 그룹처럼 인접 셀(_events[prevDate]) 조회로는 가상 사이클을 못 찾으므로 오프셋으로 직접 판정. */
+function _spanRangePos(offset, spanDays, dow, weekStartDow, weekEndDow){
+  const prevHas=offset>0, nextHas=offset<spanDays-1;
+  if(prevHas&&nextHas){
+    if(dow===weekEndDow)return 'end';
+    if(dow===weekStartDow)return 'start';
+    return 'mid';
+  }else if(!prevHas&&nextHas){
+    return 'start';
+  }else if(prevHas&&!nextHas){
+    return 'end';
+  }
+  return 'single';
+}
+/* 기간+반복 가상 엔트리 하나를 만들어 span 메타데이터를 부여(오프셋0=사이클 시작일, 오프셋>0=연속일).
+   spanDays===1(반복 없는 단독 발생 또는 기간 아닌 반복)이면 기존과 동일하게 메타데이터 없이 반환. */
+function _mkRecurEntry(ev, date, offset, anchor){
+  const span=ev._rangeSpanDays||1;
+  if(span<=1)return {...ev,_yearlyDisplay:true};
+  const dow=parseDateKey(date).getDay();
+  const ws=(typeof getWeekStartPref==='function')?getWeekStartPref():0;
+  const weekEndDow=(ws+6)%7;
+  return {...ev,_yearlyDisplay:true,
+    range_group_id:'v:'+ev.id+':'+anchor,
+    _virtualSpanAnchor:anchor,_virtualSpanOffset:offset,_virtualSpanLen:span,
+    _isRangeEvent:true,_isFirstSegment:(offset===0),
+    _rangePos:_spanRangePos(offset,span,dow,ws,weekEndDow),
+  };
+}
+
 /* 일자별 일정 — 함께 일정은 shared_id로 그룹핑 (한 번만 표시) */
 function _getDayEventsRaw(date){
   const baseEvs=_events[date]||[];
@@ -9926,15 +10035,26 @@ function _getDayEventsRaw(date){
       }
     });
   }
+  // 기간(range)+반복 origin의 2일째 이후 연속일 — 사이클 시작일(offset0)은 위 5개 인덱스가 이미 찾으므로
+  // 여기서는 spanDays>1인 origin만 대상으로 "며칠 전이 사이클 시작일이었는가"를 확인해 이어붙임 [2026-08-13]
+  const continuationOnes=[];
+  if(_allRecurringOrigins.length){
+    _allRecurringOrigins.forEach(ev=>{
+      if((ev._rangeSpanDays||1)<=1)return;
+      const c=_findSpanContinuation(ev,date);
+      if(c)continuationOnes.push({ev,offset:c.offset,anchor:c.anchor});
+    });
+  }
   const evs=baseEvs
-    .concat(yearlyOnes.map(e=>({...e,_yearlyDisplay:true})))
-    .concat(monthlyOnes.map(e=>({...e,_yearlyDisplay:true})))
-    .concat(weeklyOnes.map(e=>({...e,_yearlyDisplay:true})))
-    .concat(nthOnes.map(e=>({...e,_yearlyDisplay:true})))
-    .concat(lastOnes.map(e=>({...e,_yearlyDisplay:true})))
+    .concat(yearlyOnes.map(e=>_mkRecurEntry(e,date,0,date)))
+    .concat(monthlyOnes.map(e=>_mkRecurEntry(e,date,0,date)))
+    .concat(weeklyOnes.map(e=>_mkRecurEntry(e,date,0,date)))
+    .concat(nthOnes.map(e=>_mkRecurEntry(e,date,0,date)))
+    .concat(lastOnes.map(e=>_mkRecurEntry(e,date,0,date)))
+    .concat(continuationOnes.map(c=>_mkRecurEntry(c.ev,date,c.offset,c.anchor)))
     .concat(virtual)
-    .filter(e=>!(Array.isArray(e.repeat_except)&&e.repeat_except.includes(date)))
-    .filter(e=>!(e.repeat_until && date>e.repeat_until));   // 반복 종료일 지남 [초안 · 2026-08-10]
+    .filter(e=>!(Array.isArray(e.repeat_except)&&e.repeat_except.includes(e._virtualSpanAnchor||date)))
+    .filter(e=>!(e.repeat_until && (e._virtualSpanAnchor||date)>e.repeat_until));   // 반복 종료일 지남 [초안 · 2026-08-10]
   const seen=new Set();
   const result=[];
   evs.forEach(ev=>{
@@ -9968,6 +10088,9 @@ function _getDayEventsRaw(date){
   const weekStartDow=ws;
   const weekEndDow=(ws+6)%7;
   result.forEach(ev=>{
+    // 기간+반복 가상 사이클 엔트리는 _mkRecurEntry에서 이미 _rangePos 등을 직접 계산해뒀음(물리 인접셀
+    // 조회(_events[prevDate])로는 가상 엔트리를 못 찾으므로 여기서 덮어쓰면 안 됨) — 그대로 보존.
+    if(ev._virtualSpanAnchor)return;
     const prevHas=prevEvs.some(e=>isSameRangeGroup(e,ev));
     const nextHas=nextEvs.some(e=>isSameRangeGroup(e,ev));
     ev._isRangeEvent=(prevHas||nextHas);
@@ -10315,12 +10438,18 @@ function _eventBarHTML(ev,key,y,m,d){
   if(_pos==='mid'||_pos==='end')displayTitle='\u00A0';
   let _spillCls='', _hasRangeStart=false;
   if(_pos==='start'){
-    let _spanCols=1,_cd=_dow,_pk=key;
-    while(_cd<6){
-      _pk=shiftDateKey(_pk,1);
-      const _pe=_events[_pk]||[];
-      if(!_pe.some(e=>isSameRangeGroup(e,ev)))break;
-      _spanCols++;_cd++;
+    let _spanCols;
+    if(ev._virtualSpanAnchor){
+      // 기간+반복 가상 사이클 — 물리 인접셀 조회 대신 이미 아는 사이클 길이로 직접 계산
+      _spanCols=Math.min(ev._virtualSpanLen||1, 7-_dow);
+    }else{
+      _spanCols=1; let _cd=_dow,_pk=key;
+      while(_cd<6){
+        _pk=shiftDateKey(_pk,1);
+        const _pe=_events[_pk]||[];
+        if(!_pe.some(e=>isSameRangeGroup(e,ev)))break;
+        _spanCols++;_cd++;
+      }
     }
     if(_spanCols>1){
       _spillCls=' ev-spill';_hasRangeStart=true;
@@ -14319,9 +14448,13 @@ async function deleteEvent(eventId){
   // 한 번에 삭제한다(반복 여부 판정보다 먼저 확인). 반복 필드는 기간의 첫 날짜(origin) row에만
   // 있으므로(2026-08-12 중복 버그 수정으로 인한 구조), findEventGroup으로 기간 그룹을 모으고
   // 그 안에서 origin을 찾아 반복 여부를 판단한다. [2026-08-13, 고객 요청]
+  const occDateR=_selectedDate||_dayDate||ev.date;
   const rangeGroup=(!ev.shared_id && ev.range_group_id)?findEventGroup(ev):[ev];
   const rangeOrigin=rangeGroup.find(e=>(e.repeat_type&&e.repeat_type!=='none')||e.recurring_yearly)||null;
-  if(rangeGroup.length>1 && rangeOrigin){
+  // 지금 보고 있는 날짜가 원본(현재/최초) 기간의 실제 물리 날짜인지, 아니면 미래/과거로 투영된
+  // 가상 사이클(다른 주/월/년)인지 구분 — 가상 사이클은 실제 row가 없어 별도 분기 필요 [2026-08-13]
+  const isOwnOccurrence=rangeGroup.some(r=>r.date===occDateR);
+  if(rangeGroup.length>1 && rangeOrigin && isOwnOccurrence){
     const _rtR=rangeOrigin.repeat_type||(rangeOrigin.recurring_yearly?'yearly':'none');
     const scopeLabelR={weekly:'매주',monthly:'매월',yearly:'매년'}[_rtR]||'반복';
     const choiceR=await askRecurringDelete(
@@ -14367,6 +14500,57 @@ async function deleteEvent(eventId){
       toast('실패: '+(e.message||'').slice(0,40));console.error(e);
     }
     return;
+  }
+  // 기간(range)+반복이 다른 주/월/년으로 투영된 가상 사이클을 삭제하려는 경우 — 실제 row가 없으므로
+  // 사이클 시작일(anchor)을 역산해 그 시작일 기준으로 예외 처리(이번 기간만)하거나, 원본 기간(물리
+  // 그룹) 전체를 삭제해 반복 자체를 종료한다(모든 반복). [2026-08-13, 고객 요청]
+  if(rangeOrigin && !isOwnOccurrence && (rangeOrigin._rangeSpanDays||1)>1){
+    const anchorV=_resolveVirtualCycleAnchor(rangeOrigin, occDateR);
+    if(anchorV){
+      const spanV=rangeOrigin._rangeSpanDays||rangeGroup.length;
+      const _rtV=rangeOrigin.repeat_type||(rangeOrigin.recurring_yearly?'yearly':'none');
+      const scopeLabelV={weekly:'매주',monthly:'매월',yearly:'매년'}[_rtV]||'반복';
+      const choiceV=await askRecurringDelete(
+        `${scopeLabelV} 반복되는 기간 일정이에요.<br>이번 기간(${spanV}일)만 삭제할까요,<br>아니면 모든 반복을 삭제할까요?`,
+        {title:'반복 기간 일정 삭제', oneLabel:`이번 기간만 삭제 (${spanV}일)`, allLabel:'모든 반복 삭제'}
+      );
+      if(!choiceV)return;
+      try{
+        if(choiceV==='one'){
+          // 이 가상 사이클(다른 주/월)만 예외 처리 — 원본(및 원본 그룹)은 그대로 유지, 다음 사이클부터 계속 반복
+          const {data:cur,error:e0}=await supa.from('events').select('repeat_except').eq('id',rangeOrigin.id).maybeSingle();
+          if(e0)throw e0;
+          let ex=Array.isArray(cur&&cur.repeat_except)?cur.repeat_except.slice():[];
+          try{
+            const _today=_todayKeyStr();
+            const _cut=(anchorV<_today)?anchorV:_today;
+            if(ex.length>30) ex=ex.filter(d=>d>=_cut);
+          }catch(_){}
+          if(!ex.includes(anchorV))ex.push(anchorV);
+          const {error:eEx}=await supa.from('events').update({repeat_except:ex}).eq('id',rangeOrigin.id);
+          if(eEx)throw eEx;
+          toast(`이번 기간(${spanV}일) 일정이 삭제됐어요`);
+        }else{
+          // 모든 반복 삭제 — 원본(현재/최초) 기간의 물리 row 전체를 삭제해 반복 자체를 종료
+          // (이 가상 사이클을 포함해 향후 모든 발생이 함께 사라짐)
+          const photoUrlsToCleanup=(Array.isArray(rangeOrigin.photo_urls)&&rangeOrigin.photo_urls.length)?rangeOrigin.photo_urls.filter(Boolean):(rangeOrigin.photo_url?[rangeOrigin.photo_url]:[]);
+          const ids=rangeGroup.map(e=>e.id);
+          const {error:eDelAll}=await supa.from('events').delete().in('id',ids);
+          if(eDelAll)throw eDelAll;
+          photoUrlsToCleanup.forEach(u=>deletePhotoFromStorage(u));
+          toast('모든 반복 일정이 삭제됐어요');
+          notifyEventDeleted(ev);
+        }
+        _audit('event.delete',{targetType:'event',targetId:eventId,roomId:ev.room_id,
+          meta:{title:(ev.title||'').slice(0,80),date:occDateR,recurring:_rtV,scope:choiceV,range:true,virtualCycle:true,anchor:anchorV,rangeLen:spanV,owner_id:ev.user_id}});
+        await loadEvents();
+        if(_selectedDate)openDateSheet(_selectedDate);
+      }catch(e){
+        toast('실패: '+(e.message||'').slice(0,40));console.error(e);
+      }
+      return;
+    }
+    // anchor를 못 찾은 이례적 경우(정상적으론 발생 안 함) — 아래 단순 반복 삭제 로직으로 안전하게 폴백
   }
 
   // 반복 일정(매주/매월/매년)이면 '이 날짜만 / 모두' 선택
