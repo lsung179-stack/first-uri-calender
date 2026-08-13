@@ -3490,6 +3490,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
       <button type="button" class="dm-btn" data-rep="weekly" onclick="onEvRepeatSelect('weekly')">매주</button>
       <button type="button" class="dm-btn" data-rep="monthly" onclick="onEvRepeatSelect('monthly')">매월</button>
       <button type="button" class="dm-btn" data-rep="yearly" onclick="onEvRepeatSelect('yearly')">매년</button>
+      <button type="button" class="dm-btn" data-rep="lunar" onclick="onEvRepeatSelect('lunar')">음력</button>
     </div>
     <!-- 반복 주기 — 매 N일/N주/N개월/N년마다(interval). 반복이 '안 함'이 아니면 항상 노출. [2026-08-13] -->
     <div id="evIntervalWrap" style="display:none;margin-top:10px">
@@ -3528,6 +3529,17 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
           <div id="evNthHint" class="rep-hint"></div>
         </div>
       </div>
+    </div>
+    <!-- 음력 반복 — 매년 음력 M월 D일에 반복(양력 날짜는 해마다 달라짐, solarToLunarKR/lunarToSolar로
+         변환). 생일 입력(pf-bd-select)과 동일한 월/일 드롭다운 패턴 재사용 — 별도 달력 그리드 없이
+         단순하게(음력월은 연도마다 실제 날짜 수가 달라 그리드 렌더가 애매함). [2026-08-14] -->
+    <div id="evLunarWrap" style="display:none;margin-top:10px">
+      <div class="rep-sublabel">음력 날짜</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+        <select class="fi pf-bd-select" id="evLunarMonthSel" style="flex:1" onchange="onEvLunarMonth(this.value)"><option value="">월</option></select>
+        <select class="fi pf-bd-select" id="evLunarDaySel" style="flex:1" onchange="onEvLunarDay(this.value)"><option value="">일</option></select>
+      </div>
+      <div id="evLunarHint" class="rep-hint"></div>
     </div>
     <!-- 반복 종료 — 없음/횟수/날짜 3택1(상호배타). [2026-08-13] -->
     <div id="evUntilWrap" style="display:none;margin-top:10px">
@@ -3576,6 +3588,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
       <button class="todo-repeat-btn" id="todoRepWeekly" onclick="setTodoRepeat('weekly',this)">매주</button>
       <button class="todo-repeat-btn" id="todoRepMonthly" onclick="setTodoRepeat('monthly',this)">매월</button>
       <button class="todo-repeat-btn" id="todoRepYearly" onclick="setTodoRepeat('yearly',this)">매년</button>
+      <button class="todo-repeat-btn" id="todoRepLunar" onclick="setTodoRepeat('lunar',this)">음력</button>
     </div>
     <!-- 반복 주기 — 일정과 동일 구조. [2026-08-13] -->
     <div id="tdIntervalWrap" style="display:none;margin-top:10px">
@@ -3614,6 +3627,15 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
           <div id="tdNthHint" class="rep-hint"></div>
         </div>
       </div>
+    </div>
+    <!-- 음력 반복 — 일정 evLunarWrap과 동일 구조. [2026-08-14] -->
+    <div id="tdLunarWrap" style="display:none;margin-top:10px">
+      <div class="rep-sublabel">음력 날짜</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+        <select class="fi pf-bd-select" id="tdLunarMonthSel" style="flex:1" onchange="onTdLunarMonth(this.value)"><option value="">월</option></select>
+        <select class="fi pf-bd-select" id="tdLunarDaySel" style="flex:1" onchange="onTdLunarDay(this.value)"><option value="">일</option></select>
+      </div>
+      <div id="tdLunarHint" class="rep-hint"></div>
     </div>
     <!-- 반복 종료 — 없음/횟수/날짜 3택1(상호배타). 일정과 동일 구조. [2026-08-13] -->
     <div id="tdUntilWrap" style="display:none;margin-top:10px">
@@ -8663,6 +8685,7 @@ let _weeklyEvents={};     // {dow: [eventObj, ...]} — 매주 반복 (요일 0=
 let _monthlyNthEvents={}; // {'N-dow': [eventObj, ...]} — 매월 N째주 요일 반복 (N=1~4, -1=마지막)
 let _monthlyLastEvents=[];// 매월 말일 반복
 let _dailyEvents=[];      // 매일 반복 origin 전체(요일/월별 패턴 없이 매일 매치, 2026-08-13)
+let _lunarEvents=[];      // 음력 반복 origin 전체(양력 MM-DD가 매년 달라짐, 2026-08-14)
 let _allRecurringOrigins=[]; // 반복 활성 origin row 전체(기간+반복 사이클 투영용, 2026-08-13)
 let _reactions={};        // {target_id: [{user_id, emoji}]} — target_id는 단독=events.id, 함께=events.shared_id
 let _calYear=new Date().getFullYear();
@@ -9461,10 +9484,10 @@ async function buildWidgetPayload(){
   const roomIds=rooms.map(r=>r.id);
   const today=new Date();
   const from=_wgShift(today,-40), to=_wgShift(today,70);   // 이전/다음달 네비게이션 커버 위해 창 확대
-  const _evCols='room_id,date,title,time,color,user_id,range_group_id,shared_id,is_multi,bar_style,order_index,repeat_type,repeat_weekdays,repeat_monthly_mode,repeat_nth_week,repeat_until,repeat_interval,repeat_count,recurring_yearly,repeat_except';
+  const _evCols='room_id,date,title,time,color,user_id,range_group_id,shared_id,is_multi,bar_style,order_index,repeat_type,repeat_weekdays,repeat_monthly_mode,repeat_nth_week,repeat_until,repeat_interval,repeat_count,repeat_lunar_month,repeat_lunar_day,recurring_yearly,repeat_except';
   let events=[]; try{ const {data}=await supa.from('events').select(_evCols).in('room_id',roomIds).gte('date',from).lte('date',to); events=data||[]; }catch(_){}
   // 반복 일정의 origin이 창(from) 이전이면 위 쿼리에서 누락 → 따로 가져와 창 안으로 펼침(위젯도 반복 표시)
-  try{ const {data}=await supa.from('events').select(_evCols).in('room_id',roomIds).lt('date',from).or('repeat_type.in.(daily,weekly,monthly,yearly),recurring_yearly.eq.true'); if(data&&data.length) events=events.concat(data); }catch(_){}
+  try{ const {data}=await supa.from('events').select(_evCols).in('room_id',roomIds).lt('date',from).or('repeat_type.in.(daily,weekly,monthly,yearly,lunar),recurring_yearly.eq.true'); if(data&&data.length) events=events.concat(data); }catch(_){}
   let members=[]; try{ const {data}=await supa.from('members').select('room_id,user_id,color,is_virtual,virtual_name').in('room_id',roomIds); members=data||[]; }catch(_){}
   const realIds=[...new Set(members.filter(m=>m.user_id&&!m.is_virtual).map(m=>m.user_id))];
   let profById={};
@@ -9473,10 +9496,10 @@ async function buildWidgetPayload(){
   const avPngById={};
   try{ await Promise.all(realIds.map(async function(id){ const u=profById[id]&&profById[id].avatar_url; if(u){ avPngById[id]=await _wgAvatarPng(u); } })); }catch(_){}
   // ⚠️ todos 테이블엔 'time' 컬럼이 없음(start_time/end_time) — 예전엔 time을 select해 쿼리가 통째로 실패→할일 0
-  const _tdCols='id,room_id,start_date,title,start_time,color,is_done,user_id,member_keys,repeat_type,repeat_weekdays,repeat_monthly_mode,repeat_nth_week,repeat_until,repeat_interval,repeat_count';
+  const _tdCols='id,room_id,start_date,title,start_time,color,is_done,user_id,member_keys,repeat_type,repeat_weekdays,repeat_monthly_mode,repeat_nth_week,repeat_until,repeat_interval,repeat_count,repeat_lunar_month,repeat_lunar_day';
   let todos=[]; try{ const {data}=await supa.from('todos').select(_tdCols).in('room_id',roomIds).gte('start_date',from).lte('start_date',to); todos=data||[]; }catch(_){}
   // 반복 할일의 start_date가 창(from) 이전이면 위 쿼리에서 누락 → 따로 가져와 창 안으로 펼침
-  try{ const {data}=await supa.from('todos').select(_tdCols).in('room_id',roomIds).lt('start_date',from).in('repeat_type',['daily','weekly','monthly','yearly']); if(data&&data.length) todos=todos.concat(data); }catch(_){}
+  try{ const {data}=await supa.from('todos').select(_tdCols).in('room_id',roomIds).lt('start_date',from).in('repeat_type',['daily','weekly','monthly','yearly','lunar']); if(data&&data.length) todos=todos.concat(data); }catch(_){}
   const hx=c=>colorHex(c||'c-vintage');
   const sealMap=_mySealByRoom||{};
   const outRooms=rooms.map(r=>{
@@ -9506,7 +9529,7 @@ async function buildWidgetPayload(){
     const rt=[];
     todos.filter(t=>t.room_id===r.id).forEach(t=>{
       // 반복 할일도 일정과 동일하게 창 안 구체 날짜로 펼침(비반복이면 [start_date])
-      const occ=_wgExpandEvent({date:t.start_date, repeat_type:t.repeat_type, repeat_weekdays:t.repeat_weekdays, repeat_monthly_mode:t.repeat_monthly_mode, repeat_nth_week:t.repeat_nth_week, repeat_until:t.repeat_until, repeat_interval:t.repeat_interval, repeat_count:t.repeat_count}, from, to);
+      const occ=_wgExpandEvent({date:t.start_date, repeat_type:t.repeat_type, repeat_weekdays:t.repeat_weekdays, repeat_monthly_mode:t.repeat_monthly_mode, repeat_nth_week:t.repeat_nth_week, repeat_until:t.repeat_until, repeat_interval:t.repeat_interval, repeat_count:t.repeat_count, repeat_lunar_month:t.repeat_lunar_month, repeat_lunar_day:t.repeat_lunar_day}, from, to);
       if(!occ.length) return;
       const mk=(Array.isArray(t.member_keys)&&t.member_keys.length?t.member_keys:null);   // 멤버 필터용
       occ.forEach(d=>{ rt.push({ id:String(t.id), date:d, title:String(t.title||'').slice(0,60), time:String(t.start_time||'').trim(), color:hx(t.color), done:!!t.is_done, userId:t.user_id||null, memberKeys:mk }); });
@@ -9613,6 +9636,7 @@ async function loadEvents(){
   _monthlyNthEvents={};
   _monthlyLastEvents=[];
   _dailyEvents=[];
+  _lunarEvents=[];
   _allRecurringOrigins=[];
   invalidateSearchCache();  // 일정 재로드 시 검색 캐시 무효화
   invalidateDayEventsCache();  // 일정 재로드 시 getDayEvents 캐시 무효화
@@ -9651,6 +9675,11 @@ async function loadEvents(){
           // 매일 반복 — 요일/월별 패턴이 없어 버킷 인덱싱 불가, origin 목록만 유지하고
           // 매 셀 렌더 시 _originMatchesDate로 직접 판정(반복 주기 interval 포함). [2026-08-13]
           _dailyEvents.push(ev);
+          _allRecurringOrigins.push(ev);
+        }else if(rt==='lunar'){
+          // 음력 반복 — 양력 MM-DD가 해마다 달라져 매일 반복과 마찬가지로 고정 버킷 키를 못 씀,
+          // origin 목록만 유지하고 매 셀 _originMatchesDate로 직접 판정. [2026-08-14]
+          _lunarEvents.push(ev);
           _allRecurringOrigins.push(ev);
         }
         // rt==='none'(반복 비활성) row는 _allRecurringOrigins에 넣지 않음 — 기간(range)의
@@ -10023,6 +10052,7 @@ function _repeatCycleUnit(rt){
   if(rt==='weekly')return 'week';
   if(rt==='monthly')return 'month';
   if(rt==='yearly')return 'year';
+  if(rt==='lunar')return 'year';  // 음력 반복도 매년 주기 — N년마다 간격 계산은 매년과 동일 [2026-08-14]
   return null;
 }
 function _repeatCycleIndex(originStr, dateStr, unit){
@@ -10094,6 +10124,14 @@ function _originMatchesDate(ev, d){
     const _dow=parseDateKey(d).getDay();
     // 기간(range)+반복 결합이면 최소 요일(사이클 시작일)만 매치 — 위 monthly-nth와 동일 이유. [2026-08-13]
     matched=((ev._rangeSpanDays||1)>1)?(_dow===ev.repeat_weekdays[0]):ev.repeat_weekdays.includes(_dow);
+  }else if(rt==='lunar'){
+    // 음력 반복 — 매년 음력 M월 D일을 그 해의 양력 날짜로 변환해 비교(양력 날짜는 해마다 달라짐).
+    // lunarToSolar(y,lm,ld)는 'y년의 그 음력월/일'을 뜻하는 기존 관례(birthdayToSolarMd와 동일 사용법)라
+    // d의 연도를 그대로 넘기면 됨 — 반환된 solar.year로 문자열을 만들어야 연말/연초 경계 이동도 정확. [2026-08-14]
+    if(!ev.repeat_lunar_month||!ev.repeat_lunar_day)return false;
+    const y=parseInt(d.slice(0,4),10);
+    const s=lunarToSolar(y, ev.repeat_lunar_month, ev.repeat_lunar_day);
+    matched=!!(s && (s.year+'-'+String(s.month).padStart(2,'0')+'-'+String(s.day).padStart(2,'0'))===d);
   }
   if(!matched)return false;
   return _repeatIntervalCountOk(ev,d);
@@ -10181,6 +10219,8 @@ function _getDayEventsRaw(date){
   const weeklyOnes=(_weeklyEvents[cellDow]||[]).filter(e=>e.date<date).filter(e=>_isSpanCycleStartDow(e,cellDow)).filter(_repOk);
   // 매일 반복 — 버킷 인덱스가 없어 origin 목록을 직접 판정(항상 _originMatchesDate 경유). [2026-08-13]
   const dailyOnes=(_dailyEvents||[]).filter(e=>e.date<date && _originMatchesDate(e,date));
+  // 음력 반복 — 매일과 동일하게 버킷 없이 직접 판정(양력 MM-DD가 해마다 다름). [2026-08-14]
+  const lunarOnes=(_lunarEvents||[]).filter(e=>e.date<date && _originMatchesDate(e,date));
   // 매월 N째주 요일 / 말일 반복
   const _yy0=parseInt(date.slice(0,4),10), _mm0=parseInt(date.slice(5,7),10), _dn=parseInt(dd,10);
   const _daysInMonth=new Date(_yy0,_mm0,0).getDate();        // 이 달의 마지막 일
@@ -10245,6 +10285,7 @@ function _getDayEventsRaw(date){
     .concat(monthlyOnes.map(e=>_mkRecurEntry(e,date,0,date)))
     .concat(weeklyOnes.map(e=>_mkRecurEntry(e,date,0,date)))
     .concat(dailyOnes.map(e=>_mkRecurEntry(e,date,0,date)))
+    .concat(lunarOnes.map(e=>_mkRecurEntry(e,date,0,date)))
     .concat(nthOnes.map(e=>_mkRecurEntry(e,date,0,date)))
     .concat(lastOnes.map(e=>_mkRecurEntry(e,date,0,date)))
     .concat(continuationOnes.map(c=>_mkRecurEntry(c.ev,date,c.offset,c.anchor)))
@@ -11459,6 +11500,8 @@ let _evUntilCalDate=null;   // 반복 종료일 미니 달력이 보여주는 �
 let _evRepeatInterval=1;    // 반복 주기(N일/N주/N개월/N년마다) — 기본 1 [2026-08-13]
 let _evUntilMode='none';    // 반복 종료 방식 'none'|'count'|'date' [2026-08-13]
 let _evRepeatCount=null;    // 반복 횟수(사이클 기준) — _evUntilMode==='count'일 때만 유효 [2026-08-13]
+let _evLunarMonth=null;     // 음력 반복 — 음력 월(1~12) [2026-08-14]
+let _evLunarDay=null;       // 음력 반복 — 음력 일(1~30)
 const _REP_DOW=['일','월','화','수','목','금','토'];
 const _ORD_KO={'1':'첫째','2':'둘째','3':'셋째','4':'넷째','-1':'마지막'};
 // 주 시작 요일(설정 연동, 기본 일요일=0)
@@ -11493,11 +11536,23 @@ function _nthHintText(baseD, nth, weekdays){
 }
 /* 반복 시작일 자동 스냅 — 선택한 패턴의 '기준 달 첫 발생일'을 반환(origin이 패턴과 안 맞아 자투리 뜨는 것 방지).
    → 8월 아무 날에서 "둘째 월요일"을 골라도 시작일이 8월 둘째 월요일로 딱 맞춰짐. 안 바뀌면 원래 baseStr 반환. */
-function _repeatFirstDate(baseStr, type, weekdays, monthlyMode, nthWeek){
+function _repeatFirstDate(baseStr, type, weekdays, monthlyMode, nthWeek, lunarMonth, lunarDay){
   const b=(function(){ try{ return parseDateKey(baseStr); }catch(_){ return null; } })();
   if(!b || isNaN(b.getTime())) return baseStr;
   const p=function(n){ return String(n).padStart(2,'0'); };
   const fmt=function(y,m0,d){ return y+'-'+p(m0+1)+'-'+p(d); };
+  if(type==='lunar'){
+    // 음력 반복 첫 발생일 — baseStr 연도의 음력 M/D를 양력으로 변환, 이미 지난 날짜면
+    // 다음 해로(생일 daysUntilBirthday와 동일 관례). [2026-08-14]
+    if(!lunarMonth||!lunarDay)return baseStr;
+    try{
+      const by=b.getFullYear();
+      let s=lunarToSolar(by,lunarMonth,lunarDay);
+      let k=s?(s.year+'-'+p(s.month)+'-'+p(s.day)):null;
+      if(k&&k<baseStr){ s=lunarToSolar(by+1,lunarMonth,lunarDay); k=s?(s.year+'-'+p(s.month)+'-'+p(s.day)):null; }
+      return k||baseStr;
+    }catch(_){ return baseStr; }
+  }
   if(type==='weekly'){
     const wd=(weekdays&&weekdays.length)?weekdays:[b.getDay()];
     for(let i=0;i<7;i++){ const t=new Date(b.getFullYear(),b.getMonth(),b.getDate()+i); if(wd.indexOf(t.getDay())>=0) return fmt(t.getFullYear(),t.getMonth(),t.getDate()); }
@@ -11524,7 +11579,7 @@ function _repeatFirstDate(baseStr, type, weekdays, monthlyMode, nthWeek){
 }
 function _evBaseDateObj(){ try{ return parseDateKey(_dayDate||_selectedDate); }catch(_){ return null; } }
 function onEvRepeatSelect(t){
-  _evRepeatType=(t==='daily'||t==='weekly'||t==='monthly'||t==='yearly')?t:'none';
+  _evRepeatType=(t==='daily'||t==='weekly'||t==='monthly'||t==='yearly'||t==='lunar')?t:'none';
   const d=_evBaseDateObj();
   if(_evRepeatType==='weekly'){
     if((!_evRepeatWeekdays||!_evRepeatWeekdays.length)&&d) _evRepeatWeekdays=[d.getDay()];
@@ -11534,6 +11589,11 @@ function onEvRepeatSelect(t){
       // nth 기본값 = origin 날짜가 걸치는 N째주 + 그 요일
       _evNthWeek=Math.floor((d.getDate()-1)/7)+1;
       if(!_evRepeatWeekdays||!_evRepeatWeekdays.length) _evRepeatWeekdays=[d.getDay()];
+    }
+  }else if(_evRepeatType==='lunar'){
+    // 기본값 = origin 날짜의 음력 월/일(선택 안 돼 있을 때만) [2026-08-14]
+    if(d&&(!_evLunarMonth||!_evLunarDay)){
+      try{ const kr=solarToLunarKR(d.getFullYear(),d.getMonth()+1,d.getDate()); if(kr){ _evLunarMonth=kr.lm; _evLunarDay=kr.ld; } }catch(_){}
     }
   }
   syncEvRepeatUI();
@@ -11547,16 +11607,40 @@ function syncEvRepeatUI(){
   const detail=document.getElementById('evRepeatDetail');
   const wWrap=document.getElementById('evWeekdayWrap');
   const mWrap=document.getElementById('evMonthlyWrap');
-  const showW=(_evRepeatType==='weekly'), showM=(_evRepeatType==='monthly');
+  const lWrap=document.getElementById('evLunarWrap');
+  const showW=(_evRepeatType==='weekly'), showM=(_evRepeatType==='monthly'), showL=(_evRepeatType==='lunar');
   if(detail)detail.style.display=(showW||showM)?'':'none';
   if(wWrap)wWrap.style.display=showW?'':'none';
   if(mWrap)mWrap.style.display=showM?'':'none';
+  if(lWrap)lWrap.style.display=showL?'':'none';
   if(showW) _renderRepChips('evWeekdayChips', _evRepeatWeekdays);
   if(showM) _syncEvMonthlyUI();
+  if(showL) _syncEvLunarUI();
   _syncEvIntervalUI();
   _syncEvUntilUI();
   try{ _updateRangeCalVisibility(); }catch(_){}
 }
+/* 음력 반복 UI 동기화 — 월(1~12)/일(1~30) 드롭다운 채움 + 힌트("음력 7월 10일 · 올해는 8월 23일").
+   생일 입력(fillBirthdaySelects)과 동일한 단순 드롭다운 패턴(별도 달력 그리드 없음). [2026-08-14] */
+function _syncEvLunarUI(){
+  const ms=document.getElementById('evLunarMonthSel'), ds=document.getElementById('evLunarDaySel');
+  if(!ms||!ds)return;
+  if(ms.options.length<=1){ for(let m=1;m<=12;m++)ms.add(new Option(m+'월',m)); for(let dd=1;dd<=30;dd++)ds.add(new Option(dd+'일',dd)); }
+  ms.value=_evLunarMonth||''; ds.value=_evLunarDay||'';
+  _refreshEvLunarHint();
+}
+function _refreshEvLunarHint(){
+  const h=document.getElementById('evLunarHint'); if(!h)return;
+  if(!_evLunarMonth||!_evLunarDay){ h.textContent=''; return; }
+  try{
+    const y=new Date().getFullYear();
+    let s=lunarToSolar(y,_evLunarMonth,_evLunarDay);
+    if(s&&s.year<y){ s=lunarToSolar(y+1,_evLunarMonth,_evLunarDay); }  // 이미 지난 음력일이면 다음 해로
+    h.textContent=s?`음력 ${_evLunarMonth}월 ${_evLunarDay}일 · ${s.year}년엔 양력 ${s.month}월 ${s.day}일이에요`:`음력 ${_evLunarMonth}월 ${_evLunarDay}일`;
+  }catch(_){ h.textContent=`음력 ${_evLunarMonth}월 ${_evLunarDay}일`; }
+}
+function onEvLunarMonth(v){ _evLunarMonth=v?parseInt(v,10):null; _refreshEvLunarHint(); _refreshEvRangePreview(); }
+function onEvLunarDay(v){ _evLunarDay=v?parseInt(v,10):null; _refreshEvLunarHint(); _refreshEvRangePreview(); }
 /* 반복 종료일 UI 동기화 — 매주/매월/매년 공통, '안 함'이면 통째로 숨김.
    [2026-08-13 재작업] 년/월/일 드롭다운 3개 → 아이폰 캘린더 스타일 미니 달력(날짜를 직접 탭)으로,
    횟수는 커스텀 드롭다운 → 직접 입력(숫자 인풋)으로 교체(사용자 요청). */
@@ -11612,7 +11696,7 @@ function onEvCountBlur(el){
 function _evIntervalUnitLabel(){
   if(_evRepeatType==='daily')return '일';
   if(_evRepeatType==='monthly')return '개월';
-  if(_evRepeatType==='yearly')return '년';
+  if(_evRepeatType==='yearly'||_evRepeatType==='lunar')return '년';
   return '주';
 }
 function _syncEvIntervalUI(){
@@ -11860,7 +11944,7 @@ function onEvMonthlyMode(m){
 }
 function onEvNthWeek(n){ _evNthWeek=Number(n); syncEvRepeatUI(); }
 function resetEvRepeat(){ _evRepeatType='none'; _evRepeatWeekdays=[]; _evMonthlyMode='dom'; _evNthWeek=1; _evRepeatUntil=null;
-  _evRepeatInterval=1; _evUntilMode='none'; _evRepeatCount=null; _evUntilCalDate=null;
+  _evRepeatInterval=1; _evUntilMode='none'; _evRepeatCount=null; _evUntilCalDate=null; _evLunarMonth=null; _evLunarDay=null;
   // 폼을 새로 열 때마다 리셋 — 안 하면 세션 중 이미 한 번 '기간+반복' 전환을 겪은 뒤엔
   // _evRangeCalHidden이 계속 true로 남아 다음 폼에서 플레이스홀더 리셋(reseed)이 다시 안 일어남. [2026-08-13]
   _evRangeCalHidden=false; _evRangeWeekdaysUserTouched=false;
@@ -11876,7 +11960,8 @@ function openEvRepeatSheet(){
     type:_evRepeatType, weekdays:(_evRepeatWeekdays||[]).slice(), monthlyMode:_evMonthlyMode, nthWeek:_evNthWeek,
     until:_evRepeatUntil, rangeCalHidden:_evRangeCalHidden, rangeTouched:_evRangeWeekdaysUserTouched,
     rangeStart:_rangeStart, rangeEnd:_rangeEnd,
-    interval:_evRepeatInterval, untilMode:_evUntilMode, count:_evRepeatCount
+    interval:_evRepeatInterval, untilMode:_evUntilMode, count:_evRepeatCount,
+    lunarMonth:_evLunarMonth, lunarDay:_evLunarDay
   };
   const ov=document.getElementById('evRepSheetOverlay');
   if(!ov)return;
@@ -11902,6 +11987,7 @@ function cancelEvRepeatSheet(){
     _evRepeatUntil=s.until; _evRangeCalHidden=s.rangeCalHidden; _evRangeWeekdaysUserTouched=s.rangeTouched;
     _rangeStart=s.rangeStart; _rangeEnd=s.rangeEnd;
     _evRepeatInterval=s.interval; _evUntilMode=s.untilMode; _evRepeatCount=s.count;
+    _evLunarMonth=s.lunarMonth; _evLunarDay=s.lunarDay;
     _evUntilCalDate=null;   // 달력을 넘겨봤을 수 있으니 취소 시 기준일부터 다시 계산되도록
     syncEvRepeatUI();
   }
@@ -11935,6 +12021,9 @@ function _evRepeatSummaryText(){
     }
   }else if(_evRepeatType==='yearly'){
     base=interval>1?(interval+'년마다'):'매년';
+  }else if(_evRepeatType==='lunar'){
+    const freq=interval>1?(interval+'년마다'):'매년';
+    base=freq+(_evLunarMonth&&_evLunarDay?(' 음력 '+_evLunarMonth+'월 '+_evLunarDay+'일'):' 음력');
   }
   if(_evUntilMode==='date'&&_evRepeatUntil){
     try{ const u=parseDateKey(_evRepeatUntil); base+=' · '+(u.getMonth()+1)+'월 '+u.getDate()+'일까지'; }catch(_){}
@@ -11961,9 +12050,14 @@ function getEvRepeatPayload(baseDate){
       nth=_evNthWeek||1;
     }
   }
-  const finalType=(rt==='weekly'&&(!wd||!wd.length))?'none':rt;
-  // 시작일 자동 스냅 — 선택 패턴의 기준 달 첫 발생일(며칠/매년/매일은 그대로)
-  const snapped=(finalType==='weekly'||finalType==='monthly') ? _repeatFirstDate(baseDate, finalType, wd, mmode, nth) : baseDate;
+  const finalType=((rt==='weekly'&&(!wd||!wd.length))||(rt==='lunar'&&(!_evLunarMonth||!_evLunarDay)))?'none':rt;
+  // 시작일 자동 스냅 — 선택 패턴의 기준 달 첫 발생일(며칠/매년/매일은 그대로). [2026-08-14: 음력도 지원]
+  let snapped=baseDate;
+  if(finalType==='weekly'||finalType==='monthly'){
+    snapped=_repeatFirstDate(baseDate, finalType, wd, mmode, nth);
+  }else if(finalType==='lunar'){
+    snapped=_repeatFirstDate(baseDate, finalType, null, null, null, _evLunarMonth, _evLunarDay);
+  }
   // 반복 종료 — '날짜'/'횟수' 중 실제 선택된 모드일 때만 값을 실어보냄(상호 배타). [2026-08-13]
   const until=(finalType!=='none'&&_evUntilMode==='date'&&_evRepeatUntil&&_evRepeatUntil>=(snapped||baseDate))?_evRepeatUntil:null;
   const interval=(finalType!=='none'&&_evRepeatInterval&&_evRepeatInterval>1)?_evRepeatInterval:null;
@@ -11973,11 +12067,13 @@ function getEvRepeatPayload(baseDate){
     repeat_weekdays: wd,
     repeat_monthly_mode: (finalType==='monthly'?(mmode||'dom'):null),
     repeat_nth_week: (finalType==='monthly'&&mmode==='nth'?nth:null),
+    repeat_lunar_month: (finalType==='lunar'?_evLunarMonth:null),
+    repeat_lunar_day: (finalType==='lunar'?_evLunarDay:null),
     recurring_yearly: finalType==='yearly',
     repeat_until: until,
     repeat_interval: interval,
     repeat_count: count,
-    start_date: (finalType==='weekly'||finalType==='monthly') ? snapped : null
+    start_date: (finalType==='weekly'||finalType==='monthly'||finalType==='lunar') ? snapped : null
   };
 }
 /* 기간(range) 일정의 반복 필드 — 여러 날짜에 반복 값을 그대로 복제하면 날짜마다 독립된
@@ -11986,11 +12082,11 @@ function getEvRepeatPayload(baseDate){
    나머지 날은 repeat_type='none'으로 저장해 origin이 하나뿐이게 함.
    ⚠️ 알려진 제약: 이 경우 반복돼도 기간 전체(며칠 폭)가 아니라 **첫날 하루만** 매주/매월/매년
    반복됨 — "기간 전체가 통째로 반복"은 별도 기능 설계가 필요해 이번엔 다루지 않음(중복 버그만 제거). */
-function _rangeRepeatFields(d, firstD, repeatType, repeatWeekdays, repeatMonthlyMode, repeatNthWeek, repeatUntil, recurringYearly, repeatInterval, repeatCount){
+function _rangeRepeatFields(d, firstD, repeatType, repeatWeekdays, repeatMonthlyMode, repeatNthWeek, repeatUntil, recurringYearly, repeatInterval, repeatCount, repeatLunarMonth, repeatLunarDay){
   if(d!==firstD){
-    return {recurring_yearly:false, repeat_type:'none', repeat_weekdays:null, repeat_monthly_mode:null, repeat_nth_week:null, repeat_until:null, repeat_interval:null, repeat_count:null};
+    return {recurring_yearly:false, repeat_type:'none', repeat_weekdays:null, repeat_monthly_mode:null, repeat_nth_week:null, repeat_until:null, repeat_interval:null, repeat_count:null, repeat_lunar_month:null, repeat_lunar_day:null};
   }
-  return {recurring_yearly:recurringYearly, repeat_type:repeatType, repeat_weekdays:repeatWeekdays, repeat_monthly_mode:repeatMonthlyMode, repeat_nth_week:repeatNthWeek, repeat_until:repeatUntil, repeat_interval:repeatInterval||null, repeat_count:repeatCount||null};
+  return {recurring_yearly:recurringYearly, repeat_type:repeatType, repeat_weekdays:repeatWeekdays, repeat_monthly_mode:repeatMonthlyMode, repeat_nth_week:repeatNthWeek, repeat_until:repeatUntil, repeat_interval:repeatInterval||null, repeat_count:repeatCount||null, repeat_lunar_month:repeatLunarMonth||null, repeat_lunar_day:repeatLunarDay||null};
 }
 
 function openAddEvent(){
@@ -12116,6 +12212,8 @@ async function openEditEvent(eventId){
   _evRepeatUntil=ev.repeat_until||null;
   _evRepeatInterval=(typeof ev.repeat_interval==='number'&&ev.repeat_interval>1)?ev.repeat_interval:1;
   _evRepeatCount=(typeof ev.repeat_count==='number'&&ev.repeat_count>0)?ev.repeat_count:null;
+  _evLunarMonth=(typeof ev.repeat_lunar_month==='number')?ev.repeat_lunar_month:null;
+  _evLunarDay=(typeof ev.repeat_lunar_day==='number')?ev.repeat_lunar_day:null;
   _evUntilMode=_evRepeatCount?'count':(_evRepeatUntil?'date':'none');
   _evUntilCalDate=null;
   // 저장된 실제 반복 요일을 불러오는 중 — 새 일정의 '플레이스홀더 리셋' 대상이 아니므로
@@ -12826,6 +12924,7 @@ async function _doCopySharedEvent(ev, rooms){
       recurring_yearly:!!ev.recurring_yearly, repeat_type:ev.repeat_type||'none', repeat_weekdays:ev.repeat_weekdays||null,
       repeat_monthly_mode:ev.repeat_monthly_mode||null, repeat_nth_week:ev.repeat_nth_week||null,
       repeat_interval:ev.repeat_interval||null, repeat_count:ev.repeat_count||null,
+      repeat_lunar_month:ev.repeat_lunar_month||null, repeat_lunar_day:ev.repeat_lunar_day||null,
       memo:ev.memo||null, photo_url:ev.photo_url||null, photo_urls:ev.photo_urls||null, is_multi:isMulti };
     const rows=[];
     let sharedCount=0, soloCount=0;
@@ -13035,6 +13134,8 @@ async function _doSaveEvent(){
   const repeatUntil=_rep.repeat_until;
   const repeatInterval=_rep.repeat_interval;
   const repeatCount=_rep.repeat_count;
+  const repeatLunarMonth=_rep.repeat_lunar_month;
+  const repeatLunarDay=_rep.repeat_lunar_day;
   // 반복 시작일 자동 스냅 — 새 일정·하루 모드에서 선택 패턴의 첫 발생일로 origin(시작일)을 맞춤.
   // (예: 8월 아무 날 + "둘째 월요일" → 8월 둘째 월요일부터 시작, 자투리 원본 없음)
   if(!_editingEvent && _selectedMode==='day' && _rep.start_date){ _dayDate=_rep.start_date; }
@@ -13075,7 +13176,10 @@ async function _doSaveEvent(){
       const isCoEvent=(_selectedTarget==='all'&&_selectedMembers.length>=2);
       const applyExtra=extraRoomIds.length>0&&!isCoEvent;
       if(_selectedMode==='multi'){
-        // 여러 날 — 선택된 날짜들 각각에 events 생성 (불연속, 묶음 X)
+        // 여러 날 — 선택된 날짜들 각각에 events 생성 (불연속, 묶음 X). 반복 UI는 이 모드에서
+        // 숨겨져 있지만(applyModeUI), 방어적으로 저장 로직에서도 반복 필드를 아예 안 붙임 —
+        // 임의로 콕 찍은 날짜들은 "반복 패턴"과 개념이 안 맞아, 예전엔 dates[0]에만 반복이
+        // 붙어 사용자가 고른 적 없는 미래 날짜에 유령 일정이 생기던 버그가 있었음. [2026-08-14]
         const dates=[..._multiSelected].sort();
         if(!dates.length){toast('날짜를 하나 이상 선택해주세요');_showEvCardFromSub();return}
         if(dates.length>31){toast('한 번에 최대 31일까지');_showEvCardFromSub();return}
@@ -13086,13 +13190,13 @@ async function _doSaveEvent(){
           // 같은 날짜에 함께 일정이면 그 날짜만 sharedId 묶음
           const sharedId=(_selectedTarget==='all'&&targetUsers.length>1)?genShared():null;
           targetUsers.forEach(key=>{
-            rows.push(_buildCoEventRow(key, Object.assign({
+            rows.push(_buildCoEventRow(key, {
               room_id:_currentRoom.id, date:d,
               title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
               shared_id:sharedId,
               memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
               is_multi:true,
-            }, _rangeRepeatFields(d,dates[0],repeatType,repeatWeekdays,repeatMonthlyMode,repeatNthWeek,repeatUntil,recurringYearly,repeatInterval,repeatCount))));
+            }));
           });
         });
         const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
@@ -13102,12 +13206,12 @@ async function _doSaveEvent(){
           const extraRows=[];
           extraRoomIds.forEach(rid=>{
             dates.forEach(d=>{
-              extraRows.push(Object.assign({
+              extraRows.push({
                 room_id:rid,user_id:_currentUser.id,date:d,
                 title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
                 memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
                 is_multi:true,
-              }, _rangeRepeatFields(d,dates[0],repeatType,repeatWeekdays,repeatMonthlyMode,repeatNthWeek,repeatUntil,recurringYearly,repeatInterval,repeatCount)));
+              });
             });
           });
           if(extraRows.length){
@@ -13137,7 +13241,7 @@ async function _doSaveEvent(){
               title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
               shared_id:sharedId,range_group_id:rangeGid,
               memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
-            }, _rangeRepeatFields(d,dates[0],repeatType,repeatWeekdays,repeatMonthlyMode,repeatNthWeek,repeatUntil,recurringYearly,repeatInterval,repeatCount))));
+            }, _rangeRepeatFields(d,dates[0],repeatType,repeatWeekdays,repeatMonthlyMode,repeatNthWeek,repeatUntil,recurringYearly,repeatInterval,repeatCount,repeatLunarMonth,repeatLunarDay))));
           });
         });
         const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
@@ -13153,7 +13257,7 @@ async function _doSaveEvent(){
                 title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
                 range_group_id:extraRgid,
                 memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
-              }, _rangeRepeatFields(d,dates[0],repeatType,repeatWeekdays,repeatMonthlyMode,repeatNthWeek,repeatUntil,recurringYearly,repeatInterval,repeatCount)));
+              }, _rangeRepeatFields(d,dates[0],repeatType,repeatWeekdays,repeatMonthlyMode,repeatNthWeek,repeatUntil,recurringYearly,repeatInterval,repeatCount,repeatLunarMonth,repeatLunarDay)));
             });
           });
           if(extraRows.length){
@@ -13168,7 +13272,7 @@ async function _doSaveEvent(){
         const rows=_selectedMembers.map(key=>_buildCoEventRow(key, {
           room_id:_currentRoom.id, date:(_dayDate||_selectedDate),
           title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,shared_id:sharedId,
-          recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,
+          recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,repeat_lunar_month:repeatLunarMonth,repeat_lunar_day:repeatLunarDay,
           memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
         }));
         const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
@@ -13179,7 +13283,7 @@ async function _doSaveEvent(){
         const {error}=await supa.from('events').insert(_attachVirtualMember({
           room_id:_currentRoom.id,user_id:_currentUser.id,date:(_dayDate||_selectedDate),
           title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
-          recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,
+          recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,repeat_lunar_month:repeatLunarMonth,repeat_lunar_day:repeatLunarDay,
           memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
         }));
         if(error)throw error;
@@ -13188,7 +13292,7 @@ async function _doSaveEvent(){
           const extraRows=extraRoomIds.map(rid=>({
             room_id:rid,user_id:_currentUser.id,date:(_dayDate||_selectedDate),
             title,time,end_time:endTime,color,bar_style:barStyle,multi_group_id:mgid,
-            recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,
+            recurring_yearly:recurringYearly,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,repeat_lunar_month:repeatLunarMonth,repeat_lunar_day:repeatLunarDay,
             memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
           }));
           const {error:eX}=await supa.from('events').insert(_attachVirtualMember(extraRows));
@@ -14331,6 +14435,10 @@ function applyModeUI(){
   document.getElementById('evModeMulti').classList.toggle('on',_selectedMode==='multi');
   document.getElementById('evRangeRow').classList.toggle('show',_selectedMode==='range');
   document.getElementById('evMultiSection').classList.toggle('show',_selectedMode==='multi');
+  // 여러 날(multi)은 임의로 콕 찍은 날짜들이라 "반복 패턴"과 개념이 안 맞음(요일이 제각각이라
+  // 규칙적으로 뻗어나갈 기준이 없음) — 반복 UI 자체를 숨김. 저장 로직도 _doSaveEvent에서
+  // 반복 필드를 아예 안 붙이도록 별도 처리(숨김만으론 이미 켜둔 상태가 저장에 새는 것 방지). [2026-08-14]
+  { const _rr=document.getElementById('evRepeatRow'); if(_rr)_rr.style.display=(_selectedMode==='multi')?'none':''; }
   const _showDay=_selectedMode==='day';
   const _daySec=document.getElementById('evDaySection');
   if(_daySec){
@@ -14687,6 +14795,7 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
           recurring_yearly:_rep2.recurring_yearly,repeat_type:_rep2.repeat_type,repeat_weekdays:_rep2.repeat_weekdays,
           repeat_monthly_mode:_rep2.repeat_monthly_mode,repeat_nth_week:_rep2.repeat_nth_week,repeat_until:_rep2.repeat_until,
           repeat_interval:_rep2.repeat_interval,repeat_count:_rep2.repeat_count,
+          repeat_lunar_month:_rep2.repeat_lunar_month,repeat_lunar_day:_rep2.repeat_lunar_day,
           memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
         }));
         if(eIns)throw eIns;
@@ -14713,6 +14822,8 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
   const repeatUntil=_rep.repeat_until;
   const repeatInterval=_rep.repeat_interval;
   const repeatCount=_rep.repeat_count;
+  const repeatLunarMonth=_rep.repeat_lunar_month;
+  const repeatLunarDay=_rep.repeat_lunar_day;
 
   // 함께 일정에는 multi 모드 금지 (안전판)
   if((wasShared||isNowShared)&&_selectedMode==='multi'){
@@ -14745,7 +14856,7 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
           room_id:_currentRoom.id, date:d,
           title,time,end_time:endTime,color,bar_style:barStyle,shared_id:ev.shared_id,
           memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
-        }, _rangeRepeatFields(d,dates[0],repeatType,repeatWeekdays,repeatMonthlyMode,repeatNthWeek,repeatUntil,ry,repeatInterval,repeatCount))));
+        }, _rangeRepeatFields(d,dates[0],repeatType,repeatWeekdays,repeatMonthlyMode,repeatNthWeek,repeatUntil,ry,repeatInterval,repeatCount,repeatLunarMonth,repeatLunarDay))));
       });
     });
     const {error:eIns}=await supa.from('events').insert(_attachVirtualMember(rows));
@@ -14836,7 +14947,7 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
   if(!wasShared&&!isNowShared){
     // Case 4: 혼자 → 혼자 (이 row만 단순 수정) — 명의 변경 시 virtual_member_id 반영
     // 다른 방에도 등록된 일정(multi_group_id 존재)이면 적용 범위 선택
-    const _fields={date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls};
+    const _fields={date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,repeat_lunar_month:repeatLunarMonth,repeat_lunar_day:repeatLunarDay,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls};
     if(ev.multi_group_id){
       // 그룹(다른 방에도 등록된 동일 일정)에 속한 방 목록 조회 — 방 선택 UI용
       let groupRooms=[];
@@ -14848,7 +14959,7 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
       }catch(_){}
       const scope=await askMultiRoomScope('이 일정은 여러 방에 등록돼 있어요.<br>어느 방에 수정 내용을 적용할까요?',false,groupRooms);
       if(scope===null)return 'cancelled';  // 취소 → 수정 모달 유지
-      const _f2={date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls};
+      const _f2={date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,repeat_lunar_month:repeatLunarMonth,repeat_lunar_day:repeatLunarDay,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls};
       if(scope==='all'){
         // 그룹 전체(모든 방의 내 복사본) 일괄 수정
         const {error}=await supa.from('events').update(_f2)
@@ -14910,7 +15021,7 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
     if(e1)throw e1;
     const {error:e2}=await supa.from('events').insert(_attachVirtualMember({
       room_id:_currentRoom.id,user_id:_currentUser.id,
-      date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,
+      date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,repeat_lunar_month:repeatLunarMonth,repeat_lunar_day:repeatLunarDay,
       memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
     }));
     if(e2)throw e2;
@@ -14929,13 +15040,13 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
     const toRemoveVirtual=toRemove.filter(k=>typeof k==='string'&&k.startsWith('v-')).map(k=>k.slice(2));
     
     if(toKeepReal.length){
-      const {error}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls})
+      const {error}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,repeat_lunar_month:repeatLunarMonth,repeat_lunar_day:repeatLunarDay,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls})
         .eq('shared_id',ev.shared_id).in('user_id',toKeepReal);
       if(error)throw error;
     }
     if(toKeepVirtual.length){
       // 가상 멤버 row UPDATE (virtual_member_id 기준)
-      const {error}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls})
+      const {error}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,repeat_lunar_month:repeatLunarMonth,repeat_lunar_day:repeatLunarDay,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls})
         .eq('shared_id',ev.shared_id).in('virtual_member_id',toKeepVirtual);
       if(error)throw error;
     }
@@ -14956,7 +15067,7 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
     if(toAdd.length){
       const rows=toAdd.map(key=>_buildCoEventRow(key, {
         room_id:_currentRoom.id, date:(_dayDate||_selectedDate),
-        title,time,end_time:endTime,color,bar_style:barStyle,shared_id:ev.shared_id,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,
+        title,time,end_time:endTime,color,bar_style:barStyle,shared_id:ev.shared_id,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,repeat_lunar_month:repeatLunarMonth,repeat_lunar_day:repeatLunarDay,
         memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
       }));
       const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
@@ -19027,7 +19138,7 @@ async function _importPickRoom(srcId){
     _importSeen=new Set((cur||[]).map(function(e){ return _impKeyDT(e.date,e.title,e.time); }));
     // 소스 방 내 일정 (함께 일정도 내 행만 → solo로 복사)
     const {data:src}=await supa.from('events')
-      .select('date,title,time,end_time,color,bar_style,memo,repeat_type,repeat_weekdays,repeat_monthly_mode,repeat_nth_week,repeat_until,repeat_interval,repeat_count,recurring_yearly,range_group_id,is_multi,shared_id')
+      .select('date,title,time,end_time,color,bar_style,memo,repeat_type,repeat_weekdays,repeat_monthly_mode,repeat_nth_week,repeat_until,repeat_interval,repeat_count,repeat_lunar_month,repeat_lunar_day,recurring_yearly,range_group_id,is_multi,shared_id')
       .eq('room_id',srcId).eq('user_id',_currentUser.id).order('date',{ascending:true});
     const evs=src||[];
     if(!evs.length){ toast('가져올 일정이 없어요'); return; }
@@ -19038,7 +19149,7 @@ async function _importPickRoom(srcId){
       if(e.shared_id){ key='s:'+e.shared_id; kind=e.is_multi?'multi':'range'; }
       else if(e.range_group_id && !e.is_multi){ key='r:'+e.range_group_id; kind='range'; }
       else { key='x:'+e.date+'|'+(e.title||'')+'|'+(e.time||''); kind=e.is_multi?'multi':'single'; }
-      if(!map[key]){ map[key]={ kind:kind, title:e.title||'', time:e.time||null, end_time:e.end_time||null, color:e.color, bar_style:e.bar_style, memo:e.memo, repeat_type:e.repeat_type, repeat_weekdays:e.repeat_weekdays, repeat_monthly_mode:e.repeat_monthly_mode, repeat_nth_week:e.repeat_nth_week, repeat_until:e.repeat_until, repeat_interval:e.repeat_interval, repeat_count:e.repeat_count, recurring_yearly:e.recurring_yearly, dates:[], checked:true }; order.push(key); }
+      if(!map[key]){ map[key]={ kind:kind, title:e.title||'', time:e.time||null, end_time:e.end_time||null, color:e.color, bar_style:e.bar_style, memo:e.memo, repeat_type:e.repeat_type, repeat_weekdays:e.repeat_weekdays, repeat_monthly_mode:e.repeat_monthly_mode, repeat_nth_week:e.repeat_nth_week, repeat_until:e.repeat_until, repeat_interval:e.repeat_interval, repeat_count:e.repeat_count, repeat_lunar_month:e.repeat_lunar_month, repeat_lunar_day:e.repeat_lunar_day, recurring_yearly:e.recurring_yearly, dates:[], checked:true }; order.push(key); }
       map[key].dates.push(e.date);
     });
     _importGroups=order.map(function(k){ const g=map[k]; g.dates.sort(); return g; });
@@ -19132,6 +19243,7 @@ async function _confirmImport(){
           repeat_type:g.repeat_type||'none', repeat_weekdays:g.repeat_weekdays||null,
           repeat_monthly_mode:g.repeat_monthly_mode||null, repeat_nth_week:(typeof g.repeat_nth_week==='number'?g.repeat_nth_week:null),
           repeat_until:g.repeat_until||null, repeat_interval:g.repeat_interval||null, repeat_count:g.repeat_count||null,
+          repeat_lunar_month:g.repeat_lunar_month||null, repeat_lunar_day:g.repeat_lunar_day||null,
           recurring_yearly:!!g.recurring_yearly, range_group_id:newRg, is_multi:(g.kind==='multi') });
         any=true;
       });
@@ -21226,6 +21338,7 @@ let _tdUntilCalDate=null;  // 반복 종료일 미니 달력이 보여주는 달
 let _tdRepeatInterval=1;   // 반복 주기(N일/N주/N개월/N년마다) — 기본 1 [2026-08-13]
 let _tdUntilMode='none';   // 반복 종료 방식 'none'|'count'|'date' [2026-08-13]
 let _tdRepeatCount=null;   // 반복 횟수(사이클 기준) [2026-08-13]
+let _tdLunarMonth=null, _tdLunarDay=null;  // 음력 반복 — 음력 월(1~12)/일(1~30) [2026-08-14]
 let _todoMiniY=2026, _todoMiniM=0;
 let _uniAwaitPhoto=false;
 let _todoReturnDate=null;   // 할일 시트를 데이 시트에서 열었을 때만 설정 (취소 시 그 날짜 시트로 복귀)
@@ -21346,6 +21459,12 @@ function todoOccursOnDate(t,key){
       }
     }else if(t.repeat_type==='yearly'){
       matched=(s.getMonth()===d.getMonth() && s.getDate()===d.getDate());
+    }else if(t.repeat_type==='lunar'){
+      // 음력 반복 — 일정 _originMatchesDate와 동일 방식(그 해의 음력 M/D를 양력으로 변환해 비교). [2026-08-14]
+      if(!t.repeat_lunar_month||!t.repeat_lunar_day)return false;
+      const y=d.getFullYear();
+      const sol=lunarToSolar(y, t.repeat_lunar_month, t.repeat_lunar_day);
+      matched=!!(sol && sol.year===y && (sol.month-1)===d.getMonth() && sol.day===d.getDate());
     }
     if(!matched)return false;
     // 반복 주기(interval)/횟수(count) — 기존(interval=1·무제한) 할일은 항상 통과(무회귀). [2026-08-13]
@@ -21814,6 +21933,7 @@ function openTodoAddSheet(dateKeyStr, opts){
   _todoRepeat='none';
   _tdRepeatWeekdays=[]; _tdMonthlyMode='dom'; _tdNthWeek=1; _tdRepeatUntil=null;
   _tdRepeatInterval=1; _tdUntilMode='none'; _tdRepeatCount=null; _tdUntilCalDate=null;
+  _tdLunarMonth=null; _tdLunarDay=null;
   // 폼을 새로 열 때마다 리셋 — 일정(evCard)의 동일 수정과 대칭. [2026-08-13]
   _tdRangeCalHidden=false; _tdRangeWeekdaysUserTouched=false;
   _todoTarget='self';
@@ -21871,6 +21991,8 @@ function openTodoEditSheet(id, opts){
   _tdRepeatUntil=t.repeat_until||null;
   _tdRepeatInterval=(typeof t.repeat_interval==='number'&&t.repeat_interval>1)?t.repeat_interval:1;
   _tdRepeatCount=(typeof t.repeat_count==='number'&&t.repeat_count>0)?t.repeat_count:null;
+  _tdLunarMonth=(typeof t.repeat_lunar_month==='number')?t.repeat_lunar_month:null;
+  _tdLunarDay=(typeof t.repeat_lunar_day==='number')?t.repeat_lunar_day:null;
   _tdUntilMode=_tdRepeatCount?'count':(_tdRepeatUntil?'date':'none');
   _tdUntilCalDate=null;
   // 저장된 실제 반복 요일을 불러오는 중 — 새 할일의 '플레이스홀더 리셋' 대상이 아니므로
@@ -21895,6 +22017,7 @@ function openTodoEditSheet(id, opts){
   buildTodoColorGrid();
   showEl('todoRangeDateRow', type==='range');
   showEl('todoMultiDateRow', type==='multi');
+  showEl('todoRepeatRow', type!=='multi');  // 여러 날은 반복 UI 숨김(일정 evCard와 대칭). [2026-08-14]
   setText('todoDateLabel', type==='range'?'기간 선택':(type==='multi'?'여러 날 선택':'날짜'));
   if(type==='range') updateRangeChips();
   if(type==='multi') updateMultiChips();
@@ -21929,6 +22052,7 @@ function setTodoType(type,btn){
   if(btn) btn.classList.add('on'); else _setTypeBtns(type);
   showEl('todoRangeDateRow', type==='range');
   showEl('todoMultiDateRow', type==='multi');
+  showEl('todoRepeatRow', type!=='multi');  // 여러 날은 반복 UI 숨김(일정 evCard와 대칭). [2026-08-14]
   setText('todoDateLabel', type==='range'?'기간 선택':(type==='multi'?'여러 날 선택':'날짜'));
   if(type==='range'){ _todoRangeFocus='start'; if(!_todoRangeStart) _todoRangeStart=_todoSingleDate; updateRangeChips(); }
   if(type==='multi'){ if(!_todoMultiDates.length) _todoMultiDates=[_todoSingleDate]; updateMultiChips(); }
@@ -21943,6 +22067,11 @@ function setTodoRepeat(rep,btn){
   const d=_tdBaseDateObj();
   if(rep==='weekly'){ if((!_tdRepeatWeekdays||!_tdRepeatWeekdays.length)&&d) _tdRepeatWeekdays=[d.getDay()]; }
   else if(rep==='monthly'){ if(d){ if(!_tdMonthlyMode)_tdMonthlyMode='dom'; _tdNthWeek=Math.floor((d.getDate()-1)/7)+1; if(!_tdRepeatWeekdays||!_tdRepeatWeekdays.length)_tdRepeatWeekdays=[d.getDay()]; } }
+  else if(rep==='lunar'){
+    if(d&&(!_tdLunarMonth||!_tdLunarDay)){
+      try{ const kr=solarToLunarKR(d.getFullYear(),d.getMonth()+1,d.getDate()); if(kr){ _tdLunarMonth=kr.lm; _tdLunarDay=kr.ld; } }catch(_){}
+    }
+  }
   _syncTdRepeatUI();
 }
 /* 반복 사용자화 팝업(할일) — 일정 evCard의 openEvRepeatSheet와 완전히 대칭 구조. [2026-08-13] */
@@ -21952,7 +22081,8 @@ function openTdRepeatSheet(){
     type:_todoRepeat, weekdays:(_tdRepeatWeekdays||[]).slice(), monthlyMode:_tdMonthlyMode, nthWeek:_tdNthWeek,
     until:_tdRepeatUntil, rangeCalHidden:_tdRangeCalHidden, rangeTouched:_tdRangeWeekdaysUserTouched,
     rangeStart:_todoRangeStart, rangeEnd:_todoRangeEnd,
-    interval:_tdRepeatInterval, untilMode:_tdUntilMode, count:_tdRepeatCount
+    interval:_tdRepeatInterval, untilMode:_tdUntilMode, count:_tdRepeatCount,
+    lunarMonth:_tdLunarMonth, lunarDay:_tdLunarDay
   };
   const ov=document.getElementById('tdRepSheetOverlay');
   if(!ov)return;
@@ -21979,6 +22109,7 @@ function cancelTdRepeatSheet(){
     _tdRepeatUntil=s.until; _tdRangeCalHidden=s.rangeCalHidden; _tdRangeWeekdaysUserTouched=s.rangeTouched;
     _todoRangeStart=s.rangeStart; _todoRangeEnd=s.rangeEnd;
     _tdRepeatInterval=s.interval; _tdUntilMode=s.untilMode; _tdRepeatCount=s.count;
+    _tdLunarMonth=s.lunarMonth; _tdLunarDay=s.lunarDay;
     _tdUntilCalDate=null;
     _setRepeatBtns(_todoRepeat);
     _syncTdRepeatUI();
@@ -22013,6 +22144,9 @@ function _tdRepeatSummaryText(){
     }
   }else if(_todoRepeat==='yearly'){
     base=interval>1?(interval+'년마다'):'매년';
+  }else if(_todoRepeat==='lunar'){
+    const freq=interval>1?(interval+'년마다'):'매년';
+    base=freq+(_tdLunarMonth&&_tdLunarDay?(' 음력 '+_tdLunarMonth+'월 '+_tdLunarDay+'일'):' 음력');
   }
   if(_tdUntilMode==='date'&&_tdRepeatUntil){
     try{ const u=parseDateKey(_tdRepeatUntil); base+=' · '+(u.getMonth()+1)+'월 '+u.getDate()+'일까지'; }catch(_){}
@@ -22026,17 +22160,39 @@ function updateTdRepeatSummaryText(){
   if(el)el.textContent=_tdRepeatSummaryText();
 }
 function _syncTdRepeatUI(){
-  const detail=$('tdRepeatDetail'), wWrap=$('tdWeekdayWrap'), mWrap=$('tdMonthlyWrap');
-  const showW=(_todoRepeat==='weekly'), showM=(_todoRepeat==='monthly');
+  const detail=$('tdRepeatDetail'), wWrap=$('tdWeekdayWrap'), mWrap=$('tdMonthlyWrap'), lWrap=$('tdLunarWrap');
+  const showW=(_todoRepeat==='weekly'), showM=(_todoRepeat==='monthly'), showL=(_todoRepeat==='lunar');
   if(detail)detail.style.display=(showW||showM)?'':'none';
   if(wWrap)wWrap.style.display=showW?'':'none';
   if(mWrap)mWrap.style.display=showM?'':'none';
+  if(lWrap)lWrap.style.display=showL?'':'none';
   if(showW)_renderTdChips('tdWeekdayChips',_tdRepeatWeekdays);
   if(showM)_syncTdMonthlyUI();
+  if(showL)_syncTdLunarUI();
   _syncTdIntervalUI();
   _syncTdUntilUI();
   try{ renderTodoMiniCal(); }catch(_){}
 }
+/* 음력 반복 UI — 일정 _syncEvLunarUI와 동일 구조. [2026-08-14] */
+function _syncTdLunarUI(){
+  const ms=$('tdLunarMonthSel'), ds=$('tdLunarDaySel');
+  if(!ms||!ds)return;
+  if(ms.options.length<=1){ for(let m=1;m<=12;m++)ms.add(new Option(m+'월',m)); for(let dd=1;dd<=30;dd++)ds.add(new Option(dd+'일',dd)); }
+  ms.value=_tdLunarMonth||''; ds.value=_tdLunarDay||'';
+  _refreshTdLunarHint();
+}
+function _refreshTdLunarHint(){
+  const h=$('tdLunarHint'); if(!h)return;
+  if(!_tdLunarMonth||!_tdLunarDay){ h.textContent=''; return; }
+  try{
+    const y=new Date().getFullYear();
+    let s=lunarToSolar(y,_tdLunarMonth,_tdLunarDay);
+    if(s&&s.year<y){ s=lunarToSolar(y+1,_tdLunarMonth,_tdLunarDay); }
+    h.textContent=s?`음력 ${_tdLunarMonth}월 ${_tdLunarDay}일 · ${s.year}년엔 양력 ${s.month}월 ${s.day}일이에요`:`음력 ${_tdLunarMonth}월 ${_tdLunarDay}일`;
+  }catch(_){ h.textContent=`음력 ${_tdLunarMonth}월 ${_tdLunarDay}일`; }
+}
+function onTdLunarMonth(v){ _tdLunarMonth=v?parseInt(v,10):null; _refreshTdLunarHint(); }
+function onTdLunarDay(v){ _tdLunarDay=v?parseInt(v,10):null; _refreshTdLunarHint(); }
 /* 반복 종료일 UI 동기화 — 일정과 동일. [2026-08-13 재작업] 년/월/일 드롭다운 → 미니 달력,
    횟수 드롭다운 → 직접 입력으로 교체(사용자 요청). */
 function _syncTdUntilUI(){
@@ -22089,7 +22245,7 @@ function onTdCountBlur(el){
 function _tdIntervalUnitLabel(){
   if(_todoRepeat==='daily')return '일';
   if(_todoRepeat==='monthly')return '개월';
-  if(_todoRepeat==='yearly')return '년';
+  if(_todoRepeat==='yearly'||_todoRepeat==='lunar')return '년';
   return '주';
 }
 function _syncTdIntervalUI(){
@@ -22682,8 +22838,8 @@ async function _doSaveTodo(){
     start_date=_todoSingleDate;
     if(!start_date){ toast('날짜를 선택해주세요'); _showTodoSheetFromSub(); return; }
     // 반복 시작일 자동 스냅(새 할일·하루) — 선택 패턴의 첫 발생일로 시작일 맞춤(자투리 방지, 일정과 동일)
-    if(!_editingTodoId && (_todoRepeat==='weekly'||_todoRepeat==='monthly') && typeof _repeatFirstDate==='function'){
-      try{ start_date=_repeatFirstDate(start_date, _todoRepeat, _tdRepeatWeekdays, _tdMonthlyMode, _tdNthWeek)||start_date; }catch(_){}
+    if(!_editingTodoId && (_todoRepeat==='weekly'||_todoRepeat==='monthly'||_todoRepeat==='lunar') && typeof _repeatFirstDate==='function'){
+      try{ start_date=_repeatFirstDate(start_date, _todoRepeat, _tdRepeatWeekdays, _tdMonthlyMode, _tdNthWeek, _tdLunarMonth, _tdLunarDay)||start_date; }catch(_){}
     }
   } else if(_todoType==='range'){
     if(!_todoRangeStart||!_todoRangeEnd){ toast('시작일과 종료일을 선택해주세요'); _showTodoSheetFromSub(); return; }
@@ -22714,6 +22870,8 @@ async function _doSaveTodo(){
     repeat_until: (_todoRepeat!=='none'&&_tdUntilMode==='date'&&_tdRepeatUntil&&_tdRepeatUntil>=start_date)?_tdRepeatUntil:null,
     repeat_interval: (_todoRepeat!=='none'&&_tdRepeatInterval&&_tdRepeatInterval>1)?_tdRepeatInterval:null,
     repeat_count: (_todoRepeat!=='none'&&_tdUntilMode==='count'&&_tdRepeatCount)?_tdRepeatCount:null,
+    repeat_lunar_month: (_todoRepeat==='lunar')?_tdLunarMonth:null,
+    repeat_lunar_day: (_todoRepeat==='lunar')?_tdLunarDay:null,
     memo:(($('todoMemoInput')||{}).value||'').trim()||null,
     member_keys: isCo ? _todoMembers.slice() : null
   };
@@ -22762,8 +22920,13 @@ async function _doSaveTodo(){
       fields.multi_group_id=_tmgid;
       // ★ 여러 날(multi) → 선택한 날짜마다 '개별 single 할일'로 생성한다.
       //   (예전엔 multi_dates를 가진 한 개 row로 저장돼 목록에 "외 N일"로 1개만 보였음)
+      //   ⚠️ 반복 필드는 명시적으로 비움 — base(fields)엔 폼 반복 상태가 그대로 남아있어서
+      //   안 지우면 콕 찍은 날짜마다 각각 독립적으로 반복 origin이 돼버림(여러 날+반복은
+      //   개념이 안 맞음, 반복 UI 자체도 이 모드에서 숨겨져 있음). [2026-08-14]
       if(todo_type==='multi' && Array.isArray(multi_dates) && multi_dates.length){
-        const mkSingle=(base,d)=>Object.assign({},base,{todo_type:'single',start_date:d,end_date:null,multi_dates:null});
+        const mkSingle=(base,d)=>Object.assign({},base,{todo_type:'single',start_date:d,end_date:null,multi_dates:null,
+          repeat_type:'none',repeat_weekdays:null,repeat_monthly_mode:null,repeat_nth_week:null,
+          repeat_until:null,repeat_interval:null,repeat_count:null,repeat_lunar_month:null,repeat_lunar_day:null});
         const rows=multi_dates.map(d=>mkSingle(fields,d));
         const { error } = await supa.from('todos').insert(rows);
         if(error){ toast('저장 실패: '+((error.message||'').slice(0,40))); _showTodoSheetFromSub(); return; }
@@ -23002,6 +23165,8 @@ window.onTdIntervalInput=onTdIntervalInput;
 window.onTdIntervalBlur=onTdIntervalBlur;
 window.tdUntilCalNav=tdUntilCalNav;
 window.pickTdUntilDate=pickTdUntilDate;
+window.onTdLunarMonth=onTdLunarMonth;
+window.onTdLunarDay=onTdLunarDay;
 window.toggleTodoTimePicker=toggleTodoTimePicker;
 window.closeTodoTimePicker=closeTodoTimePicker;
 window.applyTodoTimePicker=applyTodoTimePicker;
