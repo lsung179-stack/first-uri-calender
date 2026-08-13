@@ -6539,14 +6539,19 @@ function _applyAdminPlanUI(){
 
 
 /* 반복 일정 삭제 선택 — 'one'(이 날짜만) | 'all'(모두) | null(취소) */
-function askRecurringDelete(msg){
+function askRecurringDelete(msg, opts){
   return new Promise(resolve=>{
     const ov=document.getElementById('rdOverlay');
     if(!ov){resolve(window.confirm((msg||'')+'\n\n확인=모두 삭제, 취소=중단')?'all':null);return;}
     const oneBtn=document.getElementById('rdOne');
     const allBtn=document.getElementById('rdAll');
     const cancelBtn=document.getElementById('rdCancel');
+    const titleEl=ov.querySelector('.mo-title');
     if(msg)document.getElementById('rdMsg').innerHTML=msg;
+    // opts로 제목/버튼 라벨 오버라이드 가능(반복 삭제 외에 반복 편집 범위 선택 등 재사용) — 없으면 기존 삭제용 기본값
+    if(titleEl)titleEl.textContent=(opts&&opts.title)||'반복 일정 삭제';
+    if(oneBtn)oneBtn.textContent=(opts&&opts.oneLabel)||'이 날짜만 삭제';
+    if(allBtn)allBtn.textContent=(opts&&opts.allLabel)||'모든 반복 삭제';
     document.body.appendChild(ov);  // 시트 위로 올림
     ov.classList.add('on');
     try{ if(typeof hideAdBanner==='function') hideAdBanner(); }catch(_){} // 모달 위 광고 겹침 방지
@@ -8668,6 +8673,7 @@ let _joinCopyOn=false;       // 코드 입장 복사 토글
 /* 3-C: 기간 일정 + 이모지 + 테마 */
 let _selectedMode='day';     // 'day' | 'range' | 'multi'
 let _editGroup=[];           // 같은 기간 그룹 events
+let _editOccurrenceScope=null; // 'one'|'all'|null — 반복 일정의 개별 발생 편집 범위(이 일정만/이후 일정도)
 let _emojiTargetEvent=null;  // 이모지 모달 대상
 const REACTIONS=['❤️','👍','🎉','🔥','😂','😢','✨','✅'];
 /* 3-D: 여러 날 모드 (불연속 점선택) */
@@ -11474,7 +11480,7 @@ function openAddEvent(){
   requestAnimationFrame(function(){ var _ec=document.getElementById('evCard'); if(_ec)_ec.scrollTop=0; });
   setTimeout(()=>{const i=document.getElementById('evTitle');if(i)i.focus()},320);
 }
-function openEditEvent(eventId){
+async function openEditEvent(eventId){
   // 가상 일정 (본인 생일) — events 테이블에 없음. 프로필에서 변경 안내.
   if(eventId==='__my_birthday__'){
     toast('생일은 프로필에서 변경할 수 있어');
@@ -11485,8 +11491,24 @@ function openEditEvent(eventId){
   let ev=evs.find(e=>e.id===eventId);
   if(!ev)ev=Object.values(_events).flat().find(e=>e.id===eventId);
   if(!ev){toast('일정 정보를 찾지 못했어요');return}
-  // 편집 기준 날짜를 원본 일정의 실제 날짜로 맞춤 (반복 일정 미래 연도 표시분 대응)
-  _selectedDate=ev.date||_selectedDate;
+  // 편집 대상으로 열었던 날짜(반복 일정의 가상 발생일이면 origin의 실제 날짜와 다름)
+  const viewDate=_selectedDate;
+  _editOccurrenceScope=null;
+  // 반복(단독·비기간·비다중방) 일정의 origin이 아닌 발생일을 수정하려는 경우 —
+  // '이 일정만 변경'/'이후 일정도 변경' 범위 선택 (2026-08-13, 고객 요청)
+  const _rtChk=ev.repeat_type||(ev.recurring_yearly?'yearly':'none');
+  const isRecurringOcc=_rtChk!=='none' && !ev.shared_id && !ev.range_group_id && !ev.multi_group_id && viewDate && viewDate!==ev.date;
+  if(isRecurringOcc){
+    const scopeLabel={weekly:'매주',monthly:'매월',yearly:'매년'}[_rtChk]||'반복';
+    const choice=await askRecurringDelete(
+      `${scopeLabel} 반복되는 일정이에요.<br>이 일정만 변경할까요,<br>아니면 이후 일정도 변경할까요?`,
+      {title:'반복 일정 수정', oneLabel:'이 일정만 변경', allLabel:'이후 일정도 변경'}
+    );
+    if(!choice)return;
+    _editOccurrenceScope=choice;  // 'one'=이 발생만 분리, 'all'=이 날짜부터 이후 전체
+  }
+  // 편집 기준 날짜 — 범위 선택된 개별 발생 편집이면 그 발생일, 아니면 원본 일정의 실제 날짜로 맞춤(반복 일정 미래 연도 표시분 대응)
+  _selectedDate=_editOccurrenceScope?viewDate:(ev.date||_selectedDate);
   closeMainModals();
   _editingEvent=ev;
   _selectedColor=ev.color||'c-vintage';
@@ -11567,6 +11589,14 @@ function openEditEvent(eventId){
     }
     _selectedMode='day';
   }
+  // 반복 일정 개별 발생 편집 — 기간/여러 날 전환 금지(하루 모드 고정), 'one'(이 일정만)은 반복 설정도 숨김
+  // (evRepeatRow는 매번 명시적으로 리셋 — 이전 편집이 남긴 display:none이 이어지지 않도록)
+  { const _rr0=document.getElementById('evRepeatRow'); if(_rr0)_rr0.style.display=''; }
+  if(_editOccurrenceScope){
+    _selectedMode='day';
+    const _mr=document.getElementById('evModeRow'); if(_mr)_mr.style.display='none';
+    if(_editOccurrenceScope==='one'){ const _rr=document.getElementById('evRepeatRow'); if(_rr)_rr.style.display='none'; }
+  }
   applyModeUI();
   renderColorGrid();
   applyTargetUI();
@@ -11590,6 +11620,7 @@ function closeEventModal(){
   document.getElementById('evOverlay').classList.remove('on');
   document.getElementById('evCard').classList.remove('on');
   _editingEvent=null;
+  _editOccurrenceScope=null;
   _subScreenExit();
 }
 /* 취소/스와이프/오버레이 — 캘린더가 아니라 이전 단계(날짜 시트)로 복귀 */
@@ -13960,6 +13991,62 @@ function removeMultiDate(key){
 /* 일정 수정 — 모드별 분기 처리 */
 async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly,memo,photoUrls){
   const ev=_editingEvent;
+
+  // 반복 일정의 개별 발생(virtual occurrence) 편집 — '이 일정만 변경'/'이후 일정도 변경'
+  // (openEditEvent에서 _editOccurrenceScope가 세팅된 경우만, ev=반복 origin row) [2026-08-13]
+  if(_editOccurrenceScope){
+    const scope=_editOccurrenceScope;
+    const occDate=_dayDate||_selectedDate;
+    const origin=ev;
+    try{
+      if(scope==='one'){
+        // 원본(반복 규칙)은 그대로 두고 이 발생일만 예외 처리 + 새 단독(비반복) 일정으로 분리
+        const {data:cur,error:e0}=await supa.from('events').select('repeat_except').eq('id',origin.id).maybeSingle();
+        if(e0)throw e0;
+        let ex=Array.isArray(cur&&cur.repeat_except)?cur.repeat_except.slice():[];
+        try{
+          const _today=_todayKeyStr();
+          const _cut=(occDate<_today)?occDate:_today;
+          if(ex.length>30) ex=ex.filter(d=>d>=_cut);
+        }catch(_){}
+        if(!ex.includes(occDate))ex.push(occDate);
+        const {error:eEx}=await supa.from('events').update({repeat_except:ex}).eq('id',origin.id);
+        if(eEx)throw eEx;
+        const {error:eIns}=await supa.from('events').insert(_attachVirtualMember({
+          room_id:_currentRoom.id,user_id:_currentUser.id,date:occDate,
+          title,time,end_time:endTime,color,bar_style:barStyle,
+          memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
+        }));
+        if(eIns)throw eIns;
+        toast('이 일정만 변경됐어요');
+      }else{
+        // 이후 일정도 변경 — 기존 원본은 이 발생일 전날까지만 반복하도록 자르고,
+        // 이 발생일부터는 새 원본으로 분리해(변경된 값+반복 패턴으로) 이어서 반복
+        const cutoff=shiftDateKey(occDate,-1);
+        const newUntil=(origin.repeat_until && origin.repeat_until<cutoff)?origin.repeat_until:cutoff;
+        const {error:eCut}=await supa.from('events').update({repeat_until:newUntil}).eq('id',origin.id);
+        if(eCut)throw eCut;
+        const _rep2=getEvRepeatPayload(occDate);
+        const {error:eIns}=await supa.from('events').insert(_attachVirtualMember({
+          room_id:_currentRoom.id,user_id:_currentUser.id,date:occDate,
+          title,time,end_time:endTime,color,bar_style:barStyle,
+          recurring_yearly:_rep2.recurring_yearly,repeat_type:_rep2.repeat_type,repeat_weekdays:_rep2.repeat_weekdays,
+          repeat_monthly_mode:_rep2.repeat_monthly_mode,repeat_nth_week:_rep2.repeat_nth_week,repeat_until:_rep2.repeat_until,
+          memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
+        }));
+        if(eIns)throw eIns;
+        toast('이후 일정이 모두 변경됐어요');
+      }
+      _editOccurrenceScope=null;
+      closeEventModal();
+      await loadEvents();
+      if(_selectedDate)openDateSheet(_selectedDate);
+    }catch(e){
+      toast('실패: '+(e.message||'').slice(0,40));console.error(e);
+    }
+    return;
+  }
+
   const wasShared=!!ev.shared_id;
   const isNowShared=_selectedTarget==='all'&&_selectedMembers.length>=2;
   const _rep=getEvRepeatPayload(_dayDate||_selectedDate);
@@ -14227,6 +14314,60 @@ async function deleteEvent(eventId){
   const evs=Object.values(_events).flat();
   const ev=evs.find(e=>e.id===eventId);
   if(!ev){toast('일정 정보를 찾지 못했어요');return}
+
+  // 기간(range) + 반복이 결합된 일정 — 기간 중 어느 날짜를 눌러 삭제하든 그 기간 전체(N일)를
+  // 한 번에 삭제한다(반복 여부 판정보다 먼저 확인). 반복 필드는 기간의 첫 날짜(origin) row에만
+  // 있으므로(2026-08-12 중복 버그 수정으로 인한 구조), findEventGroup으로 기간 그룹을 모으고
+  // 그 안에서 origin을 찾아 반복 여부를 판단한다. [2026-08-13, 고객 요청]
+  const rangeGroup=(!ev.shared_id && ev.range_group_id)?findEventGroup(ev):[ev];
+  const rangeOrigin=rangeGroup.find(e=>(e.repeat_type&&e.repeat_type!=='none')||e.recurring_yearly)||null;
+  if(rangeGroup.length>1 && rangeOrigin){
+    const _rtR=rangeOrigin.repeat_type||(rangeOrigin.recurring_yearly?'yearly':'none');
+    const scopeLabelR={weekly:'매주',monthly:'매월',yearly:'매년'}[_rtR]||'반복';
+    const choiceR=await askRecurringDelete(
+      `${scopeLabelR} 반복되는 기간 일정이에요.<br>이번 기간(${rangeGroup.length}일)만 삭제할까요,<br>아니면 모든 반복을 삭제할까요?`,
+      {title:'반복 기간 일정 삭제', oneLabel:`이번 기간만 삭제 (${rangeGroup.length}일)`, allLabel:'모든 반복 삭제'}
+    );
+    if(!choiceR)return;
+    try{
+      if(choiceR==='one'){
+        // 이 기간의 나머지 날짜 row만 삭제, origin은 남기되 자기 날짜를 예외 처리(반복 규칙 자체는 유지)
+        const others=rangeGroup.filter(e=>e.id!==rangeOrigin.id).map(e=>e.id);
+        if(others.length){
+          const {error:eDel}=await supa.from('events').delete().in('id',others);
+          if(eDel)throw eDel;
+        }
+        const {data:cur,error:e0}=await supa.from('events').select('repeat_except').eq('id',rangeOrigin.id).maybeSingle();
+        if(e0)throw e0;
+        let ex=Array.isArray(cur&&cur.repeat_except)?cur.repeat_except.slice():[];
+        try{
+          const _today=_todayKeyStr();
+          const _cut=(rangeOrigin.date<_today)?rangeOrigin.date:_today;
+          if(ex.length>30) ex=ex.filter(d=>d>=_cut);
+        }catch(_){}
+        if(!ex.includes(rangeOrigin.date))ex.push(rangeOrigin.date);
+        const {error:eEx}=await supa.from('events').update({repeat_except:ex}).eq('id',rangeOrigin.id);
+        if(eEx)throw eEx;
+        toast(`이번 기간(${rangeGroup.length}일) 일정이 삭제됐어요`);
+      }else{
+        // 모든 반복 삭제 — 이 기간의 모든 날짜(origin 포함)를 삭제해 반복 자체를 종료
+        const photoUrlsToCleanup=(Array.isArray(ev.photo_urls)&&ev.photo_urls.length)?ev.photo_urls.filter(Boolean):(ev.photo_url?[ev.photo_url]:[]);
+        const ids=rangeGroup.map(e=>e.id);
+        const {error:eDelAll}=await supa.from('events').delete().in('id',ids);
+        if(eDelAll)throw eDelAll;
+        photoUrlsToCleanup.forEach(u=>deletePhotoFromStorage(u));
+        toast('모든 반복 일정이 삭제됐어요');
+        notifyEventDeleted(ev);
+      }
+      _audit('event.delete',{targetType:'event',targetId:eventId,roomId:ev.room_id,
+        meta:{title:(ev.title||'').slice(0,80),date:ev.date,recurring:_rtR,scope:choiceR,range:true,rangeLen:rangeGroup.length,owner_id:ev.user_id}});
+      await loadEvents();
+      if(_selectedDate)openDateSheet(_selectedDate);
+    }catch(e){
+      toast('실패: '+(e.message||'').slice(0,40));console.error(e);
+    }
+    return;
+  }
 
   // 반복 일정(매주/매월/매년)이면 '이 날짜만 / 모두' 선택
   const _rt=ev.repeat_type||(ev.recurring_yearly?'yearly':'none');
