@@ -9529,36 +9529,52 @@ async function loadEvents(){
         if(rt==='yearly'){
           const md=ev.date.slice(5);  // 'MM-DD'
           (_yearlyEvents[md]=_yearlyEvents[md]||[]).push(ev);
+          _allRecurringOrigins.push(ev);
         }else if(rt==='monthly'){
           const mmode=ev.repeat_monthly_mode||'dom';
           if(mmode==='nth'&&Array.isArray(ev.repeat_weekdays)&&ev.repeat_weekdays.length&&ev.repeat_nth_week){
             // 매월 N째주 요일 — (N-요일) 쌍마다 인덱싱
             ev.repeat_weekdays.forEach(d=>{ const k=ev.repeat_nth_week+'-'+d; (_monthlyNthEvents[k]=_monthlyNthEvents[k]||[]).push(ev); });
+            _allRecurringOrigins.push(ev);
           }else if(mmode==='last'){
             _monthlyLastEvents.push(ev);
+            _allRecurringOrigins.push(ev);
           }else{
             const dd=ev.date.slice(8,10);  // 'DD' — 며칠(dom, 기본)
             (_monthlyEvents[dd]=_monthlyEvents[dd]||[]).push(ev);
+            _allRecurringOrigins.push(ev);
           }
-        }else if(rt==='weekly'&&Array.isArray(ev.repeat_weekdays)){
+        }else if(rt==='weekly'&&Array.isArray(ev.repeat_weekdays)&&ev.repeat_weekdays.length){
           ev.repeat_weekdays.forEach(d=>{ (_weeklyEvents[d]=_weeklyEvents[d]||[]).push(ev); });
+          _allRecurringOrigins.push(ev);
         }
-        _allRecurringOrigins.push(ev);
+        // rt==='none'(반복 비활성) row는 _allRecurringOrigins에 넣지 않음 — 기간(range)의
+        // 비-origin 형제 row나 반복 없는 일반 일정까지 매 렌더마다 불필요하게 순회하지 않도록. [2026-08-13 버그 수정]
       }
     });
     // 기간(range)+반복 origin의 기간 길이(spanDays) 계산 — 이미 로드된 같은 room의 전체 row에서
     // 같은 range_group_id를 가진 물리 row 개수를 세어, 이 origin이 매 주기 몇 일짜리 기간으로
     // 투영돼야 하는지 구함(반복 없는 기간이나 spanDays===1이면 기존 동작과 완전히 동일). [2026-08-13]
+    // ⚠️ 방어적 try/catch — 이 계산이 예기치 못한 데이터로 실패해도 일정 전체 로딩(loadEvents)이
+    // 통째로 실패하면 안 되므로, 문제가 생기면 spanDays 투영 없이(=기존 하루짜리 반복 동작으로)
+    // 안전하게 폴백한다. [2026-08-13]
     if(_allRecurringOrigins.length){
-      const _allRows=Object.values(_events).flat();
-      _allRecurringOrigins.forEach(ev=>{
-        if(ev.range_group_id){
-          const cnt=_allRows.filter(e=>e.range_group_id===ev.range_group_id).length;
-          ev._rangeSpanDays=Math.max(1,cnt);
-        }else{
-          ev._rangeSpanDays=1;
-        }
-      });
+      try{
+        const _allRows=Object.values(_events).flat();
+        _allRecurringOrigins.forEach(ev=>{
+          try{
+            if(ev.range_group_id){
+              const cnt=_allRows.filter(e=>e.range_group_id===ev.range_group_id).length;
+              ev._rangeSpanDays=Math.max(1,cnt);
+            }else{
+              ev._rangeSpanDays=1;
+            }
+          }catch(_){ ev._rangeSpanDays=1; }
+        });
+      }catch(e){
+        console.warn('기간+반복 spanDays 계산 실패 — 안전하게 폴백:', e);
+        _allRecurringOrigins.forEach(ev=>{ ev._rangeSpanDays=1; });
+      }
     }
     // 일정 먼저 렌더 (반응 로딩을 기다리지 않음 → 체감 속도 ↑)
     invalidateDayEventsCache();
@@ -9966,17 +9982,24 @@ function _spanRangePos(offset, spanDays, dow, weekStartDow, weekEndDow){
 /* 기간+반복 가상 엔트리 하나를 만들어 span 메타데이터를 부여(오프셋0=사이클 시작일, 오프셋>0=연속일).
    spanDays===1(반복 없는 단독 발생 또는 기간 아닌 반복)이면 기존과 동일하게 메타데이터 없이 반환. */
 function _mkRecurEntry(ev, date, offset, anchor){
-  const span=ev._rangeSpanDays||1;
-  if(span<=1)return {...ev,_yearlyDisplay:true};
-  const dow=parseDateKey(date).getDay();
-  const ws=(typeof getWeekStartPref==='function')?getWeekStartPref():0;
-  const weekEndDow=(ws+6)%7;
-  return {...ev,_yearlyDisplay:true,
-    range_group_id:'v:'+ev.id+':'+anchor,
-    _virtualSpanAnchor:anchor,_virtualSpanOffset:offset,_virtualSpanLen:span,
-    _isRangeEvent:true,_isFirstSegment:(offset===0),
-    _rangePos:_spanRangePos(offset,span,dow,ws,weekEndDow),
-  };
+  // ⚠️ 방어적 try/catch — 기간+반복 투영 계산이 예기치 못한 값으로 실패해도 캘린더 전체 로딩이
+  // 죽으면 안 되므로, 문제가 생기면 기존(스팬 없음) 단일 표시 형태로 안전하게 폴백한다. [2026-08-13]
+  try{
+    const span=ev._rangeSpanDays||1;
+    if(span<=1)return {...ev,_yearlyDisplay:true};
+    const dow=parseDateKey(date).getDay();
+    const ws=(typeof getWeekStartPref==='function')?getWeekStartPref():0;
+    const weekEndDow=(ws+6)%7;
+    return {...ev,_yearlyDisplay:true,
+      range_group_id:'v:'+ev.id+':'+anchor,
+      _virtualSpanAnchor:anchor,_virtualSpanOffset:offset,_virtualSpanLen:span,
+      _isRangeEvent:true,_isFirstSegment:(offset===0),
+      _rangePos:_spanRangePos(offset,span,dow,ws,weekEndDow),
+    };
+  }catch(e){
+    console.warn('_mkRecurEntry 실패 — 안전하게 폴백:', e);
+    return {...ev,_yearlyDisplay:true};
+  }
 }
 
 /* 일자별 일정 — 함께 일정은 shared_id로 그룹핑 (한 번만 표시) */
@@ -10040,9 +10063,13 @@ function _getDayEventsRaw(date){
   const continuationOnes=[];
   if(_allRecurringOrigins.length){
     _allRecurringOrigins.forEach(ev=>{
-      if((ev._rangeSpanDays||1)<=1)return;
-      const c=_findSpanContinuation(ev,date);
-      if(c)continuationOnes.push({ev,offset:c.offset,anchor:c.anchor});
+      try{
+        if((ev._rangeSpanDays||1)<=1)return;
+        const c=_findSpanContinuation(ev,date);
+        if(c)continuationOnes.push({ev,offset:c.offset,anchor:c.anchor});
+      }catch(e){
+        console.warn('_findSpanContinuation 실패 — 이 origin은 건너뜀:', e);
+      }
     });
   }
   const evs=baseEvs
@@ -10170,7 +10197,16 @@ function getDayEvents(date){
   if(token!==_gdeCacheToken){ _gdeCache.clear(); _gdeCacheToken=token; }
   const hit=_gdeCache.get(date);
   if(hit)return hit;
-  const res=_getDayEventsRaw(date);
+  // ⚠️ 최종 안전망 — _getDayEventsRaw 내부에서 예기치 못한 예외가 나도(개별 origin 단위 방어는
+  // 이미 해뒀지만 혹시 모를 다른 경로 대비) 달력 전체 로딩이 죽지 않도록, 실패 시 이 날짜의
+  // 물리 row만이라도(반복 펼치기 없이) 표시하는 최소 폴백으로 전환한다. [2026-08-13]
+  let res;
+  try{
+    res=_getDayEventsRaw(date);
+  }catch(e){
+    console.warn('_getDayEventsRaw 실패 — 이 날짜는 물리 일정만 표시:', date, e);
+    res=_events[date]||[];
+  }
   _gdeCache.set(date,res);
   return res;
 }
