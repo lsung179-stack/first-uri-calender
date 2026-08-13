@@ -1913,6 +1913,11 @@ body.ev-dragging .cal-cell{cursor:grabbing}
 .ev-multi-day.today{border-color:var(--accent)}
 .ev-multi-day:active{transform:scale(.92)}
 .ev-multi-count{font-size:11px;color:var(--sub);text-align:center;padding-top:4px}
+/* 기간+반복(요일기반) 조합 — 달력은 반복 요일 칩이 계산한 기간을 보여주는 미리보기 전용,
+   탭으로 직접 고르면 칩 상태와 어긋나므로 클릭 비활성화(회색 안내문으로 표시). [2026-08-13] */
+.ev-multi-cal.range-preview .ev-multi-day{cursor:default;pointer-events:none}
+.ev-multi-cal.range-preview .ev-multi-day:active{transform:none}
+.range-preview-hint{font-size:11px;color:var(--sub);text-align:center;padding:2px 0 6px}
 
 /* 캘린더 셀 — 기간 일정 바 (시작·중간·끝) */
 .cal-evbar.ev-l-open{border-top-left-radius:3px;border-bottom-left-radius:3px;margin-left:3px}
@@ -3130,6 +3135,8 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
 .tmc-cell.range-end{background:var(--accent);color:var(--card)!important;font-weight:700;border-radius:0 8px 8px 0}
 .tmc-cell.range-one{background:var(--accent);color:var(--card)!important;font-weight:700;border-radius:8px}
 .tmc-summary{text-align:center;font-size:12px;color:var(--sub);font-weight:600;padding:9px 4px 2px}
+/* 할일 — 기간+반복(요일기반) 미리보기 전용 달력(일정 .ev-multi-cal.range-preview와 대칭). [2026-08-13] */
+#todoMiniCal.range-preview .tmc-cell{cursor:default;pointer-events:none}
 .todo-color-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:4px 2px;margin-top:4px}
 .todo-color-dot{width:100%;aspect-ratio:1;height:auto;border-radius:50%;cursor:pointer;border:none;position:relative;transition:transform .12s}
 .todo-color-dot.on{transform:none}
@@ -11771,6 +11778,9 @@ function _evRangeAutoFromWeekdays(){
     _rangeEnd=(spanLen>1)?shiftDateKey(start,spanLen-1):null;
     syncRangeHiddenInputs();
     renderRangeBoxes();
+    // 달력이 미리보기로 계속 보이므로(2026-08-13) 자동 계산된 기간이 있는 달로 뷰를 맞춰줌
+    _rangeCalDate=parseDateKey(_rangeStart); _rangeCalDate.setDate(1);
+    renderRangeCal();
   }catch(_){}
 }
 function _evRangeShiftWeek(dir){
@@ -11779,16 +11789,18 @@ function _evRangeShiftWeek(dir){
   if(_rangeEnd)_rangeEnd=shiftDateKey(_rangeEnd,dir*7);
   syncRangeHiddenInputs();
   renderRangeBoxes();
+  try{ _rangeCalDate=parseDateKey(_rangeStart); _rangeCalDate.setDate(1); renderRangeCal(); }catch(_){}
 }
-/* 기간 모드 + 반복(요일 기반)이면 탭식 미니캘린더를 숨기고 주 이동 네비만 노출.
-   반복이 없거나 요일 기반이 아니면(며칠/매년) 기존 탭식 미니캘린더 그대로. [2026-08-13] */
+/* 기간 모드 + 반복(요일 기반)이면 미니캘린더는 계속 보여주되(2026-08-13, 사용자 요청 "달력을
+   다시 보여주되 자동선택 표시만 추가") 탭은 막고(range-preview) 반복 요일 칩이 계산한 기간을
+   하이라이트로만 보여줌 — 위 "이전 주/다음 주"로 주를 옮기는 게 실제 조작. */
 let _evRangeCalHidden=false;  // 직전에 계산한 숨김 상태(false→true 전환 시점 감지용)
 function _updateRangeCalVisibility(){
   if(_selectedMode!=='range')return;
   const hide=_evRepeatUsesWeekday();
   const grid=document.getElementById('evRangeMiniCal');
   const nav=document.getElementById('evRangeWeekNav');
-  if(grid)grid.style.display=hide?'none':'';
+  if(grid){ grid.style.display=''; grid.classList.toggle('range-preview',hide); }
   if(nav)nav.style.display=hide?'':'none';
   if(hide){
     if(!_evRangeCalHidden){
@@ -14350,6 +14362,9 @@ function rangeCalNav(diff){
   renderRangeCal();
 }
 function onRangeCellClick(key){
+  // 기간+반복(요일기반)이면 달력은 미리보기 전용(CSS pointer-events:none으로도 막혀있지만
+  // 방어적으로 한번 더 확인) — 탭 무시, 반복 요일 칩이 유일한 조작 수단. [2026-08-13]
+  if(_evRepeatUsesWeekday())return;
   // V1 로직: 첫 탭=시작, 두번째=끝(시작보다 빠르면 swap), 같으면 끝 reset, 끝 있으면 새 시작
   if(!_rangeStart||_rangeEnd){
     _rangeStart=key;_rangeEnd=null;
@@ -22082,6 +22097,11 @@ function _tdRangeAutoFromWeekdays(){
     _todoRangeStart=start;
     _todoRangeEnd=(spanLen>1)?shiftDateKey(start,spanLen-1):null;
     updateRangeChips();
+    // 달력이 미리보기로 계속 보이므로(2026-08-13) 표시 월만 맞춰둠 — 이 함수는 항상
+    // renderTodoMiniCal()의 호출 체인 안에서만 실행되므로 여기서 다시 render를 부르면
+    // 무한재귀가 됨(renderTodoMiniCal→_updateTdRangeCalVisibility→여기). render는 호출 안 함.
+    const sd=parseDateKey(_todoRangeStart);
+    _todoMiniY=sd.getFullYear(); _todoMiniM=sd.getMonth();
   }catch(_){}
 }
 function _tdRangeShiftWeek(dir){
@@ -22089,15 +22109,17 @@ function _tdRangeShiftWeek(dir){
   _todoRangeStart=shiftDateKey(_todoRangeStart,dir*7);
   if(_todoRangeEnd)_todoRangeEnd=shiftDateKey(_todoRangeEnd,dir*7);
   updateRangeChips();
+  try{ const sd=parseDateKey(_todoRangeStart); _todoMiniY=sd.getFullYear(); _todoMiniM=sd.getMonth(); }catch(_){}
   renderTodoMiniCal();
 }
-/* 기간 모드 + 반복(요일 기반)이면 탭식 미니캘린더를 숨기고 주 이동 네비만 노출. [2026-08-13] */
+/* 기간 모드 + 반복(요일 기반)이면 미니캘린더는 계속 보여주되(2026-08-13, 일정 evCard와 대칭)
+   탭은 막고(range-preview) 반복 요일 칩이 계산한 기간을 하이라이트로만 보여줌. */
 let _tdRangeCalHidden=false;  // 직전에 계산한 숨김 상태(false→true 전환 시점 감지용, 일정과 대칭)
 function _updateTdRangeCalVisibility(){
   const hide=(_todoType==='range')&&_tdRepeatUsesWeekday();
   const grid=$('todoMiniCal');
   const nav=$('todoRangeWeekNav');
-  if(grid)grid.style.display=hide?'none':'';
+  if(grid){ grid.style.display=''; grid.classList.toggle('range-preview',hide); }
   if(nav)nav.style.display=hide?'':'none';
   if(hide){
     if(!_tdRangeCalHidden){
@@ -22350,7 +22372,7 @@ function _tmcCellClass(key,dow,isOther){
 function renderTodoMiniCal(){
   const wrap=$('todoMiniCal'); if(!wrap) return;
   try{ _updateTdRangeCalVisibility(); }catch(_){}
-  if(wrap.style.display==='none')return;  // 반복(요일기반)+기간 조합이면 탭식 달력은 숨김 — 주 이동 네비만 사용
+  if(wrap.style.display==='none')return;  // 안전장치(현재는 항상 보임, 2026-08-13부터 미리보기로 전환)
   const ws=getWeekStartPref();
   const y=_todoMiniY, m=_todoMiniM;
   const first=new Date(y,m,1);
@@ -22394,6 +22416,9 @@ function renderTodoMiniCal(){
   updateTodoMiniSummary();
 }
 function todoMiniPick(key){
+  // 기간+반복(요일기반)이면 달력은 미리보기 전용(CSS pointer-events:none으로도 막혀있지만
+  // 방어적으로 한번 더 확인) — 탭 무시, 반복 요일 칩이 유일한 조작 수단. [2026-08-13]
+  if(_todoType==='range'&&_tdRepeatUsesWeekday())return;
   if(_todoType==='single'){
     _todoSingleDate=key;
   } else if(_todoType==='range'){
