@@ -3464,13 +3464,15 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
   </div>
 </div>
 
-<!-- 반복 일정 삭제 선택 모달 -->
+<!-- 반복 일정 삭제 선택 모달 — 아이폰 캘린더 스타일 3택(이 일정에만/이후 일정에도/모든 일정에) +
+     취소. rdFuture는 opts.futureLabel이 있을 때만 표시(기간+반복 등 복잡한 조합은 기존 2택 유지). [2026-08-14] -->
 <div class="vc-overlay" id="rdOverlay">
   <div class="vc-card">
     <div class="mo-title">반복 일정 삭제</div>
     <div class="mo-sub" id="rdMsg">반복되는 일정이에요.<br>어떻게 삭제할까요?</div>
     <div class="mo-actions">
       <button class="btn btn-primary" id="rdOne">이 날짜만 삭제</button>
+      <button class="btn" id="rdFuture" style="display:none;background:#fff;color:var(--accent);border:1.5px solid var(--accent)">이후 반복 삭제</button>
       <button class="btn" id="rdAll" style="background:#fff;color:var(--accent);border:1.5px solid var(--accent)">모든 반복 삭제</button>
       <button class="mo-cancel" id="rdCancel">취소</button>
     </div>
@@ -6646,6 +6648,7 @@ function askRecurringDelete(msg, opts){
     const ov=document.getElementById('rdOverlay');
     if(!ov){resolve(window.confirm((msg||'')+'\n\n확인=모두 삭제, 취소=중단')?'all':null);return;}
     const oneBtn=document.getElementById('rdOne');
+    const futureBtn=document.getElementById('rdFuture');
     const allBtn=document.getElementById('rdAll');
     const cancelBtn=document.getElementById('rdCancel');
     const titleEl=ov.querySelector('.mo-title');
@@ -6654,16 +6657,21 @@ function askRecurringDelete(msg, opts){
     if(titleEl)titleEl.textContent=(opts&&opts.title)||'반복 일정 삭제';
     if(oneBtn)oneBtn.textContent=(opts&&opts.oneLabel)||'이 날짜만 삭제';
     if(allBtn)allBtn.textContent=(opts&&opts.allLabel)||'모든 반복 삭제';
+    // 3번째 버튼(아이폰 캘린더 "이후 일정에도 적용")은 futureLabel이 있을 때만 노출 —
+    // 기간(range)+반복 등 복잡한 조합은 아직 2택(이번만/전체)만 지원해 숨겨둠. [2026-08-14]
+    const hasFuture=!!(opts&&opts.futureLabel);
+    if(futureBtn){ futureBtn.style.display=hasFuture?'':'none'; if(hasFuture)futureBtn.textContent=opts.futureLabel; }
     document.body.appendChild(ov);  // 시트 위로 올림
     ov.classList.add('on');
     try{ if(typeof hideAdBanner==='function') hideAdBanner(); }catch(_){} // 모달 위 광고 겹침 방지
     const finish=(val)=>{
       ov.classList.remove('on');
-      oneBtn.onclick=null;allBtn.onclick=null;cancelBtn.onclick=null;ov.onclick=null;
+      oneBtn.onclick=null;if(futureBtn)futureBtn.onclick=null;allBtn.onclick=null;cancelBtn.onclick=null;ov.onclick=null;
       try{ if(typeof _subScreenExit==='function') _subScreenExit(); }catch(_){} // 닫히면 광고 복원(메인 화면이면)
       resolve(val);
     };
     oneBtn.onclick=()=>finish('one');
+    if(futureBtn)futureBtn.onclick=()=>finish('future');
     allBtn.onclick=()=>finish('all');
     cancelBtn.onclick=()=>finish(null);
     ov.onclick=(e)=>{if(e.target===ov)finish(null);};
@@ -12053,18 +12061,22 @@ async function openEditEvent(eventId){
   // 편집 대상으로 열었던 날짜(반복 일정의 가상 발생일이면 origin의 실제 날짜와 다름)
   const viewDate=_selectedDate;
   _editOccurrenceScope=null;
-  // 반복(단독·비기간·비다중방) 일정의 origin이 아닌 발생일을 수정하려는 경우 —
-  // '이 일정만 변경'/'이후 일정도 변경' 범위 선택 (2026-08-13, 고객 요청)
+  // 반복(단독·비기간·비다중방) 일정 수정 — 아이폰 캘린더 스타일 3택("이 일정에만/이후 일정에도/모든
+  // 일정에 적용"). ⚠️ [2026-08-14] 이전엔 origin 자신의 날짜를 열 때는 이 선택 없이 바로 수정됐지만
+  // (=암묵적 '모든 일정에 적용'), 이제 origin이든 미래 발생이든 항상 3택을 물어봄(사용자 요청, iOS
+  // 스크린샷과 동일 동작). [2026-08-13] '이 일정만 변경'/'이후 일정도 변경' 2택으로 처음 도입.
   const _rtChk=ev.repeat_type||(ev.recurring_yearly?'yearly':'none');
-  const isRecurringOcc=_rtChk!=='none' && !ev.shared_id && !ev.range_group_id && !ev.multi_group_id && viewDate && viewDate!==ev.date;
+  const isRecurringOcc=_rtChk!=='none' && !ev.shared_id && !ev.range_group_id && !ev.multi_group_id;
   if(isRecurringOcc){
     const scopeLabel={weekly:'매주',monthly:'매월',yearly:'매년'}[_rtChk]||'반복';
     const choice=await askRecurringDelete(
-      `${scopeLabel} 반복되는 일정이에요.<br>이 일정만 변경할까요,<br>아니면 이후 일정도 변경할까요?`,
-      {title:'반복 일정 수정', oneLabel:'이 일정만 변경', allLabel:'이후 일정도 변경'}
+      `${scopeLabel} 반복되는 일정이에요.<br>어떻게 수정할까요?`,
+      {title:'반복 일정 수정', oneLabel:'이 일정에만 적용', futureLabel:'이후 일정에도 적용', allLabel:'모든 일정에 적용'}
     );
     if(!choice)return;
-    _editOccurrenceScope=choice;  // 'one'=이 발생만 분리, 'all'=이 날짜부터 이후 전체
+    // 'one'=이 발생만 분리, 'future'=이 날짜부터 이후 전체(원본 자름+새 원본 분리),
+    // 'all'=범위 선택 없이 원본을 직접 수정 → 과거·미래 모든 발생에 그대로 반영(기존 무분기 경로 재사용)
+    _editOccurrenceScope=(choice==='all')?null:choice;
   }
   // 편집 기준 날짜 — 범위 선택된 개별 발생 편집이면 그 발생일, 아니면 원본 일정의 실제 날짜로 맞춤(반복 일정 미래 연도 표시분 대응)
   _selectedDate=_editOccurrenceScope?viewDate:(ev.date||_selectedDate);
@@ -15069,13 +15081,15 @@ async function deleteEvent(eventId){
     // anchor를 못 찾은 이례적 경우(정상적으론 발생 안 함) — 아래 단순 반복 삭제 로직으로 안전하게 폴백
   }
 
-  // 반복 일정(매주/매월/매년)이면 '이 날짜만 / 모두' 선택
+  // 반복 일정(매주/매월/매년) — 아이폰 캘린더 스타일 3택("이 일정에만/이후 일정에도/모든 일정에
+  // 적용"). [2026-08-14, 사용자 요청 "반복일정을 수정하거나 삭제하면 사진처럼 적용시켜줘"]
   const _rt=ev.repeat_type||(ev.recurring_yearly?'yearly':'none');
   if(_rt!=='none' && !ev.shared_id){
     const occDate=_selectedDate||_dayDate||ev.date;
     const scopeLabel={weekly:'매주',monthly:'매월',yearly:'매년'}[_rt]||'반복';
     const choice=await askRecurringDelete(
-      `${scopeLabel} 반복되는 일정이에요.<br><b>${occDate}</b> 일정만 삭제할까요,<br>아니면 모든 반복을 삭제할까요?`
+      `${scopeLabel} 반복되는 일정이에요.<br>어떻게 삭제할까요?`,
+      {title:'반복 일정 삭제', oneLabel:'이 일정에만 적용', futureLabel:'이후 일정에도 적용', allLabel:'모든 일정에 적용'}
     );
     if(!choice)return;
     try{
@@ -15094,6 +15108,16 @@ async function deleteEvent(eventId){
         const {error}=await supa.from('events').update({repeat_except:ex}).eq('id',ev.id);
         if(error)throw error;
         toast('이 날짜 일정만 삭제됐어요');
+      }else if(choice==='future'){
+        // 이후(이 날짜 포함) 반복 종료 — repeat_until을 이 날짜 전날로 잘라 이후 발생을 모두
+        // 중단(과거 발생은 그대로 남음, origin row 자체는 안 지움 — 편집의 '이후 일정도 변경'과 동일 기법). [2026-08-14]
+        const cutoff=shiftDateKey(occDate,-1);
+        const {data:cur,error:e0}=await supa.from('events').select('repeat_until').eq('id',ev.id).maybeSingle();
+        if(e0)throw e0;
+        const newUntil=(cur&&cur.repeat_until&&cur.repeat_until<cutoff)?cur.repeat_until:cutoff;
+        const {error}=await supa.from('events').update({repeat_until:newUntil}).eq('id',ev.id);
+        if(error)throw error;
+        toast('이후 반복 일정이 삭제됐어요');
       }else{
         const photoUrlsToCleanup=(Array.isArray(ev.photo_urls)&&ev.photo_urls.length)?ev.photo_urls.filter(Boolean):(ev.photo_url?[ev.photo_url]:[]);
         const {error}=await supa.from('events').delete().eq('id',ev.id);
