@@ -11854,21 +11854,16 @@ function _renderRepChips(containerId, selected){
     c.appendChild(b);
   }
 }
-let _evRangeWeekdaysUserTouched=false;  // 기간+반복 모드에서 사용자가 요일 칩을 실제로 눌렀는지
 function _toggleRepWeekday(dow){
-  if(_selectedMode==='range'&&_evRangeCalHidden&&!_evRangeWeekdaysUserTouched){
-    // 기간+반복 모드에서 처음 누르는 요일 — 반복을 켤 때 자동으로 잡힌 임시 기본값(placeholder,
-    // 오늘/기존 시작일 요일)이 남아있으면 이 클릭이 거기에 '추가'돼 기간이 하루 더 길어지거나,
-    // 하필 그 요일을 다시 누르면 '이미 선택됨'으로 오인해 꺼지는 문제가 있었음(2026-08-13 발견)
-    // → 첫 클릭은 추가가 아니라 placeholder를 통째로 이 요일 하나로 교체한다.
-    _evRepeatWeekdays=[dow];
-    _evRangeWeekdaysUserTouched=true;
-  }else{
-    const i=_evRepeatWeekdays.indexOf(dow);
-    if(i>=0){ if(_evRepeatWeekdays.length>1)_evRepeatWeekdays.splice(i,1); }  // 최소 1개 유지
-    else _evRepeatWeekdays.push(dow);
-    _evRepeatWeekdays.sort((a,b)=>a-b);
-  }
+  // [2026-08-14] 기간+반복 모드 첫 클릭에 'placeholder를 통째로 교체'하던 특수분기를 제거했음
+  // — 사용자 피드백: 초기 표시된 요일(placeholder)이 있는 상태에서 다른 요일을 누르면 그 요일까지
+  // 기간으로 확장되길 원함("해당 요일까지 기간표시"). 대신 _updateRangeCalVisibility()가 전환
+  // 시점에 placeholder 자체를 아예 비워두므로(빈 배열), 항상 아래 단순 추가/제거 토글만으로
+  // 두 요구(무엇을 눌러도 그 요일까지 확장 / 초기엔 아무것도 선택 안 됨)가 모두 자연히 충족됨.
+  const i=_evRepeatWeekdays.indexOf(dow);
+  if(i>=0){ if(_evRepeatWeekdays.length>1)_evRepeatWeekdays.splice(i,1); }  // 최소 1개 유지
+  else _evRepeatWeekdays.push(dow);
+  _evRepeatWeekdays.sort((a,b)=>a-b);
   syncEvRepeatUI();  // → _updateRangeCalVisibility()가 기간 모드면 _evRangeAutoFromWeekdays() 호출
 }
 /* 기간(range) + 반복(매주/매월N째주) 결합 시 — 탭식 미니캘린더 대신 반복 요일 칩이 기간을 직접
@@ -11917,19 +11912,17 @@ function _updateRangeCalVisibility(){
   if(nav)nav.style.display=hide?'':'none';
   if(hide){
     if(!_evRangeCalHidden){
-      // 방금 '탭식 달력 숨김' 상태로 전환됨 — 반복을 켤 때 자동으로 잡혔던 요일 하나(오늘/기존
-      // 시작일 기준 기본값)가 남아있으면 이후 칩 선택에 섞여 기간이 엉뚱하게 커지거나, 사용자가
-      // 원하는 요일을 눌러도 "이미 선택돼 있어서" 꺼져버리는 문제가 있었음(2026-08-13 발견) —
-      // 전환 시점에 시작일 하나의 요일로 깨끗하게 리셋해 사용자가 칩으로 새로 쌓아가게 함.
-      try{
-        const startDow=parseDateKey(_rangeStart||_dayDate||_selectedDate).getDay();
-        _evRepeatWeekdays=[startDow];
-        _renderRepChips('evWeekdayChips',_evRepeatWeekdays);
-        _renderRepChips('evNthChips',_evRepeatWeekdays);
-      }catch(_){}
-      _evRangeWeekdaysUserTouched=false;  // 리셋된 플레이스홀더 — 다음 첫 클릭은 추가가 아니라 교체
+      // 방금 '탭식 달력 숨김' 상태로 전환됨 — [2026-08-14] 요일 하나를 자동 선택해두던 것을
+      // 완전히 제거(사용자 피드백: 초기에 요일이 미리 표시돼 있으면 다른 요일을 눌렀을 때
+      // 그 표시가 사라지고 새로 누른 것만 남아 헷갈림) → 아무것도 선택되지 않은 빈 상태로 시작.
+      // 이제 어떤 요일을 눌러도 항상 '추가'되므로(_toggleRepWeekday), 처음 누른 요일부터
+      // 그 다음 누른 요일까지 자연스럽게 기간으로 확장되고, 원치 않는 기본 요일이 섞여
+      // 기간이 엉뚱하게 커지는 예전 버그(2026-08-13)도 애초에 placeholder가 없어 재발하지 않음.
+      _evRepeatWeekdays=[];
+      _renderRepChips('evWeekdayChips',_evRepeatWeekdays);
+      _renderRepChips('evNthChips',_evRepeatWeekdays);
     }
-    _evRangeAutoFromWeekdays();  // 내부에서 renderRangeCal() 호출(사이클 미리보기 반영)
+    _evRangeAutoFromWeekdays();  // 내부에서 renderRangeCal() 호출(사이클 미리보기 반영, 빈 배열이면 no-op)
   }else if(_evRangeCalHidden){
     // 방금 '미리보기' 모드에서 일반 탭식 기간 모드로 전환됨 — 그리드에 직전 다중 사이클
     // 하이라이트가 남아있을 수 있어(스테일) 일반 로직으로 다시 그려줌. [2026-08-13]
@@ -11947,7 +11940,7 @@ function resetEvRepeat(){ _evRepeatType='none'; _evRepeatWeekdays=[]; _evMonthly
   _evRepeatInterval=1; _evUntilMode='none'; _evRepeatCount=null; _evUntilCalDate=null; _evLunarMonth=null; _evLunarDay=null;
   // 폼을 새로 열 때마다 리셋 — 안 하면 세션 중 이미 한 번 '기간+반복' 전환을 겪은 뒤엔
   // _evRangeCalHidden이 계속 true로 남아 다음 폼에서 플레이스홀더 리셋(reseed)이 다시 안 일어남. [2026-08-13]
-  _evRangeCalHidden=false; _evRangeWeekdaysUserTouched=false;
+  _evRangeCalHidden=false;
   syncEvRepeatUI();
   updateEvRepeatSummaryText(); }
 
@@ -11958,7 +11951,7 @@ let _evRepSheetSnapshot=null;
 function openEvRepeatSheet(){
   _evRepSheetSnapshot={
     type:_evRepeatType, weekdays:(_evRepeatWeekdays||[]).slice(), monthlyMode:_evMonthlyMode, nthWeek:_evNthWeek,
-    until:_evRepeatUntil, rangeCalHidden:_evRangeCalHidden, rangeTouched:_evRangeWeekdaysUserTouched,
+    until:_evRepeatUntil, rangeCalHidden:_evRangeCalHidden,
     rangeStart:_rangeStart, rangeEnd:_rangeEnd,
     interval:_evRepeatInterval, untilMode:_evUntilMode, count:_evRepeatCount,
     lunarMonth:_evLunarMonth, lunarDay:_evLunarDay
@@ -11984,7 +11977,7 @@ function cancelEvRepeatSheet(){
   const s=_evRepSheetSnapshot;
   if(s){
     _evRepeatType=s.type; _evRepeatWeekdays=s.weekdays.slice(); _evMonthlyMode=s.monthlyMode; _evNthWeek=s.nthWeek;
-    _evRepeatUntil=s.until; _evRangeCalHidden=s.rangeCalHidden; _evRangeWeekdaysUserTouched=s.rangeTouched;
+    _evRepeatUntil=s.until; _evRangeCalHidden=s.rangeCalHidden;
     _rangeStart=s.rangeStart; _rangeEnd=s.rangeEnd;
     _evRepeatInterval=s.interval; _evUntilMode=s.untilMode; _evRepeatCount=s.count;
     _evLunarMonth=s.lunarMonth; _evLunarDay=s.lunarDay;
@@ -12216,10 +12209,10 @@ async function openEditEvent(eventId){
   _evLunarDay=(typeof ev.repeat_lunar_day==='number')?ev.repeat_lunar_day:null;
   _evUntilMode=_evRepeatCount?'count':(_evRepeatUntil?'date':'none');
   _evUntilCalDate=null;
-  // 저장된 실제 반복 요일을 불러오는 중 — 새 일정의 '플레이스홀더 리셋' 대상이 아니므로
-  // 이미 확정값으로 표시(다음 칩 클릭이 실수로 이 값을 통째로 지우지 않게). [2026-08-13]
+  // 저장된 실제 반복 요일을 불러오는 중 — _evRangeCalHidden을 미리 최종값으로 세팅해두면
+  // _updateRangeCalVisibility()가 '방금 전환됨'으로 오인하지 않아 아래서 로드한 요일이
+  // 빈 배열로 리셋되지 않음(신규 작성 시의 플레이스홀더-초기화 로직과 구분). [2026-08-13]
   _evRangeCalHidden=!!(ev.range_group_id&&_evRepeatUsesWeekday());
-  _evRangeWeekdaysUserTouched=true;
   syncEvRepeatUI();
   updateEvRepeatSummaryText();
   // 메모/사진 — 기존 값 로드
@@ -21935,7 +21928,7 @@ function openTodoAddSheet(dateKeyStr, opts){
   _tdRepeatInterval=1; _tdUntilMode='none'; _tdRepeatCount=null; _tdUntilCalDate=null;
   _tdLunarMonth=null; _tdLunarDay=null;
   // 폼을 새로 열 때마다 리셋 — 일정(evCard)의 동일 수정과 대칭. [2026-08-13]
-  _tdRangeCalHidden=false; _tdRangeWeekdaysUserTouched=false;
+  _tdRangeCalHidden=false;
   _todoTarget='self';
   _todoMembers=[_currentUser?.id];
   const d=parseDateKey(start); _todoMiniY=d.getFullYear(); _todoMiniM=d.getMonth();
@@ -21995,10 +21988,9 @@ function openTodoEditSheet(id, opts){
   _tdLunarDay=(typeof t.repeat_lunar_day==='number')?t.repeat_lunar_day:null;
   _tdUntilMode=_tdRepeatCount?'count':(_tdRepeatUntil?'date':'none');
   _tdUntilCalDate=null;
-  // 저장된 실제 반복 요일을 불러오는 중 — 새 할일의 '플레이스홀더 리셋' 대상이 아니므로
-  // 이미 확정값으로 표시(일정 openEditEvent와 대칭). [2026-08-13]
+  // 저장된 실제 반복 요일을 불러오는 중 — _tdRangeCalHidden을 미리 최종값으로 세팅해두면
+  // 아래서 로드한 요일이 플레이스홀더-초기화 로직에 의해 빈 배열로 리셋되지 않음(일정과 대칭). [2026-08-13]
   _tdRangeCalHidden=!!(_todoType==='range'&&_tdRepeatUsesWeekday());
-  _tdRangeWeekdaysUserTouched=true;
   if(Array.isArray(t.member_keys)&&t.member_keys.length>=2){
     _todoTarget='all'; _todoMembers=t.member_keys.slice();
   }else{
@@ -22079,7 +22071,7 @@ let _tdRepSheetSnapshot=null;
 function openTdRepeatSheet(){
   _tdRepSheetSnapshot={
     type:_todoRepeat, weekdays:(_tdRepeatWeekdays||[]).slice(), monthlyMode:_tdMonthlyMode, nthWeek:_tdNthWeek,
-    until:_tdRepeatUntil, rangeCalHidden:_tdRangeCalHidden, rangeTouched:_tdRangeWeekdaysUserTouched,
+    until:_tdRepeatUntil, rangeCalHidden:_tdRangeCalHidden,
     rangeStart:_todoRangeStart, rangeEnd:_todoRangeEnd,
     interval:_tdRepeatInterval, untilMode:_tdUntilMode, count:_tdRepeatCount,
     lunarMonth:_tdLunarMonth, lunarDay:_tdLunarDay
@@ -22106,7 +22098,7 @@ function cancelTdRepeatSheet(){
   const s=_tdRepSheetSnapshot;
   if(s){
     _todoRepeat=s.type; _tdRepeatWeekdays=s.weekdays.slice(); _tdMonthlyMode=s.monthlyMode; _tdNthWeek=s.nthWeek;
-    _tdRepeatUntil=s.until; _tdRangeCalHidden=s.rangeCalHidden; _tdRangeWeekdaysUserTouched=s.rangeTouched;
+    _tdRepeatUntil=s.until; _tdRangeCalHidden=s.rangeCalHidden;
     _todoRangeStart=s.rangeStart; _todoRangeEnd=s.rangeEnd;
     _tdRepeatInterval=s.interval; _tdUntilMode=s.untilMode; _tdRepeatCount=s.count;
     _tdLunarMonth=s.lunarMonth; _tdLunarDay=s.lunarDay;
@@ -22334,19 +22326,14 @@ function _renderTdChips(containerId,selected){
   const c=$(containerId); if(!c)return; const N=['일','월','화','수','목','금','토']; c.innerHTML='';
   for(let i=0;i<7;i++){ const b=document.createElement('button'); b.type='button'; b.className='rep-chip'+((selected&&selected.indexOf(i)>=0)?' on':''); b.textContent=N[i]; (function(dow){ b.onclick=function(){ _toggleTdWeekday(dow); }; })(i); c.appendChild(b); }
 }
-let _tdRangeWeekdaysUserTouched=false;  // 기간+반복 모드에서 사용자가 요일 칩을 실제로 눌렀는지(일정과 대칭)
 function _toggleTdWeekday(dow){
-  if(_todoType==='range'&&_tdRangeCalHidden&&!_tdRangeWeekdaysUserTouched){
-    // 탭식 달력 숨김 전환 때 리셋된 플레이스홀더 요일 — 사용자의 첫 클릭은 거기 더하는 게 아니라
-    // 완전히 교체(대체)해야 함(안 그러면 스텁 요일이 섞여 기간이 커지거나, 오늘과 겹치면 꺼져버림). [2026-08-13]
-    _tdRepeatWeekdays=[dow];
-    _tdRangeWeekdaysUserTouched=true;
-  }else{
-    const i=_tdRepeatWeekdays.indexOf(dow);
-    if(i>=0){ if(_tdRepeatWeekdays.length>1)_tdRepeatWeekdays.splice(i,1); }
-    else _tdRepeatWeekdays.push(dow);
-    _tdRepeatWeekdays.sort(function(a,b){return a-b;});
-  }
+  // [2026-08-14] 일정(evCard)의 _toggleRepWeekday와 동일하게 첫클릭 '교체' 특수분기 제거 —
+  // _updateTdRangeCalVisibility()가 전환 시점에 요일을 아예 비워두므로 항상 단순 추가/제거
+  // 토글만으로 충분(사용자 피드백: 초기 표시 요일이 다른 요일 탭 시 사라지던 문제 해소).
+  const i=_tdRepeatWeekdays.indexOf(dow);
+  if(i>=0){ if(_tdRepeatWeekdays.length>1)_tdRepeatWeekdays.splice(i,1); }
+  else _tdRepeatWeekdays.push(dow);
+  _tdRepeatWeekdays.sort(function(a,b){return a-b;});
   _syncTdRepeatUI();  // → _updateTdRangeCalVisibility()가 기간 모드면 _tdRangeAutoFromWeekdays() 호출
 }
 /* 기간(range) + 반복(매주/매월N째주) 결합 시 — 반복 요일 칩이 기간을 직접 결정(선택 요일들의
@@ -22392,15 +22379,12 @@ function _updateTdRangeCalVisibility(){
   if(nav)nav.style.display=hide?'':'none';
   if(hide){
     if(!_tdRangeCalHidden){
-      // 반복을 켤 때 자동으로 잡혔던 요일 하나가 남아있으면 이후 칩 선택에 섞이는 문제 방지 —
-      // 전환 시점에 시작일 하나의 요일로 리셋(일정 evCard의 동일 로직과 대칭). [2026-08-13]
-      try{
-        const startDow=parseDateKey(_todoRangeStart||_todoSingleDate).getDay();
-        _tdRepeatWeekdays=[startDow];
-        _renderTdChips('tdWeekdayChips',_tdRepeatWeekdays);
-        _renderTdChips('tdNthChips',_tdRepeatWeekdays);
-      }catch(_){}
-      _tdRangeWeekdaysUserTouched=false;  // 리셋된 플레이스홀더 — 다음 첫 클릭은 추가가 아니라 교체
+      // [2026-08-14] 요일 하나를 자동 선택해두던 것을 완전히 제거(일정 evCard와 대칭) —
+      // 아무것도 선택 안 된 빈 상태로 시작, 어떤 요일을 눌러도 항상 '추가'되므로 처음 누른
+      // 요일부터 다음 누른 요일까지 자연스럽게 기간으로 확장됨.
+      _tdRepeatWeekdays=[];
+      _renderTdChips('tdWeekdayChips',_tdRepeatWeekdays);
+      _renderTdChips('tdNthChips',_tdRepeatWeekdays);
     }
     _tdRangeAutoFromWeekdays();
   }
