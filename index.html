@@ -3706,6 +3706,13 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
           <div class="todo-date-chip" id="todoRangeEndChip" onclick="focusTodoRangeDate('end')">종료일</div>
         </div>
       </div>
+      <!-- 반복(매주/매월N째주) 활성 시 — 반복 요일 칩이 기간을 결정하므로 탭식 미니캘린더 대신
+           주 단위 이동만 제공(일정 evCard의 evRangeWeekNav와 대칭). [2026-08-13] -->
+      <div class="ev-multi-nav" id="todoRangeWeekNav" style="display:none;margin-top:8px">
+        <button type="button" class="ev-multi-nav-btn" onclick="_tdRangeShiftWeek(-1)">‹ 이전 주</button>
+        <span class="ev-multi-nav-title" style="font-size:12px">반복 요일로 기간 자동 계산</span>
+        <button type="button" class="ev-multi-nav-btn" onclick="_tdRangeShiftWeek(1)">다음 주 ›</button>
+      </div>
       <div id="todoMultiDateRow" style="display:none;margin-top:8px">
         <div class="todo-multi-input" id="todoMultiChips"><span class="todo-multi-placeholder">아래 달력에서 날짜를 탭하세요</span></div>
       </div>
@@ -4103,7 +4110,14 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
           <span class="ev-range-arrow">→</span>
           <div class="ev-range-box" id="evRangeEndBox">종료일</div>
         </div>
-        <div class="ev-multi-cal">
+        <!-- 반복(매주/매월N째주) 활성 시 — 반복 요일 칩이 기간을 결정하므로 탭식 미니캘린더 대신
+             주 단위 이동만 제공(날짜가 직접 탭 선택과 어긋나는 문제 방지). [2026-08-13] -->
+        <div class="ev-multi-nav" id="evRangeWeekNav" style="display:none">
+          <button type="button" class="ev-multi-nav-btn" onclick="_evRangeShiftWeek(-1)">‹ 이전 주</button>
+          <span class="ev-multi-nav-title" style="font-size:12px">반복 요일로 기간 자동 계산</span>
+          <button type="button" class="ev-multi-nav-btn" onclick="_evRangeShiftWeek(1)">다음 주 ›</button>
+        </div>
+        <div class="ev-multi-cal" id="evRangeMiniCal">
           <div class="ev-multi-nav">
             <button type="button" class="ev-multi-nav-btn" onclick="rangeCalNav(-1)">‹</button>
             <span class="ev-multi-nav-title" id="evRangeNavTitle">2026년 5월</span>
@@ -11382,6 +11396,7 @@ function syncEvRepeatUI(){
   if(showW) _renderRepChips('evWeekdayChips', _evRepeatWeekdays);
   if(showM) _syncEvMonthlyUI();
   _syncEvUntilUI();
+  try{ _updateRangeCalVisibility(); }catch(_){}
 }
 /* 반복 종료일 UI 동기화 — 매주/매월/매년 공통, '안 함'이면 통째로 숨김.
    네이티브 <select>는 iOS/Android에서 OS 기본 팝업(다크·체크마크, CSS로 스타일 불가)으로 뜨므로
@@ -11537,30 +11552,50 @@ function _renderRepChips(containerId, selected){
 }
 function _toggleRepWeekday(dow){
   const i=_evRepeatWeekdays.indexOf(dow);
-  let turnedOn=false;
   if(i>=0){ if(_evRepeatWeekdays.length>1)_evRepeatWeekdays.splice(i,1); }  // 최소 1개 유지
-  else { _evRepeatWeekdays.push(dow); turnedOn=true; }
+  else _evRepeatWeekdays.push(dow);
   _evRepeatWeekdays.sort((a,b)=>a-b);
-  syncEvRepeatUI();
-  // 기간(range) 모드에서 반복 요일을 바꾸면 미니 달력 시작일도 그 요일로 옮김(기간 길이는 유지) —
-  // 반복 요일과 기간 시작일이 어긋나 있으면 반복 투영이 엉뚱한 요일부터 시작되는 문제 방지. [2026-08-13]
-  if(_selectedMode==='range'&&_rangeStart){
-    try{
-      const targetDow=turnedOn?dow:_evRepeatWeekdays[0];
-      if(typeof targetDow==='number'){
-        const curDow=parseDateKey(_rangeStart).getDay();
-        const diff=targetDow-curDow;
-        if(diff!==0){
-          const spanLen=_rangeEnd?daysBetween(_rangeStart,_rangeEnd).length:1;
-          _rangeStart=shiftDateKey(_rangeStart,diff);
-          _rangeEnd=(spanLen>1)?shiftDateKey(_rangeStart,spanLen-1):null;
-          syncRangeHiddenInputs();
-          renderRangeCal();
-          renderRangeBoxes();
-        }
-      }
-    }catch(_){}
-  }
+  syncEvRepeatUI();  // → _updateRangeCalVisibility()가 기간 모드면 _evRangeAutoFromWeekdays() 호출
+}
+/* 기간(range) + 반복(매주/매월N째주) 결합 시 — 탭식 미니캘린더 대신 반복 요일 칩이 기간을 직접
+   결정하게 함(선택한 요일들의 최소~최대 요일 범위 = 기간 길이). 예: 화 하나만 선택→1일,
+   화·수 선택→2일(화~수), 화·수·목 선택→3일(화~목). 시작일은 기존 시작일의 주(week)를 유지하며
+   최소 선택 요일로 맞춤. 탭으로 직접 날짜를 고르면 어긋나기 쉬웠던 문제를 근본적으로 없앰. [2026-08-13] */
+function _evRepeatUsesWeekday(){
+  return (_evRepeatType==='weekly')||(_evRepeatType==='monthly'&&_evMonthlyMode==='nth');
+}
+function _evRangeAutoFromWeekdays(){
+  if(!_evRepeatWeekdays||!_evRepeatWeekdays.length)return;
+  const minDow=_evRepeatWeekdays[0], maxDow=_evRepeatWeekdays[_evRepeatWeekdays.length-1];
+  const spanLen=maxDow-minDow+1;
+  let start=_rangeStart||_dayDate||_selectedDate;
+  if(!start)return;
+  try{
+    const curDow=parseDateKey(start).getDay();
+    if(curDow!==minDow) start=shiftDateKey(start, minDow-curDow);
+    _rangeStart=start;
+    _rangeEnd=(spanLen>1)?shiftDateKey(start,spanLen-1):null;
+    syncRangeHiddenInputs();
+    renderRangeBoxes();
+  }catch(_){}
+}
+function _evRangeShiftWeek(dir){
+  if(!_rangeStart)return;
+  _rangeStart=shiftDateKey(_rangeStart,dir*7);
+  if(_rangeEnd)_rangeEnd=shiftDateKey(_rangeEnd,dir*7);
+  syncRangeHiddenInputs();
+  renderRangeBoxes();
+}
+/* 기간 모드 + 반복(요일 기반)이면 탭식 미니캘린더를 숨기고 주 이동 네비만 노출.
+   반복이 없거나 요일 기반이 아니면(며칠/매년) 기존 탭식 미니캘린더 그대로. [2026-08-13] */
+function _updateRangeCalVisibility(){
+  if(_selectedMode!=='range')return;
+  const hide=_evRepeatUsesWeekday();
+  const grid=document.getElementById('evRangeMiniCal');
+  const nav=document.getElementById('evRangeWeekNav');
+  if(grid)grid.style.display=hide?'none':'';
+  if(nav)nav.style.display=hide?'':'none';
+  if(hide)_evRangeAutoFromWeekdays();
 }
 function onEvMonthlyMode(m){
   _evMonthlyMode=(m==='nth'||m==='last')?m:'dom';
@@ -13918,6 +13953,7 @@ function setEventMode(mode){
     syncRangeHiddenInputs();
     renderRangeCal();
     renderRangeBoxes();
+    try{ _updateRangeCalVisibility(); }catch(_){}
   }else if(mode==='day'){
     if(!_dayDate)_dayDate=_selectedDate;
     _dayCalDate=_dayDate?parseDateKey(_dayDate):new Date();
@@ -21460,6 +21496,7 @@ function _syncTdRepeatUI(){
   if(showW)_renderTdChips('tdWeekdayChips',_tdRepeatWeekdays);
   if(showM)_syncTdMonthlyUI();
   _syncTdUntilUI();
+  try{ renderTodoMiniCal(); }catch(_){}
 }
 /* 반복 종료일 UI 동기화 — 일정과 동일, 커스텀 드롭다운(_toggleYmdPop 공용) 재사용.
    [초안 · 2026-08-10 → 2026-08-11 커스텀 드롭다운] */
@@ -21539,41 +21576,45 @@ function _renderTdChips(containerId,selected){
 }
 function _toggleTdWeekday(dow){
   const i=_tdRepeatWeekdays.indexOf(dow);
-  let turnedOn=false;
   if(i>=0){ if(_tdRepeatWeekdays.length>1)_tdRepeatWeekdays.splice(i,1); }
-  else { _tdRepeatWeekdays.push(dow); turnedOn=true; }
+  else _tdRepeatWeekdays.push(dow);
   _tdRepeatWeekdays.sort(function(a,b){return a-b;});
-  _syncTdRepeatUI();
-  // 기간(range) 모드에서 반복 요일을 바꾸면 미니 달력 시작일도 그 요일로 옮김(기간 길이 유지) [2026-08-13]
-  if(_todoType==='range'&&_todoRangeStart){
-    try{
-      const targetDow=turnedOn?dow:_tdRepeatWeekdays[0];
-      if(typeof targetDow==='number'){
-        const curDow=parseDateKey(_todoRangeStart).getDay();
-        const diff=targetDow-curDow;
-        if(diff!==0){
-          const spanLen=_todoRangeEnd?daysBetween(_todoRangeStart,_todoRangeEnd).length:1;
-          _todoRangeStart=shiftDateKey(_todoRangeStart,diff);
-          _todoRangeEnd=(spanLen>1)?shiftDateKey(_todoRangeStart,spanLen-1):null;
-          updateRangeChips();
-          renderTodoMiniCal();
-          updateTodoMiniSummary();
-        }
-      }
-    }catch(_){}
-  }
+  _syncTdRepeatUI();  // → _updateTdRangeCalVisibility()가 기간 모드면 _tdRangeAutoFromWeekdays() 호출
 }
-/* 기간(range) 미니 달력의 시작일이 바뀌면 반복 요일(매주/매월 N째주)을 그 시작일의 요일로
-   자동 맞춤 — 일정(evCard)의 동일 로직(_syncRepWeekdayFromRange)과 대칭. [2026-08-13] */
-function _syncTdRepWeekdayFromRange(){
-  if(!_todoRangeStart)return;
-  const usesWeekday=(_todoRepeat==='weekly')||(_todoRepeat==='monthly'&&_tdMonthlyMode==='nth');
-  if(!usesWeekday)return;
+/* 기간(range) + 반복(매주/매월N째주) 결합 시 — 반복 요일 칩이 기간을 직접 결정(선택 요일들의
+   최소~최대 범위 = 기간 길이). 일정(evCard)의 `_evRangeAutoFromWeekdays`와 완전히 대칭. [2026-08-13] */
+function _tdRepeatUsesWeekday(){
+  return (_todoRepeat==='weekly')||(_todoRepeat==='monthly'&&_tdMonthlyMode==='nth');
+}
+function _tdRangeAutoFromWeekdays(){
+  if(!_tdRepeatWeekdays||!_tdRepeatWeekdays.length)return;
+  const minDow=_tdRepeatWeekdays[0], maxDow=_tdRepeatWeekdays[_tdRepeatWeekdays.length-1];
+  const spanLen=maxDow-minDow+1;
+  let start=_todoRangeStart||_todoSingleDate;
+  if(!start)return;
   try{
-    const dow=parseDateKey(_todoRangeStart).getDay();
-    _tdRepeatWeekdays=[dow];
-    _syncTdRepeatUI();
+    const curDow=parseDateKey(start).getDay();
+    if(curDow!==minDow) start=shiftDateKey(start, minDow-curDow);
+    _todoRangeStart=start;
+    _todoRangeEnd=(spanLen>1)?shiftDateKey(start,spanLen-1):null;
+    updateRangeChips();
   }catch(_){}
+}
+function _tdRangeShiftWeek(dir){
+  if(!_todoRangeStart)return;
+  _todoRangeStart=shiftDateKey(_todoRangeStart,dir*7);
+  if(_todoRangeEnd)_todoRangeEnd=shiftDateKey(_todoRangeEnd,dir*7);
+  updateRangeChips();
+  renderTodoMiniCal();
+}
+/* 기간 모드 + 반복(요일 기반)이면 탭식 미니캘린더를 숨기고 주 이동 네비만 노출. [2026-08-13] */
+function _updateTdRangeCalVisibility(){
+  const hide=(_todoType==='range')&&_tdRepeatUsesWeekday();
+  const grid=$('todoMiniCal');
+  const nav=$('todoRangeWeekNav');
+  if(grid)grid.style.display=hide?'none':'';
+  if(nav)nav.style.display=hide?'':'none';
+  if(hide)_tdRangeAutoFromWeekdays();
 }
 function onTdMonthlyMode(m){ _tdMonthlyMode=(m==='nth'||m==='last')?m:'dom'; if(m==='nth'&&(!_tdRepeatWeekdays||!_tdRepeatWeekdays.length)){ const d=_tdBaseDateObj(); if(d)_tdRepeatWeekdays=[d.getDay()]; } _syncTdRepeatUI(); }
 function onTdNthWeek(n){ _tdNthWeek=Number(n); _syncTdRepeatUI(); }
@@ -21809,6 +21850,8 @@ function _tmcCellClass(key,dow,isOther){
 }
 function renderTodoMiniCal(){
   const wrap=$('todoMiniCal'); if(!wrap) return;
+  try{ _updateTdRangeCalVisibility(); }catch(_){}
+  if(wrap.style.display==='none')return;  // 반복(요일기반)+기간 조합이면 탭식 달력은 숨김 — 주 이동 네비만 사용
   const ws=getWeekStartPref();
   const y=_todoMiniY, m=_todoMiniM;
   const first=new Date(y,m,1);
@@ -21865,7 +21908,6 @@ function todoMiniPick(key){
       _todoRangeFocus='start';
     }
     updateRangeChips();
-    _syncTdRepWeekdayFromRange();
   } else if(_todoType==='multi'){
     const i=_todoMultiDates.indexOf(key);
     if(i>=0) _todoMultiDates.splice(i,1); else _todoMultiDates.push(key);
