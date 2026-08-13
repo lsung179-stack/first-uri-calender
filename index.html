@@ -11550,11 +11550,21 @@ function _renderRepChips(containerId, selected){
     c.appendChild(b);
   }
 }
+let _evRangeWeekdaysUserTouched=false;  // 기간+반복 모드에서 사용자가 요일 칩을 실제로 눌렀는지
 function _toggleRepWeekday(dow){
-  const i=_evRepeatWeekdays.indexOf(dow);
-  if(i>=0){ if(_evRepeatWeekdays.length>1)_evRepeatWeekdays.splice(i,1); }  // 최소 1개 유지
-  else _evRepeatWeekdays.push(dow);
-  _evRepeatWeekdays.sort((a,b)=>a-b);
+  if(_selectedMode==='range'&&_evRangeCalHidden&&!_evRangeWeekdaysUserTouched){
+    // 기간+반복 모드에서 처음 누르는 요일 — 반복을 켤 때 자동으로 잡힌 임시 기본값(placeholder,
+    // 오늘/기존 시작일 요일)이 남아있으면 이 클릭이 거기에 '추가'돼 기간이 하루 더 길어지거나,
+    // 하필 그 요일을 다시 누르면 '이미 선택됨'으로 오인해 꺼지는 문제가 있었음(2026-08-13 발견)
+    // → 첫 클릭은 추가가 아니라 placeholder를 통째로 이 요일 하나로 교체한다.
+    _evRepeatWeekdays=[dow];
+    _evRangeWeekdaysUserTouched=true;
+  }else{
+    const i=_evRepeatWeekdays.indexOf(dow);
+    if(i>=0){ if(_evRepeatWeekdays.length>1)_evRepeatWeekdays.splice(i,1); }  // 최소 1개 유지
+    else _evRepeatWeekdays.push(dow);
+    _evRepeatWeekdays.sort((a,b)=>a-b);
+  }
   syncEvRepeatUI();  // → _updateRangeCalVisibility()가 기간 모드면 _evRangeAutoFromWeekdays() 호출
 }
 /* 기간(range) + 반복(매주/매월N째주) 결합 시 — 탭식 미니캘린더 대신 반복 요일 칩이 기간을 직접
@@ -11588,6 +11598,7 @@ function _evRangeShiftWeek(dir){
 }
 /* 기간 모드 + 반복(요일 기반)이면 탭식 미니캘린더를 숨기고 주 이동 네비만 노출.
    반복이 없거나 요일 기반이 아니면(며칠/매년) 기존 탭식 미니캘린더 그대로. [2026-08-13] */
+let _evRangeCalHidden=false;  // 직전에 계산한 숨김 상태(false→true 전환 시점 감지용)
 function _updateRangeCalVisibility(){
   if(_selectedMode!=='range')return;
   const hide=_evRepeatUsesWeekday();
@@ -11595,7 +11606,23 @@ function _updateRangeCalVisibility(){
   const nav=document.getElementById('evRangeWeekNav');
   if(grid)grid.style.display=hide?'none':'';
   if(nav)nav.style.display=hide?'':'none';
-  if(hide)_evRangeAutoFromWeekdays();
+  if(hide){
+    if(!_evRangeCalHidden){
+      // 방금 '탭식 달력 숨김' 상태로 전환됨 — 반복을 켤 때 자동으로 잡혔던 요일 하나(오늘/기존
+      // 시작일 기준 기본값)가 남아있으면 이후 칩 선택에 섞여 기간이 엉뚱하게 커지거나, 사용자가
+      // 원하는 요일을 눌러도 "이미 선택돼 있어서" 꺼져버리는 문제가 있었음(2026-08-13 발견) —
+      // 전환 시점에 시작일 하나의 요일로 깨끗하게 리셋해 사용자가 칩으로 새로 쌓아가게 함.
+      try{
+        const startDow=parseDateKey(_rangeStart||_dayDate||_selectedDate).getDay();
+        _evRepeatWeekdays=[startDow];
+        _renderRepChips('evWeekdayChips',_evRepeatWeekdays);
+        _renderRepChips('evNthChips',_evRepeatWeekdays);
+      }catch(_){}
+      _evRangeWeekdaysUserTouched=false;  // 리셋된 플레이스홀더 — 다음 첫 클릭은 추가가 아니라 교체
+    }
+    _evRangeAutoFromWeekdays();
+  }
+  _evRangeCalHidden=hide;
 }
 function onEvMonthlyMode(m){
   _evMonthlyMode=(m==='nth'||m==='last')?m:'dom';
@@ -11603,7 +11630,11 @@ function onEvMonthlyMode(m){
   syncEvRepeatUI();
 }
 function onEvNthWeek(n){ _evNthWeek=Number(n); syncEvRepeatUI(); }
-function resetEvRepeat(){ _evRepeatType='none'; _evRepeatWeekdays=[]; _evMonthlyMode='dom'; _evNthWeek=1; _evRepeatUntil=null; syncEvRepeatUI(); }
+function resetEvRepeat(){ _evRepeatType='none'; _evRepeatWeekdays=[]; _evMonthlyMode='dom'; _evNthWeek=1; _evRepeatUntil=null;
+  // 폼을 새로 열 때마다 리셋 — 안 하면 세션 중 이미 한 번 '기간+반복' 전환을 겪은 뒤엔
+  // _evRangeCalHidden이 계속 true로 남아 다음 폼에서 플레이스홀더 리셋(reseed)이 다시 안 일어남. [2026-08-13]
+  _evRangeCalHidden=false; _evRangeWeekdaysUserTouched=false;
+  syncEvRepeatUI(); }
 function getEvRepeatPayload(baseDate){
   const rt=_evRepeatType||'none';
   let wd=null, mmode=null, nth=null;
@@ -11763,6 +11794,10 @@ async function openEditEvent(eventId){
   _evMonthlyMode=ev.repeat_monthly_mode||'dom';
   _evNthWeek=(typeof ev.repeat_nth_week==='number')?ev.repeat_nth_week:1;
   _evRepeatUntil=ev.repeat_until||null;
+  // 저장된 실제 반복 요일을 불러오는 중 — 새 일정의 '플레이스홀더 리셋' 대상이 아니므로
+  // 이미 확정값으로 표시(다음 칩 클릭이 실수로 이 값을 통째로 지우지 않게). [2026-08-13]
+  _evRangeCalHidden=!!(ev.range_group_id&&_evRepeatUsesWeekday());
+  _evRangeWeekdaysUserTouched=true;
   syncEvRepeatUI();
   // 메모/사진 — 기존 값 로드
   const memoEl=document.getElementById('evMemo');
@@ -21368,6 +21403,8 @@ function openTodoAddSheet(dateKeyStr, opts){
   _todoColorKey='c-vintage';
   _todoRepeat='none';
   _tdRepeatWeekdays=[]; _tdMonthlyMode='dom'; _tdNthWeek=1; _tdRepeatUntil=null;
+  // 폼을 새로 열 때마다 리셋 — 일정(evCard)의 동일 수정과 대칭. [2026-08-13]
+  _tdRangeCalHidden=false; _tdRangeWeekdaysUserTouched=false;
   _todoTarget='self';
   _todoMembers=[_currentUser?.id];
   const d=parseDateKey(start); _todoMiniY=d.getFullYear(); _todoMiniM=d.getMonth();
@@ -21420,6 +21457,10 @@ function openTodoEditSheet(id, opts){
   _tdMonthlyMode=t.repeat_monthly_mode||'dom';
   _tdNthWeek=(typeof t.repeat_nth_week==='number')?t.repeat_nth_week:1;
   _tdRepeatUntil=t.repeat_until||null;
+  // 저장된 실제 반복 요일을 불러오는 중 — 새 할일의 '플레이스홀더 리셋' 대상이 아니므로
+  // 이미 확정값으로 표시(일정 openEditEvent와 대칭). [2026-08-13]
+  _tdRangeCalHidden=!!(_todoType==='range'&&_tdRepeatUsesWeekday());
+  _tdRangeWeekdaysUserTouched=true;
   if(Array.isArray(t.member_keys)&&t.member_keys.length>=2){
     _todoTarget='all'; _todoMembers=t.member_keys.slice();
   }else{
@@ -21574,11 +21615,19 @@ function _renderTdChips(containerId,selected){
   const c=$(containerId); if(!c)return; const N=['일','월','화','수','목','금','토']; c.innerHTML='';
   for(let i=0;i<7;i++){ const b=document.createElement('button'); b.type='button'; b.className='rep-chip'+((selected&&selected.indexOf(i)>=0)?' on':''); b.textContent=N[i]; (function(dow){ b.onclick=function(){ _toggleTdWeekday(dow); }; })(i); c.appendChild(b); }
 }
+let _tdRangeWeekdaysUserTouched=false;  // 기간+반복 모드에서 사용자가 요일 칩을 실제로 눌렀는지(일정과 대칭)
 function _toggleTdWeekday(dow){
-  const i=_tdRepeatWeekdays.indexOf(dow);
-  if(i>=0){ if(_tdRepeatWeekdays.length>1)_tdRepeatWeekdays.splice(i,1); }
-  else _tdRepeatWeekdays.push(dow);
-  _tdRepeatWeekdays.sort(function(a,b){return a-b;});
+  if(_todoType==='range'&&_tdRangeCalHidden&&!_tdRangeWeekdaysUserTouched){
+    // 탭식 달력 숨김 전환 때 리셋된 플레이스홀더 요일 — 사용자의 첫 클릭은 거기 더하는 게 아니라
+    // 완전히 교체(대체)해야 함(안 그러면 스텁 요일이 섞여 기간이 커지거나, 오늘과 겹치면 꺼져버림). [2026-08-13]
+    _tdRepeatWeekdays=[dow];
+    _tdRangeWeekdaysUserTouched=true;
+  }else{
+    const i=_tdRepeatWeekdays.indexOf(dow);
+    if(i>=0){ if(_tdRepeatWeekdays.length>1)_tdRepeatWeekdays.splice(i,1); }
+    else _tdRepeatWeekdays.push(dow);
+    _tdRepeatWeekdays.sort(function(a,b){return a-b;});
+  }
   _syncTdRepeatUI();  // → _updateTdRangeCalVisibility()가 기간 모드면 _tdRangeAutoFromWeekdays() 호출
 }
 /* 기간(range) + 반복(매주/매월N째주) 결합 시 — 반복 요일 칩이 기간을 직접 결정(선택 요일들의
@@ -21608,13 +21657,28 @@ function _tdRangeShiftWeek(dir){
   renderTodoMiniCal();
 }
 /* 기간 모드 + 반복(요일 기반)이면 탭식 미니캘린더를 숨기고 주 이동 네비만 노출. [2026-08-13] */
+let _tdRangeCalHidden=false;  // 직전에 계산한 숨김 상태(false→true 전환 시점 감지용, 일정과 대칭)
 function _updateTdRangeCalVisibility(){
   const hide=(_todoType==='range')&&_tdRepeatUsesWeekday();
   const grid=$('todoMiniCal');
   const nav=$('todoRangeWeekNav');
   if(grid)grid.style.display=hide?'none':'';
   if(nav)nav.style.display=hide?'':'none';
-  if(hide)_tdRangeAutoFromWeekdays();
+  if(hide){
+    if(!_tdRangeCalHidden){
+      // 반복을 켤 때 자동으로 잡혔던 요일 하나가 남아있으면 이후 칩 선택에 섞이는 문제 방지 —
+      // 전환 시점에 시작일 하나의 요일로 리셋(일정 evCard의 동일 로직과 대칭). [2026-08-13]
+      try{
+        const startDow=parseDateKey(_todoRangeStart||_todoSingleDate).getDay();
+        _tdRepeatWeekdays=[startDow];
+        _renderTdChips('tdWeekdayChips',_tdRepeatWeekdays);
+        _renderTdChips('tdNthChips',_tdRepeatWeekdays);
+      }catch(_){}
+      _tdRangeWeekdaysUserTouched=false;  // 리셋된 플레이스홀더 — 다음 첫 클릭은 추가가 아니라 교체
+    }
+    _tdRangeAutoFromWeekdays();
+  }
+  _tdRangeCalHidden=hide;
 }
 function onTdMonthlyMode(m){ _tdMonthlyMode=(m==='nth'||m==='last')?m:'dom'; if(m==='nth'&&(!_tdRepeatWeekdays||!_tdRepeatWeekdays.length)){ const d=_tdBaseDateObj(); if(d)_tdRepeatWeekdays=[d.getDay()]; } _syncTdRepeatUI(); }
 function onTdNthWeek(n){ _tdNthWeek=Number(n); _syncTdRepeatUI(); }
