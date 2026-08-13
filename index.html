@@ -2120,6 +2120,9 @@ body.ev-dragging .cal-cell{cursor:grabbing}
 .rep-sheet-card .todo-repeat-row{margin-top:18px}
 .rep-sheet-actions{display:flex;gap:10px;margin-top:22px}
 .rep-sheet-actions .mo-cancel{padding:12px 0;border:1.5px solid var(--border);border-radius:12px}
+/* 반복 주기/횟수 — 드롭다운 대신 직접 입력. 네이티브 숫자 스피너 화살표 숨김(자체 스타일 유지). [2026-08-13] */
+.rep-num-input{width:78px;padding:11px 8px;text-align:center;font-weight:600;-moz-appearance:textfield}
+.rep-num-input::-webkit-outer-spin-button,.rep-num-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 /* 글꼴 버튼은 각 버튼이 해당 폰트로 표시되어 미리보기 역할 */
 .dm-btn.ff-pretendard{font-family:"Pretendard Variable","Pretendard",-apple-system,sans-serif}
 .dm-btn.ff-jua{font-family:"Jua",sans-serif}
@@ -3484,10 +3487,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
       <div class="rep-sublabel">반복 주기</div>
       <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
         <span style="font-size:13px;color:var(--sub)">매</span>
-        <div style="position:relative;width:78px">
-          <button type="button" class="fi pf-bd-select" id="evIntervalN" onclick="openEvIntervalSel()">1</button>
-          <div class="ymd-pop" id="evIntervalNPop"></div>
-        </div>
+        <input type="number" inputmode="numeric" class="fi rep-num-input" id="evIntervalN" min="1" max="365" value="1" oninput="onEvIntervalInput(this.value)" onblur="onEvIntervalBlur(this)">
         <span id="evIntervalUnit" style="font-size:13px;color:var(--sub)">주마다</span>
       </div>
     </div>
@@ -3530,27 +3530,22 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
       </div>
       <div id="evUntilCountWrap" style="display:none;margin-top:8px">
         <div style="display:flex;align-items:center;gap:8px">
-          <div style="position:relative;width:84px">
-            <button type="button" class="fi pf-bd-select" id="evCountN" onclick="openEvCountSel()">10</button>
-            <div class="ymd-pop" id="evCountNPop"></div>
-          </div>
+          <input type="number" inputmode="numeric" class="fi rep-num-input" id="evCountN" min="1" max="999" value="10" oninput="onEvCountInput(this.value)" onblur="onEvCountBlur(this)">
           <span style="font-size:13px;color:var(--sub)">회 반복</span>
         </div>
       </div>
+      <!-- 반복 종료일 미니 달력 — 아이폰 캘린더처럼 날짜를 직접 탭해서 선택(기존 evDayGrid/evRangeMiniGrid와 동일 패턴 재사용). [2026-08-13] -->
       <div id="evUntilDateWrap" style="display:none;margin-top:8px">
-        <div style="display:flex;align-items:center;gap:6px">
-          <div style="position:relative;flex:1.3 1 0;min-width:0">
-            <button type="button" class="fi pf-bd-select" id="evUntilY" onclick="openEvUntilYSel()">년</button>
-            <div class="ymd-pop" id="evUntilYPop"></div>
+        <div class="ev-multi-cal">
+          <div class="ev-multi-nav">
+            <button type="button" class="ev-multi-nav-btn" onclick="evUntilCalNav(-1)">‹</button>
+            <span class="ev-multi-nav-title" id="evUntilCalTitle">2026년 8월</span>
+            <button type="button" class="ev-multi-nav-btn" onclick="evUntilCalNav(1)">›</button>
           </div>
-          <div style="position:relative;flex:1 1 0;min-width:0">
-            <button type="button" class="fi pf-bd-select" id="evUntilM" onclick="openEvUntilMSel()">월</button>
-            <div class="ymd-pop" id="evUntilMPop"></div>
+          <div class="ev-multi-dows">
+            <div class="ev-multi-dow sun">일</div><div class="ev-multi-dow">월</div><div class="ev-multi-dow">화</div><div class="ev-multi-dow">수</div><div class="ev-multi-dow">목</div><div class="ev-multi-dow">금</div><div class="ev-multi-dow sat">토</div>
           </div>
-          <div style="position:relative;flex:1 1 0;min-width:0">
-            <button type="button" class="fi pf-bd-select" id="evUntilD" onclick="openEvUntilDSel()">일</button>
-            <div class="ymd-pop" id="evUntilDPop"></div>
-          </div>
+          <div class="ev-multi-grid" id="evUntilCalGrid"></div>
         </div>
       </div>
       <div id="evUntilHint" class="rep-hint"></div>
@@ -3578,10 +3573,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
       <div class="rep-sublabel">반복 주기</div>
       <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
         <span style="font-size:13px;color:var(--sub)">매</span>
-        <div style="position:relative;width:78px">
-          <button type="button" class="fi pf-bd-select" id="tdIntervalN" onclick="openTdIntervalSel()">1</button>
-          <div class="ymd-pop" id="tdIntervalNPop"></div>
-        </div>
+        <input type="number" inputmode="numeric" class="fi rep-num-input" id="tdIntervalN" min="1" max="365" value="1" oninput="onTdIntervalInput(this.value)" onblur="onTdIntervalBlur(this)">
         <span id="tdIntervalUnit" style="font-size:13px;color:var(--sub)">주마다</span>
       </div>
     </div>
@@ -3624,27 +3616,22 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
       </div>
       <div id="tdUntilCountWrap" style="display:none;margin-top:8px">
         <div style="display:flex;align-items:center;gap:8px">
-          <div style="position:relative;width:84px">
-            <button type="button" class="fi pf-bd-select" id="tdCountN" onclick="openTdCountSel()">10</button>
-            <div class="ymd-pop" id="tdCountNPop"></div>
-          </div>
+          <input type="number" inputmode="numeric" class="fi rep-num-input" id="tdCountN" min="1" max="999" value="10" oninput="onTdCountInput(this.value)" onblur="onTdCountBlur(this)">
           <span style="font-size:13px;color:var(--sub)">회 반복</span>
         </div>
       </div>
+      <!-- 반복 종료일 미니 달력 — 일정과 동일 구조. [2026-08-13] -->
       <div id="tdUntilDateWrap" style="display:none;margin-top:8px">
-        <div style="display:flex;align-items:center;gap:6px">
-          <div style="position:relative;flex:1.3 1 0;min-width:0">
-            <button type="button" class="fi pf-bd-select" id="tdUntilY" onclick="openTdUntilYSel()">년</button>
-            <div class="ymd-pop" id="tdUntilYPop"></div>
+        <div class="ev-multi-cal">
+          <div class="ev-multi-nav">
+            <button type="button" class="ev-multi-nav-btn" onclick="tdUntilCalNav(-1)">‹</button>
+            <span class="ev-multi-nav-title" id="tdUntilCalTitle">2026년 8월</span>
+            <button type="button" class="ev-multi-nav-btn" onclick="tdUntilCalNav(1)">›</button>
           </div>
-          <div style="position:relative;flex:1 1 0;min-width:0">
-            <button type="button" class="fi pf-bd-select" id="tdUntilM" onclick="openTdUntilMSel()">월</button>
-            <div class="ymd-pop" id="tdUntilMPop"></div>
+          <div class="ev-multi-dows">
+            <div class="ev-multi-dow sun">일</div><div class="ev-multi-dow">월</div><div class="ev-multi-dow">화</div><div class="ev-multi-dow">수</div><div class="ev-multi-dow">목</div><div class="ev-multi-dow">금</div><div class="ev-multi-dow sat">토</div>
           </div>
-          <div style="position:relative;flex:1 1 0;min-width:0">
-            <button type="button" class="fi pf-bd-select" id="tdUntilD" onclick="openTdUntilDSel()">일</button>
-            <div class="ymd-pop" id="tdUntilDPop"></div>
-          </div>
+          <div class="ev-multi-grid" id="tdUntilCalGrid"></div>
         </div>
       </div>
       <div id="tdUntilHint" class="rep-hint"></div>
@@ -11443,7 +11430,7 @@ let _evRepeatWeekdays=[];   // 매주 or 매월 N째주 요일 (0=일~6=토, 다
 let _evMonthlyMode='dom';   // dom(며칠) | nth(N째주 요일) | last(말일)
 let _evNthWeek=1;           // 1~4, -1=마지막 주
 let _evRepeatUntil=null;    // 반복 종료일('YYYY-MM-DD') — null이면 계속 반복 [초안 · 2026-08-10]
-let _evUntilY='', _evUntilM='', _evUntilD='';   // 종료일 드롭다운 현재 선택값(문자열, ''=미선택) [2026-08-11]
+let _evUntilCalDate=null;   // 반복 종료일 미니 달력이 보여주는 달(Date, 1일 기준) [2026-08-13]
 let _evRepeatInterval=1;    // 반복 주기(N일/N주/N개월/N년마다) — 기본 1 [2026-08-13]
 let _evUntilMode='none';    // 반복 종료 방식 'none'|'count'|'date' [2026-08-13]
 let _evRepeatCount=null;    // 반복 횟수(사이클 기준) — _evUntilMode==='count'일 때만 유효 [2026-08-13]
@@ -11546,33 +11533,19 @@ function syncEvRepeatUI(){
   try{ _updateRangeCalVisibility(); }catch(_){}
 }
 /* 반복 종료일 UI 동기화 — 매주/매월/매년 공통, '안 함'이면 통째로 숨김.
-   네이티브 <select>는 iOS/Android에서 OS 기본 팝업(다크·체크마크, CSS로 스타일 불가)으로 뜨므로
-   앱 자체 드롭다운(공용 _toggleYmdPop, ymd-row 클래스)으로 대체 — 버튼 3개(년/월/일)를 탭하면
-   그 아래 크림 카드 목록이 뜸. [초안 · 2026-08-10 → 2026-08-11 커스텀 드롭다운] */
+   [2026-08-13 재작업] 년/월/일 드롭다운 3개 → 아이폰 캘린더 스타일 미니 달력(날짜를 직접 탭)으로,
+   횟수는 커스텀 드롭다운 → 직접 입력(숫자 인풋)으로 교체(사용자 요청). */
 function _syncEvUntilUI(){
   const wrap=document.getElementById('evUntilWrap'); if(!wrap)return;
   const on=(_evRepeatType!=='none');
   wrap.style.display=on?'':'none';
-  try{ _closeAllYmdPops(); }catch(_){}   // 반복종류 전환/폼 재오픈 시 열려있던 팝업 정리
   if(!on)return;
-  if(_evRepeatUntil){
-    const p=_evRepeatUntil.split('-');
-    _evUntilY=String(Number(p[0])); _evUntilM=String(Number(p[1])); _evUntilD=String(Number(p[2]));
-  }else{
-    _evUntilY=''; _evUntilM=''; _evUntilD='';
-  }
   document.querySelectorAll('#evUntilModeSeg .dm-btn').forEach(function(b){ b.classList.toggle('on', b.dataset.um===_evUntilMode); });
   const cw=document.getElementById('evUntilCountWrap'); if(cw)cw.style.display=(_evUntilMode==='count')?'':'none';
   const dw=document.getElementById('evUntilDateWrap'); if(dw)dw.style.display=(_evUntilMode==='date')?'':'none';
-  _renderEvUntilBtns();
+  const cn=document.getElementById('evCountN'); if(cn)cn.value=String(_evRepeatCount||10);
+  if(_evUntilMode==='date') renderEvUntilCal();
   _refreshEvUntilHint();
-}
-function _renderEvUntilBtns(){
-  const ys=document.getElementById('evUntilY'), ms=document.getElementById('evUntilM'), ds=document.getElementById('evUntilD');
-  if(ys)ys.textContent=_evUntilY?(_evUntilY+'년'):'년';
-  if(ms)ms.textContent=_evUntilM?(_evUntilM+'월'):'월';
-  if(ds)ds.textContent=_evUntilD?(_evUntilD+'일'):'일';
-  const cn=document.getElementById('evCountN'); if(cn)cn.textContent=String(_evRepeatCount||10);
 }
 function _korFullSafe(ds){ try{ return (typeof _korFull==='function')?_korFull(ds):ds; }catch(_){ return ds; } }
 function _refreshEvUntilHint(){
@@ -11586,14 +11559,23 @@ function setEvUntilMode(mode){
   _evUntilMode=(mode==='count'||mode==='date')?mode:'none';
   if(_evUntilMode==='count'&&!_evRepeatCount) _evRepeatCount=10;
   if(_evUntilMode!=='count') _evRepeatCount=null;
-  if(_evUntilMode!=='date'){ _evRepeatUntil=null; _evUntilY=''; _evUntilM=''; _evUntilD=''; }
+  if(_evUntilMode!=='date') _evRepeatUntil=null;
+  _evUntilCalDate=null;   // 달력이 다시 열릴 때 기준일부터 새로 계산되도록
   _syncEvUntilUI();
 }
-function openEvCountSel(){
-  const items=[]; for(let n=1;n<=52;n++) items.push({value:String(n),label:n+'회'});
-  _toggleYmdPop('evCountNPop', items, String(_evRepeatCount||10), function(v){ _evRepeatCount=Number(v); _renderEvUntilBtns(); _refreshEvUntilHint(); });
+/* 반복 횟수 — 직접 입력(숫자 인풋). 입력 중엔 자유롭게, blur 시 1~999로 정리. [2026-08-13] */
+function onEvCountInput(v){
+  const n=parseInt(v,10);
+  _evRepeatCount=(!isNaN(n)&&n>0)?n:null;
+  _refreshEvUntilHint();
 }
-/* 반복 주기(interval) UI — 매 N일/N주/N개월/N년마다. [2026-08-13] */
+function onEvCountBlur(el){
+  let n=parseInt(el.value,10);
+  if(isNaN(n)||n<1)n=1; if(n>999)n=999;
+  _evRepeatCount=n; el.value=String(n);
+  _refreshEvUntilHint();
+}
+/* 반복 주기(interval) UI — 매 N일/N주/N개월/N년마다. 직접 입력. [2026-08-13] */
 function _evIntervalUnitLabel(){
   if(_evRepeatType==='daily')return '일';
   if(_evRepeatType==='monthly')return '개월';
@@ -11605,53 +11587,70 @@ function _syncEvIntervalUI(){
   const on=(_evRepeatType!=='none');
   wrap.style.display=on?'':'none';
   if(!on)return;
-  const n=document.getElementById('evIntervalN'); if(n)n.textContent=String(_evRepeatInterval||1);
+  const n=document.getElementById('evIntervalN'); if(n)n.value=String(_evRepeatInterval||1);
   const u=document.getElementById('evIntervalUnit'); if(u)u.textContent=_evIntervalUnitLabel()+'마다';
 }
-function openEvIntervalSel(){
-  const unit=_evIntervalUnitLabel();
-  const items=[]; for(let n=1;n<=30;n++) items.push({value:String(n),label:n+unit});
-  _toggleYmdPop('evIntervalNPop', items, String(_evRepeatInterval||1), function(v){ _evRepeatInterval=Number(v); _syncEvIntervalUI(); });
+function onEvIntervalInput(v){
+  const n=parseInt(v,10);
+  _evRepeatInterval=(!isNaN(n)&&n>0)?n:1;
 }
-// Y/M/D 상태 → repeat_until 조합. 년/월이 바뀌어 일(day)이 그 달에 없으면(예: 2/29→평년) 말일로 클램프.
-function _applyEvUntilYMD(){
-  if(_evUntilY&&_evUntilM){
-    const maxDay=new Date(Number(_evUntilY),Number(_evUntilM),0).getDate();
-    if(_evUntilD&&Number(_evUntilD)>maxDay) _evUntilD=String(maxDay);
+function onEvIntervalBlur(el){
+  let n=parseInt(el.value,10);
+  if(isNaN(n)||n<1)n=1; if(n>365)n=365;
+  _evRepeatInterval=n; el.value=String(n);
+}
+/* 반복 종료일 미니 달력 — 하루 모드(evDayGrid)와 완전히 동일한 렌더 패턴 재사용, 대상만 _evRepeatUntil. */
+function _evUntilCalBase(){
+  try{ return _evRepeatUntil?parseDateKey(_evRepeatUntil):(_evBaseDateObj()||new Date()); }catch(_){ return new Date(); }
+}
+function renderEvUntilCal(){
+  const grid=document.getElementById('evUntilCalGrid');
+  const title=document.getElementById('evUntilCalTitle');
+  if(!grid)return;
+  if(!_evUntilCalDate){ _evUntilCalDate=_evUntilCalBase(); _evUntilCalDate.setDate(1); }
+  const y=_evUntilCalDate.getFullYear(), m=_evUntilCalDate.getMonth();
+  if(title)title.textContent=y+'년 '+(m+1)+'월';
+  const first=new Date(y,m,1);
+  const last=new Date(y,m+1,0);
+  const startDow=first.getDay();
+  const totalDays=last.getDate();
+  const td=new Date();
+  const todayKey=dateKey(td.getFullYear(),td.getMonth(),td.getDate());
+  let html='';
+  const prevLast=new Date(y,m,0).getDate();
+  for(let i=startDow-1;i>=0;i--){
+    const d=prevLast-i;
+    const dt=new Date(y,m-1,d);
+    const k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
+    html+='<div class="ev-multi-day other'+(k===_evRepeatUntil?' on':'')+'" onclick="pickEvUntilDate(\''+k+'\')">'+d+'</div>';
   }
-  const p=function(n){ return String(n).padStart(2,'0'); };
-  _evRepeatUntil=(_evUntilY&&_evUntilM&&_evUntilD)?(_evUntilY+'-'+p(_evUntilM)+'-'+p(_evUntilD)):null;
-  _renderEvUntilBtns();
+  for(let d=1;d<=totalDays;d++){
+    const k=dateKey(y,m,d);
+    const dow=new Date(y,m,d).getDay();
+    let cls='ev-multi-day';
+    if(dow===0)cls+=' sun';else if(dow===6)cls+=' sat';
+    if(k===todayKey)cls+=' today';
+    if(k===_evRepeatUntil)cls+=' on';
+    html+='<div class="'+cls+'" onclick="pickEvUntilDate(\''+k+'\')">'+d+'</div>';
+  }
+  const filled=startDow+totalDays;
+  const need=Math.ceil(filled/7)*7;
+  for(let i=1;i<=need-filled;i++){
+    const dt=new Date(y,m+1,i);
+    const k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
+    html+='<div class="ev-multi-day other'+(k===_evRepeatUntil?' on':'')+'" onclick="pickEvUntilDate(\''+k+'\')">'+i+'</div>';
+  }
+  grid.innerHTML=html;
+}
+function evUntilCalNav(diff){
+  if(!_evUntilCalDate)_evUntilCalDate=_evUntilCalBase();
+  _evUntilCalDate.setMonth(_evUntilCalDate.getMonth()+diff);
+  renderEvUntilCal();
+}
+function pickEvUntilDate(key){
+  _evRepeatUntil=key;
+  renderEvUntilCal();
   _refreshEvUntilHint();
-}
-function clearEvUntil(){
-  _evUntilY=''; _evUntilM=''; _evUntilD=''; _evRepeatUntil=null;
-  _renderEvUntilBtns();
-  _refreshEvUntilHint();
-}
-/* 년 팝업 옵션 — 기준일(폼에서 고른 날짜) 연도부터 넉넉히 +50년(먼 미래 반복 종료도 커버).
-   실제 달력 연산(new Date)이라 몇 년이든 정확 — KASI 음력과 달리 양력 종료일은 계산에 외부 데이터가
-   필요 없어 별도 조회 없이도 실제 날짜와 항상 일치함. 기존 저장값 연도가 범위 밖이면 확장. */
-function _evUntilYearRange(){
-  const base=(function(){ try{ return _dayDate?parseDateKey(_dayDate):new Date(); }catch(_){ return new Date(); } })();
-  let startY=base.getFullYear();
-  if(_evUntilY&&Number(_evUntilY)<startY) startY=Number(_evUntilY);
-  const endY=Math.max(startY+50, _evUntilY?Number(_evUntilY):0);
-  return {startY:startY,endY:endY};
-}
-function openEvUntilYSel(){
-  const r=_evUntilYearRange();
-  const items=[]; for(let y=r.startY;y<=r.endY;y++) items.push({value:String(y),label:y+'년'});
-  _toggleYmdPop('evUntilYPop', items, _evUntilY, function(v){ _evUntilY=v; _applyEvUntilYMD(); });
-}
-function openEvUntilMSel(){
-  const items=[]; for(let m=1;m<=12;m++) items.push({value:String(m),label:m+'월'});
-  _toggleYmdPop('evUntilMPop', items, _evUntilM, function(v){ _evUntilM=v; _applyEvUntilYMD(); });
-}
-function openEvUntilDSel(){
-  const maxDay=(_evUntilY&&_evUntilM)?new Date(Number(_evUntilY),Number(_evUntilM),0).getDate():31;
-  const items=[]; for(let d=1;d<=maxDay;d++) items.push({value:String(d),label:d+'일'});
-  _toggleYmdPop('evUntilDPop', items, _evUntilD, function(v){ _evUntilD=v; _applyEvUntilYMD(); });
 }
 /* ── 공용 커스텀 드롭다운 — 일정·할일 반복 종료일 6개 버튼이 공유.
    각 팝업(.ymd-pop)은 자기 버튼을 감싼 position:relative 박스의 자식이라
@@ -11816,7 +11815,7 @@ function onEvMonthlyMode(m){
 }
 function onEvNthWeek(n){ _evNthWeek=Number(n); syncEvRepeatUI(); }
 function resetEvRepeat(){ _evRepeatType='none'; _evRepeatWeekdays=[]; _evMonthlyMode='dom'; _evNthWeek=1; _evRepeatUntil=null;
-  _evRepeatInterval=1; _evUntilMode='none'; _evRepeatCount=null;
+  _evRepeatInterval=1; _evUntilMode='none'; _evRepeatCount=null; _evUntilCalDate=null;
   // 폼을 새로 열 때마다 리셋 — 안 하면 세션 중 이미 한 번 '기간+반복' 전환을 겪은 뒤엔
   // _evRangeCalHidden이 계속 true로 남아 다음 폼에서 플레이스홀더 리셋(reseed)이 다시 안 일어남. [2026-08-13]
   _evRangeCalHidden=false; _evRangeWeekdaysUserTouched=false;
@@ -11858,6 +11857,7 @@ function cancelEvRepeatSheet(){
     _evRepeatUntil=s.until; _evRangeCalHidden=s.rangeCalHidden; _evRangeWeekdaysUserTouched=s.rangeTouched;
     _rangeStart=s.rangeStart; _rangeEnd=s.rangeEnd;
     _evRepeatInterval=s.interval; _evUntilMode=s.untilMode; _evRepeatCount=s.count;
+    _evUntilCalDate=null;   // 달력을 넘겨봤을 수 있으니 취소 시 기준일부터 다시 계산되도록
     syncEvRepeatUI();
   }
   _evRepSheetSnapshot=null;
@@ -12068,6 +12068,7 @@ async function openEditEvent(eventId){
   _evRepeatInterval=(typeof ev.repeat_interval==='number'&&ev.repeat_interval>1)?ev.repeat_interval:1;
   _evRepeatCount=(typeof ev.repeat_count==='number'&&ev.repeat_count>0)?ev.repeat_count:null;
   _evUntilMode=_evRepeatCount?'count':(_evRepeatUntil?'date':'none');
+  _evUntilCalDate=null;
   // 저장된 실제 반복 요일을 불러오는 중 — 새 일정의 '플레이스홀더 리셋' 대상이 아니므로
   // 이미 확정값으로 표시(다음 칩 클릭이 실수로 이 값을 통째로 지우지 않게). [2026-08-13]
   _evRangeCalHidden=!!(ev.range_group_id&&_evRepeatUsesWeekday());
@@ -21103,7 +21104,7 @@ let _todoColorKey='c-vintage';
 let _todoRepeat='none';
 let _tdRepeatWeekdays=[], _tdMonthlyMode='dom', _tdNthWeek=1;   // 반복 커스텀(일정과 동일)
 let _tdRepeatUntil=null;   // 반복 종료일('YYYY-MM-DD') — null이면 계속 반복 [초안 · 2026-08-10]
-let _tdUntilY='', _tdUntilM='', _tdUntilD='';   // 종료일 드롭다운 현재 선택값 [2026-08-11]
+let _tdUntilCalDate=null;  // 반복 종료일 미니 달력이 보여주는 달(Date, 1일 기준) [2026-08-13]
 let _tdRepeatInterval=1;   // 반복 주기(N일/N주/N개월/N년마다) — 기본 1 [2026-08-13]
 let _tdUntilMode='none';   // 반복 종료 방식 'none'|'count'|'date' [2026-08-13]
 let _tdRepeatCount=null;   // 반복 횟수(사이클 기준) [2026-08-13]
@@ -21694,7 +21695,7 @@ function openTodoAddSheet(dateKeyStr, opts){
   _todoColorKey='c-vintage';
   _todoRepeat='none';
   _tdRepeatWeekdays=[]; _tdMonthlyMode='dom'; _tdNthWeek=1; _tdRepeatUntil=null;
-  _tdRepeatInterval=1; _tdUntilMode='none'; _tdRepeatCount=null;
+  _tdRepeatInterval=1; _tdUntilMode='none'; _tdRepeatCount=null; _tdUntilCalDate=null;
   // 폼을 새로 열 때마다 리셋 — 일정(evCard)의 동일 수정과 대칭. [2026-08-13]
   _tdRangeCalHidden=false; _tdRangeWeekdaysUserTouched=false;
   _todoTarget='self';
@@ -21753,6 +21754,7 @@ function openTodoEditSheet(id, opts){
   _tdRepeatInterval=(typeof t.repeat_interval==='number'&&t.repeat_interval>1)?t.repeat_interval:1;
   _tdRepeatCount=(typeof t.repeat_count==='number'&&t.repeat_count>0)?t.repeat_count:null;
   _tdUntilMode=_tdRepeatCount?'count':(_tdRepeatUntil?'date':'none');
+  _tdUntilCalDate=null;
   // 저장된 실제 반복 요일을 불러오는 중 — 새 할일의 '플레이스홀더 리셋' 대상이 아니므로
   // 이미 확정값으로 표시(일정 openEditEvent와 대칭). [2026-08-13]
   _tdRangeCalHidden=!!(_todoType==='range'&&_tdRepeatUsesWeekday());
@@ -21859,6 +21861,7 @@ function cancelTdRepeatSheet(){
     _tdRepeatUntil=s.until; _tdRangeCalHidden=s.rangeCalHidden; _tdRangeWeekdaysUserTouched=s.rangeTouched;
     _todoRangeStart=s.rangeStart; _todoRangeEnd=s.rangeEnd;
     _tdRepeatInterval=s.interval; _tdUntilMode=s.untilMode; _tdRepeatCount=s.count;
+    _tdUntilCalDate=null;
     _setRepeatBtns(_todoRepeat);
     _syncTdRepeatUI();
   }
@@ -21916,32 +21919,19 @@ function _syncTdRepeatUI(){
   _syncTdUntilUI();
   try{ renderTodoMiniCal(); }catch(_){}
 }
-/* 반복 종료일 UI 동기화 — 일정과 동일, 커스텀 드롭다운(_toggleYmdPop 공용) 재사용.
-   [초안 · 2026-08-10 → 2026-08-11 커스텀 드롭다운] */
+/* 반복 종료일 UI 동기화 — 일정과 동일. [2026-08-13 재작업] 년/월/일 드롭다운 → 미니 달력,
+   횟수 드롭다운 → 직접 입력으로 교체(사용자 요청). */
 function _syncTdUntilUI(){
   const wrap=$('tdUntilWrap'); if(!wrap)return;
   const on=(_todoRepeat!=='none');
   wrap.style.display=on?'':'none';
-  try{ _closeAllYmdPops(); }catch(_){}   // 반복종류 전환/폼 재오픈 시 열려있던 팝업 정리
   if(!on)return;
-  if(_tdRepeatUntil){
-    const p=_tdRepeatUntil.split('-');
-    _tdUntilY=String(Number(p[0])); _tdUntilM=String(Number(p[1])); _tdUntilD=String(Number(p[2]));
-  }else{
-    _tdUntilY=''; _tdUntilM=''; _tdUntilD='';
-  }
   document.querySelectorAll('#tdUntilModeSeg .dm-btn').forEach(function(b){ b.classList.toggle('on', b.dataset.um===_tdUntilMode); });
   const cw=$('tdUntilCountWrap'); if(cw)cw.style.display=(_tdUntilMode==='count')?'':'none';
   const dw=$('tdUntilDateWrap'); if(dw)dw.style.display=(_tdUntilMode==='date')?'':'none';
-  _renderTdUntilBtns();
+  const cn=$('tdCountN'); if(cn)cn.value=String(_tdRepeatCount||10);
+  if(_tdUntilMode==='date') renderTdUntilCal();
   _refreshTdUntilHint();
-}
-function _renderTdUntilBtns(){
-  const ys=$('tdUntilY'), ms=$('tdUntilM'), ds=$('tdUntilD');
-  if(ys)ys.textContent=_tdUntilY?(_tdUntilY+'년'):'년';
-  if(ms)ms.textContent=_tdUntilM?(_tdUntilM+'월'):'월';
-  if(ds)ds.textContent=_tdUntilD?(_tdUntilD+'일'):'일';
-  const cn=$('tdCountN'); if(cn)cn.textContent=String(_tdRepeatCount||10);
 }
 function _refreshTdUntilHint(){
   const h=$('tdUntilHint'); if(!h)return;
@@ -21954,14 +21944,23 @@ function setTdUntilMode(mode){
   _tdUntilMode=(mode==='count'||mode==='date')?mode:'none';
   if(_tdUntilMode==='count'&&!_tdRepeatCount) _tdRepeatCount=10;
   if(_tdUntilMode!=='count') _tdRepeatCount=null;
-  if(_tdUntilMode!=='date'){ _tdRepeatUntil=null; _tdUntilY=''; _tdUntilM=''; _tdUntilD=''; }
+  if(_tdUntilMode!=='date') _tdRepeatUntil=null;
+  _tdUntilCalDate=null;
   _syncTdUntilUI();
 }
-function openTdCountSel(){
-  const items=[]; for(let n=1;n<=52;n++) items.push({value:String(n),label:n+'회'});
-  _toggleYmdPop('tdCountNPop', items, String(_tdRepeatCount||10), function(v){ _tdRepeatCount=Number(v); _renderTdUntilBtns(); _refreshTdUntilHint(); });
+/* 반복 횟수 — 직접 입력. [2026-08-13] */
+function onTdCountInput(v){
+  const n=parseInt(v,10);
+  _tdRepeatCount=(!isNaN(n)&&n>0)?n:null;
+  _refreshTdUntilHint();
 }
-/* 반복 주기(interval) UI — 일정과 동일. [2026-08-13] */
+function onTdCountBlur(el){
+  let n=parseInt(el.value,10);
+  if(isNaN(n)||n<1)n=1; if(n>999)n=999;
+  _tdRepeatCount=n; el.value=String(n);
+  _refreshTdUntilHint();
+}
+/* 반복 주기(interval) UI — 일정과 동일, 직접 입력. [2026-08-13] */
 function _tdIntervalUnitLabel(){
   if(_todoRepeat==='daily')return '일';
   if(_todoRepeat==='monthly')return '개월';
@@ -21973,49 +21972,70 @@ function _syncTdIntervalUI(){
   const on=(_todoRepeat!=='none');
   wrap.style.display=on?'':'none';
   if(!on)return;
-  const n=$('tdIntervalN'); if(n)n.textContent=String(_tdRepeatInterval||1);
+  const n=$('tdIntervalN'); if(n)n.value=String(_tdRepeatInterval||1);
   const u=$('tdIntervalUnit'); if(u)u.textContent=_tdIntervalUnitLabel()+'마다';
 }
-function openTdIntervalSel(){
-  const unit=_tdIntervalUnitLabel();
-  const items=[]; for(let n=1;n<=30;n++) items.push({value:String(n),label:n+unit});
-  _toggleYmdPop('tdIntervalNPop', items, String(_tdRepeatInterval||1), function(v){ _tdRepeatInterval=Number(v); _syncTdIntervalUI(); });
+function onTdIntervalInput(v){
+  const n=parseInt(v,10);
+  _tdRepeatInterval=(!isNaN(n)&&n>0)?n:1;
 }
-function _applyTdUntilYMD(){
-  if(_tdUntilY&&_tdUntilM){
-    const maxDay=new Date(Number(_tdUntilY),Number(_tdUntilM),0).getDate();
-    if(_tdUntilD&&Number(_tdUntilD)>maxDay) _tdUntilD=String(maxDay);
+function onTdIntervalBlur(el){
+  let n=parseInt(el.value,10);
+  if(isNaN(n)||n<1)n=1; if(n>365)n=365;
+  _tdRepeatInterval=n; el.value=String(n);
+}
+/* 반복 종료일 미니 달력 — 일정 evUntilCal과 완전히 동일 구조, 기준일만 _tdBaseDateObj. [2026-08-13] */
+function _tdUntilCalBase(){
+  try{ return _tdRepeatUntil?parseDateKey(_tdRepeatUntil):(_tdBaseDateObj()||new Date()); }catch(_){ return new Date(); }
+}
+function renderTdUntilCal(){
+  const grid=$('tdUntilCalGrid');
+  const title=$('tdUntilCalTitle');
+  if(!grid)return;
+  if(!_tdUntilCalDate){ _tdUntilCalDate=_tdUntilCalBase(); _tdUntilCalDate.setDate(1); }
+  const y=_tdUntilCalDate.getFullYear(), m=_tdUntilCalDate.getMonth();
+  if(title)title.textContent=y+'년 '+(m+1)+'월';
+  const first=new Date(y,m,1);
+  const last=new Date(y,m+1,0);
+  const startDow=first.getDay();
+  const totalDays=last.getDate();
+  const td=new Date();
+  const todayKey=dateKey(td.getFullYear(),td.getMonth(),td.getDate());
+  let html='';
+  const prevLast=new Date(y,m,0).getDate();
+  for(let i=startDow-1;i>=0;i--){
+    const d=prevLast-i;
+    const dt=new Date(y,m-1,d);
+    const k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
+    html+='<div class="ev-multi-day other'+(k===_tdRepeatUntil?' on':'')+'" onclick="pickTdUntilDate(\''+k+'\')">'+d+'</div>';
   }
-  const p=function(n){ return String(n).padStart(2,'0'); };
-  _tdRepeatUntil=(_tdUntilY&&_tdUntilM&&_tdUntilD)?(_tdUntilY+'-'+p(_tdUntilM)+'-'+p(_tdUntilD)):null;
-  _renderTdUntilBtns();
+  for(let d=1;d<=totalDays;d++){
+    const k=dateKey(y,m,d);
+    const dow=new Date(y,m,d).getDay();
+    let cls='ev-multi-day';
+    if(dow===0)cls+=' sun';else if(dow===6)cls+=' sat';
+    if(k===todayKey)cls+=' today';
+    if(k===_tdRepeatUntil)cls+=' on';
+    html+='<div class="'+cls+'" onclick="pickTdUntilDate(\''+k+'\')">'+d+'</div>';
+  }
+  const filled=startDow+totalDays;
+  const need=Math.ceil(filled/7)*7;
+  for(let i=1;i<=need-filled;i++){
+    const dt=new Date(y,m+1,i);
+    const k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
+    html+='<div class="ev-multi-day other'+(k===_tdRepeatUntil?' on':'')+'" onclick="pickTdUntilDate(\''+k+'\')">'+i+'</div>';
+  }
+  grid.innerHTML=html;
+}
+function tdUntilCalNav(diff){
+  if(!_tdUntilCalDate)_tdUntilCalDate=_tdUntilCalBase();
+  _tdUntilCalDate.setMonth(_tdUntilCalDate.getMonth()+diff);
+  renderTdUntilCal();
+}
+function pickTdUntilDate(key){
+  _tdRepeatUntil=key;
+  renderTdUntilCal();
   _refreshTdUntilHint();
-}
-function clearTdUntil(){
-  _tdUntilY=''; _tdUntilM=''; _tdUntilD=''; _tdRepeatUntil=null;
-  _renderTdUntilBtns();
-  _refreshTdUntilHint();
-}
-function _tdUntilYearRange(){
-  const base=_tdBaseDateObj()||new Date();
-  let startY=base.getFullYear();
-  if(_tdUntilY&&Number(_tdUntilY)<startY) startY=Number(_tdUntilY);
-  const endY=Math.max(startY+50, _tdUntilY?Number(_tdUntilY):0);
-  return {startY:startY,endY:endY};
-}
-function openTdUntilYSel(){
-  const r=_tdUntilYearRange();
-  const items=[]; for(let y=r.startY;y<=r.endY;y++) items.push({value:String(y),label:y+'년'});
-  _toggleYmdPop('tdUntilYPop', items, _tdUntilY, function(v){ _tdUntilY=v; _applyTdUntilYMD(); });
-}
-function openTdUntilMSel(){
-  const items=[]; for(let m=1;m<=12;m++) items.push({value:String(m),label:m+'월'});
-  _toggleYmdPop('tdUntilMPop', items, _tdUntilM, function(v){ _tdUntilM=v; _applyTdUntilYMD(); });
-}
-function openTdUntilDSel(){
-  const maxDay=(_tdUntilY&&_tdUntilM)?new Date(Number(_tdUntilY),Number(_tdUntilM),0).getDate():31;
-  const items=[]; for(let d=1;d<=maxDay;d++) items.push({value:String(d),label:d+'일'});
-  _toggleYmdPop('tdUntilDPop', items, _tdUntilD, function(v){ _tdUntilD=v; _applyTdUntilYMD(); });
 }
 function _syncTdMonthlyUI(){
   document.querySelectorAll('#tdMonthlyMode .dm-btn').forEach(function(b){ b.classList.toggle('on', b.dataset.mm===_tdMonthlyMode); });
@@ -22786,12 +22806,13 @@ window.confirmTdRepeatSheet=confirmTdRepeatSheet;
 window.cancelTdRepeatSheet=cancelTdRepeatSheet;
 window.onTdMonthlyMode=onTdMonthlyMode;
 window.onTdNthWeek=onTdNthWeek;
-window.openTdUntilYSel=openTdUntilYSel;
-window.openTdUntilMSel=openTdUntilMSel;
-window.openTdUntilDSel=openTdUntilDSel;
 window.setTdUntilMode=setTdUntilMode;
-window.openTdCountSel=openTdCountSel;
-window.openTdIntervalSel=openTdIntervalSel;
+window.onTdCountInput=onTdCountInput;
+window.onTdCountBlur=onTdCountBlur;
+window.onTdIntervalInput=onTdIntervalInput;
+window.onTdIntervalBlur=onTdIntervalBlur;
+window.tdUntilCalNav=tdUntilCalNav;
+window.pickTdUntilDate=pickTdUntilDate;
 window.toggleTodoTimePicker=toggleTodoTimePicker;
 window.closeTodoTimePicker=closeTodoTimePicker;
 window.applyTodoTimePicker=applyTodoTimePicker;
