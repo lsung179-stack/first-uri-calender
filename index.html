@@ -621,11 +621,12 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
    보이던 문제 개선. 핸들/제목/부제 전체를 감싼 채로 sticky 처리해 스크롤해도 항상 화면 위에
    고정돼 보임(하단 저장/취소 버튼은 그대로 유지, 추가 진입점 하나 더). 좌측에 저장버튼과 같은
    크기의 투명 자리표시자를 둬 grid auto/1fr/auto로 제목을 진짜 중앙에 유지(버튼 폭 변화에도 안전). */
-.ev-topbar{position:sticky;top:-14px;margin:-14px -24px 0;padding:14px 24px 12px;background:var(--card);z-index:6}
-.ev-topbar-row{display:grid;grid-template-columns:auto 1fr auto;align-items:start;gap:8px}
+.ev-topbar{position:sticky;top:-14px;margin:-14px -24px 0;padding:10px 24px 6px;background:var(--card);z-index:6}
+.ev-topbar .mo-handle{margin:0 auto 8px}
+.ev-topbar-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px}
 .ev-topbar-titles .mo-title{margin:0}
-.ev-topbar-titles .mo-sub{margin:8px 0 0}
-.ev-topbar-save{padding:8px 18px;border-radius:999px;background:var(--accent);color:#fff;font-size:14px;font-weight:700;font-family:inherit;border:none;cursor:pointer;letter-spacing:.2px;white-space:nowrap}
+.ev-topbar-titles .mo-sub{margin:3px 0 0}
+.ev-topbar-save{padding:7px 16px;border-radius:999px;background:var(--accent);color:#fff;font-size:13px;font-weight:700;font-family:inherit;border:none;cursor:pointer;letter-spacing:.2px;white-space:nowrap}
 .ev-topbar-save:active{opacity:.85}
 .ev-topbar-save[hidden]{visibility:hidden;display:block}
 .vc-overlay{position:fixed;inset:0;background:rgba(30,28,24,.5);z-index:2000;opacity:0;pointer-events:none;transition:opacity .2s ease;display:flex;align-items:center;justify-content:center;padding:28px;box-sizing:border-box;transform:translateZ(0)}
