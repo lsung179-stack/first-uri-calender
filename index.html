@@ -606,8 +606,10 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .mo-card{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-radius:24px 24px 0 0;padding:14px 24px max(28px,env(safe-area-inset-bottom));z-index:51;transform:translateY(100%);opacity:0;pointer-events:none;transition:transform .3s cubic-bezier(.32,.72,0,1),opacity .25s ease;max-height:85vh;overflow-y:auto}
 .mo-card.on{transform:translateY(0);opacity:1;pointer-events:auto}
 .mo-handle{width:40px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 22px;position:relative}
-/* 시트 상단(핸들/제목/부제)을 잡고 아래로 스와이프 → 닫기 (터치 스크롤 대신 드래그) */
-.mo-card>.mo-handle,.mo-card>.mo-title,.mo-card>.mo-sub{touch-action:none;-webkit-user-select:none;user-select:none}
+/* 시트 상단(핸들/제목/부제)을 잡고 아래로 스와이프 → 닫기 (터치 스크롤 대신 드래그).
+   [2026-08-14] 자식결합자(>)→후손선택자로 완화 — evCard처럼 title/sub가 sticky 상단바
+   안에 한 단계 더 감싸져도(#evCard의 .ev-topbar) 계속 매칭되도록(다른 시트는 무영향, 매칭 집합 그대로). */
+.mo-card .mo-handle,.mo-card .mo-title,.mo-card .mo-sub{touch-action:none;-webkit-user-select:none;user-select:none}
 .mo-handle::after{content:'';position:absolute;left:-60px;right:-60px;top:-16px;bottom:-16px}
 .mo-title{font-family:var(--ff-serif);font-size:20px;font-weight:700;color:var(--text);text-align:center;letter-spacing:.5px}
 .mo-sub{font-size:13px;color:var(--sub);text-align:center;margin-top:8px;margin-bottom:24px;line-height:1.6}
@@ -615,6 +617,17 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .mo-form{display:flex;flex-direction:column;gap:14px;margin-bottom:8px}
 .mo-actions{display:flex;flex-direction:column;gap:10px;margin-top:18px}
 .mo-cancel{font-size:13px;color:var(--sub);text-align:center;background:none;border:none;padding:14px;cursor:pointer;font-family:inherit}
+/* 일정 추가/수정 모달 상단 고정 저장 버튼 — [2026-08-14] 폼이 길어 스크롤해야 하단 저장 버튼이
+   보이던 문제 개선. 핸들/제목/부제 전체를 감싼 채로 sticky 처리해 스크롤해도 항상 화면 위에
+   고정돼 보임(하단 저장/취소 버튼은 그대로 유지, 추가 진입점 하나 더). 좌측에 저장버튼과 같은
+   크기의 투명 자리표시자를 둬 grid auto/1fr/auto로 제목을 진짜 중앙에 유지(버튼 폭 변화에도 안전). */
+.ev-topbar{position:sticky;top:-14px;margin:-14px -24px 0;padding:14px 24px 12px;background:var(--card);z-index:6}
+.ev-topbar-row{display:grid;grid-template-columns:auto 1fr auto;align-items:start;gap:8px}
+.ev-topbar-titles .mo-title{margin:0}
+.ev-topbar-titles .mo-sub{margin:8px 0 0}
+.ev-topbar-save{padding:8px 18px;border-radius:999px;background:var(--accent);color:#fff;font-size:14px;font-weight:700;font-family:inherit;border:none;cursor:pointer;letter-spacing:.2px;white-space:nowrap}
+.ev-topbar-save:active{opacity:.85}
+.ev-topbar-save[hidden]{visibility:hidden;display:block}
 .vc-overlay{position:fixed;inset:0;background:rgba(30,28,24,.5);z-index:2000;opacity:0;pointer-events:none;transition:opacity .2s ease;display:flex;align-items:center;justify-content:center;padding:28px;box-sizing:border-box;transform:translateZ(0)}
 .vc-overlay.on{opacity:1;pointer-events:auto}
 .vc-card{background:var(--card);border-radius:22px;max-width:330px;width:100%;padding:28px 24px 14px;box-shadow:0 16px 48px rgba(30,28,24,.3);transform:scale(.94) translateY(8px);opacity:0;transition:transform .22s cubic-bezier(.32,.72,0,1),opacity .2s ease;max-height:calc(100vh - 56px);max-height:calc(100dvh - 56px);overflow-y:auto}
@@ -4135,9 +4148,17 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
 <!-- 일정 추가/수정 모달 -->
 <div class="mo-overlay" id="evOverlay" onclick="cancelEventModal()"></div>
 <div class="mo-card" id="evCard">
-  <div class="mo-handle"></div>
-  <div class="mo-title" id="evModalTitle">새 일정 추가</div>
-  <div class="mo-sub" id="evModalDate">5월 7일 목요일</div>
+  <div class="ev-topbar">
+    <div class="mo-handle"></div>
+    <div class="ev-topbar-row">
+      <button type="button" class="ev-topbar-save" hidden aria-hidden="true" tabindex="-1">저장</button>
+      <div class="ev-topbar-titles">
+        <div class="mo-title" id="evModalTitle">새 일정 추가</div>
+        <div class="mo-sub" id="evModalDate">5월 7일 목요일</div>
+      </div>
+      <button type="button" class="ev-topbar-save" id="evSaveBtnTop" onclick="saveEvent()">저장</button>
+    </div>
+  </div>
   <div class="ev-form">
     <div class="ev-form-row">
       <div class="ev-label">제목</div>
@@ -7694,7 +7715,9 @@ document.addEventListener('click',function(e){
 let _shDrag=null;
 document.addEventListener('pointerdown',function(e){
   if(e.button!==undefined&&e.button!==0)return;
-  const z=e.target&&e.target.closest&&e.target.closest('.mo-card>.mo-handle,.mo-card>.mo-title,.mo-card>.mo-sub');
+  // [2026-08-14] 자식결합자(>)→후손선택자로 완화 — evCard의 .ev-topbar처럼 handle/title/sub가
+  // 한 단계 더 감싸져도(sticky 상단바) 계속 매칭되도록. 다른 시트는 구조 그대로라 매칭 집합 불변.
+  const z=e.target&&e.target.closest&&e.target.closest('.mo-card .mo-handle,.mo-card .mo-title,.mo-card .mo-sub');
   if(!z)return;
   const card=z.closest('.mo-card');
   if(!card||!card.classList.contains('on'))return;
