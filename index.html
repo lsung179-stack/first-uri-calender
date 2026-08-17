@@ -11921,11 +11921,29 @@ function _evRangeAutoFromWeekdays(){
   if(!_evRepeatWeekdays||!_evRepeatWeekdays.length)return;
   const minDow=_evRepeatWeekdays[0], maxDow=_evRepeatWeekdays[_evRepeatWeekdays.length-1];
   const spanLen=maxDow-minDow+1;
-  let start=_rangeStart||_dayDate||_selectedDate;
-  if(!start)return;
+  let ref=_rangeStart||_dayDate||_selectedDate;
+  if(!ref)return;
   try{
-    const curDow=parseDateKey(start).getDay();
-    if(curDow!==minDow) start=shiftDateKey(start, minDow-curDow);
+    let start=null;
+    // [2026-08-17 버그수정] 매달 N째주(nth, 마지막주=-1 포함)일 때 옛 코드는 "요일이 같으면
+    // 그대로 둔다"는 단순 요일이동만 해서, N째주 값만 바뀌면(예: 마지막주→둘째주) 요일이
+    // 안 바뀌니 시작일을 그대로 오답으로 방치했음(예: 마지막주 계산값 30일이 둘째주로 바꿔도
+    // 그대로 30일에 머묾) — _nthWeekdayDate로 '그 달의 N째 줄' 기준 정확한 minDow 날짜를
+    // 매번 새로 계산. 그 달에 없으면(5째주 없는 달 등) 다음 달로 최대 3달 탐색(_repeatFirstDate와 동일 정책).
+    if(_evRepeatType==='monthly'&&_evMonthlyMode==='nth'){
+      const rd=parseDateKey(ref);
+      let y=rd.getFullYear(), m0=rd.getMonth();
+      for(let k=0;k<3;k++){
+        const dd=_nthWeekdayDate(y,m0,_evNthWeek,minDow);
+        if(dd>=1){ start=dateKey(y,m0,dd); break; }
+        if(m0===11){ m0=0; y++; } else { m0++; }
+      }
+    }
+    if(!start){
+      // 매주(weekly) 또는 위에서 못 찾은 경우 — 기존처럼 가장 가까운 minDow 요일로 이동
+      const curDow=parseDateKey(ref).getDay();
+      start=(curDow!==minDow)?shiftDateKey(ref,minDow-curDow):ref;
+    }
     _rangeStart=start;
     _rangeEnd=(spanLen>1)?shiftDateKey(start,spanLen-1):null;
     syncRangeHiddenInputs();
@@ -11955,13 +11973,17 @@ function _updateRangeCalVisibility(){
   if(grid){ grid.style.display=''; grid.classList.toggle('range-preview',hide); }
   if(nav)nav.style.display=hide?'':'none';
   if(hide){
-    if(!_evRangeCalHidden){
+    if(!_evRangeCalHidden&&(!_evRepeatWeekdays||_evRepeatWeekdays.length<=1)){
       // 방금 '탭식 달력 숨김' 상태로 전환됨 — [2026-08-14] 요일 하나를 자동 선택해두던 것을
       // 완전히 제거(사용자 피드백: 초기에 요일이 미리 표시돼 있으면 다른 요일을 눌렀을 때
       // 그 표시가 사라지고 새로 누른 것만 남아 헷갈림) → 아무것도 선택되지 않은 빈 상태로 시작.
       // 이제 어떤 요일을 눌러도 항상 '추가'되므로(_toggleRepWeekday), 처음 누른 요일부터
       // 그 다음 누른 요일까지 자연스럽게 기간으로 확장되고, 원치 않는 기본 요일이 섞여
       // 기간이 엉뚱하게 커지는 예전 버그(2026-08-13)도 애초에 placeholder가 없어 재발하지 않음.
+      // [2026-08-17] 단, 요일이 이미 2개 이상 선택돼 있으면(하루 모드 등에서 이미 반복을
+      // 설정해둔 뒤 기간으로 전환한 경우) 리셋하지 않음 — 이건 placeholder가 아니라 사용자가
+      // 실제로 고른 값(자동 기본값 로직은 항상 1개짜리 배열만 만듦, 2개 이상은 오직 사용자
+      // 클릭으로만 생김)이라 지우면 안 됨. "수,금 선택 후 기간으로 바꾸면 수~금 표시" 요청 대응.
       _evRepeatWeekdays=[];
       _renderRepChips('evWeekdayChips',_evRepeatWeekdays);
       _renderRepChips('evNthChips',_evRepeatWeekdays);
@@ -22425,11 +22447,25 @@ function _tdRangeAutoFromWeekdays(){
   if(!_tdRepeatWeekdays||!_tdRepeatWeekdays.length)return;
   const minDow=_tdRepeatWeekdays[0], maxDow=_tdRepeatWeekdays[_tdRepeatWeekdays.length-1];
   const spanLen=maxDow-minDow+1;
-  let start=_todoRangeStart||_todoSingleDate;
-  if(!start)return;
+  let ref=_todoRangeStart||_todoSingleDate;
+  if(!ref)return;
   try{
-    const curDow=parseDateKey(start).getDay();
-    if(curDow!==minDow) start=shiftDateKey(start, minDow-curDow);
+    let start=null;
+    // [2026-08-17 버그수정] 일정(evCard)의 _evRangeAutoFromWeekdays와 동일 원인·동일 수정 —
+    // 매달 N째주(마지막주=-1 포함)는 _nthWeekdayDate로 그 달 기준 정확한 minDow 날짜를 매번 재계산.
+    if(_todoRepeat==='monthly'&&_tdMonthlyMode==='nth'){
+      const rd=parseDateKey(ref);
+      let y=rd.getFullYear(), m0=rd.getMonth();
+      for(let k=0;k<3;k++){
+        const dd=_nthWeekdayDate(y,m0,_tdNthWeek,minDow);
+        if(dd>=1){ start=dateKey(y,m0,dd); break; }
+        if(m0===11){ m0=0; y++; } else { m0++; }
+      }
+    }
+    if(!start){
+      const curDow=parseDateKey(ref).getDay();
+      start=(curDow!==minDow)?shiftDateKey(ref,minDow-curDow):ref;
+    }
     _todoRangeStart=start;
     _todoRangeEnd=(spanLen>1)?shiftDateKey(start,spanLen-1):null;
     updateRangeChips();
@@ -22458,10 +22494,12 @@ function _updateTdRangeCalVisibility(){
   if(grid){ grid.style.display=''; grid.classList.toggle('range-preview',hide); }
   if(nav)nav.style.display=hide?'':'none';
   if(hide){
-    if(!_tdRangeCalHidden){
+    if(!_tdRangeCalHidden&&(!_tdRepeatWeekdays||_tdRepeatWeekdays.length<=1)){
       // [2026-08-14] 요일 하나를 자동 선택해두던 것을 완전히 제거(일정 evCard와 대칭) —
       // 아무것도 선택 안 된 빈 상태로 시작, 어떤 요일을 눌러도 항상 '추가'되므로 처음 누른
       // 요일부터 다음 누른 요일까지 자연스럽게 기간으로 확장됨.
+      // [2026-08-17] 요일이 2개 이상이면(다른 모드에서 이미 골라둔 값) 리셋하지 않음 —
+      // 자동 기본값은 항상 1개짜리라 2개 이상은 사용자가 실제로 고른 값(일정과 동일 원칙).
       _tdRepeatWeekdays=[];
       _renderTdChips('tdWeekdayChips',_tdRepeatWeekdays);
       _renderTdChips('tdNthChips',_tdRepeatWeekdays);
