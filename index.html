@@ -2311,6 +2311,12 @@ body.ff-jua{letter-spacing:-.2px}
 .ep-t1{font-size:14px;font-weight:800;line-height:1.35;margin-bottom:3px;color:var(--text)}
 .ep-t2{font-size:11.5px;color:var(--sub)}
 .ep-act{flex:none;margin-left:4px}
+/* 강조(일정 바 스타일) 탭 — .ep-th 안에 넣는 실제 렌더링 크기의 미리보기 칩. [2026-08-18] */
+.emph-prev-chip{width:56px;height:24px;border-radius:5px;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#fff;background:var(--accent)}
+.emph-prev-chip.emph-outline{background:transparent;border:1.6px solid var(--accent);color:var(--accent)}
+.emph-prev-chip.emph-tag{position:relative}
+.emph-prev-chip.emph-tag::after{content:'';position:absolute;top:0;right:0;width:9px;height:9px;background:rgba(0,0,0,.24);clip-path:polygon(100% 0,0 0,100% 100%);border-radius:0 5px 0 0}
+.store-hint-note{font-size:12px;color:var(--sub);text-align:center;padding:10px 6px 2px}
 /* 통합 프로필·테마 세트 행(방편집) — 이모지 행 스타일 재사용 */
 .ep-th .sealimg{width:88%;height:88%;object-fit:contain}
 .ep-th svg.sealset{width:88%;height:88%}
@@ -5129,6 +5135,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     <button class="store-tab" data-tab="color" onclick="setStoreTab('color')">컬러</button>
     <button class="store-tab" data-tab="text" onclick="setStoreTab('text')">텍스트</button>
     <button class="store-tab" data-tab="emoji" onclick="setStoreTab('emoji')">이모지</button>
+    <button class="store-tab" data-tab="emphasis" onclick="setStoreTab('emphasis')">강조</button>
     <!-- 달력 주문 임시 숨김 (2026-07-21, 요청) — 되돌리려면 style 제거 -->
     <button class="store-tab" data-tab="calorder" onclick="setStoreTab('calorder')" style="display:none">달력 주문</button>
   </div>
@@ -20149,6 +20156,7 @@ function setStoreTab(tab){
   else if(tab==='color')renderStoreColors();
   else if(tab==='text')renderStoreText();
   else if(tab==='emoji')renderStoreEmoji();
+  else if(tab==='emphasis')renderStoreEmphasis();
   else if(tab==='calorder')renderCalOrder();
   // 컨텐츠 영역을 맨 위로 스크롤
   const body=document.getElementById('storeBody');
@@ -20457,6 +20465,56 @@ async function onLockCharClick(key){
   lockCharPack(key);
   toast(`"${pack.name}" 캐릭터 팩 사용을 중단했어요`);
   renderStoreEmoji();
+}
+
+/* ── 강조(일정 바 스타일) 스토어 탭 ── [2026-08-18]
+   컬러/캐릭터 팩처럼 "여러 팩 중 골라 쓰는" 소모품이 아니라, 구독하면 두 스타일 모두 즉시
+   쓸 수 있는 단일 프리미엄 기능이라 사용/해제 토글 없이 상태만 안내(카카오샵식 리스트 재사용). */
+const STORE_EMPHASIS=[
+  {key:'outline', name:'테두리 일정', desc:'색 채움 없이 깔끔한 외곽선으로'},
+  {key:'tag',     name:'날짜태그 일정', desc:'모서리에 태그가 붙는 스타일'},
+];
+function _emphasisPreviewHTML(key){
+  if(key==='outline')return `<div class="emph-prev-chip emph-outline">일정</div>`;
+  if(key==='tag')return `<div class="emph-prev-chip emph-tag">일정</div>`;
+  return `<div class="emph-prev-chip">일정</div>`;
+}
+function renderStoreEmphasis(){
+  const body=document.getElementById('storeBody');
+  if(!body)return;
+  const prem=isEffectivePremium();
+  let html='<div class="store-section-title">강조 스타일 <small>EVENT BAR STYLE</small></div>';
+  STORE_EMPHASIS.forEach(item=>{
+    const btn=prem
+      ? `<button class="pack-btn pack-btn-using">사용 가능</button>`
+      : `<button class="pack-btn pack-btn-try"><span class="pack-btn-lock">🔒</span>프리미엄</button>`;
+    html+=`
+      <div class="ep-row" onclick="onEmphasisRowClick('${item.key}')">
+        <div class="ep-th">${_emphasisPreviewHTML(item.key)}</div>
+        <div class="ep-body">
+          <div class="ep-t1">${escapeHtml(item.name)}</div>
+          <div class="ep-t2">${escapeHtml(item.desc)}</div>
+        </div>
+        <div class="ep-act">${btn}</div>
+      </div>
+    `;
+  });
+  html+='<div class="store-hint-note">일정을 추가하거나 수정할 때 "일정 바 스타일"에서 골라 쓸 수 있어요.</div>';
+  body.innerHTML=html;
+}
+function onEmphasisRowClick(key){
+  if(!isEffectivePremium()){
+    const pack=STORE_EMPHASIS.find(p=>p.key===key);
+    showUpgradeModal(key==='tag'?{
+      message:'🏷️ 날짜태그로 일정을 특별하게 꾸며볼까요?',
+      feature:'프리미엄이면 일정 모서리에 태그가 붙는 날짜태그 스타일을 쓸 수 있어요.'
+    }:{
+      message:'깔끔한 외곽선 스타일, 써보고 싶으세요?',
+      feature:'프리미엄이면 일정을 색 채움 없이 깔끔한 외곽선으로 표시할 수 있어요.'
+    });
+    return;
+  }
+  toast('일정 추가/수정 시 "일정 바 스타일"에서 골라보세요');
 }
 /* (구) — 호환성 위해 남김 */
 function onLockedEmojiTap(name){toast(`"${name}"`)}
