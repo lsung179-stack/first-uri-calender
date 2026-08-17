@@ -2317,6 +2317,31 @@ body.ff-jua{letter-spacing:-.2px}
 .emph-prev-chip.emph-tag{position:relative}
 .emph-prev-chip.emph-tag::after{content:'';position:absolute;top:0;right:0;width:9px;height:9px;background:rgba(0,0,0,.24);clip-path:polygon(100% 0,0 0,100% 100%);border-radius:0 5px 0 0}
 .store-hint-note{font-size:12px;color:var(--sub);text-align:center;padding:10px 6px 2px}
+/* 강조 탭 히어로 + 색상 미리보기 그리드 [2026-08-18] — store-seal-hero와 동일 그라데이션(이미지 CDN 의존 없음) */
+.store-emphasis-hero{position:relative;overflow:hidden;border-radius:18px;padding:20px 100px 20px 18px;margin-bottom:24px;background:radial-gradient(130% 150% at 88% 12%,#b55c46,#8b3a2a 52%,#6a2a1e 100%);box-shadow:0 6px 16px rgba(106,42,30,.32)}
+.emh-eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.16em;color:#f0d089;margin-bottom:7px}
+.emh-title{font-family:var(--ff-serif);font-size:20px;line-height:1.32;font-weight:700;color:#faf3e3;margin-bottom:7px}
+.emh-desc{font-size:12px;color:rgba(243,230,207,.85);line-height:1.5}
+.emh-mock{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:78px;display:flex;flex-direction:column;gap:6px}
+.emh-mock-cell{background:rgba(243,230,207,.13);border:1px solid rgba(243,230,207,.22);border-radius:8px;padding:6px 7px}
+.emh-mock-day{font-size:9px;font-weight:700;color:rgba(243,230,207,.72);margin-bottom:4px}
+.emh-mock-bar{height:13px;border-radius:3px;position:relative}
+.emh-mock-bar.emh-mock-tag::after{content:'';position:absolute;top:0;right:0;width:6px;height:6px;background:rgba(0,0,0,.28);clip-path:polygon(100% 0,0 0,100% 100%)}
+.emh-mock-bar.emh-mock-outline{background:transparent!important;border:1.4px solid #f3e6cf}
+.emph-cat{margin-bottom:22px}
+.emph-cat-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:10px}
+.emph-cat-name{font-family:var(--ff-serif);font-size:16px;font-weight:700;color:var(--text)}
+.emph-cat-desc{font-size:11.5px;color:var(--sub);margin-top:3px}
+.emph-color-grid{display:flex;gap:10px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.emph-color-grid::-webkit-scrollbar{display:none}
+.emph-ccard{flex:0 0 auto;width:68px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.emph-ccard:active{opacity:.72}
+.emph-cthumb{width:68px;height:68px;border-radius:14px;background:var(--card);border:1px solid var(--border);padding:9px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between}
+.emph-cthumb-num{font-size:15px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums}
+.emph-cthumb-bar{height:15px;border-radius:4px;position:relative}
+.emph-cthumb-bar.is-tag::after{content:'';position:absolute;top:0;right:0;width:8px;height:8px;background:rgba(0,0,0,.24);clip-path:polygon(100% 0,0 0,100% 100%)}
+.emph-cthumb-bar.is-outline{background:transparent!important;border-width:1.6px;border-style:solid}
+.emph-clabel{font-size:11px;color:var(--sub);text-align:center}
 /* 통합 프로필·테마 세트 행(방편집) — 이모지 행 스타일 재사용 */
 .ep-th .sealimg{width:88%;height:88%;object-fit:contain}
 .ep-th svg.sealset{width:88%;height:88%}
@@ -20474,28 +20499,65 @@ const STORE_EMPHASIS=[
   {key:'outline', name:'테두리 일정', desc:'색 채움 없이 깔끔한 외곽선으로'},
   {key:'tag',     name:'날짜태그 일정', desc:'모서리에 태그가 붙는 스타일'},
 ];
+/* 색상 그리드용 예시 팔레트 — 새 색 발명 아님, STORE_COLORS에 이미 있는 값 재사용(포도·수박·복숭아·바다·노을·earth) */
+const EMPH_COLOR_SAMPLES=[
+  {name:'포도',   hex:'#8438A8'},
+  {name:'수박',   hex:'#2A9448'},
+  {name:'복숭아', hex:'#DC5A2C'},
+  {name:'바다',   hex:'#0077b6'},
+  {name:'노을',   hex:'#ff5577'},
+  {name:'어스톤', hex:'#8b6f47'},
+];
 function _emphasisPreviewHTML(key){
   if(key==='outline')return `<div class="emph-prev-chip emph-outline">일정</div>`;
   if(key==='tag')return `<div class="emph-prev-chip emph-tag">일정</div>`;
   return `<div class="emph-prev-chip">일정</div>`;
 }
+function _emphColorCardHTML(style,c){
+  const isTag=style==='tag';
+  const barStyle=isTag?`background:${c.hex}`:`border-color:${c.hex}`;
+  return `
+    <div class="emph-ccard" onclick="onEmphasisRowClick('${style}')">
+      <div class="emph-cthumb">
+        <div class="emph-cthumb-num">31</div>
+        <div class="emph-cthumb-bar ${isTag?'is-tag':'is-outline'}" style="${barStyle}"></div>
+      </div>
+      <div class="emph-clabel">${escapeHtml(c.name)}</div>
+    </div>
+  `;
+}
 function renderStoreEmphasis(){
   const body=document.getElementById('storeBody');
   if(!body)return;
   const prem=isEffectivePremium();
-  let html='<div class="store-section-title">강조 스타일 <small>EVENT BAR STYLE</small></div>';
+  let html=`
+    <div class="store-emphasis-hero">
+      <div class="emh-eyebrow">PREMIUM · EVENT STYLE</div>
+      <div class="emh-title">일정에<br>포인트를 더해요</div>
+      <div class="emh-desc">테두리와 날짜태그, 내가 쓰는<br>모든 색으로 자유롭게 꾸며보세요</div>
+      <div class="emh-mock">
+        <div class="emh-mock-cell"><div class="emh-mock-day">17</div><div class="emh-mock-bar emh-mock-tag" style="background:#e8a33e"></div></div>
+        <div class="emh-mock-cell"><div class="emh-mock-day">24</div><div class="emh-mock-bar emh-mock-outline"></div></div>
+      </div>
+    </div>
+    <div class="store-section-title">강조 스타일 <small>EVENT BAR STYLE</small></div>
+  `;
   STORE_EMPHASIS.forEach(item=>{
     const btn=prem
       ? `<button class="pack-btn pack-btn-using">사용 가능</button>`
       : `<button class="pack-btn pack-btn-try"><span class="pack-btn-lock">🔒</span>프리미엄</button>`;
     html+=`
-      <div class="ep-row" onclick="onEmphasisRowClick('${item.key}')">
-        <div class="ep-th">${_emphasisPreviewHTML(item.key)}</div>
-        <div class="ep-body">
-          <div class="ep-t1">${escapeHtml(item.name)}</div>
-          <div class="ep-t2">${escapeHtml(item.desc)}</div>
+      <div class="emph-cat">
+        <div class="ep-row" onclick="onEmphasisRowClick('${item.key}')">
+          <div class="ep-th">${_emphasisPreviewHTML(item.key)}</div>
+          <div class="ep-body">
+            <div class="ep-t1">${escapeHtml(item.name)}</div>
+            <div class="ep-t2">${escapeHtml(item.desc)}</div>
+          </div>
+          <div class="ep-act">${btn}</div>
         </div>
-        <div class="ep-act">${btn}</div>
+        <div class="emph-cat-desc">#${item.key==='tag'?'날짜태그':'테두리'} · 갖고 있는 모든 컬러 팩 색상 그대로 적용돼요</div>
+        <div class="emph-color-grid">${EMPH_COLOR_SAMPLES.map(c=>_emphColorCardHTML(item.key,c)).join('')}</div>
       </div>
     `;
   });
@@ -20504,7 +20566,6 @@ function renderStoreEmphasis(){
 }
 function onEmphasisRowClick(key){
   if(!isEffectivePremium()){
-    const pack=STORE_EMPHASIS.find(p=>p.key===key);
     showUpgradeModal(key==='tag'?{
       message:'🏷️ 날짜태그로 일정을 특별하게 꾸며볼까요?',
       feature:'프리미엄이면 일정 모서리에 태그가 붙는 날짜태그 스타일을 쓸 수 있어요.'
