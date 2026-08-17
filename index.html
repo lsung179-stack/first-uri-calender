@@ -8825,6 +8825,7 @@ let _pickContext='add';      // 'add' | 'edit' | 'todo' | 'todoEdit' (멤버 선
 let _todoTarget='self';      // 할일 대상: 'self' | 'all'
 let _todoMembers=[];         // 함께 할일 멤버 키 배열 (본인 포함)
 let _editingTodoId=null;     // 수정 중인 할일 id (사용처가 앞에 있어 여기서 선언 — TDZ 방지)
+let _tdEditOccurrenceScope=null;  // 반복 할일 발생-범위 편집: 'one'|'future'|null(=전체). [2026-08-17 · Gap B]
 let _tempPickedMembers=[];   // 모달에서 임시 선택
 let _selectedExtraRooms=[];  // 다른 방에도 추가 — 선택된 방 ID 배열 (현재 방 제외)
 let _roomPickMode='event';   // 방 선택 모달 모드: 'event' | 'todo'
@@ -9523,7 +9524,7 @@ async function buildWidgetPayload(){
   const avPngById={};
   try{ await Promise.all(realIds.map(async function(id){ const u=profById[id]&&profById[id].avatar_url; if(u){ avPngById[id]=await _wgAvatarPng(u); } })); }catch(_){}
   // ⚠️ todos 테이블엔 'time' 컬럼이 없음(start_time/end_time) — 예전엔 time을 select해 쿼리가 통째로 실패→할일 0
-  const _tdCols='id,room_id,start_date,title,start_time,color,is_done,user_id,member_keys,repeat_type,repeat_weekdays,repeat_monthly_mode,repeat_nth_week,repeat_until,repeat_interval,repeat_count,repeat_lunar_month,repeat_lunar_day';
+  const _tdCols='id,room_id,start_date,title,start_time,color,is_done,user_id,member_keys,repeat_type,repeat_weekdays,repeat_monthly_mode,repeat_nth_week,repeat_until,repeat_interval,repeat_count,repeat_lunar_month,repeat_lunar_day,repeat_except';
   let todos=[]; try{ const {data}=await supa.from('todos').select(_tdCols).in('room_id',roomIds).gte('start_date',from).lte('start_date',to); todos=data||[]; }catch(_){}
   // 반복 할일의 start_date가 창(from) 이전이면 위 쿼리에서 누락 → 따로 가져와 창 안으로 펼침
   try{ const {data}=await supa.from('todos').select(_tdCols).in('room_id',roomIds).lt('start_date',from).in('repeat_type',['daily','weekly','monthly','yearly','lunar']); if(data&&data.length) todos=todos.concat(data); }catch(_){}
@@ -9556,7 +9557,7 @@ async function buildWidgetPayload(){
     const rt=[];
     todos.filter(t=>t.room_id===r.id).forEach(t=>{
       // 반복 할일도 일정과 동일하게 창 안 구체 날짜로 펼침(비반복이면 [start_date])
-      const occ=_wgExpandEvent({date:t.start_date, repeat_type:t.repeat_type, repeat_weekdays:t.repeat_weekdays, repeat_monthly_mode:t.repeat_monthly_mode, repeat_nth_week:t.repeat_nth_week, repeat_until:t.repeat_until, repeat_interval:t.repeat_interval, repeat_count:t.repeat_count, repeat_lunar_month:t.repeat_lunar_month, repeat_lunar_day:t.repeat_lunar_day}, from, to);
+      const occ=_wgExpandEvent({date:t.start_date, repeat_type:t.repeat_type, repeat_weekdays:t.repeat_weekdays, repeat_monthly_mode:t.repeat_monthly_mode, repeat_nth_week:t.repeat_nth_week, repeat_until:t.repeat_until, repeat_interval:t.repeat_interval, repeat_count:t.repeat_count, repeat_lunar_month:t.repeat_lunar_month, repeat_lunar_day:t.repeat_lunar_day, repeat_except:t.repeat_except}, from, to);
       if(!occ.length) return;
       const mk=(Array.isArray(t.member_keys)&&t.member_keys.length?t.member_keys:null);   // 멤버 필터용
       occ.forEach(d=>{ rt.push({ id:String(t.id), date:d, title:String(t.title||'').slice(0,60), time:String(t.start_time||'').trim(), color:hx(t.color), done:!!t.is_done, userId:t.user_id||null, memberKeys:mk }); });
@@ -11190,7 +11191,7 @@ function renderDateSheetList(){
           ${memoHtml}
         </div>
         ${orderHtml}
-        <div class="dp-actions"><button class="dp-btn" onclick="event.stopPropagation();window.editTodoFromDay('${t.id}')">수정</button>${(!(Array.isArray(t.member_keys)&&t.member_keys.length))?`<button class="dp-btn" onclick="event.stopPropagation();window.copyTodoToRooms('${t.id}')">복사</button>`:''}<button class="dp-btn del" onclick="event.stopPropagation();window.deleteTodo('${t.id}')">삭제</button></div>
+        <div class="dp-actions"><button class="dp-btn" onclick="event.stopPropagation();window.editTodoFromDay('${t.id}')">수정</button>${(!(Array.isArray(t.member_keys)&&t.member_keys.length))?`<button class="dp-btn" onclick="event.stopPropagation();window.copyTodoToRooms('${t.id}')">복사</button>`:''}<button class="dp-btn del" onclick="event.stopPropagation();window.deleteTodo('${t.id}','${_selectedDate}')">삭제</button></div>
       </div>`;
       return;
     }
@@ -15217,7 +15218,11 @@ async function deleteEvent(eventId){
   // 지금 보고 있는 날짜가 원본(현재/최초) 기간의 실제 물리 날짜인지, 아니면 미래/과거로 투영된
   // 가상 사이클(다른 주/월/년)인지 구분 — 가상 사이클은 실제 row가 없어 별도 분기 필요 [2026-08-13]
   const isOwnOccurrence=rangeGroup.some(r=>r.date===occDateR);
-  if(rangeGroup.length>1 && rangeOrigin && isOwnOccurrence){
+  // ⚠️[2026-08-17 감사수정 · Gap C] rangeOrigin.multi_group_id(다른 방에도 복사된 기간+반복 일정)면
+  // 이 방 전용 3택(이번 기간만/모든 반복) 대신 아래 "다른 방에도 등록된 일정" 멀티룸 범위선택
+  // 분기로 넘김 — 그 분기가 date 필터 없이 multi_group_id 전체(=이 기간의 전 날짜, 반복이면 원본
+  // 물리 그룹 전체)를 지우므로 "모든 반복 삭제"와 동일한 결과를 멀티룸 인지 상태로 얻음(bug ⑤와 동일 패턴).
+  if(rangeGroup.length>1 && rangeOrigin && isOwnOccurrence && !rangeOrigin.multi_group_id){
     const _rtR=rangeOrigin.repeat_type||(rangeOrigin.recurring_yearly?'yearly':'none');
     const scopeLabelR={daily:'매일',weekly:'매주',monthly:'매월',yearly:'매년',lunar:'매년 음력'}[_rtR]||'반복';
     const choiceR=await askRecurringDelete(
@@ -15267,7 +15272,9 @@ async function deleteEvent(eventId){
   // 기간(range)+반복이 다른 주/월/년으로 투영된 가상 사이클을 삭제하려는 경우 — 실제 row가 없으므로
   // 사이클 시작일(anchor)을 역산해 그 시작일 기준으로 예외 처리(이번 기간만)하거나, 원본 기간(물리
   // 그룹) 전체를 삭제해 반복 자체를 종료한다(모든 반복). [2026-08-13, 고객 요청]
-  if(rangeOrigin && !isOwnOccurrence && (rangeOrigin._rangeSpanDays||1)>1){
+  // ⚠️[2026-08-17 감사수정 · Gap C] 동일하게 multi_group_id면 가상 사이클 3택도 건너뛰고 멀티룸
+  // 범위선택 분기로.
+  if(rangeOrigin && !isOwnOccurrence && (rangeOrigin._rangeSpanDays||1)>1 && !rangeOrigin.multi_group_id){
     const anchorV=_resolveVirtualCycleAnchor(rangeOrigin, occDateR);
     if(anchorV){
       const spanV=rangeOrigin._rangeSpanDays||rangeGroup.length;
@@ -15369,6 +15376,65 @@ async function deleteEvent(eventId){
       }
       _audit('event.delete',{targetType:'event',targetId:eventId,roomId:ev.room_id,
         meta:{title:(ev.title||'').slice(0,80),date:ev.date,recurring:_rt,scope:choice,owner_id:ev.user_id}});
+      await loadEvents();
+      if(_selectedDate)openDateSheet(_selectedDate);
+    }catch(e){
+      toast('실패: '+(e.message||'').slice(0,40));console.error(e);
+    }
+    return;
+  }
+
+  // 반복 + 함께(shared) 일정 — 아이폰 캘린더 스타일 3택. [2026-08-17 감사수정 · Gap A]
+  // 함께 일정은 멤버마다 물리 row가 따로 있고(같은 shared_id 공유) 반복 필드가 각 행에 동일하게
+  // 복제돼 있으므로, "이 일정만/이후/모두" 선택 시 화면에 보이는 대표 1행만 처리하면 다른 멤버는
+  // 그대로 반복이 남아 서로 다른 상태로 갈라짐 — 반드시 같은 shared_id의 모든 멤버 행에 동일하게 적용.
+  const _rtS=ev.repeat_type||(ev.recurring_yearly?'yearly':'none');
+  if(ev.shared_id && _rtS!=='none'){
+    const occDateS=_selectedDate||_dayDate||ev.date;
+    const scopeLabelS={daily:'매일',weekly:'매주',monthly:'매월',yearly:'매년',lunar:'매년 음력'}[_rtS]||'반복';
+    const choiceS=await askRecurringDelete(
+      `${scopeLabelS} 반복되는 함께 일정이에요.<br>삭제하면 참여 멤버 모두에게서 사라져요.<br>어떻게 삭제할까요?`,
+      {title:'반복 함께 일정 삭제', oneLabel:'이 일정에만 적용', futureLabel:'이후 일정에도 적용', allLabel:'모든 일정에 적용'}
+    );
+    if(!choiceS)return;
+    try{
+      const {data:groupRows,error:eG}=await supa.from('events').select('id,repeat_except,repeat_until').eq('shared_id',ev.shared_id);
+      if(eG)throw eG;
+      const rows=groupRows||[];
+      if(choiceS==='one'){
+        // 같은 shared_id의 모든 멤버 행마다 이 발생일을 예외 처리(반복 규칙 자체는 유지)
+        for(const row of rows){
+          let ex=Array.isArray(row.repeat_except)?row.repeat_except.slice():[];
+          try{
+            const _today=_todayKeyStr();
+            const _cut=(occDateS<_today)?occDateS:_today;
+            if(ex.length>30) ex=ex.filter(d=>d>=_cut);
+          }catch(_){}
+          if(!ex.includes(occDateS))ex.push(occDateS);
+          const {error:eEx}=await supa.from('events').update({repeat_except:ex}).eq('id',row.id);
+          if(eEx)throw eEx;
+        }
+        toast('이 일정만 삭제됐어요');
+      }else if(choiceS==='future'){
+        // 모든 멤버 행의 repeat_until을 이 날짜 전날로 잘라 이후 발생을 함께 중단
+        const cutoff=shiftDateKey(occDateS,-1);
+        for(const row of rows){
+          const newUntil=(row.repeat_until&&row.repeat_until<cutoff)?row.repeat_until:cutoff;
+          const {error:eCut}=await supa.from('events').update({repeat_until:newUntil}).eq('id',row.id);
+          if(eCut)throw eCut;
+        }
+        toast('이후 일정이 모두 삭제됐어요');
+      }else{
+        // 모든 일정에 적용 — 기존 동작 그대로(shared_id 그룹 전체 삭제)
+        const photoUrlsToCleanup=(Array.isArray(ev.photo_urls)&&ev.photo_urls.length)?ev.photo_urls.filter(Boolean):(ev.photo_url?[ev.photo_url]:[]);
+        const {error}=await supa.from('events').delete().eq('shared_id',ev.shared_id);
+        if(error)throw error;
+        photoUrlsToCleanup.forEach(u=>deletePhotoFromStorage(u));
+        toast('함께 일정 삭제됨');
+        notifyEventDeleted(ev);
+      }
+      _audit('event.delete',{targetType:'event',targetId:eventId,roomId:ev.room_id,
+        meta:{title:(ev.title||'').slice(0,80),date:ev.date,recurring:_rtS,scope:choiceS,shared:true,memberRows:rows.length,owner_id:ev.user_id}});
       await loadEvents();
       if(_selectedDate)openDateSheet(_selectedDate);
     }catch(e){
@@ -21598,6 +21664,8 @@ function todoOccursOnDate(t,key){
       matched=!!(sol && sol.year===y && (sol.month-1)===d.getMonth() && sol.day===d.getDate());
     }
     if(!matched)return false;
+    // 이 발생일이 예외 처리됐으면(반복 발생-범위 삭제/수정의 '이 일정만') 숨김. [2026-08-17 · Gap B]
+    if(Array.isArray(t.repeat_except) && t.repeat_except.includes(key)) return false;
     // 반복 주기(interval)/횟수(count) — 기존(interval=1·무제한) 할일은 항상 통과(무회귀). [2026-08-13]
     return _repeatIntervalCountOkRaw(t.start_date, t.repeat_type, t.repeat_interval, t.repeat_count, key);
   }
@@ -21687,8 +21755,58 @@ async function toggleTodoDone(id){
     else{ _notifyTodo(turningOn?'done':'undone', t); }
   }catch(e){ toast('변경 실패'); await loadTodos(); safeRender(); }
 }
-async function deleteTodo(id){
+async function deleteTodo(id, occDate){
   const t=_todos.find(x=>x.id===id); if(!t) return;
+  // 반복 할일 — 아이폰 캘린더 스타일 3택("이 일정에만/이후 일정에도/모든 일정에 적용"), 일정
+  // deleteEvent와 대칭. [2026-08-17 감사수정 · Gap B] multi_group_id(여러 방 링크)면 이 3택을
+  // 건너뛰고 기존 멀티룸 범위선택(아래)으로 우회 — 이벤트 삭제(⑤)와 동일하게 "여러 방 복사본은
+  // 항상 전체 시리즈 단위"로 통일. occDate는 호출부가 명시 전달(날짜시트=그 발생일, 목록화면=
+  // 특정 발생일 개념이 없어 origin의 start_date로 폴백) — 전달 안 되면 t.start_date로 안전 폴백.
+  const _rtT=t.repeat_type||'none';
+  const occDateT=occDate||t.start_date;
+  if(_rtT!=='none' && !t.multi_group_id){
+    const scopeLabelT={daily:'매일',weekly:'매주',monthly:'매월',yearly:'매년',lunar:'매년 음력'}[_rtT]||'반복';
+    const choiceT=await askRecurringDelete(
+      `${scopeLabelT} 반복되는 할 일이에요.<br>어떻게 삭제할까요?`,
+      {title:'반복 할 일 삭제', oneLabel:'이 일정에만 적용', futureLabel:'이후 일정에도 적용', allLabel:'모든 일정에 적용'}
+    );
+    if(!choiceT)return;
+    const todoSnapshotT=Object.assign({},t);
+    try{
+      if(choiceT==='one'){
+        // 이 발생일을 예외로 추가(반복 규칙은 유지, 이 날짜만 숨김) — repeat_except는 todos에
+        // 없던 컬럼이라 마이그레이션 add_todos_repeat_except로 신규 추가(events와 동일 date[]).
+        const {data:cur,error:e0}=await supa.from('todos').select('repeat_except').eq('id',t.id).maybeSingle();
+        if(e0)throw e0;
+        let ex=Array.isArray(cur&&cur.repeat_except)?cur.repeat_except.slice():[];
+        try{
+          const _today=_todayKeyStr();
+          const _cut=(occDateT<_today)?occDateT:_today;
+          if(ex.length>30) ex=ex.filter(d=>d>=_cut);
+        }catch(_){}
+        if(!ex.includes(occDateT))ex.push(occDateT);
+        const {error}=await supa.from('todos').update({repeat_except:ex}).eq('id',t.id);
+        if(error)throw error;
+        toast('이 할 일만 삭제됐어요');
+      }else if(choiceT==='future'){
+        // 이후(이 날짜 포함) 반복 종료 — repeat_until을 이 날짜 전날로 잘라 이후 발생을 모두 중단
+        const cutoff=shiftDateKey(occDateT,-1);
+        const {data:cur,error:e0}=await supa.from('todos').select('repeat_until').eq('id',t.id).maybeSingle();
+        if(e0)throw e0;
+        const newUntil=(cur&&cur.repeat_until&&cur.repeat_until<cutoff)?cur.repeat_until:cutoff;
+        const {error}=await supa.from('todos').update({repeat_until:newUntil}).eq('id',t.id);
+        if(error)throw error;
+        toast('이후 할 일이 모두 삭제됐어요');
+      }else{
+        const {error}=await supa.from('todos').delete().eq('id',t.id);
+        if(error)throw error;
+        toast('모든 반복 할 일이 삭제됐어요');
+      }
+      _notifyTodo('delete', todoSnapshotT);
+      await loadTodos(); safeRender();
+    }catch(e){ toast('삭제 실패'); }
+    return;
+  }
   const ok=await vConfirm('이 할 일을 삭제할까요?');
   if(!ok) return;
   const todoSnapshot=Object.assign({},t);  // 삭제 전 스냅샷 (알림용)
@@ -21929,9 +22047,9 @@ function buildTodoCard(t,multi){
   const _tdCanCopy=!(Array.isArray(t.member_keys)&&t.member_keys.length);
   const actionsHtml =
     '<div class="td-card-actions">'
-    +'<button class="td-act-btn" onclick="event.stopPropagation();window.openTodoEditSheet(\''+t.id+'\')" aria-label="수정">수정</button>'
+    +'<button class="td-act-btn" onclick="event.stopPropagation();window.openTodoEditSheet(\''+t.id+'\',{fromDay:\''+(t.start_date||'')+'\'})" aria-label="수정">수정</button>'
     +(_tdCanCopy?'<button class="td-act-btn" onclick="event.stopPropagation();window.copyTodoToRooms(\''+t.id+'\')" aria-label="복사">복사</button>':'')
-    +'<button class="td-act-btn del" onclick="event.stopPropagation();window.deleteTodo(\''+t.id+'\')" aria-label="삭제">삭제</button>'
+    +'<button class="td-act-btn del" onclick="event.stopPropagation();window.deleteTodo(\''+t.id+'\',\''+(t.start_date||'')+'\')" aria-label="삭제">삭제</button>'
     +'</div>';
   return '<div class="todo-card '+(done?'done':'')+'" data-id="'+t.id+'">'
     +'<div class="todo-chk '+(done?'on':'')+'" style="border-color:'+hex+';'+(done?'background:'+hex:'')+'" onclick="event.stopPropagation();window.toggleTodoDone(\''+t.id+'\')"></div>'
@@ -22028,7 +22146,7 @@ function refreshDaySheetTodos(){
       +'</div>'
       +'<div class="td-card-actions">'
         +'<button class="td-act-btn" onclick="window.editTodoFromDay(\''+t.id+'\')" aria-label="수정">수정</button>'
-        +'<button class="td-act-btn del" onclick="window.deleteTodo(\''+t.id+'\')" aria-label="삭제">삭제</button>'
+        +'<button class="td-act-btn del" onclick="window.deleteTodo(\''+t.id+'\',\''+_selectedDate+'\')" aria-label="삭제">삭제</button>'
       +'</div>'
     +'</div>';
   });
@@ -22054,6 +22172,7 @@ function openTodoAddSheet(dateKeyStr, opts){
   hideTabbar();
   _subScreenEnter();
   _editingTodoId=null;
+  _tdEditOccurrenceScope=null;  // 이전 편집의 범위선택 잔여 상태 방지. [2026-08-17 · Gap B]
   setText('todoAddTitle','새 할 일 추가');
   _todoType='single';
   _todoSingleDate=start;
@@ -22075,6 +22194,8 @@ function openTodoAddSheet(dateKeyStr, opts){
   if($('todoTitleInput')) $('todoTitleInput').value='';
   if($('todoMemoInput')) $('todoMemoInput').value='';
   _setTypeBtns('single');
+  showEl('todoTypeRange', true);
+  showEl('todoTypeMulti', true);
   _setRepeatBtns('none');
   closeTodoTimePicker();
   setTodoTimeFields(_todoStartTime,_todoEndTime);
@@ -22096,20 +22217,41 @@ function _hexToColorKey(hex){
   const f=(EVENT_COLORS||[]).find(function(c){ return c.hex===hex || c.key===hex; });
   return f?f.key:'c-vintage';
 }
-function openTodoEditSheet(id, opts){
+async function openTodoEditSheet(id, opts){
   const t=(_todos||[]).find(function(x){ return x.id===id; });
   if(!t){ toast('할 일을 찾을 수 없어요'); return; }
+  // 지금 보고 있던 발생일(반복 할일의 가상 발생이면 origin의 start_date와 다를 수 있음) — 호출부가
+  // 명시 전달(날짜시트=그 발생일, 목록화면=origin의 start_date), 못 받으면 origin 날짜로 폴백.
+  const viewDateT=(opts&&opts.fromDay)||t.start_date||_todayKeyStr();
+  _tdEditOccurrenceScope=null;
+  // 반복(다중방 아닌) 할일 수정 — 아이폰 캘린더 스타일 3택, 일정 openEditEvent와 대칭.
+  // [2026-08-17 감사수정 · Gap B] multi_group_id면 이벤트와 동일하게 3택 제외(기존 멀티룸
+  // 범위선택이 그대로 처리 — "여러 방 복사본은 항상 전체 시리즈 단위").
+  const _rtChkT=t.repeat_type||'none';
+  if(_rtChkT!=='none' && !t.multi_group_id){
+    const scopeLabelT={daily:'매일',weekly:'매주',monthly:'매월',yearly:'매년',lunar:'매년 음력'}[_rtChkT]||'반복';
+    const choiceT=await askRecurringDelete(
+      `${scopeLabelT} 반복되는 할 일이에요.<br>어떻게 수정할까요?`,
+      {title:'반복 할 일 수정', oneLabel:'이 일정에만 적용', futureLabel:'이후 일정에도 적용', allLabel:'모든 일정에 적용'}
+    );
+    if(!choiceT)return;
+    _tdEditOccurrenceScope=(choiceT==='all')?null:choiceT;
+  }
   _todoReturnDate=(opts&&opts.fromDay)?opts.fromDay:null;
   hideTabbar();
   _subScreenEnter();
   _editingTodoId=id;
   setText('todoAddTitle','할 일 수정');
-  // 타입 판별
+  // 타입 판별 — 범위선택된 개별 발생 편집(이 일정만/이후)은 항상 '하루'로 강제. 반복 할일은
+  // todoOccursOnDate가 todo_type(기간/여러날)을 무시하고 매칭하므로(반복 우선 분기), 분리되는
+  // 단일 발생도 항상 단일일이 맞음(기간/여러날 필드를 그대로 물려주면 의도와 다른 다일 할일이 됨).
   let type='single';
-  if(t.todo_type==='range' && t.end_date && t.end_date!==t.start_date) type='range';
-  else if(t.todo_type==='multi' && Array.isArray(t.multi_dates) && t.multi_dates.length>1) type='multi';
+  if(!_tdEditOccurrenceScope){
+    if(t.todo_type==='range' && t.end_date && t.end_date!==t.start_date) type='range';
+    else if(t.todo_type==='multi' && Array.isArray(t.multi_dates) && t.multi_dates.length>1) type='multi';
+  }
   _todoType=type;
-  const start=t.start_date||_todayKeyStr();
+  const start=_tdEditOccurrenceScope?viewDateT:(t.start_date||_todayKeyStr());
   _todoSingleDate=start;
   _todoRangeStart=t.start_date||start; _todoRangeEnd=t.end_date||null; _todoRangeFocus='start';
   _todoMultiDates=(Array.isArray(t.multi_dates)&&t.multi_dates.length)?t.multi_dates.slice():[start];
@@ -22138,6 +22280,9 @@ function openTodoEditSheet(id, opts){
   if($('todoTitleInput')) $('todoTitleInput').value=t.title||'';
   if($('todoMemoInput')) $('todoMemoInput').value=t.memo||'';
   _setTypeBtns(type);
+  // 범위선택된 개별 발생 편집 중엔 기간/여러날로 못 바꾸게 버튼 숨김(일정 evModeRow 숨김과 대칭)
+  showEl('todoTypeRange', !_tdEditOccurrenceScope);
+  showEl('todoTypeMulti', !_tdEditOccurrenceScope);
   _setRepeatBtns(_todoRepeat);
   try{ _syncTdRepeatUI(); }catch(_){}
   updateTdRepeatSummaryText();
@@ -22169,6 +22314,7 @@ function closeTodoAddSheet(){
   if($('todoAddOverlay')) $('todoAddOverlay').classList.remove('on');
   if($('todoAddCard')) $('todoAddCard').classList.remove('on');
   _subScreenExit();
+  _tdEditOccurrenceScope=null;  // 취소해도 다음 편집에 스코프가 새지 않게. [2026-08-17 · Gap B]
 }
 function cancelTodoAddSheet(){
   const d=_todoReturnDate;
@@ -23020,6 +23166,71 @@ async function _doSaveTodo(){
     memo:(($('todoMemoInput')||{}).value||'').trim()||null,
     member_keys: isCo ? _todoMembers.slice() : null
   };
+  // 반복 할일의 개별 발생(virtual occurrence) 편집 — '이 일정만 변경'/'이후 일정도 변경'
+  // (openTodoEditSheet에서 _tdEditOccurrenceScope가 세팅된 경우만, t=반복 origin row).
+  // 일정 saveEditedEvent의 _editOccurrenceScope 처리와 대칭. [2026-08-17 감사수정 · Gap B]
+  if(_editingTodoId && _tdEditOccurrenceScope){
+    const scopeT=_tdEditOccurrenceScope;
+    const occDateT=start_date;  // openTodoEditSheet가 폼 날짜를 이미 viewDateT로 맞춰둠
+    const originIdT=_editingTodoId;
+    try{
+      if(scopeT==='one'){
+        // 원본(반복 규칙)은 그대로 두고 이 발생일만 예외 처리 + 새 단독(비반복) 할일로 분리
+        const {data:cur,error:e0}=await supa.from('todos').select('repeat_except').eq('id',originIdT).maybeSingle();
+        if(e0)throw e0;
+        let ex=Array.isArray(cur&&cur.repeat_except)?cur.repeat_except.slice():[];
+        try{
+          const _today=_todayKeyStr();
+          const _cut=(occDateT<_today)?occDateT:_today;
+          if(ex.length>30) ex=ex.filter(d=>d>=_cut);
+        }catch(_){}
+        if(!ex.includes(occDateT))ex.push(occDateT);
+        const {error:eEx}=await supa.from('todos').update({repeat_except:ex}).eq('id',originIdT);
+        if(eEx)throw eEx;
+        const {error:eIns}=await supa.from('todos').insert({
+          room_id:_currentRoom.id, user_id:_currentUser.id,
+          title:fields.title, todo_type:'single', start_date:occDateT, end_date:null, multi_dates:null,
+          start_time:fields.start_time, end_time:fields.end_time, color:fields.color,
+          memo:fields.memo, member_keys:fields.member_keys,
+        });
+        if(eIns)throw eIns;
+        toast('이 할 일만 변경됐어요');
+      }else{
+        // 이후 일정도 변경 — 기존 원본은 이 발생일 전날까지만 반복하도록 자르고,
+        // 이 발생일부터는 새 원본으로 분리해(변경된 값+현재 폼의 반복 패턴으로) 이어서 반복
+        const cutoff=shiftDateKey(occDateT,-1);
+        const {data:cur,error:e0}=await supa.from('todos').select('repeat_until').eq('id',originIdT).maybeSingle();
+        if(e0)throw e0;
+        const newUntil=(cur&&cur.repeat_until&&cur.repeat_until<cutoff)?cur.repeat_until:cutoff;
+        const {error:eCut}=await supa.from('todos').update({repeat_until:newUntil}).eq('id',originIdT);
+        if(eCut)throw eCut;
+        const {error:eIns}=await supa.from('todos').insert({
+          room_id:_currentRoom.id, user_id:_currentUser.id,
+          title:fields.title, todo_type:'single', start_date:occDateT, end_date:null, multi_dates:null,
+          start_time:fields.start_time, end_time:fields.end_time, color:fields.color,
+          repeat_type:fields.repeat_type, repeat_weekdays:fields.repeat_weekdays,
+          repeat_monthly_mode:fields.repeat_monthly_mode, repeat_nth_week:fields.repeat_nth_week,
+          repeat_until:fields.repeat_until, repeat_interval:fields.repeat_interval, repeat_count:fields.repeat_count,
+          repeat_lunar_month:fields.repeat_lunar_month, repeat_lunar_day:fields.repeat_lunar_day,
+          memo:fields.memo, member_keys:fields.member_keys,
+        });
+        if(eIns)throw eIns;
+        toast('이후 할 일이 모두 변경됐어요');
+      }
+      _notifyTodo('update', Object.assign({id:originIdT}, fields, {start_date:occDateT}));
+      _tdEditOccurrenceScope=null;
+      _editingTodoId=null;
+      _roomPickMode='event';
+      _selectedExtraRooms=[];
+      closeTodoAddSheet();
+      await loadTodos();
+      safeRender();
+    }catch(e){
+      toast('수정 실패: '+((e.message||'').slice(0,40)));
+      _showTodoSheetFromSub();
+    }
+    return;
+  }
   try{
     if(_editingTodoId){
       // 편집 대상 할일이 여러 방에 묶여 있으면(multi_group_id) 적용 범위 선택
