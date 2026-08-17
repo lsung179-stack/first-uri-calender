@@ -1925,9 +1925,11 @@ body.ev-dragging .cal-cell{cursor:grabbing}
 .ev-multi-day.sat{color:#3a5a8b}
 .ev-multi-day.on{background:var(--accent);color:var(--card)!important;font-weight:700}
 .ev-multi-day.today{border-color:var(--accent)}
-/* [2026-08-14] 하루 모드 반복 미리보기 — 선택 요일/패턴이 실제로 어느 날짜에 생성될지 옅게 표시.
-   Sunday(.sun)와 겹쳐도 색이 씹히지 않도록 !important(위 range-start 등과 동일 원칙). */
-.ev-multi-day.rep-preview{background:var(--aP);color:var(--text)!important;border-radius:6px}
+/* [2026-08-14] 하루 모드 반복 미리보기 — 선택 요일/패턴이 실제로 어느 날짜에 생성될지 표시.
+   Sunday(.sun)와 겹쳐도 색이 씹히지 않도록 !important(위 range-start 등과 동일 원칙).
+   [2026-08-18] 원본 날짜(.on, 진한 accent)와 미리보기 날짜가 색이 달라 혼동된다는 피드백 →
+   .on과 동일한 스타일로 통일(하루 반복 일정은 전부 같은 실제 발생일이라 구분할 이유가 없음). */
+.ev-multi-day.rep-preview{background:var(--accent);color:var(--card)!important;font-weight:700;border-radius:6px}
 .ev-multi-day:active{transform:scale(.92)}
 .ev-multi-count{font-size:11px;color:var(--sub);text-align:center;padding-top:4px}
 /* 기간+반복(요일기반) 조합 — 달력은 반복 요일 칩이 계산한 기간을 보여주는 미리보기 전용,
