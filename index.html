@@ -12057,7 +12057,15 @@ function cancelEvRepeatSheet(){
 function _evRepeatSummaryText(){
   if(_evRepeatType==='none')return '안 함';
   const N=['일','월','화','수','목','금','토'];
-  const wdList=function(){ return (_evRepeatWeekdays&&_evRepeatWeekdays.length)?_evRepeatWeekdays.slice().sort(function(a,b){return a-b;}).map(function(d){return N[d];}).join(','):''; };
+  const wdList=function(){
+    if(!_evRepeatWeekdays||!_evRepeatWeekdays.length)return '';
+    const sorted=_evRepeatWeekdays.slice().sort(function(a,b){return a-b;});
+    // 기간(range) 모드는 선택한 요일을 "최소~최대 요일의 연속 범위"로 다뤄 실제로 그렇게
+    // 기간이 만들어짐(_evRangeAutoFromWeekdays) — "화,수,목,토"처럼 낱개로 보이면 실제 동작과
+    // 달라 보이므로, 범위 표기("화~토")로 실제 생성되는 기간과 일치하게 보여줌. [2026-08-17]
+    if(_selectedMode==='range'&&sorted.length>1) return N[sorted[0]]+'~'+N[sorted[sorted.length-1]];
+    return sorted.map(function(d){return N[d];}).join(',');
+  };
   const interval=(_evRepeatInterval&&_evRepeatInterval>1)?_evRepeatInterval:1;
   let base='';
   if(_evRepeatType==='daily'){
@@ -12069,7 +12077,7 @@ function _evRepeatSummaryText(){
   }else if(_evRepeatType==='monthly'){
     const freq=interval>1?(interval+'개월마다'):'매월';
     if(_evMonthlyMode==='nth'){
-      const nwNames={1:'첫째',2:'둘째',3:'셋째',4:'넷째','-1':'마지막'};
+      const nwNames={1:'첫째주',2:'둘째주',3:'셋째주',4:'넷째주','-1':'마지막주'};
       const nw=nwNames[String(_evNthWeek)]||'';
       const days=wdList();
       base=freq+' '+nw+(days?(' '+days):'')+'요일';
@@ -22215,7 +22223,14 @@ function cancelTdRepeatSheet(){
 function _tdRepeatSummaryText(){
   if(_todoRepeat==='none')return '안 함';
   const N=['일','월','화','수','목','금','토'];
-  const wdList=function(){ return (_tdRepeatWeekdays&&_tdRepeatWeekdays.length)?_tdRepeatWeekdays.slice().sort(function(a,b){return a-b;}).map(function(d){return N[d];}).join(','):''; };
+  const wdList=function(){
+    if(!_tdRepeatWeekdays||!_tdRepeatWeekdays.length)return '';
+    const sorted=_tdRepeatWeekdays.slice().sort(function(a,b){return a-b;});
+    // 일정(evCard)의 동일 수정과 대칭 — 기간 모드는 요일 선택이 최소~최대 연속 범위로
+    // 실제 기간이 만들어지므로 낱개 나열 대신 범위("화~토") 표기. [2026-08-17]
+    if(_todoType==='range'&&sorted.length>1) return N[sorted[0]]+'~'+N[sorted[sorted.length-1]];
+    return sorted.map(function(d){return N[d];}).join(',');
+  };
   const interval=(_tdRepeatInterval&&_tdRepeatInterval>1)?_tdRepeatInterval:1;
   let base='';
   if(_todoRepeat==='daily'){
@@ -22227,7 +22242,7 @@ function _tdRepeatSummaryText(){
   }else if(_todoRepeat==='monthly'){
     const freq=interval>1?(interval+'개월마다'):'매월';
     if(_tdMonthlyMode==='nth'){
-      const nwNames={1:'첫째',2:'둘째',3:'셋째',4:'넷째','-1':'마지막'};
+      const nwNames={1:'첫째주',2:'둘째주',3:'셋째주',4:'넷째주','-1':'마지막주'};
       const nw=nwNames[String(_tdNthWeek)]||'';
       const days=wdList();
       base=freq+' '+nw+(days?(' '+days):'')+'요일';
