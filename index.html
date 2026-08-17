@@ -872,6 +872,9 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .cal-evbar.ev-outline.ev-l-join{border-left:0}
 .cal-evbar.ev-outline.ev-r-join{border-right:0}
 .cal-evbar.ev-outline .cal-evbar-marker{background:currentColor}
+/* 일정 바 스타일: 날짜태그 — 채움 스타일 + 모서리 접힌 폴드 마커(어느 색에나 통하도록 반투명 오버레이). [2026-08-18] */
+.cal-evbar.ev-tag{position:relative}
+.cal-evbar.ev-tag::after{content:'';position:absolute;top:0;right:0;width:7px;height:7px;background:rgba(0,0,0,.24);clip-path:polygon(100% 0,0 0,100% 100%);border-radius:0 3px 0 0;pointer-events:none}
 
 /* 플로팅 + 추가 버튼 */
 .cal-fab{position:fixed;right:24px;bottom:calc(32px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;background:var(--accent);color:var(--card);border:none;font-size:28px;font-weight:300;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;line-height:1;z-index:20;box-shadow:0 6px 20px rgba(139,58,42,.35);transition:transform .12s}
@@ -1699,6 +1702,11 @@ body.rc-dino .cal-import-btn[data-rci="cimport"]{background-image:url("https://d
 .ev-yearly-slider::before{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:left .2s;box-shadow:0 1px 2px rgba(60,40,25,.18)}
 .ev-yearly-toggle input:checked+.ev-yearly-slider{background:var(--accent)}
 .ev-yearly-toggle input:checked+.ev-yearly-slider::before{left:25px}
+/* 일정 바 스타일(채움/테두리/날짜태그) 3택 — todo-type-row와 동일 톤(별도 클래스, 결합 방지). [2026-08-18] */
+.ev-style-row{display:flex;gap:7px;width:100%}
+.ev-style-btn{flex:1;padding:10px 0;border:1px solid var(--border);background:var(--card);border-radius:11px;font-size:13px;font-weight:600;color:var(--sub);cursor:pointer;font-family:inherit;transition:all .12s;display:flex;align-items:center;justify-content:center}
+.ev-style-btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.ev-style-btn:active{transform:scale(.97)}
 .ev-weekday-pick{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:6px;width:100%}
 .ev-wd{padding:9px 0;border:1px solid var(--line);background:var(--card);color:var(--sub);border-radius:9px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;text-align:center}
 .ev-wd.on{background:var(--accent);color:#fff;border-color:var(--accent)}
@@ -4313,15 +4321,14 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
         </div>
       </div>
     </div>
-    <!-- 일정 바 스타일: 테두리만 표시 (외곽선) -->
-    <div class="ev-form-row ev-yearly-row">
-      <div class="ev-label">테두리만 표시
-        <span style="font-size:11px;color:var(--sub);margin-left:6px">색 채움 없이 외곽선으로</span>
+    <!-- 일정 바 스타일: 채움 / 테두리 / 날짜태그 -->
+    <div class="ev-form-row">
+      <div class="ev-label">일정 바 스타일</div>
+      <div class="ev-style-row" id="evStyleRow">
+        <button type="button" class="ev-style-btn on" id="evStyleSolid" onclick="setEvBarStyle('solid')">채움</button>
+        <button type="button" class="ev-style-btn" id="evStyleOutline" onclick="setEvBarStyle('outline')"><span class="pack-btn-lock" id="evStyleOutlineLock">🔒</span>테두리</button>
+        <button type="button" class="ev-style-btn" id="evStyleTag" onclick="setEvBarStyle('tag')"><span class="pack-btn-lock" id="evStyleTagLock">🔒</span>날짜태그</button>
       </div>
-      <label class="ev-yearly-toggle">
-        <input type="checkbox" id="evOutline" onchange="onOutlineToggle(this.checked)">
-        <span class="ev-yearly-slider"></span>
-      </label>
     </div>
     <!-- 메모 -->
     <div class="ev-form-row">
@@ -4497,6 +4504,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
         <div class="prem-feature"><span class="pmf-ic">🗂️</span><div class="pmf-body"><div class="pmf-name">완료 할일 보관</div><div class="pmf-desc"><b>평생</b> 보관 <span class="pmf-free">무료 7일</span></div></div></div>
         <div class="prem-feature"><span class="pmf-ic">🏷️</span><div class="pmf-body"><div class="pmf-name">색상 라벨 이름</div><div class="pmf-desc">색마다 <b>이름 붙이기</b></div></div></div>
         <div class="prem-feature"><span class="pmf-ic">🔲</span><div class="pmf-body"><div class="pmf-name">테두리 일정</div><div class="pmf-desc">색 채움 없이 <b>외곽선 스타일</b></div></div></div>
+        <div class="prem-feature"><span class="pmf-ic">🎫</span><div class="pmf-body"><div class="pmf-name">날짜태그 일정</div><div class="pmf-desc">모서리에 태그가 붙는 <b>날짜태그 스타일</b></div></div></div>
         <div class="prem-feature"><span class="pmf-ic">🎨</span><div class="pmf-body"><div class="pmf-name">스토어 팩</div><div class="pmf-desc"><b>모든 컬러·캐릭터 팩</b> 사용</div></div></div>
         <div class="prem-feature"><span class="pmf-ic">🪷</span><div class="pmf-body"><div class="pmf-name">고급 방 프로필</div><div class="pmf-desc"><b>입체 프로필 12종</b> <span class="pmf-free">무료 색·문양 꾸미기</span></div></div></div>
         <div class="prem-feature"><span class="pmf-ic">🚫</span><div class="pmf-body"><div class="pmf-name">광고 제거</div><div class="pmf-desc">배너 광고 없이 <b>깔끔하게</b></div></div></div>
@@ -9544,7 +9552,9 @@ async function buildWidgetPayload(){
       const occ=_wgExpandEvent(e, from, to);      // 반복이면 여러 날짜, 비반복이면 [origin]
       if(!occ.length) return;
       const base={ title:String(e.title||'').slice(0,60), time:String(e.time||'').trim(), color:hx(e.color), userId:e.user_id||null,
-        style:(e.bar_style==='outline'?'outline':'solid'),   // 테두리 일정(앱 .ev-outline) 위젯에도 반영
+        // 테두리/날짜태그 일정(앱 .ev-outline/.ev-tag) 위젯에도 반영 — 네이티브가 아직 'tag' 렌더링을
+        // 모르면 else 분기(채움)로 안전하게 폴백(하위호환, 위젯 재빌드 전까지는 폴드 마커만 빠짐). [2026-08-18]
+        style:(e.bar_style==='outline'?'outline':(e.bar_style==='tag'?'tag':'solid')),
         ord:(typeof e.order_index==='number'?e.order_index:0) };  // 사용자 지정 배치 순서
       occ.forEach(d=>{
         // 바 연결·중복제거 키(gid) — 앱 isSameRangeGroup 규칙 그대로.
@@ -10736,8 +10746,9 @@ function _eventBarHTML(ev,key,y,m,d){
   const _canDrag=!ev._isVirtual&&!ev._yearlyDisplay&&(!_evRt||_evRt==='none')&&!ev.recurring_yearly&&!!ev.id;
   const dragAttr=_canDrag?` data-drag="1" data-evid="${ev.id}"`:'';
   const _isOutline=(ev.bar_style==='outline');
+  const _isTag=(ev.bar_style==='tag');
   const _barInline=_isOutline?`border-color:${hex}`:`background:${hex};color:${txt}`;
-  const _olCls=_isOutline?' ev-outline':'';
+  const _olCls=_isOutline?' ev-outline':(_isTag?' ev-tag':'');
   return {html:`<div class="cal-evbar${sharedCls}${rangeCls}${_spillCls}${_olCls}" style="${_barInline}"${dragAttr}>${sharedMarker}${displayTitle}</div>`, hasRangeStart:_hasRangeStart};
 }
 
@@ -12177,7 +12188,7 @@ function openAddEvent(){
   _selectedColor='c-vintage';
   resetColorLabelEdit('ev');
   _selectedStyle='solid';
-  { const _ol=document.getElementById('evOutline'); if(_ol)_ol.checked=false; }
+  _syncEvStyleButtons();
   _selectedTarget='self';
   _selectedMembers=[_currentUser?.id];
   _selectedMode='day';
@@ -12261,8 +12272,8 @@ async function openEditEvent(eventId){
   _editingEvent=ev;
   _selectedColor=ev.color||'c-vintage';
   resetColorLabelEdit('ev');
-  _selectedStyle=ev.bar_style||'solid';
-  { const _ol=document.getElementById('evOutline'); if(_ol)_ol.checked=(_selectedStyle==='outline'); }
+  _selectedStyle=(ev.bar_style==='outline'||ev.bar_style==='tag')?ev.bar_style:'solid';
+  _syncEvStyleButtons();
   _selectedMode='day';
   _editGroup=[];
   _dayDate=_selectedDate; _dayCalDate=null;
@@ -12838,21 +12849,31 @@ function updateMultiRoomVisibility(){
 }
 function updateMultiRoomCountLabel(){ /* no-op (UI 제거됨) */ }
 /* 일정 바 스타일 토글 — 켜면 테두리만(외곽선), 끄면 채움 */
-async function onOutlineToggle(checked){
-  // 프리미엄 차별화 — 테두리만 표시는 Pro 전용 (켜기만 막음, 끄기는 자유)
-  if(checked){
+/* 일정 바 스타일 3택(채움/테두리/날짜태그) — 채움은 항상 무료, 테두리·날짜태그는 프리미엄 전용
+   (구 onOutlineToggle 체크박스 토글을 3-way 세그먼트로 확장). [2026-08-18] */
+async function setEvBarStyle(style){
+  if(style==='outline'||style==='tag'){
     await ensurePremiumLoaded();
     if(!isEffectivePremium()){
-      const cb=document.getElementById('evOutline'); if(cb) cb.checked=false;
-      _selectedStyle='solid';
-      showUpgradeModal({
+      showUpgradeModal(style==='outline'?{
         message:'깔끔한 외곽선 스타일, 써보고 싶으세요?',
         feature:'프리미엄이면 일정을 색 채움 없이 깔끔한 외곽선으로 표시할 수 있어요.'
+      }:{
+        message:'🏷️ 날짜태그로 일정을 특별하게 꾸며볼까요?',
+        feature:'프리미엄이면 일정 모서리에 태그가 붙는 날짜태그 스타일을 쓸 수 있어요.'
       });
       return;
     }
   }
-  _selectedStyle = checked ? 'outline' : 'solid';
+  _selectedStyle=style;
+  _syncEvStyleButtons();
+}
+function _syncEvStyleButtons(){
+  const map={solid:'evStyleSolid',outline:'evStyleOutline',tag:'evStyleTag'};
+  Object.keys(map).forEach(k=>{ const b=document.getElementById(map[k]); if(b)b.classList.toggle('on',k===_selectedStyle); });
+  const prem=isEffectivePremium();
+  const lo=document.getElementById('evStyleOutlineLock'); if(lo)lo.style.display=prem?'none':'';
+  const lt=document.getElementById('evStyleTagLock'); if(lt)lt.style.display=prem?'none':'';
 }
 /* ── 저장 시 방 선택 모달 ──
    현재 방은 기본 포함(고정), 다른 방은 선택. 확인 시 _doSaveEvent() 실행, 취소 시 저장 중단 */
