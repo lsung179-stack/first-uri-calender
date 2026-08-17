@@ -10134,9 +10134,7 @@ function _originMatchesDate(ev, d){
       else if(!ev.repeat_weekdays.includes(dt.getDay()))return false;
       const y=dt.getFullYear(),m=dt.getMonth(),dn=dt.getDate();
       const daysInMonth=new Date(y,m+1,0).getDate();
-      const ws=_weekStartPref();
-      const firstCol=(new Date(y,m,1).getDay()-ws+7)%7;
-      const nthWk=Math.floor((dn-1+firstCol)/7)+1;
+      const nthWk=_calendarRowOfDate(y,m,dn);
       const isLastOcc=(dn+7>daysInMonth);
       matched=(ev.repeat_nth_week===-1?isLastOcc:(nthWk===ev.repeat_nth_week));
     }else if(mmode==='last'){
@@ -11561,6 +11559,13 @@ function _nthWeekdayDate(y,m0,nth,dow){
   const dd=1-firstCol+(nth-1)*7+col;       // N째 줄의 그 요일 날짜
   return (dd>=1&&dd<=dim)?dd:0;             // 월 밖(1째 줄 앞부분 등)이면 0
 }
+/* _nthWeekdayDate(줄+요일→날짜)의 역연산 — 날짜(y,m0,dn)가 그 달의 몇 번째 '달력 줄'에
+   속하는지 반환(1-based, 주 시작 요일 설정 반영). [2026-08-17, 아래 자동기본값 버그수정에서 사용] */
+function _calendarRowOfDate(y,m0,dn){
+  const ws=_weekStartPref();
+  const firstCol=(new Date(y,m0,1).getDay()-ws+7)%7;
+  return Math.floor((dn-1+firstCol)/7)+1;
+}
 function _nthDatesInMonth(y,m0,nth,weekdays){
   const out=[];
   (weekdays||[]).forEach(function(dow){ const dd=_nthWeekdayDate(y,m0,nth,dow); if(dd>=1) out.push(dd); });
@@ -11628,8 +11633,14 @@ function onEvRepeatSelect(t){
   }else if(_evRepeatType==='monthly'){
     if(d){
       if(!_evMonthlyMode)_evMonthlyMode='dom';
-      // nth 기본값 = origin 날짜가 걸치는 N째주 + 그 요일
-      _evNthWeek=Math.floor((d.getDate()-1)/7)+1;
+      // nth 기본값 = origin 날짜가 걸치는 N째주 + 그 요일. [2026-08-17 버그수정] 예전엔
+      // 단순 "(일-1)/7+1"로 계산해 그 달 1일이 무슨 요일인지 무시했음 — 달이 토요일 등
+      // 늦은 요일로 시작하면 실제 달력 줄(_calendarRowOfDate, _originMatchesDate가 매칭에
+      // 쓰는 바로 그 공식)과 어긋나(예: 8월은 토요일 시작이라 8/12가 단순계산=2주차지만
+      // 실제 달력줄=3주차) origin 자신이 자기가 고른 패턴과 안 맞는 상태가 되고, 그 결과
+      // "같은 주 앞쪽 요일"들이 전부 origin보다 과거로 계산돼(_originMatchesDate가 원본
+      // 자기 날짜 이전은 매치 안 함) 미리보기가 통째로 안 뜨는 버그로 이어짐.
+      _evNthWeek=_calendarRowOfDate(d.getFullYear(),d.getMonth(),d.getDate());
       if(!_evRepeatWeekdays||!_evRepeatWeekdays.length) _evRepeatWeekdays=[d.getDay()];
     }
   }else if(_evRepeatType==='lunar'){
@@ -22168,7 +22179,7 @@ function setTodoRepeat(rep,btn){
   if(btn) btn.classList.add('on'); else _setRepeatBtns(rep);
   const d=_tdBaseDateObj();
   if(rep==='weekly'){ if((!_tdRepeatWeekdays||!_tdRepeatWeekdays.length)&&d) _tdRepeatWeekdays=[d.getDay()]; }
-  else if(rep==='monthly'){ if(d){ if(!_tdMonthlyMode)_tdMonthlyMode='dom'; _tdNthWeek=Math.floor((d.getDate()-1)/7)+1; if(!_tdRepeatWeekdays||!_tdRepeatWeekdays.length)_tdRepeatWeekdays=[d.getDay()]; } }
+  else if(rep==='monthly'){ if(d){ if(!_tdMonthlyMode)_tdMonthlyMode='dom'; _tdNthWeek=_calendarRowOfDate(d.getFullYear(),d.getMonth(),d.getDate()); if(!_tdRepeatWeekdays||!_tdRepeatWeekdays.length)_tdRepeatWeekdays=[d.getDay()]; } }
   else if(rep==='lunar'){
     if(d&&(!_tdLunarMonth||!_tdLunarDay)){
       try{ const kr=solarToLunarKR(d.getFullYear(),d.getMonth()+1,d.getDate()); if(kr){ _tdLunarMonth=kr.lm; _tdLunarDay=kr.ld; } }catch(_){}
