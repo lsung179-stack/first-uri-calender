@@ -12242,7 +12242,7 @@ async function openEditEvent(eventId){
   const _rtChk=ev.repeat_type||(ev.recurring_yearly?'yearly':'none');
   const isRecurringOcc=_rtChk!=='none' && !ev.shared_id && !ev.range_group_id && !ev.multi_group_id;
   if(isRecurringOcc){
-    const scopeLabel={weekly:'매주',monthly:'매월',yearly:'매년'}[_rtChk]||'반복';
+    const scopeLabel={daily:'매일',weekly:'매주',monthly:'매월',yearly:'매년',lunar:'매년 음력'}[_rtChk]||'반복';
     const choice=await askRecurringDelete(
       `${scopeLabel} 반복되는 일정이에요.<br>어떻게 수정할까요?`,
       {title:'반복 일정 수정', oneLabel:'이 일정에만 적용', futureLabel:'이후 일정에도 적용', allLabel:'모든 일정에 적용'}
@@ -12961,15 +12961,19 @@ async function _doCopyEvent(){
     rooms.forEach(rid=>{
       const rgid=isRangeCopy?('rg_'+genShared()):null;
       dates.forEach(d=>{
-        rows.push({
+        // ⚠️[2026-08-17 감사수정] 예전엔 recurring_yearly/repeat_type/repeat_weekdays 3개만 복사해
+        // repeat_monthly_mode/repeat_nth_week/repeat_until/repeat_interval/repeat_count/음력 필드가
+        // 누락 — 매월N째주·간격·횟수제한·음력 반복을 복사하면 조용히 다른 패턴(또는 무제한 매달N일)으로
+        // 깨졌음. _rangeRepeatFields(기간의 첫 날짜에만 반복 적용, 나머지는 none)를 다른 복사 경로들과
+        // 동일하게 재사용해 전 필드+중복방지 규칙을 함께 맞춤.
+        rows.push(Object.assign({
           room_id:rid,user_id:_currentUser.id,date:d,
           title:ev.title,time:ev.time||null,end_time:ev.end_time||null,
           color:ev.color||'c-vintage',bar_style:ev.bar_style||'solid',
           multi_group_id:mgid,range_group_id:rgid,
-          recurring_yearly:!!ev.recurring_yearly,repeat_type:ev.repeat_type||'none',repeat_weekdays:ev.repeat_weekdays||null,
           memo:ev.memo||null,photo_url:ev.photo_url||null,photo_urls:ev.photo_urls||null,
           is_multi:isMulti,
-        });
+        }, _rangeRepeatFields(d,dates[0],ev.repeat_type||'none',ev.repeat_weekdays||null,ev.repeat_monthly_mode||null,ev.repeat_nth_week||null,ev.repeat_until||null,!!ev.recurring_yearly,ev.repeat_interval||null,ev.repeat_count||null,ev.repeat_lunar_month||null,ev.repeat_lunar_day||null)));
       });
     });
     const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
@@ -13075,12 +13079,19 @@ async function _doCopyTodo(){
       if(eU)throw eU;
     }
     // 선택 방마다 복사본 insert (완료상태는 초기화, 함께 멤버키는 제거)
+    // ⚠️[2026-08-17 감사수정] 예전엔 repeat_type만 복사해 repeat_weekdays(매주 요일)조차 누락 —
+    // 반복 할일을 복사하면 요일/N째주/간격/횟수/음력 전부 사라져 사실상 모든 반복 할일 복사가
+    // 깨져있었음(할일은 방당 1행이라 이벤트의 _rangeRepeatFields 같은 '첫날만' 규칙 불필요, 전 필드 직접 복사).
     const rows=rooms.map(rid=>({
       room_id:rid, user_id:_currentUser.id,
       title:t.title, todo_type:t.todo_type||'single',
       start_date:t.start_date, end_date:t.end_date||null, multi_dates:t.multi_dates||null,
       start_time:t.start_time||null, end_time:t.end_time||null,
       color:t.color||'c-vintage', repeat_type:t.repeat_type||'none',
+      repeat_weekdays:t.repeat_weekdays||null, repeat_monthly_mode:t.repeat_monthly_mode||null,
+      repeat_nth_week:t.repeat_nth_week||null, repeat_until:t.repeat_until||null,
+      repeat_interval:t.repeat_interval||null, repeat_count:t.repeat_count||null,
+      repeat_lunar_month:t.repeat_lunar_month||null, repeat_lunar_day:t.repeat_lunar_day||null,
       memo:t.memo||null, member_keys:null, multi_group_id:mgid,
     }));
     const {error}=await supa.from('todos').insert(rows);
@@ -15039,7 +15050,7 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
           multi_group_id:mgid,range_group_id:rgid,
           memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
           is_multi:isMultiMode,
-        }, _rangeRepeatFields(d,newDates[0],repeatType,repeatWeekdays,repeatMonthlyMode,repeatNthWeek,repeatUntil,ry,repeatInterval,repeatCount)));
+        }, _rangeRepeatFields(d,newDates[0],repeatType,repeatWeekdays,repeatMonthlyMode,repeatNthWeek,repeatUntil,ry,repeatInterval,repeatCount,repeatLunarMonth,repeatLunarDay)));
       });
     });
     const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
@@ -15122,7 +15133,7 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
           room_id:_currentRoom.id, date:d,
           title,time,end_time:endTime,color,bar_style:barStyle,shared_id:sharedId,
           memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
-        }, _rangeRepeatFields(d,coDates[0],repeatType,repeatWeekdays,repeatMonthlyMode,repeatNthWeek,repeatUntil,ry,repeatInterval,repeatCount))));
+        }, _rangeRepeatFields(d,coDates[0],repeatType,repeatWeekdays,repeatMonthlyMode,repeatNthWeek,repeatUntil,ry,repeatInterval,repeatCount,repeatLunarMonth,repeatLunarDay))));
       });
     });
     const {error:eIns}=await supa.from('events').insert(_attachVirtualMember(rows));
@@ -15208,7 +15219,7 @@ async function deleteEvent(eventId){
   const isOwnOccurrence=rangeGroup.some(r=>r.date===occDateR);
   if(rangeGroup.length>1 && rangeOrigin && isOwnOccurrence){
     const _rtR=rangeOrigin.repeat_type||(rangeOrigin.recurring_yearly?'yearly':'none');
-    const scopeLabelR={weekly:'매주',monthly:'매월',yearly:'매년'}[_rtR]||'반복';
+    const scopeLabelR={daily:'매일',weekly:'매주',monthly:'매월',yearly:'매년',lunar:'매년 음력'}[_rtR]||'반복';
     const choiceR=await askRecurringDelete(
       `${scopeLabelR} 반복되는 기간 일정이에요.<br>이번 기간(${rangeGroup.length}일)만 삭제할까요,<br>아니면 모든 반복을 삭제할까요?`,
       {title:'반복 기간 일정 삭제', oneLabel:`이번 기간만 삭제 (${rangeGroup.length}일)`, allLabel:'모든 반복 삭제'}
@@ -15261,7 +15272,7 @@ async function deleteEvent(eventId){
     if(anchorV){
       const spanV=rangeOrigin._rangeSpanDays||rangeGroup.length;
       const _rtV=rangeOrigin.repeat_type||(rangeOrigin.recurring_yearly?'yearly':'none');
-      const scopeLabelV={weekly:'매주',monthly:'매월',yearly:'매년'}[_rtV]||'반복';
+      const scopeLabelV={daily:'매일',weekly:'매주',monthly:'매월',yearly:'매년',lunar:'매년 음력'}[_rtV]||'반복';
       const choiceV=await askRecurringDelete(
         `${scopeLabelV} 반복되는 기간 일정이에요.<br>이번 기간(${spanV}일)만 삭제할까요,<br>아니면 모든 반복을 삭제할까요?`,
         {title:'반복 기간 일정 삭제', oneLabel:`이번 기간만 삭제 (${spanV}일)`, allLabel:'모든 반복 삭제'}
@@ -15307,10 +15318,16 @@ async function deleteEvent(eventId){
 
   // 반복 일정(매주/매월/매년) — 아이폰 캘린더 스타일 3택("이 일정에만/이후 일정에도/모든 일정에
   // 적용"). [2026-08-14, 사용자 요청 "반복일정을 수정하거나 삭제하면 사진처럼 적용시켜줘"]
+  // ⚠️[2026-08-17 감사수정] 이 가드가 !ev.multi_group_id를 빠뜨려서(openEditEvent의 isRecurringOcc는
+  // 이미 이 3개를 다 뺌 — 편집은 정상) 다른 방에도 복사된(multi_group_id) 반복 일정을 삭제하면 3택
+  // 응답과 무관하게 '이 방'의 origin row만 조용히 처리되고 다른 방에 연결된 복사본은 그대로 남아
+  // 두 방이 서로 다른 상태로 갈라지는 문제가 있었음(경고 없음). multi_group_id가 있으면 이 3택
+  // 분기를 건너뛰고 아래 방 범위 선택(다른 방에도 등록된 일정) 분기로 넘겨 — 편집과 동일하게
+  // "여러 방 복사본은 항상 전체 시리즈 단위로 처리"로 통일(그 분기가 이미 전체/이 방만 선택 지원).
   const _rt=ev.repeat_type||(ev.recurring_yearly?'yearly':'none');
-  if(_rt!=='none' && !ev.shared_id){
+  if(_rt!=='none' && !ev.shared_id && !ev.multi_group_id){
     const occDate=_selectedDate||_dayDate||ev.date;
-    const scopeLabel={weekly:'매주',monthly:'매월',yearly:'매년'}[_rt]||'반복';
+    const scopeLabel={daily:'매일',weekly:'매주',monthly:'매월',yearly:'매년',lunar:'매년 음력'}[_rt]||'반복';
     const choice=await askRecurringDelete(
       `${scopeLabel} 반복되는 일정이에요.<br>어떻게 삭제할까요?`,
       {title:'반복 일정 삭제', oneLabel:'이 일정에만 적용', futureLabel:'이후 일정에도 적용', allLabel:'모든 일정에 적용'}
