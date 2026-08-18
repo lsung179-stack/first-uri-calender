@@ -2308,18 +2308,18 @@ body.ff-jua{letter-spacing:-.2px}
 .ep-act{flex:none;margin-left:4px}
 .store-hint-note{font-size:12px;color:var(--sub);text-align:center;padding:10px 6px 2px}
 /* 날짜 강조(Date Highlight) 스토어 탭 히어로 [2026-08-18] — store-seal-hero와 동일 그라데이션(이미지 CDN 의존 없음) */
-.store-emphasis-hero{position:relative;overflow:hidden;border-radius:18px;padding:20px 18px;margin-bottom:24px;cursor:pointer;background:radial-gradient(130% 150% at 88% 12%,#b55c46,#8b3a2a 52%,#6a2a1e 100%);box-shadow:0 6px 16px rgba(106,42,30,.32);-webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;gap:14px}
+/* 히어로 배너 — 불필요하게 크지 않도록 여백/폰트 축소, 부제는 아래 대표 행으로 옮기고 한 줄만. [2026-08-19] */
+.store-emphasis-hero{position:relative;overflow:hidden;border-radius:16px;padding:14px 16px;margin-bottom:16px;cursor:pointer;background:radial-gradient(130% 150% at 88% 12%,#b55c46,#8b3a2a 52%,#6a2a1e 100%);box-shadow:0 4px 12px rgba(106,42,30,.28);-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .store-emphasis-hero:active{transform:scale(.98)}
-.emh-eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.16em;color:#f0d089;margin-bottom:7px}
-.emh-title{font-family:var(--ff-serif);font-size:20px;line-height:1.32;font-weight:700;color:#faf3e3;margin-bottom:7px}
-.emh-desc{font-size:12px;color:rgba(243,230,207,.85);line-height:1.5}
-/* 히어로 안의 미리보기 — 실제 캘린더와 같은 테두리 문법(.dh-demo-row)을 재사용해 어두운 배경에 맞춰 톤만 보정 */
-.emh-mock{display:flex;justify-content:flex-start}
-.emh-mock .dh-demo-cell{background:rgba(243,230,207,.13);border-color:rgba(243,230,207,.22)}
-.emh-mock .dh-demo-num{color:rgba(243,230,207,.62)}
-/* 날짜 강조 추가 버튼 + 목록 도트 + 색상 스와치 */
-.dh-add-btn{width:100%;padding:13px;border-radius:12px;border:1.5px dashed var(--accent);background:var(--aP);color:var(--accent);font-weight:800;font-size:14px;font-family:inherit;cursor:pointer;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:6px;-webkit-tap-highlight-color:transparent}
-.dh-add-btn:active{opacity:.75}
+.emh-text{min-width:0}
+.emh-eyebrow{font-size:9.5px;font-weight:800;letter-spacing:.14em;color:#f0d089;margin-bottom:4px}
+.emh-title{font-family:var(--ff-serif);font-size:15px;line-height:1.28;font-weight:700;color:#faf3e3}
+/* 히어로 안의 미리보기 — 실제 캘린더와 같은 테두리 문법(.dh-demo-row)을 재사용하되 배너용으로 더 작게, 어두운 배경에 맞춰 톤만 보정 */
+.emh-mock{flex:none}
+.emh-mock .dh-demo-row{gap:3px}
+.emh-mock .dh-demo-cell{width:34px;height:34px;background:rgba(243,230,207,.13);border-color:rgba(243,230,207,.22)}
+.emh-mock .dh-demo-num{color:rgba(243,230,207,.62);font-size:8px}
+.emh-mock .cal-hl-tag{font-size:7px;padding:2px 3.5px 1.5px}
 /* 일정 폼 안의 "날짜 강조" 바로가기 — 일정과 다른 데이터라는 걸 부제로 명시. [2026-08-19] */
 .dh-quicklink{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);font-weight:700;font-size:13.5px;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:2px;-webkit-tap-highlight-color:transparent}
 .dh-quicklink:active{opacity:.7}
@@ -2327,10 +2327,8 @@ body.ff-jua{letter-spacing:-.2px}
 .dh-quicklink-flags{display:flex;gap:4px}
 .dh-ql-flag{width:13px;height:13px;border-radius:3px;display:inline-block;flex:none}
 .dh-quicklink-sub{font-size:11px;font-weight:500;color:var(--sub)}
-.dh-list-dot{width:34px;height:34px;border-radius:50%}
 /* 스토어 "기본 날짜 태그" — 대표 색 1개 행(탭하면 6색 전부 + 실제 적용 미리보기). [2026-08-19] */
 .dh-rep-th{position:relative}
-.dh-flag{width:34%;height:42%;clip-path:polygon(0 0,100% 0,100% 76%,50% 100%,0 76%)}
 .dh-theme-lock{position:absolute;top:6px;right:7px;font-size:11px}
 /* 상세 팔레트 — 실제 캘린더와 동일한 테두리 오버레이를 그대로 데모 셀 안에 그려서 보여줌 */
 .dh-theme-detail-demo{display:flex;justify-content:center;padding:14px 0 12px}
@@ -2340,9 +2338,16 @@ body.ff-jua{letter-spacing:-.2px}
 .dh-theme-detail-desc{font-size:12.5px;color:var(--sub);line-height:1.6;text-align:center;padding:4px 10px 2px}
 .dh-style-row{display:flex;gap:10px;flex-wrap:wrap;padding-top:2px}
 .dh-detail-swatches{justify-content:center;padding:2px 0 6px}
-.dh-swatch{width:34px;height:34px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;box-sizing:border-box;position:relative;-webkit-tap-highlight-color:transparent}
-.dh-swatch.on{border-color:var(--text)}
-.dh-swatch.on::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:800}
+/* 색상 스와치 — 원으로 색만 보여주지 않고, 실제 색상 팩처럼 탭+본체("Aa" 라벨)가 있는 작은 폴더 아이콘으로 표시.
+   피커(.dh-swatch 안 기본 크기)·스토어 대표 이미지(.dh-folder-lg, 더 자세히) 둘 다 이 한 벌을 공유. [2026-08-19] */
+.dh-swatch{position:relative;cursor:pointer;padding:4px;border-radius:12px;border:2px solid transparent;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+.dh-swatch.on{border-color:var(--text);background:var(--aP)}
+.dh-check-badge{position:absolute;bottom:0;right:0;width:16px;height:16px;border-radius:50%;background:var(--text);color:var(--card);font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.dh-folder{position:relative;width:38px;height:44px;flex:none}
+.dh-folder-body{position:absolute;left:0;top:24%;width:100%;height:76%;background:#fff;border:2.2px solid var(--fc);border-radius:0 8px 8px 8px;box-sizing:border-box}
+.dh-folder-tab{position:absolute;left:0;top:0;width:54%;height:26%;background:var(--fc);border-radius:6px 6px 0 0;box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;font-family:var(--ff-serif,Georgia,serif)}
+.dh-folder-lg{width:54px;height:62px}
+.dh-folder-lg .dh-folder-tab{font-size:14px}
 /* 캘린더 그리드 위 날짜 강조 — 날짜 격자선(칸 테두리) 기준 오버레이 + 왼쪽위 라벨 탭. [2026-08-19] */
 .cal-hl-wrap{position:absolute;inset:1px;box-sizing:border-box;pointer-events:none;z-index:1}
 .cal-hl-tag{position:absolute;top:1px;left:1px;max-width:78%;font-size:8px;font-weight:800;line-height:1;padding:2.5px 4.5px 2px;border-radius:5px 0 6px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:auto;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.16)}
@@ -20593,51 +20598,35 @@ function renderStoreEmphasis(){
   const prem=isEffectivePremium();
   const rep=DH_STYLES.find(s=>s.key===DH_REP_KEY)||DH_STYLES[0];
   const lock=prem?'':'<span class="dh-theme-lock">🔒</span>';
-  let html=`
+  const html=`
     <div class="store-emphasis-hero" onclick="openDhCard()">
-      <div class="emh-eyebrow">PREMIUM · DATE HIGHLIGHT</div>
-      <div class="emh-title">특별한 날짜에<br>내 제목을 붙여보세요</div>
-      <div class="emh-desc">휴가, 출장, 시험기간… 원하는 구간에<br>테두리로 표시해 방 모두에게 알려줘요</div>
+      <div class="emh-text">
+        <div class="emh-eyebrow">PREMIUM · DATE HIGHLIGHT</div>
+        <div class="emh-title">특별한 날짜에<br>내 제목을 붙여보세요</div>
+      </div>
       <div class="emh-mock">${_dhDemoRowHTML(DH_REP_KEY,'휴가')}</div>
     </div>
     <div class="store-section-title">기본 날짜 태그 <small>DATE HIGHLIGHT THEMES</small></div>
     <div class="ep-row dh-rep-row" onclick="openDhThemeDetail('${rep.key}')">
-      <div class="ep-th dh-rep-th"><div class="dh-flag" style="background:${rep.hex}"></div>${lock}</div>
+      <div class="ep-th dh-rep-th">${_dhFolderHTML(rep.key,true)}${lock}</div>
       <div class="ep-body">
         <div class="ep-t1">기본 날짜 태그</div>
+        <div class="ep-t2">휴가, 출장, 시험기간… 원하는 구간에 테두리로 표시해 방 모두에게 알려줘요</div>
         <div class="ep-t2">6가지 색상 · 탭해서 실제 적용 모습을 미리 봐요</div>
       </div>
       <div class="ep-act">›</div>
     </div>
-    <div class="store-section-title">내 방의 날짜 강조 <small>MY HIGHLIGHTS</small></div>
-    <button class="dh-add-btn" onclick="openDhCard()">${prem?'':'<span class="pack-btn-lock">🔒</span>'}+ 날짜 강조 추가</button>
   `;
-  const list=(_dateHighlights||[]).slice().sort((a,b)=>a.start_date<b.start_date?-1:(a.start_date>b.start_date?1:0));
-  if(!list.length){
-    html+='<div class="store-hint-note">아직 만든 날짜 강조가 없어요.</div>';
-  }else{
-    list.forEach(h=>{
-      const hex=_dhHex(h.style_key);
-      const range=(h.start_date===h.end_date)?_fmtMD(h.start_date):`${_fmtMD(h.start_date)} ~ ${_fmtMD(h.end_date)}`;
-      html+=`
-        <div class="ep-row">
-          <div class="ep-th"><div class="dh-list-dot" style="background:${hex}"></div></div>
-          <div class="ep-body">
-            <div class="ep-t1">${escapeHtml(h.title||'(제목 없음)')}</div>
-            <div class="ep-t2">${escapeHtml(range)}</div>
-          </div>
-          <div class="ep-act"><button class="pack-btn pack-btn-try" onclick="deleteDateHighlight('${h.id}')">삭제</button></div>
-        </div>
-      `;
-    });
-  }
   body.innerHTML=html;
 }
 /* ── 날짜 강조 테마 상세보기 — 대표 카드 탭 시 6색 전부 + 실제 캘린더 적용 미리보기를 보여줌.
    보기는 누구나 가능(구경), 실제 사용은 openDhCard()가 기존 프리미엄 게이트를 그대로 처리. [2026-08-19] */
 let _dhDetailStyle=null;
 function _dhDetailSwatchesHTML(){
-  return DH_STYLES.map(s=>`<div class="dh-swatch${s.key===_dhDetailStyle?' on':''}" style="background:${s.hex}" title="${s.name}" onclick="pickDhDetailStyle('${s.key}')"></div>`).join('');
+  return DH_STYLES.map(s=>{
+    const on=s.key===_dhDetailStyle;
+    return `<div class="dh-swatch${on?' on':''}" title="${s.name}" onclick="pickDhDetailStyle('${s.key}')">${_dhFolderHTML(s.key)}${on?'<div class="dh-check-badge">✓</div>':''}</div>`;
+  }).join('');
 }
 function _dhRenderDetail(){
   const s=DH_STYLES.find(x=>x.key===_dhDetailStyle)||DH_STYLES[0];
@@ -20678,6 +20667,13 @@ const DH_STYLES=[
   {key:'purple',name:'퍼플',   hex:'#9966cc'},
 ];
 function _dhHex(key){ const s=DH_STYLES.find(x=>x.key===key); return s?s.hex:DH_STYLES[0].hex; }
+/* 폴더 아이콘(탭+본체, "Aa" 라벨) — 색상만 보여주는 원 대신 실제 색상 팩처럼 자세히 보여줌.
+   스와치 피커·스토어 대표 이미지가 전부 이 헬퍼 하나를 공유(원 색상이 어디에 쓰이든 동일한 모양). [2026-08-19] */
+function _dhFolderHTML(key,big){
+  const hex=_dhHex(key);
+  const ink=getContrastTextColor(hex);
+  return `<div class="dh-folder${big?' dh-folder-lg':''}" style="--fc:${hex}"><div class="dh-folder-tab" style="color:${ink}">Aa</div><div class="dh-folder-body"></div></div>`;
+}
 /* 일정 폼 "날짜 강조" 바로가기 버튼의 색 미리보기 — 어떤 강조 테마들이 있는지 한눈에. [2026-08-19] */
 function _renderDhQuicklinkFlags(){
   const el=document.getElementById('dhQuicklinkFlags');
@@ -20793,7 +20789,10 @@ function closeDhCard(){
 function renderDhStyleRow(){
   const row=document.getElementById('dhStyleRow');
   if(!row)return;
-  row.innerHTML=DH_STYLES.map(s=>`<div class="dh-swatch${s.key===_dhSelStyle?' on':''}" style="background:${s.hex}" onclick="pickDhStyle('${s.key}')" title="${escapeHtml(s.name)}"></div>`).join('');
+  row.innerHTML=DH_STYLES.map(s=>{
+    const on=s.key===_dhSelStyle;
+    return `<div class="dh-swatch${on?' on':''}" onclick="pickDhStyle('${s.key}')" title="${escapeHtml(s.name)}">${_dhFolderHTML(s.key)}${on?'<div class="dh-check-badge">✓</div>':''}</div>`;
+  }).join('');
 }
 function pickDhStyle(key){
   _dhSelStyle=key;
