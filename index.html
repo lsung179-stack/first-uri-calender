@@ -2336,13 +2336,6 @@ body.ff-jua{letter-spacing:-.2px}
 .emh-mock .dh-demo-num{color:#5b5148;font-size:9px;line-height:11px}
 .emh-mock .dh-demo-bar{height:6px;margin-top:2px}
 .emh-mock .cal-hl-tag{font-size:7px;padding:2.5px 4.5px 2px;border-radius:5px 9px 0 0}
-/* 일정 폼 안의 "날짜 강조" 바로가기 — 일정과 다른 데이터라는 걸 부제로 명시. [2026-08-19] */
-.dh-quicklink{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);font-weight:700;font-size:13.5px;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:2px;-webkit-tap-highlight-color:transparent}
-.dh-quicklink:active{opacity:.7}
-.dh-quicklink-top{display:flex;align-items:center;justify-content:space-between;width:100%}
-.dh-quicklink-flags{display:flex;gap:4px}
-.dh-ql-flag{width:13px;height:13px;border-radius:3px;display:inline-block;flex:none}
-.dh-quicklink-sub{font-size:11px;font-weight:500;color:var(--sub)}
 /* 스토어 "기본 날짜 태그" — 대표 색 1개 행(탭하면 6색 전부 + 실제 적용 미리보기). [2026-08-19] */
 .dh-rep-th{position:relative}
 .dh-theme-lock{position:absolute;top:6px;right:7px;font-size:11px}
@@ -4527,16 +4520,6 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
         <input type="checkbox" id="evOutline" onchange="onOutlineToggle(this.checked)">
         <span class="ev-yearly-slider"></span>
       </label>
-    </div>
-    <!-- 날짜 강조 바로가기 — 일정과 별개 데이터, 어떤 강조 테마들이 있는지 색 미리보기로 보여줌. [2026-08-19] -->
-    <div class="ev-form-row">
-      <button type="button" class="dh-quicklink" onclick="openDhFromEventForm()">
-        <div class="dh-quicklink-top">
-          <span class="dh-quicklink-title">📌 날짜 강조로 만들기</span>
-          <div class="dh-quicklink-flags" id="dhQuicklinkFlags"></div>
-        </div>
-        <span class="dh-quicklink-sub">일정이 아닌 날짜(구간) 강조 태그를 붙여요</span>
-      </button>
     </div>
     <!-- 메모 -->
     <div class="ev-form-row">
@@ -8953,6 +8936,16 @@ let _calYear=new Date().getFullYear();
 let _calMonth=new Date().getMonth();
 let _selectedDate=null;   // 시트에서 선택한 날 (YYYY-MM-DD)
 let _editingEvent=null;   // 수정 중 일정 (null이면 추가 모드)
+/* 수정 중인 일정의 '작성자' 멤버 키 — 남이 만든 일정에 함께 멤버를 붙일 때
+   기본 체크가 나로 잡히던 버그 수정용(작성자가 체크돼 있어야 함). 새 일정이면 null. [2026-08-19] */
+let _evOwnerKey=null;
+/* 함께 멤버 피커에서 '항상 포함되는 기준 멤버' — 새 일정은 나, 남의 일정 수정 중이면 그 작성자.
+   할일 컨텍스트는 기존대로 항상 나. */
+function _pickAnchorKey(){
+  const isTodoCtx=(_pickContext==='todo'||_pickContext==='todoEdit');
+  if(!isTodoCtx && _editingEvent && _evOwnerKey) return _evOwnerKey;
+  return _currentUser?.id;
+}
 let _selectedColor='c-vintage';
 let _colorLabels={};          // 색상 라벨 맵 { color_key: '이름' } — 방 공유
 let _colorLabelEditMode=false; // 일정 모달 색상 라벨 편집 모드
@@ -12497,7 +12490,7 @@ function openAddEvent(){
   resetColorLabelEdit('ev');
   _selectedStyle='solid';
   { const _ol=document.getElementById('evOutline'); if(_ol)_ol.checked=false; }
-  _renderDhQuicklinkFlags();
+  _evOwnerKey=null;
   _selectedTarget='self';
   _selectedMembers=[_currentUser?.id];
   _selectedMode='day';
@@ -12583,10 +12576,11 @@ async function openEditEvent(eventId){
   resetColorLabelEdit('ev');
   _selectedStyle=ev.bar_style||'solid';
   { const _ol=document.getElementById('evOutline'); if(_ol)_ol.checked=(_selectedStyle==='outline'); }
-  _renderDhQuicklinkFlags();
   _selectedMode='day';
   _editGroup=[];
   _dayDate=_selectedDate; _dayCalDate=null;
+  // 이 일정을 만든 사람(가상 멤버면 'v-'+member_id) — 함께 멤버 피커의 기준이 된다. [2026-08-19]
+  _evOwnerKey=ev.virtual_member_id?('v-'+ev.virtual_member_id):(ev.user_id||_currentUser?.id);
   // 함께 일정인지 확인
   if(ev.shared_id){
     _selectedTarget='all';
@@ -12597,7 +12591,8 @@ async function openEditEvent(eventId){
     _editSharedMemberIds=[..._selectedMembers];
   }else{
     _selectedTarget='self';
-    _selectedMembers=[_currentUser?.id];
+    // 남이 만든 일정을 수정할 땐 '나'가 아니라 그 일정의 작성자가 기준이 돼야 한다.
+    _selectedMembers=[_evOwnerKey||_currentUser?.id];
     _editSharedMemberIds=[];
     // 기간 일정 그룹 감지 (단독 일정만 — 함께 일정은 단일 날짜로 가정)
     _editGroup=findEventGroup(ev);
@@ -12928,7 +12923,7 @@ function setEventTarget(target){
     openMemberPick(_selectedMembers);
   }else{
     _selectedTarget='self';
-    _selectedMembers=[_currentUser?.id];
+    _selectedMembers=[_pickAnchorKey()];
     applyTargetUI();
   }
 }
@@ -13022,8 +13017,9 @@ function openMemberPick(preselected){
       if(!_tempPickedMembers.includes(authorKey))_tempPickedMembers.unshift(authorKey);
     }
   }else{
-    _tempPickedMembers=[...(preselected||[_currentUser?.id])];
-    if(!_tempPickedMembers.includes(_currentUser?.id))_tempPickedMembers.unshift(_currentUser.id);
+    const anchor=_pickAnchorKey();
+    _tempPickedMembers=[...(preselected||[anchor])];
+    if(anchor&&!_tempPickedMembers.includes(anchor))_tempPickedMembers.unshift(anchor);
   }
   renderMemberPickList();
   document.getElementById('memberPickOverlay').classList.add('on');
@@ -13061,8 +13057,9 @@ function renderMemberPickList(){
   });
 }
 function toggleMemberPick(uid){
-  // 본인 토글: 새 일정에선 차단, 기존 함께 일정 수정 시에만 허용 (자기 빠지기)
-  if(uid===_currentUser?.id){
+  // 기준 멤버 토글: 새 일정에선 차단, 기존 함께 일정 수정 시에만 허용 (자기 빠지기)
+  // 기준 = 새 일정이면 나, 남이 만든 일정을 수정 중이면 그 작성자 → 작성자는 못 빼고, 나는 자유롭게 넣고 뺄 수 있다.
+  if(uid===_pickAnchorKey()){
     if(_pickContext==='todo'||_pickContext==='todoEdit')return;  // 할일: 본인 항상 포함(잠금)
     if(!_editingEvent||!_editingEvent.shared_id)return;
   }
@@ -20933,12 +20930,6 @@ function _dhFolderHTML(key,big){
   const ink=getContrastTextColor(hex);
   return `<div class="dh-folder${big?' dh-folder-lg':''}" style="--fc:${hex}"><div class="dh-folder-tab" style="color:${ink}">Aa</div><div class="dh-folder-body"></div></div>`;
 }
-/* 일정 폼 "날짜 강조" 바로가기 버튼의 색 미리보기 — 어떤 강조 테마들이 있는지 한눈에. [2026-08-19] */
-function _renderDhQuicklinkFlags(){
-  const el=document.getElementById('dhQuicklinkFlags');
-  if(!el)return;
-  el.innerHTML=DH_STYLES.slice(0,4).map(s=>`<span class="dh-ql-flag" style="background:${s.hex}"></span>`).join('');
-}
 function _dhRgba(hex,a){
   const h=hex.replace('#','');
   const r=parseInt(h.substring(0,2),16), g=parseInt(h.substring(2,4),16), b=parseInt(h.substring(4,6),16);
@@ -21070,12 +21061,6 @@ async function openDhCard(presetDate){
   syncDhRangeBoxes();
   const ov=document.getElementById('dhOverlay'), cd=document.getElementById('dhCard');
   if(ov)ov.classList.add('on'); if(cd)cd.classList.add('on');
-}
-/* 일정 추가/수정 폼에서 바로 진입 — 날짜 강조는 일정과 별개 데이터라 폼을 닫고 넘어감. [2026-08-19] */
-function openDhFromEventForm(){
-  const d=_selectedDate;
-  closeEventModal();
-  return openDhCard(d);
 }
 function closeDhCard(){
   const ov=document.getElementById('dhOverlay'), cd=document.getElementById('dhCard');
