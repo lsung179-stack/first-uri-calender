@@ -629,6 +629,9 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .ev-topbar-save{padding:7px 16px;border-radius:999px;background:var(--accent);color:#fff;font-size:13px;font-weight:700;font-family:inherit;border:none;cursor:pointer;letter-spacing:.2px;white-space:nowrap}
 .ev-topbar-save:active{opacity:.85}
 .ev-topbar-save[hidden]{visibility:hidden;display:block}
+/* 상단 고정바 좌측 취소 버튼 — 날짜 강조 시트 등에서 재사용. [2026-08-19] */
+.ev-topbar-cancel{padding:7px 12px;border-radius:999px;background:transparent;color:var(--sub);font-size:13px;font-weight:600;font-family:inherit;border:none;cursor:pointer;white-space:nowrap}
+.ev-topbar-cancel:active{opacity:.6}
 .vc-overlay{position:fixed;inset:0;background:rgba(30,28,24,.5);z-index:2000;opacity:0;pointer-events:none;transition:opacity .2s ease;display:flex;align-items:center;justify-content:center;padding:28px;box-sizing:border-box;transform:translateZ(0)}
 .vc-overlay.on{opacity:1;pointer-events:auto}
 .vc-card{background:var(--card);border-radius:22px;max-width:330px;width:100%;padding:28px 24px 14px;box-shadow:0 16px 48px rgba(30,28,24,.3);transform:scale(.94) translateY(8px);opacity:0;transition:transform .22s cubic-bezier(.32,.72,0,1),opacity .2s ease;max-height:calc(100vh - 56px);max-height:calc(100dvh - 56px);overflow-y:auto}
@@ -2320,8 +2323,22 @@ body.ff-jua{letter-spacing:-.2px}
 /* 일정 폼 안의 "날짜 강조" 바로가기 — 일정과 다른 데이터라는 걸 부제로 명시. [2026-08-19] */
 .dh-quicklink{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);font-weight:700;font-size:13.5px;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:2px;-webkit-tap-highlight-color:transparent}
 .dh-quicklink:active{opacity:.7}
+.dh-quicklink-top{display:flex;align-items:center;justify-content:space-between;width:100%}
+.dh-quicklink-flags{display:flex;gap:4px}
+.dh-ql-flag{width:13px;height:13px;border-radius:3px;display:inline-block;flex:none}
 .dh-quicklink-sub{font-size:11px;font-weight:500;color:var(--sub)}
 .dh-list-dot{width:34px;height:34px;border-radius:50%}
+/* 스토어 "기본 날짜 태그" 테마 캐탈로그 그리드(TimeBlocks식 리본/태그 아이콘) + 상세보기. [2026-08-19] */
+.dh-theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+.dh-theme-card{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.dh-theme-card:active{opacity:.75}
+.dh-theme-thumb{width:100%;aspect-ratio:1;border-radius:14px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;position:relative}
+.dh-flag{width:34%;height:42%;clip-path:polygon(0 0,100% 0,100% 76%,50% 100%,0 76%)}
+.dh-theme-lock{position:absolute;top:6px;right:7px;font-size:11px}
+.dh-theme-name{font-size:11.5px;font-weight:700;color:var(--text);text-align:center}
+.dh-theme-detail-big{display:flex;justify-content:center;padding:18px 0 6px}
+.dh-theme-detail-big .dh-flag{width:64px;height:78px}
+.dh-theme-detail-desc{font-size:12.5px;color:var(--sub);line-height:1.6;text-align:center;padding:4px 10px 2px}
 .dh-style-row{display:flex;gap:10px;flex-wrap:wrap;padding-top:2px}
 .dh-swatch{width:34px;height:34px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;box-sizing:border-box;position:relative;-webkit-tap-highlight-color:transparent}
 .dh-swatch.on{border-color:var(--text)}
@@ -4117,9 +4134,17 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
 <!-- 날짜 강조(프리미엄, 방 공유) 추가 시트 [2026-08-18] -->
 <div class="mo-overlay" id="dhOverlay" onclick="closeDhCard()"></div>
 <div class="mo-card" id="dhCard">
-  <div class="mo-handle"></div>
-  <div class="mo-title">날짜 강조 추가</div>
-  <div class="mo-sub">한 번 만들면 방 멤버 모두에게 보여요</div>
+  <div class="ev-topbar">
+    <div class="mo-handle"></div>
+    <div class="ev-topbar-row">
+      <button type="button" class="ev-topbar-cancel" onclick="closeDhCard()">취소</button>
+      <div class="ev-topbar-titles">
+        <div class="mo-title">날짜 강조 추가</div>
+        <div class="mo-sub">한 번 만들면 방 멤버 모두에게 보여요</div>
+      </div>
+      <button type="button" class="ev-topbar-save" onclick="saveDateHighlight()">저장</button>
+    </div>
+  </div>
   <div class="ev-form-row">
     <div class="ev-label">제목</div>
     <input class="fi" type="text" id="dhTitleInput" placeholder="예: 휴가, 출장, 시험기간" maxlength="20">
@@ -4151,6 +4176,22 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeDhCard()">취소</button>
     <button class="btn btn-primary" onclick="saveDateHighlight()">저장</button>
+  </div>
+</div>
+
+<!-- 날짜 강조 테마 상세 보기 [2026-08-19] -->
+<div class="mo-overlay" id="dhThemeOverlay" onclick="closeDhThemeDetail()"></div>
+<div class="mo-card" id="dhThemeDetailCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title" id="dhThemeDetailName">레드</div>
+  <div class="mo-sub">기본 날짜 태그</div>
+  <div class="dh-theme-detail-big">
+    <div class="dh-flag" id="dhThemeDetailFlag"></div>
+  </div>
+  <div class="dh-theme-detail-desc">일정과 별개로, 원하는 날짜(구간)에 나만의 제목을 붙여 방 멤버 모두에게 보여줘요. 예: 휴가, 출장, 시험기간</div>
+  <div class="mo-actions">
+    <button class="mo-cancel" onclick="closeDhThemeDetail()">닫기</button>
+    <button class="btn btn-primary" onclick="_dhUseThemeFromDetail()">이 태그로 만들기</button>
   </div>
 </div>
 
@@ -4234,9 +4275,6 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     </div>
   </div>
   <div class="ev-form">
-    <div class="ev-form-row">
-      <button type="button" class="dh-quicklink" onclick="openDhFromEventForm()">📌 날짜 강조로 만들기 <span class="dh-quicklink-sub">일정이 아닌 날짜(구간) 강조 태그를 붙여요</span></button>
-    </div>
     <div class="ev-form-row">
       <div class="ev-label">제목</div>
       <input class="fi" type="text" id="evTitle" placeholder="예) 회의, 저녁 약속" maxlength="40" autocomplete="off">
@@ -4393,6 +4431,16 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
         <input type="checkbox" id="evOutline" onchange="onOutlineToggle(this.checked)">
         <span class="ev-yearly-slider"></span>
       </label>
+    </div>
+    <!-- 날짜 강조 바로가기 — 일정과 별개 데이터, 어떤 강조 테마들이 있는지 색 미리보기로 보여줌. [2026-08-19] -->
+    <div class="ev-form-row">
+      <button type="button" class="dh-quicklink" onclick="openDhFromEventForm()">
+        <div class="dh-quicklink-top">
+          <span class="dh-quicklink-title">📌 날짜 강조로 만들기</span>
+          <div class="dh-quicklink-flags" id="dhQuicklinkFlags"></div>
+        </div>
+        <span class="dh-quicklink-sub">일정이 아닌 날짜(구간) 강조 태그를 붙여요</span>
+      </button>
     </div>
     <!-- 메모 -->
     <div class="ev-form-row">
@@ -12285,6 +12333,7 @@ function openAddEvent(){
   resetColorLabelEdit('ev');
   _selectedStyle='solid';
   { const _ol=document.getElementById('evOutline'); if(_ol)_ol.checked=false; }
+  _renderDhQuicklinkFlags();
   _selectedTarget='self';
   _selectedMembers=[_currentUser?.id];
   _selectedMode='day';
@@ -12370,6 +12419,7 @@ async function openEditEvent(eventId){
   resetColorLabelEdit('ev');
   _selectedStyle=ev.bar_style||'solid';
   { const _ol=document.getElementById('evOutline'); if(_ol)_ol.checked=(_selectedStyle==='outline'); }
+  _renderDhQuicklinkFlags();
   _selectedMode='day';
   _editGroup=[];
   _dayDate=_selectedDate; _dayCalDate=null;
@@ -20549,6 +20599,18 @@ async function onLockCharClick(key){
 /* ── 날짜 강조(Date Highlight) 스토어 탭 ── [2026-08-18]
    특정 일정에 종속되지 않는 독립적인 날짜(구간) 하이라이트. 만드는 건 프리미엄 전용이지만
    한 번 만들면 방 멤버 전원에게 보임(공유 정보). 제목은 자유 텍스트(고정 라벨 아님). */
+function _dhThemeCardHTML(s,prem){
+  const lock=prem?'':'<span class="dh-theme-lock">🔒</span>';
+  return `
+    <div class="dh-theme-card" onclick="openDhThemeDetail('${s.key}')">
+      <div class="dh-theme-thumb">
+        <div class="dh-flag" style="background:${s.hex}"></div>
+        ${lock}
+      </div>
+      <div class="dh-theme-name">${escapeHtml(s.name)}</div>
+    </div>
+  `;
+}
 function renderStoreEmphasis(){
   const body=document.getElementById('storeBody');
   if(!body)return;
@@ -20563,7 +20625,9 @@ function renderStoreEmphasis(){
         <div class="emh-mock-cell"><div class="emh-mock-day">11</div><div class="emh-mock-bar emh-mock-tag" style="background:#8438A8"></div></div>
       </div>
     </div>
-    <div class="store-section-title">내 방의 날짜 강조 <small>DATE HIGHLIGHT</small></div>
+    <div class="store-section-title">기본 날짜 태그 <small>DATE HIGHLIGHT THEMES</small></div>
+    <div class="dh-theme-grid">${DH_STYLES.map(s=>_dhThemeCardHTML(s,prem)).join('')}</div>
+    <div class="store-section-title">내 방의 날짜 강조 <small>MY HIGHLIGHTS</small></div>
     <button class="dh-add-btn" onclick="openDhCard()">${prem?'':'<span class="pack-btn-lock">🔒</span>'}+ 날짜 강조 추가</button>
   `;
   const list=(_dateHighlights||[]).slice().sort((a,b)=>a.start_date<b.start_date?-1:(a.start_date>b.start_date?1:0));
@@ -20587,6 +20651,28 @@ function renderStoreEmphasis(){
   }
   body.innerHTML=html;
 }
+/* ── 날짜 강조 테마 상세보기 — 그리드 카드 탭 시 어떤 테마인지 크게 보여줌.
+   보기는 누구나 가능(구경), 실제 사용은 openDhCard()가 기존 프리미엄 게이트를 그대로 처리. [2026-08-19] */
+let _dhDetailStyle=null;
+function openDhThemeDetail(key){
+  const s=DH_STYLES.find(x=>x.key===key);
+  if(!s)return;
+  _dhDetailStyle=key;
+  const nameEl=document.getElementById('dhThemeDetailName'); if(nameEl)nameEl.textContent=s.name;
+  const flagEl=document.getElementById('dhThemeDetailFlag'); if(flagEl)flagEl.style.background=s.hex;
+  const ov=document.getElementById('dhThemeOverlay'), cd=document.getElementById('dhThemeDetailCard');
+  if(ov)ov.classList.add('on'); if(cd)cd.classList.add('on');
+}
+function closeDhThemeDetail(){
+  const ov=document.getElementById('dhThemeOverlay'), cd=document.getElementById('dhThemeDetailCard');
+  if(ov)ov.classList.remove('on'); if(cd)cd.classList.remove('on');
+}
+async function _dhUseThemeFromDetail(){
+  const key=_dhDetailStyle;
+  closeDhThemeDetail();
+  await openDhCard();
+  if(key && isEffectivePremium()){ _dhSelStyle=key; renderDhStyleRow(); }
+}
 /* ── 날짜 강조 색상 팔레트 — 기존 STORE_COLORS에 이미 있는 값 재사용(새 색 발명 아님) ── */
 const DH_STYLES=[
   {key:'red',   name:'레드',   hex:'#ff4d4d'},
@@ -20597,6 +20683,12 @@ const DH_STYLES=[
   {key:'purple',name:'퍼플',   hex:'#9966cc'},
 ];
 function _dhHex(key){ const s=DH_STYLES.find(x=>x.key===key); return s?s.hex:DH_STYLES[0].hex; }
+/* 일정 폼 "날짜 강조" 바로가기 버튼의 색 미리보기 — 어떤 강조 테마들이 있는지 한눈에. [2026-08-19] */
+function _renderDhQuicklinkFlags(){
+  const el=document.getElementById('dhQuicklinkFlags');
+  if(!el)return;
+  el.innerHTML=DH_STYLES.slice(0,4).map(s=>`<span class="dh-ql-flag" style="background:${s.hex}"></span>`).join('');
+}
 function _dhRgba(hex,a){
   const h=hex.replace('#','');
   const r=parseInt(h.substring(0,2),16), g=parseInt(h.substring(2,4),16), b=parseInt(h.substring(4,6),16);
