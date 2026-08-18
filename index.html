@@ -614,7 +614,7 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 /* 시트 상단(핸들/제목/부제)을 잡고 아래로 스와이프 → 닫기 (터치 스크롤 대신 드래그).
    [2026-08-14] 자식결합자(>)→후손선택자로 완화 — evCard처럼 title/sub가 sticky 상단바
    안에 한 단계 더 감싸져도(#evCard의 .ev-topbar) 계속 매칭되도록(다른 시트는 무영향, 매칭 집합 그대로). */
-.mo-card .mo-handle,.mo-card .mo-title,.mo-card .mo-sub{touch-action:none;-webkit-user-select:none;user-select:none}
+.mo-card .mo-handle,.mo-card .mo-title,.mo-card .mo-sub,.mo-card .ev-topbar{touch-action:none;-webkit-user-select:none;user-select:none}
 .mo-handle::after{content:'';position:absolute;left:-60px;right:-60px;top:-16px;bottom:-16px}
 .mo-title{font-family:var(--ff-serif);font-size:20px;font-weight:700;color:var(--text);text-align:center;letter-spacing:.5px}
 .mo-sub{font-size:13px;color:var(--sub);text-align:center;margin-top:8px;margin-bottom:24px;line-height:1.6}
@@ -7969,8 +7969,11 @@ document.addEventListener('pointerdown',function(e){
   if(e.button!==undefined&&e.button!==0)return;
   // [2026-08-14] 자식결합자(>)→후손선택자로 완화 — evCard의 .ev-topbar처럼 handle/title/sub가
   // 한 단계 더 감싸져도(sticky 상단바) 계속 매칭되도록. 다른 시트는 구조 그대로라 매칭 집합 불변.
-  const z=e.target&&e.target.closest&&e.target.closest('.mo-card .mo-handle,.mo-card .mo-title,.mo-card .mo-sub');
+  // 상단바(.ev-topbar) 전체도 드래그 존 — 제목 글자를 정확히 잡지 않아도 내려서 닫을 수 있게. [2026-08-19]
+  const z=e.target&&e.target.closest&&e.target.closest('.mo-card .mo-handle,.mo-card .mo-title,.mo-card .mo-sub,.mo-card .ev-topbar');
   if(!z)return;
+  // 상단바 안의 저장 버튼 등은 드래그 시작 대상이 아님
+  if(e.target&&e.target.closest&&e.target.closest('button,a,input,textarea,select'))return;
   const card=z.closest('.mo-card');
   if(!card||!card.classList.contains('on'))return;
   _shDrag={card:card,startY:e.clientY,pid:e.pointerId,active:false,dy:0};
@@ -10430,6 +10433,7 @@ function _originMatchesDate(ev, d){
   if(d<=ev.date)return false;  // origin 자기 날짜(또는 그 이전)는 발생으로 안 침(물리 row가 이미 표시)
   const rt=ev.repeat_type||(ev.recurring_yearly?'yearly':'none');
   let matched=false;
+  let cycleDate=null;   // 주기 계산 기준일(보통 d, '마지막주'가 다음 달로 넘어간 경우만 다름)
   if(rt==='daily'){
     matched=true;  // 요일/월별 패턴 제약 없음 — interval/count만으로 판정
   }else if(rt==='yearly'){
@@ -10446,10 +10450,18 @@ function _originMatchesDate(ev, d){
       if((ev._rangeSpanDays||1)>1){ if(dt.getDay()!==ev.repeat_weekdays[0])return false; }
       else if(!ev.repeat_weekdays.includes(dt.getDay()))return false;
       const y=dt.getFullYear(),m=dt.getMonth(),dn=dt.getDate();
-      const daysInMonth=new Date(y,m+1,0).getDate();
-      const nthWk=_calendarRowOfDate(y,m,dn);
-      const isLastOcc=(dn+7>daysInMonth);
-      matched=(ev.repeat_nth_week===-1?isLastOcc:(nthWk===ev.repeat_nth_week));
+      if(ev.repeat_nth_week===-1){
+        // 마지막주 = 말일이 든 달력 줄 전체(다음 달로 넘어간 칸도 그 줄에 속함)
+        const owner=_lastRowOwnerMonth(dt);
+        matched=!!owner;
+        if(owner&&(owner.y!==y||owner.m!==m)){
+          // 9/1이 8월의 마지막 줄인 경우처럼 달이 넘어가면 'N개월마다' 계산은 소유 달(8월) 기준
+          const dimO=new Date(owner.y,owner.m+1,0).getDate();
+          cycleDate=owner.y+'-'+String(owner.m+1).padStart(2,'0')+'-'+String(dimO).padStart(2,'0');
+        }
+      }else{
+        matched=(_calendarRowOfDate(y,m,dn)===ev.repeat_nth_week);
+      }
     }else if(mmode==='last'){
       const dt=parseDateKey(d);
       const daysInMonth=new Date(dt.getFullYear(),dt.getMonth()+1,0).getDate();
@@ -10472,7 +10484,9 @@ function _originMatchesDate(ev, d){
     matched=!!(s && (s.year+'-'+String(s.month).padStart(2,'0')+'-'+String(s.day).padStart(2,'0'))===d);
   }
   if(!matched)return false;
-  return _repeatIntervalCountOk(ev,d);
+  // 주기(N개월마다)·횟수 판정은 보통 d 자신이지만, '마지막주'가 다음 달로 넘어간 칸은
+  // 그 줄을 소유한 달을 기준으로 세어야 한다(cycleDate).
+  return _repeatIntervalCountOkRaw(ev.date, rt, ev.repeat_interval, ev.repeat_count, cycleDate||d);
 }
 /* 이 셀(date)이 spanDays>1인 origin의 어느 사이클의 몇 번째 날(offset)에 해당하는지 찾음.
    i=1(2일째)부터 spanDays-1까지만 확인 — i=0(사이클 시작일=기존 5개 인덱스가 이미 찾아줌)은 호출부에서 별도 처리. */
@@ -11913,6 +11927,39 @@ function _nthWeekdayDate(y,m0,nth,dow){
   const dd=1-firstCol+(nth-1)*7+col;       // N째 줄의 그 요일 날짜
   return (dd>=1&&dd<=dim)?dd:0;             // 월 밖(1째 줄 앞부분 등)이면 0
 }
+/* '마지막주'는 "그 요일의 마지막 등장"이 아니라 **말일이 들어 있는 달력 줄 전체**를 뜻한다.
+   그래서 줄이 다음 달로 넘어가면 그 다음 달 날짜를 쓴다(예: 8/30,8/31,9/1,9/2 …).
+   안 그러면 월=8/31인데 화·수만 8/25·8/26으로 한 주 앞서는 뒤죽박죽이 됨. [2026-08-19] */
+function _lastRowStartDate(y,m0){
+  const ws=_weekStartPref();
+  const dim=new Date(y,m0+1,0).getDate();
+  const last=new Date(y,m0,dim);
+  const col=(last.getDay()-ws+7)%7;
+  return new Date(y,m0,dim-col);
+}
+/* 그 달 '마지막 줄'에서 특정 요일의 실제 날짜(Date, 다음 달일 수 있음) */
+function _lastRowWeekdayDate(y,m0,dow){
+  const ws=_weekStartPref();
+  const rs=_lastRowStartDate(y,m0);
+  const col=(dow-ws+7)%7;
+  return new Date(rs.getFullYear(),rs.getMonth(),rs.getDate()+col);
+}
+/* 어떤 날짜가 '어느 달의 마지막 줄'에 속하는지 — {y,m} 또는 null.
+   한 줄에 말일이 둘 있을 수는 없으므로(달은 28일 이상) 후보는 최대 하나. */
+function _lastRowOwnerMonth(dt){
+  const ws=_weekStartPref();
+  const col=(dt.getDay()-ws+7)%7;
+  const rs=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate()-col);
+  const re=new Date(rs.getFullYear(),rs.getMonth(),rs.getDate()+6);
+  const cands=[{y:rs.getFullYear(),m:rs.getMonth()},{y:re.getFullYear(),m:re.getMonth()}];
+  for(let i=0;i<cands.length;i++){
+    const c=cands[i];
+    const dim=new Date(c.y,c.m+1,0).getDate();
+    const lastDay=new Date(c.y,c.m,dim);
+    if(lastDay>=rs&&lastDay<=re)return c;
+  }
+  return null;
+}
 /* _nthWeekdayDate(줄+요일→날짜)의 역연산 — 날짜(y,m0,dn)가 그 달의 몇 번째 '달력 줄'에
    속하는지 반환(1-based, 주 시작 요일 설정 반영). [2026-08-17, 아래 자동기본값 버그수정에서 사용] */
 function _calendarRowOfDate(y,m0,dn){
@@ -11920,10 +11967,19 @@ function _calendarRowOfDate(y,m0,dn){
   const firstCol=(new Date(y,m0,1).getDay()-ws+7)%7;
   return Math.floor((dn-1+firstCol)/7)+1;
 }
+/* 힌트용 실제 날짜 목록 — 마지막주는 다음 달로 넘어갈 수 있어 'M/D' 형태로 돌려준다. [2026-08-19] */
 function _nthDatesInMonth(y,m0,nth,weekdays){
   const out=[];
-  (weekdays||[]).forEach(function(dow){ const dd=_nthWeekdayDate(y,m0,nth,dow); if(dd>=1) out.push(dd); });
-  return out.sort(function(a,b){return a-b;});
+  (weekdays||[]).forEach(function(dow){
+    if(nth===-1){
+      const dt=_lastRowWeekdayDate(y,m0,dow);
+      out.push({t:dt.getTime(), y:dt.getFullYear(), m:dt.getMonth(), d:dt.getDate()});
+    }else{
+      const dd=_nthWeekdayDate(y,m0,nth,dow);
+      if(dd>=1) out.push({t:new Date(y,m0,dd).getTime(), y:y, m:m0, d:dd});
+    }
+  });
+  return out.sort(function(a,b){return a.t-b.t;});
 }
 // 힌트 문구: "매달 둘째 화·목요일 · 이번 달 10월 13·15일" — 실제 날짜로 '몇째'의 기준을 명확히
 function _nthHintText(baseD, nth, weekdays){
@@ -11933,7 +11989,13 @@ function _nthHintText(baseD, nth, weekdays){
   const ord=_ORD_KO[String(nth)]||('' + nth);
   const dts=_nthDatesInMonth(y,m0,nth,weekdays);
   const head='매달 '+ord+' '+wdNames+'요일';
-  return dts.length ? (head+' · '+(m0+1)+'월 '+dts.join('·')+'일') : (head+' · '+(m0+1)+'월엔 없음');
+  if(!dts.length) return head+' · '+(m0+1)+'월엔 없음';
+  // 마지막주는 다음 달로 넘어갈 수 있어, 달이 섞이면 각 날짜에 월을 붙여 표기
+  const multiMonth=dts.some(function(x){return x.m!==dts[0].m;});
+  const label=multiMonth
+    ? dts.map(function(x){return (x.m+1)+'월 '+x.d+'일';}).join('·')
+    : (dts[0].m+1)+'월 '+dts.map(function(x){return x.d;}).join('·')+'일';
+  return head+' · '+label;
 }
 /* 반복 시작일 자동 스냅 — 선택한 패턴의 '기준 달 첫 발생일'을 반환(origin이 패턴과 안 맞아 자투리 뜨는 것 방지).
    → 8월 아무 날에서 "둘째 월요일"을 골라도 시작일이 8월 둘째 월요일로 딱 맞춰짐. 안 바뀌면 원래 baseStr 반환. */
@@ -11964,15 +12026,22 @@ function _repeatFirstDate(baseStr, type, weekdays, monthlyMode, nthWeek, lunarMo
     if(mode==='dom') return baseStr;                 // 며칠은 이미 그 날이라 스냅 불필요
     const nthDatesFor=function(y,m0){
       const dim=new Date(y,m0+1,0).getDate();
-      if(mode==='last'){ return [dim]; }
+      if(mode==='last'){ return [new Date(y,m0,dim)]; }
       const wd=(weekdays&&weekdays.length)?weekdays:[b.getDay()];
-      const out=[]; wd.forEach(function(dow){ const dd=_nthWeekdayDate(y,m0,nthWeek,dow); if(dd>=1) out.push(dd); });   // 달력 주 기준
+      const out=[];
+      wd.forEach(function(dow){
+        if(nthWeek===-1){ out.push(_lastRowWeekdayDate(y,m0,dow)); }     // 마지막 줄(다음 달로 넘어갈 수 있음)
+        else { const dd=_nthWeekdayDate(y,m0,nthWeek,dow); if(dd>=1) out.push(new Date(y,m0,dd)); }  // 달력 주 기준
+      });
       return out;
     };
     let y=b.getFullYear(), m0=b.getMonth();
     for(let k=0;k<3;k++){                            // 기준 달→없으면 다음 달(최대 3달 탐색)
-      const days=nthDatesFor(y,m0);
-      if(days.length) return fmt(y,m0,Math.min.apply(null,days));
+      const days=nthDatesFor(y,m0).filter(function(dt){ return fmt(dt.getFullYear(),dt.getMonth(),dt.getDate())>=baseStr; });
+      if(days.length){
+        days.sort(function(a,b2){return a-b2;});
+        return fmt(days[0].getFullYear(),days[0].getMonth(),days[0].getDate());
+      }
       if(m0===11){ m0=0; y++; } else { m0++; }
     }
   }
@@ -12299,6 +12368,10 @@ function _evRangeAutoFromWeekdays(){
       const rd=parseDateKey(ref);
       let y=rd.getFullYear(), m0=rd.getMonth();
       for(let k=0;k<3;k++){
+        if(_evNthWeek===-1){
+          const dt=_lastRowWeekdayDate(y,m0,minDow);   // 마지막 줄(다음 달로 넘어갈 수 있음)
+          start=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate()); break;
+        }
         const dd=_nthWeekdayDate(y,m0,_evNthWeek,minDow);
         if(dd>=1){ start=dateKey(y,m0,dd); break; }
         if(m0===11){ m0=0; y++; } else { m0++; }
@@ -12403,6 +12476,26 @@ function confirmEvRepeatSheet(){
   _evRepSheetSnapshot=null;
   _closeEvRepeatSheetUI();
   updateEvRepeatSummaryText();
+  _snapEvDateToRepeat();
+}
+/* 반복 패턴을 고르면 시작일을 그 패턴의 첫 발생일로 맞춰준다.
+   안 그러면 미니 달력에 "패턴과 무관한 원래 날짜"가 선택된 채로 남아, 저장 시 실제로는
+   다른 날에 생기는데도 그 날이 선택돼 보여 혼란스러웠음(저장 시 스냅은 원래부터 하고 있었음).
+   새 일정 + 하루 모드에서만 — 수정/기간/여러 날은 사용자가 정한 날짜를 건드리지 않는다. [2026-08-19] */
+function _snapEvDateToRepeat(){
+  if(_editingEvent)return;
+  if(_selectedMode!=='day')return;
+  if(!_evRepeatType||_evRepeatType==='none')return;
+  const base=_dayDate||_selectedDate;
+  if(!base)return;
+  const first=_repeatFirstDate(base,_evRepeatType,_evRepeatWeekdays,_evMonthlyMode,_evNthWeek,_evLunarMonth,_evLunarDay);
+  if(!first||first===base)return;
+  _dayDate=first;
+  _selectedDate=first;
+  _dayCalDate=parseDateKey(first);
+  try{ renderDayCal(); }catch(_){}
+  try{ const dt=parseDateKey(first); const el=document.getElementById('evModalDate');
+       if(el)el.textContent=`${dt.getMonth()+1}월 ${dt.getDate()}일 ${DOW_NAMES[dt.getDay()]}요일`; }catch(_){}
 }
 function cancelEvRepeatSheet(){
   const s=_evRepSheetSnapshot;
@@ -21028,12 +21121,15 @@ const DH_THEMES=[
    colors:DH_STYLES},
   {key:'fill',  name:'파스텔 채움', desc:'제목 없이 색으로만 은은하게', render:'fill',
    colors:[
-     {key:'green',    name:'민트그린', hex:'#eefaee'},
-     {key:'rose',     name:'로즈',     hex:'#f9e7e7'},
-     {key:'peach',    name:'피치',     hex:'#fdf0e6'},
-     {key:'lavender', name:'라벤더',   hex:'#ececfb'},
-     {key:'butter',   name:'버터',     hex:'#fdf6e0'},
-     {key:'aqua',     name:'아쿠아',   hex:'#eaf8f5'},
+     /* ⚠️ 처음엔 참고 사진의 아주 옅은 색을 그대로 썼는데, 우리 앱 배경이 크림색(#f3e6cf)이라
+        거의 안 보였음 → 같은 계열을 유지하되 채도를 올려 배경에서 확실히 떠 보이게. [2026-08-19]
+        (전부 밝아서 날짜 숫자는 그대로 어두운 글자 — '진한 채움'과 구분됨) */
+     {key:'green',    name:'민트그린', hex:'#a8e6b8'},
+     {key:'rose',     name:'로즈',     hex:'#f8b4bd'},
+     {key:'peach',    name:'피치',     hex:'#ffc99a'},
+     {key:'lavender', name:'라벤더',   hex:'#c3b8f0'},
+     {key:'butter',   name:'버터',     hex:'#ffe27a'},
+     {key:'aqua',     name:'아쿠아',   hex:'#9fdcea'},
    ]},
   {key:'deep',  name:'진한 채움', desc:'제목 없이 진한 색으로 확실하게', render:'deep',
    colors:[
@@ -22851,7 +22947,11 @@ function todoOccursOnDate(t,key){
         const wd=(Array.isArray(t.repeat_weekdays)&&t.repeat_weekdays.length)?t.repeat_weekdays:[s.getDay()];
         if(wd.indexOf(d.getDay())<0) return false;
         // 달력 주(줄) 기준 — 같은 N째주 요일들이 같은 줄에 붙게(일정과 동일)
-        matched=(_nthWeekdayDate(d.getFullYear(), d.getMonth(), t.repeat_nth_week, d.getDay())===d.getDate());
+        if(t.repeat_nth_week===-1){
+          matched=!!_lastRowOwnerMonth(d);   // 마지막주 = 말일이 든 줄(다음 달 칸도 포함)
+        }else{
+          matched=(_nthWeekdayDate(d.getFullYear(), d.getMonth(), t.repeat_nth_week, d.getDay())===d.getDate());
+        }
       }else{
         matched=(s.getDate()===d.getDate());   // dom(며칠, 기본)
       }
@@ -23578,6 +23678,21 @@ function confirmTdRepeatSheet(){
   _tdRepSheetSnapshot=null;
   _closeTdRepeatSheetUI();
   updateTdRepeatSummaryText();
+  _snapTdDateToRepeat();
+}
+/* 할일도 동일 — 반복 패턴을 고르면 시작일을 첫 발생일로 스냅(단일 모드·새 할일만). [2026-08-19] */
+function _snapTdDateToRepeat(){
+  if(_editingTodoId)return;
+  if(_todoType!=='single')return;
+  if(!_todoRepeat||_todoRepeat==='none')return;
+  const base=_todoSingleDate;
+  if(!base)return;
+  const first=_repeatFirstDate(base,_todoRepeat,_tdRepeatWeekdays,_tdMonthlyMode,_tdNthWeek,_tdLunarMonth,_tdLunarDay);
+  if(!first||first===base)return;
+  _todoSingleDate=first;
+  const d=parseDateKey(first);
+  _todoMiniY=d.getFullYear(); _todoMiniM=d.getMonth();
+  try{ renderTodoMiniCal(); }catch(_){}
 }
 function cancelTdRepeatSheet(){
   const s=_tdRepSheetSnapshot;
@@ -23847,6 +23962,10 @@ function _tdRangeAutoFromWeekdays(){
       const rd=parseDateKey(ref);
       let y=rd.getFullYear(), m0=rd.getMonth();
       for(let k=0;k<3;k++){
+        if(_tdNthWeek===-1){
+          const dt=_lastRowWeekdayDate(y,m0,minDow);
+          start=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate()); break;
+        }
         const dd=_nthWeekdayDate(y,m0,_tdNthWeek,minDow);
         if(dd>=1){ start=dateKey(y,m0,dd); break; }
         if(m0===11){ m0=0; y++; } else { m0++; }
