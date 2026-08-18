@@ -2373,7 +2373,7 @@ body.ff-jua{letter-spacing:-.2px}
    위 줄로 넘어가는 만큼은 adjustCalRowHeights가 윗줄 높이를 그만큼 늘려 아래쪽을 비워두므로
    윗줄의 일정·할일과는 절대 겹치지 않는다(콘텐츠는 칸 위쪽부터 쌓이므로 늘어난 만큼이 빈칸). [2026-08-19] */
 .cal-cell.hl-tagcell{z-index:4}
-.cal-hl-tag{position:absolute;bottom:100%;left:0;max-width:100%;font-size:8.5px;font-weight:800;line-height:1;padding:3px 6px 2.5px;border-radius:6px 11px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:auto;cursor:pointer;z-index:5;box-sizing:border-box}
+.cal-hl-tag{position:absolute;bottom:100%;left:-1.6px;max-width:100%;font-size:8.5px;font-weight:800;line-height:1;padding:3px 6px 2.5px;border-radius:6px 11px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:auto;cursor:pointer;z-index:5;box-sizing:border-box}
 /* 제목이 길면 옆 칸 위쪽 빈 띠로 흘러도 됨 — 그 띠는 윗줄 전체가 비워져 있어 아무것도 안 가림. */
 .cal-hl-tag-spill{overflow:visible;text-overflow:clip}
 /* 통합 프로필·테마 세트 행(방편집) — 이모지 행 스타일 재사용 */
@@ -20911,10 +20911,11 @@ function _dhSideFlags(h,key,dow){
 /* 실제 캘린더 렌더와 미리보기(히어로 배너·상세 팔레트)가 똑같은 테두리를 그리도록 공유하는 헬퍼 */
 function _dhBorderStyle(hex,f){
   const bw=(on)=>on?'1.6px':'0';
-  const rad=(on)=>on?'6px':'0';
+  /* 모서리는 직각(radius 0) — 라운드를 주면 코너에서 선이 안쪽으로 말려 격자선과 어긋난
+     빈틈이 생긴다. 강조 박스는 격자선이 만드는 칸 사각형과 완전히 같은 모양이어야 함. [2026-08-19] */
   return `border-style:solid;border-color:${hex};`
     +`border-width:${bw(f.top)} ${bw(f.right)} ${bw(f.bottom)} ${bw(f.left)};`
-    +`border-radius:${rad(f.top&&f.left)} ${rad(f.top&&f.right)} ${rad(f.bottom&&f.right)} ${rad(f.bottom&&f.left)};`
+    +`border-radius:0;`
     +`background:${_dhRgba(hex,.05)}`;
 }
 /* 라벨 탭이 자기 칸 폭을 넘어 옆 칸으로 뻗어나가도 되는지 — 탭이 놓이는 띠는 그 줄 전체가
