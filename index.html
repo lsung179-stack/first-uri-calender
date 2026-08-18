@@ -21251,8 +21251,18 @@ function openDateHighlightDetail(id){
    오른쪽 스토어 버튼은 강조 탭으로 바로 보낸다. [2026-08-19] */
 let _dhmDate=null;      // 관리 시트가 기준으로 삼는 날짜(그 날짜의 강조를 위에 따로 보여줌)
 let _dhmTab='dh';
-function openDhManage(dateKeyStr){
+async function openDhManage(dateKeyStr){
   if(!_currentRoom){toast('방에 먼저 들어가 주세요');return;}
+  /* 날짜 강조는 프리미엄 기능 — 관리 시트 진입 자체를 막고 구독 안내를 띄운다.
+     (날짜 시트 우상단 태그 버튼 / 캘린더의 강조 라벨 탭 둘 다 이 함수를 거친다.) [2026-08-19] */
+  await ensurePremiumLoaded();
+  if(!isEffectivePremium()){
+    showUpgradeModal({
+      message:'📌 특별한 날짜를 강조해볼까요?',
+      feature:'프리미엄이면 원하는 날짜(구간)에 나만의 제목을 붙여 방 멤버 모두에게 보여줄 수 있어요.'
+    });
+    return;
+  }
   _dhmDate=(dateKeyStr&&/^\d{4}-\d{2}-\d{2}$/.test(dateKeyStr))?dateKeyStr:(_selectedDate||null);
   setDhmTab(_dhmTab||'dh');
   renderDhManageList();
