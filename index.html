@@ -572,6 +572,11 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .sfh-chips{display:flex;gap:6px;flex-wrap:wrap}
 .sfh-chip{font-size:11px;font-weight:700;color:#fff;background:rgba(255,255,255,.22);border-radius:99px;padding:5px 11px;backdrop-filter:blur(2px);text-shadow:0 1px 2px rgba(10,45,85,.4)}
 /* 동물 캐릭터 이모지 출시 히어로 (이모지 탭 상단) — 실사/일러스트 동물 사진 배경, 따뜻한 스크림 */
+.store-mono-hero{position:relative;overflow:hidden;border-radius:18px;min-height:118px;padding:18px 42% 18px 18px;margin-bottom:16px;background:#ffffff center right/cover no-repeat;border:1px solid rgba(0,0,0,.10);box-shadow:0 4px 14px rgba(40,32,24,.13)}
+.store-mono-hero::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(100deg,#fff 0%,rgba(255,255,255,.94) 40%,rgba(255,255,255,.55) 64%,rgba(255,255,255,0) 86%)}
+.store-mono-hero .sfh-eyebrow{color:#8c8c8c;text-shadow:none}
+.store-mono-hero .sfh-title{color:#1a1a1a;text-shadow:none;margin-bottom:6px}
+.store-mono-hero .sfh-desc{color:#6b6157;text-shadow:none;margin-bottom:0}
 .store-emoji-hero{position:relative;overflow:hidden;border-radius:18px;min-height:138px;padding:20px 40% 20px 18px;margin-bottom:22px;background:#e8b774 center right/cover no-repeat;box-shadow:0 6px 16px rgba(120,72,30,.30)}
 .store-emoji-hero::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(100deg,rgba(92,52,20,.78) 0%,rgba(118,70,28,.54) 34%,rgba(140,88,40,.12) 62%,rgba(140,88,40,0) 82%)}
 .store-emoji-hero .sfh-eyebrow{color:#ffe1a0;text-shadow:0 1px 4px rgba(60,32,10,.6)}
@@ -2346,8 +2351,7 @@ body.ff-jua{letter-spacing:-.2px}
 .store-hint-note{font-size:12px;color:var(--sub);text-align:center;padding:10px 6px 2px}
 /* 날짜 강조(Date Highlight) 스토어 탭 히어로 [2026-08-18] — store-seal-hero와 동일 그라데이션(이미지 CDN 의존 없음) */
 /* 히어로 배너 — 불필요하게 크지 않도록 여백/폰트 축소, 부제는 아래 대표 행으로 옮기고 한 줄만. [2026-08-19] */
-.store-emphasis-hero{position:relative;overflow:hidden;border-radius:16px;padding:14px 16px;margin-bottom:16px;cursor:pointer;background:radial-gradient(130% 150% at 88% 12%,#b55c46,#8b3a2a 52%,#6a2a1e 100%);box-shadow:0 4px 12px rgba(106,42,30,.28);-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:space-between;gap:10px}
-.store-emphasis-hero:active{transform:scale(.98)}
+.store-emphasis-hero{position:relative;overflow:hidden;border-radius:16px;padding:14px 16px;margin-bottom:16px;background:radial-gradient(130% 150% at 88% 12%,#b55c46,#8b3a2a 52%,#6a2a1e 100%);box-shadow:0 4px 12px rgba(106,42,30,.28);-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .emh-text{min-width:0}
 .emh-eyebrow{font-size:9.5px;font-weight:800;letter-spacing:.14em;color:#f0d089;margin-bottom:4px}
 .emh-title{font-family:var(--ff-serif);font-size:15px;line-height:1.28;font-weight:700;color:#faf3e3}
@@ -18384,6 +18388,7 @@ function preloadStoreAssets(){
     if(typeof FRUIT_HERO_IMG!=='undefined'&&FRUIT_HERO_IMG)urls.push(FRUIT_HERO_IMG);
     if(typeof EMOJI_HERO_IMG!=='undefined'&&EMOJI_HERO_IMG)urls.push(EMOJI_HERO_IMG);
     if(typeof SEAL_HERO_IMG!=='undefined'&&SEAL_HERO_IMG)urls.push(SEAL_HERO_IMG);
+    if(typeof MONO_HERO_IMG!=='undefined'&&MONO_HERO_IMG)urls.push(MONO_HERO_IMG);
     if(typeof SEAL_SETS!=='undefined'){ for(var sk in SEAL_SETS){ if(SEAL_SETS[sk]&&SEAL_SETS[sk].img)urls.push(SEAL_SETS[sk].img); } }
     if(typeof CARD_SKINS!=='undefined'){ for(var ck in CARD_SKINS){ var cs=CARD_SKINS[ck]; if(!cs)continue; ['img','char','scene'].forEach(function(f){ if(cs[f])urls.push(cs[f]); }); } }
     urls.forEach(function(u){ try{ var im=new Image(); im.decoding='async'; im.src=u; }catch(_){} });
@@ -20754,7 +20759,12 @@ function renderStoreThemes(){
   if(!body)return;
   const prem=isEffectivePremium();
   // 프로필+테마 통합 — 각 항목을 방목록 카드처럼 그 캐릭터의 카드 배경으로 꾸밈(프리미엄 전용).
-  let html=`<div class="store-fruit-hero seal-hero-lux" style="background-image:url('${SEAL_HERO_IMG}')" onclick="onStoreSealClick()">
+  let html=`<div class="store-mono-hero" style="background-image:url('${MONO_HERO_IMG}')">
+    <div class="sfh-eyebrow">NEW &middot; BLACK &amp; WHITE</div>
+    <div class="sfh-title">심플 블랙&amp;화이트</div>
+    <div class="sfh-desc">흰 바탕에 손그림 한 줄 &mdash; 군더더기 없는 새 테마</div>
+  </div>`;
+  html+=`<div class="store-fruit-hero seal-hero-lux" style="background-image:url('${SEAL_HERO_IMG}')" onclick="onStoreSealClick()">
     <div class="sfh-eyebrow">PREMIUM · PROFILE + THEME</div>
     <div class="sfh-title">방마다 꾸미는<br>프로필 · 테마 세트</div>
     <div class="sfh-desc">세트 하나로 프로필·카드·앱 색까지 — 프리미엄 전용</div>
@@ -20789,6 +20799,7 @@ function openSealShowcase(){
   },180);
 }
 /* ── 컬러 팩 (곧 출시) ── */
+var MONO_HERO_IMG='https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260818_230416_dff88538-7354-4656-85b2-f2db532143df.png';
 var SEAL_HERO_IMG='https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_091450_c7694e03-df3e-48e8-ae20-5f9f5f7fa893.png';
 var FRUIT_HERO_IMG='https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260721_143855_dc7a5f69-24f0-4b11-aee8-6f7879c89a42.png';
 function renderStoreColors(){
@@ -21030,7 +21041,7 @@ function renderStoreEmphasis(){
   if(!body)return;
   const prem=isEffectivePremium();
   let html=`
-    <div class="store-emphasis-hero" onclick="openDhCard()">
+    <div class="store-emphasis-hero">
       <div class="emh-text">
         <div class="emh-eyebrow">PREMIUM · DATE HIGHLIGHT</div>
         <div class="emh-title">특별한 날짜에<br>내 제목을 붙여보세요</div>
