@@ -629,9 +629,6 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .ev-topbar-save{padding:7px 16px;border-radius:999px;background:var(--accent);color:#fff;font-size:13px;font-weight:700;font-family:inherit;border:none;cursor:pointer;letter-spacing:.2px;white-space:nowrap}
 .ev-topbar-save:active{opacity:.85}
 .ev-topbar-save[hidden]{visibility:hidden;display:block}
-/* 상단 고정바 좌측 취소 버튼 — 날짜 강조 시트 등에서 재사용. [2026-08-19] */
-.ev-topbar-cancel{padding:7px 12px;border-radius:999px;background:transparent;color:var(--sub);font-size:13px;font-weight:600;font-family:inherit;border:none;cursor:pointer;white-space:nowrap}
-.ev-topbar-cancel:active{opacity:.6}
 .vc-overlay{position:fixed;inset:0;background:rgba(30,28,24,.5);z-index:2000;opacity:0;pointer-events:none;transition:opacity .2s ease;display:flex;align-items:center;justify-content:center;padding:28px;box-sizing:border-box;transform:translateZ(0)}
 .vc-overlay.on{opacity:1;pointer-events:auto}
 .vc-card{background:var(--card);border-radius:22px;max-width:330px;width:100%;padding:28px 24px 14px;box-shadow:0 16px 48px rgba(30,28,24,.3);transform:scale(.94) translateY(8px);opacity:0;transition:transform .22s cubic-bezier(.32,.72,0,1),opacity .2s ease;max-height:calc(100vh - 56px);max-height:calc(100dvh - 56px);overflow-y:auto}
@@ -2336,8 +2333,8 @@ body.ff-jua{letter-spacing:-.2px}
 .dh-demo-cell{position:relative;width:50px;height:50px;border-radius:8px;background:var(--card);border:1px solid var(--border);box-sizing:border-box;flex:none}
 .dh-demo-num{position:absolute;bottom:3px;right:5px;font-size:10px;font-weight:600;color:var(--sub)}
 .dh-theme-detail-desc{font-size:12.5px;color:var(--sub);line-height:1.6;text-align:center;padding:4px 10px 2px}
-.dh-style-row{display:flex;gap:10px;flex-wrap:wrap;padding-top:2px}
-.dh-detail-swatches{justify-content:center;padding:2px 0 6px}
+.dh-style-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 6px;justify-items:center;padding-top:2px}
+.dh-detail-swatches{padding:2px 0 6px}
 /* 색상 스와치 — 원으로 색만 보여주지 않고, 실제 색상 팩처럼 탭+본체("Aa" 라벨)가 있는 작은 폴더 아이콘으로 표시.
    피커(.dh-swatch 안 기본 크기)·스토어 대표 이미지(.dh-folder-lg, 더 자세히) 둘 다 이 한 벌을 공유. [2026-08-19] */
 .dh-swatch{position:relative;cursor:pointer;padding:4px;border-radius:12px;border:2px solid transparent;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -2350,7 +2347,11 @@ body.ff-jua{letter-spacing:-.2px}
 .dh-folder-lg .dh-folder-tab{font-size:14px}
 /* 캘린더 그리드 위 날짜 강조 — 날짜 격자선(칸 테두리) 기준 오버레이 + 왼쪽위 라벨 탭. [2026-08-19] */
 .cal-hl-wrap{position:absolute;inset:1px;box-sizing:border-box;pointer-events:none;z-index:1}
-.cal-hl-tag{position:absolute;top:1px;left:1px;max-width:78%;font-size:8px;font-weight:800;line-height:1;padding:2.5px 4.5px 2px;border-radius:5px 0 6px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:auto;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.16)}
+.cal-hl-tag{position:absolute;top:1px;left:1px;max-width:60%;font-size:8px;font-weight:800;line-height:1;padding:2.5px 4.5px 2px;border-radius:5px 0 6px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:auto;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.16);z-index:2}
+/* 라벨이 자기 칸을 넘어 다음 날짜 칸의 빈 공간으로 흘러도 되는 경우 — 잘리지 않고 전체 표시, 다음 칸 콘텐츠보다 위로. [2026-08-19] */
+.cal-hl-tag-spill{overflow:visible;text-overflow:clip;z-index:5}
+/* 라벨 탭이 있는 칸은 날짜 숫자를 오른쪽으로 비켜 탭과 겹치지 않게 함(높이/행 계산엔 영향 없는 순수 가로 조정). [2026-08-19] */
+.cal-cell.hl-tag .cal-day-num{text-align:right;padding-right:3px;box-sizing:border-box}
 /* 통합 프로필·테마 세트 행(방편집) — 이모지 행 스타일 재사용 */
 .ep-th .sealimg{width:88%;height:88%;object-fit:contain}
 .ep-th svg.sealset{width:88%;height:88%}
@@ -4144,7 +4145,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
   <div class="ev-topbar">
     <div class="mo-handle"></div>
     <div class="ev-topbar-row">
-      <button type="button" class="ev-topbar-cancel" onclick="closeDhCard()">취소</button>
+      <button type="button" class="ev-topbar-save" hidden aria-hidden="true" tabindex="-1">저장</button>
       <div class="ev-topbar-titles">
         <div class="mo-title">날짜 강조 추가</div>
         <div class="mo-sub">한 번 만들면 방 멤버 모두에게 보여요</div>
@@ -4181,8 +4182,8 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     </div>
   </div>
   <div class="mo-actions">
-    <button class="mo-cancel" onclick="closeDhCard()">취소</button>
     <button class="btn btn-primary" onclick="saveDateHighlight()">저장</button>
+    <button class="mo-cancel" onclick="closeDhCard()">취소</button>
   </div>
 </div>
 
@@ -10957,8 +10958,10 @@ function cellHtml(y,m,d,isOther,todayKey,weekRemap){
   if(_hasRangeStart)cls.push('has-range-start');
   // 날짜 강조 — 날짜 격자선(칸 테두리) 기준 오버레이, 인-플로우 높이를 차지하지 않는 절대배치라
   // 별도 행 예약이 필요 없다(기존 밴드 방식과 달리 헤더 높이에 영향 없음). [2026-08-19]
+  // 라벨 탭이 있는 칸(진짜 시작일)은 날짜 숫자가 왼쪽위 탭과 겹치지 않도록 오른쪽으로 비켜준다. [2026-08-19]
   const hl=_dhForDate(key);
   const hlHtml=hl?_dhCellOverlayHTML(hl,key,dow):'';
+  if(hl&&hl.start_date===key)cls.push('hl-tag');
   return `<div class="${cls.join(' ')}" data-date="${key}" onclick="openDateSheet('${key}')">
     ${hlHtml}
     <span class="cal-day-num">${d}</span>
@@ -20722,6 +20725,24 @@ function _dhBorderStyle(hex,f){
     +`border-radius:${rad(f.top&&f.left)} ${rad(f.top&&f.right)} ${rad(f.bottom&&f.right)} ${rad(f.bottom&&f.left)};`
     +`background:${_dhRgba(hex,.05)}`;
 }
+/* 라벨 탭이 자기 칸 폭을 넘어 다음 날짜 칸으로 뻗어나가도 되는지 — 다음 칸에 이미 일정/할일/
+   다른 강조 탭이 있으면(겹치면 안 되므로) 스필 금지, 비어있으면 1칸 더 뻗을 수 있게 허용.
+   기존 기간 일정 바의 spill(evbar-spill) 기법과 동일한 발상(제목이 넘치면 빈 이웃 칸으로 흘림). [2026-08-19] */
+function _dhTagSpanCols(startDate,dow){
+  const ws=getWeekStartPref();
+  const col=(dow-ws+7)%7;
+  if(col>=6) return 1; // 주의 마지막 칸이면 뻗어나갈 옆 칸 자체가 없음
+  const nextKey=shiftDateKey(startDate,1);
+  if(_events[nextKey]&&_events[nextKey].length>0) return 1;
+  try{
+    const td=(typeof window!=='undefined'&&window.__getTodos)?(window.__getTodos()||[]):[];
+    const occ=(typeof window!=='undefined')?window.todoOccursOnDate:null;
+    if(occ && td.some(t=>occ(t,nextKey))) return 1;
+  }catch(_){}
+  const nextHl=_dhForDate(nextKey);
+  if(nextHl && nextHl.start_date===nextKey) return 1; // 다음 칸이 다른 강조의 시작일(탭 있음)이면 금지
+  return 2;
+}
 function _dhCellOverlayHTML(h,key,dow){
   const hex=_dhHex(h.style_key);
   const f=_dhSideFlags(h,key,dow);
@@ -20729,7 +20750,10 @@ function _dhCellOverlayHTML(h,key,dow){
   let tag='';
   if(isStart){
     const ink=getContrastTextColor(hex);
-    tag=`<div class="cal-hl-tag" style="background:${hex};color:${ink}" onclick="event.stopPropagation();openDateHighlightDetail('${h.id}')">${escapeHtml(h.title||'강조')}</div>`;
+    const spanCols=_dhTagSpanCols(key,dow);
+    const spillCls=spanCols>1?' cal-hl-tag-spill':'';
+    const spillStyle=spanCols>1?`;max-width:calc(${spanCols} * 100% - 6px)`:'';
+    tag=`<div class="cal-hl-tag${spillCls}" style="background:${hex};color:${ink}${spillStyle}" onclick="event.stopPropagation();openDateHighlightDetail('${h.id}')">${escapeHtml(h.title||'강조')}</div>`;
   }
   return `<div class="cal-hl-wrap" style="${_dhBorderStyle(hex,f)}">${tag}</div>`;
 }
