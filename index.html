@@ -2311,12 +2311,14 @@ body.ff-jua{letter-spacing:-.2px}
 .emh-text{min-width:0}
 .emh-eyebrow{font-size:9.5px;font-weight:800;letter-spacing:.14em;color:#f0d089;margin-bottom:4px}
 .emh-title{font-family:var(--ff-serif);font-size:15px;line-height:1.28;font-weight:700;color:#faf3e3}
-/* 히어로 안의 미리보기 — 실제 캘린더와 같은 테두리 문법(.dh-demo-row)을 재사용하되 배너용으로 더 작게, 어두운 배경에 맞춰 톤만 보정 */
-.emh-mock{flex:none}
-.emh-mock .dh-demo-row{gap:3px}
-.emh-mock .dh-demo-cell{width:34px;height:34px;background:rgba(243,230,207,.13);border-color:rgba(243,230,207,.22)}
-.emh-mock .dh-demo-num{color:rgba(243,230,207,.62);font-size:8px}
-.emh-mock .cal-hl-tag{font-size:7px;padding:2px 3.5px 1.5px}
+/* 히어로 안의 미리보기 — 실제 캘린더 렌더(.dh-demo-row)를 그대로 쓰되, 어두운 배너 위에서
+   진짜 달력 조각처럼 보이도록 흰 카드에 얹고 배너 크기에 맞춰 축소만 한다. [2026-08-19] */
+.emh-mock{flex:none;background:rgba(255,255,255,.95);border-radius:9px;padding:4px 5px;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+.emh-mock .dh-demo-row{gap:0}
+.emh-mock .dh-demo-cell{width:36px;height:46px}
+.emh-mock .dh-demo-num{color:#5b5148;font-size:9px;line-height:11px}
+.emh-mock .dh-demo-bar{height:6px;margin-top:2px}
+.emh-mock .cal-hl-tag{font-size:7px;padding:2.5px 4.5px 2px;border-radius:5px 9px 0 0}
 /* 일정 폼 안의 "날짜 강조" 바로가기 — 일정과 다른 데이터라는 걸 부제로 명시. [2026-08-19] */
 .dh-quicklink{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);font-weight:700;font-size:13.5px;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:2px;-webkit-tap-highlight-color:transparent}
 .dh-quicklink:active{opacity:.7}
@@ -2330,9 +2332,10 @@ body.ff-jua{letter-spacing:-.2px}
 /* 상세 팔레트 — 실제 캘린더와 동일한 테두리 오버레이를 그대로 데모 셀 안에 그려서 보여줌 */
 .dh-theme-detail-demo{display:flex;justify-content:center;padding:14px 0 12px}
 .dh-demo-row{display:flex;gap:4px}
-.dh-demo-cell{position:relative;width:50px;height:50px;border-radius:8px;background:var(--card);border:1px solid var(--border);box-sizing:border-box;flex:none}
-.dh-demo-num{position:absolute;bottom:3px;right:5px;font-size:10px;font-weight:600;color:var(--sub)}
-.dh-theme-detail-desc{font-size:12.5px;color:var(--sub);line-height:1.6;text-align:center;padding:4px 10px 2px}
+/* 데모 칸 — 실제 캘린더 칸과 같은 구조: 위쪽 탭 자리(padding-top) + 중앙정렬 날짜 + 아래 일정 바 */
+.dh-demo-cell{position:relative;width:46px;height:56px;padding-top:18px;box-sizing:border-box;flex:none}
+.dh-demo-num{display:block;text-align:center;font-size:11px;font-weight:600;line-height:14px;color:var(--text);position:relative;z-index:2}
+.dh-demo-bar{margin:3px 3px 0;height:8px;border-radius:2px;position:relative;z-index:2}
 .dh-style-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 6px;justify-items:center;padding-top:2px}
 .dh-detail-swatches{padding:2px 0 6px}
 /* 색상 스와치 — 원으로 색만 보여주지 않고, 실제 색상 팩처럼 탭+본체("Aa" 라벨)가 있는 작은 폴더 아이콘으로 표시.
@@ -2347,11 +2350,14 @@ body.ff-jua{letter-spacing:-.2px}
 .dh-folder-lg .dh-folder-tab{font-size:14px}
 /* 캘린더 그리드 위 날짜 강조 — 날짜 격자선(칸 테두리) 기준 오버레이 + 왼쪽위 라벨 탭. [2026-08-19] */
 .cal-hl-wrap{position:absolute;inset:1px;box-sizing:border-box;pointer-events:none;z-index:1}
-.cal-hl-tag{position:absolute;top:1px;left:1px;max-width:60%;font-size:8px;font-weight:800;line-height:1;padding:2.5px 4.5px 2px;border-radius:5px 0 6px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:auto;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.16);z-index:2}
-/* 라벨이 자기 칸을 넘어 다음 날짜 칸의 빈 공간으로 흘러도 되는 경우 — 잘리지 않고 전체 표시, 다음 칸 콘텐츠보다 위로. [2026-08-19] */
-.cal-hl-tag-spill{overflow:visible;text-overflow:clip;z-index:5}
-/* 라벨 탭이 있는 칸은 날짜 숫자를 오른쪽으로 비켜 탭과 겹치지 않게 함(높이/행 계산엔 영향 없는 순수 가로 조정). [2026-08-19] */
-.cal-cell.hl-tag .cal-day-num{text-align:right;padding-right:3px;box-sizing:border-box}
+/* 라벨은 테두리 박스 "위쪽 바깥"에 폴더 탭처럼 솟는다(bottom:100%). 탭이 있는 줄은 셀 상단에
+   탭 자리(.hl-row 여백)를 그 줄 전체에 확보 → 날짜 숫자는 모든 칸에서 중앙정렬 그대로 유지되고
+   높이도 나란히 맞으며, 탭은 어떤 콘텐츠와도 겹치지 않는다. [2026-08-19] */
+.cal-cell.hl-row{padding-top:19px}
+.cal-hl-wrap.hl-has-tag{top:18px}
+.cal-hl-tag{position:absolute;bottom:100%;left:-1px;max-width:calc(100% + 2px);font-size:8.5px;font-weight:800;line-height:1;padding:3px 6px 2.5px;border-radius:6px 11px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:auto;cursor:pointer;z-index:5;box-sizing:border-box}
+/* 제목이 길면 옆 칸 위 빈 띠로 흘러도 됨 — 그 띠는 줄 전체가 비어 있어 아무것도 안 가림. */
+.cal-hl-tag-spill{overflow:visible;text-overflow:clip}
 /* 통합 프로필·테마 세트 행(방편집) — 이모지 행 스타일 재사용 */
 .ep-th .sealimg{width:88%;height:88%;object-fit:contain}
 .ep-th svg.sealset{width:88%;height:88%}
@@ -4192,10 +4198,9 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
 <div class="mo-card" id="dhThemeDetailCard">
   <div class="mo-handle"></div>
   <div class="mo-title" id="dhThemeDetailName">레드</div>
-  <div class="mo-sub">기본 날짜 태그 · 실제 캘린더에 이렇게 표시돼요</div>
+  <div class="mo-sub" id="dhThemeDetailSub">눈에 확 띄는 선명한 빨강</div>
   <div class="dh-theme-detail-demo" id="dhThemeDetailDemo"></div>
   <div class="dh-style-row dh-detail-swatches" id="dhThemeDetailSwatches"></div>
-  <div class="dh-theme-detail-desc">일정과 별개로, 원하는 날짜(구간)에 나만의 제목을 붙여 방 멤버 모두에게 보여줘요. 예: 휴가, 출장, 시험기간</div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeDhThemeDetail()">닫기</button>
     <button class="btn btn-primary" onclick="_dhUseThemeFromDetail()">이 태그로 만들기</button>
@@ -10647,20 +10652,33 @@ function renderMonthly(){
     _weekRemaps.push(map);
   }
 
+  // 주(週)별 날짜 강조 라벨 탭 유무 — 탭이 시작되는 줄만 상단에 탭 자리를 확보(그 줄 전체에
+  // 동일 적용해 날짜 숫자 정렬 유지). 탭 없는 줄은 그대로 컴팩트. [2026-08-19]
+  const _rowHasTag=[];
+  for(let w=0; w<6; w++){
+    let has=false;
+    for(let i=0;i<7;i++){
+      const k=_gridDays[w*7+i]; if(!k)continue;
+      const h=_dhForDate(k);
+      if(h && h.start_date===k){ has=true; break; }
+    }
+    _rowHasTag.push(has);
+  }
+
   let html='';
   let cellCount=0;
   for(let i=offset-1;i>=0;i--){
     const d=prevDim-i;
-    html+=cellHtml(_calMonth===0?_calYear-1:_calYear, _calMonth===0?11:_calMonth-1, d, true, todayKey, _weekRemaps[(cellCount/7)|0]);
+    html+=cellHtml(_calMonth===0?_calYear-1:_calYear, _calMonth===0?11:_calMonth-1, d, true, todayKey, _weekRemaps[(cellCount/7)|0], _rowHasTag[(cellCount/7)|0]);
     cellCount++;
   }
   for(let d=1;d<=dim;d++){
-    html+=cellHtml(_calYear,_calMonth,d,false,todayKey, _weekRemaps[(cellCount/7)|0]);
+    html+=cellHtml(_calYear,_calMonth,d,false,todayKey, _weekRemaps[(cellCount/7)|0], _rowHasTag[(cellCount/7)|0]);
     cellCount++;
   }
   let nextD=1;
   while(cellCount<42){
-    html+=cellHtml(_calMonth===11?_calYear+1:_calYear, _calMonth===11?0:_calMonth+1, nextD, true, todayKey, _weekRemaps[(cellCount/7)|0]);
+    html+=cellHtml(_calMonth===11?_calYear+1:_calYear, _calMonth===11?0:_calMonth+1, nextD, true, todayKey, _weekRemaps[(cellCount/7)|0], _rowHasTag[(cellCount/7)|0]);
     nextD++;cellCount++;
   }
   grid.innerHTML=html;
@@ -10686,9 +10704,6 @@ function adjustCalRowHeights(){
   if(!grid)return;
   const cells=grid.children;
   if(cells.length<42)return;
-  let headH=36;
-  const ev0=cells[0].querySelector('.cal-events');
-  if(ev0&&ev0.offsetTop>0)headH=ev0.offsetTop;
   const rows=[];
   for(let r=0;r<6;r++){
     let maxH=92;
@@ -10696,6 +10711,9 @@ function adjustCalRowHeights(){
       const cell=cells[r*7+c];
       if(!cell)continue;
       const ev=cell.querySelector('.cal-events');
+      // 날짜+라벨(+날짜강조 탭 자리) 영역 높이는 칸마다 다를 수 있어(탭 있는 줄은 상단 여백이 큼)
+      // 전체 공통 1회 측정이 아니라 칸별로 실제 offsetTop을 쓴다. [2026-08-19]
+      const headH=(ev&&ev.offsetTop>0)?ev.offsetTop:36;
       const need=headH+(ev?ev.scrollHeight:0)+4;
       if(need>maxH)maxH=need;
     }
@@ -10914,7 +10932,7 @@ function _dayAbsSlots(key,y,m,d){
   return res;
 }
 
-function cellHtml(y,m,d,isOther,todayKey,weekRemap){
+function cellHtml(y,m,d,isOther,todayKey,weekRemap,rowHasTag){
   const key=dateKey(y,m,d);
   const dow=new Date(y,m,d).getDay();
   const isToday=(key===todayKey);
@@ -10956,12 +10974,12 @@ function cellHtml(y,m,d,isOther,todayKey,weekRemap){
   }
 
   if(_hasRangeStart)cls.push('has-range-start');
-  // 날짜 강조 — 날짜 격자선(칸 테두리) 기준 오버레이, 인-플로우 높이를 차지하지 않는 절대배치라
-  // 별도 행 예약이 필요 없다(기존 밴드 방식과 달리 헤더 높이에 영향 없음). [2026-08-19]
-  // 라벨 탭이 있는 칸(진짜 시작일)은 날짜 숫자가 왼쪽위 탭과 겹치지 않도록 오른쪽으로 비켜준다. [2026-08-19]
+  // 날짜 강조 — 날짜 격자선(칸 테두리) 기준 오버레이(절대배치라 인-플로우 높이 차지 안 함).
+  // 라벨 탭은 테두리 박스 위쪽 바깥에 솟으므로, 탭이 있는 줄은 그 줄 전체(hl-row)에 탭 자리를
+  // 확보한다 → 날짜 숫자는 중앙정렬 그대로, 같은 줄끼리 높이도 나란히 유지된다. [2026-08-19]
   const hl=_dhForDate(key);
   const hlHtml=hl?_dhCellOverlayHTML(hl,key,dow):'';
-  if(hl&&hl.start_date===key)cls.push('hl-tag');
+  if(rowHasTag)cls.push('hl-row');
   return `<div class="${cls.join(' ')}" data-date="${key}" onclick="openDateSheet('${key}')">
     ${hlHtml}
     <span class="cal-day-num">${d}</span>
@@ -20707,8 +20725,7 @@ function renderStoreEmphasis(){
       <div class="ep-th dh-rep-th">${_dhFolderHTML(rep.key,true)}${lock}</div>
       <div class="ep-body">
         <div class="ep-t1">기본 날짜 태그</div>
-        <div class="ep-t2">휴가, 출장, 시험기간… 원하는 구간에 테두리로 표시해 방 모두에게 알려줘요</div>
-        <div class="ep-t2">6가지 색상 · 탭해서 실제 적용 모습을 미리 봐요</div>
+        <div class="ep-t2">6가지 색상의 날짜 강조 테두리</div>
       </div>
       <div class="ep-act">›</div>
     </div>
@@ -20727,6 +20744,7 @@ function _dhDetailSwatchesHTML(){
 function _dhRenderDetail(){
   const s=DH_STYLES.find(x=>x.key===_dhDetailStyle)||DH_STYLES[0];
   const nameEl=document.getElementById('dhThemeDetailName'); if(nameEl)nameEl.textContent=s.name;
+  const subEl=document.getElementById('dhThemeDetailSub'); if(subEl)subEl.textContent=s.desc||'';
   const demoEl=document.getElementById('dhThemeDetailDemo'); if(demoEl)demoEl.innerHTML=_dhDemoRowHTML(s.key,'휴가');
   const swEl=document.getElementById('dhThemeDetailSwatches'); if(swEl)swEl.innerHTML=_dhDetailSwatchesHTML();
 }
@@ -20755,12 +20773,12 @@ async function _dhUseThemeFromDetail(){
 }
 /* ── 날짜 강조 색상 팔레트 — 기존 STORE_COLORS에 이미 있는 값 재사용(새 색 발명 아님) ── */
 const DH_STYLES=[
-  {key:'red',   name:'레드',   hex:'#ff4d4d'},
-  {key:'yellow',name:'옐로우', hex:'#ffd633'},
-  {key:'green', name:'그린',   hex:'#33cc55'},
-  {key:'cyan',  name:'시안',   hex:'#33b3a8'},
-  {key:'blue',  name:'블루',   hex:'#3399ff'},
-  {key:'purple',name:'퍼플',   hex:'#9966cc'},
+  {key:'red',   name:'레드',   hex:'#ff4d4d', desc:'눈에 확 띄는 선명한 빨강'},
+  {key:'yellow',name:'옐로우', hex:'#ffd633', desc:'밝고 산뜻한 노랑'},
+  {key:'green', name:'그린',   hex:'#33cc55', desc:'싱그러운 초록'},
+  {key:'cyan',  name:'시안',   hex:'#33b3a8', desc:'시원한 청록'},
+  {key:'blue',  name:'블루',   hex:'#3399ff', desc:'차분한 파랑'},
+  {key:'purple',name:'퍼플',   hex:'#9966cc', desc:'은은한 보라'},
 ];
 function _dhHex(key){ const s=DH_STYLES.find(x=>x.key===key); return s?s.hex:DH_STYLES[0].hex; }
 /* 폴더 아이콘(탭+본체, "Aa" 라벨) — 색상만 보여주는 원 대신 실제 색상 팩처럼 자세히 보여줌.
@@ -20818,23 +20836,30 @@ function _dhBorderStyle(hex,f){
     +`border-radius:${rad(f.top&&f.left)} ${rad(f.top&&f.right)} ${rad(f.bottom&&f.right)} ${rad(f.bottom&&f.left)};`
     +`background:${_dhRgba(hex,.05)}`;
 }
-/* 라벨 탭이 자기 칸 폭을 넘어 다음 날짜 칸으로 뻗어나가도 되는지 — 다음 칸에 이미 일정/할일/
-   다른 강조 탭이 있으면(겹치면 안 되므로) 스필 금지, 비어있으면 1칸 더 뻗을 수 있게 허용.
-   기존 기간 일정 바의 spill(evbar-spill) 기법과 동일한 발상(제목이 넘치면 빈 이웃 칸으로 흘림). [2026-08-19] */
+/* 라벨 탭이 자기 칸 폭을 넘어 옆 칸으로 뻗어나가도 되는지 — 탭이 놓이는 띠는 그 줄 전체가
+   비어 있어(hl-row 여백) 일정·할일과는 애초에 겹칠 수 없다. 다른 강조의 탭끼리만 부딪히므로
+   그 경우와 주 경계만 막고, 그 외엔 최대 3칸까지 자연스럽게 흘려보낸다. [2026-08-19] */
 function _dhTagSpanCols(startDate,dow){
   const ws=getWeekStartPref();
   const col=(dow-ws+7)%7;
-  if(col>=6) return 1; // 주의 마지막 칸이면 뻗어나갈 옆 칸 자체가 없음
-  const nextKey=shiftDateKey(startDate,1);
-  if(_events[nextKey]&&_events[nextKey].length>0) return 1;
-  try{
-    const td=(typeof window!=='undefined'&&window.__getTodos)?(window.__getTodos()||[]):[];
-    const occ=(typeof window!=='undefined')?window.todoOccursOnDate:null;
-    if(occ && td.some(t=>occ(t,nextKey))) return 1;
-  }catch(_){}
-  const nextHl=_dhForDate(nextKey);
-  if(nextHl && nextHl.start_date===nextKey) return 1; // 다음 칸이 다른 강조의 시작일(탭 있음)이면 금지
-  return 2;
+  let span=1;
+  for(let i=1;i<=2;i++){
+    if(col+i>6) break;                       // 주의 마지막 칸을 넘어가면 중단
+    const k=shiftDateKey(startDate,i);
+    const hl=_dhForDate(k);
+    if(hl && hl.start_date===k) break;       // 그 칸에 다른 강조의 탭이 있으면 침범 금지
+    span++;
+  }
+  return span;
+}
+/* 이 칸이 '탭이 달린 구간'에 속하는지 — 진짜 시작일과 같은 줄이고 그 이후 칸이면 같은 구간.
+   같은 구간이면 테두리 박스가 탭 아래(hl-has-tag)에서 시작해 탭과 맞물리고,
+   다음 줄로 이어지는 구간은 칸 맨 위에서 시작해 위 줄 박스와 끊김 없이 연결된다. [2026-08-19] */
+function _dhInTagSegment(h,key,dow){
+  const ws=getWeekStartPref();
+  const col=(dow-ws+7)%7;
+  const shift=Math.round((parseDateKey(key)-parseDateKey(h.start_date))/86400000);
+  return shift>=0 && shift<=col;
 }
 function _dhCellOverlayHTML(h,key,dow){
   const hex=_dhHex(h.style_key);
@@ -20845,21 +20870,32 @@ function _dhCellOverlayHTML(h,key,dow){
     const ink=getContrastTextColor(hex);
     const spanCols=_dhTagSpanCols(key,dow);
     const spillCls=spanCols>1?' cal-hl-tag-spill':'';
-    const spillStyle=spanCols>1?`;max-width:calc(${spanCols} * 100% - 6px)`:'';
+    const spillStyle=spanCols>1?`;max-width:calc(${spanCols} * 100% + 2px)`:'';
     tag=`<div class="cal-hl-tag${spillCls}" style="background:${hex};color:${ink}${spillStyle}" onclick="event.stopPropagation();openDateHighlightDetail('${h.id}')">${escapeHtml(h.title||'강조')}</div>`;
   }
-  return `<div class="cal-hl-wrap" style="${_dhBorderStyle(hex,f)}">${tag}</div>`;
+  const tagSegCls=_dhInTagSegment(h,key,dow)?' hl-has-tag':'';
+  return `<div class="cal-hl-wrap${tagSegCls}" style="${_dhBorderStyle(hex,f)}">${tag}</div>`;
 }
-/* 미리보기용 3칸 데모 줄 — 실제 캘린더와 동일한 테두리 문법(_dhBorderStyle/.cal-hl-wrap/.cal-hl-tag)을
-   그대로 재사용해 "실제 일정에 어떻게 적용되는지" 스토어에서도 똑같이 보여준다. [2026-08-19] */
+/* 미리보기용 미니 캘린더 줄 — 실제 캘린더와 완전히 같은 문법(_dhBorderStyle/.cal-hl-wrap/
+   .cal-hl-tag/hl-has-tag/hl-row 여백)을 그대로 재사용해 "실제로 이렇게 표시된다"를 정확히 보여준다.
+   강조 밖 칸(9)과 실제 일정 바까지 함께 그려, 날짜 숫자가 중앙정렬로 나란히 유지되는 것도 확인됨. [2026-08-19] */
 function _dhDemoRowHTML(key,title){
   const hex=_dhHex(key);
   const ink=getContrastTextColor(hex);
-  const flags=[{top:true,bottom:true,left:true,right:false},{top:true,bottom:true,left:false,right:false},{top:true,bottom:true,left:false,right:true}];
-  const nums=['10','11','12'];
-  return `<div class="dh-demo-row">${flags.map((f,i)=>{
-    const tag=i===0?`<div class="cal-hl-tag" style="background:${hex};color:${ink}">${escapeHtml(title||'휴가')}</div>`:'';
-    return `<div class="dh-demo-cell"><span class="dh-demo-num">${nums[i]}</span><div class="cal-hl-wrap" style="${_dhBorderStyle(hex,f)}">${tag}</div></div>`;
+  const cells=[
+    {n:'9'},
+    {n:'10', f:{top:true,bottom:true,left:true,right:false}, tag:true},
+    {n:'11', f:{top:true,bottom:true,left:false,right:false}, bar:'#8fb8de'},
+    {n:'12', f:{top:true,bottom:true,left:false,right:true}},
+  ];
+  return `<div class="dh-demo-row">${cells.map(c=>{
+    let inner='';
+    if(c.f){
+      const tag=c.tag?`<div class="cal-hl-tag" style="background:${hex};color:${ink}">${escapeHtml(title||'휴가')}</div>`:'';
+      inner=`<div class="cal-hl-wrap hl-has-tag" style="${_dhBorderStyle(hex,c.f)}">${tag}</div>`;
+    }
+    const bar=c.bar?`<div class="dh-demo-bar" style="background:${c.bar}"></div>`:'';
+    return `<div class="dh-demo-cell">${inner}<span class="dh-demo-num">${c.n}</span>${bar}</div>`;
   }).join('')}</div>`;
 }
 
