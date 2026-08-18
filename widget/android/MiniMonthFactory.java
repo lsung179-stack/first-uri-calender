@@ -28,6 +28,7 @@ public class MiniMonthFactory implements RemoteViewsService.RemoteViewsFactory {
     static class Cell {
         int day; boolean inMonth; boolean isToday; int dow; String key; boolean holiday;
         List<Integer> dots = new ArrayList<>();  // 색상 최대 3
+        int hlTint;   // 날짜 강조 옅은 배경색(0=없음)
     }
 
     private int id(String name, String type) { return WidgetCommon.resId(ctx, name, type); }
@@ -84,6 +85,9 @@ public class MiniMonthFactory implements RemoteViewsService.RemoteViewsFactory {
             cell.key = WidgetCommon.fmt(d);
             cell.isToday = cell.key.equals(todayKey);
             cell.holiday = holidays.containsKey(cell.key);
+            // 미니 달력은 칸이 너무 작아 테두리/라벨이 뭉개짐 → 강조된 날은 옅은 색 배경으로만 표시(iOS와 동일)
+            WidgetData.Highlight _h = WidgetCommon.hlFor(room, cell.key);
+            if (_h != null) cell.hlTint = (_h.color & 0x00FFFFFF) | (cell.inMonth ? 0x4D000000 : 0x24000000);
             List<Integer> dots = dotByDate.get(cell.key);
             if (dots != null) cell.dots = dots;
             cells.add(cell);
@@ -96,6 +100,7 @@ public class MiniMonthFactory implements RemoteViewsService.RemoteViewsFactory {
         if (position < 0 || position >= cells.size()) return rv;
         Cell cell = cells.get(position);
 
+        rv.setInt(id("mini_root", "id"), "setBackgroundColor", cell.hlTint);   // 날짜 강조 옅은 배경(없으면 0=투명)
         boolean red = cell.dow == 0 || cell.holiday;   // 일요일/공휴일
         int numColor = cell.isToday ? 0xFFFFFFFF
             : (!cell.inMonth ? (red ? 0x59C0503F : 0x552A1C0F) : (red ? 0xFFC0503F : 0xFF2A1C0F));

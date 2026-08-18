@@ -39,6 +39,9 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
         WidgetCommon.DayBar[] bars = new WidgetCommon.DayBar[0];
         int overflow;
         String holiday; // 빨간날 이름(있으면 빨간 바 + 빨간 숫자)
+        WidgetData.Highlight hl;      // 날짜 강조(칸당 1건)
+        boolean[] hlSides;            // [top,bottom,left,right] — 테두리를 그릴 변
+        boolean hlStart;              // 강조의 진짜 시작일(라벨은 여기에만)
         List<WidgetData.Todo> todos = new ArrayList<>();
     }
 
@@ -128,6 +131,11 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
             cell.key = WidgetCommon.fmt(d);
             cell.isToday = cell.key.equals(todayKey);
             cell.holiday = holidays.get(cell.key);
+            cell.hl = WidgetCommon.hlFor(room, cell.key);
+            if (cell.hl != null) {
+                cell.hlSides = WidgetCommon.hlSides(cell.hl, cell.key, cell.dow);
+                cell.hlStart = cell.key.equals(cell.hl.start);
+            }
             int[] ov = new int[]{0};
             cell.bars = WidgetCommon.cellBars(runs, cell.key, cell.dow, laneCap, ov);
             cell.overflow = ov[0];
@@ -154,10 +162,51 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
         } else {
             rv.setInt(id("cell_day", "id"), "setBackgroundColor", 0x00000000);
             int numColor;
-            if (!cell.inMonth) numColor = (cell.dow == 0 || cell.holiday != null) ? 0x59C0503F : 0x552A1C0F;
+            boolean onDark = (cell.hl != null && cell.hl.darkFill);   // 진한 채움 위 = 흰 숫자
+            if (!cell.inMonth) numColor = onDark ? 0x88FFFFFF : ((cell.dow == 0 || cell.holiday != null) ? 0x59C0503F : 0x552A1C0F);
+            else if (onDark) numColor = 0xFFFFFFFF;
             else if (cell.dow == 0 || cell.holiday != null) numColor = 0xFFC0503F;   // 일요일/공휴일 빨강
             else numColor = 0xFF2A1C0F;
             rv.setTextColor(id("cell_day", "id"), numColor);
+        }
+
+        /* 날짜 강조 — 채움형은 칸 전체 배경, 그 외는 바깥 경계 변에만 띠.
+           ⚠️ RemoteViews로는 점선/꽃 패턴을 그릴 수 없어(임의 드로어블 전달 불가) iOS의 대시·도트는
+              같은 색 실선으로 근사한다. 대신 두께로 구분(폴더=3dp, 기본/꽃=2dp, 점선=1.2dp) —
+              두께 변경은 API 31+ 전용 API라 그 미만에서는 레이아웃 기본값 2dp 그대로. */
+        int[] sideIds = { id("cell_hl_t", "id"), id("cell_hl_b", "id"), id("cell_hl_l", "id"), id("cell_hl_r", "id") };
+        if (cell.hl != null && cell.hl.isFill()) {
+            rv.setViewVisibility(id("cell_hl_fill", "id"), android.view.View.VISIBLE);
+            rv.setInt(id("cell_hl_fill", "id"), "setBackgroundColor",
+                cell.inMonth ? cell.hl.color : ((cell.hl.color & 0x00FFFFFF) | 0x66000000));
+            for (int sd : sideIds) rv.setViewVisibility(sd, android.view.View.GONE);
+        } else if (cell.hl != null) {
+            rv.setViewVisibility(id("cell_hl_fill", "id"), android.view.View.GONE);
+            int lineColor = cell.inMonth ? cell.hl.color : ((cell.hl.color & 0x00FFFFFF) | 0x66000000);
+            float thick = "folder".equals(cell.hl.render) ? 3f : ("dashed".equals(cell.hl.render) ? 1.2f : 2f);
+            for (int k = 0; k < 4; k++) {
+                boolean on = cell.hlSides != null && cell.hlSides[k];
+                rv.setViewVisibility(sideIds[k], on ? android.view.View.VISIBLE : android.view.View.GONE);
+                if (!on) continue;
+                rv.setInt(sideIds[k], "setBackgroundColor", lineColor);
+                if (android.os.Build.VERSION.SDK_INT >= 31) {
+                    // 위/아래는 높이, 좌/우는 너비가 두께
+                    if (k < 2) rv.setViewLayoutHeight(sideIds[k], thick, android.util.TypedValue.COMPLEX_UNIT_DIP);
+                    else       rv.setViewLayoutWidth(sideIds[k], thick, android.util.TypedValue.COMPLEX_UNIT_DIP);
+                }
+            }
+        } else {
+            rv.setViewVisibility(id("cell_hl_fill", "id"), android.view.View.GONE);
+            for (int sd : sideIds) rv.setViewVisibility(sd, android.view.View.GONE);
+        }
+        // 강조 라벨 — 앱은 칸 위로 솟은 탭이지만 위젯 칸엔 여백이 없어 공휴일과 같은 '색 바'로 표시
+        if (cell.hlStart && cell.hl != null && cell.hl.label && cell.hl.title != null && !cell.hl.title.isEmpty()) {
+            rv.setViewVisibility(id("cell_hl_label", "id"), android.view.View.VISIBLE);
+            rv.setTextViewText(id("cell_hl_label", "id"), cell.hl.title);
+            rv.setInt(id("cell_hl_label", "id"), "setBackgroundColor", cell.hl.color);
+            rv.setTextColor(id("cell_hl_label", "id"), cell.hl.ink);
+        } else {
+            rv.setViewVisibility(id("cell_hl_label", "id"), android.view.View.GONE);
         }
 
         // 빨간날(공휴일) 바 — 앱은 텍스트 라벨만, 위젯은 빨간 바로 자동 표시

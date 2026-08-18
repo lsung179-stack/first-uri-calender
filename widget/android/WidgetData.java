@@ -87,6 +87,7 @@ public class WidgetData {
         public List<Member> members = new ArrayList<>();
         public List<Event> events = new ArrayList<>();
         public List<Todo> todos = new ArrayList<>();
+        public List<Highlight> hls = new ArrayList<>();   // 날짜 강조(앱 date_highlights)
 
         static Room parse(JSONObject r) {
             Room room = new Room();
@@ -146,11 +147,42 @@ public class WidgetData {
                     room.todos.add(td);
                 }
             }
+            // 날짜 강조 — 앱에서 테마(DH_THEMES) 해석까지 끝내고 결과만 보내므로 위젯은 그대로 그리기만 한다.
+            JSONArray hs = r.optJSONArray("hls");
+            if (hs != null) for (int i = 0; i < hs.length(); i++) {
+                JSONObject h = hs.optJSONObject(i);
+                if (h != null) {
+                    Highlight hl = new Highlight();
+                    hl.id = optStr(h, "id");
+                    hl.title = h.optString("t", "");
+                    hl.render = h.optString("r", "border");
+                    hl.color = WidgetCommon.parseColor(h.optString("c", "#8b3a2a"));
+                    hl.ink = WidgetCommon.parseColor(h.optString("ink", "#ffffff"));
+                    hl.label = h.optBoolean("lb", true);
+                    hl.darkFill = h.optBoolean("dk", false);
+                    hl.start = h.optString("s", "");
+                    hl.end = h.optString("e", "");
+                    if (!hl.start.isEmpty() && !hl.end.isEmpty()) room.hls.add(hl);
+                }
+            }
+            // 겹치면 시작일이 이른 것이 우선(앱 _dhForDate와 동일) — 미리 정렬해두고 앞에서부터 찾는다.
+            java.util.Collections.sort(room.hls, new java.util.Comparator<Highlight>() {
+                @Override public int compare(Highlight a, Highlight b) { return a.start.compareTo(b.start); }
+            });
             return room;
         }
     }
 
     public static class Member { public String userId, name, color, avatarPng; }
+    /* 날짜 강조 한 건. render = border | fill | deep | folder | flower | dashed
+       (테마 표는 앱에만 있고 위젯은 이 결과값만 그린다 → 테마가 늘어도 위젯 수정 불필요) */
+    public static class Highlight {
+        public String id, title, render, start, end;
+        public int color, ink;
+        public boolean label;      // 제목 라벨을 쓰는 테마인지(기본/폴더)
+        public boolean darkFill;   // 진한 채움 = 날짜 숫자를 흰 글자로
+        public boolean isFill() { return "fill".equals(render) || "deep".equals(render); }
+    }
     public static class Event { public String date, title, time, color, userId, gid, style; public int ord; public boolean shared; }
     public static class Todo {
         public String id, date, title, time, color, userId;

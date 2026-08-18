@@ -280,6 +280,31 @@ public class WidgetCommon {
         return fmt(c);
     }
     static String todayKey() { Calendar c = Calendar.getInstance(); return fmt(c); }
+
+    /* ── 날짜 강조(date_highlights) ──────────────────────────────
+       그 날짜에 걸린 강조 1건(겹치면 시작일이 이른 것) — 앱 _dhForDate와 동일 규칙.
+       (Room.hls는 파싱 때 시작일 오름차순으로 정렬돼 있어 앞에서 처음 걸리는 게 정답) */
+    static WidgetData.Highlight hlFor(WidgetData.Room room, String key) {
+        if (room == null || room.hls == null) return null;
+        for (WidgetData.Highlight h : room.hls) {
+            if (key.compareTo(h.start) >= 0 && key.compareTo(h.end) <= 0) return h;
+        }
+        return null;
+    }
+    /* 어느 변에 테두리를 그릴지 [top,bottom,left,right] — 위/아래/좌/우 이웃 날짜가 범위 밖이면
+       그 변이 바깥 경계. 여러 주에 걸친 범위도 이 규칙만으로 자연스럽게 이어진다(앱 _dhSideFlags와 동일).
+       위젯은 항상 일요일 시작이라 col = dow. */
+    static boolean[] hlSides(WidgetData.Highlight h, String key, int dow) {
+        return new boolean[]{
+            !hlIn(h, addDays(key, -7)),
+            !hlIn(h, addDays(key, 7)),
+            dow == 0 || !hlIn(h, addDays(key, -1)),
+            dow == 6 || !hlIn(h, addDays(key, 1))
+        };
+    }
+    static boolean hlIn(WidgetData.Highlight h, String key) {
+        return key.compareTo(h.start) >= 0 && key.compareTo(h.end) <= 0;
+    }
     static boolean disjoint(Set<String> a, Set<String> b) {
         Set<String> small = a.size() <= b.size() ? a : b, big = a.size() <= b.size() ? b : a;
         for (String s : small) if (big.contains(s)) return false;

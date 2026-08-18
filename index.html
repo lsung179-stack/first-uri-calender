@@ -9836,6 +9836,14 @@ function _wgExpandEvent(ev, fromStr, toStr){
   const until=ev.repeat_until||null;   // 반복 종료일 [초안 · 2026-08-10]
   return [...out].filter(d=>except.indexOf(d)<0 && (!until||d<=until));
 }
+/* 위젯 payload용 색 정규화 — '#fff' 같은 3자리 축약을 6자리로 편다.
+   안드로이드 Color.parseColor가 3자리를 지원하지 않기 때문(iOS는 되지만 양쪽 통일). [2026-08-19] */
+function _wgHex6(hex){
+  if(typeof hex!=='string') return '#8b3a2a';
+  let h=hex.trim(); if(h[0]!=='#') h='#'+h;
+  if(h.length===4) h='#'+h[1]+h[1]+h[2]+h[2]+h[3]+h[3];
+  return /^#[0-9a-fA-F]{6}$/.test(h) ? h : '#8b3a2a';
+}
 async function buildWidgetPayload(){
   const rooms=(_myRooms||[]);
   if(!rooms.length) return { updatedAt:Date.now(), currentRoomId:null, rooms:[] };
@@ -9858,6 +9866,11 @@ async function buildWidgetPayload(){
   let todos=[]; try{ const {data}=await supa.from('todos').select(_tdCols).in('room_id',roomIds).gte('start_date',from).lte('start_date',to); todos=data||[]; }catch(_){}
   // 반복 할일의 start_date가 창(from) 이전이면 위 쿼리에서 누락 → 따로 가져와 창 안으로 펼침
   try{ const {data}=await supa.from('todos').select(_tdCols).in('room_id',roomIds).lt('start_date',from).in('repeat_type',['daily','weekly','monthly','yearly','lunar']); if(data&&data.length) todos=todos.concat(data); }catch(_){}
+  // 날짜 강조(date_highlights) — 창(from~to)과 겹치는 것만. 테마 해석(렌더 방식·색·라벨 여부)은
+  // 여기 JS에서 끝내고 네이티브엔 결과만 넘긴다(위젯이 DH_THEMES 표를 중복 보유하지 않게). [2026-08-19]
+  let hls=[];
+  try{ const {data}=await supa.from('date_highlights').select('id,room_id,title,theme_key,style_key,start_date,end_date')
+        .in('room_id',roomIds).gte('end_date',from).lte('start_date',to); hls=data||[]; }catch(_){}
   const hx=c=>colorHex(c||'c-vintage');
   const sealMap=_mySealByRoom||{};
   const outRooms=rooms.map(r=>{
@@ -9897,7 +9910,20 @@ async function buildWidgetPayload(){
     try{ const _sp=(typeof _parseSeal==='function')?_parseSeal(_wgSeal):null;
       if(_sp&&_sp.set&&typeof _isPremiumSkin==='function'&&_isPremiumSkin(_sp.set)&&typeof _premOn==='function'&&!_premOn()) _wgSeal=null;
     }catch(_){}
-    return { id:r.id, name:r.name||'방', seal:_wgSeal, members:rm, events:re, todos:rt };
+    // 강조 → 위젯용 최소 스키마: r=렌더방식, c=색, ink=라벨 글자색, lb=라벨(제목) 쓰는 테마인지, dk=진한 채움(숫자 흰 글자)
+    const rh=hls.filter(h=>h.room_id===r.id).map(h=>{
+      const tk=(typeof _dhThemeKeyOf==='function')?_dhThemeKeyOf(h):'basic';
+      let render='border', hex='#8b3a2a', lb=true, dk=false;
+      try{
+        render=_dhTheme(tk).render; hex=_dhHexOf(tk,h.style_key);
+        lb=_dhThemeHasLabel(tk); dk=_dhIsDarkFill(tk,h.style_key);
+      }catch(_){}
+      // ⚠️ 색은 반드시 6자리 hex로 — getContrastTextColor는 '#fff'(3자리)를 돌려주는데
+      //    안드로이드 Color.parseColor는 3자리를 지원하지 않아 예외 → 엉뚱한 색으로 폴백된다.
+      return { id:h.id, t:String(h.title||'').slice(0,40), r:render, c:_wgHex6(hex),
+               ink:_wgHex6(getContrastTextColor(hex)), lb:lb, dk:dk, s:h.start_date, e:h.end_date };
+    }).sort((a,b)=>(a.s<b.s?-1:a.s>b.s?1:0));   // 겹치면 시작일 이른 것이 우선(앱 _dhForDate와 동일)
+    return { id:r.id, name:r.name||'방', seal:_wgSeal, members:rm, events:re, todos:rt, hls:rh };
   });
   // 각 방 씰을 PNG로 래스터화(개인별 seal 기준) → 위젯이 앱과 똑같은 컬러 씰 표시
   try{ await Promise.all(outRooms.map(async function(r){ r.sealPng=await _wgSealPng(r.seal, r.name); })); }catch(_){}

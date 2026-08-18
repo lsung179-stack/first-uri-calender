@@ -29,7 +29,37 @@ struct WGRoom: Codable, Identifiable {
     let members: [WGMember]
     let events: [WGEvent]
     let todos: [WGTodo]
+    var hls: [WGHighlight]? = nil     // 날짜 강조(앱 date_highlights) — 앱에서 테마 해석까지 끝낸 결과만 옴
 }
+/* 날짜 강조 한 건. 앱이 테마표(DH_THEMES)를 해석해 render/색/라벨여부까지 계산해 넘기므로
+   위젯은 이 값 그대로 그리기만 한다(테마가 늘어도 위젯 수정 불필요). [2026-08-19]
+   r: border | fill | deep | folder | flower | dashed */
+struct WGHighlight: Codable {
+    let id: String; let t: String; let r: String; let c: String
+    let ink: String; let lb: Bool; let dk: Bool; let s: String; let e: String
+}
+// 그 날짜에 걸린 강조(겹치면 시작일이 이른 것 하나) — 앱 _dhForDate와 동일 규칙
+func hlFor(_ room: WGRoom, _ key: String) -> WGHighlight? {
+    guard let list = room.hls else { return nil }
+    var best: WGHighlight? = nil
+    for h in list where key >= h.s && key <= h.e {
+        if best == nil || h.s < best!.s { best = h }
+    }
+    return best
+}
+// 어느 변에 테두리를 그릴지 — 위/아래/좌/우 이웃 날짜가 범위 밖이면 그 변이 바깥 경계.
+// 앱 _dhSideFlags와 동일(위젯은 항상 일요일 시작이라 col = dow).
+func hlSides(_ h: WGHighlight, _ key: String, _ dow: Int) -> (top: Bool, bottom: Bool, left: Bool, right: Bool) {
+    func inR(_ k: String) -> Bool { return k >= h.s && k <= h.e }
+    func shift(_ k: String, _ n: Int) -> String {
+        guard let d = parse(k), let m = Calendar.current.date(byAdding: .day, value: n, to: d) else { return "" }
+        return fmt(m)
+    }
+    return (top: !inR(shift(key, -7)), bottom: !inR(shift(key, 7)),
+            left: dow == 0 || !inR(shift(key, -1)), right: dow == 6 || !inR(shift(key, 1)))
+}
+// 채움형(fill/deep)인지 — 날짜 숫자 뒤에 색을 깔고, 진한 색이면 숫자를 흰 글자로
+func hlIsFill(_ h: WGHighlight) -> Bool { return h.r == "fill" || h.r == "deep" }
 // dataURL(base64 PNG) → UIImage
 func decodeDataURLImage(_ s: String?) -> UIImage? {
     guard let s = s, let comma = s.firstIndex(of: ",") else { return nil }
@@ -691,11 +721,14 @@ struct GridView: View {
                             let pair = slotsFor(d, allRuns)
                             let inM = (weeks != 6) || (cal.component(.month, from: d) == curMonth)
                             let dTodos = room.todos.filter { $0.date == fmt(d) && todoVisibleFor($0, filter) }   // 멤버 필터 적용(앱과 동일)
+                            let dKey = fmt(d)
+                            let dHl = hlFor(room, dKey)      // 날짜 강조(칸당 1건, 겹치면 시작일 이른 것)
                             DayCell(date: d, slots: Array(pair.0.prefix(usedLanes)), overflow: pair.1, isToday: fmt(d) == todayStr(),
                                     dow: cal.component(.weekday, from: d) - 1, roomId: room.id, inMonth: inM,
                                     rightLine: gridV && c < 6, bottomLine: gridH && w < rowCount - 1,
                                     holiday: holidays[fmt(d)],
-                                    todos: dTodos, maxTodos: weeks == 2 ? max(0, 3 - usedLanes) : 1, dense: rowCount >= 6 || weeks == 2)
+                                    todos: dTodos, maxTodos: weeks == 2 ? max(0, 3 - usedLanes) : 1, dense: rowCount >= 6 || weeks == 2,
+                                    hl: dHl, hlStart: dHl?.s == dKey)
                         }
                     }.frame(maxHeight: .infinity)
                 }
@@ -707,6 +740,13 @@ struct GridView: View {
 struct EvRun { let title: String; let color: String; let start: String; let end: String; var lane: Int; var outline: Bool = false; var ord: Int = 0; var shared: Bool = false }
 // 하루치 한 줄의 바(연속 정보 포함)
 struct DayBar { let title: String; let color: String; let contLeft: Bool; let contRight: Bool; var outline: Bool = false; var shared: Bool = false }
+// 변에 그릴 1차원 선 — 대시/도트 패턴을 쓰려면 Rectangle 채움이 아니라 stroke 가능한 path여야 한다.
+struct HLine: Shape {
+    func path(in r: CGRect) -> Path { var p = Path(); p.move(to: CGPoint(x: r.minX, y: r.midY)); p.addLine(to: CGPoint(x: r.maxX, y: r.midY)); return p }
+}
+struct VLine: Shape {
+    func path(in r: CGRect) -> Path { var p = Path(); p.move(to: CGPoint(x: r.midX, y: r.minY)); p.addLine(to: CGPoint(x: r.midX, y: r.maxY)); return p }
+}
 struct DayCell: View {
     let date: Date; let slots: [DayBar?]; let overflow: Int; let isToday: Bool; let dow: Int; let roomId: String; let inMonth: Bool
     var rightLine: Bool = false; var bottomLine: Bool = false
@@ -714,6 +754,8 @@ struct DayCell: View {
     var todos: [WGTodo] = []          // 그 날 할일 (이벤트 바 아래에 체크박스 줄로)
     var maxTodos: Int = 1             // 셀에 보일 할일 최대 수(칸 높이에 맞춤)
     var dense: Bool = false           // 6주 달 등 칸이 짧을 때 숫자/바를 살짝 줄여 2개 일정 확보
+    var hl: WGHighlight? = nil        // 날짜 강조 — 격자선 기준 테두리/채움 + 시작일 라벨(앱과 동일)
+    var hlStart: Bool = false         // 이 칸이 강조의 진짜 시작일인지(라벨은 여기에만)
     private var numBox: CGFloat { dense ? 16 : 18 }
     private var barH: CGFloat { dense ? 10.5 : 12 }
     private var totalOverflow: Int { overflow + max(0, todos.count - maxTodos) }   // 이벤트+할일 넘침 합산
@@ -759,15 +801,43 @@ struct DayCell: View {
             // 양끝(둥근 쪽)에만 1pt 바깥 여백 — 안드로이드 1dp inset과 육안 동일. 기간 중간은 0(연속 유지).
             .padding(.leading, roundL ? 1 : 0).padding(.trailing, roundR ? 1 : 0)
     }
+    /* 날짜 강조 테두리 — 변마다 선을 그린다(칸을 꽉 채워 격자선과 정확히 맞음, 앱과 동일하게 모서리 직각).
+       테마별로 두께/선 모양만 다르다: 폴더=굵게, 점선=대시, 꽃=둥근 점(위젯 크기에선 꽃 그림이 뭉개져
+       같은 색 도트로 근사 — 안드로이드와 동일 정책). [2026-08-19] */
+    @ViewBuilder private func hlBorder(_ h: WGHighlight) -> some View {
+        let f = hlSides(h, fmt(date), dow)
+        let col = Color(hexStr: h.c)
+        let w: CGFloat = h.r == "folder" ? 2.2 : (h.r == "dashed" ? 1.4 : 1.3)
+        let dash: [CGFloat]? = h.r == "dashed" ? [2.6, 2.0] : (h.r == "flower" ? [0.1, 3.2] : nil)
+        let style = StrokeStyle(lineWidth: w, lineCap: dash != nil ? .round : .butt, dash: dash ?? [])
+        ZStack {
+            if f.top    { HLine().stroke(col, style: style).frame(height: w).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top) }
+            if f.bottom { HLine().stroke(col, style: style).frame(height: w).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom) }
+            if f.left   { VLine().stroke(col, style: style).frame(width: w).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading) }
+            if f.right  { VLine().stroke(col, style: style).frame(width: w).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing) }
+        }
+    }
     var body: some View {
         // 날짜 탭 → 앱의 그 날짜 열기(위젯은 스크롤 불가 → 많은 일정은 앱에서 전부 보기)
         Link(destination: URL(string: "com.lsung.uricalendar://open?room=\(roomId)&date=\(fmt(date))")!) {
             VStack(spacing: 1.5) {
                 Text("\(Calendar.current.component(.day, from: date))")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(isToday ? .white : ((dow == 0 || holiday != nil) ? .sunRed : .ink))
+                    .foregroundColor(isToday ? .white
+                        : ((hl != nil && hl!.dk) ? .white                                  // 진한 채움 위 = 흰 숫자
+                        : ((dow == 0 || holiday != nil) ? .sunRed : .ink)))
                     .frame(width: numBox, height: numBox)                 // ★ 항상 고정 → 모든 날짜 같은 라인
                     .background(isToday ? Circle().fill(Color.terra) : nil)
+                // 강조 라벨: 앱은 칸 위로 솟은 탭이지만 위젯 칸은 그럴 여백이 없어 공휴일 바와 같은
+                // '색 바' 방식으로 제목을 보여준다(라벨을 쓰는 테마=기본/폴더에서만). [2026-08-19]
+                if hlStart, let h = hl, h.lb, !h.t.isEmpty {
+                    Text(h.t).font(.system(size: 8.5, weight: .bold))
+                        .foregroundColor(Color(hexStr: h.ink)).lineLimit(1)
+                        .padding(.leading, 3).padding(.trailing, 3)
+                        .frame(maxWidth: .infinity, minHeight: barH, alignment: .leading)
+                        .background(RoundedRectangle(cornerRadius: 3).fill(Color(hexStr: h.c)))
+                        .padding(.leading, 1).padding(.trailing, 1)
+                }
                 if let hn = holiday {   // 빨간날: 이름을 빨간 바로 자동 표시(앱은 텍스트만 → 위젯은 바)
                     Text(hn).font(.system(size: 8.5, weight: .bold))
                         .foregroundColor(.white).lineLimit(1)
@@ -787,6 +857,10 @@ struct DayCell: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)   // 셀이 행 높이를 채움 → 위젯 밖으로 안 넘침
             .opacity(inMonth ? 1 : 0.4)   // 다음/이전달 날짜는 흐리게
+            // 강조 채움 — 날짜/일정 뒤에 깔림(앱 .dhr-fill/.dhr-deep의 z-index:0과 동일)
+            .background { if let h = hl, hlIsFill(h) { Rectangle().fill(Color(hexStr: h.c)).opacity(inMonth ? 1 : 0.4) } }
+            // 강조 테두리 — 칸을 꽉 채우는 사각 경계(채움형은 테두리 없음)
+            .overlay { if let h = hl, !hlIsFill(h) { hlBorder(h).opacity(inMonth ? 1 : 0.4) } }
             .clipped()
             // 격자선(앱 설정 연동) — 세로=우측, 가로=하단
             .overlay(alignment: .trailing) { if rightLine { Rectangle().fill(Color.mutedBrown.opacity(0.16)).frame(width: 0.6) } }
@@ -926,6 +1000,8 @@ struct MiniMonth: View {
                     let inMonth = cal.component(.month, from: d) == baseMonth
                     let isToday = fmt(d) == todayStr()
                     let isRed = (cal.component(.weekday, from: d) == 1) || (holidays[fmt(d)] != nil)   // 일요일/공휴일
+                    // 미니 달력은 칸이 너무 작아 테두리/라벨이 뭉개짐 → 어느 날이 강조됐는지만 옅은 색으로. [2026-08-19]
+                    let mh = hlFor(room, fmt(d))
                     VStack(spacing: 1) {
                         Text("\(cal.component(.day, from: d))").font(.system(size: 10, weight: .semibold))
                             .foregroundColor(isToday ? .white : (isRed ? (inMonth ? .sunRed : Color.sunRed.opacity(0.35)) : (inMonth ? .ink : Color.ink.opacity(0.3))))
@@ -934,6 +1010,7 @@ struct MiniMonth: View {
                         HStack(spacing: 1) { ForEach(Array(hasEvent(d).enumerated()), id: \.offset) { _, c in
                             Circle().fill(c).frame(width: 3, height: 3) } }.frame(height: 4)
                     }
+                    .background { if let h = mh { RoundedRectangle(cornerRadius: 3).fill(Color(hexStr: h.c).opacity(inMonth ? 0.30 : 0.14)) } }
                 }
             }
         }
