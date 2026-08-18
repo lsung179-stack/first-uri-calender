@@ -2317,6 +2317,10 @@ body.ff-jua{letter-spacing:-.2px}
 /* 날짜 강조 추가 버튼 + 목록 도트 + 색상 스와치 */
 .dh-add-btn{width:100%;padding:13px;border-radius:12px;border:1.5px dashed var(--accent);background:var(--aP);color:var(--accent);font-weight:800;font-size:14px;font-family:inherit;cursor:pointer;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:6px;-webkit-tap-highlight-color:transparent}
 .dh-add-btn:active{opacity:.75}
+/* 일정 폼 안의 "날짜 강조" 바로가기 — 일정과 다른 데이터라는 걸 부제로 명시. [2026-08-19] */
+.dh-quicklink{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);font-weight:700;font-size:13.5px;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:2px;-webkit-tap-highlight-color:transparent}
+.dh-quicklink:active{opacity:.7}
+.dh-quicklink-sub{font-size:11px;font-weight:500;color:var(--sub)}
 .dh-list-dot{width:34px;height:34px;border-radius:50%}
 .dh-style-row{display:flex;gap:10px;flex-wrap:wrap;padding-top:2px}
 .dh-swatch{width:34px;height:34px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;box-sizing:border-box;position:relative;-webkit-tap-highlight-color:transparent}
@@ -4121,7 +4125,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     <input class="fi" type="text" id="dhTitleInput" placeholder="예: 휴가, 출장, 시험기간" maxlength="20">
   </div>
   <div class="ev-form-row">
-    <div class="ev-label">색상</div>
+    <div class="ev-label">기본 날짜 태그</div>
     <div class="dh-style-row" id="dhStyleRow"></div>
   </div>
   <div class="ev-form-row">
@@ -4230,6 +4234,9 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     </div>
   </div>
   <div class="ev-form">
+    <div class="ev-form-row">
+      <button type="button" class="dh-quicklink" onclick="openDhFromEventForm()">📌 날짜 강조로 만들기 <span class="dh-quicklink-sub">일정이 아닌 날짜(구간) 강조 태그를 붙여요</span></button>
+    </div>
     <div class="ev-form-row">
       <div class="ev-label">제목</div>
       <input class="fi" type="text" id="evTitle" placeholder="예) 회의, 저녁 약속" maxlength="40" autocomplete="off">
@@ -20582,12 +20589,12 @@ function renderStoreEmphasis(){
 }
 /* ── 날짜 강조 색상 팔레트 — 기존 STORE_COLORS에 이미 있는 값 재사용(새 색 발명 아님) ── */
 const DH_STYLES=[
-  {key:'grape', name:'포도',   hex:'#8438A8'},
-  {key:'melon', name:'수박',   hex:'#2A9448'},
-  {key:'peach', name:'복숭아', hex:'#DC5A2C'},
-  {key:'ocean', name:'바다',   hex:'#0077b6'},
-  {key:'sunset',name:'노을',   hex:'#ff5577'},
-  {key:'earth', name:'어스톤', hex:'#8b6f47'},
+  {key:'red',   name:'레드',   hex:'#ff4d4d'},
+  {key:'yellow',name:'옐로우', hex:'#ffd633'},
+  {key:'green', name:'그린',   hex:'#33cc55'},
+  {key:'cyan',  name:'시안',   hex:'#33b3a8'},
+  {key:'blue',  name:'블루',   hex:'#3399ff'},
+  {key:'purple',name:'퍼플',   hex:'#9966cc'},
 ];
 function _dhHex(key){ const s=DH_STYLES.find(x=>x.key===key); return s?s.hex:DH_STYLES[0].hex; }
 function _dhRgba(hex,a){
@@ -20630,7 +20637,7 @@ function _dhBandHTML(h,key,dow){
 let _dhSelStyle=DH_STYLES[0].key;
 let _dhStart=null, _dhEnd=null;
 let _dhCalDate=new Date();
-async function openDhCard(){
+async function openDhCard(presetDate){
   if(!_currentRoom){toast('방에 먼저 들어가 주세요');return;}
   await ensurePremiumLoaded();
   if(!isEffectivePremium()){
@@ -20641,14 +20648,26 @@ async function openDhCard(){
     return;
   }
   _dhSelStyle=DH_STYLES[0].key;
-  _dhStart=null; _dhEnd=null;
-  _dhCalDate=new Date(_calYear,_calMonth,1);
+  // 일정 폼의 "날짜 강조 추가" 버튼으로 들어오면 그 폼에서 고르고 있던 날짜를 시작일로 미리 채움
+  if(presetDate&&/^\d{4}-\d{2}-\d{2}$/.test(presetDate)){
+    _dhStart=presetDate; _dhEnd=null;
+    _dhCalDate=parseDateKey(presetDate);
+  }else{
+    _dhStart=null; _dhEnd=null;
+    _dhCalDate=new Date(_calYear,_calMonth,1);
+  }
   const ti=document.getElementById('dhTitleInput'); if(ti)ti.value='';
   renderDhStyleRow();
   renderDhRangeCal();
   syncDhRangeBoxes();
   const ov=document.getElementById('dhOverlay'), cd=document.getElementById('dhCard');
   if(ov)ov.classList.add('on'); if(cd)cd.classList.add('on');
+}
+/* 일정 추가/수정 폼에서 바로 진입 — 날짜 강조는 일정과 별개 데이터라 폼을 닫고 넘어감. [2026-08-19] */
+function openDhFromEventForm(){
+  const d=_selectedDate;
+  closeEventModal();
+  return openDhCard(d);
 }
 function closeDhCard(){
   const ov=document.getElementById('dhOverlay'), cd=document.getElementById('dhCard');
