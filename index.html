@@ -53,6 +53,11 @@
 /* 격자선(세로/가로) 즉시 적용 */
 (function(){
   try{
+    // 진하기(--grid-a)는 선 표시 여부와 무관하게 먼저 심어 첫 렌더에 기본값이 잠깐 보이지 않게 함
+    var ga=parseInt(localStorage.getItem('uricalv2.gridAlpha'),10);
+    if(!isNaN(ga)&&ga>=4&&ga<=60){
+      document.documentElement.style.setProperty('--grid-a',(ga/100).toFixed(3));
+    }
     var gv=localStorage.getItem('uricalv2.gridV')==='on';
     var gh=localStorage.getItem('uricalv2.gridH')==='on';
     if(gv||gh){
@@ -855,8 +860,9 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .cal-tdline.done .cal-tdtxt{text-decoration:line-through}
 /* 격자선 — 세로(우측)/가로(하단) 토글. box-shadow inset으로 레이아웃 안 밀리게 */
 /* 격자선 — 세로(우측)/가로(하단). 가상요소로 그려 일정바(자식) 아래에 둔다 → 기간 일정바가 선을 덮음 */
-body.grid-v .cal-cell::after{content:'';position:absolute;top:0;right:0;width:1px;height:100%;background:rgba(120,108,92,.16);z-index:0;pointer-events:none}
-body.grid-h .cal-cell::before{content:'';position:absolute;left:0;bottom:0;width:100%;height:1px;background:rgba(120,108,92,.16);z-index:0;pointer-events:none}
+/* 진하기(불투명도)는 고급설정 슬라이더가 --grid-a로 넣어준다(기본 .16). [2026-08-19] */
+body.grid-v .cal-cell::after{content:'';position:absolute;top:0;right:0;width:1px;height:100%;background:rgba(120,108,92,var(--grid-a,.16));z-index:0;pointer-events:none}
+body.grid-h .cal-cell::before{content:'';position:absolute;left:0;bottom:0;width:100%;height:1px;background:rgba(120,108,92,var(--grid-a,.16));z-index:0;pointer-events:none}
 /* 날짜·일정만 선 위로 (반응 이모지 등은 자기 z-index 유지) */
 body.grid-v .cal-day-num,body.grid-h .cal-day-num,
 body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
@@ -2128,6 +2134,17 @@ body.ev-dragging .cal-cell{cursor:grabbing}
 .dm-btn{flex:1;padding:9px 0;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--sub);cursor:pointer;transition:all .12s}
 .dm-btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .dm-btn:active{transform:scale(.96)}
+/* 격자선 진하기 슬라이더 (고급설정) [2026-08-19] */
+.gop-row{display:flex;align-items:center;gap:11px;margin-top:12px}
+.gop-lab{font-size:12.5px;font-weight:600;color:var(--sub);white-space:nowrap}
+.gop-range{flex:1;min-width:0;-webkit-appearance:none;appearance:none;height:4px;border-radius:99px;background:var(--border);outline:none;margin:0;padding:0}
+.gop-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:22px;height:22px;border-radius:50%;background:var(--accent);border:2.5px solid var(--card);box-shadow:0 1px 4px rgba(0,0,0,.25);cursor:pointer}
+.gop-range::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--accent);border:2.5px solid var(--card);box-shadow:0 1px 4px rgba(0,0,0,.25);cursor:pointer}
+.gop-val{width:42px;text-align:right;font-size:12.5px;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums}
+/* 실제 선과 같은 색으로 그린 미리보기 — 슬라이더를 움직이면 즉시 반영됨 */
+.gop-preview{margin-top:9px;height:26px;border:1px solid var(--border);border-radius:8px;background:var(--card);display:flex;overflow:hidden}
+.gop-preview span{flex:1;border-right:1px solid rgba(120,108,92,var(--grid-a,.16))}
+.gop-preview span:last-child{border-right:none}
 /* 반복 커스텀(요일/N째주) — 상세 옵션 */
 .rep-chip-row{display:flex;gap:5px;margin-top:6px}
 .rep-chip{flex:1;padding:8px 0;background:var(--bg);border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--sub);cursor:pointer;transition:all .12s;text-align:center}
@@ -5390,6 +5407,15 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
         <button class="dm-btn" data-gridh="off" onclick="onGridSelect('h','off')">가로선 끔</button>
         <button class="dm-btn" data-gridh="on" onclick="onGridSelect('h','on')">가로선 켬</button>
       </div>
+      <div class="gop-row">
+        <span class="gop-lab">선 진하기</span>
+        <input type="range" class="gop-range" id="gridOpacityRange" min="4" max="60" step="1" value="16"
+               aria-label="격자선 진하기"
+               oninput="onGridOpacityInput(this.value)" onchange="onGridOpacityInput(this.value)">
+        <span class="gop-val" id="gridOpacityVal">16%</span>
+      </div>
+      <div class="gop-preview" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+      <div style="font-size:11.5px;color:var(--sub);margin-top:7px" id="gridOpacityHint">값이 클수록 선이 진해져요</div>
     </div>
 
     <div class="rs-section">
@@ -9327,7 +9353,40 @@ function getGridPref(axis){
     return localStorage.getItem(axis==='v'?'uricalv2.gridV':'uricalv2.gridH')==='on'?'on':'off';
   }catch(e){ return 'off'; }
 }
+/* 격자선 진하기(불투명도) — 4~60%, CSS 변수 --grid-a로 주입해 선 색 alpha에 바로 반영. [2026-08-19] */
+const GRID_ALPHA_MIN=4, GRID_ALPHA_MAX=60, GRID_ALPHA_DEFAULT=16;
+function getGridOpacity(){
+  try{
+    const v=parseInt(localStorage.getItem('uricalv2.gridAlpha'),10);
+    if(!isNaN(v)&&v>=GRID_ALPHA_MIN&&v<=GRID_ALPHA_MAX)return v;
+  }catch(e){}
+  return GRID_ALPHA_DEFAULT;
+}
+function applyGridOpacity(){
+  try{ document.documentElement.style.setProperty('--grid-a', (getGridOpacity()/100).toFixed(3)); }catch(e){}
+}
+function onGridOpacityInput(val){
+  let v=parseInt(val,10);
+  if(isNaN(v))v=GRID_ALPHA_DEFAULT;
+  v=Math.max(GRID_ALPHA_MIN,Math.min(GRID_ALPHA_MAX,v));
+  try{ localStorage.setItem('uricalv2.gridAlpha', String(v)); }catch(e){}
+  applyGridOpacity();
+  syncGridOpacityUI();
+}
+function syncGridOpacityUI(){
+  const o=getGridOpacity();
+  const r=document.getElementById('gridOpacityRange');
+  if(r && r.value!==String(o)) r.value=String(o);
+  const lab=document.getElementById('gridOpacityVal');
+  if(lab) lab.textContent=o+'%';
+  const hint=document.getElementById('gridOpacityHint');
+  if(hint){
+    const anyOn=(getGridPref('v')==='on'||getGridPref('h')==='on');
+    hint.textContent=anyOn?'값이 클수록 선이 진해져요':'세로선이나 가로선을 켜면 달력에 적용돼요';
+  }
+}
 function applyGrid(){
+  applyGridOpacity();
   if(!document.body)return;
   document.body.classList.toggle('grid-v', getGridPref('v')==='on');
   document.body.classList.toggle('grid-h', getGridPref('h')==='on');
@@ -9343,6 +9402,7 @@ function syncGridButtons(){
   if(vRow){ const pv=getGridPref('v'); vRow.querySelectorAll('.dm-btn').forEach(b=>b.classList.toggle('on', b.dataset.gridv===pv)); }
   const hRow=document.getElementById('gridHRow');
   if(hRow){ const ph=getGridPref('h'); hRow.querySelectorAll('.dm-btn').forEach(b=>b.classList.toggle('on', b.dataset.gridh===ph)); }
+  syncGridOpacityUI();
 }
 const TEXT_THEMES=[
   {key:'default',     name:'기본',       cat:'ko'},
