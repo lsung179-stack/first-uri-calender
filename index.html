@@ -2308,15 +2308,15 @@ body.ff-jua{letter-spacing:-.2px}
 .ep-act{flex:none;margin-left:4px}
 .store-hint-note{font-size:12px;color:var(--sub);text-align:center;padding:10px 6px 2px}
 /* 날짜 강조(Date Highlight) 스토어 탭 히어로 [2026-08-18] — store-seal-hero와 동일 그라데이션(이미지 CDN 의존 없음) */
-.store-emphasis-hero{position:relative;overflow:hidden;border-radius:18px;padding:20px 100px 20px 18px;margin-bottom:24px;cursor:pointer;background:radial-gradient(130% 150% at 88% 12%,#b55c46,#8b3a2a 52%,#6a2a1e 100%);box-shadow:0 6px 16px rgba(106,42,30,.32);-webkit-tap-highlight-color:transparent}
+.store-emphasis-hero{position:relative;overflow:hidden;border-radius:18px;padding:20px 18px;margin-bottom:24px;cursor:pointer;background:radial-gradient(130% 150% at 88% 12%,#b55c46,#8b3a2a 52%,#6a2a1e 100%);box-shadow:0 6px 16px rgba(106,42,30,.32);-webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;gap:14px}
 .store-emphasis-hero:active{transform:scale(.98)}
 .emh-eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.16em;color:#f0d089;margin-bottom:7px}
 .emh-title{font-family:var(--ff-serif);font-size:20px;line-height:1.32;font-weight:700;color:#faf3e3;margin-bottom:7px}
 .emh-desc{font-size:12px;color:rgba(243,230,207,.85);line-height:1.5}
-.emh-mock{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:78px;display:flex;flex-direction:column;gap:6px}
-.emh-mock-cell{background:rgba(243,230,207,.13);border:1px solid rgba(243,230,207,.22);border-radius:8px;padding:6px 7px}
-.emh-mock-day{font-size:9px;font-weight:700;color:rgba(243,230,207,.72);margin-bottom:4px}
-.emh-mock-bar{height:14px;border-radius:3px;position:relative;display:flex;align-items:center;padding:0 3px;font-size:8px;font-weight:800;color:#fff;overflow:hidden;white-space:nowrap}
+/* 히어로 안의 미리보기 — 실제 캘린더와 같은 테두리 문법(.dh-demo-row)을 재사용해 어두운 배경에 맞춰 톤만 보정 */
+.emh-mock{display:flex;justify-content:flex-start}
+.emh-mock .dh-demo-cell{background:rgba(243,230,207,.13);border-color:rgba(243,230,207,.22)}
+.emh-mock .dh-demo-num{color:rgba(243,230,207,.62)}
 /* 날짜 강조 추가 버튼 + 목록 도트 + 색상 스와치 */
 .dh-add-btn{width:100%;padding:13px;border-radius:12px;border:1.5px dashed var(--accent);background:var(--aP);color:var(--accent);font-weight:800;font-size:14px;font-family:inherit;cursor:pointer;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:6px;-webkit-tap-highlight-color:transparent}
 .dh-add-btn:active{opacity:.75}
@@ -2328,26 +2328,24 @@ body.ff-jua{letter-spacing:-.2px}
 .dh-ql-flag{width:13px;height:13px;border-radius:3px;display:inline-block;flex:none}
 .dh-quicklink-sub{font-size:11px;font-weight:500;color:var(--sub)}
 .dh-list-dot{width:34px;height:34px;border-radius:50%}
-/* 스토어 "기본 날짜 태그" 테마 캐탈로그 그리드(TimeBlocks식 리본/태그 아이콘) + 상세보기. [2026-08-19] */
-.dh-theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
-.dh-theme-card{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.dh-theme-card:active{opacity:.75}
-.dh-theme-thumb{width:100%;aspect-ratio:1;border-radius:14px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;position:relative}
+/* 스토어 "기본 날짜 태그" — 대표 색 1개 행(탭하면 6색 전부 + 실제 적용 미리보기). [2026-08-19] */
+.dh-rep-th{position:relative}
 .dh-flag{width:34%;height:42%;clip-path:polygon(0 0,100% 0,100% 76%,50% 100%,0 76%)}
 .dh-theme-lock{position:absolute;top:6px;right:7px;font-size:11px}
-.dh-theme-name{font-size:11.5px;font-weight:700;color:var(--text);text-align:center}
-.dh-theme-detail-big{display:flex;justify-content:center;padding:18px 0 6px}
-.dh-theme-detail-big .dh-flag{width:64px;height:78px}
+/* 상세 팔레트 — 실제 캘린더와 동일한 테두리 오버레이를 그대로 데모 셀 안에 그려서 보여줌 */
+.dh-theme-detail-demo{display:flex;justify-content:center;padding:14px 0 12px}
+.dh-demo-row{display:flex;gap:4px}
+.dh-demo-cell{position:relative;width:50px;height:50px;border-radius:8px;background:var(--card);border:1px solid var(--border);box-sizing:border-box;flex:none}
+.dh-demo-num{position:absolute;bottom:3px;right:5px;font-size:10px;font-weight:600;color:var(--sub)}
 .dh-theme-detail-desc{font-size:12.5px;color:var(--sub);line-height:1.6;text-align:center;padding:4px 10px 2px}
 .dh-style-row{display:flex;gap:10px;flex-wrap:wrap;padding-top:2px}
+.dh-detail-swatches{justify-content:center;padding:2px 0 6px}
 .dh-swatch{width:34px;height:34px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;box-sizing:border-box;position:relative;-webkit-tap-highlight-color:transparent}
 .dh-swatch.on{border-color:var(--text)}
 .dh-swatch.on::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:800}
-/* 캘린더 그리드 위 날짜 강조 밴드 [2026-08-18] — 요일 열 기준 이어붙임(주 경계에서 자연스레 끊김) */
-.cal-hl-band{height:14px;line-height:13px;margin:1px 0 2px;font-size:9px;font-weight:800;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box;cursor:pointer;border-style:solid;border-width:1.3px 0;border-color:transparent;position:relative}
-.cal-hl-band.hl-l,.cal-hl-band.hl-single{border-left-width:1.3px;border-top-left-radius:4px;border-bottom-left-radius:4px}
-.cal-hl-band.hl-r,.cal-hl-band.hl-single{border-right-width:1.3px;border-top-right-radius:4px;border-bottom-right-radius:4px}
-.cal-hl-band.hl-start::before{content:'';position:absolute;top:-1.3px;left:-1.3px;width:6px;height:6px;background:rgba(0,0,0,.2);clip-path:polygon(0 0,100% 0,0 100%);border-radius:4px 0 0 0}
+/* 캘린더 그리드 위 날짜 강조 — 날짜 격자선(칸 테두리) 기준 오버레이 + 왼쪽위 라벨 탭. [2026-08-19] */
+.cal-hl-wrap{position:absolute;inset:1px;box-sizing:border-box;pointer-events:none;z-index:1}
+.cal-hl-tag{position:absolute;top:1px;left:1px;max-width:78%;font-size:8px;font-weight:800;line-height:1;padding:2.5px 4.5px 2px;border-radius:5px 0 6px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:auto;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.16)}
 /* 통합 프로필·테마 세트 행(방편집) — 이모지 행 스타일 재사용 */
 .ep-th .sealimg{width:88%;height:88%;object-fit:contain}
 .ep-th svg.sealset{width:88%;height:88%}
@@ -2688,6 +2686,10 @@ body.align-right .cal-evbar{text-align:right}
 #charDetailOverlay{z-index:1400}
 #charDetailCard{z-index:1401;left:50%;right:auto;width:100%;max-width:430px;transform:translateX(-50%) translateY(100%)}
 #charDetailCard.on{transform:translateX(-50%) translateY(0)}
+/* 날짜 강조 추가 시트·팔레트 상세도 스토어(z-index:1300) 안에서 열리므로 그 위로 띄워야 함(안 그러면
+   스토어 뒤에 가려져 탭해도 아무 반응 없어 보임 — 캐릭터 상세와 동일한 처리). [2026-08-19] */
+#dhOverlay,#dhThemeOverlay{z-index:1400}
+#dhCard,#dhThemeDetailCard{z-index:1401}
 .char-expr-grid{
   display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
   margin:8px auto 12px;justify-content:center;width:100%;
@@ -4179,15 +4181,14 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
   </div>
 </div>
 
-<!-- 날짜 강조 테마 상세 보기 [2026-08-19] -->
+<!-- 날짜 강조 테마 상세 보기 — 6색 팔레트 + 실제 캘린더 적용 미리보기 [2026-08-19] -->
 <div class="mo-overlay" id="dhThemeOverlay" onclick="closeDhThemeDetail()"></div>
 <div class="mo-card" id="dhThemeDetailCard">
   <div class="mo-handle"></div>
   <div class="mo-title" id="dhThemeDetailName">레드</div>
-  <div class="mo-sub">기본 날짜 태그</div>
-  <div class="dh-theme-detail-big">
-    <div class="dh-flag" id="dhThemeDetailFlag"></div>
-  </div>
+  <div class="mo-sub">기본 날짜 태그 · 실제 캘린더에 이렇게 표시돼요</div>
+  <div class="dh-theme-detail-demo" id="dhThemeDetailDemo"></div>
+  <div class="dh-style-row dh-detail-swatches" id="dhThemeDetailSwatches"></div>
   <div class="dh-theme-detail-desc">일정과 별개로, 원하는 날짜(구간)에 나만의 제목을 붙여 방 멤버 모두에게 보여줘요. 예: 휴가, 출장, 시험기간</div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeDhThemeDetail()">닫기</button>
@@ -10640,28 +10641,20 @@ function renderMonthly(){
     _weekRemaps.push(map);
   }
 
-  // 주(週)별 날짜 강조 유무 — 하이라이트가 있는 주만 밴드 슬롯을 예약(없는 주는 그만큼 더 컴팩트). [2026-08-18]
-  const _weekHasHl=[];
-  for(let w=0; w<6; w++){
-    let has=false;
-    for(let i=0;i<7;i++){ const k=_gridDays[w*7+i]; if(k && _dhForDate(k)){ has=true; break; } }
-    _weekHasHl.push(has);
-  }
-
   let html='';
   let cellCount=0;
   for(let i=offset-1;i>=0;i--){
     const d=prevDim-i;
-    html+=cellHtml(_calMonth===0?_calYear-1:_calYear, _calMonth===0?11:_calMonth-1, d, true, todayKey, _weekRemaps[(cellCount/7)|0], _weekHasHl[(cellCount/7)|0]);
+    html+=cellHtml(_calMonth===0?_calYear-1:_calYear, _calMonth===0?11:_calMonth-1, d, true, todayKey, _weekRemaps[(cellCount/7)|0]);
     cellCount++;
   }
   for(let d=1;d<=dim;d++){
-    html+=cellHtml(_calYear,_calMonth,d,false,todayKey, _weekRemaps[(cellCount/7)|0], _weekHasHl[(cellCount/7)|0]);
+    html+=cellHtml(_calYear,_calMonth,d,false,todayKey, _weekRemaps[(cellCount/7)|0]);
     cellCount++;
   }
   let nextD=1;
   while(cellCount<42){
-    html+=cellHtml(_calMonth===11?_calYear+1:_calYear, _calMonth===11?0:_calMonth+1, nextD, true, todayKey, _weekRemaps[(cellCount/7)|0], _weekHasHl[(cellCount/7)|0]);
+    html+=cellHtml(_calMonth===11?_calYear+1:_calYear, _calMonth===11?0:_calMonth+1, nextD, true, todayKey, _weekRemaps[(cellCount/7)|0]);
     nextD++;cellCount++;
   }
   grid.innerHTML=html;
@@ -10687,15 +10680,11 @@ function adjustCalRowHeights(){
   if(!grid)return;
   const cells=grid.children;
   if(cells.length<42)return;
+  let headH=36;
+  const ev0=cells[0].querySelector('.cal-events');
+  if(ev0&&ev0.offsetTop>0)headH=ev0.offsetTop;
   const rows=[];
   for(let r=0;r<6;r++){
-    // 날짜+라벨(+날짜강조 밴드, 있는 주만) 영역 높이 — 그 주(週) 첫 셀 기준 측정.
-    // 날짜 강조 밴드가 있는 주만 그 슬롯이 예약돼 다른 주와 헤더 높이가 달라질 수 있어
-    // 전체 공통이 아니라 週 단위로 다시 측정(2026-08-18, 기존엔 cells[0] 고정 측정).
-    let headH=36;
-    const headCell=cells[r*7];
-    const ev0=headCell&&headCell.querySelector('.cal-events');
-    if(ev0&&ev0.offsetTop>0)headH=ev0.offsetTop;
     let maxH=92;
     for(let c=0;c<7;c++){
       const cell=cells[r*7+c];
@@ -10919,7 +10908,7 @@ function _dayAbsSlots(key,y,m,d){
   return res;
 }
 
-function cellHtml(y,m,d,isOther,todayKey,weekRemap,rowHasHl){
+function cellHtml(y,m,d,isOther,todayKey,weekRemap){
   const key=dateKey(y,m,d);
   const dow=new Date(y,m,d).getDay();
   const isToday=(key===todayKey);
@@ -10961,16 +10950,14 @@ function cellHtml(y,m,d,isOther,todayKey,weekRemap,rowHasHl){
   }
 
   if(_hasRangeStart)cls.push('has-range-start');
-  // 날짜 강조 밴드 — 이 주(週)에 하이라이트가 하나라도 있을 때만 슬롯 예약(모든 셀 헤더 높이 통일). [2026-08-18]
-  let hlHtml='';
-  if(rowHasHl){
-    const hl=_dhForDate(key);
-    hlHtml=hl?_dhBandHTML(hl,key,dow):'<div class="cal-hl-band"></div>';
-  }
+  // 날짜 강조 — 날짜 격자선(칸 테두리) 기준 오버레이, 인-플로우 높이를 차지하지 않는 절대배치라
+  // 별도 행 예약이 필요 없다(기존 밴드 방식과 달리 헤더 높이에 영향 없음). [2026-08-19]
+  const hl=_dhForDate(key);
+  const hlHtml=hl?_dhCellOverlayHTML(hl,key,dow):'';
   return `<div class="${cls.join(' ')}" data-date="${key}" onclick="openDateSheet('${key}')">
+    ${hlHtml}
     <span class="cal-day-num">${d}</span>
     ${labelHtml}
-    ${hlHtml}
     <div class="cal-events">${evsHtml}</div>
   </div>`;
 }
@@ -20599,34 +20586,29 @@ async function onLockCharClick(key){
 /* ── 날짜 강조(Date Highlight) 스토어 탭 ── [2026-08-18]
    특정 일정에 종속되지 않는 독립적인 날짜(구간) 하이라이트. 만드는 건 프리미엄 전용이지만
    한 번 만들면 방 멤버 전원에게 보임(공유 정보). 제목은 자유 텍스트(고정 라벨 아님). */
-function _dhThemeCardHTML(s,prem){
-  const lock=prem?'':'<span class="dh-theme-lock">🔒</span>';
-  return `
-    <div class="dh-theme-card" onclick="openDhThemeDetail('${s.key}')">
-      <div class="dh-theme-thumb">
-        <div class="dh-flag" style="background:${s.hex}"></div>
-        ${lock}
-      </div>
-      <div class="dh-theme-name">${escapeHtml(s.name)}</div>
-    </div>
-  `;
-}
+const DH_REP_KEY='purple'; // 스토어 대표 미리보기 색 — 탭하면 상세에서 6색 전부 + 실제 적용 미리보기
 function renderStoreEmphasis(){
   const body=document.getElementById('storeBody');
   if(!body)return;
   const prem=isEffectivePremium();
+  const rep=DH_STYLES.find(s=>s.key===DH_REP_KEY)||DH_STYLES[0];
+  const lock=prem?'':'<span class="dh-theme-lock">🔒</span>';
   let html=`
     <div class="store-emphasis-hero" onclick="openDhCard()">
       <div class="emh-eyebrow">PREMIUM · DATE HIGHLIGHT</div>
       <div class="emh-title">특별한 날짜에<br>내 제목을 붙여보세요</div>
-      <div class="emh-desc">휴가, 출장, 시험기간… 원하는 구간에<br>태그를 달아 방 모두에게 알려줘요</div>
-      <div class="emh-mock">
-        <div class="emh-mock-cell"><div class="emh-mock-day">4</div><div class="emh-mock-bar emh-mock-tag" style="background:#8438A8">휴가</div></div>
-        <div class="emh-mock-cell"><div class="emh-mock-day">11</div><div class="emh-mock-bar emh-mock-tag" style="background:#8438A8"></div></div>
-      </div>
+      <div class="emh-desc">휴가, 출장, 시험기간… 원하는 구간에<br>테두리로 표시해 방 모두에게 알려줘요</div>
+      <div class="emh-mock">${_dhDemoRowHTML(DH_REP_KEY,'휴가')}</div>
     </div>
     <div class="store-section-title">기본 날짜 태그 <small>DATE HIGHLIGHT THEMES</small></div>
-    <div class="dh-theme-grid">${DH_STYLES.map(s=>_dhThemeCardHTML(s,prem)).join('')}</div>
+    <div class="ep-row dh-rep-row" onclick="openDhThemeDetail('${rep.key}')">
+      <div class="ep-th dh-rep-th"><div class="dh-flag" style="background:${rep.hex}"></div>${lock}</div>
+      <div class="ep-body">
+        <div class="ep-t1">기본 날짜 태그</div>
+        <div class="ep-t2">6가지 색상 · 탭해서 실제 적용 모습을 미리 봐요</div>
+      </div>
+      <div class="ep-act">›</div>
+    </div>
     <div class="store-section-title">내 방의 날짜 강조 <small>MY HIGHLIGHTS</small></div>
     <button class="dh-add-btn" onclick="openDhCard()">${prem?'':'<span class="pack-btn-lock">🔒</span>'}+ 날짜 강조 추가</button>
   `;
@@ -20651,15 +20633,28 @@ function renderStoreEmphasis(){
   }
   body.innerHTML=html;
 }
-/* ── 날짜 강조 테마 상세보기 — 그리드 카드 탭 시 어떤 테마인지 크게 보여줌.
+/* ── 날짜 강조 테마 상세보기 — 대표 카드 탭 시 6색 전부 + 실제 캘린더 적용 미리보기를 보여줌.
    보기는 누구나 가능(구경), 실제 사용은 openDhCard()가 기존 프리미엄 게이트를 그대로 처리. [2026-08-19] */
 let _dhDetailStyle=null;
-function openDhThemeDetail(key){
+function _dhDetailSwatchesHTML(){
+  return DH_STYLES.map(s=>`<div class="dh-swatch${s.key===_dhDetailStyle?' on':''}" style="background:${s.hex}" title="${s.name}" onclick="pickDhDetailStyle('${s.key}')"></div>`).join('');
+}
+function _dhRenderDetail(){
+  const s=DH_STYLES.find(x=>x.key===_dhDetailStyle)||DH_STYLES[0];
+  const nameEl=document.getElementById('dhThemeDetailName'); if(nameEl)nameEl.textContent=s.name;
+  const demoEl=document.getElementById('dhThemeDetailDemo'); if(demoEl)demoEl.innerHTML=_dhDemoRowHTML(s.key,'휴가');
+  const swEl=document.getElementById('dhThemeDetailSwatches'); if(swEl)swEl.innerHTML=_dhDetailSwatchesHTML();
+}
+function pickDhDetailStyle(key){
   const s=DH_STYLES.find(x=>x.key===key);
   if(!s)return;
   _dhDetailStyle=key;
-  const nameEl=document.getElementById('dhThemeDetailName'); if(nameEl)nameEl.textContent=s.name;
-  const flagEl=document.getElementById('dhThemeDetailFlag'); if(flagEl)flagEl.style.background=s.hex;
+  _dhRenderDetail();
+}
+function openDhThemeDetail(key){
+  const s=DH_STYLES.find(x=>x.key===key)||DH_STYLES[0];
+  _dhDetailStyle=s.key;
+  _dhRenderDetail();
   const ov=document.getElementById('dhThemeOverlay'), cd=document.getElementById('dhThemeDetailCard');
   if(ov)ov.classList.add('on'); if(cd)cd.classList.add('on');
 }
@@ -20697,7 +20692,7 @@ function _dhRgba(hex,a){
 function _fmtMD(k){ const d=parseDateKey(k); return `${d.getMonth()+1}월 ${d.getDate()}일`; }
 function _dayCountBetween(a,b){ return Math.round((parseDateKey(b)-parseDateKey(a))/86400000)+1; }
 
-/* ── 캘린더 그리드 렌더링: 날짜별 하이라이트 조회 + 밴드 HTML ── */
+/* ── 캘린더 그리드 렌더링: 날짜별 하이라이트 조회 + 격자선 기준 테두리 오버레이 ── */
 function _dhForDate(key){
   if(!_dateHighlights||!_dateHighlights.length)return null;
   let best=null;
@@ -20708,21 +20703,51 @@ function _dhForDate(key){
   }
   return best;
 }
-function _dhBandHTML(h,key,dow){
+/* 이 날짜 칸의 상/하/좌/우 중 어느 변에 테두리를 그려야 하는지 — 위/아래/좌/우 이웃 날짜가
+   같은 하이라이트 범위 밖이면 그 변에 테두리(=하이라이트 영역의 바깥 경계)를 그린다.
+   여러 주에 걸친 범위도 이 규칙만으로 자연스럽게 이어지는 사각 테두리(브라켓) 모양이 된다. */
+function _dhSideFlags(h,key,dow){
   const ws=getWeekStartPref();
   const col=(dow-ws+7)%7;
-  const isStart=(key===h.start_date), isEnd=(key===h.end_date);
-  const rowStart=isStart||col===0, rowEnd=isEnd||col===6;
+  const inRange=(k)=>k>=h.start_date&&k<=h.end_date;
+  return {
+    top: !inRange(shiftDateKey(key,-7)),
+    bottom: !inRange(shiftDateKey(key,7)),
+    left: col===0 || !inRange(shiftDateKey(key,-1)),
+    right: col===6 || !inRange(shiftDateKey(key,1))
+  };
+}
+/* 실제 캘린더 렌더와 미리보기(히어로 배너·상세 팔레트)가 똑같은 테두리를 그리도록 공유하는 헬퍼 */
+function _dhBorderStyle(hex,f){
+  const bw=(on)=>on?'1.6px':'0';
+  const rad=(on)=>on?'6px':'0';
+  return `border-style:solid;border-color:${hex};`
+    +`border-width:${bw(f.top)} ${bw(f.right)} ${bw(f.bottom)} ${bw(f.left)};`
+    +`border-radius:${rad(f.top&&f.left)} ${rad(f.top&&f.right)} ${rad(f.bottom&&f.right)} ${rad(f.bottom&&f.left)};`
+    +`background:${_dhRgba(hex,.05)}`;
+}
+function _dhCellOverlayHTML(h,key,dow){
   const hex=_dhHex(h.style_key);
-  const cls=['cal-hl-band'];
-  if(rowStart&&rowEnd)cls.push('hl-single');
-  else if(rowStart)cls.push('hl-l');
-  else if(rowEnd)cls.push('hl-r');
-  else cls.push('hl-mid');
-  if(isStart)cls.push('hl-start');
-  const style=`background:${_dhRgba(hex,.16)};border-color:${hex};color:${hex}`;
-  const label=isStart?escapeHtml(h.title||'강조'):'';
-  return `<div class="${cls.join(' ')}" style="${style}" onclick="event.stopPropagation();openDateHighlightDetail('${h.id}')">${label}</div>`;
+  const f=_dhSideFlags(h,key,dow);
+  const isStart=(key===h.start_date);
+  let tag='';
+  if(isStart){
+    const ink=getContrastTextColor(hex);
+    tag=`<div class="cal-hl-tag" style="background:${hex};color:${ink}" onclick="event.stopPropagation();openDateHighlightDetail('${h.id}')">${escapeHtml(h.title||'강조')}</div>`;
+  }
+  return `<div class="cal-hl-wrap" style="${_dhBorderStyle(hex,f)}">${tag}</div>`;
+}
+/* 미리보기용 3칸 데모 줄 — 실제 캘린더와 동일한 테두리 문법(_dhBorderStyle/.cal-hl-wrap/.cal-hl-tag)을
+   그대로 재사용해 "실제 일정에 어떻게 적용되는지" 스토어에서도 똑같이 보여준다. [2026-08-19] */
+function _dhDemoRowHTML(key,title){
+  const hex=_dhHex(key);
+  const ink=getContrastTextColor(hex);
+  const flags=[{top:true,bottom:true,left:true,right:false},{top:true,bottom:true,left:false,right:false},{top:true,bottom:true,left:false,right:true}];
+  const nums=['10','11','12'];
+  return `<div class="dh-demo-row">${flags.map((f,i)=>{
+    const tag=i===0?`<div class="cal-hl-tag" style="background:${hex};color:${ink}">${escapeHtml(title||'휴가')}</div>`:'';
+    return `<div class="dh-demo-cell"><span class="dh-demo-num">${nums[i]}</span><div class="cal-hl-wrap" style="${_dhBorderStyle(hex,f)}">${tag}</div></div>`;
+  }).join('')}</div>`;
 }
 
 /* ── 추가 시트 ── */
