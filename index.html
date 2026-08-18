@@ -2404,7 +2404,15 @@ body.ff-jua{letter-spacing:-.2px}
 /* 날짜 강조 테마별 렌더 [2026-08-19]
    채움형(fill/deep)은 날짜 숫자·일정 바보다 '뒤'에 깔려야 하므로 z-index를 0으로 낮춘다
    (숫자와 일정 바는 DOM상 뒤에 오므로 같은 층에서는 그 위에 그려진다). */
-.cal-hl-wrap.dhr-fill,.cal-hl-wrap.dhr-deep{z-index:0}
+/* 채움형 강조는 날짜 숫자·공휴일 라벨·일정 바 '뒤'에 깔려야 한다.
+   ⚠️ z-index:0으로는 부족했음 — .cal-hl-wrap은 절대배치(=위치 지정 요소)라
+      z-index가 0이어도 정적 배치인 형제 콘텐츠보다 나중에 그려져 전부 가려버린다.
+      (실기기 제보: 빨간 채움 위에서 '광복절' 라벨과 일정 바가 사라져 보임)
+   → 채움 칸만 isolation으로 스택 컨텍스트를 만들고 채움을 z-index:-1로 내려,
+     칸 배경 위·콘텐츠 아래에 정확히 깔리게 한다(음수 z-index가 칸 밖으로 새지 않음).
+   테두리형은 그대로 위에 유지 — 라벨 탭이 그 안에 있고 탭을 눌러야 하기 때문. [2026-08-19] */
+.cal-cell.hl-fillcell{isolation:isolate}
+.cal-hl-wrap.dhr-fill,.cal-hl-wrap.dhr-deep{z-index:-1}
 .cal-cell.hl-ondark .cal-day-num{color:#fff}
 .cal-cell.hl-ondark .cal-cell-label{color:rgba(255,255,255,.85)}
 /* 폴더 탭 테마 — 탭을 각지고 도톰하게(서류철 느낌) */
@@ -11230,6 +11238,8 @@ function cellHtml(y,m,d,isOther,todayKey,weekRemap){
   const hl=_dhForDate(key);
   const hlHtml=hl?_dhCellOverlayHTML(hl,key,dow):'';
   if(hl&&hl.start_date===key&&_dhThemeHasLabel(_dhThemeKeyOf(hl)))cls.push('hl-tagcell');
+  // 채움형은 콘텐츠 뒤로 깔리도록 그 칸만 스택 컨텍스트로(위 CSS 참고)
+  if(hl&&_dhIsFillTheme(_dhThemeKeyOf(hl)))cls.push('hl-fillcell');
   // 진한 채움 테마 위에서는 날짜 숫자를 흰 글자로(안 그러면 안 보임)
   if(hl&&_dhIsDarkFill(_dhThemeKeyOf(hl),hl.style_key))cls.push('hl-ondark');
   return `<div class="${cls.join(' ')}" data-date="${key}" onclick="openDateSheet('${key}')">
@@ -21239,6 +21249,11 @@ function _dhHexOf(themeKey,colorKey){ return _dhColorOf(themeKey,colorKey).hex; 
 /* 강조 행에서 테마 키 뽑기(옛 행은 theme_key 없음 → 기본) */
 function _dhThemeKeyOf(h){ return (h&&h.theme_key)||DH_THEME_DEFAULT; }
 /* 진한 채움 위에서는 날짜 숫자가 안 보이므로 흰 글자로 바꿔야 하는지 */
+/* 채움형(파스텔·진한 채움) 테마인지 — 채움은 콘텐츠 뒤로 깔아야 해서 칸 클래스가 달라진다 */
+function _dhIsFillTheme(themeKey){
+  const r=_dhTheme(themeKey||DH_THEME_DEFAULT).render;
+  return r==='fill'||r==='deep';
+}
 function _dhIsDarkFill(themeKey,colorKey){
   const t=_dhTheme(themeKey);
   if(t.render!=='deep'&&t.render!=='fill')return false;
