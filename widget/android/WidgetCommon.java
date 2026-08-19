@@ -305,6 +305,30 @@ public class WidgetCommon {
     /* 칸별 플래그(42칸)를 줄(7칸)별로 접는다 — 한 줄에 하나라도 true면 그 줄 전체 true.
        공휴일·강조 라벨이 특정 칸에만 있으면 그 칸의 일정 바만 밀려 기간 바가 끊겨 보이므로,
        같은 줄 전체에 같은 높이를 예약하는 데 쓴다. [2026-08-19] */
+    /* 셀 높이(dp)에서 그릴 수 있는 '일정 줄' 수를 산정한다.
+       날짜 숫자 박스(17dp)+여백, 그 주가 비워두는 공휴일/강조 라벨 줄, 할일 줄을 먼저 뺀다.
+       줄 하나 높이 = 13dp(레이아웃 minHeight와 동일). 순수 계산이라 단위테스트로 검증. [2026-08-19] */
+    static int laneBudget(int cellDp, int reserveLines, boolean hasTodos) {
+        return laneBudget(cellDp, reserveLines, hasTodos, 13);
+    }
+    /* lineDp = 줄 하나 높이. 시스템 글자 크기 배율이 크면 sp 글자가 13dp 최소높이를 넘어
+       줄이 두꺼워지므로 배율을 반영한 값을 넘긴다. */
+    static int laneBudget(int cellDp, int reserveLines, boolean hasTodos, int lineDp) {
+        int lh = Math.max(1, lineDp);
+        int lines = (cellDp - 18) / lh;          // 날짜 숫자 빼고 남는 줄 수
+        return lines - Math.max(0, reserveLines) - (hasTodos ? 1 : 0);
+    }
+    // 시스템 글자 크기 배율에 맞춘 줄 높이(dp). 배율 1이면 레이아웃 기본 13dp.
+    static int lineDpFor(float fontScale) {
+        float fs = (fontScale > 0.1f) ? fontScale : 1f;
+        return Math.max(13, Math.round(11f * fs) + 2);
+    }
+    // 배율이 크면 헤더(‹ 8월 › ↻ 등 sp 글자)도 커져 그리드가 좁아진다 → 추정치에 반영.
+    static int headerDpFor(float fontScale) {
+        float fs = (fontScale > 0.1f) ? fontScale : 1f;
+        float extra = Math.max(0f, Math.min(1f, fs - 1f));
+        return 52 + Math.round(20f * extra);
+    }
     static boolean[] rowFlags(boolean[] perCell, int rows) {
         boolean[] out = new boolean[rows];
         if (perCell == null) return out;

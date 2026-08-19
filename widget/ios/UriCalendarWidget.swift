@@ -541,7 +541,8 @@ struct TodayView: View {
                 ForEach(todaysTodos.prefix(2)) { t in TodoRow(t: t) }
                 Spacer(minLength: 0)
             }
-        }.padding(12).widgetBg()
+        }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)   // 넘쳐도 위(헤더)가 잘리지 않게 상단 고정 [2026-08-19]
+        .padding(12).widgetBg()
     }
 }
 struct EventRow: View {
@@ -623,6 +624,13 @@ struct GridView: View {
         }
     }
     var maxLanes: Int { 2 }
+    // 칸 하나가 그릴 수 있는 '바 줄' 수 — 행 높이에서 날짜 숫자를 빼고 바 한 줄 높이로 나눈다.
+    // 이게 있어야 칸이 자기 최소 높이를 우기지 않고 행 안에 들어간다(헤더 잘림 방지). [2026-08-19]
+    func lineBudget(rowH: CGFloat, dense: Bool) -> Int {
+        let numBox: CGFloat = dense ? 16 : 18
+        let line: CGFloat = (dense ? 10.5 : 12) + 1.5      // 바 높이 + VStack spacing
+        return max(0, Int(floor((rowH - numBox - 1.5) / line)))
+    }
     // 표시 주 수 — 2주 위젯은 2. 월 위젯은 그 달이 실제 걸치는 주 수(5 또는 6, 드물게 4)로
     // 동적 계산 → 6주 달도 마지막 날이 잘리지 않음. 2개 일정 줄(maxLanes)은 유지.
     var rowCount: Int {
@@ -703,6 +711,7 @@ struct GridView: View {
         let curMonth = cal.component(.month, from: monthDate)
         // 실제로 쓰인 이벤트 줄 수만 예약(빈 줄이 할일을 셀 밖으로 밀어내지 않게) → 할일 노출 개선
         let usedLanes = min(maxLanes, max(0, (allRuns.map { $0.lane }.max() ?? -1) + 1))
+        let denseCell = rowCount >= 6 || weeks == 2
         VStack(spacing: 0) {
             WGHeader(room: room, compact: weeks > 2, active: filter, monthNav: monthNav, monthLabel: monthLabel, myUserId: myUserId, weekNav: weekNav, weekLabel: weekLabel, weekOffset: weekOffset)
             Color.clear.frame(height: weeks > 2 ? 9 : 7)     // 헤더 ↔ 달력 사이 여백(위아래 균형)
@@ -712,8 +721,15 @@ struct GridView: View {
                         .foregroundColor(i == 0 ? .sunRed : .mutedBrown).frame(maxWidth: .infinity)
                 }
             }.padding(.bottom, 2)
-            // 주(week)별 행을 maxHeight 무한으로 균등 분배 → 위젯 높이를 정확히 채워 '아래 잘림' 방지
-            VStack(spacing: 2) {
+            /* 남는 높이를 실측해 주(week) 행마다 '정확한' 높이를 준다.
+               예전엔 .frame(maxHeight:.infinity)만 줬는데, 칸 안 고정 높이(숫자·라벨·바·할일)가
+               합쳐져 행의 최소 높이가 되고, 그 합이 위젯보다 커지면 VStack이 가운데로 넘쳐
+               위(헤더)와 아래가 동시에 잘렸다(실기기 제보 2026-08-19). [2026-08-19] */
+            GeometryReader { geo in
+              let rowGap: CGFloat = 2
+              let rowH = max(20, (geo.size.height - rowGap * CGFloat(max(0, rowCount - 1))) / CGFloat(rowCount))
+              let budget = lineBudget(rowH: rowH, dense: denseCell)
+              VStack(spacing: rowGap) {
                 ForEach(0..<rowCount, id: \.self) { w in
                     // 이 줄(주)에 공휴일/강조 라벨이 하나라도 있으면 7칸 모두 그 높이를 비워둔다
                     let rowDates = (0..<7).map { cal.date(byAdding: .day, value: w*7 + $0, to: startDate)! }
@@ -736,11 +752,13 @@ struct GridView: View {
                                     holiday: holidays[fmt(d)],
                                     todos: dTodos, maxTodos: weeks == 2 ? max(0, 3 - usedLanes) : 1, dense: rowCount >= 6 || weeks == 2,
                                     hl: dHl, hlStart: dHl?.s == dKey,
-                                    holidayReserve: resHoliday, hlLabelReserve: resLabel)
+                                    holidayReserve: resHoliday, hlLabelReserve: resLabel,
+                                    lineBudget: budget)
                         }
-                    }.frame(maxHeight: .infinity)
+                    }.frame(height: rowH)
                 }
-            }.frame(maxHeight: .infinity)
+              }.frame(width: geo.size.width, height: geo.size.height, alignment: .top)
+            }
         }.padding(.horizontal, weeks > 2 ? 12 : 13).padding(.vertical, 10).widgetBg()
     }
 }
@@ -768,9 +786,35 @@ struct DayCell: View {
     // → 같은 주에 하나라도 있으면 나머지 칸도 같은 높이를 비워둔다(안드로이드와 동일 규칙). [2026-08-19]
     var holidayReserve: Bool = false
     var hlLabelReserve: Bool = false
+    // 이 칸이 그릴 수 있는 '바 줄' 수(행 높이에서 산정). 넘치는 만큼은 그리지 않고 '+N'으로. [2026-08-19]
+    var lineBudget: Int = 99
     private var numBox: CGFloat { dense ? 16 : 18 }
     private var barH: CGFloat { dense ? 10.5 : 12 }
-    private var totalOverflow: Int { overflow + max(0, todos.count - maxTodos) }   // 이벤트+할일 넘침 합산
+    private var labelLine: Bool { (hlStart && hl != nil && hl!.lb && !(hl!.t.isEmpty)) || hlLabelReserve }
+    private var holidayLine: Bool { holiday != nil || holidayReserve }
+    // 라벨·공휴일 줄을 먼저 빼고 남는 줄을 이벤트 → 할일 순으로 채운다.
+    // (라벨/공휴일 예약은 같은 주 7칸이 동일하므로 이 계산도 줄 단위로 균일하다)
+    // 예산이 아주 작으면(칸이 매우 낮으면) 예약 줄부터 접는다 — 라벨 → 공휴일 순으로 살린다.
+    // 이 판단도 lineBudget/예약 플래그가 줄 단위로 같아서 같은 주 7칸이 항상 동일하다.
+    private var showLabelLine: Bool { labelLine && lineBudget >= 1 }
+    private var showHolidayLine: Bool { holidayLine && lineBudget >= (showLabelLine ? 2 : 1) }
+    private var freeLines: Int { max(0, lineBudget - (showLabelLine ? 1 : 0) - (showHolidayLine ? 1 : 0)) }
+    private func hiddenCountFor(_ s: Int, _ t: Int) -> Int {
+        var h = overflow + max(0, todos.count - t)
+        if s < slots.count { for i in s..<slots.count where slots[i] != nil { h += 1 } }
+        return h
+    }
+    private var layoutPlan: (slots: Int, todos: Int, over: Int, overFits: Bool) {
+        var s = max(0, min(slots.count, freeLines))
+        var t = max(0, min(min(maxTodos, todos.count), freeLines - s))
+        // 넘침 표시(+N)도 한 줄을 먹으므로, 자리가 없으면 할일 → 이벤트 순으로 한 줄 양보
+        if hiddenCountFor(s, t) > 0 && freeLines - s - t <= 0 {
+            if t > 0 { t -= 1 } else if s > 1 { s -= 1 }
+        }
+        // 그래도 줄이 안 남으면(일정 1개 + 공휴일로 꽉 찬 칸 등) '+N'을 줄로 쌓지 않고
+        // 칸 우측 하단에 작은 배지로 겹쳐 그린다 → 칸이 행 높이를 넘지 않는다. [2026-08-19]
+        return (s, t, hiddenCountFor(s, t), freeLines - s - t >= 1)
+    }
     // 할일 한 줄: 작은 체크박스 + 제목. 완료면 취소선+흐리게. 이벤트 바와 시각적으로 구분.
     @ViewBuilder private func todoLine(_ t: WGTodo) -> some View {
         let done = todoDone(t)
@@ -843,32 +887,37 @@ struct DayCell: View {
                     .background(isToday ? Circle().fill(Color.terra) : nil)
                 // 강조 라벨: 앱은 칸 위로 솟은 탭이지만 위젯 칸은 그럴 여백이 없어 공휴일 바와 같은
                 // '색 바' 방식으로 제목을 보여준다(라벨을 쓰는 테마=기본/폴더에서만). [2026-08-19]
-                if hlStart, let h = hl, h.lb, !h.t.isEmpty {
-                    Text(h.t).font(.system(size: 8.5, weight: .bold))
-                        .foregroundColor(Color(hexStr: h.ink)).lineLimit(1)
-                        .padding(.leading, 3).padding(.trailing, 3)
-                        .frame(maxWidth: .infinity, minHeight: barH, alignment: .leading)
-                        .background(RoundedRectangle(cornerRadius: 3).fill(Color(hexStr: h.c)))
-                        .padding(.leading, 1).padding(.trailing, 1)
-                } else if hlLabelReserve {
-                    Color.clear.frame(height: barH)      // 같은 주 칸들과 일정 바 시작 높이를 맞춤
+                if showLabelLine {
+                    if hlStart, let h = hl, h.lb, !h.t.isEmpty {
+                        Text(h.t).font(.system(size: 8.5, weight: .bold))
+                            .foregroundColor(Color(hexStr: h.ink)).lineLimit(1)
+                            .padding(.leading, 3).padding(.trailing, 3)
+                            .frame(maxWidth: .infinity, minHeight: barH, alignment: .leading)
+                            .background(RoundedRectangle(cornerRadius: 3).fill(Color(hexStr: h.c)))
+                            .padding(.leading, 1).padding(.trailing, 1)
+                    } else {
+                        Color.clear.frame(height: barH)      // 같은 주 칸들과 일정 바 시작 높이를 맞춤
+                    }
                 }
-                if let hn = holiday {   // 빨간날: 이름을 빨간 바로 자동 표시(앱은 텍스트만 → 위젯은 바)
-                    Text(hn).font(.system(size: 8.5, weight: .bold))
-                        .foregroundColor(.white).lineLimit(1)
-                        .padding(.leading, 3).padding(.trailing, 3)
-                        .frame(maxWidth: .infinity, minHeight: barH, alignment: .leading)
-                        .background(RoundedRectangle(cornerRadius: 3).fill(Color.sunRed))
-                        .padding(.leading, 1).padding(.trailing, 1)
-                } else if holidayReserve {
-                    Color.clear.frame(height: barH)      // 공휴일 칸에서 기간 바가 끊겨 보이지 않게 자리만 확보
+                if showHolidayLine {
+                    if let hn = holiday {   // 빨간날: 이름을 빨간 바로 자동 표시(앱은 텍스트만 → 위젯은 바)
+                        Text(hn).font(.system(size: 8.5, weight: .bold))
+                            .foregroundColor(.white).lineLimit(1)
+                            .padding(.leading, 3).padding(.trailing, 3)
+                            .frame(maxWidth: .infinity, minHeight: barH, alignment: .leading)
+                            .background(RoundedRectangle(cornerRadius: 3).fill(Color.sunRed))
+                            .padding(.leading, 1).padding(.trailing, 1)
+                    } else {
+                        Color.clear.frame(height: barH)      // 공휴일 칸에서 기간 바가 끊겨 보이지 않게 자리만 확보
+                    }
                 }
-                ForEach(0..<slots.count, id: \.self) { idx in
+                let plan = layoutPlan
+                ForEach(0..<plan.slots, id: \.self) { idx in
                     if let b = slots[idx] { barView(b) } else { Color.clear.frame(height: barH) }   // 빈 줄도 높이 유지 → 줄 정렬
                 }
-                ForEach(Array(todos.prefix(maxTodos).enumerated()), id: \.offset) { _, t in todoLine(t) }
-                if totalOverflow > 0 {
-                    Text("+\(totalOverflow)").font(.system(size: 7.5, weight: .bold)).foregroundColor(.mutedBrown)
+                ForEach(Array(todos.prefix(plan.todos).enumerated()), id: \.offset) { _, t in todoLine(t) }
+                if plan.over > 0 && plan.overFits {
+                    Text("+\(plan.over)").font(.system(size: 7.5, weight: .bold)).foregroundColor(.mutedBrown)
                 }
                 Spacer(minLength: 0)
             }
@@ -878,6 +927,16 @@ struct DayCell: View {
             .background { if let h = hl, hlIsFill(h) { Rectangle().fill(Color(hexStr: h.c)).opacity(inMonth ? 1 : 0.4) } }
             // 강조 테두리 — 칸을 꽉 채우는 사각 경계(채움형은 테두리 없음)
             .overlay { if let h = hl, !hlIsFill(h) { hlBorder(h).opacity(inMonth ? 1 : 0.4) } }
+            // 줄로 쌓을 자리가 없을 때의 넘침 배지(레이아웃 높이를 차지하지 않음)
+            .overlay(alignment: .bottomTrailing) {
+                let p = layoutPlan
+                if p.over > 0 && !p.overFits {
+                    Text("+\(p.over)").font(.system(size: 7, weight: .bold)).foregroundColor(.mutedBrown)
+                        .padding(.horizontal, 2)
+                        .background(RoundedRectangle(cornerRadius: 2).fill(Color.cream.opacity(0.85)))
+                        .padding(.trailing, 1)
+                }
+            }
             .clipped()
             // 격자선(앱 설정 연동) — 세로=우측, 가로=하단
             .overlay(alignment: .trailing) { if rightLine { Rectangle().fill(Color.mutedBrown.opacity(0.16)).frame(width: 0.6) } }
@@ -975,7 +1034,8 @@ struct ComboView: View {
                 Rectangle().fill(Color.mutedBrown.opacity(0.2)).frame(width: 1)
                 MiniMonth(room: room, filter: filter, holidays: holidays).frame(maxWidth: .infinity)
             }
-        }.padding(16).widgetBg()
+        }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)   // 넘쳐도 위(헤더)가 잘리지 않게 상단 고정 [2026-08-19]
+        .padding(16).widgetBg()
     }
 }
 struct MiniMonth: View {

@@ -92,22 +92,25 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
             start.add(Calendar.DAY_OF_MONTH, -offset);
         }
 
-        // 위젯 실제 높이에 맞춰 셀 높이·표시 줄 수 산정 (여백만큼 일정을 더 노출)
+        // 위젯 실제 높이에 맞춰 셀 높이 산정 (여백만큼 일정을 더 노출).
+        // 표시 줄 수(laneCap)는 공휴일/강조 라벨 예약 줄까지 알아야 정확해서 아래에서 확정한다.
         laneCap = 2; cellMinPx = 0;
+        int cellDpForLanes = 0;
+        int lineDp = 13;
         try {
             float density = ctx.getResources().getDisplayMetrics().density;
             int hDp = WidgetCommon.gridHeightDp(ctx, kind);
             if (hDp > 0) {
-                int headerDp = 52; // 씰 헤더 + 요일 줄 + 여백 대략치
+                float fontScale = ctx.getResources().getConfiguration().fontScale;
+                int headerDp = WidgetCommon.headerDpFor(fontScale); // 씰 헤더 + 요일 줄 + 여백(글자 배율 반영)
+                lineDp = WidgetCommon.lineDpFor(fontScale);
                 int gridDp = hDp - headerDp;
                 int cellDp = gridDp / rows;
                 if (cellDp < 30) cellDp = 30;   // 최소 셀 높이(날짜+1줄) — 작은 위젯도 전체 주 표시
                 cellMinPx = Math.round(cellDp * density);
-                // 날짜 숫자(~18dp) 뺀 나머지를 이벤트 줄(~12dp)로 → 셀 클수록 일정 더 노출
-                int lanes = (cellDp - 18) / 12;
-                laneCap = Math.max(2, Math.min(MAX_LANE_VIEWS, lanes));
+                cellDpForLanes = cellDp;
             }
-        } catch (Throwable t) { laneCap = 2; cellMinPx = 0; }
+        } catch (Throwable t) { laneCap = 2; cellMinPx = 0; cellDpForLanes = 0; lineDp = 13; }
 
         String startKey = WidgetCommon.fmt(start);
         Calendar endCal = (Calendar) start.clone();
@@ -142,9 +145,6 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
                 cell.hlSides = WidgetCommon.hlSides(cell.hl, cell.key, cell.dow);
                 cell.hlStart = cell.key.equals(cell.hl.start);
             }
-            int[] ov = new int[]{0};
-            cell.bars = WidgetCommon.cellBars(runs, cell.key, cell.dow, laneCap, ov);
-            cell.overflow = ov[0];
             List<WidgetData.Todo> tl = byTodo.get(cell.key);
             if (tl != null) cell.todos = tl;
             cells.add(cell);
@@ -160,6 +160,24 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
         boolean[] rl = WidgetCommon.rowFlags(lab, rowHasHlLabel.length);
         System.arraycopy(rh, 0, rowHasHoliday, 0, rowHasHoliday.length);
         System.arraycopy(rl, 0, rowHasHlLabel, 0, rowHasHlLabel.length);
+
+        /* 표시 줄 수 확정 — 예전엔 날짜 숫자만 빼고 계산해서, 공휴일/강조 라벨이 있는 주(그 줄 7칸 전부가
+           한 줄을 비워둠)와 할일 줄까지 겹치면 칸이 위젯 높이를 넘어 마지막 주가 밀려났다. 이제 예약 줄과
+           할일 줄을 먼저 빼고 남는 만큼만 일정 줄로 쓴다(작은 위젯은 1줄까지 내려감). [2026-08-19] */
+        if (cellDpForLanes > 0) {
+            int maxReserve = 0;
+            for (int r = 0; r < rows; r++) {
+                int need = (rh[r] ? 1 : 0) + (rl[r] ? 1 : 0);
+                if (need > maxReserve) maxReserve = need;
+            }
+            int lines = WidgetCommon.laneBudget(cellDpForLanes, maxReserve, !byTodo.isEmpty(), lineDp);
+            laneCap = Math.max(1, Math.min(MAX_LANE_VIEWS, lines));
+        }
+        for (Cell c : cells) {
+            int[] ov = new int[]{0};
+            c.bars = WidgetCommon.cellBars(runs, c.key, c.dow, laneCap, ov);
+            c.overflow = ov[0];
+        }
     }
 
     @Override
