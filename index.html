@@ -21201,15 +21201,20 @@ const DH_THEMES=[
    colors:DH_STYLES},
   {key:'fill',  name:'파스텔 채움', desc:'제목 없이 색으로만 은은하게', render:'fill',
    colors:[
-     /* ⚠️ 처음엔 참고 사진의 아주 옅은 색을 그대로 썼는데, 우리 앱 배경이 크림색(#f3e6cf)이라
-        거의 안 보였음 → 같은 계열을 유지하되 채도를 올려 배경에서 확실히 떠 보이게. [2026-08-19]
-        (전부 밝아서 날짜 숫자는 그대로 어두운 글자 — '진한 채움'과 구분됨) */
-     {key:'green',    name:'민트그린', hex:'#a8e6b8'},
-     {key:'rose',     name:'로즈',     hex:'#f8b4bd'},
-     {key:'peach',    name:'피치',     hex:'#ffc99a'},
-     {key:'lavender', name:'라벤더',   hex:'#c3b8f0'},
-     {key:'butter',   name:'버터',     hex:'#ffe27a'},
-     {key:'aqua',     name:'아쿠아',   hex:'#9fdcea'},
+     /* ⚠️ 색 세기 조정 이력 — 두 번의 실기기 피드백 사이 균형점. [2026-08-19]
+          1) 참고 사진의 아주 옅은 색 그대로 → 크림 배경(#f3e6cf)과 붙어 "잘 안 보임"
+          2) 채도를 크게 올림 → "좀 쨍함"
+          3) 지금: 색조는 그대로 두고 명도를 올려 훨씬 밝고 연하게.
+             크림 배경과의 색차(CIELAB ΔE)를 20 안팎으로 맞춤 — 안 보였던 1)이 평균 12,
+             쨍했던 2)가 평균 33이라 그 중간. 따뜻한 색(피치·버터)은 크림과 색조가 가까워
+             더 밝게 하면 배경에 묻히므로 상대적으로 덜 밝다(물리적 한계).
+          전부 밝은 색이라 날짜 숫자는 그대로 어두운 글자 — '진한 채움'과 구분됨. */
+     {key:'green',    name:'민트그린', hex:'#cef8d9'},
+     {key:'rose',     name:'로즈',     hex:'#fbcbd2'},
+     {key:'peach',    name:'피치',     hex:'#ffcda1'},
+     {key:'lavender', name:'라벤더',   hex:'#dbd5f0'},
+     {key:'butter',   name:'버터',     hex:'#feedae'},
+     {key:'aqua',     name:'아쿠아',   hex:'#d3edf3'},
    ]},
   {key:'deep',  name:'진한 채움', desc:'제목 없이 진한 색으로 확실하게', render:'deep',
    colors:[
