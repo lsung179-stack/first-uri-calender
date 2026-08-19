@@ -18423,7 +18423,7 @@ function preloadStoreAssets(){
     if(typeof ANIMAL_STICKER!=='undefined'){ for(var k in ANIMAL_STICKER){ if(ANIMAL_STICKER[k])urls.push(ANIMAL_STICKER[k]); } }
     if(typeof FRUIT_HERO_IMG!=='undefined'&&FRUIT_HERO_IMG)urls.push(FRUIT_HERO_IMG);
     if(typeof EMOJI_HERO_IMG!=='undefined'&&EMOJI_HERO_IMG)urls.push(EMOJI_HERO_IMG);
-    if(typeof SEAL_HERO_IMG!=='undefined'&&SEAL_HERO_IMG)urls.push(SEAL_HERO_IMG);
+    // (SEAL_HERO_IMG는 테마 탭 히어로 제거로 더 이상 화면에 안 뜸 → 프리로드 제외) [2026-08-19]
     if(typeof MONO_HERO_IMG!=='undefined'&&MONO_HERO_IMG)urls.push(MONO_HERO_IMG);
     if(typeof SEAL_SETS!=='undefined'){ for(var sk in SEAL_SETS){ if(SEAL_SETS[sk]&&SEAL_SETS[sk].img)urls.push(SEAL_SETS[sk].img); } }
     if(typeof CARD_SKINS!=='undefined'){ for(var ck in CARD_SKINS){ var cs=CARD_SKINS[ck]; if(!cs)continue; ['img','char','scene'].forEach(function(f){ if(cs[f])urls.push(cs[f]); }); } }
@@ -20799,12 +20799,6 @@ function renderStoreThemes(){
     <div class="sfh-eyebrow">NEW &middot; BLACK &amp; WHITE</div>
     <div class="sfh-title">심플 블랙&amp;화이트</div>
     <div class="sfh-desc">흰 바탕에 손그림 한 줄 &mdash; 군더더기 없는 새 테마</div>
-  </div>`;
-  html+=`<div class="store-fruit-hero seal-hero-lux" style="background-image:url('${SEAL_HERO_IMG}')" onclick="onStoreSealClick()">
-    <div class="sfh-eyebrow">PREMIUM · PROFILE + THEME</div>
-    <div class="sfh-title">방마다 꾸미는<br>프로필 · 테마 세트</div>
-    <div class="sfh-desc">세트 하나로 프로필·카드·앱 색까지 — 프리미엄 전용</div>
-    <span class="ssh-cta">꾸미러 가기 ›</span>
   </div>`;
   html+='<div class="store-section-title">프로필 · 테마 <small>PREMIUM SET</small></div>';
   SEAL_SET_ORDER.forEach(function(k){
