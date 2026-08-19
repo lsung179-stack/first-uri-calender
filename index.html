@@ -4291,7 +4291,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
         <div class="mo-title" id="dhCardTitle">날짜 강조 추가</div>
         <div class="mo-sub" id="dhCardSub">한 번 만들면 방 멤버 모두에게 보여요</div>
       </div>
-      <button type="button" class="ev-topbar-save" onclick="saveDateHighlight()">저장</button>
+      <button type="button" class="ev-topbar-save" id="dhSaveBtnTop" onclick="saveDateHighlight()">저장</button>
     </div>
   </div>
   <div class="ev-form-row" id="dhTitleRow">
@@ -4332,7 +4332,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     </div>
   </div>
   <div class="mo-actions">
-    <button class="btn btn-primary" onclick="saveDateHighlight()">저장</button>
+    <button class="btn btn-primary" id="dhSaveBtn" onclick="saveDateHighlight()">저장</button>
     <button class="mo-cancel" onclick="closeDhCard()">취소</button>
   </div>
 </div>
@@ -21679,7 +21679,18 @@ function syncDhRangeBoxes(){
       : (_dhStart?(_dhEnd?`${_dayCountBetween(_dhStart,_dhEnd)}일간`:`${_fmtMD(_dhStart)} 하루 · 기간으로 하려면 위 "종료일"을 탭하세요`):'날짜를 탭하면 그 하루가 강조돼요');
   }
 }
+/* 저장 진행 중 플래그 — 저장 버튼이 한 번의 탭에 두 번 발화하거나 사용자가 빠르게 두 번
+   누르면 insert가 두 번 나가 '강조가 2개씩 생기는' 문제가 있었다(실기기 제보, DB상 64ms 간격).
+   원인을 한 곳으로 특정하지 못해, 어떤 경로로 두 번 불려도 무해하도록 재진입 자체를 막는다. [2026-08-19] */
+let _dhSaving=false;
+function _dhSetSaveDisabled(on){
+  ['dhSaveBtn','dhSaveBtnTop'].forEach(function(id){
+    const b=document.getElementById(id);
+    if(b){ b.disabled=!!on; b.style.opacity=on?'.55':''; }
+  });
+}
 async function saveDateHighlight(){
+  if(_dhSaving)return;                 // 저장 중 재진입 차단
   if(!_currentRoom)return;
   const hasLabel=_dhThemeHasLabel(_dhSelTheme);
   const title=hasLabel?(document.getElementById('dhTitleInput')?.value||'').trim():'';
@@ -21687,6 +21698,17 @@ async function saveDateHighlight(){
   if(!_dhStart){toast('시작일을 선택해주세요');return;}
   const endD=_dhEnd||_dhStart;
   const editing=_dhEditId;
+  // 완전히 같은 강조(테마·색·기간·제목)가 이미 있으면 새로 만들지 않는다.
+  // 같은 날에 겹치면 어차피 하나만 렌더되므로(_dhForDate) 중복 행은 쓸모가 없고,
+  // 사용자가 "안 만들어졌나?" 하고 다시 만든 경우도 여기서 걸러진다.
+  if(!editing){
+    const dup=(_dateHighlights||[]).find(function(h){
+      return _dhThemeKeyOf(h)===_dhSelTheme && h.style_key===_dhSelStyle
+          && h.start_date===_dhStart && h.end_date===endD && (h.title||'')===title;
+    });
+    if(dup){ closeDhCard(); toast('같은 강조가 이미 있어요'); return; }
+  }
+  _dhSaving=true; _dhSetSaveDisabled(true);
   try{
     if(editing){
       const {error}=await supa.from('date_highlights').update({
@@ -21708,6 +21730,8 @@ async function saveDateHighlight(){
   }catch(e){
     console.error(e);
     toast('저장에 실패했어요');
+  }finally{
+    _dhSaving=false; _dhSetSaveDisabled(false);
   }
 }
 async function deleteDateHighlight(id){
