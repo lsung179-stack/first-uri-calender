@@ -22017,9 +22017,8 @@ function renderDhManageList(){
     : '<div class="dhm-empty">이 날짜엔 아직 강조가 없어요</div>';
   // 목록이 길어지면 시트가 끝없이 늘어나므로 5개만 보여주고, 나머지는 섹션 제목 오른쪽
   // '자세히 보기' 텍스트 버튼으로(전체 보기 시트에서 다른 방 강조까지 함께 확인). [2026-08-19]
+  // 버튼 라벨은 마크업에 고정 — 남은 개수(+N) 표기는 사용자 요청으로 뺐다.
   const DHM_MAX=5;
-  const moreBtn=document.getElementById('dhmMoreBtn');
-  if(moreBtn)moreBtn.textContent=(others.length>DHM_MAX)?`자세히 보기 (+${others.length-DHM_MAX}) ›`:'자세히 보기 ›';
   // 이 방에 다른 강조가 없어도 섹션은 남긴다 — 다른 방 강조를 볼 진입점(자세히 보기)이 사라지지 않게
   otherList.innerHTML=others.length
     ? others.slice(0,DHM_MAX).map(_dhmItemHTML).join('')
