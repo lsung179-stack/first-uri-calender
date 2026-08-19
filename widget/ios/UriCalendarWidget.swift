@@ -795,7 +795,8 @@ struct DayCell: View {
                     RoundedRectangle(cornerRadius: 1)
                         .fill(b.outline ? Color(hexStr: b.color) : contrastText(b.color))
                         .frame(width: 2.5, height: barH * 0.52)
-                        .padding(.leading, roundL ? 3 : 1)
+                        // 왼쪽 여백은 조금 더, 제목과의 간격은 더 좁게(안드로이드와 동일 조정). [2026-08-19]
+                        .padding(.leading, roundL ? 4 : 2)
                 }
             }
             // 양끝(둥근 쪽)에만 1pt 바깥 여백 — 안드로이드 1dp inset과 육안 동일. 기간 중간은 0(연속 유지).

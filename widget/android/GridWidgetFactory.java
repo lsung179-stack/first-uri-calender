@@ -154,6 +154,9 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
         // 위젯 높이에 맞춘 셀 최소 높이 → GridView 행이 위젯을 꽉 채움(하단 여백 제거)
         if (cellMinPx > 0) rv.setInt(id("cell_root", "id"), "setMinimumHeight", cellMinPx);
 
+        // ⚠️ 시스템 글자 크기 배율이 크면 sp 글자가 17dp 박스를 넘쳐 두 자리 날짜가 "1"만 보이던 문제
+        //    (실기기 제보 2026-08-19) → 날짜만 dp로 고정해 배율과 무관하게 항상 들어가게 한다.
+        rv.setTextViewTextSize(id("cell_day", "id"), android.util.TypedValue.COMPLEX_UNIT_DIP, 11f);
         rv.setTextViewText(id("cell_day", "id"), String.valueOf(cell.day));
         if (cell.isToday) {
             // 오늘 = 채운 원 + 흰 숫자 (iOS 파리티)
@@ -213,6 +216,13 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
         if (cell.holiday != null) {
             rv.setViewVisibility(id("cell_holiday", "id"), android.view.View.VISIBLE);
             rv.setTextViewText(id("cell_holiday", "id"), cell.holiday);
+            // 공휴일 바만 각진 직사각형이라 다른 일정 바와 이질감이 있었음 → 같은 둥근 칩으로 통일
+            // (칩 드로어블은 틴트가 필요해 API 31+ 전용, 그 미만은 레이아웃의 평면 색 폴백)
+            if (android.os.Build.VERSION.SDK_INT >= 31) {
+                rv.setInt(id("cell_holiday", "id"), "setBackgroundResource", id("ev_chip_single", "drawable"));
+                rv.setColorStateList(id("cell_holiday", "id"), "setBackgroundTintList",
+                    android.content.res.ColorStateList.valueOf(0xFFC0503F));
+            }
         } else {
             rv.setViewVisibility(id("cell_holiday", "id"), android.view.View.GONE);
         }
@@ -225,7 +235,9 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
                 boolean showMark = b.shared && !b.contLeft;   // 함께 일정: 시작 칸 왼쪽에 얇은 띠(▎, 텍스트색=대비색)
                 rv.setViewVisibility(evViews[s], android.view.View.VISIBLE);
                 String _bt = showTitle ? (b.title == null ? "" : b.title) : " ";
-                if (showMark) _bt = "▎ " + _bt;
+                // 함께 일정 띠: 왼쪽에 얇은 여백(thin space)을 주고, 띠와 제목 사이는 더 좁게(hair space).
+                // 실기기 피드백 — 띠가 왼쪽 끝에 너무 붙고 제목과는 너무 벌어져 보였음. [2026-08-19]
+                if (showMark) _bt = "\u2009▎\u200A" + _bt;
                 rv.setTextViewText(evViews[s], _bt);
                 if (b.outline) {
                     rv.setInt(evViews[s], "setBackgroundColor", 0x00000000);
