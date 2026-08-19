@@ -302,6 +302,18 @@ public class WidgetCommon {
             dow == 6 || !hlIn(h, addDays(key, 1))
         };
     }
+    /* 칸별 플래그(42칸)를 줄(7칸)별로 접는다 — 한 줄에 하나라도 true면 그 줄 전체 true.
+       공휴일·강조 라벨이 특정 칸에만 있으면 그 칸의 일정 바만 밀려 기간 바가 끊겨 보이므로,
+       같은 줄 전체에 같은 높이를 예약하는 데 쓴다. [2026-08-19] */
+    static boolean[] rowFlags(boolean[] perCell, int rows) {
+        boolean[] out = new boolean[rows];
+        if (perCell == null) return out;
+        for (int i = 0; i < perCell.length; i++) {
+            int r = i / 7;
+            if (r < rows && perCell[i]) out[r] = true;
+        }
+        return out;
+    }
     static boolean hlIn(WidgetData.Highlight h, String key) {
         return key.compareTo(h.start) >= 0 && key.compareTo(h.end) <= 0;
     }

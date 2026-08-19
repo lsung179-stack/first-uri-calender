@@ -30,6 +30,12 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
     private int laneCap = 2;    // 위젯 높이에 맞춰 산정되는 셀당 표시 줄 수(여백만큼 일정 더 노출)
     private int cellMinPx = 0;  // 셀 최소 높이(px) — 0이면 미적용(기존 동작)
     private String roomId = null; // 셀 탭 딥링크(://open?room=&date=)용
+    // 공휴일·강조 라벨은 그 칸에만 있으면 그 칸의 일정 바만 한 줄 아래로 밀려서,
+    // 여러 날 기간 바가 그 날만 어긋나 '끊겨' 보인다(실기기 제보 2026-08-19).
+    // → 같은 주(가로 한 줄)에 하나라도 있으면 그 줄 7칸 전부에 같은 높이를 예약한다.
+    //   (앱도 같은 이유로 공휴일 라벨을 고정 높이로 항상 자리 잡아둠 — CLAUDE.md 코드 38)
+    private final boolean[] rowHasHoliday = new boolean[6];
+    private final boolean[] rowHasHlLabel = new boolean[6];
     private Map<String,String> holidays = new HashMap<>(); // 빨간날(공휴일) 'YYYY-MM-DD'→이름
 
     GridWidgetFactory(Context c, int kind) { this.ctx = c; this.kind = kind; }
@@ -143,6 +149,17 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
             if (tl != null) cell.todos = tl;
             cells.add(cell);
         }
+        // 줄별 예약 여부 계산 (칸별 플래그 → 줄 단위로 접기; 계산은 WidgetCommon.rowFlags에서 검증)
+        boolean[] hol = new boolean[cells.size()], lab = new boolean[cells.size()];
+        for (int i = 0; i < cells.size(); i++) {
+            Cell c = cells.get(i);
+            hol[i] = (c.holiday != null);
+            lab[i] = (c.hlStart && c.hl != null && c.hl.label && c.hl.title != null && !c.hl.title.isEmpty());
+        }
+        boolean[] rh = WidgetCommon.rowFlags(hol, rowHasHoliday.length);
+        boolean[] rl = WidgetCommon.rowFlags(lab, rowHasHlLabel.length);
+        System.arraycopy(rh, 0, rowHasHoliday, 0, rowHasHoliday.length);
+        System.arraycopy(rl, 0, rowHasHlLabel, 0, rowHasHlLabel.length);
     }
 
     @Override
@@ -209,7 +226,11 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
             rv.setInt(id("cell_hl_label", "id"), "setBackgroundColor", cell.hl.color);
             rv.setTextColor(id("cell_hl_label", "id"), cell.hl.ink);
         } else {
-            rv.setViewVisibility(id("cell_hl_label", "id"), android.view.View.GONE);
+            // 같은 줄에 라벨이 하나라도 있으면 자리만 비워둔다(INVISIBLE) → 일정 바 시작 높이가 줄 전체에서 동일
+            final int _row = position / 7;
+            final boolean _res = (_row < rowHasHlLabel.length) && rowHasHlLabel[_row];
+            rv.setTextViewText(id("cell_hl_label", "id"), "");
+            rv.setViewVisibility(id("cell_hl_label", "id"), _res ? android.view.View.INVISIBLE : android.view.View.GONE);
         }
 
         // 빨간날(공휴일) 바 — 앱은 텍스트 라벨만, 위젯은 빨간 바로 자동 표시
@@ -224,7 +245,11 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
                     android.content.res.ColorStateList.valueOf(0xFFC0503F));
             }
         } else {
-            rv.setViewVisibility(id("cell_holiday", "id"), android.view.View.GONE);
+            // 같은 줄에 공휴일이 있으면 자리만 비워둔다 → 기간 바가 공휴일 칸에서 끊겨 보이지 않음
+            final int _row2 = position / 7;
+            final boolean _res2 = (_row2 < rowHasHoliday.length) && rowHasHoliday[_row2];
+            rv.setTextViewText(id("cell_holiday", "id"), "");
+            rv.setViewVisibility(id("cell_holiday", "id"), _res2 ? android.view.View.INVISIBLE : android.view.View.GONE);
         }
 
         int[] evViews = { id("cell_ev1", "id"), id("cell_ev2", "id"), id("cell_ev3", "id"), id("cell_ev4", "id"), id("cell_ev5", "id") };

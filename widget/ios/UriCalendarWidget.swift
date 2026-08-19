@@ -715,6 +715,13 @@ struct GridView: View {
             // 주(week)별 행을 maxHeight 무한으로 균등 분배 → 위젯 높이를 정확히 채워 '아래 잘림' 방지
             VStack(spacing: 2) {
                 ForEach(0..<rowCount, id: \.self) { w in
+                    // 이 줄(주)에 공휴일/강조 라벨이 하나라도 있으면 7칸 모두 그 높이를 비워둔다
+                    let rowDates = (0..<7).map { cal.date(byAdding: .day, value: w*7 + $0, to: startDate)! }
+                    let resHoliday = rowDates.contains { holidays[fmt($0)] != nil }
+                    let resLabel = rowDates.contains { rd in
+                        let k = fmt(rd); let h = hlFor(room, k)
+                        return h != nil && h!.lb && !h!.t.isEmpty && h!.s == k
+                    }
                     HStack(spacing: 0) {
                         ForEach(0..<7, id: \.self) { c in
                             let d = cal.date(byAdding: .day, value: w*7 + c, to: startDate)!
@@ -728,7 +735,8 @@ struct GridView: View {
                                     rightLine: gridV && c < 6, bottomLine: gridH && w < rowCount - 1,
                                     holiday: holidays[fmt(d)],
                                     todos: dTodos, maxTodos: weeks == 2 ? max(0, 3 - usedLanes) : 1, dense: rowCount >= 6 || weeks == 2,
-                                    hl: dHl, hlStart: dHl?.s == dKey)
+                                    hl: dHl, hlStart: dHl?.s == dKey,
+                                    holidayReserve: resHoliday, hlLabelReserve: resLabel)
                         }
                     }.frame(maxHeight: .infinity)
                 }
@@ -756,6 +764,10 @@ struct DayCell: View {
     var dense: Bool = false           // 6주 달 등 칸이 짧을 때 숫자/바를 살짝 줄여 2개 일정 확보
     var hl: WGHighlight? = nil        // 날짜 강조 — 격자선 기준 테두리/채움 + 시작일 라벨(앱과 동일)
     var hlStart: Bool = false         // 이 칸이 강조의 진짜 시작일인지(라벨은 여기에만)
+    // 공휴일·강조 라벨이 그 칸에만 있으면 그 칸의 일정 바만 한 줄 밀려 기간 바가 끊겨 보인다.
+    // → 같은 주에 하나라도 있으면 나머지 칸도 같은 높이를 비워둔다(안드로이드와 동일 규칙). [2026-08-19]
+    var holidayReserve: Bool = false
+    var hlLabelReserve: Bool = false
     private var numBox: CGFloat { dense ? 16 : 18 }
     private var barH: CGFloat { dense ? 10.5 : 12 }
     private var totalOverflow: Int { overflow + max(0, todos.count - maxTodos) }   // 이벤트+할일 넘침 합산
@@ -838,6 +850,8 @@ struct DayCell: View {
                         .frame(maxWidth: .infinity, minHeight: barH, alignment: .leading)
                         .background(RoundedRectangle(cornerRadius: 3).fill(Color(hexStr: h.c)))
                         .padding(.leading, 1).padding(.trailing, 1)
+                } else if hlLabelReserve {
+                    Color.clear.frame(height: barH)      // 같은 주 칸들과 일정 바 시작 높이를 맞춤
                 }
                 if let hn = holiday {   // 빨간날: 이름을 빨간 바로 자동 표시(앱은 텍스트만 → 위젯은 바)
                     Text(hn).font(.system(size: 8.5, weight: .bold))
@@ -846,6 +860,8 @@ struct DayCell: View {
                         .frame(maxWidth: .infinity, minHeight: barH, alignment: .leading)
                         .background(RoundedRectangle(cornerRadius: 3).fill(Color.sunRed))
                         .padding(.leading, 1).padding(.trailing, 1)
+                } else if holidayReserve {
+                    Color.clear.frame(height: barH)      // 공휴일 칸에서 기간 바가 끊겨 보이지 않게 자리만 확보
                 }
                 ForEach(0..<slots.count, id: \.self) { idx in
                     if let b = slots[idx] { barView(b) } else { Color.clear.frame(height: barH) }   // 빈 줄도 높이 유지 → 줄 정렬
