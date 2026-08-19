@@ -2460,8 +2460,9 @@ body.ff-jua{letter-spacing:-.2px}
 .dhm-acts .dp-btn{padding:8px 12px;font-size:12.5px;min-height:34px}
 .dhm-multi{color:var(--accent);font-weight:700}
 .dhm-empty{text-align:center;color:var(--sub);font-size:12.5px;padding:18px 0;background:#fdf6e8;border:1px dashed var(--borderL);border-radius:12px}
-.dhm-more{width:100%;padding:11px;margin-top:8px;background:transparent;color:var(--accent);border:1px dashed var(--border);border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
-.dhm-more:active{background:var(--aP)}
+.dhm-sec-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.dhm-seclink{background:none;border:none;padding:2px 0 2px 8px;color:var(--accent);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;letter-spacing:0;white-space:nowrap}
+.dhm-seclink:active{opacity:.6}
 /* 전체 보기 시트 — 관리 시트(1380/1381) 위, 추가 시트(1400/1401) 아래 */
 #dhAllOverlay{z-index:1390}
 #dhAllCard{z-index:1391;max-height:82vh;overflow-y:auto}
@@ -4284,7 +4285,10 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
   <div id="dhmPanelDh">
     <div class="dhm-sec" id="dhmThisSec">이 날짜의 강조</div>
     <div class="dhm-list" id="dhmThisList"></div>
-    <div class="dhm-sec" id="dhmOtherSec">이 방의 다른 강조</div>
+    <div class="dhm-sec dhm-sec-row" id="dhmOtherSec">
+      <span>이 방의 다른 강조</span>
+      <button type="button" class="dhm-seclink" id="dhmMoreBtn" onclick="openDhAll()">자세히 보기 ›</button>
+    </div>
     <div class="dhm-list" id="dhmOtherList"></div>
     <button type="button" class="dhm-add" onclick="openDhFromManage()">+ 날짜 강조 추가</button>
   </div>
@@ -22011,18 +22015,15 @@ function renderDhManageList(){
   thisList.innerHTML=onDate.length
     ? onDate.map(_dhmItemHTML).join('')
     : '<div class="dhm-empty">이 날짜엔 아직 강조가 없어요</div>';
-  const otherSec=document.getElementById('dhmOtherSec');
-  if(otherSec)otherSec.style.display=others.length?'':'none';
-  // 목록이 길어지면 시트가 끝없이 늘어나므로 5개만 보여주고 나머지는 '자세히 보기'로. [2026-08-19]
+  // 목록이 길어지면 시트가 끝없이 늘어나므로 5개만 보여주고, 나머지는 섹션 제목 오른쪽
+  // '자세히 보기' 텍스트 버튼으로(전체 보기 시트에서 다른 방 강조까지 함께 확인). [2026-08-19]
   const DHM_MAX=5;
-  const shown=others.slice(0,DHM_MAX);
-  let html=shown.map(_dhmItemHTML).join('');
-  if(others.length>DHM_MAX){
-    html+=`<button type="button" class="dhm-more" onclick="openDhAll()">자세히 보기 (+${others.length-DHM_MAX}) ›</button>`;
-  }else if(others.length){
-    html+=`<button type="button" class="dhm-more" onclick="openDhAll()">다른 방 강조도 보기 ›</button>`;
-  }
-  otherList.innerHTML=html;
+  const moreBtn=document.getElementById('dhmMoreBtn');
+  if(moreBtn)moreBtn.textContent=(others.length>DHM_MAX)?`자세히 보기 (+${others.length-DHM_MAX}) ›`:'자세히 보기 ›';
+  // 이 방에 다른 강조가 없어도 섹션은 남긴다 — 다른 방 강조를 볼 진입점(자세히 보기)이 사라지지 않게
+  otherList.innerHTML=others.length
+    ? others.slice(0,DHM_MAX).map(_dhmItemHTML).join('')
+    : '<div class="dhm-empty">이 방엔 다른 강조가 없어요</div>';
 }
 /* ── 전체 보기: 내가 속한 모든 방의 강조를 방별로 ──────────────────
    관리 시트는 현재 방만 다루지만(_dateHighlights), 여기선 내 모든 방을 한 번에 조회한다. */
@@ -22031,9 +22032,14 @@ let _dhAllRows=[];
 function _dhFindRow(id){
   return (_dateHighlights||[]).find(x=>x.id===id) || (_dhAllRows||[]).find(x=>x.id===id) || null;
 }
+let _dhAllFromManage=false;   // 전체 보기를 관리 시트에서 열었는지(닫을 때 되돌리려고)
 async function openDhAll(){
   const ids=(_myRooms||[]).map(r=>r.id);
   if(!ids.length){toast('방에 먼저 들어가 주세요');return;}
+  // 관리 시트가 열려 있으면 감춰 둔다 — 시트가 두 장 겹쳐 보이지 않게(닫으면 그대로 복귀)
+  const mo=document.getElementById('dhManageOverlay'), mc=document.getElementById('dhManageCard');
+  _dhAllFromManage=!!(mc&&mc.classList.contains('on'));
+  if(_dhAllFromManage){ mc.classList.remove('on'); if(mo)mo.classList.remove('on'); }
   const ov=document.getElementById('dhAllOverlay'), cd=document.getElementById('dhAllCard');
   const body=document.getElementById('dhAllBody');
   if(body)body.innerHTML='<div class="dhm-empty">불러오는 중…</div>';
@@ -22048,6 +22054,13 @@ async function openDhAll(){
 function closeDhAll(){
   const ov=document.getElementById('dhAllOverlay'), cd=document.getElementById('dhAllCard');
   if(ov)ov.classList.remove('on'); if(cd)cd.classList.remove('on');
+  // 관리 시트에서 왔으면 다시 띄우고 목록도 갱신(전체 보기에서 복사·삭제했을 수 있음)
+  if(_dhAllFromManage){
+    _dhAllFromManage=false;
+    const mo=document.getElementById('dhManageOverlay'), mc=document.getElementById('dhManageCard');
+    if(mc)mc.classList.add('on'); if(mo)mo.classList.add('on');
+    try{ renderDhManageList(); }catch(_){}
+  }
 }
 function renderDhAllList(){
   const body=document.getElementById('dhAllBody');
