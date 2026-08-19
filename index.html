@@ -6019,29 +6019,30 @@ async function unregisterPushNotification(){
 /* (V1.2에서 프로필 시트 푸시 토글 UI 제거됨 — 자동 등록 방식으로 전환.
    togglePushNotification / syncPushButton / sendTestPush 함수는 호출처가 없어 dead code였음. 청소됨) */
 
-/* ═══════════ 네이티브(Capacitor) FCM 푸시 ═══════════
+/* ═══════════ 네이티브(Capacitor) 푸시 ═══════════
    네이티브 앱(WKWebView/WebView)은 웹푸시(PushManager)를 지원하지 않는다.
-   → 안드로이드는 @capacitor/push-notifications(FCM), iOS는 @capacitor-firebase/messaging
-     (APNs 토큰을 Firebase가 FCM 토큰으로 변환)으로 각각 토큰을 받아 fcm_tokens 테이블에 저장하고,
-     send-push Edge Function이 그 토큰으로 FCM v1 발송한다. (웹/PWA는 기존 웹푸시 경로 그대로)
-   ⚠️ 2026-08-11까지: iOS도 isAndroidNative() 가드 때문에 웹푸시 경로로 빠져 WKWebView가
-      PushManager를 지원 안 해 알림 자체가 불가능했음(실기기 확인). isNativeApp()으로 라우팅
-      수정 + iOS 전용 FirebaseMessaging 플러그인 연동으로 실제 전달까지 완성. */
+   → 안드로이드·iOS 모두 @capacitor/push-notifications 로 기기 토큰을 받아 fcm_tokens 테이블에
+     저장하고(platform 컬럼으로 구분), 서버가 플랫폼별로 보낸다:
+       android → FCM v1,  ios → APNs(api.push.apple.com)로 직접 발송.
+     (웹/PWA는 기존 웹푸시 경로 그대로)
+   ⚠️ 2026-08-11까지: iOS가 isAndroidNative() 가드 때문에 웹푸시 경로로 빠져, WKWehView가
+      PushManager를 지원하지 않아 알림 자체가 불가능했음(실기기 확인) → isNativeApp()으로 수정.
+   ⚠️ 2026-08-19: 그 뒤 iOS만 @capacitor-firebase/messaging(APNs→FCM 변환)으로 붙이려 했으나,
+      그 경로는 Firebase 콘솔에 iOS 앱 등록 + APNs 키 업로드가 선행돼야 해서 계속 막혀 있었다.
+      → Firebase를 거치지 않고 **서버가 APNs로 직접 보내도록** 바꿨다(콘솔 작업 불필요).
+      iOS도 안드로이드와 똑같이 PushNotifications 플러그인을 쓰고, 여기서 받는 토큰은
+      '원본 APNs 디바이스 토큰'(16진수)이다. */
 let _nativePushToken=null;
 let _nativePushListenersReady=false;
 
 function _nativePlatform(){
   try{return (window.Capacitor&&window.Capacitor.getPlatform&&window.Capacitor.getPlatform())||'android';}catch(_){return 'android';}
 }
-/* 플랫폼별 네이티브 푸시 플러그인 — 안드로이드=PushNotifications(FCM 직접),
-   iOS=FirebaseMessaging(APNs 토큰을 Firebase가 FCM 토큰으로 변환, GoogleService-Info.plist 필요). */
+/* 네이티브 푸시 플러그인 — iOS·Android 공통으로 @capacitor/push-notifications 사용.
+   안드로이드는 FCM 등록 토큰을, iOS는 원본 APNs 디바이스 토큰을 준다(서버가 platform으로 구분). */
 function _getPushPlugin(){
-  try{
-    if(_nativePlatform()==='ios'){
-      return (window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.FirebaseMessaging)||null;
-    }
-    return (window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.PushNotifications)||null;
-  }catch(_){return null;}
+  try{ return (window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.PushNotifications)||null; }
+  catch(_){return null;}
 }
 /* ⚠️ 레거시 이름 유지(과거 '안드로이드만 네이티브 푸시' 가정 시절의 함수명) — 실제로는
    이제 iOS도 네이티브 경로를 타므로 isNativeApp()과 동일하게 동작. 호출부는 전부
@@ -6050,7 +6051,8 @@ function isAndroidNative(){
   try{return isNativeApp()&&_nativePlatform()==='android';}catch(_){return false;}
 }
 
-/* 현재 기기 FCM 토큰을 DB에 저장 + 같은 user_id의 옛 토큰 정리 */
+/* 현재 기기의 푸시 토큰을 DB에 저장 + 같은 user_id의 옛 토큰 정리.
+   platform 컬럼('ios'|'android')으로 서버가 APNs/FCM 중 어디로 보낼지 고른다. */
 async function _saveFcmToken(token){
   try{
     if(!token||!_currentUser)return;
@@ -6068,25 +6070,18 @@ async function _saveFcmToken(token){
   }catch(e){console.warn('FCM 토큰 처리 실패:',e);}
 }
 
-/* 네이티브 푸시 리스너 1회 등록 (토큰 수신 → 저장, 알림 탭 → 딥링크 이동) */
-/* 리스너 이벤트 이름이 플랫폼별 플러그인마다 달라 분기.
-   Android(PushNotifications): registration / registrationError / pushNotificationActionPerformed / pushNotificationReceived
-   iOS(FirebaseMessaging):     tokenReceived / notificationActionPerformed / notificationReceived [2026-08-11] */
+/* 네이티브 푸시 리스너 1회 등록 (토큰 수신 → 저장, 알림 탭 → 딥링크 이동).
+   iOS·Android 모두 같은 플러그인이라 이벤트 이름도 동일하다. [2026-08-19] */
 function _setupNativePushListeners(){
   if(_nativePushListenersReady)return;
   const PN=_getPushPlugin();
   if(!PN)return;
   _nativePushListenersReady=true;
-  const isIos=(_nativePlatform()==='ios');
   try{
-    if(isIos){
-      PN.addListener('tokenReceived',(t)=>{ _saveFcmToken(t&&t.token); });
-    }else{
-      PN.addListener('registration',(t)=>{ _saveFcmToken(t&&t.value); });
-      PN.addListener('registrationError',(e)=>{ console.warn('FCM 등록 오류:',e); });
-    }
+    PN.addListener('registration',(t)=>{ _saveFcmToken(t&&t.value); });
+    PN.addListener('registrationError',(e)=>{ console.warn('푸시 등록 오류:',e); });
     // 알림 탭 → data.url로 이동 (send-push가 /?room=..&date=.. 형태로 넣어줌)
-    PN.addListener(isIos?'notificationActionPerformed':'pushNotificationActionPerformed',(a)=>{
+    PN.addListener('pushNotificationActionPerformed',(a)=>{
       try{
         const url=a&&a.notification&&a.notification.data&&a.notification.data.url;
         if(url&&typeof url==='string'&&url.charAt(0)==='/'){ location.assign(url); }
@@ -6094,7 +6089,7 @@ function _setupNativePushListeners(){
     });
     // 앱이 켜져 있을 때(포그라운드) 도착한 알림 — 트레이에 자동 표시하지 않는 플랫폼이 있어
     // 화면에 토스트로 직접 안내한다. (앱이 닫혀 있으면 이 리스너는 안 타고 시스템이 트레이에 표시)
-    PN.addListener(isIos?'notificationReceived':'pushNotificationReceived',(n)=>{
+    PN.addListener('pushNotificationReceived',(n)=>{
       try{
         const t=(n&&n.title)||(n&&n.notification&&n.notification.title)||'';
         const b=(n&&n.body)||(n&&n.notification&&n.notification.body)||'';
@@ -6136,9 +6131,7 @@ async function _ensurePushChannel(){
 
 /* 네이티브 푸시 등록 (권한 요청 + 토큰 등록). 반환: 권한 granted 성공 여부.
    Android 13+ 는 requestPermissions()가 POST_NOTIFICATIONS 시스템 팝업을 띄운다 → 설정 토글이 켜짐.
-   ⚠️ 토큰 발급 방식이 플랫폼별로 다름: Android(PushNotifications)는 register()→'registration'
-   이벤트로 비동기 수신, iOS(FirebaseMessaging)는 getToken()이 토큰을 직접 반환(요청·응답 1:1
-   — APNs 콜백을 기다리는 register() 패턴이 없음). [2026-08-11] */
+   iOS도 동일하게 register() → 'registration' 이벤트로 토큰(원본 APNs 토큰)을 받는다. [2026-08-19] */
 async function registerNativePush(silent){
   const PN=_getPushPlugin();
   if(!PN){ if(!silent)toast('이 앱 버전은 알림을 지원하지 않아요. 최신 버전으로 업데이트해 주세요'); return false; }
@@ -6154,12 +6147,7 @@ async function registerNativePush(silent){
       if(!silent)toast('휴대폰 설정 › 앱 › 우리 캘린더 › 알림에서 허용해 주세요');
       return false;
     }
-    if(_nativePlatform()==='ios'){
-      const res=await PN.getToken();   // {token:string} — Firebase가 APNs↔FCM 변환 완료된 토큰
-      if(res&&res.token) await _saveFcmToken(res.token);
-    }else{
-      await PN.register();  // → 'registration' 이벤트에서 토큰 저장
-    }
+    await PN.register();  // → 'registration' 이벤트에서 토큰 저장 (iOS=APNs 토큰, Android=FCM 토큰)
     if(!silent)toast('알림을 켰어요');
     return true;
   }catch(e){

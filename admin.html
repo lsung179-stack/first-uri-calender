@@ -724,7 +724,10 @@ async function sendAdminPush(){
     if(d.saPresent===false){
       html+='<div style="color:#c0392b;font-weight:700;margin-bottom:6px">⚠️ FCM 서비스계정 시크릿(FCM_SERVICE_ACCOUNT)이 서버에 설정되지 않았어요.<br>→ 이것이 안드로이드 미발송의 원인입니다. Supabase › Edge Functions › Secrets 에서 설정하세요.</div>';
     }
-    html+='<b>대상 '+(d.targetUsers??0)+'명</b> · 앱(FCM) <b>'+(d.fcmSent??0)+'/'+(d.fcmTotal??0)+'</b> 전송 · 웹 <b>'+(d.webSent??0)+'/'+(d.webTotal??0)+'</b> 전송';
+    if(d.apnsConfigured===false){
+      html+='<div style="color:#c0392b;font-weight:700;margin-bottom:6px">⚠️ iOS(APNs) 설정이 아직 없어요.<br>→ Supabase Vault 에 apns_key_id / apns_team_id / apns_bundle_id / apns_private_key 가 있어야 아이폰으로 발송됩니다.</div>';
+    }
+    html+='<b>대상 '+(d.targetUsers??0)+'명</b> · 안드로이드 <b>'+(d.fcmSent??0)+'/'+(d.fcmTotal??0)+'</b> · iOS <b>'+(d.apnsSent??0)+'/'+(d.apnsTotal??0)+'</b> · 웹 <b>'+(d.webSent??0)+'/'+(d.webTotal??0)+'</b> 전송';
     if(d.fcmTotal>0 && d.fcmSent===d.fcmTotal && d.saPresent!==false){
       html+='<div style="color:#2e7d32;margin-top:5px">✅ 서버→FCM 전송 성공. 그래도 폰에 안 뜨면 갤럭시 기기의 배터리 최적화/절전(앱 잠자기)·알림 권한을 확인하세요.</div>';
     }
