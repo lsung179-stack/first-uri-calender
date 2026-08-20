@@ -2394,18 +2394,34 @@ body.ff-jua{letter-spacing:-.2px}
 .dh-dots{display:flex;align-items:center;gap:3.5px;margin-top:7px}
 .dh-dot{width:9px;height:9px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.09)}
 .dh-dots-n{font-size:9.5px;font-weight:700;color:var(--sub);margin-left:4px;letter-spacing:.2px}
-/* 썸네일 — 날짜 한 칸에 테마 스타일을 입힌 것 하나만. 겹친 카드 3장은 산만해서 걷어냈다.
-   무엇을 사는지(= 날짜가 이렇게 표시된다) 바로 읽히고 목록도 깔끔하다. [2026-08-20] */
+/* 썸네일 — 테마 스타일을 입힌 날짜 한 칸을 '빛이 있는 종이 무대' 위에 얹는다.
+   평평한 크림 상자 안에 칸을 넣으니 빈 입력칸처럼 보여서, 무대(그라데이션+안쪽 하이라이트)와
+   떠 있는 오브제(그림자)로 나눴다. 무대에 깔리는 은은한 빛은 그 테마 자신의 색(--emb-wash)이라
+   여섯 줄이 한 세트로 보이면서도 각자 다른 색을 띤다. [2026-08-20] */
 .dh-row-th{background:transparent;padding:0}
-.dh-emb{position:relative;width:100%;height:100%;border-radius:14px;box-sizing:border-box;overflow:hidden;
-  background:linear-gradient(#fffdf8,#faf4e8);
-  border:1px solid rgba(120,108,92,.16);
-  display:flex;align-items:center;justify-content:center}
-.dh-emb-chip{position:relative;width:48px;height:42px;box-sizing:border-box;border-radius:8px;
-  display:flex;align-items:center;justify-content:center;margin-top:3px}
-.dh-emb-num{font-size:17px;font-weight:700;line-height:1;color:#5a4f44;position:relative;z-index:2}
-.dh-emb-num.on-dark{color:#fff}
-.dh-emb-tab{position:absolute;left:-1px;top:-8px;width:19px;height:9px;border-radius:3px 5px 0 0;display:block}
+.dh-emb{position:relative;width:100%;height:100%;border-radius:15px;box-sizing:border-box;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  background:
+    radial-gradient(66% 58% at 50% 56%, var(--emb-wash,transparent) 0%, transparent 72%),
+    linear-gradient(163deg,#fffefb 0%,#fdf8ee 42%,#f3e8d3 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.95),
+    inset 0 -6px 10px -9px rgba(106,72,42,.14),
+    0 0 0 1px rgba(120,108,92,.20)}
+/* 액자 매트처럼 안쪽에 가는 선 한 줄 — 오브제 하나를 정중앙에 두는 구성이라
+   이 여백과 선이 '허전함'을 '의도된 여백'으로 바꿔 준다 */
+.dh-emb::before{content:'';position:absolute;inset:5px;border-radius:10px;
+  border:1px solid rgba(120,108,92,.16);pointer-events:none;z-index:1}
+.dh-emb-chip{position:relative;width:44px;height:38px;box-sizing:border-box;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;margin-top:4px;
+  z-index:2;
+  box-shadow:0 1px 1.5px rgba(74,48,30,.12),0 4px 9px -4px rgba(74,48,30,.26),
+    0 6px 13px -6px var(--emb-glow,transparent)}
+.dh-emb-num{font-family:'Noto Serif KR',serif;font-size:19px;font-weight:700;line-height:1;
+  letter-spacing:-.4px;font-variant-numeric:tabular-nums;color:#4b4038;
+  position:relative;z-index:2;text-shadow:0 1px 0 rgba(255,255,255,.55)}
+.dh-emb-num.on-dark{color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.20)}
+.dh-emb-tab{position:absolute;left:-2.4px;top:-9px;width:21px;height:11px;border-radius:4px 7px 0 0;display:block}
 /* 꽃 테마 — 실제 꽃 타일을 그대로 쓰되 칩 크기에 맞게 줄인다 */
 .dh-emb .dh-eb-t,.dh-emb .dh-eb-b{height:8px;background-size:14px 8px}
 .dh-emb .dh-eb-l,.dh-emb .dh-eb-r{width:8px;background-size:8px 14px}
@@ -21532,16 +21548,20 @@ function _dhCellOverlayHTML(h,key,dow){
   return `<div class="cal-hl-wrap${_dhWrapCls(themeKey)}" style="${_dhBorderStyle(hex,f,themeKey,h.style_key)}">${deco}${tag}</div>`;
 }
 /* 목록 썸네일 — '달력 한 조각'이라는 틀을 벗어난 제품 컷.
-   테마의 스타일(테두리/채움/탭/꽃/점선)이 그대로 입혀진 스와치 카드 3장을 겹쳐 놓아
-   "이런 결의 세트"라는 게 한눈에 읽히게 한다. 달력은 상세로 들어가면 실물로 보여준다. [2026-08-20] */
+   테마의 스타일(테두리/채움/탭/꽃/점선)이 그대로 입혀진 '날짜 한 칸'을 종이 무대 위에 얹어
+   무엇을 사는지 한눈에 읽히게 한다. 달력은 상세로 들어가면 실물로 보여준다. [2026-08-20] */
 function _dhChipStyle(themeKey,colorKey){
-  const r=_dhTheme(themeKey).render;
+  const t=_dhTheme(themeKey);
+  const r=t.render;
   const hex=_dhHexOf(themeKey,colorKey);
+  // 탭이 얹히는 테마는 왼쪽 위만 각지게 — 탭이 모서리 곡선 위에 스티커처럼 떠 보이지 않고
+  // 서류철 색인 탭처럼 카드에 이어 붙는다
+  const rad=t.label?'border-radius:0 9px 9px 9px;':'';
   if(r==='fill'||r==='deep') return `background:${hex}`;
   if(r==='flower')           return `background:${_dhRgba(hex,.12)}`;
-  if(r==='folder')           return `background:#fffdf7;border:2.4px solid ${hex};border-radius:3px`;
+  if(r==='folder')           return `background:#fffdf7;border:2.4px solid ${hex};border-radius:0 4px 4px 4px`;
   if(r==='dashed')           return `background:#fffdf7;border:1.8px dashed ${hex}`;
-  return `background:#fffdf7;border:2px solid ${hex}`;   // basic
+  return `background:#fffdf7;border:2px solid ${hex};${rad}`;   // basic
 }
 function _dhEmblemHTML(themeKey,colorKey){
   const t=_dhTheme(themeKey);
@@ -21550,7 +21570,9 @@ function _dhEmblemHTML(themeKey,colorKey){
   // 제목을 붙일 수 있는 테마만 작은 탭을 얹어 그 차이를 드러낸다
   const tab=t.label?`<i class="dh-emb-tab" style="background:${hex}"></i>`:'';
   const deco=_dhEmojiSidesHTML(themeKey,colorKey,{top:true,bottom:true,left:true,right:true});
-  return `<div class="dh-emb">
+  // 무대는 중립적인 종이로 두고(색은 오브제만), 칸 뒤에 아주 옅은 빛 + 그림자에 섞인 테마 색으로
+  // 깊이를 준다 — 색을 넓게 깔면 얼룩처럼 보이고 칩 자신의 색과도 부딪힌다
+  return `<div class="dh-emb" style="--emb-wash:${_dhRgba(hex,.085)};--emb-glow:${_dhRgba(hex,.30)}">
     <div class="dh-emb-chip" style="${_dhChipStyle(themeKey,colorKey)}">${deco}${tab}
       <span class="dh-emb-num${dark?' on-dark':''}">15</span>
     </div>
