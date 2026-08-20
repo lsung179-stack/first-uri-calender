@@ -2382,27 +2382,6 @@ body.ff-jua{letter-spacing:-.2px}
 .dh-rep-th{position:relative}
 .dh-theme-lock{position:absolute;top:6px;right:7px;font-size:11px}
 /* 상세 팔레트 — 실제 캘린더와 동일한 테두리 오버레이를 그대로 데모 셀 안에 그려서 보여줌 */
-/* 상세 시트 — 실제 달력 화면을 그대로 보여준다(캡처 사진이 아니라 진짜 렌더) */
-.dh-theme-detail-demo{padding:14px 2px 8px}
-.dh-shot{background:#fffaf0;border:1px solid rgba(120,108,92,.18);border-radius:14px;padding:11px 9px 10px;
-  box-shadow:0 2px 10px rgba(106,42,30,.10)}
-.dhm-title{font-family:var(--ff-serif);font-size:15px;font-weight:700;color:var(--text);text-align:center;margin-bottom:8px;letter-spacing:-.2px}
-.dhm-head{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:2px}
-.dhm-dow{text-align:center;font-size:9.5px;font-weight:700;color:var(--sub);line-height:13px}
-.dhm-week{display:grid;grid-template-columns:repeat(7,1fr)}
-.dhm-week-tag{padding-top:11px}
-.dhm-cell{position:relative;isolation:isolate;height:31px;padding-top:2px;box-sizing:border-box;min-width:0}
-.dhm-out{opacity:.32}
-.dhm-num{display:block;text-align:center;font-size:10.5px;font-weight:600;line-height:13px;color:#4a4038;position:relative;z-index:2}
-.dhm-sun{color:#c0503f}
-.dhm-num-ondark{color:#fff !important}
-.dhm-bar{margin:2px 2px 0;height:6px;border-radius:2px;position:relative;z-index:2}
-.dh-shot .cal-hl-tag{font-size:8px;padding:2px 5px 1.5px;border-radius:5px 9px 0 0;line-height:1.1}
-.dh-detail-tags{text-align:center;font-size:11.5px;color:var(--sub);margin:2px 0 8px}
-.dh-theme-detail-demo .dh-demo-cell{width:58px;height:56px;padding-top:5px}
-.dh-theme-detail-demo .dh-demo-num{font-size:14px;line-height:18px}
-.dh-theme-detail-demo .dh-demo-bar{height:10px;margin:5px 4px 0}
-.dh-theme-detail-demo .cal-hl-tag{font-size:10px;padding:4px 8px 3.5px;border-radius:7px 13px 0 0}
 /* ── 스토어 '강조' 탭 ────────────────────────────────────────────────
    목록은 다른 탭과 같은 간결한 행(.ep-row)을 그대로 쓰되,
    썸네일·제목·설명만 고급스럽게 끌어올린다. [2026-08-20] */
@@ -2415,17 +2394,40 @@ body.ff-jua{letter-spacing:-.2px}
 .dh-dots{display:flex;align-items:center;gap:3.5px;margin-top:7px}
 .dh-dot{width:9px;height:9px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.09)}
 .dh-dots-n{font-size:9.5px;font-weight:700;color:var(--sub);margin-left:4px;letter-spacing:.2px}
-/* 썸네일 — 달력 한 귀퉁이를 오려낸 듯한 타일(종이질감 + 가는 테두리 + 은은한 그림자) */
-.dh-row-th{background:transparent;padding:0}
-.dh-tile{width:100%;height:100%;border-radius:12px;box-sizing:border-box;padding:6px;
-  background:linear-gradient(160deg,#fffdf7 0%,#fbf4e6 58%,#f4ead6 100%);
-  border:1px solid rgba(120,108,92,.22);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 1px 3px rgba(106,42,30,.10)}
-.dh-tile-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;height:100%;column-gap:0;row-gap:0;padding-top:7px;box-sizing:border-box}
-.dh-tile-cell{position:relative;isolation:isolate;min-width:0;display:flex;align-items:flex-start;justify-content:center;padding-top:2px}
-.dh-tile-num{font-size:9px;font-weight:700;line-height:11px;color:#6b5f52;position:relative;z-index:2}
-.dh-tile-num-ondark{color:#fff !important}
-.dh-tile .cal-hl-tag{font-size:6px;padding:1.5px 3px 1px;border-radius:3px 6px 0 0;line-height:1.1}
+/* 썸네일 — 테마 스타일이 입혀진 스와치 카드 3장(제품 컷). 달력 모양이 아니다. [2026-08-20] */
+.dh-row-th{background:transparent;padding:0;overflow:visible}
+.dh-emb{position:relative;width:100%;height:100%;border-radius:14px;box-sizing:border-box;overflow:hidden;
+  background:radial-gradient(115% 115% at 28% 18%,#fffdf8 0%,#f9f1e2 52%,var(--dhc) 100%);
+  border:1px solid rgba(120,108,92,.20);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 1px 3px rgba(106,42,30,.10)}
+.dh-emb-chip{position:absolute;top:50%;left:50%;width:36px;height:29px;margin:-14.5px 0 0 -18px;
+  box-sizing:border-box;border-radius:7px}
+.dh-emb .e3{transform:translate(-12px,6px) rotate(-12deg);opacity:.5}
+.dh-emb .e2{transform:translate(12px,4px) rotate(11deg);opacity:.7}
+.dh-emb .e1{transform:translate(0,-4px) rotate(-2deg);box-shadow:0 2px 7px rgba(106,42,30,.20)}
+.dh-emb-tab{position:absolute;left:-1px;top:-6px;width:15px;height:7px;border-radius:3px 4px 0 0;display:block}
+/* 꽃 테마 — 실제 꽃 타일을 그대로 쓰되 칩 크기에 맞게 줄인다 */
+.dh-emb .dh-eb-t,.dh-emb .dh-eb-b{height:7px;background-size:13px 7px}
+.dh-emb .dh-eb-l,.dh-emb .dh-eb-r{width:7px;background-size:7px 13px}
+/* 상세 시트 — 실제 달력 화면을 그대로 보여준다(캡처 사진이 아니라 진짜 렌더).
+   ⚠️ 접두사 주의 — dhm-* 은 이미 '날짜 강조 관리 시트'가 쓰는 이름이라(.dhm-bar/.dhm-title 등)
+   그걸 쓰면 관리 시트 규칙이 뒤에 선언돼 있어 일정 바가 그쪽 스타일을 뒤집어쓴다. → dhcal-*. [2026-08-20] */
+.dh-theme-detail-demo{padding:14px 2px 8px}
+.dh-shot{background:#fffaf0;border:1px solid rgba(120,108,92,.18);border-radius:14px;padding:11px 9px 10px;
+  box-shadow:0 2px 10px rgba(106,42,30,.10)}
+.dhcal-title{font-family:var(--ff-serif);font-size:15.5px;font-weight:700;color:var(--text);text-align:center;margin-bottom:9px;letter-spacing:-.2px}
+.dhcal-head{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:3px}
+.dhcal-dow{text-align:center;font-size:9.5px;font-weight:700;color:var(--sub);line-height:13px}
+.dhcal-week{display:grid;grid-template-columns:repeat(7,1fr)}
+.dhcal-week-tag{padding-top:12px}
+.dhcal-cell{position:relative;isolation:isolate;height:42px;padding-top:4px;box-sizing:border-box;min-width:0}
+.dhcal-out{opacity:.32}
+.dhcal-num{display:block;text-align:center;font-size:11px;font-weight:600;line-height:14px;color:#4a4038;position:relative;z-index:2}
+.dhcal-sun{color:#c0503f}
+.dhcal-num-ondark{color:#fff !important}
+.dhcal-bar{margin:4px 5px 0;height:4px;border-radius:2px;position:relative;z-index:2}
+.dh-shot .cal-hl-tag{font-size:8px;padding:2px 5px 1.5px;border-radius:5px 9px 0 0;line-height:1.1}
+.dh-detail-tags{text-align:center;font-size:11.5px;color:var(--sub);margin:2px 0 8px}
 .dh-demo-row{display:flex;gap:4px}
 /* 데모 칸 — 실제 캘린더 칸과 같은 구조: 격자선에 꽉 찬 박스 + 중앙정렬 날짜 + 아래 일정 바.
    탭은 칸 위로 솟으므로 줄 자체(.dh-demo-row 부모)가 위쪽 여백을 갖는다. */
@@ -21190,10 +21192,9 @@ function renderStoreEmphasis(){
               : `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();onDhThemeUse('${t.key}')"><span class="pack-btn-lock">🔒</span>프리미엄</button>`));
     const dots=t.colors.map(c=>`<span class="dh-dot" style="background:${_dhHexOf(t.key,c.key)}"></span>`).join('');
     const repColor=t.rep||t.colors[0].key;
-    const firstTag=t.tags?t.tags.split(' · ')[0]:'휴가';
     html+=`
       <div class="ep-row dh-row" onclick="openDhThemeDetail('${t.key}')">
-        <div class="ep-th dh-row-th">${_dhTileHTML(t.key,repColor,firstTag)}</div>
+        <div class="ep-th dh-row-th">${_dhEmblemHTML(t.key,repColor)}</div>
         <div class="ep-body">
           <div class="dh-row-en">${escapeHtml(t.en||'')}</div>
           <div class="ep-t1">${escapeHtml(t.name)}${t.label?'<span class="dh-chip">제목 붙이기</span>':''}</div>
@@ -21530,33 +21531,33 @@ function _dhCellOverlayHTML(h,key,dow){
   const deco=_dhEmojiSidesHTML(themeKey,h.style_key,f);
   return `<div class="cal-hl-wrap${_dhWrapCls(themeKey)}" style="${_dhBorderStyle(hex,f,themeKey,h.style_key)}">${deco}${tag}</div>`;
 }
-/* 목록 썸네일 — 달력 한 귀퉁이를 오려낸 듯한 작은 타일.
-   납작한 색 사각형 하나로는 무엇을 얻는지 안 보인다는 피드백([2026-08-20])에 따라,
-   2×2 날짜 칸에 '이틀짜리 구간'을 얹어 이 테마가 달력에서 어떤 모양인지 한눈에 보여준다.
-   실제 렌더 함수(_dhBorderStyle/.cal-hl-wrap/.cal-hl-tag)를 그대로 쓰므로 실물과 어긋나지 않는다. */
-function _dhTileHTML(themeKey,colorKey,label){
-  const t=_dhTheme(themeKey);
+/* 목록 썸네일 — '달력 한 조각'이라는 틀을 벗어난 제품 컷.
+   테마의 스타일(테두리/채움/탭/꽃/점선)이 그대로 입혀진 스와치 카드 3장을 겹쳐 놓아
+   "이런 결의 세트"라는 게 한눈에 읽히게 한다. 달력은 상세로 들어가면 실물로 보여준다. [2026-08-20] */
+function _dhChipStyle(themeKey,colorKey){
+  const r=_dhTheme(themeKey).render;
   const hex=_dhHexOf(themeKey,colorKey);
-  const ink=getContrastTextColor(hex);
-  const dark=_dhIsDarkFill(themeKey,colorKey);
-  const cells=[
-    {n:11, f:{top:true,bottom:true,left:true,right:false}, tag:true},
-    {n:12, f:{top:true,bottom:true,left:false,right:true}},
-    {n:18},
-    {n:19},
-  ];
-  const inner=cells.map(c=>{
-    let ov='';
-    if(c.f){
-      const tag=(c.tag&&t.label)
-        ? `<div class="cal-hl-tag dht-${t.render}" style="background:${hex};color:${ink}">${escapeHtml(label||'휴가')}</div>`
-        : '';
-      const deco=_dhEmojiSidesHTML(themeKey,colorKey,c.f);
-      ov=`<div class="cal-hl-wrap dhr-${t.render}" style="${_dhBorderStyle(hex,c.f,themeKey,colorKey)}">${deco}${tag}</div>`;
-    }
-    return `<div class="dh-tile-cell">${ov}<span class="dh-tile-num${(c.f&&dark)?' dh-tile-num-ondark':''}">${c.n}</span></div>`;
-  }).join('');
-  return `<div class="dh-tile"><div class="dh-tile-grid">${inner}</div></div>`;
+  if(r==='fill'||r==='deep') return `background:${hex}`;
+  if(r==='flower')           return `background:${_dhRgba(hex,.12)}`;
+  if(r==='folder')           return `background:#fffdf7;border:2.4px solid ${hex};border-radius:3px`;
+  if(r==='dashed')           return `background:#fffdf7;border:1.8px dashed ${hex}`;
+  return `background:#fffdf7;border:2px solid ${hex}`;   // basic
+}
+function _dhEmblemHTML(themeKey,colorKey){
+  const t=_dhTheme(themeKey);
+  const cols=t.colors;
+  const i=Math.max(0,cols.findIndex(c=>c.key===colorKey));
+  const pick=[cols[i], cols[(i+2)%cols.length], cols[(i+4)%cols.length]];
+  const front=pick[0].key;
+  const hex=_dhHexOf(themeKey,front);
+  // 제목을 붙일 수 있는 테마는 앞 카드에 작은 탭을 얹어 그 특징을 드러낸다
+  const tab=t.label?`<i class="dh-emb-tab" style="background:${hex}"></i>`:'';
+  const deco=_dhEmojiSidesHTML(themeKey,front,{top:true,bottom:true,left:true,right:true});
+  return `<div class="dh-emb" style="--dhc:${_dhRgba(hex,.16)}">
+    <span class="dh-emb-chip e3" style="${_dhChipStyle(themeKey,pick[2].key)}"></span>
+    <span class="dh-emb-chip e2" style="${_dhChipStyle(themeKey,pick[1].key)}"></span>
+    <span class="dh-emb-chip e1" style="${_dhChipStyle(themeKey,front)}">${deco}${tab}</span>
+  </div>`;
 }
 /* 상세 시트 — '실제 캘린더 화면'을 그대로 보여준다(사진 대신 진짜 렌더).
    2026년 8월(1일=토)을 실제 배치 그대로 그리고, 11~13일에 3일짜리 강조를 얹는다. */
@@ -21577,7 +21578,7 @@ function _dhMiniMonthHTML(themeKey,colorKey,label){
     [{d:30},{d:31},{d:1,o:1},{d:2,o:1},{d:3,o:1},{d:4,o:1},{d:5,o:1}],
   ];
   const dows=['일','월','화','수','목','금','토'];
-  const head=dows.map((x,i)=>`<span class="dhm-dow${i===0?' dhm-sun':''}">${x}</span>`).join('');
+  const head=dows.map((x,i)=>`<span class="dhcal-dow${i===0?' dhcal-sun':''}">${x}</span>`).join('');
   const body=weeks.map(w=>{
     const hasTag=w.some(c=>c.hl==='s')&&t.label;
     const row=w.map((c,i)=>{
@@ -21590,17 +21591,17 @@ function _dhMiniMonthHTML(themeKey,colorKey,label){
         const deco=_dhEmojiSidesHTML(themeKey,colorKey,f);
         ov=`<div class="cal-hl-wrap dhr-${t.render}" style="${_dhBorderStyle(hex,f,themeKey,colorKey)}">${deco}${tag}</div>`;
       }
-      const cls=['dhm-num'];
-      if(c.hl&&dark)cls.push('dhm-num-ondark');
-      else if(i===0)cls.push('dhm-sun');
-      const bar=c.bar?`<div class="dhm-bar" style="background:${c.bar}"></div>`:'';
-      return `<div class="dhm-cell${c.o?' dhm-out':''}">${ov}<span class="${cls.join(' ')}">${c.d}</span>${bar}</div>`;
+      const cls=['dhcal-num'];
+      if(c.hl&&dark)cls.push('dhcal-num-ondark');
+      else if(i===0)cls.push('dhcal-sun');
+      const bar=c.bar?`<div class="dhcal-bar" style="background:${c.bar}"></div>`:'';
+      return `<div class="dhcal-cell${c.o?' dhcal-out':''}">${ov}<span class="${cls.join(' ')}">${c.d}</span>${bar}</div>`;
     }).join('');
-    return `<div class="dhm-week${hasTag?' dhm-week-tag':''}">${row}</div>`;
+    return `<div class="dhcal-week${hasTag?' dhcal-week-tag':''}">${row}</div>`;
   }).join('');
   return `<div class="dh-shot">
-    <div class="dhm-title">2026년 8월</div>
-    <div class="dhm-head">${head}</div>
+    <div class="dhcal-title">2026년 8월</div>
+    <div class="dhcal-head">${head}</div>
     ${body}
   </div>`;
 }
