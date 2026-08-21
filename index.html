@@ -2480,6 +2480,18 @@ body.ff-jua{letter-spacing:-.2px}
      칸 배경 위·콘텐츠 아래에 정확히 깔리게 한다(음수 z-index가 칸 밖으로 새지 않음).
    테두리형은 그대로 위에 유지 — 라벨 탭이 그 안에 있고 탭을 눌러야 하기 때문. [2026-08-19] */
 .cal-cell.hl-fillcell{isolation:isolate}
+/* 채움형 강조(소프트 워시·딥 솔리드) 위에서는 일정 바가 배경과 거의 같은 색일 수 있어 묻힌다.
+   색을 바꾸지 않고 바 위/아래에 카드색 얇은 선을 깔아 '경계'만 만들어 준다.
+   ⚠️ 좌우에는 넣지 않는다 — 기간 일정이 옆 칸으로 이어질 때 세로선이 생겨 끊겨 보인다. [2026-08-21] */
+.cal-cell.hl-fillcell .cal-evbar{
+  --kl:0px; --kr:0px;
+  box-shadow:0 -1px 0 var(--card),0 1px 0 var(--card),
+             calc(-1 * var(--kl)) 0 0 var(--card), var(--kr) 0 0 var(--card);
+}
+/* 진짜 끝(ev-*-open)에만 좌우 선을 넣는다 — 이어지는 변(ev-*-join)에 넣으면 바가 끊겨 보인다 */
+.cal-cell.hl-fillcell .cal-evbar.ev-l-open{--kl:1px}
+.cal-cell.hl-fillcell .cal-evbar.ev-r-open{--kr:1px}
+.cal-cell.hl-fillcell .cal-tditem,.cal-cell.hl-fillcell .cal-tdline{box-shadow:0 -1px 0 var(--card),0 1px 0 var(--card)}
 .cal-hl-wrap.dhr-fill,.cal-hl-wrap.dhr-deep{z-index:-1}
 .cal-cell.hl-ondark .cal-day-num{color:#fff}
 .cal-cell.hl-ondark .cal-cell-label{color:rgba(255,255,255,.85)}
