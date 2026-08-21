@@ -914,9 +914,15 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .rc-decor .rc-bg{position:absolute;inset:0;background-repeat:repeat;background-position:center;background-size:178px 178px;opacity:.24;pointer-events:none}
 /* 카드배경처럼 자연스러운 풀 씬 배경(타일 아님) — 캐릭터가 풍경에 녹아든 통짜 씬, 중앙 정렬(캐릭터 중앙), 옅게 */
 .rc-decor .rc-bg.rc-bg-scene{background-repeat:no-repeat;background-position:center 38%;background-size:auto 116%;opacity:.4}
-/* 심플 블랙&화이트 — 검은 선화 배경을 .4 로 깔면 흰 바탕 전체가 회색빛으로 뜬다.
-   순백을 지키려고 속삭이듯 옅게. [2026-08-21] */
-body.rc-mono .rc-decor .rc-bg.rc-bg-scene{opacity:.11}
+/* 심플 블랙&화이트 — 회색빛의 원인은 '선화'가 아니라 배경 이미지 자체의 바탕색이다.
+   (측정: 씬 없으면 255,255,255 / 씬 깔면 254,254,253 → 원래 opacity .4 면 249 까지 내려감)
+   그래서 옅게 깔아 숨기는 대신, contrast 로 near-white 바탕을 순백까지 밀어올려
+   '바탕은 완전한 흰색, 선은 검정'만 남긴다. 그러면 낙서를 진하게 해도 배경이 안 탁해진다.
+   grayscale 은 혹시 모를 색 끼(따뜻한 크림빛 등)까지 제거 — 흑백 테마라 어울린다. [2026-08-21] */
+body.rc-mono .rc-decor .rc-bg.rc-bg-scene{
+  opacity:.3;
+  filter:grayscale(1) contrast(1.8);
+}
 /* 코코 씬 — 이미지 자체에 하단 마룻바닥이 있어 별도 위치보정/마감 불필요(공용 규칙 사용) */
 /* 방 캐릭터 테마 — 탭바/설정 색 틴트(제네릭, 모든 캐릭터) */
 body.rc-on .cal-tab{color:var(--aL)}
