@@ -911,6 +911,9 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .rc-decor .rc-bg{position:absolute;inset:0;background-repeat:repeat;background-position:center;background-size:178px 178px;opacity:.24;pointer-events:none}
 /* 카드배경처럼 자연스러운 풀 씬 배경(타일 아님) — 캐릭터가 풍경에 녹아든 통짜 씬, 중앙 정렬(캐릭터 중앙), 옅게 */
 .rc-decor .rc-bg.rc-bg-scene{background-repeat:no-repeat;background-position:center 38%;background-size:auto 116%;opacity:.4}
+/* 심플 블랙&화이트 — 검은 선화 배경을 .4 로 깔면 흰 바탕 전체가 회색빛으로 뜬다.
+   순백을 지키려고 속삭이듯 옅게. [2026-08-21] */
+body.rc-mono .rc-decor .rc-bg.rc-bg-scene{opacity:.11}
 /* 코코 씬 — 이미지 자체에 하단 마룻바닥이 있어 별도 위치보정/마감 불필요(공용 규칙 사용) */
 /* 방 캐릭터 테마 — 탭바/설정 색 틴트(제네릭, 모든 캐릭터) */
 body.rc-on .cal-tab{color:var(--aL)}
@@ -3242,12 +3245,14 @@ body.align-right .cal-evbar{text-align:right}
   bottom:calc(10px + env(safe-area-inset-bottom));
   left:50%;transform:translateX(-50%);
   width:calc(100% - 32px);max-width:520px;
-  background:rgba(251,242,224,.84);
-  backdrop-filter:blur(20px) saturate(1.6);
-  -webkit-backdrop-filter:blur(20px) saturate(1.6);
+  /* 탭바 색은 테마가 정한다 — 예전엔 크림이 하드코딩돼 있어 흰 테마에서도 크림/회색으로 떴다.
+     기본값은 지금까지의 빈티지 크림 그대로라 다른 테마는 무회귀. [2026-08-21] */
+  background:var(--tabbar-bg,rgba(251,242,224,.84));
+  backdrop-filter:var(--tabbar-filter,blur(20px) saturate(1.6));
+  -webkit-backdrop-filter:var(--tabbar-filter,blur(20px) saturate(1.6));
   border-radius:26px;
-  border:1px solid rgba(255,255,255,.65);
-  box-shadow:0 6px 24px rgba(58,36,24,.15),0 1px 0 rgba(255,255,255,.7) inset;
+  border:1px solid var(--tabbar-border,rgba(255,255,255,.65));
+  box-shadow:var(--tabbar-shadow,0 6px 24px rgba(58,36,24,.15),0 1px 0 rgba(255,255,255,.7) inset);
   display:flex;align-items:stretch;
   height:54px;padding:0 4px;z-index:30;
   transition:opacity .25s,transform .25s;
@@ -3278,7 +3283,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
   border:none;background:transparent;cursor:pointer;color:var(--mute);font-family:inherit;
   border-radius:20px;transition:background .15s,color .15s;position:relative;padding:0 2px;
 }
-.cal-tab.on{color:var(--accent);background:rgba(139,58,42,.09)}
+.cal-tab.on{color:var(--accent);background:var(--tab-on-bg,rgba(139,58,42,.09))}
 .cal-tab:active{transform:scale(.94)}
 .cal-tab-ico{width:23px;height:23px;display:flex;align-items:center;justify-content:center}
 .cal-tab-ico svg{width:23px;height:23px;display:block}
@@ -9378,7 +9383,10 @@ function getDayHeaderInfo(year,month,day){
 /* ── 테마 시스템 (V2 8가지) ── */
 const THEMES={
   /* 심플 블랙&화이트 — 흰 바탕에 검정 선화 컨셉(2026-08-19, 사용자 참고사진) */
-  mono:{bg:'#ffffff',card:'#ffffff',text:'#1a1a1a',sub:'#8c8c8c',mute:'#c6c6c6',accent:'#1a1a1a',aL:'#4a4a4a',aP:'#f1f1f1',gold:'#8c8c8c',border:'rgba(0,0,0,.13)',borderL:'rgba(0,0,0,.07)',sun:'#e2604e',sat:'#4a7ad6',dotRGB:'26,26,26'},
+  mono:{bg:'#ffffff',card:'#ffffff',text:'#1a1a1a',sub:'#8c8c8c',mute:'#c6c6c6',accent:'#1a1a1a',aL:'#4a4a4a',aP:'#f1f1f1',gold:'#8c8c8c',border:'rgba(0,0,0,.13)',borderL:'rgba(0,0,0,.07)',sun:'#e2604e',sat:'#4a7ad6',dotRGB:'26,26,26',
+    // 탭바도 순백 — 크림 반투명+채도부스트(saturate)를 쓰면 흰 바탕에서 회색빛이 돈다
+    'tabbar-bg':'#ffffff','tabbar-border':'rgba(0,0,0,.10)',
+    'tabbar-shadow':'0 6px 20px rgba(0,0,0,.10)','tabbar-filter':'none','tab-on-bg':'rgba(0,0,0,.06)'},
   vintage:{bg:'#f3e6cf',card:'#fbf2e0',text:'#3a2418',sub:'#8a6a4d',mute:'#b8a285',accent:'#8b3a2a',aL:'#a85040',aP:'#e8d4be',gold:'#b08742',border:'rgba(139,58,42,.18)',borderL:'rgba(139,58,42,.10)',sun:'#8b3a2a',sat:'#3a5a8b',dotRGB:'139,58,42'},
   lavender:{bg:'#efebfb',card:'#ffffff',text:'#1e1c25',sub:'#7e7090',mute:'#b5acc4',accent:'#9b7fc7',aL:'#b49ad4',aP:'#e2d3fc',gold:'#b08742',border:'rgba(200,190,220,.4)',borderL:'rgba(200,190,220,.22)',sun:'#d47090',sat:'#7090d4',dotRGB:'155,127,199'},
   peach:{bg:'#fff2e6',card:'#ffffff',text:'#2a1d18',sub:'#8a6850',mute:'#c5a895',accent:'#e0855a',aL:'#e8a880',aP:'#ffe3ce',gold:'#b08742',border:'rgba(230,200,180,.4)',borderL:'rgba(230,200,180,.22)',sun:'#d47060',sat:'#6080c8',dotRGB:'224,133,90'},
@@ -9658,9 +9666,20 @@ function applyFontFamily(v){
   document.body.classList.remove(...TEXT_THEME_CLASSES,'ff-pretendard');
   if(v && v!=='default')document.body.classList.add('ff-'+v);
 }
+/* 탭바 기본값(빈티지 크림). 테마가 자기 값을 안 주면 여기로 되돌린다 —
+   되돌리지 않으면 흰 테마(mono)에서 나간 뒤에도 흰 탭바가 그대로 남는다. */
+const TABBAR_DEFAULTS={
+  'tabbar-bg':'rgba(251,242,224,.84)',
+  'tabbar-border':'rgba(255,255,255,.65)',
+  'tabbar-shadow':'0 6px 24px rgba(58,36,24,.15),0 1px 0 rgba(255,255,255,.7) inset',
+  'tabbar-filter':'blur(20px) saturate(1.6)',
+  'tab-on-bg':'rgba(139,58,42,.09)',   /* 활성 탭 알약 — 예전엔 테라코타가 하드코딩돼 흰 테마에서 분홍으로 떴다 */
+};
 function applyTheme(name){
   const t=THEMES[name]||THEMES.vintage;
   const r=document.documentElement;
+  // 먼저 기본값을 깔고, 아래 루프에서 테마가 가진 값만 덮어쓴다
+  Object.keys(TABBAR_DEFAULTS).forEach(k=>r.style.setProperty('--'+k, TABBAR_DEFAULTS[k]));
   // 라이트 모드 강제 — 시스템 다크모드와 무관
   Object.keys(t).forEach(k=>{
     if(k==='dotRGB'){
