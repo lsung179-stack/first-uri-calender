@@ -11374,10 +11374,12 @@ function _dayVisualOrder(key){
 function _dayAbsSlots(key,y,m,d){
   if(_absSlotCache){ const h=_absSlotCache.get(key); if(h) return h; }
   const slots={}; const fixed={}; let overflow=0; let hasRangeStart=false;
-  // fx=true → '여러 날에 걸친 것'(기간 일정·여러 날 일정·기간 할일)만 줄을 예약한다.
-  //   · 기간 바는 칸을 넘어가며 이어지므로 줄이 고정돼야 하고,
-  //   · 여러 날 일정도 같은 일정이 날마다 다른 높이에 뜨면 계단처럼 보여 예약 대상.
-  //   그 외(하루짜리 일정·할일)는 예약하지 않고 남은 줄을 위에서부터 채운다.
+  // fx=true → '가로로 이어지는 것'(기간 일정·기간 할일)만 줄을 예약한다.
+  //   기간 바는 칸을 넘어가며 실제로 이어져 보여야 하므로 줄이 고정돼야 한다.
+  //   ⚠️ 여러 날(is_multi) 일정은 칸마다 독립된 칩이라 줄을 안 잡는다 —
+  //      잡아두면 그 일정만 있는 날 위쪽이 빈칸으로 남고, 사용자가 정한 순서(▲▼)도 안 먹는다.
+  //      (사용자 결정, 2026-08-21: "여러날은 붙어있다고 줄 예약할 필요 없다")
+  //   그 외(하루짜리·여러 날 일정·할일)는 예약하지 않고 남은 줄을 위에서부터 채운다.
   //   ⚠️ 주별 remap 도 '예약된 줄'만으로 압축하므로, 그 주에 안 쓰이는 줄은 사라져
   //      예약 대상이라도 필요 이상으로 아래로 밀리지 않는다(삭제 후 빈칸이 안 남는 이유). [2026-08-21]
   const keyAt={};
@@ -11386,7 +11388,7 @@ function _dayAbsSlots(key,y,m,d){
   getDayEvents(key).forEach(function(ev){
     const bar=_eventBarHTML(ev,key,y,m,d);
     const _lkEv=_eventLaneKey(ev, key);
-    place(_laneMap[_lkEv], bar.html, bar.hasRangeStart, !!(ev._isRangeEvent||ev.is_multi), _lkEv);
+    place(_laneMap[_lkEv], bar.html, bar.hasRangeStart, !!ev._isRangeEvent, _lkEv);
   });
   // 할일 — 미완료/완료 모두 전역 레인
   const _td=(typeof window!=='undefined'&&window.__getTodos)?(window.__getTodos()||[]):[];
@@ -11759,6 +11761,11 @@ function _authorChipHtml(uid){
   const avInner=m.avatar_url?avImg(m.avatar_url,initial):initial;
   return '<span class="dp-member-chip dp-author-chip" title="'+escapeHtml(name)+'님이 등록"><span class="dp-member-chip-av" style="background:'+escapeHtml(m.color||'#8b3a2a')+'">'+avInner+'</span><span class="dp-member-chip-name">'+escapeHtml(name)+'</span></span>';
 }
+/* 시트 항목이 '기간(가로로 이어지는) 항목'인지 — 기간끼리 / 하루짜리끼리 각각 순서를 바꾼다. */
+function _sheetIsRangeItem(x){
+  return (x.kind==='event') ? !!(x.ev&&x.ev._isRangeEvent)
+                            : !!(x.t&&x.t.todo_type==='range'&&x.t.end_date&&x.t.end_date>x.t.start_date);
+}
 /* 날짜 시트 목록의 레인키 — 캘린더가 쓰는 키와 똑같아야 표시 순서를 맞출 수 있다. */
 function _sheetLaneKey(item, key){
   if(item.kind==='todo'){
@@ -11794,14 +11801,17 @@ function _daySheetItems(key){
     if(a.order!==b.order) return a.order-b.order;
     return a.tb<b.tb?-1:(a.tb>b.tb?1:0);
   });
-  // ▲▼ 순서변경은 단일·미완료 항목끼리만 — 기간·완료·가상 제외
-  const swappable=combined.filter(function(x){
-    if(x.virt) return false;
-    if(x.kind==='todo'&&x.t&&x.t.is_done) return false; // 완료 할일 제외
-    const xR=(x.kind==='event')?(x.ev&&x.ev._isRangeEvent):!!(x.t&&x.t.todo_type==='range'&&x.t.end_date&&x.t.end_date>x.t.start_date);
-    return !xR;
+  // ▲▼ 순서변경 — 가상·완료 할일만 제외.
+  // ⚠️ 기간 항목은 정렬에서 항상 하루짜리보다 위라 서로 자리를 바꿀 수 없다.
+  //    그래서 '기간끼리' / '하루짜리끼리' 두 무리로 나눠 각자 안에서 움직인다.
+  //    (사용자 요청, 2026-08-21: "기간일정끼리는 순서 화살표가 가능해야 한다")
+  const groups={range:[], single:[]};
+  combined.forEach(function(x){
+    if(x.virt) return;
+    if(x.kind==='todo'&&x.t&&x.t.is_done) return; // 완료 할일 제외
+    groups[_sheetIsRangeItem(x)?'range':'single'].push(x);
   });
-  return {combined:combined, swappable:swappable};
+  return {combined:combined, groups:groups};
 }
 function renderDateSheetList(){
   const evs=getDayEvents(_selectedDate);
@@ -11813,19 +11823,22 @@ function renderDateSheetList(){
   }
   const _si=_daySheetItems(_selectedDate);
   const combined=_si.combined;
-  const _swappable=_si.swappable;
+  const _grpOf=new Map();
+  ['range','single'].forEach(function(g){
+    _si.groups[g].forEach(function(x,i){ _grpOf.set(x,{i:i,n:_si.groups[g].length}); });
+  });
 
   let html='';
   combined.forEach(function(item,i){
-    // 기간·완료·가상 항목은 버튼 없음, 단일 미완료 항목끼리만 ▲▼
-    const _itemIsRange=(item.kind==='event')?(item.ev&&item.ev._isRangeEvent):!!(item.t&&item.t.todo_type==='range'&&item.t.end_date&&item.t.end_date>item.t.start_date);
+    // 완료·가상 항목은 버튼 없음. 기간끼리 / 하루짜리끼리 각각 ▲▼
+    const _itemIsRange=_sheetIsRangeItem(item);
     const _itemDone=(item.kind==='todo'&&item.t&&item.t.is_done);
     let orderHtml='';
-    if(!item.virt && !_itemIsRange && !_itemDone){
+    const _gi=_grpOf.get(item);
+    if(_gi){
       const idArg=(item.kind==='todo')?item.t.id:item.ev.id;
-      const swIdx=_swappable.indexOf(item);
-      const canUp=swIdx>0;
-      const canDown=swIdx<_swappable.length-1;
+      const canUp=_gi.i>0;
+      const canDown=_gi.i<_gi.n-1;
       orderHtml=`<div class="dp-order">
         <button class="dp-arrow" ${canUp?'':'disabled'} onclick="event.stopPropagation();moveItemInList('${item.kind}','${idArg}',-1)" aria-label="위로">▲</button>
         <button class="dp-arrow" ${canDown?'':'disabled'} onclick="event.stopPropagation();moveItemInList('${item.kind}','${idArg}',1)" aria-label="아래로">▼</button>
@@ -11953,9 +11966,15 @@ function renderDateSheetList(){
 async function moveItemInList(kind, id, direction){
   if(!_selectedDate||!_currentRoom){return}
   // ⚠️ 목록 렌더와 반드시 같은 순서를 써야 ▲▼ 활성화와 실제 이동이 어긋나지 않는다.
-  const swappable=_daySheetItems(_selectedDate).swappable;
-  const idx=swappable.findIndex(function(x){ return x.kind===kind && ((kind==='todo')?(x.t&&x.t.id===id):(x.ev&&x.ev.id===id)); });
-  if(idx<0) return;
+  const _groups=_daySheetItems(_selectedDate).groups;
+  const _match=function(x){ return x.kind===kind && ((kind==='todo')?(x.t&&x.t.id===id):(x.ev&&x.ev.id===id)); };
+  let swappable=null, idx=-1;
+  ['range','single'].forEach(function(g){
+    if(swappable) return;
+    const i=_groups[g].findIndex(_match);
+    if(i>=0){ swappable=_groups[g]; idx=i; }
+  });
+  if(!swappable||idx<0) return;
   const swapIdx=idx+direction;
   if(swapIdx<0||swapIdx>=swappable.length) return;
   // ⚠️ 두 개만 교환하면 같은 order 가 셋 이상 몰려 있을 때(기본값이 전부 0인 흔한 경우)
