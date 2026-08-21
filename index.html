@@ -10998,16 +10998,26 @@ function renderMonthly(){
   _absSlotCache=new Map();
   const _weekRemaps=[];
   for(let w=0; w<6; w++){
-    const used=new Set();
+    const used=new Map();   // 예약후보 항목(레인키) → {lane, 그 주에 나타난 날 수}
     for(let i=0;i<7;i++){
       const key=_gridDays[w*7+i]; if(!key)continue;
       const dt=parseDateKey(key);
       const abs=_dayAbsSlots(key,dt.getFullYear(),dt.getMonth(),dt.getDate());
-      Object.keys(abs.slots).forEach(function(k){ used.add(+k); });
+      // 여러 날에 걸친 것만 주 단위로 줄을 예약(나머지는 칸마다 위로 당겨 채움 → 빈칸 없음)
+      Object.keys(abs.fixed).forEach(function(k){
+        const lk=abs.fixed[k];
+        const e=used.get(lk)||{lane:+k,days:0}; e.days++; used.set(lk,e);
+      });
     }
-    const sorted=Array.from(used).sort(function(a,b){return a-b;});
-    const map={}; sorted.forEach(function(L,idx){ map[L]=idx; });
-    _weekRemaps.push(map);
+    // ⚠️ 그 주에 하루만 나오는 항목은 맞출 상대가 없으므로 예약하지 않는다.
+    //    (예약하면 그 항목만 있는 날에 위쪽이 통째로 빈칸으로 남는다)
+    //    ⚠️ 판정은 '레인'이 아니라 '항목' 단위 — 서로 다른 항목이 같은 레인을 나눠 쓸 수 있어,
+    //       레인으로 세면 하루짜리 항목이 남의 예약에 얹혀 그대로 밀린다. [2026-08-21]
+    const keys=new Set(); const lanes=new Set();
+    used.forEach(function(v,k){ if(v.days>=2){ keys.add(k); lanes.add(v.lane); } });
+    const laneRow={}; Array.from(lanes).sort(function(a,b){return a-b;})
+      .forEach(function(L,idx){ laneRow[L]=idx; });
+    _weekRemaps.push({laneRow:laneRow, keys:keys});
   }
 
   // 주(週)별 날짜 강조 라벨 탭 유무 — 탭은 칸 위쪽 바깥으로 솟으므로, 탭이 있는 줄의 "바로 윗줄"에
@@ -11292,12 +11302,19 @@ function _eventBarHTML(ev,key,y,m,d){
 let _absSlotCache=null;
 function _dayAbsSlots(key,y,m,d){
   if(_absSlotCache){ const h=_absSlotCache.get(key); if(h) return h; }
-  const slots={}; let overflow=0; let hasRangeStart=false;
-  const place=function(lane,html,rs){ if(typeof lane!=='number'){return;} if(lane>49){ overflow++; return; } if(slots[lane]==null){ slots[lane]=html; if(rs)hasRangeStart=true; } };
+  const slots={}; const fixed={}; let overflow=0; let hasRangeStart=false;
+  // fx=true → '여러 날에 걸친 것'(기간 일정·여러 날 일정·기간 할일)만 줄을 예약한다.
+  //   · 기간 바는 칸을 넘어가며 이어지므로 줄이 고정돼야 하고,
+  //   · 여러 날 일정도 같은 일정이 날마다 다른 높이에 뜨면 계단처럼 보여 예약 대상.
+  //   그 외(하루짜리 일정·할일)는 예약하지 않고 남은 줄을 위에서부터 채운다.
+  //   ⚠️ 주별 remap 도 '예약된 줄'만으로 압축하므로, 그 주에 안 쓰이는 줄은 사라져
+  //      예약 대상이라도 필요 이상으로 아래로 밀리지 않는다(삭제 후 빈칸이 안 남는 이유). [2026-08-21]
+  const place=function(lane,html,rs,fx,lk){ if(typeof lane!=='number'){return;} if(lane>49){ overflow++; return; } if(slots[lane]==null){ slots[lane]=html; if(fx)fixed[lane]=(lk||('L'+lane)); if(rs)hasRangeStart=true; } };
   // 일정
   getDayEvents(key).forEach(function(ev){
     const bar=_eventBarHTML(ev,key,y,m,d);
-    place(_laneMap[_eventLaneKey(ev, key)], bar.html, bar.hasRangeStart);
+    const _lkEv=_eventLaneKey(ev, key);
+    place(_laneMap[_lkEv], bar.html, bar.hasRangeStart, !!(ev._isRangeEvent||ev.is_multi), _lkEv);
   });
   // 할일 — 미완료/완료 모두 전역 레인
   const _td=(typeof window!=='undefined'&&window.__getTodos)?(window.__getTodos()||[]):[];
@@ -11309,10 +11326,10 @@ function _dayAbsSlots(key,y,m,d){
       const th=window.__todoCellHTML?window.__todoCellHTML(t,key):'';
       const _spreadTd=(!_isRangeTd)&&((t.repeat_type&&t.repeat_type!=='none')||t.todo_type==='multi');
       const _lk=_spreadTd?('t:'+t.id+'@'+key):('t:'+t.id);
-      if(th) place(_laneMap[_lk], th, false);
+      if(th) place(_laneMap[_lk], th, false, _isRangeTd, _lk);
     });
   }
-  const res={slots:slots, overflow:overflow, hasRangeStart:hasRangeStart};
+  const res={slots:slots, fixed:fixed, overflow:overflow, hasRangeStart:hasRangeStart};
   if(_absSlotCache) _absSlotCache.set(key,res);
   return res;
 }
@@ -11346,13 +11363,23 @@ function cellHtml(y,m,d,isOther,todayKey,weekRemap){
     _hasRangeStart=abs.hasRangeStart;
     // 주별 레인 압축: 이 주(週) 전체가 비어있는 레인은 걷어내 남은 바를 위로 끌어올린다.
     // (겹치는 기간 일정이 끝난 뒤 남은 바가 빈 줄 아래로 떠 보이던 문제 해결)
-    const disp=[]; let maxLane=-1;
-    Object.keys(abs.slots).forEach(function(k){
-      const absL=+k;
-      const dL=weekRemap?weekRemap[absL]:absL;
-      if(typeof dL!=='number') return;
-      disp[dL]=abs.slots[absL];
-      if(dL>maxLane)maxLane=dL;
+    // 이어지는 바(기간)는 주 단위로 예약된 줄에 고정 배치하고,
+    // 나머지(단일·여러 날·할일)는 남은 줄을 위에서부터 채운다.
+    // → 삭제 등으로 생긴 빈칸이 그대로 남지 않고 자동으로 당겨진다. [2026-08-21]
+    const disp=[]; let maxLane=-1; const floats=[];
+    Object.keys(abs.slots).map(Number).sort(function(a,b){return a-b;}).forEach(function(absL){
+      const _lk2=(abs.fixed?abs.fixed[absL]:null);
+      const dL=(_lk2!=null&&weekRemap&&weekRemap.keys&&weekRemap.keys.has(_lk2))
+                 ? weekRemap.laneRow[absL] : null;
+      if(typeof dL==='number'){          // 그 주에 2일 이상 나오는 여러 날 항목 → 예약된 줄에 고정
+        disp[dL]=abs.slots[absL];
+        if(dL>maxLane)maxLane=dL;
+      } else floats.push(abs.slots[absL]);   // 나머지(하루짜리·주에 하루만 나온 것)는 당겨 채움
+    });
+    let _cur=0;
+    floats.forEach(function(h){
+      while(disp[_cur]!=null)_cur++;
+      disp[_cur]=h; if(_cur>maxLane)maxLane=_cur; _cur++;
     });
     for(let L=0; L<=maxLane; L++){ evsHtml += (disp[L]!=null?disp[L]:'<div class="cal-evspacer"></div>'); }
     if(abs.overflow>0) evsHtml += '<div class="cal-more">+'+abs.overflow+'</div>';
