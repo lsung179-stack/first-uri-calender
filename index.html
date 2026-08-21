@@ -2394,37 +2394,19 @@ body.ff-jua{letter-spacing:-.2px}
 .dh-dots{display:flex;align-items:center;gap:3.5px;margin-top:7px}
 .dh-dot{width:9px;height:9px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.09)}
 .dh-dots-n{font-size:9.5px;font-weight:700;color:var(--sub);margin-left:4px;letter-spacing:.2px}
-/* 썸네일 — 테마 스타일을 입힌 날짜 한 칸을 '빛이 있는 종이 무대' 위에 얹는다.
-   평평한 크림 상자 안에 칸을 넣으니 빈 입력칸처럼 보여서, 무대(그라데이션+안쪽 하이라이트)와
-   떠 있는 오브제(그림자)로 나눴다. 무대에 깔리는 은은한 빛은 그 테마 자신의 색(--emb-wash)이라
-   여섯 줄이 한 세트로 보이면서도 각자 다른 색을 띤다. [2026-08-20] */
+/* 썸네일 — 타일 자체가 견본. 무대·그림자·광택 없이 색면과 선만(납작하게). [2026-08-20] */
 .dh-row-th{background:transparent;padding:0}
-.dh-emb{position:relative;width:100%;height:100%;border-radius:15px;box-sizing:border-box;overflow:hidden;
-  display:flex;align-items:center;justify-content:center;
-  background:
-    radial-gradient(66% 58% at 50% 56%, var(--emb-wash,transparent) 0%, transparent 72%),
-    linear-gradient(163deg,#fffefb 0%,#fdf8ee 42%,#f3e8d3 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.95),
-    inset 0 -6px 10px -9px rgba(106,72,42,.14),
-    0 0 0 1px rgba(120,108,92,.20)}
-/* 액자 매트처럼 안쪽에 가는 선 한 줄 — 오브제 하나를 정중앙에 두는 구성이라
-   이 여백과 선이 '허전함'을 '의도된 여백'으로 바꿔 준다 */
-.dh-emb::before{content:'';position:absolute;inset:5px;border-radius:10px;
-  border:1px solid rgba(120,108,92,.16);pointer-events:none;z-index:1}
-.dh-emb-chip{position:relative;width:44px;height:38px;box-sizing:border-box;border-radius:9px;
-  display:flex;align-items:center;justify-content:center;margin-top:4px;
-  z-index:2;
-  box-shadow:0 1px 1.5px rgba(74,48,30,.12),0 4px 9px -4px rgba(74,48,30,.26),
-    0 6px 13px -6px var(--emb-glow,transparent)}
-.dh-emb-num{font-family:'Noto Serif KR',serif;font-size:19px;font-weight:700;line-height:1;
-  letter-spacing:-.4px;font-variant-numeric:tabular-nums;color:#4b4038;
-  position:relative;z-index:2;text-shadow:0 1px 0 rgba(255,255,255,.55)}
-.dh-emb-num.on-dark{color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.20)}
-.dh-emb-tab{position:absolute;left:-2.4px;top:-9px;width:21px;height:11px;border-radius:4px 7px 0 0;display:block}
-/* 꽃 테마 — 실제 꽃 타일을 그대로 쓰되 칩 크기에 맞게 줄인다 */
-.dh-emb .dh-eb-t,.dh-emb .dh-eb-b{height:8px;background-size:14px 8px}
-.dh-emb .dh-eb-l,.dh-emb .dh-eb-r{width:8px;background-size:8px 14px}
+.dh-emb{position:relative;width:100%;height:100%;border-radius:14px;box-sizing:border-box;overflow:hidden;
+  display:flex;align-items:center;justify-content:center}
+.dh-emb-num{font-family:'Noto Serif KR',serif;font-size:29px;font-weight:600;line-height:1;
+  letter-spacing:-1.2px;font-variant-numeric:tabular-nums;color:#3f362e;position:relative;z-index:2}
+.dh-emb-num.on-dark{color:#fff}
+/* 서류철 색인 띠 */
+.dh-emb-band{position:absolute;left:0;right:0;top:0;height:16px;display:block;z-index:1}
+.dh-emb.has-band .dh-emb-num{margin-top:14px}
+/* 꽃 테마 — 타일 네 변을 두른다 */
+.dh-emb .dh-eb-t,.dh-emb .dh-eb-b{height:11px;background-size:19px 11px}
+.dh-emb .dh-eb-l,.dh-emb .dh-eb-r{width:11px;background-size:11px 19px}
 /* 상세 시트 — 실제 달력 화면을 그대로 보여준다(캡처 사진이 아니라 진짜 렌더).
    ⚠️ 접두사 주의 — dhm-* 은 이미 '날짜 강조 관리 시트'가 쓰는 이름이라(.dhm-bar/.dhm-title 등)
    그걸 쓰면 관리 시트 규칙이 뒤에 선언돼 있어 일정 바가 그쪽 스타일을 뒤집어쓴다. → dhcal-*. [2026-08-20] */
@@ -21547,36 +21529,27 @@ function _dhCellOverlayHTML(h,key,dow){
   const deco=_dhEmojiSidesHTML(themeKey,h.style_key,f);
   return `<div class="cal-hl-wrap${_dhWrapCls(themeKey)}" style="${_dhBorderStyle(hex,f,themeKey,h.style_key)}">${deco}${tag}</div>`;
 }
-/* 목록 썸네일 — '달력 한 조각'이라는 틀을 벗어난 제품 컷.
-   테마의 스타일(테두리/채움/탭/꽃/점선)이 그대로 입혀진 '날짜 한 칸'을 종이 무대 위에 얹어
-   무엇을 사는지 한눈에 읽히게 한다. 달력은 상세로 들어가면 실물로 보여준다. [2026-08-20] */
-function _dhChipStyle(themeKey,colorKey){
+/* 목록 썸네일 — 썸네일 '자체'가 견본이다.
+   작은 칩을 상자 안에 넣고 그림자·광택으로 꾸미던 걸 전부 걷어냈다(그게 싸구려로 보이던 원인).
+   테마의 표시 방식을 74px 타일 전체에 그대로 입혀, 색면과 선만으로 납작하게 —
+   무엇을 사는지 멀리서도 한 번에 읽힌다. 달력은 상세로 들어가면 실물로 보여준다. [2026-08-20] */
+function _dhEmblemHTML(themeKey,colorKey){
   const t=_dhTheme(themeKey);
   const r=t.render;
   const hex=_dhHexOf(themeKey,colorKey);
-  // 탭이 얹히는 테마는 왼쪽 위만 각지게 — 탭이 모서리 곡선 위에 스티커처럼 떠 보이지 않고
-  // 서류철 색인 탭처럼 카드에 이어 붙는다
-  const rad=t.label?'border-radius:0 9px 9px 9px;':'';
-  if(r==='fill'||r==='deep') return `background:${hex}`;
-  if(r==='flower')           return `background:${_dhRgba(hex,.12)}`;
-  if(r==='folder')           return `background:#fffdf7;border:2.4px solid ${hex};border-radius:0 4px 4px 4px`;
-  if(r==='dashed')           return `background:#fffdf7;border:1.8px dashed ${hex}`;
-  return `background:#fffdf7;border:2px solid ${hex};${rad}`;   // basic
-}
-function _dhEmblemHTML(themeKey,colorKey){
-  const t=_dhTheme(themeKey);
-  const hex=_dhHexOf(themeKey,colorKey);
   const dark=_dhIsDarkFill(themeKey,colorKey);
-  // 제목을 붙일 수 있는 테마만 작은 탭을 얹어 그 차이를 드러낸다
-  const tab=t.label?`<i class="dh-emb-tab" style="background:${hex}"></i>`:'';
+  let style='',band='',cls='';
+  if(r==='fill'||r==='deep')   style=`background:${hex}`;
+  else if(r==='flower')        style=`background:linear-gradient(${_dhRgba(hex,.11)},${_dhRgba(hex,.11)}),#fffdf7`;
+  else if(r==='dashed')        style=`background:#fffdf7;border:2.5px dashed ${hex}`;
+  else if(r==='folder'){
+    // 서류철 — 위에 색 띠(색인)를 두르고 굵은 테를 둘러 '보관함'의 성격을 드러낸다
+    style=`background:#fffdf7;box-shadow:inset 0 0 0 3px ${hex}`;
+    band=`<i class="dh-emb-band" style="background:${hex}"></i>`; cls=' has-band';
+  }
+  else                         style=`background:#fffdf7;box-shadow:inset 0 0 0 3px ${hex}`;  // basic
   const deco=_dhEmojiSidesHTML(themeKey,colorKey,{top:true,bottom:true,left:true,right:true});
-  // 무대는 중립적인 종이로 두고(색은 오브제만), 칸 뒤에 아주 옅은 빛 + 그림자에 섞인 테마 색으로
-  // 깊이를 준다 — 색을 넓게 깔면 얼룩처럼 보이고 칩 자신의 색과도 부딪힌다
-  return `<div class="dh-emb" style="--emb-wash:${_dhRgba(hex,.085)};--emb-glow:${_dhRgba(hex,.30)}">
-    <div class="dh-emb-chip" style="${_dhChipStyle(themeKey,colorKey)}">${deco}${tab}
-      <span class="dh-emb-num${dark?' on-dark':''}">15</span>
-    </div>
-  </div>`;
+  return `<div class="dh-emb${cls}" style="${style}">${deco}${band}<span class="dh-emb-num${dark?' on-dark':''}">15</span></div>`;
 }
 /* 상세 시트 — '실제 캘린더 화면'을 그대로 보여준다(사진 대신 진짜 렌더).
    2026년 8월(1일=토)을 실제 배치 그대로 그리고, 11~13일에 3일짜리 강조를 얹는다. */
