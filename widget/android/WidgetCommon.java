@@ -302,9 +302,11 @@ public class WidgetCommon {
             dow == 6 || !hlIn(h, addDays(key, 1))
         };
     }
-    /* 칸별 플래그(42칸)를 줄(7칸)별로 접는다 — 한 줄에 하나라도 true면 그 줄 전체 true.
-       공휴일·강조 라벨이 특정 칸에만 있으면 그 칸의 일정 바만 밀려 기간 바가 끊겨 보이므로,
-       같은 줄 전체에 같은 높이를 예약하는 데 쓴다. [2026-08-19] */
+    /* 칸별 플래그(42칸)를 줄(7칸)별로 접는다.
+       ⚠️ 예전엔 공휴일/강조 라벨이 있는 줄 전체에 같은 높이를 예약하는 데 썼는데,
+          그러면 공휴일이 없는 칸까지 첫 줄이 빈칸이 돼 일정이 하나밖에 안 보였다
+          (실기기 제보 2026-08-22). 지금은 '그 칸에 공휴일/라벨이 있을 때만' 자리를 쓴다.
+          이 헬퍼는 남겨두지만 렌더에는 쓰지 않는다. */
     /* 셀 높이(dp)에서 그릴 수 있는 '일정 줄' 수를 산정한다.
        날짜 숫자 박스(17dp)+여백, 그 주가 비워두는 공휴일/강조 라벨 줄, 할일 줄을 먼저 뺀다.
        줄 하나 높이 = 13dp(레이아웃 minHeight와 동일). 순수 계산이라 단위테스트로 검증. [2026-08-19] */
@@ -433,13 +435,32 @@ public class WidgetCommon {
             String at = a.title == null ? "" : a.title, bt = b.title == null ? "" : b.title;
             return at.compareTo(bt);
         });
-        List<Set<String>> occ = new ArrayList<>();
+        /* 레인 배정 — ⚠️ 같은 일정(제목·색·소유 동일)은 가능하면 '같은 줄'을 쓴다.
+           여러 날(is_multi) 일정은 gid가 없어 날짜마다 별개 Run 이 되는데, 날마다 다른 줄에 떨어지면
+           다른 일정이 그 자리에 들어가 한 줄이 두 색으로 섞여 보인다(실기기 제보 2026-08-22:
+           "29·31일 여름휴가 바에 핑크색이 섞여 있다"). 앱의 _eventItemKey 묶음과 같은 취지. */
+        /* 레인은 '일정 단위'로 배정한다 — 같은 일정(제목·색·소유 동일)의 런들은 전부 같은 줄.
+           ⚠️ 런 하나씩 배정하면서 나중에 같은 줄을 노리는 방식으로는 안 된다: 먼저 처리된 다른 일정이
+              그 줄을 가져가면 그날만 아래로 밀려 한 줄이 두 색으로 섞여 보인다(실기기 제보 2026-08-22
+              "29·31일 여름휴가 바에 핑크색이 섞여 있다"). 그래서 그 일정이 걸친 날 전체를 한 번에 잡는다.
+           ⚠️ 점유는 '그 일정이 실제로 있는 날'에만 걸리므로, 없는 날엔 다른 일정이 그 줄을 그대로 쓴다. */
+        List<String> order = new ArrayList<>();
+        Map<String, List<Run>> byGroup = new HashMap<>();
         for (Run r : all) {
+            String gk = (r.title == null ? "" : r.title) + "|" + r.color + "|" + r.outline + "|" + r.shared;
+            List<Run> g = byGroup.get(gk);
+            if (g == null) { g = new ArrayList<>(); byGroup.put(gk, g); order.add(gk); }
+            g.add(r);
+        }
+        List<Set<String>> occ = new ArrayList<>();
+        for (String gk : order) {
+            Set<String> days = new HashSet<>();
+            for (Run r : byGroup.get(gk)) days.addAll(r.days);
             int lane = 0;
-            while (lane < occ.size() && !disjoint(occ.get(lane), r.days)) lane++;
-            if (lane == occ.size()) occ.add(new HashSet<>(r.days));
-            else occ.get(lane).addAll(r.days);
-            r.lane = lane;
+            while (lane < occ.size() && !disjoint(occ.get(lane), days)) lane++;
+            if (lane == occ.size()) occ.add(new HashSet<>(days));
+            else occ.get(lane).addAll(days);
+            for (Run r : byGroup.get(gk)) r.lane = lane;
         }
         return all;
     }

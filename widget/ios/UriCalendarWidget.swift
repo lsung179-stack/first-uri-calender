@@ -683,13 +683,28 @@ struct GridView: View {
         // 실제 날짜 점유(occupancy) 기반 레인 배정(앱 _computeMonthLanes와 동일) —
         // 기간 일정은 '자기가 걸친 날'만 레인을 막고, 그 외 날의 일정은 같은 레인을 재사용.
         // (예전 laneEnd 방식은 기간 일정 종료일이 멀면 그 사이 모든 일정을 위 레인으로 밀어냈음)
-        var occ: [Set<String>] = []   // lane → 점유된 날짜들
+        /* ⚠️ 같은 일정(제목·색·소유 동일)은 가능하면 '같은 줄'을 쓴다.
+           여러 날(is_multi) 일정은 gid가 없어 날짜마다 별개 런이 되는데, 날마다 다른 줄에 떨어지면
+           그 자리에 다른 일정이 들어가 한 줄이 두 색으로 섞여 보인다(실기기 제보 2026-08-22).
+           앱의 _eventItemKey 묶음과 같은 취지 — 안드로이드 buildRuns 와 동일 규칙. */
+        // 레인은 '일정 단위'로 배정 — 같은 일정의 런들은 전부 같은 줄(안드로이드 buildRuns와 동일).
+        // 런 하나씩 배정하면 먼저 처리된 다른 일정이 그 줄을 가져가 그날만 밀리므로,
+        // 그 일정이 걸친 날 전체를 한 번에 잡는다.
+        var order: [String] = []
+        var byGroup: [String: [Int]] = [:]     // 그룹키 → result 인덱스들
         for idx in result.indices {
-            let days = runDays(result[idx].start, result[idx].end)
+            let gk = "\(result[idx].title)|\(result[idx].color)|\(result[idx].outline)|\(result[idx].shared)"
+            if byGroup[gk] == nil { byGroup[gk] = []; order.append(gk) }
+            byGroup[gk]!.append(idx)
+        }
+        var occ: [Set<String>] = []   // lane → 점유된 날짜들
+        for gk in order {
+            var days = Set<String>()
+            for i in byGroup[gk]! { days.formUnion(runDays(result[i].start, result[i].end)) }
             var lane = 0
             while lane < occ.count && !occ[lane].isDisjoint(with: days) { lane += 1 }
-            if lane == occ.count { occ.append(Set(days)) } else { occ[lane].formUnion(days) }
-            result[idx].lane = lane
+            if lane == occ.count { occ.append(days) } else { occ[lane].formUnion(days) }
+            for i in byGroup[gk]! { result[i].lane = lane }
         }
         return result
     }
@@ -731,13 +746,10 @@ struct GridView: View {
               let budget = lineBudget(rowH: rowH, dense: denseCell)
               VStack(spacing: rowGap) {
                 ForEach(0..<rowCount, id: \.self) { w in
-                    // 이 줄(주)에 공휴일/강조 라벨이 하나라도 있으면 7칸 모두 그 높이를 비워둔다
-                    let rowDates = (0..<7).map { cal.date(byAdding: .day, value: w*7 + $0, to: startDate)! }
-                    let resHoliday = rowDates.contains { holidays[fmt($0)] != nil }
-                    let resLabel = rowDates.contains { rd in
-                        let k = fmt(rd); let h = hlFor(room, k)
-                        return h != nil && h!.lb && !h!.t.isEmpty && h!.s == k
-                    }
+                    /* ⚠️ 예전엔 '그 주에 공휴일/강조 라벨이 하나라도 있으면 7칸 모두 그 줄을 비워두는'
+                       방식이었는데, 공휴일이 하나만 있어도 그 주 전체가 일정 한 줄을 잃어
+                       "일정이 하나밖에 안 보인다"는 실기기 제보가 나왔다(2026-08-22).
+                       → 예약은 '그 칸'에만 적용한다(안드로이드와 동일 규칙). */
                     HStack(spacing: 0) {
                         ForEach(0..<7, id: \.self) { c in
                             let d = cal.date(byAdding: .day, value: w*7 + c, to: startDate)!
@@ -752,7 +764,6 @@ struct GridView: View {
                                     holiday: holidays[fmt(d)],
                                     todos: dTodos, maxTodos: weeks == 2 ? max(0, 3 - usedLanes) : 1, dense: rowCount >= 6 || weeks == 2,
                                     hl: dHl, hlStart: dHl?.s == dKey,
-                                    holidayReserve: resHoliday, hlLabelReserve: resLabel,
                                     lineBudget: budget)
                         }
                     }.frame(height: rowH)
@@ -784,14 +795,13 @@ struct DayCell: View {
     var hlStart: Bool = false         // 이 칸이 강조의 진짜 시작일인지(라벨은 여기에만)
     // 공휴일·강조 라벨이 그 칸에만 있으면 그 칸의 일정 바만 한 줄 밀려 기간 바가 끊겨 보인다.
     // → 같은 주에 하나라도 있으면 나머지 칸도 같은 높이를 비워둔다(안드로이드와 동일 규칙). [2026-08-19]
-    var holidayReserve: Bool = false
-    var hlLabelReserve: Bool = false
     // 이 칸이 그릴 수 있는 '바 줄' 수(행 높이에서 산정). 넘치는 만큼은 그리지 않고 '+N'으로. [2026-08-19]
     var lineBudget: Int = 99
     private var numBox: CGFloat { dense ? 16 : 18 }
     private var barH: CGFloat { dense ? 10.5 : 12 }
-    private var labelLine: Bool { (hlStart && hl != nil && hl!.lb && !(hl!.t.isEmpty)) || hlLabelReserve }
-    private var holidayLine: Bool { holiday != nil || holidayReserve }
+    // 예약은 칸별 — 공휴일/라벨이 '이 칸에' 있을 때만 줄을 쓴다(없는 칸은 일정으로 채움).
+    private var labelLine: Bool { hlStart && hl != nil && hl!.lb && !(hl!.t.isEmpty) }
+    private var holidayLine: Bool { holiday != nil }
     // 라벨·공휴일 줄을 먼저 빼고 남는 줄을 이벤트 → 할일 순으로 채운다.
     // (라벨/공휴일 예약은 같은 주 7칸이 동일하므로 이 계산도 줄 단위로 균일하다)
     // 예산이 아주 작으면(칸이 매우 낮으면) 예약 줄부터 접는다 — 라벨 → 공휴일 순으로 살린다.
@@ -834,12 +844,15 @@ struct DayCell: View {
         let roundR = !b.contRight || dow == 6
         let showTitle = !b.contLeft || dow == 0     // 시작일/주 시작에만 제목
         let showMark = b.shared && !b.contLeft       // 함께 일정: 시작 칸 왼쪽에 얇은 띠 (앱 .cal-evbar-marker)
+        // 모서리 라운드는 2pt (실기기 피드백 2026-08-22: 3pt는 커 보임 / 안드로이드 2dp와 동일)
         let shape = UnevenRoundedRectangle(
-            topLeadingRadius: roundL ? 3 : 0, bottomLeadingRadius: roundL ? 3 : 0,
-            bottomTrailingRadius: roundR ? 3 : 0, topTrailingRadius: roundR ? 3 : 0)
+            topLeadingRadius: roundL ? 2 : 0, bottomLeadingRadius: roundL ? 2 : 0,
+            bottomTrailingRadius: roundR ? 2 : 0, topTrailingRadius: roundR ? 2 : 0)
         Text(showTitle ? b.title : " ").font(.system(size: 8.5, weight: .bold))
             .foregroundColor(b.outline ? .ink : contrastText(b.color)).lineLimit(1)
-            .padding(.leading, showMark ? 8 : (roundL ? 3 : 0)).padding(.trailing, roundR ? 3 : 0)
+            // 띠가 있을 때 제목 시작 위치: 띠(leading 4 + 폭 2.5) 다음 0.75pt.
+            // 실기기 피드백(2026-08-22) — 띠와 글자 사이가 너무 벌어져 보여 간격을 절반으로.
+            .padding(.leading, showMark ? 7.25 : (roundL ? 3 : 0)).padding(.trailing, roundR ? 3 : 0)
             .frame(maxWidth: .infinity, minHeight: barH, alignment: .leading)
             .background(
                 b.outline
@@ -877,7 +890,7 @@ struct DayCell: View {
     var body: some View {
         // 날짜 탭 → 앱의 그 날짜 열기(위젯은 스크롤 불가 → 많은 일정은 앱에서 전부 보기)
         Link(destination: URL(string: "com.lsung.uricalendar://open?room=\(roomId)&date=\(fmt(date))")!) {
-            VStack(spacing: 1.5) {
+            VStack(spacing: 0.75) {   // 바 사이 간격 축소(실기기 피드백 2026-08-22)
                 Text("\(Calendar.current.component(.day, from: date))")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(isToday ? .white
@@ -893,7 +906,7 @@ struct DayCell: View {
                             .foregroundColor(Color(hexStr: h.ink)).lineLimit(1)
                             .padding(.leading, 3).padding(.trailing, 3)
                             .frame(maxWidth: .infinity, minHeight: barH, alignment: .leading)
-                            .background(RoundedRectangle(cornerRadius: 3).fill(Color(hexStr: h.c)))
+                            .background(RoundedRectangle(cornerRadius: 2).fill(Color(hexStr: h.c)))
                             .padding(.leading, 1).padding(.trailing, 1)
                     } else {
                         Color.clear.frame(height: barH)      // 같은 주 칸들과 일정 바 시작 높이를 맞춤
@@ -905,7 +918,7 @@ struct DayCell: View {
                             .foregroundColor(.white).lineLimit(1)
                             .padding(.leading, 3).padding(.trailing, 3)
                             .frame(maxWidth: .infinity, minHeight: barH, alignment: .leading)
-                            .background(RoundedRectangle(cornerRadius: 3).fill(Color.sunRed))
+                            .background(RoundedRectangle(cornerRadius: 2).fill(Color.sunRed))
                             .padding(.leading, 1).padding(.trailing, 1)
                     } else {
                         Color.clear.frame(height: barH)      // 공휴일 칸에서 기간 바가 끊겨 보이지 않게 자리만 확보

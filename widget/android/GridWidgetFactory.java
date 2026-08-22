@@ -34,8 +34,6 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
     // 여러 날 기간 바가 그 날만 어긋나 '끊겨' 보인다(실기기 제보 2026-08-19).
     // → 같은 주(가로 한 줄)에 하나라도 있으면 그 줄 7칸 전부에 같은 높이를 예약한다.
     //   (앱도 같은 이유로 공휴일 라벨을 고정 높이로 항상 자리 잡아둠 — CLAUDE.md 코드 38)
-    private final boolean[] rowHasHoliday = new boolean[6];
-    private final boolean[] rowHasHlLabel = new boolean[6];
     private Map<String,String> holidays = new HashMap<>(); // 빨간날(공휴일) 'YYYY-MM-DD'→이름
 
     GridWidgetFactory(Context c, int kind) { this.ctx = c; this.kind = kind; }
@@ -48,6 +46,7 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
         WidgetData.Highlight hl;      // 날짜 강조(칸당 1건)
         boolean[] hlSides;            // [top,bottom,left,right] — 테두리를 그릴 변
         boolean hlStart;              // 강조의 진짜 시작일(라벨은 여기에만)
+        int reserve;                  // 이 칸이 쓰는 예약 줄 수(공휴일 바 + 강조 라벨) — 칸별로만 적용
         List<WidgetData.Todo> todos = new ArrayList<>();
     }
 
@@ -149,33 +148,21 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
             if (tl != null) cell.todos = tl;
             cells.add(cell);
         }
-        // 줄별 예약 여부 계산 (칸별 플래그 → 줄 단위로 접기; 계산은 WidgetCommon.rowFlags에서 검증)
-        boolean[] hol = new boolean[cells.size()], lab = new boolean[cells.size()];
-        for (int i = 0; i < cells.size(); i++) {
-            Cell c = cells.get(i);
-            hol[i] = (c.holiday != null);
-            lab[i] = (c.hlStart && c.hl != null && c.hl.label && c.hl.title != null && !c.hl.title.isEmpty());
-        }
-        boolean[] rh = WidgetCommon.rowFlags(hol, rowHasHoliday.length);
-        boolean[] rl = WidgetCommon.rowFlags(lab, rowHasHlLabel.length);
-        System.arraycopy(rh, 0, rowHasHoliday, 0, rowHasHoliday.length);
-        System.arraycopy(rl, 0, rowHasHlLabel, 0, rowHasHlLabel.length);
-
-        /* 표시 줄 수 확정 — 예전엔 날짜 숫자만 빼고 계산해서, 공휴일/강조 라벨이 있는 주(그 줄 7칸 전부가
-           한 줄을 비워둠)와 할일 줄까지 겹치면 칸이 위젯 높이를 넘어 마지막 주가 밀려났다. 이제 예약 줄과
-           할일 줄을 먼저 빼고 남는 만큼만 일정 줄로 쓴다(작은 위젯은 1줄까지 내려감). [2026-08-19] */
+        /* 표시 줄 수 확정.
+           ⚠️ 예전엔 '공휴일/강조 라벨이 있는 주는 그 줄 7칸 전부가 한 줄을 비워두는' 방식이라,
+              한 달에 공휴일이 하나만 있어도 위젯 전체 일정 줄이 하나씩 깎여 일정이 한 개밖에
+              안 보였다(실기기 제보 2026-08-22). 이제 예약은 '그 칸'에만 적용한다 —
+              칸 전체 높이는 (예약 줄 + 일정 줄)이 항상 같도록 칸별로 일정 줄 수를 깎아서 맞춘다. */
         if (cellDpForLanes > 0) {
-            int maxReserve = 0;
-            for (int r = 0; r < rows; r++) {
-                int need = (rh[r] ? 1 : 0) + (rl[r] ? 1 : 0);
-                if (need > maxReserve) maxReserve = need;
-            }
-            int lines = WidgetCommon.laneBudget(cellDpForLanes, maxReserve, !byTodo.isEmpty(), lineDp);
+            int lines = WidgetCommon.laneBudget(cellDpForLanes, 0, !byTodo.isEmpty(), lineDp);
             laneCap = Math.max(1, Math.min(MAX_LANE_VIEWS, lines));
         }
         for (Cell c : cells) {
             int[] ov = new int[]{0};
-            c.bars = WidgetCommon.cellBars(runs, c.key, c.dow, laneCap, ov);
+            c.reserve = (c.holiday != null ? 1 : 0)
+                      + ((c.hlStart && c.hl != null && c.hl.label && c.hl.title != null && !c.hl.title.isEmpty()) ? 1 : 0);
+            int cap = Math.max(1, laneCap - c.reserve);
+            c.bars = WidgetCommon.cellBars(runs, c.key, c.dow, cap, ov);
             c.overflow = ov[0];
         }
     }
@@ -244,11 +231,9 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
             rv.setInt(id("cell_hl_label", "id"), "setBackgroundColor", cell.hl.color);
             rv.setTextColor(id("cell_hl_label", "id"), cell.hl.ink);
         } else {
-            // 같은 줄에 라벨이 하나라도 있으면 자리만 비워둔다(INVISIBLE) → 일정 바 시작 높이가 줄 전체에서 동일
-            final int _row = position / 7;
-            final boolean _res = (_row < rowHasHlLabel.length) && rowHasHlLabel[_row];
+            // 라벨이 없는 칸은 자리를 안 비워둔다 → 그 칸은 일정으로 꽉 채워짐
             rv.setTextViewText(id("cell_hl_label", "id"), "");
-            rv.setViewVisibility(id("cell_hl_label", "id"), _res ? android.view.View.INVISIBLE : android.view.View.GONE);
+            rv.setViewVisibility(id("cell_hl_label", "id"), android.view.View.GONE);
         }
 
         // 빨간날(공휴일) 바 — 앱은 텍스트 라벨만, 위젯은 빨간 바로 자동 표시
@@ -263,25 +248,33 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
                     android.content.res.ColorStateList.valueOf(0xFFC0503F));
             }
         } else {
-            // 같은 줄에 공휴일이 있으면 자리만 비워둔다 → 기간 바가 공휴일 칸에서 끊겨 보이지 않음
-            final int _row2 = position / 7;
-            final boolean _res2 = (_row2 < rowHasHoliday.length) && rowHasHoliday[_row2];
+            // 공휴일이 없는 칸은 자리를 안 비워둔다(사용자 요청 2026-08-22) → 일정이 한 줄 더 보임
             rv.setTextViewText(id("cell_holiday", "id"), "");
-            rv.setViewVisibility(id("cell_holiday", "id"), _res2 ? android.view.View.INVISIBLE : android.view.View.GONE);
+            rv.setViewVisibility(id("cell_holiday", "id"), android.view.View.GONE);
         }
 
         int[] evViews = { id("cell_ev1", "id"), id("cell_ev2", "id"), id("cell_ev3", "id"), id("cell_ev4", "id"), id("cell_ev5", "id") };
         for (int s = 0; s < evViews.length; s++) {
-            WidgetCommon.DayBar b = (s < laneCap && s < cell.bars.length) ? cell.bars[s] : null;
+            WidgetCommon.DayBar b = (s < cell.bars.length) ? cell.bars[s] : null;
             if (b != null) {
                 boolean showTitle = !b.contLeft || cell.dow == 0;
                 boolean showMark = b.shared && !b.contLeft;   // 함께 일정: 시작 칸 왼쪽에 얇은 띠(▎, 텍스트색=대비색)
                 rv.setViewVisibility(evViews[s], android.view.View.VISIBLE);
                 String _bt = showTitle ? (b.title == null ? "" : b.title) : " ";
-                // 함께 일정 띠: 왼쪽에 얇은 여백(thin space)을 주고, 띠와 제목 사이는 더 좁게(hair space).
-                // 실기기 피드백 — 띠가 왼쪽 끝에 너무 붙고 제목과는 너무 벌어져 보였음. [2026-08-19]
-                if (showMark) _bt = "\u2009▎\u200A" + _bt;
-                rv.setTextViewText(evViews[s], _bt);
+                /* 함께 일정 띠. ⚠️ '▎'(U+258E)는 글자 폭의 1/4만 잉크이고 나머지는 글리프 자체의
+                   빈 공간이라, 앞뒤로 스페이스를 안 넣어도 제목과 크게 벌어진다(실기기 제보 2026-08-22).
+                   → ScaleXSpan 으로 그 글자만 가로 50%로 눌러 간격을 절반으로 줄인다.
+                   (RemoteViews 는 SCALE_X_SPAN 을 그대로 전달한다. 혹시 적용이 안 돼도
+                    그냥 원래 폭의 띠가 되므로 안전하다.) 왼쪽 여백은 레이아웃 paddingLeft 가 담당. */
+                if (showMark) {
+                    android.text.SpannableStringBuilder _sb = new android.text.SpannableStringBuilder("▎");
+                    _sb.setSpan(new android.text.style.ScaleXSpan(0.5f), 0, 1,
+                                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    _sb.append(_bt);
+                    rv.setTextViewText(evViews[s], _sb);
+                } else {
+                    rv.setTextViewText(evViews[s], _bt);
+                }
                 if (b.outline) {
                     rv.setInt(evViews[s], "setBackgroundColor", 0x00000000);
                     rv.setTextColor(evViews[s], b.color);
