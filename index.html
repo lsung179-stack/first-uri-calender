@@ -4403,7 +4403,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
       <button type="button" class="ev-topbar-save" hidden aria-hidden="true" tabindex="-1">저장</button>
       <div class="ev-topbar-titles">
         <div class="mo-title" id="dhCardTitle">날짜 강조 추가</div>
-        <div class="mo-sub" id="dhCardSub">내 캘린더에만 보여요 (다른 멤버에겐 안 보여요)</div>
+        <div class="mo-sub" id="dhCardSub">내 탭에서만 보여요 (멤버별로 따로 표시돼요)</div>
       </div>
       <button type="button" class="ev-topbar-save" id="dhSaveBtnTop" onclick="saveDateHighlight()">저장</button>
     </div>
@@ -9997,9 +9997,9 @@ async function buildWidgetPayload(){
   // 날짜 강조(date_highlights) — 창(from~to)과 겹치는 것만. 테마 해석(렌더 방식·색·라벨 여부)은
   // 여기 JS에서 끝내고 네이티브엔 결과만 넘긴다(위젯이 DH_THEMES 표를 중복 보유하지 않게). [2026-08-19]
   let hls=[];
-  // ⚠️ 개인 전용 데코 — 내가 만든 것만(위젯도 앱과 동일하게 본인 것만 보여야 함). [2026-08-22]
+  // ⚠️ 멤버별 데코 — 방 전체를 실어 보내고, 위젯이 보고 있는 멤버(필터 없으면 나)의 것만 그린다. [2026-08-22]
   try{ const {data}=await supa.from('date_highlights').select('id,room_id,user_id,title,theme_key,style_key,start_date,end_date')
-        .in('room_id',roomIds).eq('user_id',(_currentUser&&_currentUser.id)||'-').gte('end_date',from).lte('start_date',to); hls=data||[]; }catch(_){}
+        .in('room_id',roomIds).gte('end_date',from).lte('start_date',to); hls=data||[]; }catch(_){}
   const hx=c=>colorHex(c||'c-vintage');
   const sealMap=_mySealByRoom||{};
   const outRooms=rooms.map(r=>{
@@ -10241,14 +10241,17 @@ async function loadEvents(){
   }
 }
 
-/* 날짜 강조(프리미엄) — ⚠️ '개인 전용' 데코다. 일정·할일과 달리 방 멤버끼리 공유하지 않고
-   만든 사람 본인 화면에만 보인다(사용자 결정 2026-08-22). 그래서 조회도 내 것만 가져온다.
-   (DB RLS도 user_id = auth.uid() 로 막아둬 클라이언트 필터가 빠져도 새지 않는다) */
+/* 날짜 강조(프리미엄) — ⚠️ '멤버별' 데코다. 일정처럼 한 화면에 전부 겹쳐 보이지 않고,
+   지금 보고 있는 멤버 탭의 주인 것만 보인다(사용자 결정 2026-08-22).
+     · 전체 탭 / 내 탭 → 내가 만든 것
+     · 다른 멤버 탭   → 그 멤버가 만든 것
+   그래서 조회는 방 전체를 가져오고, 화면에 뿌릴 때 _dhForDate 가 걸러낸다.
+   ⚠️ 수정·삭제는 DB(RLS)에서 만든 사람만 가능하다 — 남의 강조는 편집 진입 자체를 막는다. */
 async function loadDateHighlights(){
   if(!_currentRoom||!_currentUser){_dateHighlights=[];return;}
   try{
     const {data,error}=await supa.from('date_highlights').select('*')
-      .eq('room_id',_currentRoom.id).eq('user_id',_currentUser.id);
+      .eq('room_id',_currentRoom.id);
     if(error)throw error;
     _dateHighlights=data||[];
   }catch(e){
@@ -21385,7 +21388,7 @@ function onDhThemeUse(key){
   if(!isEffectivePremium()){
     showUpgradeModal({
       message:'📌 특별한 날짜를 강조해볼까요?',
-      feature:'프리미엄이면 원하는 날짜(구간)에 나만의 제목을 붙여 표시할 수 있어요. 내 캘린더에만 보이는 나만의 표시예요.'
+      feature:'프리미엄이면 원하는 날짜(구간)에 나만의 제목을 붙여 표시할 수 있어요. 멤버마다 각자의 표시가 따로 보여요.'
     });
     return;
   }
@@ -21607,12 +21610,17 @@ function _fmtMD(k){ const d=parseDateKey(k); return `${d.getMonth()+1}월 ${d.ge
 function _dayCountBetween(a,b){ return Math.round((parseDateKey(b)-parseDateKey(a))/86400000)+1; }
 
 /* ── 캘린더 그리드 렌더링: 날짜별 하이라이트 조회 + 격자선 기준 테두리 오버레이 ── */
+/* 지금 화면에 보여야 할 강조의 주인 — 전체 탭이면 나, 멤버 탭이면 그 멤버. [2026-08-22] */
+function _dhViewOwner(){
+  return _memberFilter || (_currentUser?_currentUser.id:null);
+}
 function _dhForDate(key){
   if(!_dateHighlights||!_dateHighlights.length)return null;
-  // 개인 데코라 '전체' 또는 '내 탭'에서만 보인다 — 다른 멤버를 보고 있을 땐 숨김. [2026-08-22]
-  if(_memberFilter && _currentUser && _memberFilter!==_currentUser.id) return null;
+  const own=_dhViewOwner();
+  if(!own) return null;
   let best=null;
   for(const h of _dateHighlights){
+    if(h.user_id!==own) continue;          // 보고 있는 멤버의 것만(가상 멤버는 user_id가 없어 자동 제외)
     if(key>=h.start_date && key<=h.end_date){
       if(!best || h.start_date<best.start_date) best=h;
     }
@@ -21815,7 +21823,7 @@ async function openDhCard(presetDate){
   if(!isEffectivePremium()){
     showUpgradeModal({
       message:'📌 특별한 날짜를 강조해볼까요?',
-      feature:'프리미엄이면 원하는 날짜(구간)에 나만의 제목을 붙여 표시할 수 있어요. 내 캘린더에만 보이는 나만의 표시예요.'
+      feature:'프리미엄이면 원하는 날짜(구간)에 나만의 제목을 붙여 표시할 수 있어요. 멤버마다 각자의 표시가 따로 보여요.'
     });
     return;
   }
@@ -21851,7 +21859,7 @@ function closeDhCard(){
 function _syncDhCardTitle(){
   const t=document.getElementById('dhCardTitle'), sb=document.getElementById('dhCardSub');
   if(t)t.textContent=_dhEditId?'날짜 강조 수정':'날짜 강조 추가';
-  if(sb)sb.textContent=_dhEditId?'제목·색·기간을 바꿀 수 있어요':'내 캘린더에만 보여요 (다른 멤버에겐 안 보여요)';
+  if(sb)sb.textContent=_dhEditId?'제목·색·기간을 바꿀 수 있어요':'내 탭에서만 보여요 (멤버별로 따로 표시돼요)';
 }
 /* 기존 강조를 그대로 불러와 수정 — 추가 시트를 재사용하고 저장만 update로 분기 */
 async function openDhEdit(id){
@@ -22243,6 +22251,16 @@ window.openDhAll=openDhAll; window.closeDhAll=closeDhAll;
 function openDateHighlightDetail(id){
   const h=(_dateHighlights||[]).find(x=>x.id===id);
   if(!h)return;
+  // 남이 만든 강조는 보기만 — 관리 시트(수정·삭제)로 들어가지 않는다(RLS도 본인만 허용). [2026-08-22]
+  if(_currentUser && h.user_id && h.user_id!==_currentUser.id){
+    let who='다른 멤버';
+    try{
+      const m=(_myMembers||[]).find(mm=>mm.user_id===h.user_id);
+      if(m&&m.name) who=m.name+'님';
+    }catch(_){}
+    toast(who+'이 만든 날짜 강조예요');
+    return;
+  }
   openDhManage(h.start_date);
 }
 
@@ -22259,7 +22277,7 @@ async function openDhManage(dateKeyStr){
   if(!isEffectivePremium()){
     showUpgradeModal({
       message:'📌 특별한 날짜를 강조해볼까요?',
-      feature:'프리미엄이면 원하는 날짜(구간)에 나만의 제목을 붙여 표시할 수 있어요. 내 캘린더에만 보이는 나만의 표시예요.'
+      feature:'프리미엄이면 원하는 날짜(구간)에 나만의 제목을 붙여 표시할 수 있어요. 멤버마다 각자의 표시가 따로 보여요.'
     });
     return;
   }
@@ -22304,7 +22322,10 @@ function renderDhManageList(){
   const thisList=document.getElementById('dhmThisList');
   const otherList=document.getElementById('dhmOtherList');
   if(!thisList||!otherList)return;
-  const all=(_dateHighlights||[]).slice().sort((a,b)=>(a.start_date<b.start_date?-1:a.start_date>b.start_date?1:0));
+  // 관리 목록은 내가 만든 것만 — 남의 강조는 보기만 되고 수정·삭제는 안 된다(RLS도 동일).
+  const me=_currentUser?_currentUser.id:null;
+  const all=(_dateHighlights||[]).filter(h=>h.user_id===me)
+    .slice().sort((a,b)=>(a.start_date<b.start_date?-1:a.start_date>b.start_date?1:0));
   const d=_dhmDate;
   const onDate=d?all.filter(h=>h.start_date<=d&&d<=h.end_date):[];
   const others=all.filter(h=>onDate.indexOf(h)<0);
