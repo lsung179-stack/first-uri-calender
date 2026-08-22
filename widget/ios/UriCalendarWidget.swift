@@ -37,12 +37,16 @@ struct WGRoom: Codable, Identifiable {
 struct WGHighlight: Codable {
     let id: String; let t: String; let r: String; let c: String
     let ink: String; let lb: Bool; let dk: Bool; let s: String; let e: String
+    let u: String?      // 만든 사람 — 개인 전용 데코라 멤버 필터에 걸린다 [2026-08-22]
 }
 // 그 날짜에 걸린 강조(겹치면 시작일이 이른 것 하나) — 앱 _dhForDate와 동일 규칙
-func hlFor(_ room: WGRoom, _ key: String) -> WGHighlight? {
+/* 날짜 강조는 '개인 전용' 데코라 만든 사람에게만 보인다(앱과 동일). payload 에는 내 것만 실리지만,
+   위젯에서 '다른 멤버'로 필터를 걸었을 땐 내 표시도 숨긴다(앱 _dhForDate 와 같은 규칙). [2026-08-22] */
+func hlFor(_ room: WGRoom, _ key: String, _ filter: String? = nil) -> WGHighlight? {
     guard let list = room.hls else { return nil }
     var best: WGHighlight? = nil
     for h in list where key >= h.s && key <= h.e {
+        if let f = filter, let owner = h.u, owner != f { continue }
         if best == nil || h.s < best!.s { best = h }
     }
     return best
@@ -757,7 +761,7 @@ struct GridView: View {
                             let inM = (weeks != 6) || (cal.component(.month, from: d) == curMonth)
                             let dTodos = room.todos.filter { $0.date == fmt(d) && todoVisibleFor($0, filter) }   // 멤버 필터 적용(앱과 동일)
                             let dKey = fmt(d)
-                            let dHl = hlFor(room, dKey)      // 날짜 강조(칸당 1건, 겹치면 시작일 이른 것)
+                            let dHl = hlFor(room, dKey, filter)   // 날짜 강조(칸당 1건, 겹치면 시작일 이른 것) — 멤버 필터 반영
                             DayCell(date: d, slots: Array(pair.0.prefix(usedLanes)), overflow: pair.1, isToday: fmt(d) == todayStr(),
                                     dow: cal.component(.weekday, from: d) - 1, roomId: room.id, inMonth: inM,
                                     rightLine: gridV && c < 6, bottomLine: gridH && w < rowCount - 1,
@@ -1091,7 +1095,7 @@ struct MiniMonth: View {
                     let isToday = fmt(d) == todayStr()
                     let isRed = (cal.component(.weekday, from: d) == 1) || (holidays[fmt(d)] != nil)   // 일요일/공휴일
                     // 미니 달력은 칸이 너무 작아 테두리/라벨이 뭉개짐 → 어느 날이 강조됐는지만 옅은 색으로. [2026-08-19]
-                    let mh = hlFor(room, fmt(d))
+                    let mh = hlFor(room, fmt(d), filter)
                     VStack(spacing: 1) {
                         Text("\(cal.component(.day, from: d))").font(.system(size: 10, weight: .semibold))
                             .foregroundColor(isToday ? .white : (isRed ? (inMonth ? .sunRed : Color.sunRed.opacity(0.35)) : (inMonth ? .ink : Color.ink.opacity(0.3))))

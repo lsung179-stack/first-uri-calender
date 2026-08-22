@@ -139,7 +139,7 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
             cell.key = WidgetCommon.fmt(d);
             cell.isToday = cell.key.equals(todayKey);
             cell.holiday = holidays.get(cell.key);
-            cell.hl = WidgetCommon.hlFor(room, cell.key);
+            cell.hl = WidgetCommon.hlFor(room, cell.key, filter);
             if (cell.hl != null) {
                 cell.hlSides = WidgetCommon.hlSides(cell.hl, cell.key, cell.dow);
                 cell.hlStart = cell.key.equals(cell.hl.start);

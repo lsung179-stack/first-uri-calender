@@ -86,7 +86,7 @@ public class MiniMonthFactory implements RemoteViewsService.RemoteViewsFactory {
             cell.isToday = cell.key.equals(todayKey);
             cell.holiday = holidays.containsKey(cell.key);
             // 미니 달력은 칸이 너무 작아 테두리/라벨이 뭉개짐 → 강조된 날은 옅은 색 배경으로만 표시(iOS와 동일)
-            WidgetData.Highlight _h = WidgetCommon.hlFor(room, cell.key);
+            WidgetData.Highlight _h = WidgetCommon.hlFor(room, cell.key, filter);
             if (_h != null) cell.hlTint = (_h.color & 0x00FFFFFF) | (cell.inMonth ? 0x4D000000 : 0x24000000);
             List<Integer> dots = dotByDate.get(cell.key);
             if (dots != null) cell.dots = dots;

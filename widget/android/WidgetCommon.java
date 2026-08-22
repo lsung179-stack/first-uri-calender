@@ -285,8 +285,14 @@ public class WidgetCommon {
        그 날짜에 걸린 강조 1건(겹치면 시작일이 이른 것) — 앱 _dhForDate와 동일 규칙.
        (Room.hls는 파싱 때 시작일 오름차순으로 정렬돼 있어 앞에서 처음 걸리는 게 정답) */
     static WidgetData.Highlight hlFor(WidgetData.Room room, String key) {
+        return hlFor(room, key, null);
+    }
+    /* 날짜 강조는 '개인 전용' 데코라 만든 사람에게만 보인다(앱과 동일). payload 에는 내 것만 실리지만,
+       위젯에서 '다른 멤버'로 필터를 걸었을 땐 내 표시도 숨긴다(앱 _dhForDate 와 같은 규칙). [2026-08-22] */
+    static WidgetData.Highlight hlFor(WidgetData.Room room, String key, String filter) {
         if (room == null || room.hls == null) return null;
         for (WidgetData.Highlight h : room.hls) {
+            if (filter != null && h.userId != null && !filter.equals(h.userId)) continue;
             if (key.compareTo(h.start) >= 0 && key.compareTo(h.end) <= 0) return h;
         }
         return null;

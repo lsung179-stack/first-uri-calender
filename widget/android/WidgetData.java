@@ -154,6 +154,7 @@ public class WidgetData {
                 if (h != null) {
                     Highlight hl = new Highlight();
                     hl.id = optStr(h, "id");
+                    hl.userId = optStr(h, "u");
                     hl.title = h.optString("t", "");
                     hl.render = h.optString("r", "border");
                     hl.color = WidgetCommon.parseColor(h.optString("c", "#8b3a2a"));
@@ -178,6 +179,7 @@ public class WidgetData {
        (테마 표는 앱에만 있고 위젯은 이 결과값만 그린다 → 테마가 늘어도 위젯 수정 불필요) */
     public static class Highlight {
         public String id, title, render, start, end;
+        public String userId;      // 만든 사람 — 개인 전용 데코라 멤버 필터에 걸린다 [2026-08-22]
         public int color, ink;
         public boolean label;      // 제목 라벨을 쓰는 테마인지(기본/폴더)
         public boolean darkFill;   // 진한 채움 = 날짜 숫자를 흰 글자로
