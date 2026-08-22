@@ -4403,7 +4403,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
       <button type="button" class="ev-topbar-save" hidden aria-hidden="true" tabindex="-1">저장</button>
       <div class="ev-topbar-titles">
         <div class="mo-title" id="dhCardTitle">날짜 강조 추가</div>
-        <div class="mo-sub" id="dhCardSub">내 탭에서만 보여요 (멤버별로 따로 표시돼요)</div>
+        <div class="mo-sub" id="dhCardSub">제목·색·기간을 정해보세요</div>
       </div>
       <button type="button" class="ev-topbar-save" id="dhSaveBtnTop" onclick="saveDateHighlight()">저장</button>
     </div>
@@ -21388,7 +21388,7 @@ function onDhThemeUse(key){
   if(!isEffectivePremium()){
     showUpgradeModal({
       message:'📌 특별한 날짜를 강조해볼까요?',
-      feature:'프리미엄이면 원하는 날짜(구간)에 나만의 제목을 붙여 표시할 수 있어요. 멤버마다 각자의 표시가 따로 보여요.'
+      feature:'프리미엄이면 원하는 날짜(구간)에 나만의 제목을 붙여 표시할 수 있어요.'
     });
     return;
   }
@@ -21823,7 +21823,7 @@ async function openDhCard(presetDate){
   if(!isEffectivePremium()){
     showUpgradeModal({
       message:'📌 특별한 날짜를 강조해볼까요?',
-      feature:'프리미엄이면 원하는 날짜(구간)에 나만의 제목을 붙여 표시할 수 있어요. 멤버마다 각자의 표시가 따로 보여요.'
+      feature:'프리미엄이면 원하는 날짜(구간)에 나만의 제목을 붙여 표시할 수 있어요.'
     });
     return;
   }
@@ -21859,7 +21859,7 @@ function closeDhCard(){
 function _syncDhCardTitle(){
   const t=document.getElementById('dhCardTitle'), sb=document.getElementById('dhCardSub');
   if(t)t.textContent=_dhEditId?'날짜 강조 수정':'날짜 강조 추가';
-  if(sb)sb.textContent=_dhEditId?'제목·색·기간을 바꿀 수 있어요':'내 탭에서만 보여요 (멤버별로 따로 표시돼요)';
+  if(sb)sb.textContent=_dhEditId?'제목·색·기간을 바꿀 수 있어요':'제목·색·기간을 정해보세요';
 }
 /* 기존 강조를 그대로 불러와 수정 — 추가 시트를 재사용하고 저장만 update로 분기 */
 async function openDhEdit(id){
@@ -22277,7 +22277,7 @@ async function openDhManage(dateKeyStr){
   if(!isEffectivePremium()){
     showUpgradeModal({
       message:'📌 특별한 날짜를 강조해볼까요?',
-      feature:'프리미엄이면 원하는 날짜(구간)에 나만의 제목을 붙여 표시할 수 있어요. 멤버마다 각자의 표시가 따로 보여요.'
+      feature:'프리미엄이면 원하는 날짜(구간)에 나만의 제목을 붙여 표시할 수 있어요.'
     });
     return;
   }
