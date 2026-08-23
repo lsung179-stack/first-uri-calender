@@ -6041,6 +6041,21 @@ async function autoRegisterPush(){
    '다음에' 또는 OS 거절 → 7일 스누즈, 평생 최대 3회 노출. 세션당 1회. */
 const PUSH_ASK_KEY='uricalv2.pushAsk';
 let _pushAskShown=false;
+/* ⚠️ iOS 네이티브 앱은 2026-08-11 이전까지 푸시 경로가 웹푸시로 잘못 잡혀 있어 등록 자체가
+   불가능했다. 그 사이에 소프트 요청(평생 3회)을 다 써버린 기기는 고쳐진 뒤에도 다시 물어보지
+   않아 영영 알림을 못 켜게 된다. → iOS 네이티브에서 한 번만 예산을 초기화한다. [2026-08-23] */
+const PUSH_ASK_RESET_KEY='uricalv2.pushAskReset.ios1';
+(function _resetIosPushAskOnce(){
+  try{
+    if(localStorage.getItem(PUSH_ASK_RESET_KEY))return;
+    const C=window.Capacitor;
+    const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform());
+    const ios=nat&&C.getPlatform&&C.getPlatform()==='ios';
+    if(!ios)return;
+    localStorage.removeItem(PUSH_ASK_KEY);
+    localStorage.setItem(PUSH_ASK_RESET_KEY,'1');
+  }catch(_){}
+})();
 function _pushAskState(){ try{ return JSON.parse(localStorage.getItem(PUSH_ASK_KEY)||'{}')||{}; }catch(_){ return {}; } }
 function _pushAskSnooze(){
   const s=_pushAskState(); s.c=(s.c||0)+1; s.n=Date.now()+7*24*3600*1000;
@@ -8672,7 +8687,21 @@ async function init(){
   }finally{
     initAdMob(); // AdMob 초기화 (네이티브에서만 동작)
     setTimeout(()=>document.getElementById('loading').classList.add('hide'),200);
-    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp)); bi.textContent='build 1.1.9 (78) · '+(nat?'네이티브':'웹')+' · http플러그인 '+(ch?'있음':'없음'); } }catch(_){}
+    /* 설정 화면 푸터 진단 — 광고(_admobDebug)처럼 푸시도 한눈에 보이게.
+       '푸시플러그인 없음'이면 그 빌드에 PushNotifications 가 안 들어간 것(=토큰 등록 자체 불가),
+       '권한 prompt'면 아직 OS 팝업을 수락하지 않은 것 → 설정 › 알림 설정에서 켜면 된다. [2026-08-23] */
+    try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp));
+      const plat=(nat&&C.getPlatform)?C.getPlatform():'web';
+      const _base='build 1.1.9 (78) · '+(nat?'네이티브('+plat+')':'웹')+' · http플러그인 '+(ch?'있음':'없음');
+      bi.textContent=_base;
+      (async function(){
+        try{
+          const pn=(typeof _getPushPlugin==='function')?_getPushPlugin():null;
+          let perm='-'; try{ perm=(typeof getNativePushPerm==='function')?(await getNativePushPerm()):'-'; }catch(_){ perm='error'; }
+          bi.textContent=_base+' · 푸시플러그인 '+(pn?'있음':'없음')+' · 권한 '+perm+(_nativePushToken?' · 토큰 있음':' · 토큰 없음');
+        }catch(_){}
+      })();
+    } }catch(_){}
     // in-app browser(카톡·네이버·페이스북 등)에서 열렸을 때 한 줄 안내
     setTimeout(maybeShowInAppBrowserHint,800);
   }
