@@ -6121,6 +6121,9 @@ async function unregisterPushNotification(){
       iOS도 안드로이드와 똑같이 PushNotifications 플러그인을 쓰고, 여기서 받는 토큰은
       '원본 APNs 디바이스 토큰'(16진수)이다. */
 let _nativePushToken=null;
+/* 마지막 APNs/FCM 등록 실패 사유 — 설정 푸터 진단에 노출한다.
+   예전엔 console.warn 만 해서 실기기에서 실패를 전혀 알 수 없었다. [2026-08-24] */
+let _nativePushErr='';
 let _nativePushListenersReady=false;
 
 function _nativePlatform(){
@@ -6167,7 +6170,11 @@ function _setupNativePushListeners(){
   _nativePushListenersReady=true;
   try{
     PN.addListener('registration',(t)=>{ _saveFcmToken(t&&t.value); });
-    PN.addListener('registrationError',(e)=>{ console.warn('푸시 등록 오류:',e); });
+    PN.addListener('registrationError',(e)=>{
+      _nativePushErr=(e&&(e.error||e.message))||'unknown';
+      console.warn('푸시 등록 오류:',e);
+      try{ if(typeof toast==='function') toast('알림 등록 실패: '+_nativePushErr); }catch(_){}
+    });
     // 알림 탭 → data.url로 이동 (send-push가 /?room=..&date=.. 형태로 넣어줌)
     PN.addListener('pushNotificationActionPerformed',(a)=>{
       try{
@@ -8698,7 +8705,7 @@ async function init(){
         try{
           const pn=(typeof _getPushPlugin==='function')?_getPushPlugin():null;
           let perm='-'; try{ perm=(typeof getNativePushPerm==='function')?(await getNativePushPerm()):'-'; }catch(_){ perm='error'; }
-          bi.textContent=_base+' · 푸시플러그인 '+(pn?'있음':'없음')+' · 권한 '+perm+(_nativePushToken?' · 토큰 있음':' · 토큰 없음');
+          bi.textContent=_base+' · 푸시플러그인 '+(pn?'있음':'없음')+' · 권한 '+perm+(_nativePushToken?' · 토큰 있음':' · 토큰 없음')+(_nativePushErr?' · 등록오류:'+_nativePushErr:'');
         }catch(_){}
       })();
     } }catch(_){}
