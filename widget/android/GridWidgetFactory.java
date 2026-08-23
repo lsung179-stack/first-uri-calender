@@ -148,10 +148,11 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
         /* 예약 줄(공휴일 바·강조 라벨)을 레인으로 미리 점유한 뒤 런을 만든다.
            ⚠️ 이렇게 해야 기간 바가 공휴일 칸에서 한 줄 밀리지 않고 일자로 이어지고,
               공휴일이 없는 칸의 빈 첫 줄은 하루짜리 일정이 채운다. (사용자 요청 2026-08-23) */
+        // ⚠️ 줄을 먹는 건 공휴일 바뿐이다 — 강조 라벨은 앱처럼 칸 좌상단에 얹히는 '탭'이라
+        //    레이아웃상 자리를 차지하지 않는다(사용자 지적 2026-08-23).
         Map<String, Integer> reserve = new HashMap<>();
         for (Cell c : cells) {
-            int r = (c.holiday != null ? 1 : 0)
-                  + ((c.hlStart && c.hl != null && c.hl.label && c.hl.title != null && !c.hl.title.isEmpty()) ? 1 : 0);
+            int r = (c.holiday != null ? 1 : 0);
             c.reserve = r;
             if (r > 0) reserve.put(c.key, r);
         }
@@ -236,7 +237,13 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
         if (cell.hlStart && cell.hl != null && cell.hl.label && cell.hl.title != null && !cell.hl.title.isEmpty()) {
             rv.setViewVisibility(id("cell_hl_label", "id"), android.view.View.VISIBLE);
             rv.setTextViewText(id("cell_hl_label", "id"), cell.hl.title);
-            rv.setInt(id("cell_hl_label", "id"), "setBackgroundColor", cell.hl.color);
+            if (android.os.Build.VERSION.SDK_INT >= 31) {
+                rv.setInt(id("cell_hl_label", "id"), "setBackgroundResource", id("ev_chip_single", "drawable"));
+                rv.setColorStateList(id("cell_hl_label", "id"), "setBackgroundTintList",
+                    android.content.res.ColorStateList.valueOf(cell.hl.color));
+            } else {
+                rv.setInt(id("cell_hl_label", "id"), "setBackgroundColor", cell.hl.color);
+            }
             rv.setTextColor(id("cell_hl_label", "id"), cell.hl.ink);
         } else {
             // 라벨이 없는 칸은 자리를 안 비워둔다 → 그 칸은 일정으로 꽉 채워짐

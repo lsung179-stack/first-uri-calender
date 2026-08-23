@@ -660,10 +660,9 @@ struct GridView: View {
         for i in 0..<(rowCount*7) {
             guard let d = cal.date(byAdding: .day, value: i, to: startDate) else { continue }
             let k = fmt(d)
-            var r = 0
-            if holidays[k] != nil { r += 1 }
-            if let h = hlFor(room, k, filter, myUserId), h.s == k, h.lb, !h.t.isEmpty { r += 1 }
-            if r > 0 { out[k] = r }
+            // ⚠️ 줄을 먹는 건 공휴일 바뿐 — 강조 라벨은 앱처럼 칸 좌상단에 얹히는 '탭'이라
+            //    자리를 차지하지 않는다(사용자 지적 2026-08-23).
+            if holidays[k] != nil { out[k] = 1 }
         }
         return out
     }
@@ -829,17 +828,16 @@ struct DayCell: View {
     private var numBox: CGFloat { dense ? 16 : 18 }
     private var barH: CGFloat { dense ? 10.5 : 12 }
     // 예약은 칸별 — 공휴일/라벨이 '이 칸에' 있을 때만 줄을 쓴다(없는 칸은 일정으로 채움).
-    private var labelLine: Bool { hlStart && hl != nil && hl!.lb && !(hl!.t.isEmpty) }
     private var holidayLine: Bool { holiday != nil }
     // 라벨·공휴일 줄을 먼저 빼고 남는 줄을 이벤트 → 할일 순으로 채운다.
     // (라벨/공휴일 예약은 같은 주 7칸이 동일하므로 이 계산도 줄 단위로 균일하다)
     // 예산이 아주 작으면(칸이 매우 낮으면) 예약 줄부터 접는다 — 라벨 → 공휴일 순으로 살린다.
     // 이 판단도 lineBudget/예약 플래그가 줄 단위로 같아서 같은 주 7칸이 항상 동일하다.
-    private var showLabelLine: Bool { labelLine && lineBudget >= 1 }
-    private var showHolidayLine: Bool { holidayLine && lineBudget >= (showLabelLine ? 2 : 1) }
+    // 라벨은 오버레이 탭이라 줄 예산과 무관 — 줄을 먹는 건 공휴일 바뿐.
+    private var showHolidayLine: Bool { holidayLine && lineBudget >= 1 }
     /* 예약 줄(공휴일 바·강조 라벨)이 레인 0..resLines-1 을 이미 차지한다 —
        slots 는 '절대 레인' 인덱스이므로 이벤트는 resLines 부터 그린다. [2026-08-23] */
-    private var resLines: Int { (showLabelLine ? 1 : 0) + (showHolidayLine ? 1 : 0) }
+    private var resLines: Int { showHolidayLine ? 1 : 0 }
     private var freeLines: Int { max(0, lineBudget - resLines) }
     private func hiddenCountFor(_ s: Int, _ t: Int) -> Int {
         var h = overflow + max(0, todos.count - t)
@@ -933,18 +931,6 @@ struct DayCell: View {
                     .background(isToday ? Circle().fill(Color.terra) : nil)
                 // 강조 라벨: 앱은 칸 위로 솟은 탭이지만 위젯 칸은 그럴 여백이 없어 공휴일 바와 같은
                 // '색 바' 방식으로 제목을 보여준다(라벨을 쓰는 테마=기본/폴더에서만). [2026-08-19]
-                if showLabelLine {
-                    if hlStart, let h = hl, h.lb, !h.t.isEmpty {
-                        Text(h.t).font(.system(size: 8.5, weight: .bold))
-                            .foregroundColor(Color(hexStr: h.ink)).lineLimit(1)
-                            .padding(.leading, 3).padding(.trailing, 3)
-                            .frame(maxWidth: .infinity, minHeight: barH, alignment: .leading)
-                            .background(RoundedRectangle(cornerRadius: 2).fill(Color(hexStr: h.c)))
-                            .padding(.leading, 1).padding(.trailing, 1)
-                    } else {
-                        Color.clear.frame(height: barH)      // 같은 주 칸들과 일정 바 시작 높이를 맞춤
-                    }
-                }
                 if showHolidayLine {
                     if let hn = holiday {   // 빨간날: 이름을 빨간 바로 자동 표시(앱은 텍스트만 → 위젯은 바)
                         Text(hn).font(.system(size: 8.5, weight: .bold))
@@ -970,6 +956,16 @@ struct DayCell: View {
                 Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)   // 셀이 행 높이를 채움 → 위젯 밖으로 안 넘침
+            // 강조 라벨 = 앱과 같은 '탭' — 줄을 차지하지 않고 칸 좌상단에 얹힌다. [2026-08-23]
+            .overlay(alignment: .topLeading) {
+                if hlStart, let h = hl, h.lb, !h.t.isEmpty {
+                    Text(h.t).font(.system(size: 7, weight: .bold))
+                        .foregroundColor(Color(hexStr: h.ink)).lineLimit(1)
+                        .padding(.horizontal, 2.5)
+                        .background(RoundedRectangle(cornerRadius: 2).fill(Color(hexStr: h.c)))
+                        .frame(maxWidth: 44, alignment: .leading)
+                }
+            }
             .opacity(inMonth ? 1 : 0.4)   // 다음/이전달 날짜는 흐리게
             // 강조 채움 — 날짜/일정 뒤에 깔림(앱 .dhr-fill/.dhr-deep의 z-index:0과 동일)
             .background { if let h = hl, hlIsFill(h) { Rectangle().fill(Color(hexStr: h.c)).opacity(inMonth ? 1 : 0.4) } }

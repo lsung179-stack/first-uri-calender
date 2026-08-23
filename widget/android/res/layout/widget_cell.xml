@@ -47,25 +47,6 @@
         android:textSize="11sp"
         android:text="1" />
 
-    <!-- 강조 라벨: 앱은 칸 위로 솟은 탭이지만 위젯 칸엔 그럴 여백이 없어 색 바로 표시(라벨 쓰는 테마만) -->
-    <TextView
-        android:id="@+id/cell_hl_label"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="0.5dp"
-        android:paddingLeft="4dp"
-        android:paddingRight="2dp"
-        android:minHeight="13dp"
-        android:gravity="center_vertical"
-        android:includeFontPadding="false"
-        android:background="#8B3A2A"
-        android:textColor="#FFFFFF"
-        android:textSize="7sp"
-        android:textStyle="bold"
-        android:singleLine="true"
-        android:ellipsize="end"
-        android:visibility="gone"
-        android:text="" />
 
     <!-- 빨간날(공휴일) 바: 앱은 텍스트만 표시하지만 위젯은 빨간 바로 자동 표시 -->
     <TextView
@@ -211,4 +192,25 @@
     <FrameLayout android:id="@+id/cell_hl_b" android:layout_width="match_parent" android:layout_height="2dp" android:layout_gravity="bottom" android:visibility="gone" />
     <FrameLayout android:id="@+id/cell_hl_l" android:layout_width="2dp" android:layout_height="match_parent" android:layout_gravity="left" android:visibility="gone" />
     <FrameLayout android:id="@+id/cell_hl_r" android:layout_width="2dp" android:layout_height="match_parent" android:layout_gravity="right" android:visibility="gone" />
+
+    <!-- 강조 라벨 = 앱과 같은 '탭'(라벨) — 줄을 차지하지 않고 칸 좌상단에 얹힌다.
+         ⚠️ 예전엔 세로 스택 안의 한 줄(바)이라 일정 한 줄을 잡아먹었다(실기기 제보 2026-08-23).
+            날짜 숫자는 가운데 정렬이라 좌상단 탭과 겹치지 않는다. 테두리보다 뒤에 둬야 위에 그려짐. -->
+    <TextView
+        android:id="@+id/cell_hl_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|left"
+        android:maxWidth="42dp"
+        android:paddingLeft="3dp"
+        android:paddingRight="3dp"
+        android:includeFontPadding="false"
+        android:background="#8B3A2A"
+        android:textColor="#FFFFFF"
+        android:textSize="6.5sp"
+        android:textStyle="bold"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:visibility="gone"
+        android:text="" />
 </FrameLayout>
