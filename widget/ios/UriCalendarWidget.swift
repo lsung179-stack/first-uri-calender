@@ -651,6 +651,22 @@ struct GridView: View {
     }
     // 보이는 그리드 범위의 '기간 런(run)'을 만들고 줄(lane)을 고정 배정 →
     // 같은 일정이 날마다 같은 줄에 놓여 끊기지 않고 이어짐.
+    /* 칸별로 먼저 쓰는 줄 수(공휴일 바 + 강조 라벨). 이 줄들을 레인으로 미리 점유해야
+       기간 바가 공휴일 칸에서 한 줄 밀리지 않고 일자로 이어진다. 공휴일이 없는 칸의 빈 첫 줄은
+       하루짜리 일정이 채운다. (사용자 요청 2026-08-23 / 안드로이드 buildRuns 와 동일 규칙) */
+    var reserveByDay: [String: Int] {
+        let cal = Calendar.current
+        var out: [String: Int] = [:]
+        for i in 0..<(rowCount*7) {
+            guard let d = cal.date(byAdding: .day, value: i, to: startDate) else { continue }
+            let k = fmt(d)
+            var r = 0
+            if holidays[k] != nil { r += 1 }
+            if let h = hlFor(room, k, filter, myUserId), h.s == k, h.lb, !h.t.isEmpty { r += 1 }
+            if r > 0 { out[k] = r }
+        }
+        return out
+    }
     var runs: [EvRun] {
         let cal = Calendar.current
         let startS = fmt(startDate)
@@ -705,6 +721,12 @@ struct GridView: View {
             byGroup[gk]!.append(idx)
         }
         var occ: [Set<String>] = []   // lane → 점유된 날짜들
+        for (day, r) in reserveByDay {          // 공휴일/강조 라벨이 쓰는 줄을 먼저 막아둔다
+            for L in 0..<r {
+                while occ.count <= L { occ.append(Set<String>()) }
+                occ[L].insert(day)
+            }
+        }
         for gk in order {
             var days = Set<String>()
             for i in byGroup[gk]! { days.formUnion(runDays(result[i].start, result[i].end)) }
@@ -815,14 +837,18 @@ struct DayCell: View {
     // 이 판단도 lineBudget/예약 플래그가 줄 단위로 같아서 같은 주 7칸이 항상 동일하다.
     private var showLabelLine: Bool { labelLine && lineBudget >= 1 }
     private var showHolidayLine: Bool { holidayLine && lineBudget >= (showLabelLine ? 2 : 1) }
-    private var freeLines: Int { max(0, lineBudget - (showLabelLine ? 1 : 0) - (showHolidayLine ? 1 : 0)) }
+    /* 예약 줄(공휴일 바·강조 라벨)이 레인 0..resLines-1 을 이미 차지한다 —
+       slots 는 '절대 레인' 인덱스이므로 이벤트는 resLines 부터 그린다. [2026-08-23] */
+    private var resLines: Int { (showLabelLine ? 1 : 0) + (showHolidayLine ? 1 : 0) }
+    private var freeLines: Int { max(0, lineBudget - resLines) }
     private func hiddenCountFor(_ s: Int, _ t: Int) -> Int {
         var h = overflow + max(0, todos.count - t)
-        if s < slots.count { for i in s..<slots.count where slots[i] != nil { h += 1 } }
+        let from = resLines + s
+        if from < slots.count { for i in from..<slots.count where slots[i] != nil { h += 1 } }
         return h
     }
     private var layoutPlan: (slots: Int, todos: Int, over: Int, overFits: Bool) {
-        var s = max(0, min(slots.count, freeLines))
+        var s = max(0, min(max(0, slots.count - resLines), freeLines))
         var t = max(0, min(min(maxTodos, todos.count), freeLines - s))
         // 넘침 표시(+N)도 한 줄을 먹으므로, 자리가 없으면 할일 → 이벤트 순으로 한 줄 양보
         if hiddenCountFor(s, t) > 0 && freeLines - s - t <= 0 {
@@ -932,8 +958,10 @@ struct DayCell: View {
                     }
                 }
                 let plan = layoutPlan
-                ForEach(0..<plan.slots, id: \.self) { idx in
-                    if let b = slots[idx] { barView(b) } else { Color.clear.frame(height: barH) }   // 빈 줄도 높이 유지 → 줄 정렬
+                ForEach(0..<plan.slots, id: \.self) { k in
+                    let idx = resLines + k                     // 예약 줄 다음부터가 이벤트 레인
+                    if idx < slots.count, let b = slots[idx] { barView(b) }
+                    else { Color.clear.frame(height: barH) }   // 빈 줄도 높이 유지 → 줄 정렬(하루 일정이 있으면 그 자리를 채움)
                 }
                 ForEach(Array(todos.prefix(plan.todos).enumerated()), id: \.offset) { _, t in todoLine(t) }
                 if plan.over > 0 && plan.overFits {

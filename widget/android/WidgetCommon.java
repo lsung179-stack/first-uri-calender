@@ -397,6 +397,15 @@ public class WidgetCommon {
 
     // startKey~endKey 범위의 이벤트를 gid 런으로 묶고 레인 배정. filter=null=전체.
     static List<Run> buildRuns(List<WidgetData.Event> events, String filter, String startKey, String endKey) {
+        return buildRuns(events, filter, startKey, endKey, null);
+    }
+    /* reserve = 날짜 → 그 칸이 먼저 쓰는 줄 수(공휴일 바·강조 라벨).
+       ⚠️ 이 줄들을 레인으로 '미리 점유'해야 기간 바가 공휴일 칸에서 어긋나지 않는다.
+          예) 8/15에 공휴일이 있고 8/14~16 기간 일정이면 → 기간 바는 세 날 모두 두 번째 줄,
+              공휴일이 없는 8/14·8/16의 첫 줄은 비어 있으니 하루짜리 일정이 그 자리를 채운다.
+          (사용자 요청 2026-08-23) */
+    static List<Run> buildRuns(List<WidgetData.Event> events, String filter, String startKey, String endKey,
+                               Map<String, Integer> reserve) {
         List<Run> all = new ArrayList<>();
         if (events == null) return all;
         Map<String, Run> byGid = new HashMap<>();
@@ -460,6 +469,15 @@ public class WidgetCommon {
             g.add(r);
         }
         List<Set<String>> occ = new ArrayList<>();
+        if (reserve != null) {
+            for (Map.Entry<String, Integer> e : reserve.entrySet()) {
+                int r = e.getValue() == null ? 0 : e.getValue();
+                for (int L = 0; L < r; L++) {
+                    while (occ.size() <= L) occ.add(new HashSet<String>());
+                    occ.get(L).add(e.getKey());
+                }
+            }
+        }
         for (String gk : order) {
             Set<String> days = new HashSet<>();
             for (Run r : byGroup.get(gk)) days.addAll(r.days);

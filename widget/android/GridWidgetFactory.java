@@ -116,9 +116,6 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
         endCal.add(Calendar.DAY_OF_MONTH, rows * 7 - 1);
         String endKey = WidgetCommon.fmt(endCal);
 
-        List<WidgetCommon.Run> runs = room != null
-            ? WidgetCommon.buildRuns(room.events, filter, startKey, endKey) : new ArrayList<>();
-
         Map<String, List<WidgetData.Todo>> byTodo = new HashMap<>();
         if (room != null) {
             for (WidgetData.Todo t : room.todos) {
@@ -148,21 +145,32 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
             if (tl != null) cell.todos = tl;
             cells.add(cell);
         }
+        /* 예약 줄(공휴일 바·강조 라벨)을 레인으로 미리 점유한 뒤 런을 만든다.
+           ⚠️ 이렇게 해야 기간 바가 공휴일 칸에서 한 줄 밀리지 않고 일자로 이어지고,
+              공휴일이 없는 칸의 빈 첫 줄은 하루짜리 일정이 채운다. (사용자 요청 2026-08-23) */
+        Map<String, Integer> reserve = new HashMap<>();
+        for (Cell c : cells) {
+            int r = (c.holiday != null ? 1 : 0)
+                  + ((c.hlStart && c.hl != null && c.hl.label && c.hl.title != null && !c.hl.title.isEmpty()) ? 1 : 0);
+            c.reserve = r;
+            if (r > 0) reserve.put(c.key, r);
+        }
+        List<WidgetCommon.Run> runs = room != null
+            ? WidgetCommon.buildRuns(room.events, filter, startKey, endKey, reserve) : new ArrayList<>();
+
         /* 표시 줄 수 확정.
            ⚠️ 예전엔 '공휴일/강조 라벨이 있는 주는 그 줄 7칸 전부가 한 줄을 비워두는' 방식이라,
               한 달에 공휴일이 하나만 있어도 위젯 전체 일정 줄이 하나씩 깎여 일정이 한 개밖에
               안 보였다(실기기 제보 2026-08-22). 이제 예약은 '그 칸'에만 적용한다 —
-              칸 전체 높이는 (예약 줄 + 일정 줄)이 항상 같도록 칸별로 일정 줄 수를 깎아서 맞춘다. */
+              칸 전체 높이는 (예약 줄 + 일정 줄)이 항상 같다 — 예약 줄이 레인을 차지하기 때문. */
         if (cellDpForLanes > 0) {
             int lines = WidgetCommon.laneBudget(cellDpForLanes, 0, !byTodo.isEmpty(), lineDp);
             laneCap = Math.max(1, Math.min(MAX_LANE_VIEWS, lines));
         }
         for (Cell c : cells) {
             int[] ov = new int[]{0};
-            c.reserve = (c.holiday != null ? 1 : 0)
-                      + ((c.hlStart && c.hl != null && c.hl.label && c.hl.title != null && !c.hl.title.isEmpty()) ? 1 : 0);
-            int cap = Math.max(1, laneCap - c.reserve);
-            c.bars = WidgetCommon.cellBars(runs, c.key, c.dow, cap, ov);
+            // 예약 줄이 레인 0..reserve-1 을 이미 점유하므로 cap 은 '칸 전체 줄 수'를 그대로 쓴다.
+            c.bars = WidgetCommon.cellBars(runs, c.key, c.dow, laneCap, ov);
             c.overflow = ov[0];
         }
     }
@@ -253,9 +261,23 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
             rv.setViewVisibility(id("cell_holiday", "id"), android.view.View.GONE);
         }
 
+        /* 이벤트 줄 배치 — 예약 줄(공휴일 바·강조 라벨)이 이미 레인 0..reserve-1 을 차지하므로,
+           evViews[k] 는 '레인 reserve+k' 를 담당한다. 중간에 빈 레인이 있으면 빈 줄(스페이서)을 넣어
+           같은 기간 바가 날마다 같은 높이에 오게 한다 — 그 빈 줄은 하루짜리 일정이 있으면 그 일정이 채운다.
+           ⚠️ 마지막 바 뒤의 빈 레인까지 채우면 칸만 길어지므로 '마지막 바 앞'까지만 스페이서를 둔다. */
         int[] evViews = { id("cell_ev1", "id"), id("cell_ev2", "id"), id("cell_ev3", "id"), id("cell_ev4", "id"), id("cell_ev5", "id") };
+        int lastBar = -1;
+        for (int L = cell.reserve; L < cell.bars.length; L++) if (cell.bars[L] != null) lastBar = L;
         for (int s = 0; s < evViews.length; s++) {
-            WidgetCommon.DayBar b = (s < cell.bars.length) ? cell.bars[s] : null;
+            int lane = cell.reserve + s;
+            WidgetCommon.DayBar b = (lane < cell.bars.length) ? cell.bars[lane] : null;
+            if (b == null && lane < lastBar) {
+                // 빈 레인 자리 지킴 — 투명 배경 + 빈 글자
+                rv.setViewVisibility(evViews[s], android.view.View.VISIBLE);
+                rv.setTextViewText(evViews[s], "");
+                rv.setInt(evViews[s], "setBackgroundColor", 0x00000000);
+                continue;
+            }
             if (b != null) {
                 boolean showTitle = !b.contLeft || cell.dow == 0;
                 boolean showMark = b.shared && !b.contLeft;   // 함께 일정: 시작 칸 왼쪽에 얇은 띠(▎, 텍스트색=대비색)
