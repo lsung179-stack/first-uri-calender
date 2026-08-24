@@ -1996,11 +1996,14 @@ body.ev-dragging .cal-cell{cursor:grabbing}
 .range-preview-hint{font-size:11px;color:var(--sub);text-align:center;padding:2px 0 6px}
 
 /* 캘린더 셀 — 기간 일정 바 (시작·중간·끝) */
-.cal-evbar.ev-l-open{border-top-left-radius:3px;border-bottom-left-radius:3px;margin-left:3px}
+/* [2026-08-24] 바 양끝 좌우 여백 3px→2px — 칸에 비해 여백이 많다는 실기기 피드백(23·24일).
+   ⚠️ 0으로 붙이면 같은 색 바가 이웃 날과 한 덩어리로 보인다 → 인접 칸 사이 4px 은 남긴다.
+   이어지는 변(ev-*-join)은 -1px 겹침 그대로(칸 경계 이음새 방지, 코드 61). */
+.cal-evbar.ev-l-open{border-top-left-radius:3px;border-bottom-left-radius:3px;margin-left:2px}
 /* 연결(join) 변은 인접 셀의 같은 기간 바와 1px 겹치게 늘려 서브픽셀 이음새(안티에일리어싱 실틈)를 없앤다.
    — 갤럭시 등 특정 DPR 기기에서 기간 바가 칸 경계에서 끊겨 보이던 문제 방지. 같은 색·직각변이라 겹침이 안 보임. */
 .cal-evbar.ev-l-join{border-top-left-radius:0;border-bottom-left-radius:0;margin-left:-1px}
-.cal-evbar.ev-r-open{border-top-right-radius:3px;border-bottom-right-radius:3px;margin-right:3px}
+.cal-evbar.ev-r-open{border-top-right-radius:3px;border-bottom-right-radius:3px;margin-right:2px}
 .cal-evbar.ev-r-join{border-top-right-radius:0;border-bottom-right-radius:0;margin-right:-1px}
 /* 다음달(흐림 opacity .35) 셀에선 기간 바 조인 겹침(-1px)이 반투명으로 두 겹 → 칸 경계마다 진해짐. 겹침 0으로(바는 이어지되 진해짐 제거) */
 .cal-cell.other .cal-evbar.ev-l-join{margin-left:0}
