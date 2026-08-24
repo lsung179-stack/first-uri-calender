@@ -218,8 +218,10 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
             rv.setViewVisibility(id("cell_hl_fill", "id"), android.view.View.GONE);
             int lineColor = cell.inMonth ? cell.hl.color : ((cell.hl.color & 0x00FFFFFF) | 0x66000000);
             float thick = "folder".equals(cell.hl.render) ? 3f : ("dashed".equals(cell.hl.render) ? 1.2f : 2f);
+            // ⚠️ 섬세한 점선은 위·아래만 그린다(앱과 동일 — 사용자 요청 2026-08-24).
+            boolean noSide = "dashed".equals(cell.hl.render);
             for (int k = 0; k < 4; k++) {
-                boolean on = cell.hlSides != null && cell.hlSides[k];
+                boolean on = cell.hlSides != null && cell.hlSides[k] && !(noSide && k >= 2);
                 rv.setViewVisibility(sideIds[k], on ? android.view.View.VISIBLE : android.view.View.GONE);
                 if (!on) continue;
                 rv.setInt(sideIds[k], "setBackgroundColor", lineColor);

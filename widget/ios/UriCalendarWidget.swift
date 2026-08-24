@@ -813,7 +813,8 @@ struct GridView: View {
                합쳐져 행의 최소 높이가 되고, 그 합이 위젯보다 커지면 VStack이 가운데로 넘쳐
                위(헤더)와 아래가 동시에 잘렸다(실기기 제보 2026-08-19). [2026-08-19] */
             GeometryReader { geo in
-              let rowGap: CGFloat = 2
+              // 주 사이 여백 0 — 세로로 인접한 날짜 강조가 끊기지 않고 이어진다(사용자 요청 2026-08-24)
+              let rowGap: CGFloat = 0
               let rowH = max(20, (geo.size.height - rowGap * CGFloat(max(0, rowCount - 1))) / CGFloat(rowCount))
               let budget = lineBudget(rowH: rowH, dense: denseCell)
               VStack(spacing: rowGap) {
@@ -957,11 +958,13 @@ struct DayCell: View {
         let w: CGFloat = h.r == "folder" ? 2.2 : (h.r == "dashed" ? 1.4 : 1.3)
         let dash: [CGFloat]? = h.r == "dashed" ? [2.6, 2.0] : (h.r == "flower" ? [0.1, 3.2] : nil)
         let style = StrokeStyle(lineWidth: w, lineCap: dash != nil ? .round : .butt, dash: dash ?? [])
+        // ⚠️ 섬세한 점선은 위·아래만 (앱과 동일, 사용자 요청 2026-08-24)
+        let noSide = (h.r == "dashed")
         ZStack {
             if f.top    { HLine().stroke(col, style: style).frame(height: w).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top) }
             if f.bottom { HLine().stroke(col, style: style).frame(height: w).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom) }
-            if f.left   { VLine().stroke(col, style: style).frame(width: w).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading) }
-            if f.right  { VLine().stroke(col, style: style).frame(width: w).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing) }
+            if f.left && !noSide  { VLine().stroke(col, style: style).frame(width: w).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading) }
+            if f.right && !noSide { VLine().stroke(col, style: style).frame(width: w).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing) }
         }
     }
     var body: some View {
@@ -1005,11 +1008,16 @@ struct DayCell: View {
             // 강조 라벨 = 앱과 같은 '탭' — 줄을 차지하지 않고 칸 좌상단에 얹힌다. [2026-08-23]
             .overlay(alignment: .topLeading) {
                 if hlStart, let h = hl, h.lb, !h.t.isEmpty {
-                    Text(h.t).font(.system(size: 7, weight: .bold))
-                        .foregroundColor(Color(hexStr: h.ink)).lineLimit(1)
-                        .padding(.horizontal, 2.5)
-                        .background(RoundedRectangle(cornerRadius: 2).fill(Color(hexStr: h.c)))
-                        .frame(maxWidth: 44, alignment: .leading)
+                    /* 라벨은 날짜 숫자와 같은 줄에 얹히므로 '숫자를 가리지 않을 만큼'만 넓힌다
+                       (사용자 요청 2026-08-24). 숫자는 가운데 정렬이라 왼쪽 여유 = (칸폭-숫자칸)/2.
+                       넘치는 제목은 …로 줄이고, 전체 제목은 칸을 눌러 앱에서 본다. */
+                    GeometryReader { g in
+                        Text(h.t).font(.system(size: 7, weight: .bold))
+                            .foregroundColor(Color(hexStr: h.ink)).lineLimit(1)
+                            .padding(.horizontal, 2.5)
+                            .background(RoundedRectangle(cornerRadius: 2).fill(Color(hexStr: h.c)))
+                            .frame(maxWidth: max(12, (g.size.width - numBox) / 2 - 1), alignment: .leading)
+                    }
                 }
             }
             .opacity(inMonth ? 1 : 0.4)   // 다음/이전달 날짜는 흐리게

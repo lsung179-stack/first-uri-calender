@@ -21728,11 +21728,14 @@ function _dhBorderStyle(hex,f,themeKey,colorKey){
     // 꽃 테두리 — 테두리 대신 변마다 꽃 타일을 깔아준다(장식은 _dhEmojiSidesHTML).
     return `border:0;border-radius:0;background:${_dhRgba(hex,.045)}`;
   }
+  /* ⚠️ 섬세한 점선은 '위·아래만' 그린다(사용자 요청 2026-08-24 — 위젯에 세로선이 떠서
+     앱과 달라 보였다). 세로 점선은 칸이 좁아 촘촘하게 뭉쳐 보이는 것도 이유. */
+  const noSide=(r==='dashed');
   const bw=(on)=>on?(r==='folder'?'2.8px':(r==='dashed'?'1.8px':'1.6px')):'0';
   const style=(r==='dashed')?'dashed':'solid';
   const bg=(r==='folder')?'transparent':_dhRgba(hex,.05);
   return `border-style:${style};border-color:${hex};`
-    +`border-width:${bw(f.top)} ${bw(f.right)} ${bw(f.bottom)} ${bw(f.left)};`
+    +`border-width:${bw(f.top)} ${bw(noSide?false:f.right)} ${bw(f.bottom)} ${bw(noSide?false:f.left)};`
     +`border-radius:0;`
     +`background:${bg}`;
 }
@@ -21779,11 +21782,10 @@ function _dhCellOverlayHTML(h,key,dow){
   let tag='';
   if(isStart&&_dhThemeHasLabel(themeKey)){
     const ink=getContrastTextColor(hex);
-    const spanCols=_dhTagSpanCols(key,dow);
-    const spillCls=spanCols>1?' cal-hl-tag-spill':'';
-    const spillStyle=spanCols>1?`;max-width:calc(${spanCols} * 100% + 2px)`:'';
+    /* [2026-08-24] 제목이 길어도 옆 날로 넘치지 않게 — 자기 칸 안에서 말줄임(…).
+       전체 제목은 탭해서 상세로 확인한다(사용자 요청). 옛 스필(_dhTagSpanCols)은 쓰지 않는다. */
     const tagThemeCls=' dht-'+_dhTheme(themeKey).render;
-    tag=`<div class="cal-hl-tag${tagThemeCls}${spillCls}" style="background:${hex};color:${ink}${spillStyle}" onclick="event.stopPropagation();openDateHighlightDetail('${h.id}')">${escapeHtml(h.title||'강조')}</div>`;
+    tag=`<div class="cal-hl-tag${tagThemeCls}" style="background:${hex};color:${ink}" title="${escapeHtml(h.title||'강조')}" onclick="event.stopPropagation();openDateHighlightDetail('${h.id}')">${escapeHtml(h.title||'강조')}</div>`;
   }
   const deco=_dhEmojiSidesHTML(themeKey,h.style_key,f);
   return `<div class="cal-hl-wrap${_dhWrapCls(themeKey)}" style="${_dhBorderStyle(hex,f,themeKey,h.style_key)}">${deco}${tag}</div>`;

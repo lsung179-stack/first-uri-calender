@@ -195,13 +195,16 @@
 
     <!-- 강조 라벨 = 앱과 같은 '탭'(라벨) — 줄을 차지하지 않고 칸 좌상단에 얹힌다.
          ⚠️ 예전엔 세로 스택 안의 한 줄(바)이라 일정 한 줄을 잡아먹었다(실기기 제보 2026-08-23).
-            날짜 숫자는 가운데 정렬이라 좌상단 탭과 겹치지 않는다. 테두리보다 뒤에 둬야 위에 그려짐. -->
+            날짜 숫자는 가운데 정렬이라 좌상단 탭과 겹치지 않는다. 테두리보다 뒤에 둬야 위에 그려짐.
+         ⚠️ 라벨 폭은 '날짜 숫자를 가리지 않을 만큼'만 — 숫자칸 17dp 가 가운데 정렬이라
+            왼쪽 여유 = (칸폭-17)/2 ≈ 13dp(4x4 위젯 기준). 넘치면 …, 전체는 앱에서 본다.
+            (사용자 요청 2026-08-24) -->
     <TextView
         android:id="@+id/cell_hl_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|left"
-        android:maxWidth="42dp"
+        android:maxWidth="13dp"
         android:paddingLeft="3dp"
         android:paddingRight="3dp"
         android:includeFontPadding="false"
