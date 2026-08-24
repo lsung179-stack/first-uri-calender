@@ -22917,7 +22917,8 @@ function _skinCT(skin){
 }
 async function loadCustomThemes(){
   try{
-    if(!_currentUser){ _customThemes=[]; return; }
+    // 테스트 중 게이트 — 안 보이는 사람에겐 조회 자체를 안 한다(방 로딩에 왕복 1회 추가되지 않게)
+    if(!_currentUser||!_ctbVisible()){ _customThemes=[]; return; }
     const {data}=await supa.from('custom_themes').select('*').eq('user_id',_currentUser.id).order('created_at',{ascending:false});
     _customThemes=data||[];
   }catch(_){ }
