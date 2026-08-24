@@ -908,6 +908,11 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 /* ── 방 캐릭터 테마(카드 스킨 연동) — 콘텐츠 뒤에 큰 캐릭터 워터마크+구름(타입블럭 스타일) ── */
 /* .app이 position:fixed로 스택 컨텍스트를 만들어 body의 z-index:-1은 가려짐 → 데코를 .app 안 첫 자식으로 넣어
    투명한 .screen/그리드보다 먼저 그려 날짜/일정 뒤로 비치게 함. pointer-events 없음(터치 방해 0). */
+/* 방 프로필 '내 사진' — 배경 이미지는 인라인(위치·확대 포함), 여기선 테두리/배경만 정리 */
+.has-seal.seal-photo{--seal-ring:transparent;background-color:var(--aP);background-image:none}
+.has-seal.seal-photo::before,.has-seal.seal-photo::after{display:none!important}
+.rm-bigprev.seal-photo{cursor:grab;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08),0 4px 12px rgba(60,40,25,.2)}
+.rm-bigprev.seal-photo:active{cursor:grabbing}
 /* 커스텀 테마 스티커 — 좌표·크기가 % 라서 화면 크기가 달라도 같은 자리에 붙는다 */
 .rc-decor .rc-sticker{position:absolute;aspect-ratio:1/1;background-repeat:no-repeat;background-position:center;background-size:contain;pointer-events:none}
 /* 스토어 '나만의 테마' 배너 — 이미지 없이 CSS만(외부 CDN 의존 0) */
@@ -5539,6 +5544,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
       </div>
     </div>
     <div id="rmGroups"></div>
+    <input type="file" id="rmPhotoFile" accept="image/*" style="display:none" onchange="rmPhotoChosen(event)">
     <div class="mo-actions rm-fixactions" style="margin-top:0">
       <button class="mo-cancel" id="rmClearBtn" onclick="clearRoomMascot()" style="display:none">기본(첫 글자)으로 되돌리기</button>
     </div>
@@ -5557,7 +5563,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
       <div class="ctb-bg" id="ctbBg"></div>
       <div class="ctb-mock" id="ctbMock"></div>
     </div>
-    <div class="ctb-hint" id="ctbHint">사진을 넣고 스티커를 끌어 배치해 보세요</div>
+    <div class="ctb-hint" id="ctbHint">배경·스티커를 끌어서 원하는 위치로 옮겨보세요</div>
 
     <div id="ctbStep1">
       <div class="rm-field-label">배경 사진</div>
@@ -5567,6 +5573,11 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
       </div>
       <div class="rm-field-label">배경 진하기 <span class="ctb-slider-val" id="ctbOpVal">40%</span></div>
       <input type="range" class="gop-range" id="ctbOpacity" min="5" max="100" step="1" value="40" oninput="ctbOpacityInput(this.value)" onchange="ctbOpacityInput(this.value)">
+      <div class="rm-field-label" style="margin-top:12px">사진 확대 <span class="ctb-slider-val" id="ctbBgZoomVal">116%</span></div>
+      <input type="range" class="gop-range" id="ctbBgZoom" min="100" max="300" step="1" value="116" disabled oninput="ctbBgZoomInput(this.value)" onchange="ctbBgZoomInput(this.value)">
+      <div class="ctb-row" style="margin-top:8px">
+        <button class="ctb-btn" onclick="ctbBgReset()">사진 위치 가운데로 <span class="ctb-slider-val" id="ctbBgPosVal" style="float:none;margin-left:4px">&mdash;</span></button>
+      </div>
       <div class="rm-field-label" style="margin-top:14px">스티커</div>
       <div class="ctb-row">
         <button class="ctb-btn" onclick="ctbPickSticker()">스티커 추가</button>
@@ -7880,10 +7891,11 @@ async function loadRooms(){
   try{
     // 내가 속한 방들의 room_id + 내 순서(sort_order) 가져오기
     const {data:myMems,error:e1}=await supa
-      .from('members').select('room_id,sort_order,seal,card_skin')
+      .from('members').select('room_id,sort_order,seal,card_skin,seal_photo')
       .eq('user_id',_currentUser.id);
     if(e1)throw e1;
-    _mySealByRoom={}; _myCardSkinByRoom={}; (myMems||[]).forEach(function(m){ _mySealByRoom[m.room_id]=m.seal||null; _myCardSkinByRoom[m.room_id]=m.card_skin||null; });
+    _mySealByRoom={}; _myCardSkinByRoom={}; _mySealPhotoByRoom={};
+    (myMems||[]).forEach(function(m){ _mySealByRoom[m.room_id]=m.seal||null; _myCardSkinByRoom[m.room_id]=m.card_skin||null; _mySealPhotoByRoom[m.room_id]=m.seal_photo||null; });
     // 커스텀 테마는 방 카드/입장 테마보다 먼저 있어야 한다(없으면 custom: 키가 해석 안 돼 기본으로 보임)
     try{ await loadCustomThemes(); }catch(_){}
     try{ _preloadRoomScenes(); }catch(_){}   // 방 입장 전에 각 방 배경씬 미리 캐시(입장 즉시 표시)
@@ -8084,7 +8096,7 @@ function renderRooms(rooms,countMap){
     const safeName=escapeHtml(r.name||'(이름 없음)');
     const safeCode=escapeHtml(r.code||'------');
     const firstChar=escapeHtml((r.name||'·').trim().charAt(0));
-    const sealHtml=_sealInner(_mySealByRoom[r.id], r.name)
+    const sealHtml=_sealInner(_mySealByRoom[r.id], r.name, _mySealPhotoByRoom[r.id])
       || `<div class="r-card-seal"><span class="r-card-seal-letter">${firstChar}</span></div>`;
     html+=`
       <div class="r-card${_cardSkinCls(_effSkin(_myCardSkinByRoom[r.id]))}"${_cardSkinStyle(_effSkin(_myCardSkinByRoom[r.id]))} data-roomid="${r.id}" onclick="enterRoom('${r.id}')">
@@ -16862,7 +16874,12 @@ function _sealGlyph(sym, roomName){
     : _sealSvg(sym);
 }
 /* 방 목록 씰 inner (색 지정된 경우만, 아니면 null) */
-function _sealInner(mascotVal, roomName){
+function _sealInner(mascotVal, roomName, photo){
+  // 내 사진이 있으면 그게 우선(프리미엄 — 만료 시 기본으로 복귀)
+  if(photo&&photo.url){
+    if(typeof _premOn==='function' && !_premOn()) { /* 만료 → 아래 기본 경로로 */ }
+    else return '<div class="r-card-seal has-seal seal-photo" style="'+_ctPhotoStyle(photo,1)+'"></div>';
+  }
   const p=_parseSeal(mascotVal); if(!p)return null;
   if(p.set){
     // 프리미엄 세트 씰: 구독 만료 시 기본(첫 글자)으로 복귀 — 저장값은 유지(재구독 시 자동 복원)
@@ -16872,7 +16889,7 @@ function _sealInner(mascotVal, roomName){
   return '<div class="r-card-seal has-seal seal-'+p.color+'">'+_sealGlyph(p.sym, roomName)+'</div>';
 }
 
-let _mascotRoomId=null, _mascotRoomName='', _sealColor='terra', _sealSym='ini', _sealSet=null, _sealHad=false, _sealCustomPicked=false, _mySealByRoom={}, _cardSkin=null, _myCardSkinByRoom={}, _rmBaseTheme=null;
+let _mascotRoomId=null, _mascotRoomName='', _sealColor='terra', _sealSym='ini', _sealSet=null, _sealHad=false, _sealCustomPicked=false, _mySealByRoom={}, _cardSkin=null, _myCardSkinByRoom={}, _rmBaseTheme=null, _mySealPhotoByRoom={}, _sealPhoto=null;
 function openRoomMascotForRoom(roomId){
   const room=(_myRooms||[]).find(function(r){return r.id===roomId})
     || ((_currentRoom&&_currentRoom.id===roomId)?_currentRoom:null);
@@ -16881,7 +16898,7 @@ function openRoomMascotForRoom(roomId){
   _mascotRoomId=room.id;
   _mascotRoomName=room.name||'';
   const p=_parseSeal(_mySealByRoom[room.id]);   // 개인별 씰 (members.seal)
-  _sealHad=!!p;
+  _sealHad=!!p||!!(_mySealPhotoByRoom[room.id]);
   _sealSet = (p&&p.set)?p.set:null;
   _sealColor = (p&&p.color)?p.color:'terra';
   _sealSym   = (p&&p.sym)?p.sym:'ini';
@@ -16889,6 +16906,7 @@ function openRoomMascotForRoom(roomId){
   _preloadSealSets();
   const _pn=document.getElementById('rmPrevRoomName'); if(_pn)_pn.textContent=_mascotRoomName||'방';
   _cardSkin=_myCardSkinByRoom[room.id]||null;
+  _sealPhoto=_mySealPhotoByRoom[room.id]||null;
   _rmBaseTheme=_currentRoomTheme||_myTheme||'vintage';   // 편집 취소 시 되돌릴 기준 테마
   _rmTab = _sealSet ? 'prem' : 'basic';   // 저장된 게 세트면 프리미엄 탭에서 시작
   _rmSyncSeg();
@@ -16967,11 +16985,90 @@ function renderRoomMascotPicker(){
       + CARD_SKIN_FREE.map(k=>{ const sk=CARD_SKINS[k]; const on=(!_sealSet)&&((k===_cardSkin)||(k==='t_vintage'&&!_cardSkin));
         return '<button type="button" data-skin="'+k+'" class="rm-skin rcs-'+k+(on?' on':'')+'" onclick="pickCardSkin(\''+k+'\')"><span class="rm-skin-name">'+sk.name+'</span></button>'; }).join('')
       + '</div>';
-    g.innerHTML=swatches+'<div class="rm-field-label">문양</div><div class="rm-symrow">'+symBtns+'</div>'+themeColors;
+    // 내 사진(테스트 중 — 관리자에게만)
+    var photoSec='';
+    if(_ctbVisible()){
+      var hasPh=!!(_sealPhoto&&_sealPhoto.url);
+      photoSec='<div class="rm-field-label">내 사진</div>'
+        +'<div class="ctb-row"><button type="button" class="ctb-btn" onclick="rmPickPhoto()">사진 선택</button>'
+        +'<button type="button" class="ctb-btn danger" onclick="rmClearPhoto()"'+(hasPh?'':' disabled')+'>사진 빼기</button></div>'
+        +'<div class="rm-field-label">사진 확대 <span class="ctb-slider-val" id="rmPhZoomVal">'+(hasPh?Math.round(_ctNum(_sealPhoto.z,100)):100)+'%</span></div>'
+        +'<input type="range" class="gop-range" id="rmPhZoom" min="100" max="300" step="1" value="'+(hasPh?Math.round(_ctNum(_sealPhoto.z,100)):100)+'"'+(hasPh?'':' disabled')+' oninput="rmPhotoZoom(this.value)" onchange="rmPhotoZoom(this.value)">'
+        +'<div class="ctb-hint" style="margin:6px 0 14px">'+(hasPh?'위 동그라미를 끌어서 보일 부분을 맞춰요':'사진을 넣으면 동그라미를 끌어 위치를 맞출 수 있어요')+'</div>';
+    }
+    g.innerHTML=photoSec+swatches+'<div class="rm-field-label">문양</div><div class="rm-symrow">'+symBtns+'</div>'+themeColors;
+    _rmWirePhotoDrag();
   }
   const clr=document.getElementById('rmClearBtn'); if(clr)clr.style.display=_sealHad?'block':'none';
 }
 function _setDisplayName(k){ if(_isCustomSkin(k)){ var cu=_customThemeOf(k); return (cu&&cu.name)||'내 테마'; } return (typeof CARD_SKINS!=='undefined'&&CARD_SKINS[k]&&CARD_SKINS[k].name)||(SEAL_SETS[k]&&SEAL_SETS[k].name)||k; }
+/* ── 방 프로필 '내 사진' — 고르고, 동그라미를 끌어서 보일 부분을 맞춘다 ──
+   사진은 고르는 즉시 올린다(자동 저장 구조라 blob 을 들고 있기 어려움). 바꾸면 옛 파일은 지운다. */
+var _rmPhDrag=null, _rmPhWired=false;
+window.rmPickPhoto=function(){
+  if(!_ctbVisible())return;
+  if(!isEffectivePremium()){ showUpgradeModal({message:'프로필 사진은 프리미엄 전용이에요.', feature:'내 사진을 방 프로필로 쓰고, 보일 부분까지 직접 맞출 수 있어요.'}); return; }
+  var f=document.getElementById('rmPhotoFile'); if(f){ f.value=''; f.click(); }
+};
+window.rmPhotoChosen=async function(ev){
+  var file=ev&&ev.target&&ev.target.files&&ev.target.files[0]; if(!file)return;
+  try{
+    var r=await _ctbToBlob(file, 720, false);
+    if(!r||!r.blob){ toast('이미지를 읽지 못했어요'); return; }
+    var old=(_sealPhoto&&_sealPhoto.url)||'';
+    var url=await _ctbUpload(r.blob,false);
+    _sealPhoto={url:url, x:50, y:50, z:100, ar:r.ar};
+    _sealSet=null;                 // 사진이 프로필을 대신한다
+    _autoSaveMascot();
+    renderRoomMascotPicker();
+    _ctDeletePhoto(old);           // 바뀐 뒤에 옛 파일 정리(실패해도 무시)
+  }catch(_){ toast('사진을 올리지 못했어요'); }
+};
+window.rmClearPhoto=function(){
+  var old=(_sealPhoto&&_sealPhoto.url)||'';
+  _sealPhoto=null;
+  _autoSaveMascot();
+  renderRoomMascotPicker();
+  _ctDeletePhoto(old);
+};
+window.rmPhotoZoom=function(v){
+  if(!_sealPhoto)return;
+  _sealPhoto.z=Math.max(100,Math.min(300,_ctNum(v,100)));
+  var lb=document.getElementById('rmPhZoomVal'); if(lb)lb.textContent=Math.round(_sealPhoto.z)+'%';
+  _rmSyncPreview(); _autoSaveMascot();
+};
+/* 내가 올린 사진만 지운다(themes/<내 id>/ 경로) */
+async function _ctDeletePhoto(url){
+  try{
+    if(!url||!_currentUser)return;
+    var m=url.match(/\/event-photos\/(themes\/[^?]+)/);
+    if(!m)return;
+    if(m[1].indexOf('themes/'+_currentUser.id+'/')!==0)return;
+    await supa.storage.from('event-photos').remove([m[1]]);
+  }catch(_){}
+}
+function _rmWirePhotoDrag(){
+  var big=document.getElementById('rmBigPrev'); if(!big||_rmPhWired)return;
+  _rmPhWired=true;
+  big.style.touchAction='none';
+  big.addEventListener('pointerdown',function(e){
+    if(!_sealPhoto||!_sealPhoto.url)return;
+    _rmPhDrag={rect:big.getBoundingClientRect(), sx:e.clientX, sy:e.clientY, x:_ctNum(_sealPhoto.x,50), y:_ctNum(_sealPhoto.y,50)};
+    try{ big.setPointerCapture(e.pointerId); }catch(_){}
+    e.preventDefault();
+  });
+  big.addEventListener('pointermove',function(e){
+    if(!_rmPhDrag||!_sealPhoto)return;
+    var r=_rmPhDrag.rect;
+    _sealPhoto.x=Math.max(0,Math.min(100,Math.round((_rmPhDrag.x-((e.clientX-_rmPhDrag.sx)/r.width)*100)*10)/10));
+    _sealPhoto.y=Math.max(0,Math.min(100,Math.round((_rmPhDrag.y-((e.clientY-_rmPhDrag.sy)/r.height)*100)*10)/10));
+    _rmSyncPreview();
+    e.preventDefault();
+  });
+  var end=function(){ if(_rmPhDrag){ _rmPhDrag=null; _autoSaveMascot(); } };
+  big.addEventListener('pointerup',end);
+  big.addEventListener('pointercancel',end);
+}
 /* 통합 프리미엄 세트 선택 — 프로필(씰)+테마(카드·앱색)를 함께 적용 */
 function pickUnifiedSet(k){
   if(!isEffectivePremium()){
@@ -17002,22 +17099,30 @@ function _rmSyncPreview(){
   }
   const big=document.getElementById('rmBigPrev'), nm=document.getElementById('rmBpName');
   if(big){
-    if(_sealSet){
+    if(_sealPhoto&&_sealPhoto.url){
+      big.className='rm-bigprev has-seal seal-photo';
+      big.innerHTML='';
+      big.setAttribute('style', _ctPhotoStyle(_sealPhoto,1).replace(/&quot;/g,'"'));
+    } else if(_sealSet){
+      big.removeAttribute('style');
       big.className='rm-bigprev has-seal seal-set';
       const st=SEAL_SETS[_sealSet]; const im=big.querySelector('img.sealimg');
       if(im&&st&&st.img){ if(im.getAttribute('src')!==st.img) im.src=st.img; im.style.setProperty('--sz',String(st.zoom||1)); }
       else big.innerHTML=_sealSetArt(_sealSet);
     } else if(_sealCustomPicked){
+      big.removeAttribute('style');
       big.className='rm-bigprev has-seal seal-'+_sealColor;
       big.innerHTML=_sealGlyph(_sealSym, _mascotRoomName);
     } else {
       // 아직 아무 색도 고르지 않음(=기본으로 되돌린 직후 포함) → 중립 미리보기(방목록 기본과 동일)
+      big.removeAttribute('style');
       big.className='rm-bigprev rm-bp-none';
       big.innerHTML='<span class="rm-bigprev-letter">'+escapeHtml((_mascotRoomName||'·').trim().charAt(0))+'</span>';
     }
   }
   if(nm){
-    nm.textContent = _sealSet ? (SEAL_SETS[_sealSet].name+' 프로필 · 프리미엄')
+    nm.textContent = (_sealPhoto&&_sealPhoto.url) ? '내 사진'
+      : _sealSet ? (SEAL_SETS[_sealSet].name+' 프로필 · 프리미엄')
       : _sealCustomPicked ? (((SEAL_COLORS.find(x=>x.key===_sealColor)||{}).name||'')+' · '+(SEAL_SYM_NAMES[_sealSym]||''))
       : '기본 (첫 글자)';
   }
@@ -17087,7 +17192,7 @@ async function saveRoomMascot(){
   await _saveMascotValue(sealVal, _cardSkin);
 }
 async function clearRoomMascot(){
-  _sealSet=null; _cardSkin=null; _sealColor='terra'; _sealSym='ini'; _sealCustomPicked=false;
+  _sealSet=null; _cardSkin=null; _sealColor='terra'; _sealSym='ini'; _sealCustomPicked=false; _sealPhoto=null;
   await _saveMascotValue(null, null, true);
   // 옛 '이 방 테마'(user_room_themes) 잔존값도 함께 제거 — 안 그러면 카드배경 없는 방이
   // 레거시 테마로 폴백돼(applyRoomThemeFor) '기본으로 되돌리기'가 색은 안 바뀌는 버그가 남음.
@@ -17108,9 +17213,10 @@ function _autoSaveMascot(){
   // 기본값(terra:ini)이 씰로 함께 저장돼 '테마만 바꿨는데 씰 색도 바뀜' 버그가 남.
   const sealVal=_sealSet?('set:'+_sealSet):(_sealCustomPicked?(_sealColor+':'+_sealSym):null);
   const skin=_cardSkin;
+  if(_mascotRoomId) _mySealPhotoByRoom[_mascotRoomId]=_sealPhoto||null;
   // 로컬 맵 즉시 반영 → 곧바로 닫아도 applyRoomThemeFor가 최신값을 읽음. DB 쓰기만 디바운스.
   if(_mascotRoomId){ _mySealByRoom[_mascotRoomId]=sealVal; _myCardSkinByRoom[_mascotRoomId]=skin||null; }
-  _sealHad=!!(sealVal||skin);
+  _sealHad=!!(sealVal||skin||_sealPhoto);
   const clr=document.getElementById('rmClearBtn'); if(clr)clr.style.display=_sealHad?'block':'none';
   clearTimeout(_autoSaveMascotT);
   _autoSaveMascotT=setTimeout(function(){ _saveMascotValue(sealVal, skin, true); }, 220);
@@ -17119,11 +17225,12 @@ async function _saveMascotValue(val, skin, keepOpen){
   if(!_mascotRoomId||!_currentUser)return;
   try{
     // 개인별 설정 — 내 members 행의 seal+card_skin 갱신 (RLS members_update_self)
-    const {error}=await supa.from('members').update({seal:val, card_skin:skin||null})
+    const {error}=await supa.from('members').update({seal:val, card_skin:skin||null, seal_photo:_sealPhoto||null})
       .eq('room_id',_mascotRoomId).eq('user_id',_currentUser.id);
     if(error)throw error;
     _mySealByRoom[_mascotRoomId]=val;
     _myCardSkinByRoom[_mascotRoomId]=skin||null;
+    _mySealPhotoByRoom[_mascotRoomId]=_sealPhoto||null;
     try{ if(_myRooms) renderRooms(_myRooms,_roomCountMap); }catch(_){}
     try{ _syncRoomSetMascot(); }catch(_){}
     if(keepOpen){
@@ -20251,7 +20358,7 @@ function renderRoomSeal(){
   if(!_currentRoom){ btn.style.display='none'; btn.innerHTML=''; try{_syncMonthHeaderBalance();}catch(_){} return; }
   const name=_currentRoom.name||'방';
   const firstChar=escapeHtml(name.slice(0,1)||'방');
-  btn.innerHTML=_sealInner((_mySealByRoom||{})[_currentRoom.id], name)
+  btn.innerHTML=_sealInner((_mySealByRoom||{})[_currentRoom.id], name, (_mySealPhotoByRoom||{})[_currentRoom.id])
     || ('<div class="r-card-seal"><span class="r-card-seal-letter">'+firstChar+'</span></div>');
   try{ btn.setAttribute('aria-label', name+' · 방 전환'); }catch(_){}
   btn.style.display='flex';
@@ -20275,7 +20382,7 @@ function showRoomSwitch(room){
   if(!box||!room) return;
   const name=room.name||'방';
   const firstChar=escapeHtml(name.slice(0,1)||'방');
-  const seal=_sealInner((_mySealByRoom||{})[room.id], name)
+  const seal=_sealInner((_mySealByRoom||{})[room.id], name, (_mySealPhotoByRoom||{})[room.id])
     || ('<div class="r-card-seal"><span class="r-card-seal-letter">'+firstChar+'</span></div>');
   const sEl=document.getElementById('roomSwitchSeal'), nEl=document.getElementById('roomSwitchName');
   if(sEl) sEl.innerHTML=seal;
@@ -20296,7 +20403,7 @@ function openRoomSealPicker(){
   let html='';
   rooms.forEach(function(r){
     const name=r.name||'방'; const fc=escapeHtml(name.slice(0,1)||'방');
-    const seal=_sealInner((_mySealByRoom||{})[r.id], name) || ('<div class="r-card-seal"><span class="r-card-seal-letter">'+fc+'</span></div>');
+    const seal=_sealInner((_mySealByRoom||{})[r.id], name, (_mySealPhotoByRoom||{})[r.id]) || ('<div class="r-card-seal"><span class="r-card-seal-letter">'+fc+'</span></div>');
     const cur=(_currentRoom&&r.id===_currentRoom.id)?' cur':'';
     html+='<div class="rsp-item'+cur+'" data-roomid="'+escapeHtml(r.id)+'" onclick="_sealPickRoom(\''+r.id+'\')">'+seal+'<span class="rsp-name">'+escapeHtml(name)+'</span></div>';
   });
@@ -20370,7 +20477,7 @@ function openImportEvents(){
     let html='';
     others.forEach(function(r){
       const name=r.name||'방'; const fc=escapeHtml((name.slice(0,1))||'방');
-      const seal=_sealInner((_mySealByRoom||{})[r.id], name) || ('<div class="r-card-seal"><span class="r-card-seal-letter">'+fc+'</span></div>');
+      const seal=_sealInner((_mySealByRoom||{})[r.id], name, (_mySealPhotoByRoom||{})[r.id]) || ('<div class="r-card-seal"><span class="r-card-seal-letter">'+fc+'</span></div>');
       html+='<div class="import-room-item" onclick="_importPickRoom(\''+r.id+'\')"><div class="import-room-seal">'+seal+'</div><div class="import-room-name">'+escapeHtml(name)+'</div><div class="import-room-go">선택 ›</div></div>';
     });
     list.innerHTML=html;
@@ -22968,6 +23075,32 @@ function _clearRoomCharDecor(){
     document.body.style.removeProperty('--rc-char-url');
   }catch(_){}
 }
+/* 사진 배경(커스텀 테마 배경·방 프로필 사진 공용) — 위치(%)와 확대(%)를 실제로 적용.
+   비율(ar=가로/세로)을 알고 있으면 '어느 쪽이 넘치는지'를 정확히 계산해, 기기 크기가 달라도
+   확대 100% = 딱 채움(빈 곳 없음)이 되고 그 위로 확대·이동이 자연스럽게 먹는다.
+   ⚠️ 요소가 화면에 붙은 뒤에 호출해야 크기를 잴 수 있다. */
+function _ctPhotoStyle(o, ca){
+  if(!o||!o.url) return '';
+  var z=Math.max(100,_ctNum(o.z,100)), ar=Number(o.ar)||0;
+  var size = ar>0 ? ((ar>(ca||1)) ? ('auto '+z+'%') : (z+'% auto')) : (z>100?('auto '+z+'%'):'cover');
+  return 'background-image:url(&quot;'+o.url+'&quot;);background-repeat:no-repeat;background-position:'
+    +_ctNum(o.x,50)+'% '+_ctNum(o.y,50)+'%;background-size:'+size;
+}
+function _ctPhotoApply(el, o){
+  if(!el||!o) return;
+  el.style.backgroundImage = o.url ? ('url("'+o.url+'")') : '';
+  el.style.backgroundRepeat = 'no-repeat';
+  el.style.backgroundPosition = _ctNum(o.x,50)+'% '+_ctNum(o.y,50)+'%';
+  var z = Math.max(100, _ctNum(o.z,100));
+  var ar = Number(o.ar)||0;
+  if(ar>0){
+    var r = el.getBoundingClientRect();
+    var ca = (r.width>0&&r.height>0) ? (r.width/r.height) : 0.5625;
+    el.style.backgroundSize = (ar>ca) ? ('auto '+z+'%') : (z+'% auto');
+  }else{
+    el.style.backgroundSize = (z>100) ? ('auto '+z+'%') : 'cover';
+  }
+}
 function _ctNum(v,dflt){ var n=Number(v); return isFinite(n)?n:dflt; }
 function _ctOpacity(v){ var n=Number(v); if(!isFinite(n))n=40; return Math.max(0,Math.min(100,n)); }
 function _applyRoomCharDecor(ct){
@@ -23005,6 +23138,11 @@ function _applyRoomCharDecor(ct){
     });
   }
   host.insertBefore(d, host.firstChild);
+  // 커스텀 배경의 위치·확대는 요소가 화면에 붙은 뒤에 계산한다(컨테이너 크기를 재야 함)
+  if(ct.custom){
+    var cu2=ct.custom, bg3=d.querySelector('.rc-bg');
+    if(bg3&&cu2.bg_url) _ctPhotoApply(bg3,{url:cu2.bg_url,x:cu2.bg_x,y:cu2.bg_y,z:cu2.bg_zoom,ar:cu2.bg_ar});
+  }
 }
 async function applyRoomThemeFor(roomId){
   const rawSkin=(_myCardSkinByRoom&&roomId)?_myCardSkinByRoom[roomId]:null;
@@ -23040,7 +23178,7 @@ async function applyRoomThemeFor(roomId){
    2단계: 색상(THEMES) + 아이콘(기존 테마의 아이콘 세트) — 둘 다 '기본' 선택 가능
    이미지는 저장 버튼을 눌렀을 때만 올린다(취소해도 저장소에 쓰레기가 안 남게).  */
 var _ctbStep=1, _ctbEditId=null, _ctbDraft=null, _ctbSel=-1, _ctbFileMode='bg', _ctbSaving=false, _ctbDrag=null, _ctbWired=false;
-function _ctbNewDraft(){ return {name:'', bg_url:'', bg_blob:null, bg_opacity:40, stickers:[], color_theme:'', icon_theme:''}; }
+function _ctbNewDraft(){ return {name:'', bg_url:'', bg_blob:null, bg_opacity:40, bg_x:50, bg_y:38, bg_zoom:116, bg_ar:0, stickers:[], color_theme:'', icon_theme:''}; }
 function _ctbEl(id){ return document.getElementById(id); }
 
 /* 색상 후보 — 사용자가 이름으로 알아보는 기존 테마들에서 뽑는다(중복 테마는 하나만) */
@@ -23072,6 +23210,7 @@ async function openCustomThemeBuilder(id){
   var src=id?_customThemeById(id):null;
   _ctbDraft = src
     ? { name:src.name||'', bg_url:src.bg_url||'', bg_blob:null, bg_opacity:_ctOpacity(src.bg_opacity),
+        bg_x:_ctNum(src.bg_x,50), bg_y:_ctNum(src.bg_y,38), bg_zoom:Math.max(100,_ctNum(src.bg_zoom,116)), bg_ar:Number(src.bg_ar)||0,
         stickers:(Array.isArray(src.stickers)?src.stickers:[]).map(function(st){
           return {url:st.url, blob:null, x:_ctNum(st.x,50), y:_ctNum(st.y,50), s:_ctNum(st.s,24), r:_ctNum(st.r,0)}; }),
         color_theme:src.color_theme||'', icon_theme:src.icon_theme||'' }
@@ -23081,6 +23220,7 @@ async function openCustomThemeBuilder(id){
   var nm=_ctbEl('ctbName'); if(nm)nm.value=_ctbDraft.name;
   var op=_ctbEl('ctbOpacity'); if(op)op.value=String(_ctbDraft.bg_opacity);
   var ov=_ctbEl('ctbOpVal'); if(ov)ov.textContent=_ctbDraft.bg_opacity+'%';
+  ctbSyncBgCtl();
   ctbSetStep(1);
   ctbRenderStage(); ctbSyncStickerCtl();
   if(!_ctbWired){
@@ -23116,7 +23256,7 @@ function ctbSetStep(n){
   var t=_ctbEl('ctbTitle'); if(t)t.textContent=(n===1)?'테마 만들기':'색상 · 아이콘';
   var b=_ctbEl('ctbNextBtn'); if(b)b.textContent=(n===1)?'다음':'저장';
   var h=_ctbEl('ctbHint');
-  if(h)h.textContent=(n===1)?'사진을 넣고 스티커를 끌어 배치해 보세요':'앱 색과 아이콘을 고르면 미리보기에 바로 보여요';
+  if(h)h.textContent=(n===1)?'배경·스티커를 끌어서 원하는 위치로 옮겨보세요':'앱 색과 아이콘을 고르면 미리보기에 바로 보여요';
   if(n===2){ ctbRenderPicks(); }
   ctbApplyStageTheme();
   ctbRenderStage();
@@ -23145,7 +23285,7 @@ function ctbApplyStageTheme(){
 function ctbRenderStage(){
   var bg=_ctbEl('ctbBg');
   if(bg){
-    bg.style.backgroundImage=_ctbDraft.bg_url?('url("'+_ctbDraft.bg_url+'")'):'';
+    _ctPhotoApply(bg,{url:_ctbDraft.bg_url,x:_ctbDraft.bg_x,y:_ctbDraft.bg_y,z:_ctbDraft.bg_zoom,ar:_ctbDraft.bg_ar});
     bg.style.opacity=String(_ctOpacity(_ctbDraft.bg_opacity)/100);
   }
   var st=_ctbEl('ctbStage'); if(!st)return;
@@ -23165,15 +23305,33 @@ function ctbStageDown(e){
   if(_ctbStep!==1)return;
   var st=_ctbEl('ctbStage'); if(!st)return;
   var t=(e.target&&e.target.closest)?e.target.closest('.ctb-sticker'):null;
-  if(!t){ if(_ctbSel>=0){ _ctbSel=-1; ctbRenderStage(); ctbSyncStickerCtl(); } return; }
+  if(!t){
+    // 빈 곳을 끌면 배경 사진을 옮긴다(스티커 선택은 해제)
+    if(_ctbSel>=0){ _ctbSel=-1; ctbRenderStage(); ctbSyncStickerCtl(); }
+    if(!_ctbDraft.bg_url) return;
+    _ctbDrag={mode:'bg', rect:st.getBoundingClientRect(), sx:e.clientX, sy:e.clientY, bx:_ctNum(_ctbDraft.bg_x,50), by:_ctNum(_ctbDraft.bg_y,38)};
+    try{ st.setPointerCapture(e.pointerId); }catch(_){}
+    e.preventDefault();
+    return;
+  }
   _ctbSel=Number(t.getAttribute('data-i'));
-  _ctbDrag={rect:st.getBoundingClientRect()};
+  _ctbDrag={mode:'sticker', rect:st.getBoundingClientRect()};
   try{ st.setPointerCapture(e.pointerId); }catch(_){}
   ctbRenderStage(); ctbSyncStickerCtl();
   e.preventDefault();
 }
 function ctbStageMove(e){
-  if(!_ctbDrag||_ctbSel<0)return;
+  if(!_ctbDrag)return;
+  if(_ctbDrag.mode==='bg'){
+    var r0=_ctbDrag.rect;
+    // 끄는 방향으로 사진이 따라오도록(위치 %는 반대로 움직인다)
+    _ctbDraft.bg_x=Math.max(0,Math.min(100,Math.round((_ctbDrag.bx-((e.clientX-_ctbDrag.sx)/r0.width)*100)*10)/10));
+    _ctbDraft.bg_y=Math.max(0,Math.min(100,Math.round((_ctbDrag.by-((e.clientY-_ctbDrag.sy)/r0.height)*100)*10)/10));
+    ctbRenderStage(); ctbSyncBgCtl();
+    e.preventDefault();
+    return;
+  }
+  if(_ctbSel<0)return;
   var s=(_ctbDraft.stickers||[])[_ctbSel]; if(!s)return;
   var r=_ctbDrag.rect;
   s.x=Math.max(0,Math.min(100,Math.round(((e.clientX-r.left)/r.width)*1000)/10));
@@ -23182,6 +23340,22 @@ function ctbStageMove(e){
   e.preventDefault();
 }
 function ctbStageUp(){ _ctbDrag=null; }
+function ctbSyncBgCtl(){
+  var has=!!_ctbDraft.bg_url;
+  var z=_ctbEl('ctbBgZoom'), zv=_ctbEl('ctbBgZoomVal');
+  if(z){ z.disabled=!has; z.value=String(Math.round(Math.max(100,_ctNum(_ctbDraft.bg_zoom,116)))); }
+  if(zv)zv.textContent=Math.round(Math.max(100,_ctNum(_ctbDraft.bg_zoom,116)))+'%';
+  var pv=_ctbEl('ctbBgPosVal');
+  if(pv)pv.textContent=has?(Math.round(_ctNum(_ctbDraft.bg_x,50))+' · '+Math.round(_ctNum(_ctbDraft.bg_y,38))):'—';
+}
+window.ctbBgZoomInput=function(v){
+  _ctbDraft.bg_zoom=Math.max(100,Math.min(300,_ctNum(v,116)));
+  ctbRenderStage(); ctbSyncBgCtl();
+};
+window.ctbBgReset=function(){
+  _ctbDraft.bg_x=50; _ctbDraft.bg_y=38; _ctbDraft.bg_zoom=116;
+  ctbRenderStage(); ctbSyncBgCtl();
+};
 function ctbSyncStickerCtl(){
   var has=_ctbSel>=0 && !!(_ctbDraft.stickers||[])[_ctbSel];
   var s=has?_ctbDraft.stickers[_ctbSel]:null;
@@ -23215,7 +23389,7 @@ window.ctbOpacityInput=function(v){
   var ov=_ctbEl('ctbOpVal'); if(ov)ov.textContent=_ctbDraft.bg_opacity+'%';
   ctbRenderStage();
 };
-window.ctbClearBg=function(){ _ctbDraft.bg_url=''; _ctbDraft.bg_blob=null; ctbRenderStage(); };
+window.ctbClearBg=function(){ _ctbDraft.bg_url=''; _ctbDraft.bg_blob=null; _ctbDraft.bg_ar=0; _ctbDraft.bg_x=50; _ctbDraft.bg_y=38; _ctbDraft.bg_zoom=116; ctbRenderStage(); ctbSyncBgCtl(); };
 /* ── 파일 선택 ── */
 window.ctbPickBg=function(){ _ctbFileMode='bg'; var f=_ctbEl('ctbFile'); if(f){ f.value=''; f.click(); } };
 window.ctbPickSticker=function(){ _ctbFileMode='sticker'; var f=_ctbEl('ctbFile'); if(f){ f.value=''; f.click(); } };
@@ -23233,22 +23407,24 @@ async function _ctbToBlob(file, max, png){
   if(w>h){ if(w>max){ h=h*max/w; w=max; } } else { if(h>max){ w=w*max/h; h=max; } }
   var c=document.createElement('canvas'); c.width=Math.max(1,Math.round(w)); c.height=Math.max(1,Math.round(h));
   c.getContext('2d').drawImage(im,0,0,c.width,c.height);
-  return await new Promise(function(res){ c.toBlob(function(b){ res(b); }, png?'image/png':'image/jpeg', png?undefined:0.85); });
+  var blob=await new Promise(function(res){ c.toBlob(function(b){ res(b); }, png?'image/png':'image/jpeg', png?undefined:0.85); });
+  return {blob:blob, ar:(c.height?c.width/c.height:1)};
 }
 window.ctbFileChosen=async function(ev){
   var f=ev&&ev.target&&ev.target.files&&ev.target.files[0]; if(!f)return;
   try{
     var isSticker=(_ctbFileMode==='sticker');
-    var blob=await _ctbToBlob(f, isSticker?520:1280, isSticker);
-    if(!blob){ toast('이미지를 읽지 못했어요'); return; }
-    var url=URL.createObjectURL(blob);
+    var r=await _ctbToBlob(f, isSticker?520:1280, isSticker);
+    if(!r||!r.blob){ toast('이미지를 읽지 못했어요'); return; }
+    var url=URL.createObjectURL(r.blob);
     if(isSticker){
-      _ctbDraft.stickers.push({url:url, blob:blob, x:50, y:50, s:24, r:0});
+      _ctbDraft.stickers.push({url:url, blob:r.blob, x:50, y:50, s:24, r:0});
       _ctbSel=_ctbDraft.stickers.length-1;
     }else{
-      _ctbDraft.bg_url=url; _ctbDraft.bg_blob=blob;
+      _ctbDraft.bg_url=url; _ctbDraft.bg_blob=r.blob; _ctbDraft.bg_ar=r.ar;
+      _ctbDraft.bg_x=50; _ctbDraft.bg_y=38; _ctbDraft.bg_zoom=116;   // 새 사진은 기본 위치에서 시작
     }
-    ctbRenderStage(); ctbSyncStickerCtl();
+    ctbRenderStage(); ctbSyncStickerCtl(); ctbSyncBgCtl();
   }catch(_){ toast('이미지를 읽지 못했어요'); }
 };
 /* ── 2단계: 색상·아이콘 ── */
@@ -23301,6 +23477,10 @@ async function ctbSave(){
       name:(_ctbDraft.name||'').trim()||'내 테마',
       bg_url:_ctbDraft.bg_url||null,
       bg_opacity:_ctOpacity(_ctbDraft.bg_opacity),
+      bg_x:Math.round(_ctNum(_ctbDraft.bg_x,50)),
+      bg_y:Math.round(_ctNum(_ctbDraft.bg_y,38)),
+      bg_zoom:Math.round(Math.max(100,_ctNum(_ctbDraft.bg_zoom,116))),
+      bg_ar:Number(_ctbDraft.bg_ar)||null,
       stickers:_ctbDraft.stickers.map(function(s){ return {url:s.url, x:s.x, y:s.y, s:s.s, r:s.r}; }),
       color_theme:_ctbDraft.color_theme||null,
       icon_theme:_ctbDraft.icon_theme||null
