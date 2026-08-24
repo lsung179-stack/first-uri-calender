@@ -171,7 +171,7 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
         for (Cell c : cells) {
             int[] ov = new int[]{0};
             // 예약 줄이 레인 0..reserve-1 을 이미 점유하므로 cap 은 '칸 전체 줄 수'를 그대로 쓴다.
-            c.bars = WidgetCommon.cellBars(runs, c.key, c.dow, laneCap, ov);
+            c.bars = WidgetCommon.cellBars(runs, c.key, c.dow, laneCap, ov, c.reserve);
             c.overflow = ov[0];
         }
     }

@@ -451,15 +451,16 @@ public class WidgetCommon {
             String at = a.title == null ? "" : a.title, bt = b.title == null ? "" : b.title;
             return at.compareTo(bt);
         });
-        /* 레인 배정 — ⚠️ 같은 일정(제목·색·소유 동일)은 가능하면 '같은 줄'을 쓴다.
-           여러 날(is_multi) 일정은 gid가 없어 날짜마다 별개 Run 이 되는데, 날마다 다른 줄에 떨어지면
-           다른 일정이 그 자리에 들어가 한 줄이 두 색으로 섞여 보인다(실기기 제보 2026-08-22:
-           "29·31일 여름휴가 바에 핑크색이 섞여 있다"). 앱의 _eventItemKey 묶음과 같은 취지. */
-        /* 레인은 '일정 단위'로 배정한다 — 같은 일정(제목·색·소유 동일)의 런들은 전부 같은 줄.
-           ⚠️ 런 하나씩 배정하면서 나중에 같은 줄을 노리는 방식으로는 안 된다: 먼저 처리된 다른 일정이
-              그 줄을 가져가면 그날만 아래로 밀려 한 줄이 두 색으로 섞여 보인다(실기기 제보 2026-08-22
-              "29·31일 여름휴가 바에 핑크색이 섞여 있다"). 그래서 그 일정이 걸친 날 전체를 한 번에 잡는다.
-           ⚠️ 점유는 '그 일정이 실제로 있는 날'에만 걸리므로, 없는 날엔 다른 일정이 그 줄을 그대로 쓴다. */
+        /* 레인 배정 — 앱(_computeMonthLanes)과 같은 규칙.
+           ① 같은 일정(제목·색·소유 동일)의 런들 중 '날짜가 붙어 있는 것'만 한 덩어리(item)로 본다.
+              여러 날(is_multi) 일정은 gid 가 없어 날마다 별개 Run 이 되는데, 붙어 있는 날을 묶어
+              같은 줄에 놓아야 한 줄이 두 색으로 섞여 보이지 않는다(실기기 제보 2026-08-22).
+              ⚠️ 예전엔 창 전체에서 제목·색만 같으면 전부 한 덩어리로 묶었는데, 그러면 서로 무관한
+                 다른 날의 하루 일정까지 같은 줄을 강제로 써서 — 한 곳에서 밀리면 전부 밀린다.
+                 공휴일도 없는 날의 첫 줄이 비고 일정이 아래로 내려가고, 같은 일정이 7월 위젯과
+                 8월 위젯에서 다른 줄에 뜨던 원인(실기기 제보 2026-08-24).
+           ② 줄을 미리 잡는 건 '여러 날에 걸친 덩어리'뿐. 하루짜리는 lane=-1(float)로 두고
+              cellBars 가 칸마다 빈 줄을 위에서부터 채운다 — 앱의 float 패킹과 같다. */
         List<String> order = new ArrayList<>();
         Map<String, List<Run>> byGroup = new HashMap<>();
         for (Run r : all) {
@@ -467,6 +468,20 @@ public class WidgetCommon {
             List<Run> g = byGroup.get(gk);
             if (g == null) { g = new ArrayList<>(); byGroup.put(gk, g); order.add(gk); }
             g.add(r);
+        }
+        // 그룹 안에서 '붙어 있는 런'끼리만 묶어 item 을 만든다.
+        List<List<Run>> items = new ArrayList<>();
+        for (String gk : order) {
+            List<Run> g = byGroup.get(gk);
+            Collections.sort(g, (a, b) -> a.start.compareTo(b.start));
+            List<Run> cur = new ArrayList<>();
+            String curEnd = null;
+            for (Run r : g) {
+                if (!cur.isEmpty() && r.start.compareTo(addDays(curEnd, 1)) > 0) { items.add(cur); cur = new ArrayList<>(); curEnd = null; }
+                cur.add(r);
+                if (curEnd == null || r.end.compareTo(curEnd) > 0) curEnd = r.end;
+            }
+            if (!cur.isEmpty()) items.add(cur);
         }
         List<Set<String>> occ = new ArrayList<>();
         if (reserve != null) {
@@ -478,33 +493,49 @@ public class WidgetCommon {
                 }
             }
         }
-        for (String gk : order) {
+        for (List<Run> item : items) {
             Set<String> days = new HashSet<>();
-            for (Run r : byGroup.get(gk)) days.addAll(r.days);
+            for (Run r : item) days.addAll(r.days);
+            if (days.size() <= 1) { for (Run r : item) r.lane = -1; continue; }  // 하루짜리는 칸마다 자유 배치
             int lane = 0;
             while (lane < occ.size() && !disjoint(occ.get(lane), days)) lane++;
             if (lane == occ.size()) occ.add(new HashSet<>(days));
             else occ.get(lane).addAll(days);
-            for (Run r : byGroup.get(gk)) r.lane = lane;
+            for (Run r : item) r.lane = lane;
         }
         return all;
     }
 
-    // 한 날짜(cellKey)의 레인별 바 + 넘침. maxLanes 초과분은 overflow[0]에 누적.
     static DayBar[] cellBars(List<Run> runs, String cellKey, int dow, int maxLanes, int[] overflow) {
+        return cellBars(runs, cellKey, dow, maxLanes, overflow, 0);
+    }
+    /* 한 날짜(cellKey)의 레인별 바 + 넘침. maxLanes 초과분은 overflow[0]에 누적.
+       lane<0 인 런(하루짜리)은 이 칸에서 비어 있는 가장 위 줄을 채운다 — 앱의 float 패킹과 동일.
+       reserveForCell = 이 칸이 공휴일 바로 먼저 쓰는 줄 수(그 아래부터 채운다). */
+    static DayBar[] cellBars(List<Run> runs, String cellKey, int dow, int maxLanes, int[] overflow, int reserveForCell) {
         DayBar[] bars = new DayBar[maxLanes];
+        List<Run> floats = new ArrayList<>();
         for (Run r : runs) {
             if (r.start.compareTo(cellKey) <= 0 && cellKey.compareTo(r.end) <= 0) {
-                if (r.lane < maxLanes) {
-                    DayBar b = new DayBar();
-                    b.title = r.title; b.color = r.color; b.outline = r.outline; b.shared = r.shared;
-                    b.contLeft = r.start.compareTo(cellKey) < 0;
-                    b.contRight = r.end.compareTo(cellKey) > 0;
-                    bars[r.lane] = b;
-                } else if (overflow != null) overflow[0]++;
+                if (r.lane < 0) { floats.add(r); continue; }
+                if (r.lane < maxLanes) bars[r.lane] = mkBar(r, cellKey);
+                else if (overflow != null) overflow[0]++;
             }
         }
+        int next = Math.max(0, reserveForCell);
+        for (Run r : floats) {
+            while (next < maxLanes && bars[next] != null) next++;
+            if (next < maxLanes) bars[next] = mkBar(r, cellKey);
+            else if (overflow != null) overflow[0]++;
+        }
         return bars;
+    }
+    private static DayBar mkBar(Run r, String cellKey) {
+        DayBar b = new DayBar();
+        b.title = r.title; b.color = r.color; b.outline = r.outline; b.shared = r.shared;
+        b.contLeft = r.start.compareTo(cellKey) < 0;
+        b.contRight = r.end.compareTo(cellKey) > 0;
+        return b;
     }
 
     // ── 다가오는 일정(콤보) — gid 연속 묶기 ──

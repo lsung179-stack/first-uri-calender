@@ -705,13 +705,16 @@ struct GridView: View {
         // 실제 날짜 점유(occupancy) 기반 레인 배정(앱 _computeMonthLanes와 동일) —
         // 기간 일정은 '자기가 걸친 날'만 레인을 막고, 그 외 날의 일정은 같은 레인을 재사용.
         // (예전 laneEnd 방식은 기간 일정 종료일이 멀면 그 사이 모든 일정을 위 레인으로 밀어냈음)
-        /* ⚠️ 같은 일정(제목·색·소유 동일)은 가능하면 '같은 줄'을 쓴다.
-           여러 날(is_multi) 일정은 gid가 없어 날짜마다 별개 런이 되는데, 날마다 다른 줄에 떨어지면
-           그 자리에 다른 일정이 들어가 한 줄이 두 색으로 섞여 보인다(실기기 제보 2026-08-22).
-           앱의 _eventItemKey 묶음과 같은 취지 — 안드로이드 buildRuns 와 동일 규칙. */
-        // 레인은 '일정 단위'로 배정 — 같은 일정의 런들은 전부 같은 줄(안드로이드 buildRuns와 동일).
-        // 런 하나씩 배정하면 먼저 처리된 다른 일정이 그 줄을 가져가 그날만 밀리므로,
-        // 그 일정이 걸친 날 전체를 한 번에 잡는다.
+        /* 레인 배정 — 앱(_computeMonthLanes)과 같은 규칙, 안드로이드 buildRuns 와 동일.
+           ① 같은 일정(제목·색·소유 동일)의 런들 중 '날짜가 붙어 있는 것'만 한 덩어리(item).
+              여러 날(is_multi) 일정은 gid 가 없어 날마다 별개 런이 되는데, 붙어 있는 날을 묶어
+              같은 줄에 놓아야 한 줄이 두 색으로 섞여 보이지 않는다(실기기 제보 2026-08-22).
+              ⚠️ 예전엔 창 전체에서 제목·색만 같으면 전부 한 덩어리로 묶었다 — 그러면 서로 무관한
+                 다른 날의 하루 일정까지 같은 줄을 강제로 써서, 한 곳에서 밀리면 전부 밀린다.
+                 공휴일도 없는 날의 첫 줄이 비고 일정이 아래로 내려가며, 같은 일정이 7월 위젯과
+                 8월 위젯에서 다른 줄에 뜨던 원인(실기기 제보 2026-08-24).
+           ② 줄을 미리 잡는 건 '여러 날에 걸친 덩어리'뿐. 하루짜리는 lane = -1(float)로 두고
+              slotsFor 가 칸마다 빈 줄을 위에서부터 채운다 — 앱의 float 패킹과 같다. */
         var order: [String] = []
         var byGroup: [String: [Int]] = [:]     // 그룹키 → result 인덱스들
         for idx in result.indices {
@@ -719,20 +722,37 @@ struct GridView: View {
             if byGroup[gk] == nil { byGroup[gk] = []; order.append(gk) }
             byGroup[gk]!.append(idx)
         }
+        // 그룹 안에서 '붙어 있는 런'끼리만 묶어 item 을 만든다.
+        var items: [[Int]] = []
+        for gk in order {
+            let idxs = byGroup[gk]!.sorted { result[$0].start < result[$1].start }
+            var cur: [Int] = []
+            var curEnd = ""
+            for i in idxs {
+                if !cur.isEmpty {
+                    let gap = (parse(curEnd).flatMap { cal.date(byAdding: .day, value: 1, to: $0) }).map { fmt($0) } ?? curEnd
+                    if result[i].start > gap { items.append(cur); cur = []; curEnd = "" }
+                }
+                cur.append(i)
+                if curEnd.isEmpty || result[i].end > curEnd { curEnd = result[i].end }
+            }
+            if !cur.isEmpty { items.append(cur) }
+        }
         var occ: [Set<String>] = []   // lane → 점유된 날짜들
-        for (day, r) in reserveByDay {          // 공휴일/강조 라벨이 쓰는 줄을 먼저 막아둔다
+        for (day, r) in reserveByDay {          // 공휴일이 쓰는 줄을 먼저 막아둔다
             for L in 0..<r {
                 while occ.count <= L { occ.append(Set<String>()) }
                 occ[L].insert(day)
             }
         }
-        for gk in order {
+        for item in items {
             var days = Set<String>()
-            for i in byGroup[gk]! { days.formUnion(runDays(result[i].start, result[i].end)) }
+            for i in item { days.formUnion(runDays(result[i].start, result[i].end)) }
+            if days.count <= 1 { for i in item { result[i].lane = -1 }; continue }   // 하루짜리는 칸마다 자유 배치
             var lane = 0
             while lane < occ.count && !occ[lane].isDisjoint(with: days) { lane += 1 }
             if lane == occ.count { occ.append(days) } else { occ[lane].formUnion(days) }
-            for i in byGroup[gk]! { result[i].lane = lane }
+            for i in item { result[i].lane = lane }
         }
         return result
     }
@@ -741,19 +761,43 @@ struct GridView: View {
         let s = fmt(d)
         var arr = [DayBar?](repeating: nil, count: maxLanes)
         var overflow = 0
+        var floats: [EvRun] = []
         for r in rs where r.start <= s && s <= r.end {
+            if r.lane < 0 { floats.append(r); continue }
             if r.lane < maxLanes {
                 arr[r.lane] = DayBar(title: r.title, color: r.color, contLeft: r.start < s, contRight: r.end > s, outline: r.outline, shared: r.shared)
             } else { overflow += 1 }
         }
+        // 하루짜리는 이 칸에서 비어 있는 가장 위 줄부터 채운다(공휴일 줄은 건너뛴다).
+        var next = reserveByDay[s] ?? 0
+        for r in floats {
+            while next < maxLanes && arr[next] != nil { next += 1 }
+            if next < maxLanes {
+                arr[next] = DayBar(title: r.title, color: r.color, contLeft: false, contRight: false, outline: r.outline, shared: r.shared)
+            } else { overflow += 1 }
+        }
         return (arr, overflow)
+    }
+    /* 실제로 쓰인 이벤트 줄 수 — 하루짜리는 전역 레인이 없으므로(float) 보이는 날들을 훑어 구한다.
+       빈 줄을 예약하지 않아야 할일이 셀 밖으로 밀리지 않는다. */
+    func usedLaneCount(_ rs: [EvRun]) -> Int {
+        let cal = Calendar.current
+        var used = 0
+        for i in 0..<(rowCount*7) {
+            guard let d = cal.date(byAdding: .day, value: i, to: startDate) else { continue }
+            let slots = slotsFor(d, rs).0
+            var last = 0
+            for (j, b) in slots.enumerated() where b != nil { last = j + 1 }
+            if last > used { used = last }
+        }
+        return min(maxLanes, used)
     }
     var body: some View {
         let cal = Calendar.current
         let allRuns = runs
         let curMonth = cal.component(.month, from: monthDate)
         // 실제로 쓰인 이벤트 줄 수만 예약(빈 줄이 할일을 셀 밖으로 밀어내지 않게) → 할일 노출 개선
-        let usedLanes = min(maxLanes, max(0, (allRuns.map { $0.lane }.max() ?? -1) + 1))
+        let usedLanes = usedLaneCount(allRuns)
         let denseCell = rowCount >= 6 || weeks == 2
         VStack(spacing: 0) {
             WGHeader(room: room, compact: weeks > 2, active: filter, monthNav: monthNav, monthLabel: monthLabel, myUserId: myUserId, weekNav: weekNav, weekLabel: weekLabel, weekOffset: weekOffset)

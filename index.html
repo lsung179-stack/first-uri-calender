@@ -12759,7 +12759,9 @@ function _updateRangeCalVisibility(){
   const grid=document.getElementById('evRangeMiniCal');
   const nav=document.getElementById('evRangeWeekNav');
   if(grid){ grid.style.display=''; grid.classList.toggle('range-preview',hide); }
-  if(nav)nav.style.display=hide?'':'none';
+  /* '이전 주 / 다음 주' 는 매주 반복에서만 의미가 있다 — 매월 N째주는 날짜가 규칙(몇째 줄의
+     어느 요일)으로 정해져서 주 단위로 밀면 그 규칙에서 벗어난다. (사용자 요청 2026-08-24) */
+  if(nav)nav.style.display=(hide&&_evRepeatType==='weekly')?'':'none';
   if(hide){
     if(!_evRangeCalHidden&&(!_evRepeatWeekdays||_evRepeatWeekdays.length<=1)){
       // 방금 '탭식 달력 숨김' 상태로 전환됨 — [2026-08-14] 요일 하나를 자동 선택해두던 것을
@@ -24724,7 +24726,9 @@ function _updateTdRangeCalVisibility(){
   const grid=$('todoMiniCal');
   const nav=$('todoRangeWeekNav');
   if(grid){ grid.style.display=''; grid.classList.toggle('range-preview',hide); }
-  if(nav)nav.style.display=hide?'':'none';
+  /* '이전 주 / 다음 주' 는 매주 반복에서만 의미가 있다 — 매월 N째주는 날짜가 규칙(몇째 줄의
+     어느 요일)으로 정해져서 주 단위로 밀면 그 규칙에서 벗어난다. (사용자 요청 2026-08-24) */
+  if(nav)nav.style.display=(hide&&_todoRepeat==='weekly')?'':'none';
   if(hide){
     if(!_tdRangeCalHidden&&(!_tdRepeatWeekdays||_tdRepeatWeekdays.length<=1)){
       // [2026-08-14] 요일 하나를 자동 선택해두던 것을 완전히 제거(일정 evCard와 대칭) —
