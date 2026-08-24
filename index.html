@@ -908,6 +908,15 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 /* ── 방 캐릭터 테마(카드 스킨 연동) — 콘텐츠 뒤에 큰 캐릭터 워터마크+구름(타입블럭 스타일) ── */
 /* .app이 position:fixed로 스택 컨텍스트를 만들어 body의 z-index:-1은 가려짐 → 데코를 .app 안 첫 자식으로 넣어
    투명한 .screen/그리드보다 먼저 그려 날짜/일정 뒤로 비치게 함. pointer-events 없음(터치 방해 0). */
+/* 커스텀 테마 2단계 — 위 미리보기 + 아래 큰 편집기(배너·원) */
+.ctb-prev-label{font-size:11.5px;font-weight:700;color:var(--sub);letter-spacing:.02em;margin:0 0 6px}
+#ctbPrevWrap{margin-bottom:16px}
+.ctb-banner-edit{width:100%;height:118px;border-radius:14px;border:1px solid var(--border);background:var(--aP);background-size:cover;background-position:center;background-repeat:no-repeat;touch-action:none;cursor:grab;position:relative;overflow:hidden}
+.ctb-banner-edit:active{cursor:grabbing}
+.ctb-banner-edit.empty::after{content:'배경 사진을 먼저 넣어주세요';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--sub)}
+.ctb-seal-edit-wrap{display:flex;justify-content:center}
+.ctb-seal-edit{width:150px;height:150px;border-radius:50%;overflow:hidden;border:1px solid var(--border);background:var(--aP);background-size:cover;background-position:center;background-repeat:no-repeat;touch-action:none;cursor:grab;display:flex;align-items:center;justify-content:center;font-family:'Noto Serif KR',serif;font-size:44px;color:var(--accent)}
+.ctb-seal-edit:active{cursor:grabbing}
 /* 방 프로필 '내 사진' — 배경 이미지는 인라인(위치·확대 포함), 여기선 테두리/배경만 정리 */
 .has-seal.seal-photo{--seal-ring:transparent;background-color:var(--aP);background-image:none}
 .has-seal.seal-photo::before,.has-seal.seal-photo::after{display:none!important}
@@ -5562,13 +5571,16 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
       <div class="ctb-bg" id="ctbBg"></div>
       <div class="ctb-mock" id="ctbMock"></div>
     </div>
-    <div class="rm-cardprev" id="ctbCardPrev" style="display:none">
-      <div class="rm-bigprev" id="ctbSealPrev"></div>
-      <div class="rm-cardprev-body">
-        <div class="rm-cardprev-name" id="ctbCpName">우리 방</div>
-        <div class="rm-bpname">방 프로필</div>
+    <div id="ctbPrevWrap" style="display:none">
+      <div class="ctb-prev-label">미리보기</div>
+      <div class="rm-cardprev" id="ctbCardPrev">
+        <div class="rm-bigprev" id="ctbSealPrev"></div>
+        <div class="rm-cardprev-body">
+          <div class="rm-cardprev-name" id="ctbCpName">우리 방</div>
+          <div class="rm-bpname">방 프로필</div>
+        </div>
+        <span class="rm-cardprev-chev">&rsaquo;</span>
       </div>
-      <span class="rm-cardprev-chev">&rsaquo;</span>
     </div>
     <div class="ctb-hint" id="ctbHint">끌어서 옮기고, 두 손가락으로 확대·축소해요</div>
 
@@ -5599,7 +5611,13 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
     </div>
 
     <div id="ctbStep2" style="display:none">
+      <div class="rm-field-label">방 배너 &mdash; 배경 사진에서 보일 부분</div>
+      <div class="ctb-banner-edit" id="ctbBannerEdit"></div>
+      <div class="ctb-hint" id="ctbBannerHint" style="margin:6px 0 16px">끌어서 보일 부분을 맞춰요</div>
+
       <div class="rm-field-label">방 프로필 사진</div>
+      <div class="ctb-seal-edit-wrap"><div class="ctb-seal-edit" id="ctbSealEdit"></div></div>
+      <div class="ctb-hint" style="margin:6px 0 12px">끌어서 위치, 두 손가락으로 확대&middot;축소</div>
       <div class="ctb-row">
         <button type="button" class="ctb-btn" onclick="ctbPickSeal()">사진 선택</button>
         <button type="button" class="ctb-btn danger" id="ctbSealClear" onclick="ctbClearSeal()" disabled>사진 빼기</button>
@@ -16876,7 +16894,7 @@ CARD_SKINS.c_simsul={name:'심술이',img:'https://d8j0ntlcm91z4.cloudfront.net/
 CARD_SKINS.c_kkalkal={name:'깔깔이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_143001_bda96b6b-4448-4757-9830-140f684e737f.png'};
 const CARD_SKIN_PREM=['mono', 'a_cat', 'a_rabbit', 'a_bear', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'a_dino', 'c_gaegu', 'nabi', 'moon', 'daisy', 'star', 'koi'];   // 보리·호담·소녀·소년·눈꽃 제거(2026-07-23, 사용자 요청). CARD_SKINS 데이터는 잔존
 function _cardSkinCls(k){ if(_isCustomSkin(k)) return ' rcs-img'; const sk=k&&CARD_SKINS[k]; if(!sk)return ''; if(sk.char) return ' rcs-char'+(sk.dark?' rcs-dark':''); if(sk.img) return ' rcs-img'+(sk.dark?' rcs-dark':''); return ' rcs-'+k+(sk.dark?' rcs-dark':''); }
-function _cardSkinStyle(k){ if(_isCustomSkin(k)){ var cu=_customThemeOf(k); return (cu&&cu.bg_url)?(' style="background-image:url(&quot;'+cu.bg_url+'&quot;)"'):''; }
+function _cardSkinStyle(k){ if(_isCustomSkin(k)){ var cu=_customThemeOf(k); return (cu&&cu.bg_url)?(' style="'+_ctCardBgStyle({url:cu.bg_url,x:cu.card_x,y:cu.card_y})+'"'):''; }
   const sk=k&&CARD_SKINS[k]; if(!sk)return '';
   if(sk.char){ const g=sk.grad||['#f3e6cf','#e6d3ad']; const bg=sk.scene?('url(&quot;'+sk.scene+'&quot;) center/cover'):('linear-gradient(100deg,'+g[0]+' 0%,'+g[0]+' 40%,'+g[1]+' 100%)'); return ' style="background:url(&quot;'+sk.char+'&quot;) no-repeat right 3% center/auto 94%,'+bg+'"'; }
   return sk.img?(' style="background-image:url(&quot;'+sk.img+'&quot;)"'):''; }
@@ -23130,7 +23148,7 @@ async function applyRoomThemeFor(roomId){
    2단계: 색상(THEMES) + 아이콘(기존 테마의 아이콘 세트) — 둘 다 '기본' 선택 가능
    이미지는 저장 버튼을 눌렀을 때만 올린다(취소해도 저장소에 쓰레기가 안 남게).  */
 var _ctbStep=1, _ctbEditId=null, _ctbDraft=null, _ctbSel=-1, _ctbFileMode='bg', _ctbSaving=false, _ctbDrag=null, _ctbWired=false;
-function _ctbNewDraft(){ return {name:'', bg_url:'', bg_blob:null, bg_opacity:40, bg_x:50, bg_y:38, bg_zoom:116, bg_ar:0, stickers:[], seal_photo:null, color_theme:'', icon_theme:''}; }
+function _ctbNewDraft(){ return {name:'', bg_url:'', bg_blob:null, bg_opacity:40, bg_x:50, bg_y:38, bg_zoom:116, bg_ar:0, card_x:50, card_y:50, stickers:[], seal_photo:null, color_theme:'', icon_theme:''}; }
 function _ctbEl(id){ return document.getElementById(id); }
 
 /* 색상 후보 — 사용자가 이름으로 알아보는 기존 테마들에서 뽑는다(중복 테마는 하나만) */
@@ -23163,6 +23181,7 @@ async function openCustomThemeBuilder(id){
   _ctbDraft = src
     ? { name:src.name||'', bg_url:src.bg_url||'', bg_blob:null, bg_opacity:_ctOpacity(src.bg_opacity),
         bg_x:_ctNum(src.bg_x,50), bg_y:_ctNum(src.bg_y,38), bg_zoom:Math.max(100,_ctNum(src.bg_zoom,116)), bg_ar:Number(src.bg_ar)||0,
+        card_x:_ctNum(src.card_x,50), card_y:_ctNum(src.card_y,50),
         stickers:(Array.isArray(src.stickers)?src.stickers:[]).map(function(st){
           return {url:st.url, blob:null, x:_ctNum(st.x,50), y:_ctNum(st.y,50), s:_ctNum(st.s,24), r:_ctNum(st.r,0)}; }),
         seal_photo:(src.seal_photo&&src.seal_photo.url)?{url:src.seal_photo.url, blob:null, x:_ctNum(src.seal_photo.x,50), y:_ctNum(src.seal_photo.y,50), z:Math.max(100,_ctNum(src.seal_photo.z,100)), ar:Number(src.seal_photo.ar)||0}:null,
@@ -23186,6 +23205,7 @@ async function openCustomThemeBuilder(id){
     }
     var nmi=_ctbEl('ctbName'); if(nmi)nmi.addEventListener('input',function(){ _ctbDraft.name=this.value; });
     _ctbWireSeal();
+    _ctbWireBanner();
     _ctbWired=true;
   }
   var c=_ctbEl('ctbCard'); if(c)c.classList.add('on');
@@ -23206,15 +23226,17 @@ function ctbSetStep(n){
   _ctbStep=n;
   ['ctbStep1','ctbStep2','ctbStep3'].forEach(function(id,i){ var el=_ctbEl(id); if(el)el.style.display=(n===i+1)?'':'none'; });
   // 1·3단계는 폰 모양 미리보기, 2단계는 방 카드(프로필) 미리보기
-  var stg=_ctbEl('ctbStage'), cp=_ctbEl('ctbCardPrev');
+  var stg=_ctbEl('ctbStage'), pw=_ctbEl('ctbPrevWrap');
   if(stg)stg.style.display=(n===2)?'none':'';
-  if(cp)cp.style.display=(n===2)?'':'none';
+  if(pw)pw.style.display=(n===2)?'':'none';
   var t=_ctbEl('ctbTitle'); if(t)t.textContent=(n===1)?'테마 만들기':(n===2?'방 프로필':'색상 · 아이콘');
   var b=_ctbEl('ctbNextBtn'); if(b)b.textContent=(n===3)?'저장':'다음';
   var h=_ctbEl('ctbHint');
-  if(h)h.textContent=(n===1)?'끌어서 옮기고, 두 손가락으로 확대·축소해요'
-    :(n===2?'동그라미를 끌어서 위치, 두 손가락으로 확대·축소'
-           :'앱 색과 아이콘을 고르면 미리보기에 바로 보여요');
+  // 2단계는 배너·원 편집기마다 안내가 따로 있어 공용 안내는 숨긴다
+  if(h){
+    h.style.display=(n===2)?'none':'';
+    h.textContent=(n===1)?'끌어서 옮기고, 두 손가락으로 확대·축소해요':'앱 색과 아이콘을 고르면 미리보기에 바로 보여요';
+  }
   if(n===3){ ctbRenderPicks(); }
   ctbApplyStageTheme();
   ctbRenderStage();
@@ -23444,24 +23466,50 @@ function ctbSyncSealCtl(){
   if(z){ z.disabled=!has; z.value=String(zval); }
   if(zv)zv.textContent=zval+'%';
 }
-function ctbRenderSeal(){
-  var cp=_ctbEl('ctbCardPrev'), sp=_ctbEl('ctbSealPrev');
-  // 카드 배경 = 이 테마의 배경 사진(방 목록에서 보이는 모습 그대로)
-  if(cp){
-    if(_ctbDraft.bg_url) _ctPhotoApply(cp,{url:_ctbDraft.bg_url,x:_ctbDraft.bg_x,y:_ctbDraft.bg_y,z:_ctbDraft.bg_zoom,ar:_ctbDraft.bg_ar});
-    else { cp.style.backgroundImage=''; }
+/* 방 카드(배너)의 배경 — 항상 '꽉 채움(cover)'이고 위치만 조절한다(방 카드는 가로로 넓어 확대는 필요 없음) */
+function _ctCardBgStyle(o){
+  if(!o||!o.url) return '';
+  return 'background-image:url(&quot;'+o.url+'&quot;);background-size:cover;background-repeat:no-repeat;'
+    +'background-position:'+_ctNum(o.x,50)+'% '+_ctNum(o.y,50)+'%';
+}
+function _ctCardBgApply(el,o){
+  if(!el)return;
+  if(o&&o.url){
+    el.style.backgroundImage='url("'+o.url+'")';
+    el.style.backgroundSize='cover';
+    el.style.backgroundRepeat='no-repeat';
+    el.style.backgroundPosition=_ctNum(o.x,50)+'% '+_ctNum(o.y,50)+'%';
+  }else{
+    el.style.backgroundImage='';
   }
+}
+function ctbRenderSeal(){
+  var card={url:_ctbDraft.bg_url, x:_ctbDraft.card_x, y:_ctbDraft.card_y};
+  var ph=_ctbDraft.seal_photo;
+  var initial=((_currentRoom&&_currentRoom.name)||((_myRooms&&_myRooms[0]&&_myRooms[0].name)||'우리 방')).trim().charAt(0);
+  // ① 위 미리보기(실제 방 카드 모습)
+  var cp=_ctbEl('ctbCardPrev'), sp=_ctbEl('ctbSealPrev');
+  _ctCardBgApply(cp,card);
   if(sp){
-    var ph=_ctbDraft.seal_photo;
     if(ph&&ph.url){
-      sp.className='rm-bigprev has-seal seal-photo';
-      sp.innerHTML='';
+      sp.className='rm-bigprev has-seal seal-photo'; sp.innerHTML='';
       _ctPhotoApply(sp,{url:ph.url,x:ph.x,y:ph.y,z:ph.z,ar:ph.ar});
     }else{
-      sp.className='rm-bigprev rm-bp-none';
-      sp.removeAttribute('style');
-      sp.innerHTML='<span class="rm-bigprev-letter">우</span>';
+      sp.className='rm-bigprev rm-bp-none'; sp.removeAttribute('style');
+      sp.innerHTML='<span class="rm-bigprev-letter">'+escapeHtml(initial)+'</span>';
     }
+  }
+  // ② 큰 배너 편집기(위치만)
+  var be=_ctbEl('ctbBannerEdit');
+  if(be){
+    be.classList.toggle('empty',!_ctbDraft.bg_url);
+    _ctCardBgApply(be,card);
+  }
+  // ③ 큰 원 편집기(위치+확대)
+  var se=_ctbEl('ctbSealEdit');
+  if(se){
+    if(ph&&ph.url){ se.textContent=''; _ctPhotoApply(se,{url:ph.url,x:ph.x,y:ph.y,z:ph.z,ar:ph.ar}); }
+    else { se.style.backgroundImage=''; se.textContent=initial; }
   }
   var nm=_ctbEl('ctbCpName');
   if(nm)nm.textContent=(_currentRoom&&_currentRoom.name)||((_myRooms&&_myRooms[0]&&_myRooms[0].name)||'우리 방');
@@ -23470,7 +23518,7 @@ function ctbRenderSeal(){
 var _ctbSealDrag=null, _ctbSealPtrs={}, _ctbSealPinch=null, _ctbSealWired=false;
 function _ctbSealIds(){ return Object.keys(_ctbSealPtrs); }
 function _ctbWireSeal(){
-  var sp=_ctbEl('ctbSealPrev'); if(!sp||_ctbSealWired)return;
+  var sp=_ctbEl('ctbSealEdit'); if(!sp||_ctbSealWired)return;
   _ctbSealWired=true;
   sp.style.touchAction='none';
   sp.addEventListener('pointerdown',function(e){
@@ -23515,6 +23563,30 @@ function _ctbWireSeal(){
   };
   sp.addEventListener('pointerup',end);
   sp.addEventListener('pointercancel',end);
+}
+/* 방 배너 — 배경 사진과 같은 사진이고, 끌어서 '보일 부분'만 정한다(확대 없음) */
+var _ctbBanDrag=null, _ctbBanWired=false;
+function _ctbWireBanner(){
+  var be=_ctbEl('ctbBannerEdit'); if(!be||_ctbBanWired)return;
+  _ctbBanWired=true;
+  be.addEventListener('pointerdown',function(e){
+    if(!_ctbDraft||!_ctbDraft.bg_url)return;
+    _ctbBanDrag={rect:be.getBoundingClientRect(), sx:e.clientX, sy:e.clientY,
+      x:_ctNum(_ctbDraft.card_x,50), y:_ctNum(_ctbDraft.card_y,50)};
+    try{ be.setPointerCapture(e.pointerId); }catch(_){}
+    e.preventDefault();
+  });
+  be.addEventListener('pointermove',function(e){
+    if(!_ctbBanDrag)return;
+    var r=_ctbBanDrag.rect;
+    _ctbDraft.card_x=Math.max(0,Math.min(100,Math.round((_ctbBanDrag.x-((e.clientX-_ctbBanDrag.sx)/r.width)*100)*10)/10));
+    _ctbDraft.card_y=Math.max(0,Math.min(100,Math.round((_ctbBanDrag.y-((e.clientY-_ctbBanDrag.sy)/r.height)*100)*10)/10));
+    ctbRenderSeal();
+    e.preventDefault();
+  });
+  var bend=function(){ _ctbBanDrag=null; };
+  be.addEventListener('pointerup',bend);
+  be.addEventListener('pointercancel',bend);
 }
 /* ── 3단계: 색상·아이콘 ── */
 function ctbRenderPicks(){
@@ -23571,6 +23643,8 @@ async function ctbSave(){
       bg_y:Math.round(_ctNum(_ctbDraft.bg_y,38)),
       bg_zoom:Math.round(Math.max(100,_ctNum(_ctbDraft.bg_zoom,116))),
       bg_ar:Number(_ctbDraft.bg_ar)||null,
+      card_x:Math.round(_ctNum(_ctbDraft.card_x,50)),
+      card_y:Math.round(_ctNum(_ctbDraft.card_y,50)),
       seal_photo:(_ctbDraft.seal_photo&&_ctbDraft.seal_photo.url)
         ? {url:_ctbDraft.seal_photo.url, x:_ctbDraft.seal_photo.x, y:_ctbDraft.seal_photo.y, z:_ctbDraft.seal_photo.z, ar:_ctbDraft.seal_photo.ar}
         : null,
