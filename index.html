@@ -23085,8 +23085,8 @@ function _clearRoomCharDecor(){
    비율(ar=가로/세로)을 알고 있으면 '어느 쪽이 넘치는지'를 정확히 계산해, 기기 크기가 달라도
    확대 100% = 딱 채움(빈 곳 없음)이 되고 그 위로 확대·이동이 자연스럽게 먹는다.
    ⚠️ 요소가 화면에 붙은 뒤에 호출해야 크기를 잴 수 있다. */
-/* 끌어서 옮길 때 감도 — 1.0 이면 '화면 한 번 훑기 = 사진 전체'라 너무 빠르다(실기기 피드백). */
-var _CT_PAN_SENS=0.55;
+/* 끌어서 옮길 때 감도 — 1 이면 사진이 손끝을 그대로 따라온다(아래 _ctPanScale 로 픽셀 단위 환산). */
+var _CT_PAN_SENS=1;
 /* 두 손가락 사이 거리 — 핀치 확대/축소 계산용 */
 function _ctPinchDist(a,b){ var dx=a.x-b.x, dy=a.y-b.y; return Math.sqrt(dx*dx+dy*dy)||1; }
 /* 사진 비율(가로/세로) 캐시 — 비율을 알아야 '꽉 채움(cover) 기준 확대'를 정확히 계산할 수 있다.
@@ -23134,6 +23134,23 @@ function _ctPhotoApply(el, o){
   }else{
     el.style.backgroundSize = 'cover';
   }
+}
+/* 손가락 1px 이동 = 배경 위치 몇 % 인가.
+   ⚠️ background-position 의 %는 '상자 크기'가 아니라 '삐져나온 부분(overflow)' 전체를 0~100 으로 나눈 값이라,
+   상자 폭으로 나누면 축마다 속도가 제각각이 된다(넓고 낮은 배너에서 가로는 굼뜨고 세로는 쏜살같던 원인).
+   overflow 기준으로 환산해야 가로·세로가 같은 속도로, 사진이 손끝을 그대로 따라온다. */
+function _ctPanScale(el, o){
+  var out={x:0,y:0};
+  if(!el||!o) return out;
+  var r=el.getBoundingClientRect();
+  if(!(r.width>0&&r.height>0)) return out;
+  var ar=_ctAr(o), z=Math.max(100,_ctNum(o.z,100)), bw, bh;
+  if(ar>0){ var ca=r.width/r.height; if(ar>ca){ bh=r.height*z/100; bw=bh*ar; } else { bw=r.width*z/100; bh=bw/ar; } }
+  else { bw=r.width; bh=r.height; }   /* 비율을 아직 모르면 cover 로 그려지는 중 — 움직일 여지 없음 */
+  var ox=bw-r.width, oy=bh-r.height;
+  out.x = ox>0.5 ? (100/ox) : 0;
+  out.y = oy>0.5 ? (100/oy) : 0;
+  return out;
 }
 function _ctNum(v,dflt){ var n=Number(v); return isFinite(n)?n:dflt; }
 function _ctOpacity(v){ var n=Number(v); if(!isFinite(n))n=40; return Math.max(0,Math.min(100,n)); }
@@ -23382,7 +23399,7 @@ function ctbStageDown(e){
     // 빈 곳을 끌면 배경 사진을 옮긴다(스티커 선택은 해제)
     if(_ctbSel>=0){ _ctbSel=-1; ctbRenderStage(); ctbSyncStickerCtl(); }
     if(!_ctbDraft.bg_url) return;
-    _ctbDrag={mode:'bg', rect:st.getBoundingClientRect(), sx:e.clientX, sy:e.clientY, bx:_ctNum(_ctbDraft.bg_x,50), by:_ctNum(_ctbDraft.bg_y,38)};
+    _ctbDrag={mode:'bg', rect:st.getBoundingClientRect(), pan:_ctbStagePan(), sx:e.clientX, sy:e.clientY, bx:_ctNum(_ctbDraft.bg_x,50), by:_ctNum(_ctbDraft.bg_y,38)};
     try{ st.setPointerCapture(e.pointerId); }catch(_){}
     e.preventDefault();
     return;
@@ -23414,8 +23431,9 @@ function ctbStageMove(e){
   if(_ctbDrag.mode==='bg'){
     var r0=_ctbDrag.rect;
     // 끄는 방향으로 사진이 따라오도록(위치 %는 반대로 움직인다)
-    _ctbDraft.bg_x=Math.max(0,Math.min(100,Math.round((_ctbDrag.bx-((e.clientX-_ctbDrag.sx)/r0.width)*100)*10)/10));
-    _ctbDraft.bg_y=Math.max(0,Math.min(100,Math.round((_ctbDrag.by-((e.clientY-_ctbDrag.sy)/r0.height)*100)*10)/10));
+    var pb=_ctbDrag.pan||{x:0,y:0};
+    _ctbDraft.bg_x=Math.max(0,Math.min(100,Math.round((_ctbDrag.bx-(e.clientX-_ctbDrag.sx)*pb.x*_CT_PAN_SENS)*10)/10));
+    _ctbDraft.bg_y=Math.max(0,Math.min(100,Math.round((_ctbDrag.by-(e.clientY-_ctbDrag.sy)*pb.y*_CT_PAN_SENS)*10)/10));
     ctbRenderStage(); ctbSyncBgCtl();
     e.preventDefault();
     return;
@@ -23437,7 +23455,7 @@ function ctbStageUp(e){
     var st=_ctbEl('ctbStage'), p=_ctbPtrs[ids[0]];
     if(st&&p){
       if(was==='sticker'&&_ctbSel>=0) _ctbDrag={mode:'sticker', rect:st.getBoundingClientRect()};
-      else if(_ctbDraft.bg_url) _ctbDrag={mode:'bg', rect:st.getBoundingClientRect(), sx:p.x, sy:p.y,
+      else if(_ctbDraft.bg_url) _ctbDrag={mode:'bg', rect:st.getBoundingClientRect(), pan:_ctbStagePan(), sx:p.x, sy:p.y,
         bx:_ctNum(_ctbDraft.bg_x,50), by:_ctNum(_ctbDraft.bg_y,38)};
     }
     return;
@@ -23630,7 +23648,7 @@ function _ctbWireSeal(){
       e.preventDefault();
       return;
     }
-    _ctbSealDrag={rect:sp.getBoundingClientRect(), sx:e.clientX, sy:e.clientY, x:_ctNum(ph.x,50), y:_ctNum(ph.y,50)};
+    _ctbSealDrag={rect:sp.getBoundingClientRect(), pan:_ctPanScale(sp,ph), sx:e.clientX, sy:e.clientY, x:_ctNum(ph.x,50), y:_ctNum(ph.y,50)};
     try{ sp.setPointerCapture(e.pointerId); }catch(_){}
     e.preventDefault();
   });
@@ -23649,8 +23667,9 @@ function _ctbWireSeal(){
     }
     if(!_ctbSealDrag)return;
     var r=_ctbSealDrag.rect;
-    ph.x=Math.max(0,Math.min(100,Math.round((_ctbSealDrag.x-((e.clientX-_ctbSealDrag.sx)/r.width)*100*_CT_PAN_SENS)*10)/10));
-    ph.y=Math.max(0,Math.min(100,Math.round((_ctbSealDrag.y-((e.clientY-_ctbSealDrag.sy)/r.height)*100*_CT_PAN_SENS)*10)/10));
+    var pz=_ctbSealDrag.pan||{x:0,y:0};
+    ph.x=Math.max(0,Math.min(100,Math.round((_ctbSealDrag.x-(e.clientX-_ctbSealDrag.sx)*pz.x*_CT_PAN_SENS)*10)/10));
+    ph.y=Math.max(0,Math.min(100,Math.round((_ctbSealDrag.y-(e.clientY-_ctbSealDrag.sy)*pz.y*_CT_PAN_SENS)*10)/10));
     ctbRenderSeal();
     e.preventDefault();
   });
@@ -23661,7 +23680,7 @@ function _ctbWireSeal(){
     if(_ctbSealPinch && ids.length===1){
       _ctbSealPinch=null;
       var ph2=_ctbDraft&&_ctbDraft.seal_photo, p2=_ctbSealPtrs[ids[0]];
-      if(ph2&&p2) _ctbSealDrag={rect:sp.getBoundingClientRect(), sx:p2.x, sy:p2.y, x:_ctNum(ph2.x,50), y:_ctNum(ph2.y,50)};
+      if(ph2&&p2) _ctbSealDrag={rect:sp.getBoundingClientRect(), pan:_ctPanScale(sp,ph2), sx:p2.x, sy:p2.y, x:_ctNum(ph2.x,50), y:_ctNum(ph2.y,50)};
       return;
     }
     if(ids.length<2) _ctbSealPinch=null;
@@ -23669,6 +23688,17 @@ function _ctbWireSeal(){
   };
   sp.addEventListener('pointerup',end);
   sp.addEventListener('pointercancel',end);
+}
+/* 무대(1단계 배경)·배너의 이동 환산값 — 지금 그려진 크기 기준이라 확대를 바꾸면 자동으로 따라간다 */
+function _ctbStagePan(){
+  var bg=_ctbEl('ctbBg');
+  if(!bg||!_ctbDraft) return {x:0,y:0};
+  return _ctPanScale(bg,{url:_ctbDraft.bg_url,z:_ctbDraft.bg_zoom,ar:_ctbDraft.bg_ar});
+}
+function _ctbBanPan(){
+  var be=_ctbEl('ctbBannerEdit');
+  if(!be||!_ctbDraft) return {x:0,y:0};
+  return _ctPanScale(be,{url:_ctbDraft.bg_url,z:_ctbDraft.card_zoom,ar:_ctbDraft.bg_ar});
 }
 /* 방 배너 — 배경과 같은 사진이고, 카드에서 '보일 부분'과 확대만 정한다(사진은 따로 못 고름) */
 var _ctbBanDrag=null, _ctbBanWired=false, _ctbBanPtrs={}, _ctbBanPinch=null;
@@ -23698,7 +23728,7 @@ function _ctbWireBanner(){
       e.preventDefault();
       return;
     }
-    _ctbBanDrag={rect:be.getBoundingClientRect(), sx:e.clientX, sy:e.clientY,
+    _ctbBanDrag={rect:be.getBoundingClientRect(), pan:_ctbBanPan(), sx:e.clientX, sy:e.clientY,
       x:_ctNum(_ctbDraft.card_x,50), y:_ctNum(_ctbDraft.card_y,50)};
     try{ be.setPointerCapture(e.pointerId); }catch(_){}
     e.preventDefault();
@@ -23717,8 +23747,9 @@ function _ctbWireBanner(){
     }
     if(!_ctbBanDrag)return;
     var r=_ctbBanDrag.rect;
-    _ctbDraft.card_x=Math.max(0,Math.min(100,Math.round((_ctbBanDrag.x-((e.clientX-_ctbBanDrag.sx)/r.width)*100*_CT_PAN_SENS)*10)/10));
-    _ctbDraft.card_y=Math.max(0,Math.min(100,Math.round((_ctbBanDrag.y-((e.clientY-_ctbBanDrag.sy)/r.height)*100*_CT_PAN_SENS)*10)/10));
+    var pn=_ctbBanDrag.pan||{x:0,y:0};
+    _ctbDraft.card_x=Math.max(0,Math.min(100,Math.round((_ctbBanDrag.x-(e.clientX-_ctbBanDrag.sx)*pn.x*_CT_PAN_SENS)*10)/10));
+    _ctbDraft.card_y=Math.max(0,Math.min(100,Math.round((_ctbBanDrag.y-(e.clientY-_ctbBanDrag.sy)*pn.y*_CT_PAN_SENS)*10)/10));
     ctbRenderSeal();
     e.preventDefault();
   });
@@ -23729,7 +23760,7 @@ function _ctbWireBanner(){
     if(_ctbBanPinch && ids.length===1){
       _ctbBanPinch=null;
       var p=_ctbBanPtrs[ids[0]];
-      if(p) _ctbBanDrag={rect:be.getBoundingClientRect(), sx:p.x, sy:p.y,
+      if(p) _ctbBanDrag={rect:be.getBoundingClientRect(), pan:_ctbBanPan(), sx:p.x, sy:p.y,
         x:_ctNum(_ctbDraft.card_x,50), y:_ctNum(_ctbDraft.card_y,50)};
       return;
     }
