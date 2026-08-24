@@ -23407,10 +23407,19 @@ function ctbStageDown(e){
     return;
   }
   _ctbSel=Number(t.getAttribute('data-i'));
-  _ctbDrag={mode:'sticker', rect:st.getBoundingClientRect()};
+  _ctbDrag=_ctbStickerGrab(st, e.clientX, e.clientY);
   try{ st.setPointerCapture(e.pointerId); }catch(_){}
   ctbRenderStage(); ctbSyncStickerCtl();
   e.preventDefault();
+}
+/* 스티커를 잡을 때 '손가락↔스티커 중심'의 차이를 기억한다.
+   ⚠️ 이걸 안 하면 스티커 중심이 매번 손가락으로 끌려가, 처음 잡을 때도·손가락을 바꿀 때도 순간이동한다. */
+function _ctbStickerGrab(st, px, py){
+  var r=st.getBoundingClientRect();
+  var s=(_ctbDraft&&_ctbDraft.stickers||[])[_ctbSel]||{};
+  return {mode:'sticker', rect:r,
+    ox:_ctNum(s.x,50)-((px-r.left)/r.width)*100,
+    oy:_ctNum(s.y,50)-((py-r.top)/r.height)*100};
 }
 function ctbStageMove(e){
   if(_ctbPtrs[e.pointerId]) _ctbPtrs[e.pointerId]={x:e.clientX,y:e.clientY};
@@ -23443,8 +23452,8 @@ function ctbStageMove(e){
   if(_ctbSel<0)return;
   var s=(_ctbDraft.stickers||[])[_ctbSel]; if(!s)return;
   var r=_ctbDrag.rect;
-  s.x=Math.max(0,Math.min(100,Math.round(((e.clientX-r.left)/r.width)*1000)/10));
-  s.y=Math.max(0,Math.min(100,Math.round(((e.clientY-r.top)/r.height)*1000)/10));
+  s.x=Math.max(0,Math.min(100,Math.round((((e.clientX-r.left)/r.width)*100+_ctNum(_ctbDrag.ox,0))*10)/10));
+  s.y=Math.max(0,Math.min(100,Math.round((((e.clientY-r.top)/r.height)*100+_ctNum(_ctbDrag.oy,0))*10)/10));
   ctbRenderStage();
   e.preventDefault();
 }
@@ -23456,7 +23465,7 @@ function ctbStageUp(e){
     var was=_ctbPinch.target; _ctbPinch=null;
     var st=_ctbEl('ctbStage'), p=_ctbPtrs[ids[0]];
     if(st&&p){
-      if(was==='sticker'&&_ctbSel>=0) _ctbDrag={mode:'sticker', rect:st.getBoundingClientRect()};
+      if(was==='sticker'&&_ctbSel>=0) _ctbDrag=_ctbStickerGrab(st, p.x, p.y);
       else if(_ctbDraft.bg_url) _ctbDrag={mode:'bg', rect:st.getBoundingClientRect(), pan:_ctbStagePan(), sx:p.x, sy:p.y,
         bx:_ctNum(_ctbDraft.bg_x,50), by:_ctNum(_ctbDraft.bg_y,38)};
     }
