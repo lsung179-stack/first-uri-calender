@@ -3805,7 +3805,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
             <button type="button" class="dm-btn" data-nw="1" onclick="onEvNthWeek(1)">첫째</button>
             <button type="button" class="dm-btn" data-nw="2" onclick="onEvNthWeek(2)">둘째</button>
             <button type="button" class="dm-btn" data-nw="3" onclick="onEvNthWeek(3)">셋째</button>
-            <button type="button" class="dm-btn" data-nw="4" onclick="onEvNthWeek(4)">넷째</button>
+            <button type="button" class="dm-btn" data-nw="4" onclick="onEvNthWeek(4)">넷째</button><button type="button" class="dm-btn" data-nw="5" onclick="onEvNthWeek(5)">다섯째</button>
             <button type="button" class="dm-btn" data-nw="-1" onclick="onEvNthWeek(-1)">마지막</button>
           </div>
           <div class="rep-chip-row" id="evNthChips" style="margin-top:6px"></div>
@@ -3903,7 +3903,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
             <button type="button" class="dm-btn" data-nw="1" onclick="onTdNthWeek(1)">첫째</button>
             <button type="button" class="dm-btn" data-nw="2" onclick="onTdNthWeek(2)">둘째</button>
             <button type="button" class="dm-btn" data-nw="3" onclick="onTdNthWeek(3)">셋째</button>
-            <button type="button" class="dm-btn" data-nw="4" onclick="onTdNthWeek(4)">넷째</button>
+            <button type="button" class="dm-btn" data-nw="4" onclick="onTdNthWeek(4)">넷째</button><button type="button" class="dm-btn" data-nw="5" onclick="onTdNthWeek(5)">다섯째</button>
             <button type="button" class="dm-btn" data-nw="-1" onclick="onTdNthWeek(-1)">마지막</button>
           </div>
           <div class="rep-chip-row" id="tdNthChips" style="margin-top:6px"></div>
@@ -9143,7 +9143,7 @@ let _events={};           // {YYYY-MM-DD: [eventObj, ...]}
 let _yearlyEvents={};     // {MM-DD: [eventObj, ...]} — 매년 반복 일정 (월,일 기준)
 let _monthlyEvents={};    // {DD: [eventObj, ...]} — 매월 반복 며칠 기준(dom)
 let _weeklyEvents={};     // {dow: [eventObj, ...]} — 매주 반복 (요일 0=일~6=토, 다중 요일 지원)
-let _monthlyNthEvents={}; // {'N-dow': [eventObj, ...]} — 매월 N째주 요일 반복 (N=1~4, -1=마지막)
+let _monthlyNthEvents={}; // {'N-dow': [eventObj, ...]} — 매월 N째주 요일 반복 (N=1~5, -1=마지막)
 let _monthlyLastEvents=[];// 매월 말일 반복
 let _dailyEvents=[];      // 매일 반복 origin 전체(요일/월별 패턴 없이 매일 매치, 2026-08-13)
 let _lunarEvents=[];      // 음력 반복 origin 전체(양력 MM-DD가 매년 달라짐, 2026-08-14)
@@ -12256,7 +12256,7 @@ let _evRepeatCount=null;    // 반복 횟수(사이클 기준) — _evUntilMode=
 let _evLunarMonth=null;     // 음력 반복 — 음력 월(1~12) [2026-08-14]
 let _evLunarDay=null;       // 음력 반복 — 음력 일(1~30)
 const _REP_DOW=['일','월','화','수','목','금','토'];
-const _ORD_KO={'1':'첫째','2':'둘째','3':'셋째','4':'넷째','-1':'마지막'};
+const _ORD_KO={'1':'첫째','2':'둘째','3':'셋째','4':'넷째','5':'다섯째','-1':'마지막'};
 // 주 시작 요일(설정 연동, 기본 일요일=0)
 function _weekStartPref(){ try{ return (typeof getWeekStartPref==='function')?(Number(getWeekStartPref())||0):0; }catch(_){ return 0; } }
 /* '매달 N째주 요일'의 실제 날짜(일) 계산 — **달력 주(줄)** 기준(요일 등장 순서 X).
@@ -12307,6 +12307,17 @@ function _lastRowOwnerMonth(dt){
 }
 /* _nthWeekdayDate(줄+요일→날짜)의 역연산 — 날짜(y,m0,dn)가 그 달의 몇 번째 '달력 줄'에
    속하는지 반환(1-based, 주 시작 요일 설정 반영). [2026-08-17, 아래 자동기본값 버그수정에서 사용] */
+/* 그 달의 달력 줄 수(4·5·6) — '다섯째' 버튼 노출 판단용.
+   6줄인 달에서만 5번째 줄이 '넷째'와 '마지막' 사이에 끼어 어느 버튼으로도 안 잡힌다
+   (예: 2026-08 → 넷째=17·18·19, 마지막=8/31·9/1·9/2, 그 사이 24·25·26이 구멍).
+   5줄 이하인 달은 5번째 줄이 곧 마지막 줄이라 '마지막'으로 이미 잡히므로 버튼을 숨긴다.
+   (사용자 요청 2026-08-24) */
+function _calendarRowCount(y,m0){
+  const ws=_weekStartPref();
+  const dim=new Date(y,m0+1,0).getDate();
+  const firstCol=(new Date(y,m0,1).getDay()-ws+7)%7;
+  return Math.ceil((firstCol+dim)/7);
+}
 function _calendarRowOfDate(y,m0,dn){
   const ws=_weekStartPref();
   const firstCol=(new Date(y,m0,1).getDay()-ws+7)%7;
@@ -12327,6 +12338,17 @@ function _nthDatesInMonth(y,m0,nth,weekdays){
   return out.sort(function(a,b){return a.t-b.t;});
 }
 // 힌트 문구: "매달 둘째 화·목요일 · 이번 달 10월 13·15일" — 실제 날짜로 '몇째'의 기준을 명확히
+/* '다섯째' 버튼 노출 — 기준 달이 6줄일 때만 보인다(5줄 이하면 5번째 줄=마지막 줄이라 중복).
+   ⚠️ 단 이미 '다섯째'가 선택돼 있으면 항상 보여준다 — 안 그러면 5줄인 달로 넘겼을 때
+      선택된 버튼이 사라져 무엇이 걸려 있는지 알 수 없게 된다(그 달엔 힌트가 'N월엔 없음'으로 알림).
+   할일(IIFE 안)에서도 쓰므로 전역에 둔다. [2026-08-24] */
+function _syncNthFifthBtn(selId, refD, curNth){
+  const b=document.querySelector('#'+selId+' .dm-btn[data-nw="5"]');
+  if(!b)return;
+  let show=(Number(curNth)===5);
+  if(!show&&refD){ try{ show=_calendarRowCount(refD.getFullYear(), refD.getMonth())>=6; }catch(_){ show=false; } }
+  b.style.display=show?'':'none';
+}
 function _nthHintText(baseD, nth, weekdays){
   if(!baseD || !weekdays || !weekdays.length) return '';
   const y=baseD.getFullYear(), m0=baseD.getMonth();
@@ -12668,6 +12690,7 @@ function _syncEvMonthlyUI(){
     _renderRepChips('evNthChips', _evRepeatWeekdays);
     // 힌트는 미니 달력에 '표시된 달'(_dayCalDate) 기준 → 달력을 넘기면 그 달 날짜로 갱신
     const refD=_dayCalDate?new Date(_dayCalDate.getFullYear(),_dayCalDate.getMonth(),1):_evBaseDateObj();
+    _syncNthFifthBtn('evNthWeekSel', refD, _evNthWeek);
     const h=document.getElementById('evNthHint'); if(h)h.textContent=_nthHintText(refD, _evNthWeek, _evRepeatWeekdays);
   }
 }
@@ -12887,7 +12910,7 @@ function _evRepeatSummaryText(){
   }else if(_evRepeatType==='monthly'){
     const freq=interval>1?(interval+'개월마다'):'매월';
     if(_evMonthlyMode==='nth'){
-      const nwNames={1:'첫째주',2:'둘째주',3:'셋째주',4:'넷째주','-1':'마지막주'};
+      const nwNames={1:'첫째주',2:'둘째주',3:'셋째주',4:'넷째주',5:'다섯째주','-1':'마지막주'};
       const nw=nwNames[String(_evNthWeek)]||'';
       const days=wdList();
       base=freq+' '+nw+(days?(' '+days):'')+'요일';
@@ -24457,7 +24480,7 @@ function _tdRepeatSummaryText(){
   }else if(_todoRepeat==='monthly'){
     const freq=interval>1?(interval+'개월마다'):'매월';
     if(_tdMonthlyMode==='nth'){
-      const nwNames={1:'첫째주',2:'둘째주',3:'셋째주',4:'넷째주','-1':'마지막주'};
+      const nwNames={1:'첫째주',2:'둘째주',3:'셋째주',4:'넷째주',5:'다섯째주','-1':'마지막주'};
       const nw=nwNames[String(_tdNthWeek)]||'';
       const days=wdList();
       base=freq+' '+nw+(days?(' '+days):'')+'요일';
@@ -24652,7 +24675,7 @@ function _syncTdMonthlyUI(){
   const d=_tdBaseDateObj(); const dd=d?d.getDate():'';
   const domHint=$('tdMonthlyDomHint'); if(domHint){ domHint.style.display=(_tdMonthlyMode==='dom')?'':'none'; domHint.textContent=dd?('매달 '+dd+'일에 반복돼요.'+(dd>28?' (그 날이 없는 달은 건너뜀)':'')):''; }
   const lastHint=$('tdMonthlyLastHint'); if(lastHint){ lastHint.style.display=(_tdMonthlyMode==='last')?'':'none'; if(_tdMonthlyMode==='last'){ const ld=new Date(_todoMiniY,_todoMiniM+1,0); lastHint.textContent='매달 마지막 날에 반복돼요 ('+(ld.getMonth()+1)+'월 '+ld.getDate()+'일)'; } }
-  if(nth){ document.querySelectorAll('#tdNthWeekSel .dm-btn').forEach(function(b){ b.classList.toggle('on', Number(b.dataset.nw)===_tdNthWeek); }); _renderTdChips('tdNthChips',_tdRepeatWeekdays); const h=$('tdNthHint'); if(h){ const refD=new Date(_todoMiniY,_todoMiniM,1); h.textContent=_nthHintText(refD, _tdNthWeek, _tdRepeatWeekdays); } }
+  if(nth){ document.querySelectorAll('#tdNthWeekSel .dm-btn').forEach(function(b){ b.classList.toggle('on', Number(b.dataset.nw)===_tdNthWeek); }); _renderTdChips('tdNthChips',_tdRepeatWeekdays); const refD=new Date(_todoMiniY,_todoMiniM,1); _syncNthFifthBtn('tdNthWeekSel', refD, _tdNthWeek); const h=$('tdNthHint'); if(h){ h.textContent=_nthHintText(refD, _tdNthWeek, _tdRepeatWeekdays); } }
 }
 function _renderTdChips(containerId,selected){
   const c=$(containerId); if(!c)return; const N=['일','월','화','수','목','금','토']; c.innerHTML='';
