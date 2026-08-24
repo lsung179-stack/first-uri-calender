@@ -16940,7 +16940,7 @@ function renderRoomMascotPicker(){
         +'</button>';
     });
     var mine='';
-    if(_customThemes&&_customThemes.length){
+    if(_ctbVisible()&&_customThemes&&_customThemes.length){
       mine='<div class="rm-field-label">내 테마</div>';
       _customThemes.forEach(function(c){
         var on=(_cardSkin==='custom:'+c.id);
@@ -16951,7 +16951,7 @@ function renderRoomMascotPicker(){
           +'</button>';
       });
     }
-    mine+='<button type="button" class="ctb-btn" style="width:100%;margin:'+(mine?'8px':'0')+' 0 4px" onclick="openCustomThemeBuilder()">+ 나만의 테마 만들기</button>';
+    if(_ctbVisible()) mine+='<button type="button" class="ctb-btn" style="width:100%;margin:'+(mine?'8px':'0')+' 0 4px" onclick="openCustomThemeBuilder()">+ 나만의 테마 만들기</button>';
     g.innerHTML=mine+'<div class="rm-field-label">프로필 · 테마'+(prem?'':' · 프리미엄 전용')+'</div>'+rows
       +(prem?'':'<div class="rm-prem-note">프리미엄을 시작하면 바로 사용할 수 있어요 · 첫 7일 무료</div>');
   } else {
@@ -21287,7 +21287,10 @@ function renderStoreThemes(){
   if(!body)return;
   const prem=isEffectivePremium();
   // 프로필+테마 통합 — 각 항목을 방목록 카드처럼 그 캐릭터의 카드 배경으로 꾸밈(프리미엄 전용).
-  let html=`<div class="store-custom-hero">
+  // ⚠️ 커스텀 테마는 아직 테스트 중 — 관리자 계정에만 노출한다(빌드에 들어가도 일반 사용자에겐 안 보임).
+  //    정식 공개할 때 이 _ctbVisible() 게이트만 지우면 된다. [2026-08-24]
+  let html='';
+  if(_ctbVisible()) html+=`<div class="store-custom-hero">
     <div class="sch-text">
       <div class="sfh-eyebrow">NEW &middot; MY THEME</div>
       <div class="sfh-title">나만의 테마 만들기</div>
@@ -21295,8 +21298,7 @@ function renderStoreThemes(){
       <button type="button" class="sch-cta" onclick="openCustomThemeBuilder()">만들기</button>
     </div>
     <div class="sch-art"><i class="sch-a1"></i><i class="sch-a2"></i><i class="sch-a3"></i></div>
-  </div>`;
-  html+=_ctbMyThemesHTML();
+  </div>`+_ctbMyThemesHTML();
   html+=`<div class="store-mono-hero" style="background-image:url('${MONO_HERO_IMG}')">
     <div class="sfh-eyebrow">NEW &middot; BLACK &amp; WHITE</div>
     <div class="sfh-title">심플 블랙&amp;화이트</div>
@@ -23057,7 +23059,10 @@ function _ctbIconOptions(){
   });
   return out;
 }
+/* 테스트 중 노출 게이트 — 관리자만. 정식 공개 시 이 함수가 true 만 반환하게 바꾸면 된다. */
+function _ctbVisible(){ try{ return typeof isAdmin==='function' && isAdmin(); }catch(_){ return false; } }
 async function openCustomThemeBuilder(id){
+  if(!_ctbVisible()) return;
   if(!isEffectivePremium()){
     showUpgradeModal({message:'나만의 테마 만들기는 프리미엄 전용이에요.', feature:'사진과 스티커로 우리 방만의 배경을 만들고, 색과 아이콘까지 골라 쓸 수 있어요.'});
     return;
