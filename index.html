@@ -23089,10 +23089,32 @@ function _clearRoomCharDecor(){
 var _CT_PAN_SENS=0.55;
 /* 두 손가락 사이 거리 — 핀치 확대/축소 계산용 */
 function _ctPinchDist(a,b){ var dx=a.x-b.x, dy=a.y-b.y; return Math.sqrt(dx*dx+dy*dy)||1; }
+/* 사진 비율(가로/세로) 캐시 — 비율을 알아야 '꽉 채움(cover) 기준 확대'를 정확히 계산할 수 있다.
+   저장값(bg_ar)이 없는 옛 테마도 여기서 한 번 재서 채운다. 실패하면 0 으로 굳혀 재시도 루프를 막는다. */
+var _ctArCache={};
+function _ctEnsureAr(url, cb){
+  if(!url) return 0;
+  var v=_ctArCache[url];
+  if(typeof v==='number') return v;
+  if(v==='loading') return 0;
+  _ctArCache[url]='loading';
+  try{
+    var im=new Image();
+    im.onload=function(){
+      _ctArCache[url]=(im.naturalWidth>0&&im.naturalHeight>0)?(im.naturalWidth/im.naturalHeight):0;
+      try{ cb&&cb(_ctArCache[url]); }catch(_){}
+    };
+    im.onerror=function(){ _ctArCache[url]=0; };
+    im.src=url;
+  }catch(_){ _ctArCache[url]=0; }
+  return 0;
+}
+function _ctAr(o){ if(!o) return 0; var a=Number(o.ar)||0; if(a>0) return a; var c=o.url?_ctArCache[o.url]:0; return (typeof c==='number'&&c>0)?c:0; }
+/* ⚠️ 비율을 모르면 반드시 'cover' — 'auto z%' 로 두면 세로 사진이 가로로 넓은 상자에서 좁은 띠가 되어 양옆이 빈다 */
 function _ctPhotoStyle(o, ca){
   if(!o||!o.url) return '';
-  var z=Math.max(100,_ctNum(o.z,100)), ar=Number(o.ar)||0;
-  var size = ar>0 ? ((ar>(ca||1)) ? ('auto '+z+'%') : (z+'% auto')) : (z>100?('auto '+z+'%'):'cover');
+  var z=Math.max(100,_ctNum(o.z,100)), ar=_ctAr(o);
+  var size = ar>0 ? ((ar>(ca||1)) ? ('auto '+z+'%') : (z+'% auto')) : 'cover';
   return 'background-image:url(&quot;'+o.url+'&quot;);background-repeat:no-repeat;background-position:'
     +_ctNum(o.x,50)+'% '+_ctNum(o.y,50)+'%;background-size:'+size;
 }
@@ -23102,13 +23124,15 @@ function _ctPhotoApply(el, o){
   el.style.backgroundRepeat = 'no-repeat';
   el.style.backgroundPosition = _ctNum(o.x,50)+'% '+_ctNum(o.y,50)+'%';
   var z = Math.max(100, _ctNum(o.z,100));
-  var ar = Number(o.ar)||0;
-  if(ar>0){
-    var r = el.getBoundingClientRect();
-    var ca = (r.width>0&&r.height>0) ? (r.width/r.height) : 0.5625;
+  var ar = _ctAr(o);
+  if(!(ar>0) && o.url) ar = _ctEnsureAr(o.url, function(){ _ctPhotoApply(el,o); });
+  var r = el.getBoundingClientRect();
+  if(ar>0 && r.width>0 && r.height>0){
+    /* 꽉 채움을 기준으로 확대 — 넘치는 쪽을 auto 로 두면 100% 가 정확히 cover 가 된다 */
+    var ca = r.width/r.height;
     el.style.backgroundSize = (ar>ca) ? ('auto '+z+'%') : (z+'% auto');
   }else{
-    el.style.backgroundSize = (z>100) ? ('auto '+z+'%') : 'cover';
+    el.style.backgroundSize = 'cover';
   }
 }
 function _ctNum(v,dflt){ var n=Number(v); return isFinite(n)?n:dflt; }
@@ -23227,6 +23251,17 @@ async function openCustomThemeBuilder(id){
         seal_photo:(src.seal_photo&&src.seal_photo.url)?{url:src.seal_photo.url, blob:null, x:_ctNum(src.seal_photo.x,50), y:_ctNum(src.seal_photo.y,50), z:Math.max(100,_ctNum(src.seal_photo.z,100)), ar:Number(src.seal_photo.ar)||0}:null,
         color_theme:src.color_theme||'', icon_theme:src.icon_theme||'' }
     : _ctbNewDraft();
+  /* 옛 테마엔 비율(bg_ar)이 없을 수 있다 — 한 번 재서 채워두면 저장에도 실리고 배너가 항상 꽉 찬다 */
+  if(_ctbDraft.bg_url && !(Number(_ctbDraft.bg_ar)>0)){
+    _ctEnsureAr(_ctbDraft.bg_url, function(a){
+      if(a>0 && _ctbDraft){ _ctbDraft.bg_ar=a; try{ ctbRenderStage(); ctbRenderSeal(); }catch(_){} }
+    });
+  }
+  if(_ctbDraft.seal_photo && _ctbDraft.seal_photo.url && !(Number(_ctbDraft.seal_photo.ar)>0)){
+    _ctEnsureAr(_ctbDraft.seal_photo.url, function(a){
+      if(a>0 && _ctbDraft && _ctbDraft.seal_photo){ _ctbDraft.seal_photo.ar=a; try{ ctbRenderSeal(); }catch(_){} }
+    });
+  }
   _ctbSel=-1; _ctbStep=1;
   ctbBuildMock();
   var nm=_ctbEl('ctbName'); if(nm)nm.value=_ctbDraft.name;
@@ -23527,16 +23562,8 @@ function _ctCardBgStyle(o){
 function _ctCardBgApply(el,o){
   if(!el)return;
   if(o&&o.url){
-    var z=Math.max(100,_ctNum(o.z,100));
-    if(Number(o.ar)>0){
-      // 비율을 알면 '어느 쪽이 넘치는지'를 정확히 계산 → 100%가 딱 채움, 그 위로 확대
-      _ctPhotoApply(el,{url:o.url,x:o.x,y:o.y,z:z,ar:o.ar});
-    }else{
-      el.style.backgroundImage='url("'+o.url+'")';
-      el.style.backgroundRepeat='no-repeat';
-      el.style.backgroundSize=(z>100)?('auto '+z+'%'):'cover';
-      el.style.backgroundPosition=_ctNum(o.x,50)+'% '+_ctNum(o.y,50)+'%';
-    }
+    /* 배너도 사진과 같은 계산 — 항상 꽉 채운 상태에서 확대·이동만 된다(비율은 없으면 재서 채움) */
+    _ctPhotoApply(el,{url:o.url,x:o.x,y:o.y,z:Math.max(100,_ctNum(o.z,100)),ar:o.ar});
   }else{
     el.style.backgroundImage='';
   }
