@@ -937,6 +937,8 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .sch-art .sch-a2{width:36px;height:36px;left:30px;top:4px;transform:rotate(8deg);background:rgba(232,201,138,.28)}
 .sch-art .sch-a3{width:22px;height:22px;left:48px;top:36px;transform:rotate(-4deg);background:rgba(255,255,255,.3)}
 .ct-row{cursor:pointer}
+.ct-th{position:relative}
+.ct-th-seal{position:absolute;left:5px;bottom:5px;width:26px;height:26px;border-radius:50%;border:1.5px solid rgba(255,255,255,.9);background-size:cover;background-position:center;box-shadow:0 1px 3px rgba(0,0,0,.25)}
 .ct-th{background-repeat:no-repeat;background-position:center;background-size:cover;background-color:var(--aP)}
 .ct-acts{display:flex;flex-direction:column;gap:5px}
 .pack-btn.ct-del{background:transparent;color:#c0503f;border:1px solid rgba(192,80,63,.35)}
@@ -8135,7 +8137,7 @@ function renderRooms(rooms,countMap){
     const safeName=escapeHtml(r.name||'(이름 없음)');
     const safeCode=escapeHtml(r.code||'------');
     const firstChar=escapeHtml((r.name||'·').trim().charAt(0));
-    const sealHtml=_sealInner(_mySealByRoom[r.id], r.name, _mySealPhotoByRoom[r.id])
+    const sealHtml=_sealInner(_mySealByRoom[r.id], r.name, _roomSealPhoto(r.id))
       || `<div class="r-card-seal"><span class="r-card-seal-letter">${firstChar}</span></div>`;
     html+=`
       <div class="r-card${_cardSkinCls(_effSkin(_myCardSkinByRoom[r.id]))}"${_cardSkinStyle(_effSkin(_myCardSkinByRoom[r.id]))} data-roomid="${r.id}" onclick="enterRoom('${r.id}')">
@@ -16914,6 +16916,17 @@ function _sealGlyph(sym, roomName){
     : _sealSvg(sym);
 }
 /* 방 목록 씰 inner (색 지정된 경우만, 아니면 null) */
+/* 이 방에 보일 프로필 사진 — 방에 저장된 값 우선, 없으면 적용된 커스텀 테마의 사진 */
+function _roomSealPhoto(rid){
+  try{
+    if(!rid) return null;
+    var ph=(_mySealPhotoByRoom||{})[rid];
+    if(ph&&ph.url) return ph;
+    var skin=(typeof _effSkin==='function')?_effSkin((_myCardSkinByRoom||{})[rid]):null;
+    if(_isCustomSkin(skin)){ var cu=_customThemeOf(skin); if(cu&&cu.seal_photo&&cu.seal_photo.url) return cu.seal_photo; }
+  }catch(_){}
+  return null;
+}
 function _sealInner(mascotVal, roomName, photo){
   // 내 사진이 있으면 그게 우선(프리미엄 — 만료 시 기본으로 복귀)
   if(photo&&photo.url){
@@ -16946,7 +16959,7 @@ function openRoomMascotForRoom(roomId){
   _preloadSealSets();
   const _pn=document.getElementById('rmPrevRoomName'); if(_pn)_pn.textContent=_mascotRoomName||'방';
   _cardSkin=_myCardSkinByRoom[room.id]||null;
-  _sealPhoto=_mySealPhotoByRoom[room.id]||null;
+  _sealPhoto=_roomSealPhoto(room.id);
   _rmBaseTheme=_currentRoomTheme||_myTheme||'vintage';   // 편집 취소 시 되돌릴 기준 테마
   _rmTab = _sealSet ? 'prem' : 'basic';   // 저장된 게 세트면 프리미엄 탭에서 시작
   _rmSyncSeg();
@@ -17003,7 +17016,7 @@ function renderRoomMascotPicker(){
       _customThemes.forEach(function(c){
         var on=(_cardSkin==='custom:'+c.id);
         mine+='<button type="button" class="ep-row rm-uset'+(on?' on':'')+'" onclick="pickCustomTheme(\''+c.id+'\')">'
-          +'<div class="ep-th ct-th"'+_ctbThumbStyle(c)+'></div>'
+          +'<div class="ep-th ct-th" data-ct="'+c.id+'"'+_ctbThumbStyle(c)+'></div>'
           +'<div class="ep-body"><div class="ep-t1">'+escapeHtml(c.name||'내 테마')+'</div><div class="ep-t2">'+escapeHtml(_ctbThemeDesc(c))+'</div></div>'
           +'<div class="ep-act">'+(on?'<span class="rm-uset-pill on">사용</span>':(prem?'<span class="rm-uset-pill">선택</span>':'<span class="rm-set-lock">\uD83D\uDD12</span>'))+'</div>'
           +'</button>';
@@ -17012,6 +17025,7 @@ function renderRoomMascotPicker(){
     if(_ctbVisible()) mine+='<button type="button" class="ctb-btn" style="width:100%;margin:'+(mine?'8px':'0')+' 0 4px" onclick="openCustomThemeBuilder()">+ 나만의 테마 만들기</button>';
     g.innerHTML=mine+'<div class="rm-field-label">프로필 · 테마'+(prem?'':' · 프리미엄 전용')+'</div>'+rows
       +(prem?'':'<div class="rm-prem-note">프리미엄을 시작하면 바로 사용할 수 있어요 · 첫 7일 무료</div>');
+    try{ _applyCustomThumbs(g); }catch(_){}
   } else {
     // 무료: 색 + 문양(커스텀 프로필) + 기본 테마 6색
     const swatches='<div class="rm-field-label">배경 색</div><div class="rm-swatches">'
@@ -20330,7 +20344,7 @@ function renderRoomSeal(){
   if(!_currentRoom){ btn.style.display='none'; btn.innerHTML=''; try{_syncMonthHeaderBalance();}catch(_){} return; }
   const name=_currentRoom.name||'방';
   const firstChar=escapeHtml(name.slice(0,1)||'방');
-  btn.innerHTML=_sealInner((_mySealByRoom||{})[_currentRoom.id], name, (_mySealPhotoByRoom||{})[_currentRoom.id])
+  btn.innerHTML=_sealInner((_mySealByRoom||{})[_currentRoom.id], name, _roomSealPhoto(_currentRoom.id))
     || ('<div class="r-card-seal"><span class="r-card-seal-letter">'+firstChar+'</span></div>');
   try{ btn.setAttribute('aria-label', name+' · 방 전환'); }catch(_){}
   btn.style.display='flex';
@@ -20354,7 +20368,7 @@ function showRoomSwitch(room){
   if(!box||!room) return;
   const name=room.name||'방';
   const firstChar=escapeHtml(name.slice(0,1)||'방');
-  const seal=_sealInner((_mySealByRoom||{})[room.id], name, (_mySealPhotoByRoom||{})[room.id])
+  const seal=_sealInner((_mySealByRoom||{})[room.id], name, _roomSealPhoto(room.id))
     || ('<div class="r-card-seal"><span class="r-card-seal-letter">'+firstChar+'</span></div>');
   const sEl=document.getElementById('roomSwitchSeal'), nEl=document.getElementById('roomSwitchName');
   if(sEl) sEl.innerHTML=seal;
@@ -20375,7 +20389,7 @@ function openRoomSealPicker(){
   let html='';
   rooms.forEach(function(r){
     const name=r.name||'방'; const fc=escapeHtml(name.slice(0,1)||'방');
-    const seal=_sealInner((_mySealByRoom||{})[r.id], name, (_mySealPhotoByRoom||{})[r.id]) || ('<div class="r-card-seal"><span class="r-card-seal-letter">'+fc+'</span></div>');
+    const seal=_sealInner((_mySealByRoom||{})[r.id], name, _roomSealPhoto(r.id)) || ('<div class="r-card-seal"><span class="r-card-seal-letter">'+fc+'</span></div>');
     const cur=(_currentRoom&&r.id===_currentRoom.id)?' cur':'';
     html+='<div class="rsp-item'+cur+'" data-roomid="'+escapeHtml(r.id)+'" onclick="_sealPickRoom(\''+r.id+'\')">'+seal+'<span class="rsp-name">'+escapeHtml(name)+'</span></div>';
   });
@@ -20449,7 +20463,7 @@ function openImportEvents(){
     let html='';
     others.forEach(function(r){
       const name=r.name||'방'; const fc=escapeHtml((name.slice(0,1))||'방');
-      const seal=_sealInner((_mySealByRoom||{})[r.id], name, (_mySealPhotoByRoom||{})[r.id]) || ('<div class="r-card-seal"><span class="r-card-seal-letter">'+fc+'</span></div>');
+      const seal=_sealInner((_mySealByRoom||{})[r.id], name, _roomSealPhoto(r.id)) || ('<div class="r-card-seal"><span class="r-card-seal-letter">'+fc+'</span></div>');
       html+='<div class="import-room-item" onclick="_importPickRoom(\''+r.id+'\')"><div class="import-room-seal">'+seal+'</div><div class="import-room-name">'+escapeHtml(name)+'</div><div class="import-room-go">선택 ›</div></div>';
     });
     list.innerHTML=html;
@@ -21344,12 +21358,29 @@ function _ctbThumbStyle(c){
   if(!u) return '';
   return ' style="background-image:url(&quot;'+u+'&quot;)'+(c.bg_url?'':';background-size:contain')+'"';
 }
+/* 목록 썸네일을 '실제 방 카드'처럼 — 배너 크롭 + 프로필 사진 동그라미.
+   요소 크기를 재야 확대가 정확하므로 그린 뒤에 한 번 훑는다. */
+function _applyCustomThumbs(root){
+  try{
+    (root||document).querySelectorAll('.ct-th[data-ct]').forEach(function(el){
+      var c=_customThemeById(el.getAttribute('data-ct')); if(!c)return;
+      if(c.bg_url) _ctCardBgApply(el,{url:c.bg_url,x:c.card_x,y:c.card_y,z:c.card_zoom,ar:c.bg_ar});
+      var sp=c.seal_photo;
+      var dot=el.querySelector('.ct-th-seal');
+      if(sp&&sp.url){
+        if(!dot){ dot=document.createElement('div'); dot.className='ct-th-seal'; el.appendChild(dot); }
+        _ctPhotoApply(dot,{url:sp.url,x:sp.x,y:sp.y,z:sp.z,ar:sp.ar});
+      }else if(dot){ dot.remove(); }
+    });
+  }catch(_){}
+}
 function _ctbMyThemesHTML(){
+  if(!_ctbVisible()) return '';   /* 관리자 전용 게이트 — 호출부가 늘어도 여기서 한 번에 막힌다 */
   if(!_customThemes||!_customThemes.length) return '';
   var h='<div class="store-section-title">내 테마 <small>MY THEME</small></div>';
   _customThemes.forEach(function(c){
     h+='<div class="ep-row ct-row" onclick="onMyThemeRowClick()">'
-      +'<div class="ep-th ct-th"'+_ctbThumbStyle(c)+'></div>'
+      +'<div class="ep-th ct-th" data-ct="'+c.id+'"'+_ctbThumbStyle(c)+'></div>'
       +'<div class="ep-body"><div class="ep-t1">'+escapeHtml(c.name||'내 테마')+'</div><div class="ep-t2">'+escapeHtml(_ctbThemeDesc(c))+'</div></div>'
       +'<div class="ep-act ct-acts">'
       +'<button type="button" class="pack-btn pack-btn-try" onclick="event.stopPropagation();openCustomThemeBuilder(\''+c.id+'\')">수정</button>'
@@ -21378,12 +21409,13 @@ function renderStoreThemes(){
       <button type="button" class="sch-cta" onclick="openCustomThemeBuilder()">만들기</button>
     </div>
     <div class="sch-art"><i class="sch-a1"></i><i class="sch-a2"></i><i class="sch-a3"></i></div>
-  </div>`+_ctbMyThemesHTML();
+  </div>`;
   html+=`<div class="store-mono-hero" style="background-image:url('${MONO_HERO_IMG}')">
     <div class="sfh-eyebrow">NEW &middot; BLACK &amp; WHITE</div>
     <div class="sfh-title">심플 블랙&amp;화이트</div>
     <div class="sfh-desc">흰 바탕에 손그림 한 줄 &mdash; 군더더기 없는 새 테마</div>
   </div>`;
+  html+=_ctbMyThemesHTML();
   html+='<div class="store-section-title">프로필 · 테마 <small>PREMIUM SET</small></div>';
   SEAL_SET_ORDER.forEach(function(k){
     const btn = prem
@@ -21395,6 +21427,7 @@ function renderStoreThemes(){
     </div>`;
   });
   body.innerHTML=html;
+  try{ _applyCustomThumbs(body); }catch(_){}
 }
 function onStoreSealClick(){
   if(isEffectivePremium()) openSealShowcase();
