@@ -925,9 +925,11 @@ struct DayCell: View {
             bottomTrailingRadius: roundR ? 2 : 0, topTrailingRadius: roundR ? 2 : 0)
         Text(showTitle ? b.title : " ").font(.system(size: 8.5, weight: .bold))
             .foregroundColor(b.outline ? .ink : contrastText(b.color)).lineLimit(1)
-            // 띠가 있을 때 제목 시작 위치: 띠(leading 4 + 폭 2.5) 다음 0.75pt.
+            // 띠가 있을 때 제목 시작 위치: 띠(leading 2.5 + 폭 2.5) 다음 0.75pt.
+            // [2026-08-24] 띠를 칸 왼쪽에 더 붙여달라는 요청 — 띠·제목을 함께 1.5pt 왼쪽으로
+            // (둘 사이 간격 0.75pt 는 유지). 안드로이드도 같은 양만큼 왼쪽으로.
             // 실기기 피드백(2026-08-22) — 띠와 글자 사이가 너무 벌어져 보여 간격을 절반으로.
-            .padding(.leading, showMark ? 7.25 : (roundL ? 3 : 0)).padding(.trailing, roundR ? 3 : 0)
+            .padding(.leading, showMark ? 5.75 : (roundL ? 3 : 0)).padding(.trailing, roundR ? 3 : 0)
             .frame(maxWidth: .infinity, minHeight: barH, alignment: .leading)
             .background(
                 b.outline
@@ -940,7 +942,7 @@ struct DayCell: View {
                         .fill(b.outline ? Color(hexStr: b.color) : contrastText(b.color))
                         .frame(width: 2.5, height: barH * 0.52)
                         // 왼쪽 여백은 조금 더, 제목과의 간격은 더 좁게(안드로이드와 동일 조정). [2026-08-19]
-                        .padding(.leading, roundL ? 4 : 2)
+                        .padding(.leading, roundL ? 2.5 : 1)
                 }
             }
             // 양끝(둥근 쪽)에만 1pt 바깥 여백 — 안드로이드 1dp inset과 육안 동일. 기간 중간은 0(연속 유지).

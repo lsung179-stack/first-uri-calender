@@ -286,6 +286,7 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
                 continue;
             }
             if (b != null) {
+                final float _density = ctx.getResources().getDisplayMetrics().density;
                 boolean showTitle = !b.contLeft || cell.dow == 0;
                 boolean showMark = b.shared && !b.contLeft;   // 함께 일정: 시작 칸 왼쪽에 얇은 띠(▎, 텍스트색=대비색)
                 rv.setViewVisibility(evViews[s], android.view.View.VISIBLE);
@@ -304,6 +305,13 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
                 } else {
                     rv.setTextViewText(evViews[s], _bt);
                 }
+                /* 함께 일정 띠를 칩 왼쪽 끝에 조금 더 붙인다(실기기 요청 2026-08-24).
+                   띠는 텍스트 안에 있어 iOS 처럼 따로 못 옮기므로, 그 줄의 왼쪽 패딩만 줄인다
+                   (4dp → 2.5dp). 제목도 함께 1.5dp 왼쪽으로 — iOS 도 동일하게 둘 다 옮긴다.
+                   ⚠️ 띠 없는 줄은 XML 그대로 4dp 라, 매번 명시적으로 되돌려 준다(뷰 재사용 대비). */
+                int _padL = Math.round((showMark ? 2.5f : 4f) * _density);
+                int _padR = Math.round(2f * _density);
+                rv.setViewPadding(evViews[s], _padL, 0, _padR, 0);
                 if (b.outline) {
                     rv.setInt(evViews[s], "setBackgroundColor", 0x00000000);
                     rv.setTextColor(evViews[s], b.color);
