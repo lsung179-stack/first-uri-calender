@@ -5563,7 +5563,7 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
       <div class="ctb-bg" id="ctbBg"></div>
       <div class="ctb-mock" id="ctbMock"></div>
     </div>
-    <div class="ctb-hint" id="ctbHint">배경·스티커를 끌어서 원하는 위치로 옮겨보세요</div>
+    <div class="ctb-hint" id="ctbHint">끌어서 옮기고, 두 손가락으로 확대·축소해요</div>
 
     <div id="ctbStep1">
       <div class="rm-field-label">배경 사진</div>
@@ -16994,7 +16994,7 @@ function renderRoomMascotPicker(){
         +'<button type="button" class="ctb-btn danger" onclick="rmClearPhoto()"'+(hasPh?'':' disabled')+'>사진 빼기</button></div>'
         +'<div class="rm-field-label">사진 확대 <span class="ctb-slider-val" id="rmPhZoomVal">'+(hasPh?Math.round(_ctNum(_sealPhoto.z,100)):100)+'%</span></div>'
         +'<input type="range" class="gop-range" id="rmPhZoom" min="100" max="300" step="1" value="'+(hasPh?Math.round(_ctNum(_sealPhoto.z,100)):100)+'"'+(hasPh?'':' disabled')+' oninput="rmPhotoZoom(this.value)" onchange="rmPhotoZoom(this.value)">'
-        +'<div class="ctb-hint" style="margin:6px 0 14px">'+(hasPh?'위 동그라미를 끌어서 보일 부분을 맞춰요':'사진을 넣으면 동그라미를 끌어 위치를 맞출 수 있어요')+'</div>';
+        +'<div class="ctb-hint" style="margin:6px 0 14px">'+(hasPh?'동그라미를 끌어서 위치, 두 손가락으로 확대·축소':'사진을 넣으면 동그라미를 끌거나 두 손가락으로 맞출 수 있어요')+'</div>';
     }
     g.innerHTML=photoSec+swatches+'<div class="rm-field-label">문양</div><div class="rm-symrow">'+symBtns+'</div>'+themeColors;
     _rmWirePhotoDrag();
@@ -17047,17 +17047,42 @@ async function _ctDeletePhoto(url){
     await supa.storage.from('event-photos').remove([m[1]]);
   }catch(_){}
 }
+var _rmPhPtrs={}, _rmPhPinch=null;
+function _rmPhIds(){ return Object.keys(_rmPhPtrs); }
 function _rmWirePhotoDrag(){
   var big=document.getElementById('rmBigPrev'); if(!big||_rmPhWired)return;
   _rmPhWired=true;
   big.style.touchAction='none';
   big.addEventListener('pointerdown',function(e){
     if(!_sealPhoto||!_sealPhoto.url)return;
+    _rmPhPtrs[e.pointerId]={x:e.clientX,y:e.clientY};
+    var ids=_rmPhIds();
+    if(ids.length>=2){
+      // 두 손가락 — 확대/축소
+      _rmPhPinch={ d0:_ctPinchDist(_rmPhPtrs[ids[0]],_rmPhPtrs[ids[1]]), z0:Math.max(100,_ctNum(_sealPhoto.z,100)) };
+      _rmPhDrag=null;
+      try{ big.setPointerCapture(e.pointerId); }catch(_){}
+      e.preventDefault();
+      return;
+    }
     _rmPhDrag={rect:big.getBoundingClientRect(), sx:e.clientX, sy:e.clientY, x:_ctNum(_sealPhoto.x,50), y:_ctNum(_sealPhoto.y,50)};
     try{ big.setPointerCapture(e.pointerId); }catch(_){}
     e.preventDefault();
   });
   big.addEventListener('pointermove',function(e){
+    if(_rmPhPtrs[e.pointerId]) _rmPhPtrs[e.pointerId]={x:e.clientX,y:e.clientY};
+    if(_rmPhPinch&&_sealPhoto){
+      var ids=_rmPhIds();
+      if(ids.length>=2){
+        var ratio=_ctPinchDist(_rmPhPtrs[ids[0]],_rmPhPtrs[ids[1]])/_rmPhPinch.d0;
+        _sealPhoto.z=Math.max(100,Math.min(300,Math.round(_rmPhPinch.z0*ratio)));
+        var lb=document.getElementById('rmPhZoomVal'); if(lb)lb.textContent=Math.round(_sealPhoto.z)+'%';
+        var sl=document.getElementById('rmPhZoom'); if(sl)sl.value=String(Math.round(_sealPhoto.z));
+        _rmSyncPreview();
+        e.preventDefault();
+      }
+      return;
+    }
     if(!_rmPhDrag||!_sealPhoto)return;
     var r=_rmPhDrag.rect;
     _sealPhoto.x=Math.max(0,Math.min(100,Math.round((_rmPhDrag.x-((e.clientX-_rmPhDrag.sx)/r.width)*100)*10)/10));
@@ -17065,7 +17090,11 @@ function _rmWirePhotoDrag(){
     _rmSyncPreview();
     e.preventDefault();
   });
-  var end=function(){ if(_rmPhDrag){ _rmPhDrag=null; _autoSaveMascot(); } };
+  var end=function(e){
+    if(e&&e.pointerId!=null) delete _rmPhPtrs[e.pointerId];
+    if(_rmPhIds().length<2&&_rmPhPinch){ _rmPhPinch=null; _autoSaveMascot(); }
+    if(_rmPhDrag){ _rmPhDrag=null; _autoSaveMascot(); }
+  };
   big.addEventListener('pointerup',end);
   big.addEventListener('pointercancel',end);
 }
@@ -23079,6 +23108,8 @@ function _clearRoomCharDecor(){
    비율(ar=가로/세로)을 알고 있으면 '어느 쪽이 넘치는지'를 정확히 계산해, 기기 크기가 달라도
    확대 100% = 딱 채움(빈 곳 없음)이 되고 그 위로 확대·이동이 자연스럽게 먹는다.
    ⚠️ 요소가 화면에 붙은 뒤에 호출해야 크기를 잴 수 있다. */
+/* 두 손가락 사이 거리 — 핀치 확대/축소 계산용 */
+function _ctPinchDist(a,b){ var dx=a.x-b.x, dy=a.y-b.y; return Math.sqrt(dx*dx+dy*dy)||1; }
 function _ctPhotoStyle(o, ca){
   if(!o||!o.url) return '';
   var z=Math.max(100,_ctNum(o.z,100)), ar=Number(o.ar)||0;
@@ -23256,7 +23287,7 @@ function ctbSetStep(n){
   var t=_ctbEl('ctbTitle'); if(t)t.textContent=(n===1)?'테마 만들기':'색상 · 아이콘';
   var b=_ctbEl('ctbNextBtn'); if(b)b.textContent=(n===1)?'다음':'저장';
   var h=_ctbEl('ctbHint');
-  if(h)h.textContent=(n===1)?'배경·스티커를 끌어서 원하는 위치로 옮겨보세요':'앱 색과 아이콘을 고르면 미리보기에 바로 보여요';
+  if(h)h.textContent=(n===1)?'끌어서 옮기고, 두 손가락으로 확대·축소해요':'앱 색과 아이콘을 고르면 미리보기에 바로 보여요';
   if(n===2){ ctbRenderPicks(); }
   ctbApplyStageTheme();
   ctbRenderStage();
@@ -23301,9 +23332,25 @@ function ctbRenderStage(){
   });
 }
 /* ── 스티커 선택·드래그 ── */
+var _ctbPtrs={}, _ctbPinch=null;
+function _ctbPinchIds(){ return Object.keys(_ctbPtrs); }
 function ctbStageDown(e){
   if(_ctbStep!==1)return;
   var st=_ctbEl('ctbStage'); if(!st)return;
+  _ctbPtrs[e.pointerId]={x:e.clientX,y:e.clientY};
+  var ids=_ctbPinchIds();
+  if(ids.length>=2){
+    // 두 손가락 — 스티커를 잡고 있었으면 스티커 크기, 아니면 배경 확대
+    var target=(_ctbDrag&&_ctbDrag.mode==='sticker'&&_ctbSel>=0)?'sticker':'bg';
+    if(target==='bg'&&!_ctbDraft.bg_url) return;
+    _ctbPinch={ target:target,
+      d0:_ctPinchDist(_ctbPtrs[ids[0]],_ctbPtrs[ids[1]]),
+      z0: target==='sticker' ? _ctNum((_ctbDraft.stickers[_ctbSel]||{}).s,24) : Math.max(100,_ctNum(_ctbDraft.bg_zoom,116)) };
+    _ctbDrag=null;   // 한 손가락 이동은 멈추고 확대로 전환
+    try{ st.setPointerCapture(e.pointerId); }catch(_){}
+    e.preventDefault();
+    return;
+  }
   var t=(e.target&&e.target.closest)?e.target.closest('.ctb-sticker'):null;
   if(!t){
     // 빈 곳을 끌면 배경 사진을 옮긴다(스티커 선택은 해제)
@@ -23321,6 +23368,22 @@ function ctbStageDown(e){
   e.preventDefault();
 }
 function ctbStageMove(e){
+  if(_ctbPtrs[e.pointerId]) _ctbPtrs[e.pointerId]={x:e.clientX,y:e.clientY};
+  if(_ctbPinch){
+    var ids=_ctbPinchIds();
+    if(ids.length>=2){
+      var ratio=_ctPinchDist(_ctbPtrs[ids[0]],_ctbPtrs[ids[1]])/_ctbPinch.d0;
+      if(_ctbPinch.target==='sticker'){
+        var sk=_ctbDraft.stickers[_ctbSel];
+        if(sk){ sk.s=Math.max(6,Math.min(70,Math.round(_ctbPinch.z0*ratio*10)/10)); ctbRenderStage(); ctbSyncStickerCtl(); }
+      }else{
+        _ctbDraft.bg_zoom=Math.max(100,Math.min(300,Math.round(_ctbPinch.z0*ratio)));
+        ctbRenderStage(); ctbSyncBgCtl();
+      }
+      e.preventDefault();
+    }
+    return;
+  }
   if(!_ctbDrag)return;
   if(_ctbDrag.mode==='bg'){
     var r0=_ctbDrag.rect;
@@ -23339,7 +23402,11 @@ function ctbStageMove(e){
   ctbRenderStage();
   e.preventDefault();
 }
-function ctbStageUp(){ _ctbDrag=null; }
+function ctbStageUp(e){
+  if(e&&e.pointerId!=null) delete _ctbPtrs[e.pointerId];
+  if(_ctbPinchIds().length<2) _ctbPinch=null;
+  _ctbDrag=null;
+}
 function ctbSyncBgCtl(){
   var has=!!_ctbDraft.bg_url;
   var z=_ctbEl('ctbBgZoom'), zv=_ctbEl('ctbBgZoomVal');
