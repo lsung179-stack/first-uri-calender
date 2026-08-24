@@ -908,6 +908,51 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 /* ── 방 캐릭터 테마(카드 스킨 연동) — 콘텐츠 뒤에 큰 캐릭터 워터마크+구름(타입블럭 스타일) ── */
 /* .app이 position:fixed로 스택 컨텍스트를 만들어 body의 z-index:-1은 가려짐 → 데코를 .app 안 첫 자식으로 넣어
    투명한 .screen/그리드보다 먼저 그려 날짜/일정 뒤로 비치게 함. pointer-events 없음(터치 방해 0). */
+/* 커스텀 테마 스티커 — 좌표·크기가 % 라서 화면 크기가 달라도 같은 자리에 붙는다 */
+.rc-decor .rc-sticker{position:absolute;aspect-ratio:1/1;background-repeat:no-repeat;background-position:center;background-size:contain;pointer-events:none}
+/* 스토어 '나만의 테마' 배너 — 이미지 없이 CSS만(외부 CDN 의존 0) */
+.store-custom-hero{position:relative;display:flex;align-items:center;justify-content:space-between;gap:10px;overflow:hidden;border-radius:16px;padding:16px 18px;margin-bottom:16px;background:linear-gradient(120deg,#2f2a3d 0%,#4a3a52 52%,#7a5a5e 100%);box-shadow:0 6px 18px rgba(0,0,0,.16)}
+.store-custom-hero .sch-text{position:relative;z-index:1;min-width:0}
+.store-custom-hero .sfh-eyebrow{color:#e8c98a;font-size:10.5px;letter-spacing:.14em;font-weight:700;margin-bottom:5px}
+.store-custom-hero .sfh-title{font-family:'Noto Serif KR',serif;color:#fff;font-size:19px;font-weight:700;line-height:1.25}
+.store-custom-hero .sfh-desc{color:rgba(255,255,255,.82);font-size:12px;margin-top:5px}
+.sch-cta{margin-top:11px;background:#fbf2e0;color:#3a2418;border:none;border-radius:999px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer}
+.sch-art{position:relative;flex-shrink:0;width:78px;height:66px}
+.sch-art i{position:absolute;display:block;border-radius:7px;border:2px solid rgba(255,255,255,.5);background:rgba(255,255,255,.14)}
+.sch-art .sch-a1{width:44px;height:44px;left:2px;top:12px;transform:rotate(-9deg)}
+.sch-art .sch-a2{width:36px;height:36px;left:30px;top:4px;transform:rotate(8deg);background:rgba(232,201,138,.28)}
+.sch-art .sch-a3{width:22px;height:22px;left:48px;top:36px;transform:rotate(-4deg);background:rgba(255,255,255,.3)}
+.ct-row{cursor:pointer}
+.ct-th{background-repeat:no-repeat;background-position:center;background-size:cover;background-color:var(--aP)}
+.ct-acts{display:flex;flex-direction:column;gap:5px}
+.pack-btn.ct-del{background:transparent;color:#c0503f;border:1px solid rgba(192,80,63,.35)}
+/* ── 커스텀 테마 만들기 ── */
+#ctbCard{z-index:1420}
+.ctb-head-btn{background:var(--accent);color:var(--card);border:none;border-radius:999px;padding:7px 15px;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0}
+.ctb-head-btn[disabled]{opacity:.45}
+.ctb-stage{position:relative;width:100%;max-width:260px;aspect-ratio:9/16;margin:2px auto 10px;border-radius:16px;overflow:hidden;background:var(--bg);border:1px solid var(--border);touch-action:none;user-select:none}
+.ctb-stage .ctb-bg{position:absolute;inset:0;background-repeat:no-repeat;background-position:center 38%;background-size:auto 116%}
+.ctb-mock{position:absolute;inset:0;padding:8px 7px;pointer-events:none;display:flex;flex-direction:column;gap:5px}
+.ctb-mock-title{font-family:'Noto Serif KR',serif;font-size:12px;color:var(--text);text-align:center}
+.ctb-mock-week{display:grid;grid-template-columns:repeat(7,1fr);font-size:7px;color:var(--sub);text-align:center}
+.ctb-mock-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;flex:1}
+.ctb-mock-cell{font-size:7.5px;color:var(--text);text-align:center;padding-top:2px;border-top:1px solid var(--borderL)}
+.ctb-mock-bar{height:5px;border-radius:2px;background:var(--accent);margin:1px 1px 0}
+.ctb-sticker{position:absolute;aspect-ratio:1/1;background-repeat:no-repeat;background-position:center;background-size:contain;transform:translate(-50%,-50%)}
+.ctb-sticker.on{outline:2px dashed var(--accent);outline-offset:2px;border-radius:4px}
+.ctb-hint{font-size:11.5px;color:var(--sub);text-align:center;margin:-4px 0 10px}
+.ctb-row{display:flex;gap:8px;margin:2px 0 12px;flex-wrap:wrap}
+.ctb-btn{flex:1 1 0;min-width:96px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:11px 8px;font-size:13px;font-weight:600;cursor:pointer}
+.ctb-btn.danger{color:#c0503f}
+.ctb-btn[disabled]{opacity:.4}
+.ctb-slider-val{float:right;color:var(--accent);font-weight:700}
+.ctb-pick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.ctb-pick button{position:relative;border:2px solid transparent;background:var(--card);border-radius:12px;padding:8px 4px 7px;cursor:pointer;font-size:11.5px;color:var(--text);display:flex;flex-direction:column;align-items:center;gap:5px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.ctb-pick button.on{border-color:var(--accent)}
+.ctb-sw{display:flex;gap:2px}
+.ctb-sw i{width:11px;height:18px;border-radius:3px;display:block}
+.ctb-ic{width:26px;height:26px;background-repeat:no-repeat;background-position:center;background-size:contain}
+.ctb-ic-none{font-size:16px;line-height:26px;color:var(--sub)}
 .rc-decor{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 .rc-decor .rc-char{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);width:min(88vw,410px);height:min(88vw,410px);background-position:center;background-size:contain;background-repeat:no-repeat;opacity:.17}
 .rc-decor .rc-cloud{position:absolute;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.7),rgba(255,255,255,0) 72%)}
@@ -5500,6 +5545,51 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
   </div></div>
 </div>
 
+<!-- 커스텀 테마 만들기 — 1단계(사진·스티커) → 2단계(색상·아이콘) -->
+<div class="ann-card" id="ctbCard">
+  <div class="ann-head">
+    <button class="ann-back" onclick="ctbBack()" aria-label="뒤로">&lsaquo;</button>
+    <div class="ann-title" id="ctbTitle">테마 만들기</div>
+    <button class="ctb-head-btn" id="ctbNextBtn" onclick="ctbNext()">다음</button>
+  </div>
+  <div class="ann-body"><div class="ann-form">
+    <div class="ctb-stage" id="ctbStage">
+      <div class="ctb-bg" id="ctbBg"></div>
+      <div class="ctb-mock" id="ctbMock"></div>
+    </div>
+    <div class="ctb-hint" id="ctbHint">사진을 넣고 스티커를 끌어 배치해 보세요</div>
+
+    <div id="ctbStep1">
+      <div class="rm-field-label">배경 사진</div>
+      <div class="ctb-row">
+        <button class="ctb-btn" onclick="ctbPickBg()">사진 선택</button>
+        <button class="ctb-btn danger" onclick="ctbClearBg()">배경 지우기</button>
+      </div>
+      <div class="rm-field-label">배경 진하기 <span class="ctb-slider-val" id="ctbOpVal">40%</span></div>
+      <input type="range" class="gop-range" id="ctbOpacity" min="5" max="100" step="1" value="40" oninput="ctbOpacityInput(this.value)" onchange="ctbOpacityInput(this.value)">
+      <div class="rm-field-label" style="margin-top:14px">스티커</div>
+      <div class="ctb-row">
+        <button class="ctb-btn" onclick="ctbPickSticker()">스티커 추가</button>
+        <button class="ctb-btn danger" id="ctbStDel" onclick="ctbDeleteSticker()" disabled>선택 스티커 삭제</button>
+      </div>
+      <div class="rm-field-label">스티커 크기 <span class="ctb-slider-val" id="ctbStSizeVal">24%</span></div>
+      <input type="range" class="gop-range" id="ctbStSize" min="6" max="70" step="1" value="24" disabled oninput="ctbStickerSize(this.value)" onchange="ctbStickerSize(this.value)">
+      <div class="rm-field-label">스티커 회전 <span class="ctb-slider-val" id="ctbStRotVal">0&deg;</span></div>
+      <input type="range" class="gop-range" id="ctbStRot" min="-180" max="180" step="1" value="0" disabled oninput="ctbStickerRot(this.value)" onchange="ctbStickerRot(this.value)">
+      <div class="rm-field-label" style="margin-top:14px">테마 이름</div>
+      <input class="fi" id="ctbName" maxlength="20" placeholder="예: 우리 가족 사진">
+    </div>
+
+    <div id="ctbStep2" style="display:none">
+      <div class="rm-field-label">색상</div>
+      <div class="ctb-pick" id="ctbColorPick"></div>
+      <div class="rm-field-label">아이콘</div>
+      <div class="ctb-pick" id="ctbIconPick"></div>
+    </div>
+    <input type="file" id="ctbFile" accept="image/*" style="display:none" onchange="ctbFileChosen(event)">
+  </div></div>
+</div>
+
 <!-- 스토어 (테마 등 꾸미기) -->
 <div class="store-card" id="storeCard">
   <div class="store-head">
@@ -7612,7 +7702,7 @@ async function hideAdBanner() {
    AdMob 배너는 OS 별도 레이어라 서브 화면 위에도 떠서 버튼/콘텐츠를 가린다.
    서브 시트가 열려 있으면 광고를 숨기고, 모두 닫히면 다시 표시한다.
    DOM의 .on 상태를 직접 보므로 닫는 경로가 어디든(닫기버튼·탭전환·뒤로) 항상 정합. */
-const _AD_HIDE_SHEET_IDS = ['premiumCard','storeCard','advCard','notifSetCard','annCard','csCard','evCard','todoAddCard','dpCard','myOrdersCard','vcOverlay','upgOverlay','rdOverlay','evRepSheetOverlay','tdRepSheetOverlay','dhCard','dhAllCard','dhManageCard','dhThemeDetailCard'];
+const _AD_HIDE_SHEET_IDS = ['premiumCard','storeCard','advCard','notifSetCard','annCard','csCard','evCard','todoAddCard','dpCard','myOrdersCard','vcOverlay','upgOverlay','rdOverlay','evRepSheetOverlay','tdRepSheetOverlay','dhCard','dhAllCard','dhManageCard','dhThemeDetailCard','ctbCard'];
 /* 요소가 실제로 화면에 보이는지(display:none이 아닌지) — 잔여 .on 클래스 오판 방지 */
 function _elVisible(el){
   try{ return !!(el && (el.offsetWidth>0 || el.offsetHeight>0 || el.getClientRects().length>0)); }catch(_){ return true; }
@@ -7794,6 +7884,8 @@ async function loadRooms(){
       .eq('user_id',_currentUser.id);
     if(e1)throw e1;
     _mySealByRoom={}; _myCardSkinByRoom={}; (myMems||[]).forEach(function(m){ _mySealByRoom[m.room_id]=m.seal||null; _myCardSkinByRoom[m.room_id]=m.card_skin||null; });
+    // 커스텀 테마는 방 카드/입장 테마보다 먼저 있어야 한다(없으면 custom: 키가 해석 안 돼 기본으로 보임)
+    try{ await loadCustomThemes(); }catch(_){}
     try{ _preloadRoomScenes(); }catch(_){}   // 방 입장 전에 각 방 배경씬 미리 캐시(입장 즉시 표시)
 
     if(!myMems||myMems.length===0){
@@ -8960,6 +9052,7 @@ supa.auth.onAuthStateChange((event,session)=>{
       ['annPopup', function(){ closeAnnouncementPopup(); }],
       ['annMenuCard', function(){ closeAnnouncementMenu(); }],
       ['annComposeCard', function(){ closeAnnouncementCompose(); }],
+      ['ctbCard', function(){ ctbBack(); }],   // 커스텀 테마 만들기(2단계 → 1단계 → 닫기)
       // 날짜 강조 계열 — 위에 겹치는 순서대로(추가/수정 > 관리 > 날짜 시트) [2026-08-19]
       ['dhCard', function(){ closeDhCard(); }],
       ['dhThemeDetailCard', function(){ closeDhThemeDetail(); }],
@@ -16752,8 +16845,9 @@ CARD_SKINS.c_gaegu={name:'개구쟁이',img:'https://d8j0ntlcm91z4.cloudfront.ne
 CARD_SKINS.c_simsul={name:'심술이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_143004_1c85bdab-07e1-4042-b3aa-17212d290697.png'};
 CARD_SKINS.c_kkalkal={name:'깔깔이',img:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_143001_bda96b6b-4448-4757-9830-140f684e737f.png'};
 const CARD_SKIN_PREM=['mono', 'a_cat', 'a_rabbit', 'a_bear', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'a_dino', 'c_gaegu', 'nabi', 'moon', 'daisy', 'star', 'koi'];   // 보리·호담·소녀·소년·눈꽃 제거(2026-07-23, 사용자 요청). CARD_SKINS 데이터는 잔존
-function _cardSkinCls(k){ const sk=k&&CARD_SKINS[k]; if(!sk)return ''; if(sk.char) return ' rcs-char'+(sk.dark?' rcs-dark':''); if(sk.img) return ' rcs-img'+(sk.dark?' rcs-dark':''); return ' rcs-'+k+(sk.dark?' rcs-dark':''); }
-function _cardSkinStyle(k){ const sk=k&&CARD_SKINS[k]; if(!sk)return '';
+function _cardSkinCls(k){ if(_isCustomSkin(k)) return ' rcs-img'; const sk=k&&CARD_SKINS[k]; if(!sk)return ''; if(sk.char) return ' rcs-char'+(sk.dark?' rcs-dark':''); if(sk.img) return ' rcs-img'+(sk.dark?' rcs-dark':''); return ' rcs-'+k+(sk.dark?' rcs-dark':''); }
+function _cardSkinStyle(k){ if(_isCustomSkin(k)){ var cu=_customThemeOf(k); return (cu&&cu.bg_url)?(' style="background-image:url(&quot;'+cu.bg_url+'&quot;)"'):''; }
+  const sk=k&&CARD_SKINS[k]; if(!sk)return '';
   if(sk.char){ const g=sk.grad||['#f3e6cf','#e6d3ad']; const bg=sk.scene?('url(&quot;'+sk.scene+'&quot;) center/cover'):('linear-gradient(100deg,'+g[0]+' 0%,'+g[0]+' 40%,'+g[1]+' 100%)'); return ' style="background:url(&quot;'+sk.char+'&quot;) no-repeat right 3% center/auto 94%,'+bg+'"'; }
   return sk.img?(' style="background-image:url(&quot;'+sk.img+'&quot;)"'):''; }
 function _sealSetSvg(key){ const st=SEAL_SETS[key]; return st?'<svg class="sealset" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">'+st.svg+'</svg>':''; }
@@ -16845,7 +16939,20 @@ function renderRoomMascotPicker(){
         +'<div class="ep-act">'+(on?'<span class="rm-uset-pill on">사용</span>':(prem?'<span class="rm-uset-pill">선택</span>':'<span class="rm-set-lock">\uD83D\uDD12</span>'))+'</div>'
         +'</button>';
     });
-    g.innerHTML='<div class="rm-field-label">프로필 · 테마'+(prem?'':' · 프리미엄 전용')+'</div>'+rows
+    var mine='';
+    if(_customThemes&&_customThemes.length){
+      mine='<div class="rm-field-label">내 테마</div>';
+      _customThemes.forEach(function(c){
+        var on=(_cardSkin==='custom:'+c.id);
+        mine+='<button type="button" class="ep-row rm-uset'+(on?' on':'')+'" onclick="pickCustomTheme(\''+c.id+'\')">'
+          +'<div class="ep-th ct-th"'+_ctbThumbStyle(c)+'></div>'
+          +'<div class="ep-body"><div class="ep-t1">'+escapeHtml(c.name||'내 테마')+'</div><div class="ep-t2">'+escapeHtml(_ctbThemeDesc(c))+'</div></div>'
+          +'<div class="ep-act">'+(on?'<span class="rm-uset-pill on">사용</span>':(prem?'<span class="rm-uset-pill">선택</span>':'<span class="rm-set-lock">\uD83D\uDD12</span>'))+'</div>'
+          +'</button>';
+      });
+    }
+    mine+='<button type="button" class="ctb-btn" style="width:100%;margin:'+(mine?'8px':'0')+' 0 4px" onclick="openCustomThemeBuilder()">+ 나만의 테마 만들기</button>';
+    g.innerHTML=mine+'<div class="rm-field-label">프로필 · 테마'+(prem?'':' · 프리미엄 전용')+'</div>'+rows
       +(prem?'':'<div class="rm-prem-note">프리미엄을 시작하면 바로 사용할 수 있어요 · 첫 7일 무료</div>');
   } else {
     // 무료: 색 + 문양(커스텀 프로필) + 기본 테마 6색
@@ -16864,7 +16971,7 @@ function renderRoomMascotPicker(){
   }
   const clr=document.getElementById('rmClearBtn'); if(clr)clr.style.display=_sealHad?'block':'none';
 }
-function _setDisplayName(k){ return (typeof CARD_SKINS!=='undefined'&&CARD_SKINS[k]&&CARD_SKINS[k].name)||(SEAL_SETS[k]&&SEAL_SETS[k].name)||k; }
+function _setDisplayName(k){ if(_isCustomSkin(k)){ var cu=_customThemeOf(k); return (cu&&cu.name)||'내 테마'; } return (typeof CARD_SKINS!=='undefined'&&CARD_SKINS[k]&&CARD_SKINS[k].name)||(SEAL_SETS[k]&&SEAL_SETS[k].name)||k; }
 /* 통합 프리미엄 세트 선택 — 프로필(씰)+테마(카드·앱색)를 함께 적용 */
 function pickUnifiedSet(k){
   if(!isEffectivePremium()){
@@ -16890,6 +16997,7 @@ function _rmSyncPreview(){
     cp.className='rm-cardprev'+_cardSkinCls(_cardSkin);
     const skk=_cardSkin&&CARD_SKINS[_cardSkin];
     if(skk&&skk.char){ const g=skk.grad||['#f3e6cf','#e6d3ad']; const bg=skk.scene?('url("'+skk.scene+'") center/cover'):('linear-gradient(100deg,'+g[0]+' 0%,'+g[0]+' 40%,'+g[1]+' 100%)'); cp.style.background='url("'+skk.char+'") no-repeat right 3% center/auto 94%,'+bg; }
+    else if(_isCustomSkin(_cardSkin)){ var cu=_customThemeOf(_cardSkin); cp.style.background=''; cp.style.backgroundImage=(cu&&cu.bg_url)?('url("'+cu.bg_url+'")'):''; }
     else { cp.style.background=''; cp.style.backgroundImage=(skk&&skk.img)?('url("'+skk.img+'")'):''; }
   }
   const big=document.getElementById('rmBigPrev'), nm=document.getElementById('rmBpName');
@@ -16972,6 +17080,7 @@ function _rmPickCustom(){
 /* 방 프로필(컬러 씰)은 무료 기능 — 프리미엄 게이트 제거(2026-07, 사용자 결정) */
 async function saveRoomMascot(){
   if(_sealSet&&!isEffectivePremium()){ showUpgradeModal({message:'고급 프로필은 프리미엄 전용이에요.', feature:'입체 프로필 12종으로 방 카드를 꾸밀 수 있어요.'}); return; }
+  if(_isCustomSkin(_cardSkin)&&!isEffectivePremium()){ showUpgradeModal({message:'나만의 테마는 프리미엄 전용이에요.', feature:'사진과 스티커로 만든 테마를 방마다 골라 쓸 수 있어요.'}); return; }
   const _sk=_cardSkin?CARD_SKINS[_cardSkin]:null;
   if(_sk&&!_sk.free&&!isEffectivePremium()){ showUpgradeModal({message:'컨셉 테마는 프리미엄 전용이에요.', feature:'달빛·실크·한지 등 8가지 배경으로 방 카드를 꾸밀 수 있어요.'}); return; }
   const sealVal=_sealSet?('set:'+_sealSet):(_sealCustomPicked?(_sealColor+':'+_sealSym):null);   // 직접 꾸미기(색+문양)는 무료
@@ -21134,12 +21243,61 @@ function renderStoreSeal(){
 
   body.innerHTML=html;
 }
+/* 스토어 '내 테마' 목록 — 사용자가 만든 커스텀 테마 */
+function _ctbThemeDesc(c){
+  var parts=[];
+  if(c.bg_url) parts.push('사진');
+  var n=(Array.isArray(c.stickers)?c.stickers.length:0);
+  if(n) parts.push('스티커 '+n+'개');
+  if(c.color_theme&&THEMES[c.color_theme]) parts.push('색 '+_themeLabel(c.color_theme));
+  if(c.icon_theme&&ROOM_CHAR_THEME[c.icon_theme]) parts.push('아이콘 '+_setDisplayName(c.icon_theme));
+  return parts.length?parts.join(' · '):'빈 테마';
+}
+/* 테마 키 → 사용자에게 보이는 이름(카드 스킨 이름 재사용, 없으면 '기본') */
+function _themeLabel(themeKey){
+  var all=(typeof CARD_SKIN_FREE!=='undefined'?CARD_SKIN_FREE:[]).concat(typeof CARD_SKIN_PREM!=='undefined'?CARD_SKIN_PREM:[]);
+  for(var i=0;i<all.length;i++){ if(_cardSkinTheme(all[i])===themeKey) return _setDisplayName(all[i]); }
+  return '기본';
+}
+function _ctbThumbStyle(c){
+  var u=c.bg_url||((Array.isArray(c.stickers)&&c.stickers[0])?c.stickers[0].url:'');
+  if(!u) return '';
+  return ' style="background-image:url(&quot;'+u+'&quot;)'+(c.bg_url?'':';background-size:contain')+'"';
+}
+function _ctbMyThemesHTML(){
+  if(!_customThemes||!_customThemes.length) return '';
+  var h='<div class="store-section-title">내 테마 <small>MY THEME</small></div>';
+  _customThemes.forEach(function(c){
+    h+='<div class="ep-row ct-row" onclick="onMyThemeRowClick()">'
+      +'<div class="ep-th ct-th"'+_ctbThumbStyle(c)+'></div>'
+      +'<div class="ep-body"><div class="ep-t1">'+escapeHtml(c.name||'내 테마')+'</div><div class="ep-t2">'+escapeHtml(_ctbThemeDesc(c))+'</div></div>'
+      +'<div class="ep-act ct-acts">'
+      +'<button type="button" class="pack-btn pack-btn-try" onclick="event.stopPropagation();openCustomThemeBuilder(\''+c.id+'\')">수정</button>'
+      +'<button type="button" class="pack-btn ct-del" onclick="event.stopPropagation();deleteCustomTheme(\''+c.id+'\')">삭제</button>'
+      +'</div></div>';
+  });
+  return h;
+}
+function onMyThemeRowClick(){
+  try{ openSealShowcase(); }catch(_){}
+}
+window.onMyThemeRowClick=onMyThemeRowClick;
 function renderStoreThemes(){
   const body=document.getElementById('storeBody');
   if(!body)return;
   const prem=isEffectivePremium();
   // 프로필+테마 통합 — 각 항목을 방목록 카드처럼 그 캐릭터의 카드 배경으로 꾸밈(프리미엄 전용).
-  let html=`<div class="store-mono-hero" style="background-image:url('${MONO_HERO_IMG}')">
+  let html=`<div class="store-custom-hero">
+    <div class="sch-text">
+      <div class="sfh-eyebrow">NEW &middot; MY THEME</div>
+      <div class="sfh-title">나만의 테마 만들기</div>
+      <div class="sfh-desc">사진과 스티커로 우리 방 배경을 직접 꾸며요</div>
+      <button type="button" class="sch-cta" onclick="openCustomThemeBuilder()">만들기</button>
+    </div>
+    <div class="sch-art"><i class="sch-a1"></i><i class="sch-a2"></i><i class="sch-a3"></i></div>
+  </div>`;
+  html+=_ctbMyThemesHTML();
+  html+=`<div class="store-mono-hero" style="background-image:url('${MONO_HERO_IMG}')">
     <div class="sfh-eyebrow">NEW &middot; BLACK &amp; WHITE</div>
     <div class="sfh-title">심플 블랙&amp;화이트</div>
     <div class="sfh-desc">흰 바탕에 손그림 한 줄 &mdash; 군더더기 없는 새 테마</div>
@@ -22733,15 +22891,44 @@ const ROOM_CHAR_THEME={
   daisy:{theme:'daisy', cls:'rc-daisy', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_124306_4f1352dc-8b79-4b19-b5de-87e4363aad99.png', bgScene:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_113408_01e0b42b-5b36-4516-b421-a90d8338cbfb_min.webp', charInScene:true},
   koi:{theme:'koi', cls:'rc-koi', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_083737_979f19ba-c2a1-4fd7-a1e9-82d32e1c194d.png', bgScene:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_113410_5f9c78c2-4d14-4318-a86c-bbd425a17182_min.webp', charInScene:true}
 };
+/* ── 커스텀 테마(사용자가 만든 테마) ──────────────────────────────
+   저장: public.custom_themes(본인만 RLS). 방에 적용할 땐 members.card_skin='custom:<id>'.
+   기존 테마와 '같은 통로'로 흐르게 하려고, _skinCT()가 ROOM_CHAR_THEME 항목과 똑같은 모양
+   {theme, cls, bgScene, charInScene}으로 만들어 준다 → 데코·색·아이콘 코드는 손댈 필요 없음.
+   색은 THEMES 중 하나, 아이콘은 ROOM_CHAR_THEME 중 하나의 cls 를 빌려 쓴다(둘 다 '기본' 가능). */
+var _customThemes=[];
+function _isCustomSkin(k){ return typeof k==='string' && k.indexOf('custom:')===0; }
+function _customSkinId(k){ return _isCustomSkin(k)?k.slice(7):null; }
+function _customThemeById(id){ for(var i=0;i<_customThemes.length;i++){ if(_customThemes[i].id===id) return _customThemes[i]; } return null; }
+function _customThemeOf(k){ return _isCustomSkin(k)?_customThemeById(_customSkinId(k)):null; }
+function _iconClsOf(k){ var t=k&&ROOM_CHAR_THEME[k]; return (t&&t.cls)||''; }
+/* 카드 스킨 키 → 테마 정의(기존 테마 또는 커스텀). 없으면 null */
+function _skinCT(skin){
+  if(!skin) return null;
+  if(_isCustomSkin(skin)){
+    var c=_customThemeById(_customSkinId(skin));
+    if(!c) return null;
+    return { theme:(c.color_theme&&THEMES[c.color_theme])?c.color_theme:'vintage',
+             cls:_iconClsOf(c.icon_theme), bgScene:c.bg_url||'', charInScene:true, custom:c };
+  }
+  return ROOM_CHAR_THEME[skin]||null;
+}
+async function loadCustomThemes(){
+  try{
+    if(!_currentUser){ _customThemes=[]; return; }
+    const {data}=await supa.from('custom_themes').select('*').eq('user_id',_currentUser.id).order('created_at',{ascending:false});
+    _customThemes=data||[];
+  }catch(_){ }
+}
 /* 테마 배경씬 프리로드 — 방 입장 전에 미리 캐시해서 입장 즉시 표시(첫 네트워크 대기 제거) */
 var _scenesPreloaded={};
 function _preloadSceneUrl(url){ if(!url||_scenesPreloaded[url])return; _scenesPreloaded[url]=1; try{ var im=new Image(); im.decoding='async'; im.src=url; }catch(_){} }
-function _preloadSkinScene(skin){ try{ if(!skin||typeof ROOM_CHAR_THEME==='undefined')return; var ct=ROOM_CHAR_THEME[skin]; if(ct&&ct.bgScene)_preloadSceneUrl(ct.bgScene); }catch(_){} }
+function _preloadSkinScene(skin){ try{ if(!skin||typeof ROOM_CHAR_THEME==='undefined')return; var ct=_skinCT(skin); if(ct&&ct.bgScene)_preloadSceneUrl(ct.bgScene); }catch(_){} }
 function _preloadRoomScenes(){ try{ var m=(typeof _myCardSkinByRoom!=='undefined')?_myCardSkinByRoom:null; if(!m)return; Object.keys(m).forEach(function(rid){ _preloadSkinScene(m[rid]); }); }catch(_){} }
 /* 카드 스킨 → 앱 테마 매핑(캐릭터 스킨=ROOM_CHAR_THEME.theme, 기본 배경=CARD_SKINS[k].theme). 없으면 null. */
 function _cardSkinTheme(skin){
   if(!skin) return null;
-  var ct=ROOM_CHAR_THEME[skin]; if(ct&&ct.theme&&THEMES[ct.theme]) return ct.theme;
+  var ct=_skinCT(skin); if(ct&&ct.theme&&THEMES[ct.theme]) return ct.theme;
   var sk=(typeof CARD_SKINS!=='undefined')?CARD_SKINS[skin]:null; if(sk&&sk.theme&&THEMES[sk.theme]) return sk.theme;
   return null;
 }
@@ -22778,6 +22965,8 @@ function _clearRoomCharDecor(){
     document.body.style.removeProperty('--rc-char-url');
   }catch(_){}
 }
+function _ctNum(v,dflt){ var n=Number(v); return isFinite(n)?n:dflt; }
+function _ctOpacity(v){ var n=Number(v); if(!isFinite(n))n=40; return Math.max(0,Math.min(100,n)); }
 function _applyRoomCharDecor(ct){
   _clearRoomCharDecor();
   if(!ct) return;
@@ -22790,16 +22979,34 @@ function _applyRoomCharDecor(ct){
   var _bgUrl = _bgScene ? ct.bgScene : (ct.bgSvg ? ('data:image/svg+xml,'+encodeURIComponent(ct.bgSvg)) : (ct.bg||''));
   // 씬 배경엔 하늘/구름/캐릭터가 이미 그려져 있으므로 별도 구름·워터마크 생략. charInScene면 캐릭터도 씬에만.
   var _charWm = ct.mascot && !ct.charInScene && !_bgScene;
-  var _clouds = _bgScene ? '' : '<div class="rc-cloud rc-cloud1"></div><div class="rc-cloud rc-cloud2"></div>';
+  var _clouds = (_bgScene||ct.custom) ? '' : '<div class="rc-cloud rc-cloud1"></div><div class="rc-cloud rc-cloud2"></div>';
   d.innerHTML=(_bgUrl?('<div class="rc-bg'+(_bgScene?' rc-bg-scene':'')+'"></div>'):'')+_clouds+(_charWm?'<div class="rc-char"></div>':'');
   if(_bgUrl){ var bgEl=d.querySelector('.rc-bg'); if(bgEl) bgEl.style.backgroundImage='url("'+_bgUrl+'")'; }
   if(ct.mascot){ var c=d.querySelector('.rc-char'); if(c) c.style.backgroundImage='url("'+ct.mascot+'")'; document.body.style.setProperty('--rc-char-url','url("'+ct.mascot+'")'); }
+  // 커스텀 테마 — 배경 진하기는 사용자가 정한 값, 스티커는 %좌표로 배치(화면 크기 무관)
+  if(ct.custom){
+    var cu=ct.custom;
+    var bg2=d.querySelector('.rc-bg');
+    if(bg2) bg2.style.opacity=String(_ctOpacity(cu.bg_opacity)/100);
+    (Array.isArray(cu.stickers)?cu.stickers:[]).forEach(function(st){
+      if(!st||!st.url) return;
+      var el=document.createElement('div');
+      el.className='rc-sticker';
+      el.style.left=_ctNum(st.x,50)+'%';
+      el.style.top=_ctNum(st.y,50)+'%';
+      el.style.width=_ctNum(st.s,24)+'%';
+      el.style.transform='translate(-50%,-50%) rotate('+_ctNum(st.r,0)+'deg)';
+      el.style.opacity=String(_ctOpacity(st.o==null?100:st.o)/100);
+      el.style.backgroundImage='url("'+st.url+'")';
+      d.appendChild(el);
+    });
+  }
   host.insertBefore(d, host.firstChild);
 }
 async function applyRoomThemeFor(roomId){
   const rawSkin=(_myCardSkinByRoom&&roomId)?_myCardSkinByRoom[roomId]:null;
   const skin=_effSkin(rawSkin);   // 만료 시 프리미엄 스킨→null(기본 복귀). 저장값은 유지.
-  let ct=skin?ROOM_CHAR_THEME[skin]:null;
+  let ct=skin?_skinCT(skin):null;
   let theme=_myTheme||'vintage';
   // 이 방이 '카드 배경(스킨)'으로 테마가 정해지는 방인가 — 게이트 전(raw) 기준으로 판정(코드 60: 카드 배경 우선).
   // ⚠️ 게이트된 skin(만료 시 null)으로 판정하면 옛 user_room_themes로 잘못 폴백됨 → 반드시 rawSkin 사용.
@@ -22825,6 +23032,329 @@ async function applyRoomThemeFor(roomId){
   _applyRoomCharDecor(ct);   // 마스코트 + 캐릭터 클래스(테마 색과 별개로 스킨 있으면 표시)
   try{ renderRoomThemeGrid(); }catch(_){}
 }
+/* ══ 커스텀 테마 만들기 ═══════════════════════════════════════
+   1단계: 배경 사진 + 스티커(끌어서 이동, 슬라이더로 크기·회전)
+   2단계: 색상(THEMES) + 아이콘(기존 테마의 아이콘 세트) — 둘 다 '기본' 선택 가능
+   이미지는 저장 버튼을 눌렀을 때만 올린다(취소해도 저장소에 쓰레기가 안 남게).  */
+var _ctbStep=1, _ctbEditId=null, _ctbDraft=null, _ctbSel=-1, _ctbFileMode='bg', _ctbSaving=false, _ctbDrag=null, _ctbWired=false;
+function _ctbNewDraft(){ return {name:'', bg_url:'', bg_blob:null, bg_opacity:40, stickers:[], color_theme:'', icon_theme:''}; }
+function _ctbEl(id){ return document.getElementById(id); }
+
+/* 색상 후보 — 사용자가 이름으로 알아보는 기존 테마들에서 뽑는다(중복 테마는 하나만) */
+function _ctbColorOptions(){
+  var out=[{theme:'', name:'기본'}], seen={vintage:1};
+  function push(k){ var th=_cardSkinTheme(k); if(!th||seen[th])return; seen[th]=1; out.push({theme:th, name:_setDisplayName(k)}); }
+  (typeof CARD_SKIN_FREE!=='undefined'?CARD_SKIN_FREE:[]).forEach(push);
+  (typeof CARD_SKIN_PREM!=='undefined'?CARD_SKIN_PREM:[]).forEach(push);
+  return out;
+}
+/* 아이콘 후보 — 아이콘 세트를 가진 기존 테마(ROOM_CHAR_THEME) */
+function _ctbIconOptions(){
+  var out=[{key:'', name:'기본', img:''}];
+  (typeof CARD_SKIN_PREM!=='undefined'?CARD_SKIN_PREM:[]).forEach(function(k){
+    var t=ROOM_CHAR_THEME[k]; if(!t||!t.cls)return;
+    out.push({key:k, name:_setDisplayName(k), img:t.mascot||''});
+  });
+  return out;
+}
+async function openCustomThemeBuilder(id){
+  if(!isEffectivePremium()){
+    showUpgradeModal({message:'나만의 테마 만들기는 프리미엄 전용이에요.', feature:'사진과 스티커로 우리 방만의 배경을 만들고, 색과 아이콘까지 골라 쓸 수 있어요.'});
+    return;
+  }
+  _ctbEditId=id||null;
+  var src=id?_customThemeById(id):null;
+  _ctbDraft = src
+    ? { name:src.name||'', bg_url:src.bg_url||'', bg_blob:null, bg_opacity:_ctOpacity(src.bg_opacity),
+        stickers:(Array.isArray(src.stickers)?src.stickers:[]).map(function(st){
+          return {url:st.url, blob:null, x:_ctNum(st.x,50), y:_ctNum(st.y,50), s:_ctNum(st.s,24), r:_ctNum(st.r,0)}; }),
+        color_theme:src.color_theme||'', icon_theme:src.icon_theme||'' }
+    : _ctbNewDraft();
+  _ctbSel=-1; _ctbStep=1;
+  ctbBuildMock();
+  var nm=_ctbEl('ctbName'); if(nm)nm.value=_ctbDraft.name;
+  var op=_ctbEl('ctbOpacity'); if(op)op.value=String(_ctbDraft.bg_opacity);
+  var ov=_ctbEl('ctbOpVal'); if(ov)ov.textContent=_ctbDraft.bg_opacity+'%';
+  ctbSetStep(1);
+  ctbRenderStage(); ctbSyncStickerCtl();
+  if(!_ctbWired){
+    var st=_ctbEl('ctbStage');
+    if(st){
+      st.addEventListener('pointerdown', ctbStageDown);
+      st.addEventListener('pointermove', ctbStageMove);
+      st.addEventListener('pointerup', ctbStageUp);
+      st.addEventListener('pointercancel', ctbStageUp);
+    }
+    var nmi=_ctbEl('ctbName'); if(nmi)nmi.addEventListener('input',function(){ _ctbDraft.name=this.value; });
+    _ctbWired=true;
+  }
+  var c=_ctbEl('ctbCard'); if(c)c.classList.add('on');
+  try{ hideTabbar(); }catch(_){}
+  try{ _subScreenEnter(); }catch(_){}
+}
+window.openCustomThemeBuilder=openCustomThemeBuilder;
+function closeCustomThemeBuilder(){
+  var c=_ctbEl('ctbCard'); if(c)c.classList.remove('on');
+  try{ showTabbar(); }catch(_){}
+  try{ _subScreenExit(); }catch(_){}
+  _ctbDrag=null;
+}
+window.closeCustomThemeBuilder=closeCustomThemeBuilder;
+function ctbBack(){ if(_ctbStep===2){ ctbSetStep(1); return; } closeCustomThemeBuilder(); }
+window.ctbBack=ctbBack;
+function ctbSetStep(n){
+  _ctbStep=n;
+  var s1=_ctbEl('ctbStep1'), s2=_ctbEl('ctbStep2');
+  if(s1)s1.style.display=(n===1)?'':'none';
+  if(s2)s2.style.display=(n===2)?'':'none';
+  var t=_ctbEl('ctbTitle'); if(t)t.textContent=(n===1)?'테마 만들기':'색상 · 아이콘';
+  var b=_ctbEl('ctbNextBtn'); if(b)b.textContent=(n===1)?'다음':'저장';
+  var h=_ctbEl('ctbHint');
+  if(h)h.textContent=(n===1)?'사진을 넣고 스티커를 끌어 배치해 보세요':'앱 색과 아이콘을 고르면 미리보기에 바로 보여요';
+  if(n===2){ ctbRenderPicks(); }
+  ctbApplyStageTheme();
+  ctbRenderStage();
+}
+window.ctbNext=function(){
+  if(_ctbStep===1){
+    if(!_ctbDraft.bg_url && !(_ctbDraft.stickers||[]).length){ toast('사진이나 스티커를 하나 이상 넣어주세요'); return; }
+    ctbSetStep(2); return;
+  }
+  ctbSave();
+};
+/* ── 미리보기(가짜 달력) ── */
+function ctbBuildMock(){
+  var m=_ctbEl('ctbMock'); if(!m)return;
+  var wk=['일','월','화','수','목','금','토'];
+  var h='<div class="ctb-mock-title">8월</div><div class="ctb-mock-week">'+wk.map(function(d){return '<span>'+d+'</span>';}).join('')+'</div><div class="ctb-mock-grid">';
+  for(var i=1;i<=28;i++){ h+='<div class="ctb-mock-cell">'+i+((i===5||i===12||i===19)?'<div class="ctb-mock-bar"></div>':'')+'</div>'; }
+  m.innerHTML=h+'</div>';
+}
+function ctbApplyStageTheme(){
+  var st=_ctbEl('ctbStage'); if(!st)return;
+  var t=THEMES[_ctbDraft.color_theme]||THEMES.vintage;
+  ['bg','card','text','sub','mute','accent','aL','aP','border','borderL'].forEach(function(k){ if(t[k])st.style.setProperty('--'+k,t[k]); });
+  st.style.background=t.bg;
+}
+function ctbRenderStage(){
+  var bg=_ctbEl('ctbBg');
+  if(bg){
+    bg.style.backgroundImage=_ctbDraft.bg_url?('url("'+_ctbDraft.bg_url+'")'):'';
+    bg.style.opacity=String(_ctOpacity(_ctbDraft.bg_opacity)/100);
+  }
+  var st=_ctbEl('ctbStage'); if(!st)return;
+  Array.prototype.slice.call(st.querySelectorAll('.ctb-sticker')).forEach(function(e){ e.remove(); });
+  (_ctbDraft.stickers||[]).forEach(function(s,i){
+    var el=document.createElement('div');
+    el.className='ctb-sticker'+((i===_ctbSel&&_ctbStep===1)?' on':'');
+    el.setAttribute('data-i',String(i));
+    el.style.left=s.x+'%'; el.style.top=s.y+'%'; el.style.width=s.s+'%';
+    el.style.transform='translate(-50%,-50%) rotate('+s.r+'deg)';
+    el.style.backgroundImage='url("'+s.url+'")';
+    st.appendChild(el);
+  });
+}
+/* ── 스티커 선택·드래그 ── */
+function ctbStageDown(e){
+  if(_ctbStep!==1)return;
+  var st=_ctbEl('ctbStage'); if(!st)return;
+  var t=(e.target&&e.target.closest)?e.target.closest('.ctb-sticker'):null;
+  if(!t){ if(_ctbSel>=0){ _ctbSel=-1; ctbRenderStage(); ctbSyncStickerCtl(); } return; }
+  _ctbSel=Number(t.getAttribute('data-i'));
+  _ctbDrag={rect:st.getBoundingClientRect()};
+  try{ st.setPointerCapture(e.pointerId); }catch(_){}
+  ctbRenderStage(); ctbSyncStickerCtl();
+  e.preventDefault();
+}
+function ctbStageMove(e){
+  if(!_ctbDrag||_ctbSel<0)return;
+  var s=(_ctbDraft.stickers||[])[_ctbSel]; if(!s)return;
+  var r=_ctbDrag.rect;
+  s.x=Math.max(0,Math.min(100,Math.round(((e.clientX-r.left)/r.width)*1000)/10));
+  s.y=Math.max(0,Math.min(100,Math.round(((e.clientY-r.top)/r.height)*1000)/10));
+  ctbRenderStage();
+  e.preventDefault();
+}
+function ctbStageUp(){ _ctbDrag=null; }
+function ctbSyncStickerCtl(){
+  var has=_ctbSel>=0 && !!(_ctbDraft.stickers||[])[_ctbSel];
+  var s=has?_ctbDraft.stickers[_ctbSel]:null;
+  var del=_ctbEl('ctbStDel'); if(del)del.disabled=!has;
+  var sz=_ctbEl('ctbStSize'), szv=_ctbEl('ctbStSizeVal');
+  if(sz){ sz.disabled=!has; if(has)sz.value=String(Math.round(s.s)); }
+  if(szv)szv.textContent=(has?Math.round(s.s):24)+'%';
+  var rt=_ctbEl('ctbStRot'), rtv=_ctbEl('ctbStRotVal');
+  if(rt){ rt.disabled=!has; if(has)rt.value=String(Math.round(s.r)); }
+  if(rtv)rtv.textContent=(has?Math.round(s.r):0)+'°';
+}
+window.ctbStickerSize=function(v){
+  var s=(_ctbDraft.stickers||[])[_ctbSel]; if(!s)return;
+  s.s=Math.max(6,Math.min(70,_ctNum(v,24)));
+  var szv=_ctbEl('ctbStSizeVal'); if(szv)szv.textContent=Math.round(s.s)+'%';
+  ctbRenderStage();
+};
+window.ctbStickerRot=function(v){
+  var s=(_ctbDraft.stickers||[])[_ctbSel]; if(!s)return;
+  s.r=Math.max(-180,Math.min(180,_ctNum(v,0)));
+  var rtv=_ctbEl('ctbStRotVal'); if(rtv)rtv.textContent=Math.round(s.r)+'°';
+  ctbRenderStage();
+};
+window.ctbDeleteSticker=function(){
+  if(_ctbSel<0)return;
+  _ctbDraft.stickers.splice(_ctbSel,1);
+  _ctbSel=-1; ctbRenderStage(); ctbSyncStickerCtl();
+};
+window.ctbOpacityInput=function(v){
+  _ctbDraft.bg_opacity=_ctOpacity(v);
+  var ov=_ctbEl('ctbOpVal'); if(ov)ov.textContent=_ctbDraft.bg_opacity+'%';
+  ctbRenderStage();
+};
+window.ctbClearBg=function(){ _ctbDraft.bg_url=''; _ctbDraft.bg_blob=null; ctbRenderStage(); };
+/* ── 파일 선택 ── */
+window.ctbPickBg=function(){ _ctbFileMode='bg'; var f=_ctbEl('ctbFile'); if(f){ f.value=''; f.click(); } };
+window.ctbPickSticker=function(){ _ctbFileMode='sticker'; var f=_ctbEl('ctbFile'); if(f){ f.value=''; f.click(); } };
+function _ctbReadImage(file){
+  return new Promise(function(res,rej){
+    var r=new FileReader();
+    r.onload=function(e){ var im=new Image(); im.onload=function(){res(im);}; im.onerror=rej; im.src=e.target.result; };
+    r.onerror=rej; r.readAsDataURL(file);
+  });
+}
+/* 배경은 JPEG(작게), 스티커는 PNG(투명 유지) */
+async function _ctbToBlob(file, max, png){
+  var im=await _ctbReadImage(file);
+  var w=im.width, h=im.height;
+  if(w>h){ if(w>max){ h=h*max/w; w=max; } } else { if(h>max){ w=w*max/h; h=max; } }
+  var c=document.createElement('canvas'); c.width=Math.max(1,Math.round(w)); c.height=Math.max(1,Math.round(h));
+  c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+  return await new Promise(function(res){ c.toBlob(function(b){ res(b); }, png?'image/png':'image/jpeg', png?undefined:0.85); });
+}
+window.ctbFileChosen=async function(ev){
+  var f=ev&&ev.target&&ev.target.files&&ev.target.files[0]; if(!f)return;
+  try{
+    var isSticker=(_ctbFileMode==='sticker');
+    var blob=await _ctbToBlob(f, isSticker?520:1280, isSticker);
+    if(!blob){ toast('이미지를 읽지 못했어요'); return; }
+    var url=URL.createObjectURL(blob);
+    if(isSticker){
+      _ctbDraft.stickers.push({url:url, blob:blob, x:50, y:50, s:24, r:0});
+      _ctbSel=_ctbDraft.stickers.length-1;
+    }else{
+      _ctbDraft.bg_url=url; _ctbDraft.bg_blob=blob;
+    }
+    ctbRenderStage(); ctbSyncStickerCtl();
+  }catch(_){ toast('이미지를 읽지 못했어요'); }
+};
+/* ── 2단계: 색상·아이콘 ── */
+function ctbRenderPicks(){
+  var cp=_ctbEl('ctbColorPick');
+  if(cp){
+    cp.innerHTML=_ctbColorOptions().map(function(o){
+      var t=THEMES[o.theme]||THEMES.vintage;
+      var on=((_ctbDraft.color_theme||'')===(o.theme||''));
+      return '<button type="button" class="'+(on?'on':'')+'" onclick="ctbPickColor(\''+o.theme+'\')">'
+        +'<span class="ctb-sw"><i style="background:'+t.bg+'"></i><i style="background:'+t.accent+'"></i><i style="background:'+t.aP+'"></i></span>'
+        +'<span>'+escapeHtml(o.name)+'</span></button>';
+    }).join('');
+  }
+  var ip=_ctbEl('ctbIconPick');
+  if(ip){
+    ip.innerHTML=_ctbIconOptions().map(function(o){
+      var on=((_ctbDraft.icon_theme||'')===(o.key||''));
+      var thumb=o.img?('<span class="ctb-ic" style="background-image:url(\''+o.img+'\')"></span>'):'<span class="ctb-ic ctb-ic-none">◻︎</span>';
+      return '<button type="button" class="'+(on?'on':'')+'" onclick="ctbPickIcon(\''+o.key+'\')">'+thumb+'<span>'+escapeHtml(o.name)+'</span></button>';
+    }).join('');
+  }
+}
+window.ctbPickColor=function(t){ _ctbDraft.color_theme=t||''; ctbRenderPicks(); ctbApplyStageTheme(); };
+window.ctbPickIcon=function(k){ _ctbDraft.icon_theme=k||''; ctbRenderPicks(); };
+/* ── 저장 ── */
+async function _ctbUpload(blob, png){
+  var uid=_currentUser&&_currentUser.id; if(!uid) throw new Error('no user');
+  var path='themes/'+uid+'/'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+(png?'.png':'.jpg');
+  var r=await supa.storage.from('event-photos').upload(path, blob, {contentType:png?'image/png':'image/jpeg', upsert:false});
+  if(r.error) throw r.error;
+  var pub=supa.storage.from('event-photos').getPublicUrl(r.data.path);
+  return (pub&&pub.data&&pub.data.publicUrl)||'';
+}
+function _ctbSetSaving(on){
+  _ctbSaving=on;
+  var b=_ctbEl('ctbNextBtn'); if(b){ b.disabled=on; b.textContent=on?'저장 중…':(_ctbStep===1?'다음':'저장'); }
+}
+async function ctbSave(){
+  if(_ctbSaving)return;
+  if(!_currentUser){ toast('로그인이 필요해요'); return; }
+  _ctbSetSaving(true);
+  try{
+    if(_ctbDraft.bg_blob){ _ctbDraft.bg_url=await _ctbUpload(_ctbDraft.bg_blob,false); _ctbDraft.bg_blob=null; }
+    for(var i=0;i<_ctbDraft.stickers.length;i++){
+      var st=_ctbDraft.stickers[i];
+      if(st.blob){ st.url=await _ctbUpload(st.blob,true); st.blob=null; }
+    }
+    var row={
+      name:(_ctbDraft.name||'').trim()||'내 테마',
+      bg_url:_ctbDraft.bg_url||null,
+      bg_opacity:_ctOpacity(_ctbDraft.bg_opacity),
+      stickers:_ctbDraft.stickers.map(function(s){ return {url:s.url, x:s.x, y:s.y, s:s.s, r:s.r}; }),
+      color_theme:_ctbDraft.color_theme||null,
+      icon_theme:_ctbDraft.icon_theme||null
+    };
+    if(_ctbEditId){
+      row.updated_at=new Date().toISOString();
+      var u=await supa.from('custom_themes').update(row).eq('id',_ctbEditId);
+      if(u.error) throw u.error;
+    }else{
+      row.user_id=_currentUser.id;
+      var ins=await supa.from('custom_themes').insert(row);
+      if(ins.error) throw ins.error;
+    }
+    await loadCustomThemes();
+    closeCustomThemeBuilder();
+    try{ if(_storeCurrentTab==='theme') renderStoreThemes(); }catch(_){}
+    try{ if(document.getElementById('roomMascotCard').classList.contains('on')) renderRoomMascotPicker(); }catch(_){}
+    toast('테마를 저장했어요');
+  }catch(e){
+    toast('저장에 실패했어요 — 잠시 후 다시 시도해 주세요');
+  }finally{ _ctbSetSaving(false); }
+}
+window.ctbSave=ctbSave;
+async function deleteCustomTheme(id){
+  var c=_customThemeById(id); if(!c)return;
+  var ok=await vConfirm('‘'+(c.name||'내 테마')+'’를 삭제할까요?\n이 테마를 쓰던 방은 기본 테마로 돌아가요.', {title:'테마 삭제', okText:'삭제', cancelText:'취소', danger:true});
+  if(!ok)return;
+  try{
+    await supa.from('custom_themes').delete().eq('id',id);
+    // 이 테마를 쓰던 방들은 기본으로 되돌린다(안 그러면 빈 테마 키가 남아 아무것도 안 보임)
+    var key='custom:'+id;
+    if(_currentUser){ await supa.from('members').update({card_skin:null}).eq('user_id',_currentUser.id).eq('card_skin',key); }
+    Object.keys(_myCardSkinByRoom||{}).forEach(function(rid){ if(_myCardSkinByRoom[rid]===key) _myCardSkinByRoom[rid]=null; });
+    await loadCustomThemes();
+    try{ if(_storeCurrentTab==='theme') renderStoreThemes(); }catch(_){}
+    try{ if(typeof renderRooms==='function') renderRooms(); }catch(_){}
+    try{ if(_currentRoom) applyRoomThemeFor(_currentRoom.id); }catch(_){}
+    toast('삭제했어요');
+  }catch(_){ toast('삭제에 실패했어요'); }
+}
+window.deleteCustomTheme=deleteCustomTheme;
+/* 방 프로필 편집에서 커스텀 테마 선택 — 프로필(씰)은 건드리지 않고 테마만 바꾼다 */
+function pickCustomTheme(id){
+  if(!isEffectivePremium()){
+    showUpgradeModal({message:'나만의 테마는 프리미엄 전용이에요.', feature:'사진과 스티커로 만든 테마를 방마다 골라 쓸 수 있어요.'});
+    return;
+  }
+  _sealSet=null;
+  _cardSkin='custom:'+id;
+  try{ _preloadSkinScene(_cardSkin); }catch(_){}
+  renderRoomMascotPicker();
+  try{
+    if(_currentRoom&&_mascotRoomId===_currentRoom.id){
+      var th=_cardSkinTheme(_cardSkin)||_rmBaseTheme||_myTheme||'vintage';
+      if(THEMES[th]) applyTheme(th);
+    }
+  }catch(_){}
+  _autoSaveMascot();
+}
+window.pickCustomTheme=pickCustomTheme;
 function renderRoomThemeGrid(){
   // 이 방 테마(=스토어 테마)는 프리미엄 전용. 무료 유저는 섹션 자체를 숨김.
   const row=document.getElementById('uniRoomThemeRow');
