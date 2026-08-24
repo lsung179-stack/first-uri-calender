@@ -978,15 +978,8 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .rc-decor .rc-bg{position:absolute;inset:0;background-repeat:repeat;background-position:center;background-size:178px 178px;opacity:.24;pointer-events:none}
 /* 카드배경처럼 자연스러운 풀 씬 배경(타일 아님) — 캐릭터가 풍경에 녹아든 통짜 씬, 중앙 정렬(캐릭터 중앙), 옅게 */
 .rc-decor .rc-bg.rc-bg-scene{background-repeat:no-repeat;background-position:center 38%;background-size:auto 116%;opacity:.4}
-/* 심플 블랙&화이트 — 회색빛의 원인은 '선화'가 아니라 배경 이미지 자체의 바탕색이다.
-   (측정: 씬 없으면 255,255,255 / 씬 깔면 254,254,253 → 원래 opacity .4 면 249 까지 내려감)
-   그래서 옅게 깔아 숨기는 대신, contrast 로 near-white 바탕을 순백까지 밀어올려
-   '바탕은 완전한 흰색, 선은 검정'만 남긴다. 그러면 낙서를 진하게 해도 배경이 안 탁해진다.
-   grayscale 은 혹시 모를 색 끼(따뜻한 크림빛 등)까지 제거 — 흑백 테마라 어울린다. [2026-08-21] */
-body.rc-mono .rc-decor .rc-bg.rc-bg-scene{
-  opacity:.3;
-  filter:grayscale(1) contrast(1.8);
-}
+/* ⚠️ 커스텀 테마(사용자 사진)에는 테마별 배경 보정을 걸면 안 된다 — 아이콘 세트로 심플 블랙&화이트를
+   고르면 body 에 rc-mono 가 붙는데, 그때 사용자 사진까지 흑백이 되던 문제. .rc-bg-custom 로 제외. [2026-08-24] */
 /* 코코 씬 — 이미지 자체에 하단 마룻바닥이 있어 별도 위치보정/마감 불필요(공용 규칙 사용) */
 /* 방 캐릭터 테마 — 탭바/설정 색 틴트(제네릭, 모든 캐릭터) */
 body.rc-on .cal-tab{color:var(--aL)}
@@ -22986,7 +22979,8 @@ let _currentRoomTheme=null;
    대표 1종(두두 공룡)만 우선 구현 — 다른 캐릭터는 여기에 추가하면 자동 확장. */
 const ROOM_CHAR_THEME={
   // 심플 블랙&화이트 — 흰 바탕에 옅은 검정 낙서 배경(캐릭터 워터마크 없음: 참고 사진처럼 미니멀하게)
-  mono:{theme:'mono', cls:'rc-mono', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260818_151735_47d20eb6-2416-460e-b27a-6eeee1ed6392.png', bgScene:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260818_150825_02a132bd-4530-4e2a-99f6-bafdcfd71dd1_min.webp'},
+  /* 심플 블랙&화이트 — 배경 낙서를 옅게 깔면 흰 바탕이 탁해 보인다는 평이 많아 완전 흰색으로(장식 없음) [2026-08-24] */
+  mono:{theme:'mono', cls:'rc-mono', plain:true, mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260818_151735_47d20eb6-2416-460e-b27a-6eeee1ed6392.png'},
   a_dino:{theme:'dino', cls:'rc-dino', mascot:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260722_231336_caee7c1e-3f39-462e-b3ee-6b102cd3906e.png', bgScene:'https://d8j0ntlcm91z4.cloudfront.net/user_3EyeZao5gPjop5GdbH5lUnzm1RT/hf_20260725_113126_237cc54c-9934-4369-8f97-eb0edd1be434_min.webp', charInScene:true},
   // 동물 8종 — 색 테마 + 캐릭터 워터마크(캐릭터마다 다른 감정 스티커 재활용, 크레딧 0). 배경 씬·전용 아이콘은 추후 유료 단계.
   // (보리 강아지·호담 호랑이는 삭제됨 — 사용자 요청 2026-07-23)
@@ -23165,9 +23159,10 @@ function _applyRoomCharDecor(ct){
   var _bgScene = !!ct.bgScene;
   var _bgUrl = _bgScene ? ct.bgScene : (ct.bgSvg ? ('data:image/svg+xml,'+encodeURIComponent(ct.bgSvg)) : (ct.bg||''));
   // 씬 배경엔 하늘/구름/캐릭터가 이미 그려져 있으므로 별도 구름·워터마크 생략. charInScene면 캐릭터도 씬에만.
-  var _charWm = ct.mascot && !ct.charInScene && !_bgScene;
-  var _clouds = (_bgScene||ct.custom) ? '' : '<div class="rc-cloud rc-cloud1"></div><div class="rc-cloud rc-cloud2"></div>';
-  d.innerHTML=(_bgUrl?('<div class="rc-bg'+(_bgScene?' rc-bg-scene':'')+'"></div>'):'')+_clouds+(_charWm?'<div class="rc-char"></div>':'');
+  /* plain 테마(심플 블랙&화이트)는 배경 장식을 하나도 그리지 않는다 — 아이콘·색만 바뀐다 */
+  var _charWm = ct.mascot && !ct.charInScene && !_bgScene && !ct.plain;
+  var _clouds = (_bgScene||ct.custom||ct.plain) ? '' : '<div class="rc-cloud rc-cloud1"></div><div class="rc-cloud rc-cloud2"></div>';
+  d.innerHTML=(_bgUrl?('<div class="rc-bg'+(_bgScene?' rc-bg-scene':'')+(ct.custom?' rc-bg-custom':'')+'"></div>'):'')+_clouds+(_charWm?'<div class="rc-char"></div>':'');
   if(_bgUrl){ var bgEl=d.querySelector('.rc-bg'); if(bgEl) bgEl.style.backgroundImage='url("'+_bgUrl+'")'; }
   if(ct.mascot){ var c=d.querySelector('.rc-char'); if(c) c.style.backgroundImage='url("'+ct.mascot+'")'; document.body.style.setProperty('--rc-char-url','url("'+ct.mascot+'")'); }
   // 커스텀 테마 — 배경 진하기는 사용자가 정한 값, 스티커는 %좌표로 배치(화면 크기 무관)
