@@ -23355,8 +23355,20 @@ function ctbStageMove(e){
 }
 function ctbStageUp(e){
   if(e&&e.pointerId!=null) delete _ctbPtrs[e.pointerId];
-  if(_ctbPinchIds().length<2) _ctbPinch=null;
-  _ctbDrag=null;
+  var ids=_ctbPinchIds();
+  // 확대하다 한 손가락만 떼면 → 남은 손가락으로 곧바로 '이동'으로 이어진다(다시 잡을 필요 없음)
+  if(_ctbPinch && ids.length===1){
+    var was=_ctbPinch.target; _ctbPinch=null;
+    var st=_ctbEl('ctbStage'), p=_ctbPtrs[ids[0]];
+    if(st&&p){
+      if(was==='sticker'&&_ctbSel>=0) _ctbDrag={mode:'sticker', rect:st.getBoundingClientRect()};
+      else if(_ctbDraft.bg_url) _ctbDrag={mode:'bg', rect:st.getBoundingClientRect(), sx:p.x, sy:p.y,
+        bx:_ctNum(_ctbDraft.bg_x,50), by:_ctNum(_ctbDraft.bg_y,38)};
+    }
+    return;
+  }
+  if(ids.length<2) _ctbPinch=null;
+  if(ids.length===0) _ctbDrag=null;
 }
 function ctbSyncBgCtl(){
   var has=!!_ctbDraft.bg_url;
@@ -23558,8 +23570,16 @@ function _ctbWireSeal(){
   });
   var end=function(e){
     if(e&&e.pointerId!=null) delete _ctbSealPtrs[e.pointerId];
-    if(_ctbSealIds().length<2) _ctbSealPinch=null;
-    _ctbSealDrag=null;
+    var ids=_ctbSealIds();
+    // 확대하다 한 손가락만 떼면 → 남은 손가락으로 곧바로 이동
+    if(_ctbSealPinch && ids.length===1){
+      _ctbSealPinch=null;
+      var ph2=_ctbDraft&&_ctbDraft.seal_photo, p2=_ctbSealPtrs[ids[0]];
+      if(ph2&&p2) _ctbSealDrag={rect:sp.getBoundingClientRect(), sx:p2.x, sy:p2.y, x:_ctNum(ph2.x,50), y:_ctNum(ph2.y,50)};
+      return;
+    }
+    if(ids.length<2) _ctbSealPinch=null;
+    if(ids.length===0) _ctbSealDrag=null;
   };
   sp.addEventListener('pointerup',end);
   sp.addEventListener('pointercancel',end);
