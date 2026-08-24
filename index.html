@@ -3547,6 +3547,8 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
 .plan-toggle.on .plan-switch{background:rgba(255,255,255,.28);color:#fff}
 .plan-toggle.off .plan-switch{background:var(--mute);color:#fff}
 .uni-mini-btn{background:var(--aP);border:none;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:600;color:var(--accent);cursor:pointer;font-family:inherit;flex-shrink:0}
+/* 심플 블랙&화이트 — 옅은 회색 칩은 '비활성 버튼'처럼 보여 화면이 칙칙해진다. 또렷한 검정으로. [2026-08-25] */
+body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
 .uni-member-list{margin-top:2px}
 .uni-bottom{padding:8px 2px max(14px,env(safe-area-inset-bottom))}
 
@@ -9590,10 +9592,12 @@ function getDayHeaderInfo(year,month,day){
 /* ── 테마 시스템 (V2 8가지) ── */
 const THEMES={
   /* 심플 블랙&화이트 — 흰 바탕에 검정 선화 컨셉(2026-08-19, 사용자 참고사진) */
-  mono:{bg:'#ffffff',card:'#ffffff',text:'#1a1a1a',sub:'#8c8c8c',mute:'#c6c6c6',accent:'#1a1a1a',aL:'#4a4a4a',aP:'#f1f1f1',gold:'#8c8c8c',border:'rgba(0,0,0,.13)',borderL:'rgba(0,0,0,.07)',sun:'#e2604e',sat:'#4a7ad6',dotRGB:'26,26,26',
+  /* 심플 블랙&화이트 — 완전 중립(무채색) 회색은 흰 바탕에서 탁해 보인다('칙칙').
+     같은 밝기라도 아주 옅은 한색(파랑 쪽)을 섞으면 훨씬 맑고 밝게 읽힌다. [2026-08-25] */
+  mono:{bg:'#ffffff',card:'#ffffff',text:'#16181d',sub:'#7c828c',mute:'#bcc3cd',accent:'#16181d',aL:'#5b626d',aP:'#eaeff5',gold:'#8d94a1',border:'rgba(22,26,38,.10)',borderL:'rgba(22,26,38,.05)',sun:'#e2604e',sat:'#4a7ad6',dotRGB:'22,24,29',
     // 탭바도 순백 — 크림 반투명+채도부스트(saturate)를 쓰면 흰 바탕에서 회색빛이 돈다
-    'tabbar-bg':'#ffffff','tabbar-border':'rgba(0,0,0,.10)',
-    'tabbar-shadow':'0 6px 20px rgba(0,0,0,.10)','tabbar-filter':'none','tab-on-bg':'rgba(0,0,0,.06)'},
+    'tabbar-bg':'#ffffff','tabbar-border':'rgba(22,26,38,.09)',
+    'tabbar-shadow':'0 6px 20px rgba(22,26,38,.09)','tabbar-filter':'none','tab-on-bg':'rgba(22,26,38,.055)'},
   vintage:{bg:'#f3e6cf',card:'#fbf2e0',text:'#3a2418',sub:'#8a6a4d',mute:'#b8a285',accent:'#8b3a2a',aL:'#a85040',aP:'#e8d4be',gold:'#b08742',border:'rgba(139,58,42,.18)',borderL:'rgba(139,58,42,.10)',sun:'#8b3a2a',sat:'#3a5a8b',dotRGB:'139,58,42'},
   lavender:{bg:'#efebfb',card:'#ffffff',text:'#1e1c25',sub:'#7e7090',mute:'#b5acc4',accent:'#9b7fc7',aL:'#b49ad4',aP:'#e2d3fc',gold:'#b08742',border:'rgba(200,190,220,.4)',borderL:'rgba(200,190,220,.22)',sun:'#d47090',sat:'#7090d4',dotRGB:'155,127,199'},
   peach:{bg:'#fff2e6',card:'#ffffff',text:'#2a1d18',sub:'#8a6850',mute:'#c5a895',accent:'#e0855a',aL:'#e8a880',aP:'#ffe3ce',gold:'#b08742',border:'rgba(230,200,180,.4)',borderL:'rgba(230,200,180,.22)',sun:'#d47060',sat:'#6080c8',dotRGB:'224,133,90'},
@@ -9885,6 +9889,9 @@ const TABBAR_DEFAULTS={
 function applyTheme(name){
   const t=THEMES[name]||THEMES.vintage;
   const r=document.documentElement;
+  /* 팔레트 이름을 body 에 남긴다 — 테마별 손질은 이걸로 스코프해야 정확하다.
+     (아이콘 세트 클래스 rc-<cls> 로 잡으면 '아이콘만 다른 테마' 조합에서 색이 어긋난다) [2026-08-25] */
+  try{ document.body.setAttribute('data-theme', THEMES[name]?name:'vintage'); }catch(_){}
   // 먼저 기본값을 깔고, 아래 루프에서 테마가 가진 값만 덮어쓴다
   Object.keys(TABBAR_DEFAULTS).forEach(k=>r.style.setProperty('--'+k, TABBAR_DEFAULTS[k]));
   // 라이트 모드 강제 — 시스템 다크모드와 무관
