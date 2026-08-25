@@ -932,10 +932,17 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .rm-bigprev.seal-photo:active{cursor:grabbing}
 /* 커스텀 테마 스티커 — 좌표·크기가 % 라서 화면 크기가 달라도 같은 자리에 붙는다 */
 /* 스토어 스티커 탭 히어로 — 외부 이미지 없이 CSS만 */
-.store-sticker-hero{border-radius:16px;padding:16px 18px;margin-bottom:16px;background:linear-gradient(120deg,#3a2b40 0%,#6b4a5c 55%,#a8756a 100%);box-shadow:0 6px 18px rgba(0,0,0,.16)}
+.store-sticker-hero{border-radius:16px;padding:16px 18px;margin-bottom:16px;background:linear-gradient(145deg,#3a2b40 0%,#5f4256 45%,#7e5257 100%);box-shadow:0 6px 18px rgba(0,0,0,.16)}
 .store-sticker-hero .sfh-eyebrow{color:#f0c98a}
 .store-sticker-hero .sfh-title,.store-sticker-hero .sfh-desc{color:#fff}
 .store-sticker-hero .sfh-desc{opacity:.85}
+/* 히어로 안 사용법 — 아래에 따로 있던 한 줄 힌트를 여기로 합쳤다 [2026-08-25] */
+.sfh-steps{margin-top:13px;padding-top:12px;border-top:1px solid rgba(255,255,255,.18);display:flex;flex-direction:column;gap:9px}
+.sfh-step{display:flex;align-items:flex-start;gap:9px}
+.sfh-num{flex:none;width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,.9);color:#3a2b40;font-size:10.5px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.sfh-stxt{flex:1;min-width:0;font-size:12px;line-height:1.55;color:#fff;opacity:.88}
+.sfh-stxt b{font-weight:800;opacity:1}
+.sfh-note{margin-top:11px;font-size:10.5px;line-height:1.5;color:#f0c98a;opacity:.9}
 .store-stgrid{max-height:none;overflow:visible;margin-bottom:14px}
 /* 스티커 묶음 탭 + 내가 붙인 목록 */
 .rs-packtabs{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 8px;-webkit-overflow-scrolling:touch}
@@ -21361,7 +21368,13 @@ function renderStoreStickers(){
   let html=`<div class="store-sticker-hero">
     <div class="sfh-eyebrow">NEW &middot; STICKER</div>
     <div class="sfh-title">배경에 붙이는 스티커</div>
-    <div class="sfh-desc">쓰고 싶은 묶음을 골라두면 달력 스티커 탭에 나타나요</div>
+    <div class="sfh-desc">우리 방 달력 배경 위에 마음껏 꾸며보세요</div>
+    <div class="sfh-steps">
+      <div class="sfh-step"><span class="sfh-num">1</span><span class="sfh-stxt"><b>묶음 고르기</b> — 아래에서 쓰고 싶은 묶음의 <b>사용하기</b>를 눌러요.</span></div>
+      <div class="sfh-step"><span class="sfh-num">2</span><span class="sfh-stxt"><b>배경에 붙이기</b> — 달력에서 날짜를 열고 오른쪽 위 <b>태그 버튼</b> → <b>스티커 탭</b>에서 원하는 스티커를 탭해요.</span></div>
+      <div class="sfh-step"><span class="sfh-num">3</span><span class="sfh-stxt"><b>자리 잡기</b> — <b>달력에서 옮기기</b>를 누르면 달력 위에서 끌어 옮기고, 두 손가락으로 크기를 바꿀 수 있어요. 다 되면 <b>완료</b>.</span></div>
+    </div>
+    <div class="sfh-note">내 화면에만 보여요 &middot; 방마다 따로 저장 &middot; 한 방에 20개까지</div>
   </div>`;
   html+='<div class="store-section-title">스티커 묶음 <small>STICKER PACKS</small></div>';
   html+=packs.map(function(p){
@@ -21382,7 +21395,6 @@ function renderStoreStickers(){
       +'<div class="rsp-prev">'+prev+'</div></div>'
       +'<div class="ep-act">'+btn+'</div></div>';
   }).join('');
-  html+='<div class="dh-hint">사용하기를 누르면 달력 화면의 스티커 탭에 그 묶음이 나타나요. 거기서 골라 붙이고, 위치는 끌어서 옮길 수 있어요.</div>';
   body.innerHTML=html;
 }
 function setStoreTab(tab){
