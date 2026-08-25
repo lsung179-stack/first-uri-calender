@@ -22819,7 +22819,12 @@ window.rsRemoveAt=async function(i){
 };
 window.rsEditFromManage=function(){
   if(!_roomStickers().length){ toast('먼저 스티커를 골라주세요'); return; }
-  closeDhManage(); setTimeout(function(){ startRoomStickerEdit(); }, 220);
+  closeDhManage();
+  /* 이 시트는 '날짜 시트' 위에서 열린다 → 그것까지 닫아야 달력이 온전히 보인다.
+     안 닫으면 편집 모드로 들어가도 아래 절반을 날짜 목록이 가린다. [2026-08-25] */
+  try{ if(document.getElementById('dpCard').classList.contains('on')) closeDateSheet(); }catch(_){}
+  try{ calTabSwitch('cal'); }catch(_){}
+  setTimeout(function(){ startRoomStickerEdit(); }, 260);
 };
 function _dhmRangeText(h){
   return (h.start_date===h.end_date)
