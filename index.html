@@ -931,6 +931,33 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .rm-bigprev.seal-photo{cursor:grab;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08),0 4px 12px rgba(60,40,25,.2)}
 .rm-bigprev.seal-photo:active{cursor:grabbing}
 /* 커스텀 테마 스티커 — 좌표·크기가 % 라서 화면 크기가 달라도 같은 자리에 붙는다 */
+/* 스토어 스티커 탭 히어로 — 외부 이미지 없이 CSS만 */
+.store-sticker-hero{border-radius:16px;padding:16px 18px;margin-bottom:16px;background:linear-gradient(120deg,#3a2b40 0%,#6b4a5c 55%,#a8756a 100%);box-shadow:0 6px 18px rgba(0,0,0,.16)}
+.store-sticker-hero .sfh-eyebrow{color:#f0c98a}
+.store-sticker-hero .sfh-title,.store-sticker-hero .sfh-desc{color:#fff}
+.store-sticker-hero .sfh-desc{opacity:.85}
+.store-stgrid{max-height:none;overflow:visible;margin-bottom:14px}
+/* 스티커 묶음 탭 + 내가 붙인 목록 */
+.rs-packtabs{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 8px;-webkit-overflow-scrolling:touch}
+.rs-packtab{flex:none;background:var(--aP);border:1px solid var(--borderL);border-radius:999px;padding:6px 13px;font-family:inherit;font-size:12px;font-weight:700;color:var(--sub);cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.rs-packtab.on{background:var(--accent);color:var(--card);border-color:var(--accent)}
+.rs-mine{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;-webkit-overflow-scrolling:touch}
+.rs-mine-cell{flex:none;width:62px;background:var(--aP);border:1px solid var(--borderL);border-radius:13px;padding:6px 4px 5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;-webkit-tap-highlight-color:transparent}
+.rs-mine-cell i{display:block;width:100%;aspect-ratio:1/1;background:no-repeat center/contain}
+.rs-mine-cell span{font-size:10px;font-weight:700;color:#c0503f}
+.rs-empty{font-size:12px;color:var(--sub);background:var(--aP);border-radius:11px;padding:12px;text-align:center;width:100%}
+/* 방 배경 스티커(개인) — 평소엔 콘텐츠 뒤, 편집 모드에서만 위로 올라와 잡힌다 */
+.rs-layer{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.rs-layer.editing{z-index:60;pointer-events:auto;touch-action:none;background:rgba(0,0,0,.04)}
+.rs-sticker{position:absolute;aspect-ratio:1/1;background:no-repeat center/contain;pointer-events:none}
+.rs-layer.editing .rs-sticker{pointer-events:auto;cursor:grab}
+.rs-layer.editing .rs-sticker.on{outline:2px dashed var(--accent);outline-offset:3px;border-radius:6px}
+.rs-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 18px);z-index:1600;display:none;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:8px 10px 8px 16px;box-shadow:0 8px 24px rgba(0,0,0,.18);max-width:calc(100vw - 24px)}
+.rs-bar.on{display:flex}
+.rs-bar-hint{font-size:11.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.rs-bar-del,.rs-bar-done{flex:none;white-space:nowrap;border:none;border-radius:999px;font-family:inherit;font-size:12.5px;font-weight:700;padding:7px 14px;cursor:pointer}
+.rs-bar-del{background:var(--aP);color:#c0503f}
+.rs-bar-done{background:var(--accent);color:var(--card)}
 .rc-decor .rc-sticker{position:absolute;aspect-ratio:1/1;background-repeat:no-repeat;background-position:center;background-size:contain;pointer-events:none}
 /* 스토어 '나만의 테마' 배너 — 이미지 없이 CSS만(외부 CDN 의존 0) */
 .store-custom-hero{position:relative;display:flex;align-items:center;justify-content:space-between;gap:10px;overflow:hidden;border-radius:16px;padding:16px 18px;margin-bottom:16px;background:linear-gradient(120deg,#2f2a3d 0%,#4a3a52 52%,#7a5a5e 100%);box-shadow:0 6px 18px rgba(0,0,0,.16)}
@@ -4431,6 +4458,9 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
         <button type="button" class="dhm-tab on" data-dhmtab="dh" onclick="setDhmTab('dh')" aria-label="날짜 강조" title="날짜 강조">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.2" y="5" width="17.6" height="15.5" rx="2.4" stroke="currentColor" stroke-width="1.8"/><path d="M3.2 9.4h17.6" stroke="currentColor" stroke-width="1.8"/><path d="M7.8 3.2v3.4M16.2 3.2v3.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="6.6" y="12" width="6.4" height="5.2" rx="1.1" fill="currentColor"/></svg>
         </button>
+        <button type="button" class="dhm-tab" data-dhmtab="sticker" onclick="setDhmTab('sticker')" aria-label="스티커" title="스티커">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M14.4 3.4H6.6A2.6 2.6 0 0 0 4 6v12a2.6 2.6 0 0 0 2.6 2.6h5.1L20.6 12V6a2.6 2.6 0 0 0-2.6-2.6h-3.6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M11.7 20.6v-5a3.6 3.6 0 0 1 3.6-3.6h5.3" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="9" cy="8.6" r="1.3" fill="currentColor"/><circle cx="15" cy="8.6" r="1.3" fill="currentColor"/></svg>
+        </button>
       </div>
       <button type="button" class="dhm-store" onclick="openStoreFromDhManage()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8.5h16l-1.1 10.1a1.6 1.6 0 0 1-1.6 1.4H6.7a1.6 1.6 0 0 1-1.6-1.4L4 8.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.7 11V7.8a3.3 3.3 0 0 1 6.6 0V11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
@@ -4447,6 +4477,14 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
     </div>
     <div class="dhm-list" id="dhmOtherList"></div>
     <button type="button" class="dhm-add" onclick="openDhFromManage()">+ 날짜 강조 추가</button>
+  </div>
+  <div id="dhmPanelSticker" style="display:none">
+    <div class="dhm-sec">이 방 배경에 붙인 스티커</div>
+    <div class="rs-mine" id="dhmStickerMine"></div>
+    <div class="dhm-sec">스티커 고르기</div>
+    <div class="rs-packtabs" id="dhmStickerPacks"></div>
+    <div class="ctb-stgrid" id="dhmStickerGrid"></div>
+    <button type="button" class="dhm-add" onclick="rsEditFromManage()">달력에서 옮기기</button>
   </div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeDhManage()">닫기</button>
@@ -5670,6 +5708,7 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
     <button class="store-tab" data-tab="text" onclick="setStoreTab('text')">텍스트</button>
     <button class="store-tab" data-tab="emoji" onclick="setStoreTab('emoji')">이모지</button>
     <button class="store-tab" data-tab="emphasis" onclick="setStoreTab('emphasis')">강조</button>
+    <button class="store-tab" data-tab="sticker" id="storeTabSticker" onclick="setStoreTab('sticker')" style="display:none">스티커</button>
     <!-- 달력 주문 임시 숨김 (2026-07-21, 요청) — 되돌리려면 style 제거 -->
     <button class="store-tab" data-tab="calorder" onclick="setStoreTab('calorder')" style="display:none">달력 주문</button>
   </div>
@@ -6457,7 +6496,7 @@ function showScreen(id){
   // 인증 화면(로그인 전)에선 광고 숨김, 메인 화면이면 정상 판정에 맡김
   try{
     const _authScreens=['welcomeScreen','emailScreen','otpScreen','resetScreen'];
-    if(_authScreens.indexOf(id)>=0){ if(typeof hideAdBanner==='function') hideAdBanner(); if(typeof _clearRoomCharDecor==='function') _clearRoomCharDecor(); }
+    if(_authScreens.indexOf(id)>=0){ if(typeof hideAdBanner==='function') hideAdBanner(); if(typeof _clearRoomCharDecor==='function') _clearRoomCharDecor(); try{ var _rl=document.getElementById('roomStickers'); if(_rl)_rl.remove(); }catch(_){} }
     else { if(typeof showAdBannerIfNeeded==='function') showAdBannerIfNeeded(); }
   }catch(_){}
 }
@@ -7946,11 +7985,11 @@ async function loadRooms(){
   try{
     // 내가 속한 방들의 room_id + 내 순서(sort_order) 가져오기
     const {data:myMems,error:e1}=await supa
-      .from('members').select('room_id,sort_order,seal,card_skin,seal_photo')
+      .from('members').select('room_id,sort_order,seal,card_skin,seal_photo,stickers')
       .eq('user_id',_currentUser.id);
     if(e1)throw e1;
-    _mySealByRoom={}; _myCardSkinByRoom={}; _mySealPhotoByRoom={};
-    (myMems||[]).forEach(function(m){ _mySealByRoom[m.room_id]=m.seal||null; _myCardSkinByRoom[m.room_id]=m.card_skin||null; _mySealPhotoByRoom[m.room_id]=m.seal_photo||null; });
+    _mySealByRoom={}; _myCardSkinByRoom={}; _mySealPhotoByRoom={}; _myStickersByRoom={};
+    (myMems||[]).forEach(function(m){ _mySealByRoom[m.room_id]=m.seal||null; _myCardSkinByRoom[m.room_id]=m.card_skin||null; _mySealPhotoByRoom[m.room_id]=m.seal_photo||null; _myStickersByRoom[m.room_id]=Array.isArray(m.stickers)?m.stickers:[]; });
     // 커스텀 테마는 방 카드/입장 테마보다 먼저 있어야 한다(없으면 custom: 키가 해석 안 돼 기본으로 보임)
     try{ await loadCustomThemes(); }catch(_){}
     try{ _preloadRoomScenes(); }catch(_){}   // 방 입장 전에 각 방 배경씬 미리 캐시(입장 즉시 표시)
@@ -8469,6 +8508,7 @@ function enterRoom(roomId){
 function exitRoom(){
   const _lastId=_currentRoom&&_currentRoom.id;      // 마지막 입장 방 (테마 유지용)
   const _lastTheme=_currentRoomTheme;               // 마지막 방 테마(색) — 깜빡임 없이 즉시 유지
+  try{ endRoomStickerEdit(); }catch(_){}            // 배경 스티커 편집 중이었으면 정리
   _currentRoom=null;
   _events={};
   _viewingMember='all';  // 멤버 뷰도 리셋
@@ -16962,7 +17002,7 @@ function _sealInner(mascotVal, roomName, photo){
   return '<div class="r-card-seal has-seal seal-'+p.color+'">'+_sealGlyph(p.sym, roomName)+'</div>';
 }
 
-let _mascotRoomId=null, _mascotRoomName='', _sealColor='terra', _sealSym='ini', _sealSet=null, _sealHad=false, _sealCustomPicked=false, _mySealByRoom={}, _cardSkin=null, _myCardSkinByRoom={}, _rmBaseTheme=null, _mySealPhotoByRoom={}, _sealPhoto=null;
+let _mascotRoomId=null, _mascotRoomName='', _sealColor='terra', _sealSym='ini', _sealSet=null, _sealHad=false, _sealCustomPicked=false, _mySealByRoom={}, _cardSkin=null, _myCardSkinByRoom={}, _rmBaseTheme=null, _mySealPhotoByRoom={}, _sealPhoto=null, _myStickersByRoom={};
 function openRoomMascotForRoom(roomId){
   const room=(_myRooms||[]).find(function(r){return r.id===roomId})
     || ((_currentRoom&&_currentRoom.id===roomId)?_currentRoom:null);
@@ -21284,6 +21324,8 @@ function openStore(){
   // 스토어는 방 캐릭터 테마(초록 등) 말고 원래(개인 기본) 테마 색으로 — 카드 배경은 각 항목이 자체 이미지로 보여줌
   try{ applyTheme(_myTheme||'vintage'); }catch(_){}
   renderTrialBanner();
+  /* 스티커 탭도 커스텀 꾸미기와 같은 게이트 — 정식 공개 시 _ctbVisible() 만 풀면 된다 */
+  try{ var _stb=document.getElementById('storeTabSticker'); if(_stb)_stb.style.display=_ctbVisible()?'':'none'; }catch(_){}
   setStoreTab('theme');
   document.getElementById('storeCard').classList.add('on');
   _subScreenEnter();
@@ -21295,6 +21337,30 @@ function closeStore(){
   // 닫으면 방 캐릭터 테마 색 복원
   try{ applyTheme(_currentRoomTheme||_myTheme||'vintage'); }catch(_){}
 }
+/* 스토어 '스티커' 탭 — 테마별로 묶어서 보여주고, 방에 들어와 있으면 탭해서 바로 붙인다 */
+function renderStoreStickers(){
+  const body=document.getElementById('storeBody');
+  if(!body)return;
+  const packs=_stickerPacks();
+  let html=`<div class="store-sticker-hero">
+    <div class="sfh-eyebrow">NEW &middot; STICKER</div>
+    <div class="sfh-title">배경에 붙이는 스티커</div>
+    <div class="sfh-desc">우리 방 배경 위에 마음껏 붙여요 &middot; 총 ${packs.reduce((n,p)=>n+p.items.length,0)}종</div>
+  </div>`;
+  packs.forEach(function(p){
+    html+='<div class="store-section-title">'+escapeHtml(p.n)+' <small>'+p.items.length+'종</small></div>';
+    html+='<div class="ctb-stgrid store-stgrid">'+p.items.map(function(it){
+      return '<button type="button" class="ctb-stcell" onclick="storeAddSticker(&quot;'+it.u+'&quot;)">'
+        +'<i style="background-image:url(&quot;'+it.u+'&quot;)"></i><span>'+escapeHtml(it.n)+'</span></button>';
+    }).join('')+'</div>';
+  });
+  html+='<div class="dh-hint">스티커를 탭하면 지금 들어와 있는 방 배경에 붙어요. 위치는 달력에서 끌어 옮길 수 있어요.</div>';
+  body.innerHTML=html;
+}
+window.storeAddSticker=function(url){
+  if(!_currentRoom){ toast('방에 들어가서 붙일 수 있어요'); return; }
+  if(addRoomSticker(url)) toast('배경에 붙였어요 · 달력에서 옮길 수 있어요');
+};
 function setStoreTab(tab){
   // ⚠️ 스크롤 리셋은 '그리기 전'에 — 새로 그린 뒤 scrollTop을 쓰면 방금 만든 DOM의
   //    레이아웃을 강제로 계산하게 돼 탭 전환이 한 프레임 끊긴다(측정: 탭당 ~11ms). [2026-08-19 성능]
@@ -21309,6 +21375,7 @@ function setStoreTab(tab){
   else if(tab==='text')renderStoreText();
   else if(tab==='emoji')renderStoreEmoji();
   else if(tab==='emphasis')renderStoreEmphasis();
+  else if(tab==='sticker')renderStoreStickers();
   else if(tab==='calorder')renderCalOrder();
 }
 
@@ -22662,12 +22729,57 @@ function closeDhManage(){
 /* 지금은 '날짜 강조' 탭 하나뿐 — 기능이 늘면 여기에 패널 id를 추가한다. */
 function setDhmTab(tab){
   _dhmTab=tab||'dh';
+  /* 스티커 탭은 아직 관리자 전용 — 안 보이면 항상 '날짜 강조'로 */
+  try{ var _stb=document.querySelector('#dhManageCard .dhm-tab[data-dhmtab="sticker"]');
+       if(_stb){ _stb.style.display=_ctbVisible()?'':'none'; if(!_ctbVisible()&&_dhmTab==='sticker')_dhmTab='dh'; } }catch(_){}
   document.querySelectorAll('#dhManageCard .dhm-tab').forEach(b=>{
     b.classList.toggle('on', b.dataset.dhmtab===_dhmTab);
   });
   const p=document.getElementById('dhmPanelDh');
   if(p)p.style.display=(_dhmTab==='dh')?'':'none';
+  const sp=document.getElementById('dhmPanelSticker');
+  if(sp)sp.style.display=(_dhmTab==='sticker')?'':'none';
+  if(_dhmTab==='sticker') renderDhmStickers();
 }
+/* ── 시트의 스티커 탭 ── */
+var _rsPack='basic';
+function renderDhmStickers(){
+  var mine=document.getElementById('dhmStickerMine');
+  if(mine){
+    var list=_roomStickers();
+    mine.innerHTML = list.length
+      ? list.map(function(st,i){
+          return '<button type="button" class="rs-mine-cell" onclick="rsRemoveAt('+i+')" title="탭하면 뗍니다">'
+            +'<i style="background-image:url(&quot;'+st.url+'&quot;)"></i><span>떼기</span></button>'; }).join('')
+      : '<div class="rs-empty">아직 붙인 스티커가 없어요</div>';
+  }
+  var packs=_stickerPacks();
+  if(!packs.some(function(p){ return p.k===_rsPack; })) _rsPack='basic';
+  var tabs=document.getElementById('dhmStickerPacks');
+  if(tabs){
+    tabs.innerHTML=packs.map(function(p){
+      return '<button type="button" class="rs-packtab'+(p.k===_rsPack?' on':'')+'" onclick="setRsPack(\''+p.k+'\')">'+escapeHtml(p.n)+'</button>'; }).join('');
+  }
+  var grid=document.getElementById('dhmStickerGrid');
+  if(grid){
+    var pk=packs.filter(function(p){ return p.k===_rsPack; })[0]||packs[0];
+    grid.innerHTML=(pk?pk.items:[]).map(function(it){
+      return '<button type="button" class="ctb-stcell" onclick="rsAddFromSheet(&quot;'+it.u+'&quot;)">'
+        +'<i style="background-image:url(&quot;'+it.u+'&quot;)"></i><span>'+escapeHtml(it.n)+'</span></button>'; }).join('');
+  }
+}
+window.setRsPack=function(k){ _rsPack=k; renderDhmStickers(); };
+window.rsAddFromSheet=function(url){ if(addRoomSticker(url)) toast('배경에 붙였어요 · 달력에서 옮길 수 있어요'); renderDhmStickers(); };
+window.rsRemoveAt=function(i){
+  var list=_roomStickers();
+  if(i<0||i>=list.length)return;
+  list.splice(i,1); _rsSel=-1;
+  renderRoomStickers(); renderDhmStickers(); _rsSaveSoon();
+};
+window.rsEditFromManage=function(){
+  if(!_roomStickers().length){ toast('먼저 스티커를 골라주세요'); return; }
+  closeDhManage(); setTimeout(function(){ startRoomStickerEdit(); }, 220);
+};
 function _dhmRangeText(h){
   return (h.start_date===h.end_date)
     ? _fmtMD(h.start_date)
@@ -23095,6 +23207,153 @@ function _refreshPremiumGatedUI(){
     else if(typeof applyTheme==='function') applyTheme(_effTheme(typeof _myTheme!=='undefined'?_myTheme:'vintage'));
   }catch(_){}
 }
+/* ══ 방 배경 스티커(개인) ══
+   ⚠️ 테마 데코(#rcDecor)와 별개 레이어다 — 테마를 바꿔도, 테마가 아예 없어도 그대로 남는다.
+   평소엔 콘텐츠 뒤(z-index:0)에 pointer-events:none 로 깔리고, 편집 모드에서만 위로 올라와 잡힌다. */
+var _rsEdit=false, _rsSel=-1, _rsSaveTimer=null, _rsDrag=null, _rsPtrs={}, _rsPinch=null, _rsWired=false;
+function _roomStickers(){
+  if(!_currentRoom) return [];
+  var a=(_myStickersByRoom||{})[_currentRoom.id];
+  if(!Array.isArray(a)){ a=[]; if(_currentRoom) (_myStickersByRoom=_myStickersByRoom||{})[_currentRoom.id]=a; }
+  return a;
+}
+function renderRoomStickers(){
+  var host=document.querySelector('.app'); if(!host) return;
+  var layer=document.getElementById('roomStickers');
+  var list=_roomStickers();
+  if(!_currentRoom || (!list.length && !_rsEdit)){ if(layer) layer.remove(); return; }
+  if(!layer){
+    layer=document.createElement('div'); layer.id='roomStickers'; layer.className='rs-layer';
+    var decor=document.getElementById('rcDecor');
+    if(decor && decor.nextSibling) host.insertBefore(layer, decor.nextSibling);
+    else if(decor) host.appendChild(layer);
+    else host.insertBefore(layer, host.firstChild);
+  }
+  layer.classList.toggle('editing', !!_rsEdit);
+  layer.innerHTML=list.map(function(st,i){
+    return '<div class="rs-sticker'+(_rsEdit&&i===_rsSel?' on':'')+'" data-i="'+i+'" style="left:'+_ctNum(st.x,50)+'%;top:'+_ctNum(st.y,50)+'%;width:'+_ctNum(st.s,20)+'%;'
+      +'transform:translate(-50%,-50%) rotate('+_ctNum(st.r,0)+'deg);background-image:url(&quot;'+st.url+'&quot;)"></div>';
+  }).join('');
+  _rsWire();
+}
+function _rsSaveSoon(){
+  if(_rsSaveTimer) clearTimeout(_rsSaveTimer);
+  _rsSaveTimer=setTimeout(function(){
+    _rsSaveTimer=null;
+    if(!_currentRoom||!_currentUser) return;
+    var list=_roomStickers().map(function(st){ return {url:st.url, x:st.x, y:st.y, s:st.s, r:st.r}; });
+    supa.from('members').update({stickers:list})
+      .eq('room_id',_currentRoom.id).eq('user_id',_currentUser.id)
+      .then(function(res){ if(res&&res.error) console.warn('스티커 저장 실패',res.error); });
+  }, 500);
+}
+/* 편집 모드 — 실제 달력 화면 위에서 끌어 옮기고 두 손가락으로 확대 */
+window.startRoomStickerEdit=function(){
+  if(!_currentRoom){ toast('방에 먼저 들어가 주세요'); return; }
+  _rsEdit=true; _rsSel=_roomStickers().length?0:-1;
+  try{ hideTabbar(); }catch(_){}      // 아래 막대가 탭바와 겹치지 않게
+  renderRoomStickers(); _rsSyncBar();
+};
+window.endRoomStickerEdit=function(){
+  _rsEdit=false; _rsSel=-1; _rsDrag=null; _rsPtrs={}; _rsPinch=null;
+  try{ showTabbar(); }catch(_){}
+  renderRoomStickers(); _rsSyncBar();
+};
+window.rsDeleteSelected=function(){
+  var list=_roomStickers();
+  if(_rsSel<0||_rsSel>=list.length){ toast('옮길 스티커를 먼저 탭해주세요'); return; }
+  list.splice(_rsSel,1);
+  _rsSel=list.length?Math.min(_rsSel,list.length-1):-1;
+  renderRoomStickers(); _rsSyncBar(); _rsSaveSoon();
+};
+function _rsSyncBar(){
+  var bar=document.getElementById('rsBar');
+  if(!_rsEdit){ if(bar) bar.classList.remove('on'); return; }
+  if(!bar){
+    bar=document.createElement('div'); bar.id='rsBar'; bar.className='rs-bar';
+    bar.innerHTML='<span class="rs-bar-hint">끌어서 옮기고, 두 손가락으로 확대·축소</span>'
+      +'<button type="button" class="rs-bar-del" onclick="rsDeleteSelected()">삭제</button>'
+      +'<button type="button" class="rs-bar-done" onclick="endRoomStickerEdit()">완료</button>';
+    document.body.appendChild(bar);
+  }
+  bar.classList.add('on');
+}
+/* 잡은 지점을 기억해 순간이동 없이 상대 이동(테마 만들기와 같은 방식) */
+function _rsGrab(layer,px,py){
+  var r=layer.getBoundingClientRect(), st=_roomStickers()[_rsSel]||{};
+  return {rect:r, ox:_ctNum(st.x,50)-((px-r.left)/r.width)*100, oy:_ctNum(st.y,50)-((py-r.top)/r.height)*100};
+}
+function _rsIds(){ return Object.keys(_rsPtrs); }
+function _rsWire(){
+  var layer=document.getElementById('roomStickers'); if(!layer||_rsWired) return;
+  _rsWired=true;
+  layer.addEventListener('pointerdown',function(e){
+    if(!_rsEdit) return;
+    var t=(e.target&&e.target.closest)?e.target.closest('.rs-sticker'):null;
+    _rsPtrs[e.pointerId]={x:e.clientX,y:e.clientY};
+    var ids=_rsIds();
+    if(ids.length>=2){
+      if(_rsSel<0) return;
+      _rsPinch={ d0:_ctPinchDist(_rsPtrs[ids[0]],_rsPtrs[ids[1]]), s0:_ctNum((_roomStickers()[_rsSel]||{}).s,20) };
+      _rsDrag=null; e.preventDefault(); return;
+    }
+    if(!t) return;
+    _rsSel=Number(t.getAttribute('data-i'));
+    renderRoomStickers();
+    var lay=document.getElementById('roomStickers');
+    _rsDrag=_rsGrab(lay,e.clientX,e.clientY);
+    try{ lay.setPointerCapture(e.pointerId); }catch(_){}
+    e.preventDefault();
+  });
+  layer.addEventListener('pointermove',function(e){
+    if(!_rsEdit) return;
+    if(_rsPtrs[e.pointerId]) _rsPtrs[e.pointerId]={x:e.clientX,y:e.clientY};
+    var st=_roomStickers()[_rsSel];
+    if(_rsPinch){
+      var ids=_rsIds();
+      if(ids.length>=2&&st){
+        var ratio=_ctPinchDist(_rsPtrs[ids[0]],_rsPtrs[ids[1]])/_rsPinch.d0;
+        st.s=Math.max(5,Math.min(80,Math.round(_rsPinch.s0*ratio*10)/10));
+        renderRoomStickers(); e.preventDefault();
+      }
+      return;
+    }
+    if(!_rsDrag||!st) return;
+    var r=_rsDrag.rect;
+    st.x=Math.max(0,Math.min(100,Math.round((((e.clientX-r.left)/r.width)*100+_ctNum(_rsDrag.ox,0))*10)/10));
+    st.y=Math.max(0,Math.min(100,Math.round((((e.clientY-r.top)/r.height)*100+_ctNum(_rsDrag.oy,0))*10)/10));
+    renderRoomStickers(); e.preventDefault();
+  });
+  var up=function(e){
+    if(e&&e.pointerId!=null) delete _rsPtrs[e.pointerId];
+    var ids=_rsIds();
+    // 확대하다 한 손가락만 떼면 곧바로 이동으로 이어진다
+    if(_rsPinch&&ids.length===1){
+      _rsPinch=null;
+      var lay=document.getElementById('roomStickers'), p=_rsPtrs[ids[0]];
+      if(lay&&p&&_rsSel>=0) _rsDrag=_rsGrab(lay,p.x,p.y);
+      _rsSaveSoon(); return;
+    }
+    if(ids.length<2) _rsPinch=null;
+    if(ids.length===0){ _rsDrag=null; _rsSaveSoon(); }
+  };
+  layer.addEventListener('pointerup',up);
+  layer.addEventListener('pointercancel',up);
+}
+/* 스티커 붙이기 — 스토어·시트 공용 */
+window.addRoomSticker=function(url){
+  if(!_currentRoom){ toast('방에 먼저 들어가 주세요'); return false; }
+  if(!isEffectivePremium()){
+    showUpgradeModal({message:'🧸 배경을 스티커로 꾸며볼까요?', feature:'프리미엄이면 방 배경에 원하는 스티커를 마음껏 붙일 수 있어요.'});
+    return false;
+  }
+  var list=_roomStickers();
+  if(list.length>=20){ toast('스티커는 한 방에 20개까지예요'); return false; }
+  list.push({url:url, x:50, y:50, s:20, r:0});
+  _rsSel=list.length-1;
+  renderRoomStickers(); _rsSaveSoon();
+  return true;
+};
 function _clearRoomCharDecor(){
   try{
     Array.prototype.slice.call(document.body.classList).forEach(function(c){ if(c.indexOf('rc-')===0) document.body.classList.remove(c); });
@@ -23244,6 +23503,7 @@ async function applyRoomThemeFor(roomId){
   _currentRoomTheme=theme;
   applyTheme(theme);
   _applyRoomCharDecor(ct);   // 마스코트 + 캐릭터 클래스(테마 색과 별개로 스킨 있으면 표시)
+  try{ renderRoomStickers(); }catch(_){}   // 방 배경 스티커는 테마와 별개 레이어 — 테마 바꿔도 유지
   try{ renderRoomThemeGrid(); }catch(_){}
 }
 /* ══ 커스텀 테마 만들기 ═══════════════════════════════════════
@@ -23569,6 +23829,22 @@ window.ctbOpacityInput=function(v){
 window.ctbClearBg=function(){ _ctbDraft.bg_url=''; _ctbDraft.bg_blob=null; _ctbDraft.bg_ar=0; _ctbDraft.bg_x=50; _ctbDraft.bg_y=38; _ctbDraft.bg_zoom=116; ctbRenderStage(); ctbSyncBgCtl(); };
 /* ── 파일 선택 ── */
 window.ctbPickBg=function(){ _ctbFileMode='bg'; var f=_ctbEl('ctbFile'); if(f){ f.value=''; f.click(); } };
+/* 스티커 묶음 — 기본 다이컷 19종 + 앱에 이미 있는 캐릭터 팩(테마별).
+   ⚠️ 캐릭터 팩은 ANIMAL_STICKER/CHAR_META 를 그대로 빌려 쓴다(새로 만들지 않음). */
+function _stickerPacks(){
+  var packs=[{k:'basic', n:'기본', items:CTB_STICKERS.map(function(x){ return {u:x.u, n:x.n}; })}];
+  try{
+    Object.keys(CHAR_EXPRESSIONS||{}).forEach(function(ck){
+      var meta=(CHAR_META||{})[ck]||{}, labels=meta.labels||{};
+      var items=(CHAR_EXPRESSIONS[ck]||[]).map(function(em){
+        var u=(ANIMAL_STICKER||{})[ck+':'+em];
+        return u?{u:u, n:labels[em]||em}:null;
+      }).filter(Boolean);
+      if(items.length) packs.push({k:ck, n:meta.name||ck, items:items});
+    });
+  }catch(_){}
+  return packs;
+}
 /* ── 기본 제공 스티커 고르기 ── */
 window.openCtbStickerPick=function(){
   var g=_ctbEl('ctbStGrid');
