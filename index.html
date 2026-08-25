@@ -958,9 +958,12 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .rs-bar-del,.rs-bar-done{flex:none;white-space:nowrap;border:none;border-radius:999px;font-family:inherit;font-size:12.5px;font-weight:700;padding:7px 14px;cursor:pointer}
 .rs-bar-del{background:var(--aP);color:#c0503f}
 .rs-bar-done{background:var(--accent);color:var(--card)}
-/* 스토어 스티커 묶음 행 — 대표 이미지 + 작은 미리보기 4개 + 사용하기 */
-.rsp-th{background:var(--aP) no-repeat center/78%;border:1px solid var(--borderL)}
-.rsp-prev{display:flex;gap:4px;margin-top:5px}
+/* 스토어 스티커 묶음 행 — 대표 이미지 + 작은 미리보기 4개 + 사용하기
+   ⚠️ 그림은 .ep-th 자체가 아니라 '안쪽 요소'에 넣는다 — .ep-th 가 background 단축속성으로
+      크기·위치를 되돌려 그림이 모서리에 잘려 보였다(실기기 확인). [2026-08-25] */
+.rsp-th{background:var(--aP);border:1px solid var(--borderL)}
+.rsp-art{display:block;width:100%;height:100%;background:no-repeat center/contain}
+.rsp-prev{display:flex;gap:4px;margin-top:7px}
 .rsp-mini{display:block;width:20px;height:20px;background:no-repeat center/contain;flex:none}
 /* 시트 스티커 탭 — 카드 안에서 그리드만 스크롤하고 아래 버튼은 항상 보이게 [2026-08-25] */
 #dhManageCard.rs-mode{height:85vh;display:flex;flex-direction:column;overflow:hidden}
@@ -21360,23 +21363,24 @@ function renderStoreStickers(){
     <div class="sfh-title">배경에 붙이는 스티커</div>
     <div class="sfh-desc">쓰고 싶은 묶음을 골라두면 달력 스티커 탭에 나타나요</div>
   </div>`;
-  html+='<div class="store-section-title">스티커 묶음 <small>'+packs.length+'묶음</small></div>';
+  html+='<div class="store-section-title">스티커 묶음 <small>STICKER PACKS</small></div>';
   html+=packs.map(function(p){
     const inUse=isStickerPackInUse(p.k);
     const rep=p.items[0]?p.items[0].u:'';
     const prev=p.items.slice(1,5).map(function(it){
       return '<i class="rsp-mini" style="background-image:url(&quot;'+it.u+'&quot;)"></i>'; }).join('');
-    const act = p.k==='basic'
-      ? '<span class="ep-act on">기본 제공</span>'
-      : (inUse ? '<button type="button" class="ep-act on" onclick="event.stopPropagation();unuseStickerPack(\''+p.k+'\')">사용 중</button>'
-               : '<button type="button" class="ep-act" onclick="event.stopPropagation();useStickerPack(\''+p.k+'\')">'
-                 +(prem?'':'<span class="pack-btn-lock">🔒</span>')+'사용하기</button>');
+    const btn=inUse
+      ? '<button class="pack-btn pack-btn-using" onclick="event.stopPropagation();onStickerPackLock(\''+p.k+'\')">사용 중</button>'
+      : (prem
+          ? '<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();useStickerPack(\''+p.k+'\')">사용하기</button>'
+          : '<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();useStickerPack(\''+p.k+'\')"><span class="pack-btn-lock">🔒</span>프리미엄</button>');
     return '<div class="ep-row rsp-row">'
-      +'<i class="ep-th rsp-th" style="background-image:url(&quot;'+rep+'&quot;)"></i>'
-      +'<div class="ep-txt"><div class="ep-t1">'+escapeHtml(p.n)+'</div>'
-      +'<div class="ep-t2">'+p.items.length+'종</div>'
+      +'<div class="ep-th rsp-th"><i class="rsp-art" style="background-image:url(&quot;'+rep+'&quot;)"></i></div>'
+      +'<div class="ep-body">'
+      +'<div class="ep-t1">'+escapeHtml(p.n)+'<span class="dh-chip">'+p.items.length+'종</span></div>'
+      +'<div class="ep-t2">'+escapeHtml(p.d||'')+'</div>'
       +'<div class="rsp-prev">'+prev+'</div></div>'
-      +act+'</div>';
+      +'<div class="ep-act">'+btn+'</div></div>';
   }).join('');
   html+='<div class="dh-hint">사용하기를 누르면 달력 화면의 스티커 탭에 그 묶음이 나타나요. 거기서 골라 붙이고, 위치는 끌어서 옮길 수 있어요.</div>';
   body.innerHTML=html;
@@ -21807,13 +21811,11 @@ function renderStoreEmphasis(){
     <div class="store-section-title">날짜 강조 테마 <small>DATE HIGHLIGHT THEMES</small></div>`;
   DH_THEMES.forEach(t=>{
     const inUse=isDhThemeInUse(t.key);
-    const btn=t.always
-      ? `<button class="pack-btn pack-btn-using">기본 제공</button>`
-      : (inUse
-          ? `<button class="pack-btn pack-btn-using" onclick="event.stopPropagation();onDhThemeLock('${t.key}')">사용 중</button>`
-          : (prem
-              ? `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();onDhThemeUse('${t.key}')">사용하기</button>`
-              : `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();onDhThemeUse('${t.key}')"><span class="pack-btn-lock">🔒</span>프리미엄</button>`));
+    const btn=inUse
+      ? `<button class="pack-btn pack-btn-using" onclick="event.stopPropagation();onDhThemeLock('${t.key}')">사용 중</button>`
+      : (prem
+          ? `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();onDhThemeUse('${t.key}')">사용하기</button>`
+          : `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();onDhThemeUse('${t.key}')"><span class="pack-btn-lock">🔒</span>프리미엄</button>`);
     const dots=t.colors.map(c=>`<span class="dh-dot" style="background:${_dhHexOf(t.key,c.key)}"></span>`).join('');
     const repColor=t.rep||t.colors[0].key;
     html+=`
@@ -21846,8 +21848,9 @@ function onDhThemeUse(key){
 }
 async function onDhThemeLock(key){
   const t=_dhTheme(key);
+  if(_getDhUnlocks().length<=1){ toast('적어도 한 가지는 쓰고 있어야 해요'); return; }
   if(!await vConfirm(`"${t.name}" 테마 사용을 중단할까요?`))return;
-  lockDhTheme(key);
+  if(!lockDhTheme(key))return;
   toast(`"${t.name}" 테마 사용을 중단했어요`);
   renderStoreEmphasis();
   if(document.getElementById('dhThemeDetailCard')?.classList.contains('on'))_dhRenderDetail();
@@ -21876,13 +21879,11 @@ function _dhRenderDetail(){
   const swEl=document.getElementById('dhThemeDetailSwatches'); if(swEl)swEl.innerHTML=_dhDetailSwatchesHTML();
   const actEl=document.getElementById('dhThemeDetailAct');
   if(actEl){
-    actEl.innerHTML=t.always
-      ? `<button class="pack-btn pack-btn-using">기본 제공</button>`
-      : (isDhThemeInUse(t.key)
-          ? `<button class="pack-btn pack-btn-using" onclick="onDhThemeLock('${t.key}')">사용 중</button>`
-          : (isEffectivePremium()
-              ? `<button class="pack-btn pack-btn-try" onclick="onDhThemeUse('${t.key}')">사용하기</button>`
-              : `<button class="pack-btn pack-btn-try" onclick="onDhThemeUse('${t.key}')"><span class="pack-btn-lock">🔒</span>프리미엄</button>`));
+    actEl.innerHTML=isDhThemeInUse(t.key)
+      ? `<button class="pack-btn pack-btn-using" onclick="onDhThemeLock('${t.key}')">사용 중</button>`
+      : (isEffectivePremium()
+          ? `<button class="pack-btn pack-btn-try" onclick="onDhThemeUse('${t.key}')">사용하기</button>`
+          : `<button class="pack-btn pack-btn-try" onclick="onDhThemeUse('${t.key}')"><span class="pack-btn-lock">🔒</span>프리미엄</button>`);
   }
 }
 function pickDhDetailStyle(key){
@@ -22018,24 +22019,31 @@ function _dhFlowerTile(c,vertical){
   return `url(data:image/svg+xml,${enc})`;
 }
 /* ── 사용 중인 테마(스토어 '사용하기') — 컬러 팩과 같은 localStorage 저장소를 씀 ── */
+/* ⚠️ '기본 제공' 개념은 없앴다(프리미엄이면 전부 쓸 수 있으므로) — 기본 테마도 켜고 끌 수 있다.
+   다만 지금까지 기본 테마는 늘 쓸 수 있었으므로, 처음 한 번 목록에 넣어줘서 쓰던 사람의
+   화면이 갑자기 비지 않게 한다(그 뒤에 직접 끄면 그대로 꺼진 채 유지). [2026-08-25] */
 function _getDhUnlocks(){
   try{
     const raw=localStorage.getItem('uricalv2.unlocks');
-    if(raw){ const u=JSON.parse(raw); return Array.isArray(u.dh)?u.dh:[]; }
+    if(raw){
+      const u=JSON.parse(raw);
+      if(!Array.isArray(u.dh)) return ['basic'];
+      if(!u.dhSeed && u.dh.indexOf('basic')<0){ u.dh=['basic'].concat(u.dh); u.dhSeed=1;
+        try{ localStorage.setItem('uricalv2.unlocks',JSON.stringify(u)); }catch(e2){} }
+      return u.dh;
+    }
   }catch(e){}
-  return [];
+  return ['basic'];
 }
 function _saveDhUnlocks(list){
   try{
     const raw=localStorage.getItem('uricalv2.unlocks');
     const u=raw?JSON.parse(raw):{};
-    u.color=u.color||[]; u.char=u.char||[]; u.dh=list;
+    u.color=u.color||[]; u.char=u.char||[]; u.dh=list; u.dhSeed=1;
     localStorage.setItem('uricalv2.unlocks',JSON.stringify(u));
   }catch(e){}
 }
 function isDhThemeInUse(key){
-  const t=_dhTheme(key);
-  if(t.always)return true;                 // 기본 테마는 항상 사용
   if(!isEffectivePremium())return false;   // 날짜 강조 자체가 프리미엄
   return _getDhUnlocks().includes(key);
 }
@@ -22047,7 +22055,11 @@ function unlockDhTheme(key){
   if(!l.includes(key)){ l.push(key); _saveDhUnlocks(l); }
   return true;
 }
-function lockDhTheme(key){ _saveDhUnlocks(_getDhUnlocks().filter(k=>k!==key)); }
+function lockDhTheme(key){
+  const l=_getDhUnlocks();
+  if(l.length<=1 && l.indexOf(key)>=0){ toast('적어도 한 가지는 쓰고 있어야 해요'); return false; }
+  _saveDhUnlocks(l.filter(k=>k!==key)); return true;
+}
 function _dhRgba(hex,a){
   const h=hex.replace('#','');
   const r=parseInt(h.substring(0,2),16), g=parseInt(h.substring(2,4),16), b=parseInt(h.substring(4,6),16);
@@ -23864,7 +23876,8 @@ window.ctbPickBg=function(){ _ctbFileMode='bg'; var f=_ctbEl('ctbFile'); if(f){ 
 /* 스티커 묶음 — 기본 다이컷 19종 + 앱에 이미 있는 캐릭터 팩(테마별).
    ⚠️ 캐릭터 팩은 ANIMAL_STICKER/CHAR_META 를 그대로 빌려 쓴다(새로 만들지 않음). */
 function _stickerPacks(){
-  var packs=[{k:'basic', n:'기본', items:CTB_STICKERS.map(function(x){ return {u:x.u, n:x.n}; })}];
+  var packs=[{k:'basic', n:'기본', d:'어디에나 어울리는 기본 스티커',
+              items:CTB_STICKERS.map(function(x){ return {u:x.u, n:x.n}; })}];
   try{
     Object.keys(CHAR_EXPRESSIONS||{}).forEach(function(ck){
       var meta=(CHAR_META||{})[ck]||{}, labels=meta.labels||{};
@@ -23872,7 +23885,7 @@ function _stickerPacks(){
         var u=(ANIMAL_STICKER||{})[ck+':'+em];
         return u?{u:u, n:labels[em]||em}:null;
       }).filter(Boolean);
-      if(items.length) packs.push({k:ck, n:meta.name||ck, items:items});
+      if(items.length) packs.push({k:ck, n:meta.name||ck, d:meta.identity||'', items:items});
     });
   }catch(_){}
   return packs;
@@ -23881,8 +23894,8 @@ function _stickerPacks(){
    저장소는 컬러·강조 팩과 같은 localStorage['uricalv2.unlocks'] 를 쓴다(키만 rs). [2026-08-25] */
 function _getRsUnlocks(){
   try{ var raw=localStorage.getItem('uricalv2.unlocks');
-    if(raw){ var u=JSON.parse(raw); return Array.isArray(u.rs)?u.rs:[]; } }catch(e){}
-  return [];
+    if(raw){ var u=JSON.parse(raw); if(Array.isArray(u.rs))return u.rs; } }catch(e){}
+  return ['basic'];                                            // 처음엔 기본 묶음으로 시작
 }
 function _saveRsUnlocks(list){
   try{ var raw=localStorage.getItem('uricalv2.unlocks');
@@ -23891,7 +23904,6 @@ function _saveRsUnlocks(list){
     localStorage.setItem('uricalv2.unlocks',JSON.stringify(u)); }catch(e){}
 }
 function isStickerPackInUse(k){
-  if(k==='basic')return true;                                  // 기본은 항상
   if(typeof isEffectivePremium==='function' && !isEffectivePremium())return false;
   return _getRsUnlocks().indexOf(k)>=0;
 }
@@ -23908,8 +23920,17 @@ window.useStickerPack=function(k){
   renderStoreStickers();
 };
 window.unuseStickerPack=function(k){
-  _saveRsUnlocks(_getRsUnlocks().filter(function(x){ return x!==k; }));
-  renderStoreStickers();
+  var l=_getRsUnlocks();
+  if(l.length<=1 && l.indexOf(k)>=0){ toast('적어도 한 묶음은 쓰고 있어야 해요'); return false; }
+  _saveRsUnlocks(l.filter(function(x){ return x!==k; }));
+  renderStoreStickers(); return true;
+};
+window.onStickerPackLock=async function(k){
+  var p=_stickerPacks().filter(function(x){ return x.k===k; })[0];
+  if(_getRsUnlocks().length<=1){ toast('적어도 한 묶음은 쓰고 있어야 해요'); return; }
+  if(!await vConfirm('"'+(p?p.n:'스티커')+'" 묶음 사용을 중단할까요?'))return;
+  if(!unuseStickerPack(k))return;
+  toast('"'+(p?p.n:'스티커')+'" 묶음 사용을 중단했어요');
 };
 window.toggleStickerPack=function(k){ if(isStickerPackInUse(k)) unuseStickerPack(k); else useStickerPack(k); };
 /* ── 기본 제공 스티커 고르기 ── */
