@@ -958,6 +958,17 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .rs-bar-del,.rs-bar-done{flex:none;white-space:nowrap;border:none;border-radius:999px;font-family:inherit;font-size:12.5px;font-weight:700;padding:7px 14px;cursor:pointer}
 .rs-bar-del{background:var(--aP);color:#c0503f}
 .rs-bar-done{background:var(--accent);color:var(--card)}
+/* 스토어 스티커 묶음 행 — 대표 이미지 + 작은 미리보기 4개 + 사용하기 */
+.rsp-th{background:var(--aP) no-repeat center/78%;border:1px solid var(--borderL)}
+.rsp-prev{display:flex;gap:4px;margin-top:5px}
+.rsp-mini{display:block;width:20px;height:20px;background:no-repeat center/contain;flex:none}
+/* 시트 스티커 탭 — 카드 안에서 그리드만 스크롤하고 아래 버튼은 항상 보이게 [2026-08-25] */
+#dhManageCard.rs-mode{height:85vh;display:flex;flex-direction:column;overflow:hidden}
+#dhManageCard.rs-mode>.ev-topbar{flex:none}
+#dhManageCard.rs-mode #dhmPanelSticker{flex:1;min-height:0;display:flex;flex-direction:column}
+#dhManageCard.rs-mode #dhmPanelSticker .ctb-stgrid{flex:1;min-height:0;max-height:none}
+#dhManageCard.rs-mode #dhmPanelSticker .dhm-add{flex:none}
+#dhManageCard.rs-mode .mo-actions{flex:none}
 .rc-decor .rc-sticker{position:absolute;aspect-ratio:1/1;background-repeat:no-repeat;background-position:center;background-size:contain;pointer-events:none}
 /* 스토어 '나만의 테마' 배너 — 이미지 없이 CSS만(외부 CDN 의존 0) */
 .store-custom-hero{position:relative;display:flex;align-items:center;justify-content:space-between;gap:10px;overflow:hidden;border-radius:16px;padding:16px 18px;margin-bottom:16px;background:linear-gradient(120deg,#2f2a3d 0%,#4a3a52 52%,#7a5a5e 100%);box-shadow:0 6px 18px rgba(0,0,0,.16)}
@@ -21337,30 +21348,39 @@ function closeStore(){
   // 닫으면 방 캐릭터 테마 색 복원
   try{ applyTheme(_currentRoomTheme||_myTheme||'vintage'); }catch(_){}
 }
-/* 스토어 '스티커' 탭 — 테마별로 묶어서 보여주고, 방에 들어와 있으면 탭해서 바로 붙인다 */
+/* 스토어 '스티커' 탭 — 묶음마다 대표 이미지 + 미리보기 + '사용하기'.
+   사용 설정한 묶음만 달력의 스티커 탭에 나타난다(컬러·강조 팩과 같은 방식). [2026-08-25] */
 function renderStoreStickers(){
   const body=document.getElementById('storeBody');
   if(!body)return;
   const packs=_stickerPacks();
+  const prem=(typeof isEffectivePremium==='function')&&isEffectivePremium();
   let html=`<div class="store-sticker-hero">
     <div class="sfh-eyebrow">NEW &middot; STICKER</div>
     <div class="sfh-title">배경에 붙이는 스티커</div>
-    <div class="sfh-desc">우리 방 배경 위에 마음껏 붙여요 &middot; 총 ${packs.reduce((n,p)=>n+p.items.length,0)}종</div>
+    <div class="sfh-desc">쓰고 싶은 묶음을 골라두면 달력 스티커 탭에 나타나요</div>
   </div>`;
-  packs.forEach(function(p){
-    html+='<div class="store-section-title">'+escapeHtml(p.n)+' <small>'+p.items.length+'종</small></div>';
-    html+='<div class="ctb-stgrid store-stgrid">'+p.items.map(function(it){
-      return '<button type="button" class="ctb-stcell" onclick="storeAddSticker(&quot;'+it.u+'&quot;)">'
-        +'<i style="background-image:url(&quot;'+it.u+'&quot;)"></i><span>'+escapeHtml(it.n)+'</span></button>';
-    }).join('')+'</div>';
-  });
-  html+='<div class="dh-hint">스티커를 탭하면 지금 들어와 있는 방 배경에 붙어요. 위치는 달력에서 끌어 옮길 수 있어요.</div>';
+  html+='<div class="store-section-title">스티커 묶음 <small>'+packs.length+'묶음</small></div>';
+  html+=packs.map(function(p){
+    const inUse=isStickerPackInUse(p.k);
+    const rep=p.items[0]?p.items[0].u:'';
+    const prev=p.items.slice(1,5).map(function(it){
+      return '<i class="rsp-mini" style="background-image:url(&quot;'+it.u+'&quot;)"></i>'; }).join('');
+    const act = p.k==='basic'
+      ? '<span class="ep-act on">기본 제공</span>'
+      : (inUse ? '<button type="button" class="ep-act on" onclick="event.stopPropagation();unuseStickerPack(\''+p.k+'\')">사용 중</button>'
+               : '<button type="button" class="ep-act" onclick="event.stopPropagation();useStickerPack(\''+p.k+'\')">'
+                 +(prem?'':'<span class="pack-btn-lock">🔒</span>')+'사용하기</button>');
+    return '<div class="ep-row rsp-row">'
+      +'<i class="ep-th rsp-th" style="background-image:url(&quot;'+rep+'&quot;)"></i>'
+      +'<div class="ep-txt"><div class="ep-t1">'+escapeHtml(p.n)+'</div>'
+      +'<div class="ep-t2">'+p.items.length+'종</div>'
+      +'<div class="rsp-prev">'+prev+'</div></div>'
+      +act+'</div>';
+  }).join('');
+  html+='<div class="dh-hint">사용하기를 누르면 달력 화면의 스티커 탭에 그 묶음이 나타나요. 거기서 골라 붙이고, 위치는 끌어서 옮길 수 있어요.</div>';
   body.innerHTML=html;
 }
-window.storeAddSticker=function(url){
-  if(!_currentRoom){ toast('방에 들어가서 붙일 수 있어요'); return; }
-  if(addRoomSticker(url)) toast('배경에 붙였어요 · 달력에서 옮길 수 있어요');
-};
 function setStoreTab(tab){
   // ⚠️ 스크롤 리셋은 '그리기 전'에 — 새로 그린 뒤 scrollTop을 쓰면 방금 만든 DOM의
   //    레이아웃을 강제로 계산하게 돼 탭 전환이 한 프레임 끊긴다(측정: 탭당 ~11ms). [2026-08-19 성능]
@@ -22739,6 +22759,10 @@ function setDhmTab(tab){
   if(p)p.style.display=(_dhmTab==='dh')?'':'none';
   const sp=document.getElementById('dhmPanelSticker');
   if(sp)sp.style.display=(_dhmTab==='sticker')?'':'none';
+  // 스티커 탭은 목록이 길다 → 카드를 고정 높이 세로배치로 바꿔 그리드만 스크롤하고
+  // '달력에서 옮기기'·'닫기' 는 항상 보이게 한다(중첩 스크롤로 버튼이 잘리던 문제).
+  const mc=document.getElementById('dhManageCard');
+  if(mc)mc.classList.toggle('rs-mode', _dhmTab==='sticker');
   if(_dhmTab==='sticker') renderDhmStickers();
 }
 /* ── 시트의 스티커 탭 ── */
@@ -22753,8 +22777,9 @@ function renderDhmStickers(){
             +'<i style="background-image:url(&quot;'+st.url+'&quot;)"></i><span>떼기</span></button>'; }).join('')
       : '<div class="rs-empty">아직 붙인 스티커가 없어요</div>';
   }
-  var packs=_stickerPacks();
-  if(!packs.some(function(p){ return p.k===_rsPack; })) _rsPack='basic';
+  var packs=getUsableStickerPacks();
+  if(!packs.length) packs=_stickerPacks().slice(0,1);
+  if(!packs.some(function(p){ return p.k===_rsPack; })) _rsPack=packs[0].k;
   var tabs=document.getElementById('dhmStickerPacks');
   if(tabs){
     tabs.innerHTML=packs.map(function(p){
@@ -22770,8 +22795,12 @@ function renderDhmStickers(){
 }
 window.setRsPack=function(k){ _rsPack=k; renderDhmStickers(); };
 window.rsAddFromSheet=function(url){ if(addRoomSticker(url)) toast('배경에 붙였어요 · 달력에서 옮길 수 있어요'); renderDhmStickers(); };
-window.rsRemoveAt=function(i){
+window.rsRemoveAt=async function(i){
   var list=_roomStickers();
+  if(i<0||i>=list.length)return;
+  var okDel=await vConfirm('이 스티커를 배경에서 뗄까요?',{title:'스티커 떼기',okText:'떼기',cancelText:'취소'});
+  if(!okDel)return;
+  list=_roomStickers();                      // 확인하는 사이 목록이 바뀌었을 수 있다
   if(i<0||i>=list.length)return;
   list.splice(i,1); _rsSel=-1;
   renderRoomStickers(); renderDhmStickers(); _rsSaveSoon();
@@ -23210,7 +23239,7 @@ function _refreshPremiumGatedUI(){
 /* ══ 방 배경 스티커(개인) ══
    ⚠️ 테마 데코(#rcDecor)와 별개 레이어다 — 테마를 바꿔도, 테마가 아예 없어도 그대로 남는다.
    평소엔 콘텐츠 뒤(z-index:0)에 pointer-events:none 로 깔리고, 편집 모드에서만 위로 올라와 잡힌다. */
-var _rsEdit=false, _rsSel=-1, _rsSaveTimer=null, _rsDrag=null, _rsPtrs={}, _rsPinch=null, _rsWired=false;
+var _rsEdit=false, _rsSel=-1, _rsSaveTimer=null, _rsDrag=null, _rsPtrs={}, _rsPinch=null;
 function _roomStickers(){
   if(!_currentRoom) return [];
   var a=(_myStickersByRoom||{})[_currentRoom.id];
@@ -23284,9 +23313,12 @@ function _rsGrab(layer,px,py){
   return {rect:r, ox:_ctNum(st.x,50)-((px-r.left)/r.width)*100, oy:_ctNum(st.y,50)-((py-r.top)/r.height)*100};
 }
 function _rsIds(){ return Object.keys(_rsPtrs); }
+/* ⚠️ '이미 연결했다'를 전역 플래그로 두면 안 된다 — 레이어는 방을 나갔다 오면 지워졌다
+   새로 만들어지는데, 전역 플래그는 그대로라 새 레이어에 리스너가 안 붙는다(스티커가 안 잡힘).
+   그래서 표시를 레이어 요소 자신에 남긴다. [2026-08-25] */
 function _rsWire(){
-  var layer=document.getElementById('roomStickers'); if(!layer||_rsWired) return;
-  _rsWired=true;
+  var layer=document.getElementById('roomStickers'); if(!layer||layer.__rsWired) return;
+  layer.__rsWired=true;
   layer.addEventListener('pointerdown',function(e){
     if(!_rsEdit) return;
     var t=(e.target&&e.target.closest)?e.target.closest('.rs-sticker'):null;
@@ -23845,6 +23877,41 @@ function _stickerPacks(){
   }catch(_){}
   return packs;
 }
+/* ── 사용 중인 스티커 묶음 — 스토어에서 '사용하기' 누른 것만 시트 탭에 뜬다 ──
+   저장소는 컬러·강조 팩과 같은 localStorage['uricalv2.unlocks'] 를 쓴다(키만 rs). [2026-08-25] */
+function _getRsUnlocks(){
+  try{ var raw=localStorage.getItem('uricalv2.unlocks');
+    if(raw){ var u=JSON.parse(raw); return Array.isArray(u.rs)?u.rs:[]; } }catch(e){}
+  return [];
+}
+function _saveRsUnlocks(list){
+  try{ var raw=localStorage.getItem('uricalv2.unlocks');
+    var u=raw?JSON.parse(raw):{};
+    u.color=u.color||[]; u.char=u.char||[]; u.dh=u.dh||[]; u.rs=list;
+    localStorage.setItem('uricalv2.unlocks',JSON.stringify(u)); }catch(e){}
+}
+function isStickerPackInUse(k){
+  if(k==='basic')return true;                                  // 기본은 항상
+  if(typeof isEffectivePremium==='function' && !isEffectivePremium())return false;
+  return _getRsUnlocks().indexOf(k)>=0;
+}
+/* 시트 스티커 탭에 뜨는 묶음 = 기본 + 사용 설정한 묶음 */
+function getUsableStickerPacks(){ return _stickerPacks().filter(function(p){ return isStickerPackInUse(p.k); }); }
+window.useStickerPack=function(k){
+  if(!isEffectivePremium()){
+    showUpgradeModal({message:'🧸 배경을 스티커로 꾸며볼까요?', feature:'프리미엄이면 원하는 스티커 묶음을 골라 방 배경에 마음껏 붙일 수 있어요.'});
+    return;
+  }
+  var l=_getRsUnlocks(); if(l.indexOf(k)<0){ l.push(k); _saveRsUnlocks(l); }
+  var p=_stickerPacks().filter(function(x){ return x.k===k; })[0];
+  toast((p?p.n:'스티커')+' 사용 시작 · 달력 스티커 탭에서 골라 붙여요');
+  renderStoreStickers();
+};
+window.unuseStickerPack=function(k){
+  _saveRsUnlocks(_getRsUnlocks().filter(function(x){ return x!==k; }));
+  renderStoreStickers();
+};
+window.toggleStickerPack=function(k){ if(isStickerPackInUse(k)) unuseStickerPack(k); else useStickerPack(k); };
 /* ── 기본 제공 스티커 고르기 ── */
 window.openCtbStickerPick=function(){
   var g=_ctbEl('ctbStGrid');
