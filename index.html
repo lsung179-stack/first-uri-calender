@@ -8639,6 +8639,32 @@ function selectCopySource(roomId){
   });
 }
 
+/* 방 만들기·코드 입장 시 '기존 방 일정 가져오기' — 원본 일정을 통째로 옮겨 담는다.
+   ⚠️ 예전엔 date/title/time/color/bar_style 5개만 복사해 **반복 설정·기간 묶음·종료시간·메모가
+      통째로 사라졌다**(반복 일정이 그냥 하루짜리로, 기간 일정이 낱개 하루들로 복사됨).
+      기간은 방마다 새 range_group_id 를 줘야 새 방에서도 바가 이어진다. [2026-08-28] */
+const _ROOM_COPY_COLS='date,title,time,end_time,color,bar_style,memo,is_multi,range_group_id,'
+  +'recurring_yearly,repeat_type,repeat_weekdays,repeat_monthly_mode,repeat_nth_week,repeat_until,'
+  +'repeat_interval,repeat_count,repeat_lunar_month,repeat_lunar_day,repeat_except';
+function _buildRoomCopyRows(srcEvents,destRoomId){
+  const rgMap={};
+  return (srcEvents||[]).map(e=>{
+    let rg=null;
+    if(e.range_group_id){ rg=rgMap[e.range_group_id]||(rgMap[e.range_group_id]='rg_'+genShared()); }
+    return {
+      room_id:destRoomId, user_id:_currentUser.id,
+      date:e.date, title:e.title, time:e.time||null, end_time:e.end_time||null,
+      color:e.color||'c-vintage', bar_style:e.bar_style||'solid', memo:e.memo||null,
+      is_multi:!!e.is_multi, range_group_id:rg,
+      recurring_yearly:!!e.recurring_yearly, repeat_type:e.repeat_type||'none',
+      repeat_weekdays:e.repeat_weekdays||null, repeat_monthly_mode:e.repeat_monthly_mode||null,
+      repeat_nth_week:e.repeat_nth_week||null, repeat_until:e.repeat_until||null,
+      repeat_interval:e.repeat_interval||null, repeat_count:e.repeat_count||null,
+      repeat_lunar_month:e.repeat_lunar_month||null, repeat_lunar_day:e.repeat_lunar_day||null,
+      repeat_except:e.repeat_except||null,
+    };
+  });
+}
 async function createRoom(){
   if(!_currentUser){toast('로그인이 필요해요');return}
   const name=document.getElementById('newRoomName').value.trim();
@@ -8676,16 +8702,12 @@ async function createRoom(){
     if(_createCopyOn&&_createCopySource){
       try{
         const {data:srcEvents}=await supa.from('events')
-          .select('date,title,time,color,bar_style')
+          .select(_ROOM_COPY_COLS)
           .eq('room_id',_createCopySource)
           .eq('user_id',_currentUser.id)
           .is('shared_id',null);  // 함께 일정은 새 방엔 다른 멤버 없으니 제외, 본인 단독만
         if(srcEvents&&srcEvents.length){
-          const rows=srcEvents.map(e=>({
-            room_id:room.id,
-            user_id:_currentUser.id,
-            date:e.date,title:e.title,time:e.time,color:e.color,bar_style:(e.bar_style||'solid'),
-          }));
+          const rows=_buildRoomCopyRows(srcEvents,room.id);
           const {error:eCopy}=await supa.from('events').insert(_attachVirtualMember(rows));
           if(!eCopy)copiedCount=rows.length;
         }
@@ -8827,15 +8849,12 @@ async function joinRoom(){
     if(_joinCopyOn&&_joinCopySource){
       try{
         const {data:srcEvents}=await supa.from('events')
-          .select('date,title,time,color,bar_style')
+          .select(_ROOM_COPY_COLS)
           .eq('room_id',_joinCopySource)
           .eq('user_id',_currentUser.id)
           .is('shared_id',null);
         if(srcEvents&&srcEvents.length){
-          const rows=srcEvents.map(e=>({
-            room_id:room.id,user_id:_currentUser.id,
-            date:e.date,title:e.title,time:e.time,color:e.color,bar_style:(e.bar_style||'solid'),
-          }));
+          const rows=_buildRoomCopyRows(srcEvents,room.id);
           const {error:eCopy}=await supa.from('events').insert(_attachVirtualMember(rows));
           if(!eCopy)copiedCount=rows.length;
         }
@@ -14031,6 +14050,23 @@ function copyEventToRooms(eventId){
   _roomPickMode='copy';
   openRoomPick();
 }
+/* 복사 전 중복 확인 — 대상 방에 '같은 날짜·제목·시간' 일정이 이미 있으면 건너뛴다.
+   ⚠️ 현재 방은 제외 — 같은 방 복사는 '하나 더 만들기'라 일부러 중복을 만드는 것이다.
+   (가져오기[_confirmImport]는 예전부터 이 보호가 있었는데 복사엔 없어서, 이미 있는 일정을
+    다시 복사하면 같은 날 같은 일정이 두 개로 보였다.) [2026-08-28] */
+async function _copyDupSkipSet(rooms, dates, title, time){
+  const others=(rooms||[]).filter(r=>r&&r!==_currentRoom?.id);
+  const skip=new Set();
+  if(!others.length||!dates.length) return skip;
+  try{
+    const {data}=await supa.from('events').select('room_id,date,title,time')
+      .in('room_id',others).in('date',dates);
+    (data||[]).forEach(e=>{
+      if((e.title||'')===(title||'') && (e.time||'')===(time||'')) skip.add(e.room_id+'|'+e.date);
+    });
+  }catch(_){}
+  return skip;
+}
 async function _doCopyEvent(){
   const rooms=(_selectedExtraRooms||[]).slice();
   _roomPickMode='event';
@@ -14057,7 +14093,12 @@ async function _doCopyEvent(){
     /* ⚠️ '같은 방 복사'는 방 간 동기화(multi_group_id)로 묶지 않는다 — 묶으면 둘 중 하나만
        고쳐도 나머지가 같이 바뀌어 '하나 더 만든' 게 아니게 된다. 다른 방에만 묶는다. [2026-08-26] */
     const curId=_currentRoom?.id;
-    const otherRooms=rooms.filter(r=>r!==curId);
+    // 대상 방에 이미 같은 일정이 있으면 그 (방·날짜)는 건너뛴다
+    const dupSkip=await _copyDupSkipSet(rooms,dates,ev.title,ev.time);
+    const liveRooms=rooms.filter(r=>r===curId||dates.some(d=>!dupSkip.has(r+'|'+d)));
+    const skippedRooms=rooms.length-liveRooms.length;
+    if(!liveRooms.length){ toast('선택한 방에 이미 같은 일정이 있어요'); return; }
+    const otherRooms=liveRooms.filter(r=>r!==curId);
     // 그룹 ID: 원본에 있으면 재사용, 없으면 새로 만들어 원본 그룹에도 부여(→ 어느 방에서 수정해도 동기화)
     let mgid=ev.multi_group_id||null;
     if(!mgid && otherRooms.length){
@@ -14074,9 +14115,10 @@ async function _doCopyEvent(){
     // 복사본도 기간 바로 이어지게 한다.
     const isRangeCopy=(!isMulti && !!ev.range_group_id && dates.length>1);
     const rows=[];
-    rooms.forEach(rid=>{
+    liveRooms.forEach(rid=>{
       const rgid=isRangeCopy?('rg_'+genShared()):null;
       dates.forEach(d=>{
+        if(rid!==curId && dupSkip.has(rid+'|'+d)) return;   // 이미 있는 날짜는 건너뜀
         // ⚠️[2026-08-17 감사수정] 예전엔 recurring_yearly/repeat_type/repeat_weekdays 3개만 복사해
         // repeat_monthly_mode/repeat_nth_week/repeat_until/repeat_interval/repeat_count/음력 필드가
         // 누락 — 매월N째주·간격·횟수제한·음력 반복을 복사하면 조용히 다른 패턴(또는 무제한 매달N일)으로
@@ -14092,9 +14134,11 @@ async function _doCopyEvent(){
         }, _rangeRepeatFields(d,dates[0],ev.repeat_type||'none',ev.repeat_weekdays||null,ev.repeat_monthly_mode||null,ev.repeat_nth_week||null,ev.repeat_until||null,!!ev.recurring_yearly,ev.repeat_interval||null,ev.repeat_count||null,ev.repeat_lunar_month||null,ev.repeat_lunar_day||null)));
       });
     });
+    if(!rows.length){ toast('선택한 방에 이미 같은 일정이 있어요'); return; }
     const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
     if(error)throw error;
-    toast(rooms.length===1&&rooms[0]===curId ? '같은 방에 복사됐어요' : (rooms.length+'개 방에 복사됐어요'));
+    const _suffix=skippedRooms?(' · '+skippedRooms+'개 방은 이미 있어서 건너뛰었어요'):'';
+    toast((liveRooms.length===1&&liveRooms[0]===curId ? '같은 방에 복사됐어요' : (liveRooms.length+'개 방에 복사됐어요'))+_suffix);
     await loadEvents();
   }catch(e){ console.error(e); toast('복사 실패: '+((e.message||'').slice(0,40))); }
 }
@@ -14117,23 +14161,31 @@ async function _doCopySharedEvent(ev, rooms){
       (dm||[]).forEach(m=>{ if(m.user_id&&!m.is_virtual){ (destReal[m.room_id]=destReal[m.room_id]||new Set()).add(m.user_id); } });
     }catch(_){}
     const isMulti=!!ev.is_multi;
+    /* ⚠️ 반복 필드는 여기서 넣지 않는다 — 기간(range)은 첫 날짜 행에만 반복을 둬야 한다.
+       예전엔 base 에 넣어 모든 날짜 행이 반복 원본이 돼, 기간+반복 함께 일정을 복사하면
+       매 주기마다 N개가 겹쳐 보였다. _rangeRepeatFields 로 다른 복사 경로와 규칙을 맞춘다.
+       repeat_until 도 빠져 있어 '언제까지'가 사라지던 것 함께 수정. [2026-08-28] */
+    const _rep=d=>_rangeRepeatFields(d,dates[0],ev.repeat_type||'none',ev.repeat_weekdays||null,
+      ev.repeat_monthly_mode||null,ev.repeat_nth_week||null,ev.repeat_until||null,!!ev.recurring_yearly,
+      ev.repeat_interval||null,ev.repeat_count||null,ev.repeat_lunar_month||null,ev.repeat_lunar_day||null);
     const base={ title:ev.title, time:ev.time||null, end_time:ev.end_time||null,
       color:ev.color||'c-vintage', bar_style:ev.bar_style||'solid',
-      recurring_yearly:!!ev.recurring_yearly, repeat_type:ev.repeat_type||'none', repeat_weekdays:ev.repeat_weekdays||null,
-      repeat_monthly_mode:ev.repeat_monthly_mode||null, repeat_nth_week:ev.repeat_nth_week||null,
-      repeat_interval:ev.repeat_interval||null, repeat_count:ev.repeat_count||null,
-      repeat_lunar_month:ev.repeat_lunar_month||null, repeat_lunar_day:ev.repeat_lunar_day||null,
       memo:ev.memo||null, photo_url:ev.photo_url||null, photo_urls:ev.photo_urls||null, is_multi:isMulti };
+    // 대상 방에 이미 같은 일정이 있으면 그 방은 건너뛴다(현재 방 복사는 예외 — 일부러 하나 더 만드는 것)
+    const dupSkip=await _copyDupSkipSet(rooms,dates,ev.title,ev.time);
+    const liveRooms=rooms.filter(r=>r===_currentRoom?.id||dates.some(d=>!dupSkip.has(r+'|'+d)));
+    const skippedRooms=rooms.length-liveRooms.length;
+    if(!liveRooms.length){ toast('선택한 방에 이미 같은 일정이 있어요'); return; }
     const rows=[];
     let sharedCount=0, soloCount=0;
-    rooms.forEach(rid=>{
+    liveRooms.forEach(rid=>{
       const destSet=destReal[rid]||new Set();
       const kept=realMemberIds.filter(uid=>destSet.has(uid));   // 대상 방에도 있는 원본 함께 멤버(같은 사람)
       if(kept.length>=2){
         // 함께 유지 — 방마다 새 shared_id (기간=날짜에 걸쳐 동일 shared_id로 연속 바 유지)
         const sid=genShared(); sharedCount++;
         dates.forEach(d=>{ kept.forEach(uid=>{
-          rows.push({...base, room_id:rid, user_id:uid, virtual_member_id:null, date:d, shared_id:sid, range_group_id:null});
+          rows.push({...base, ..._rep(d), room_id:rid, user_id:uid, virtual_member_id:null, date:d, shared_id:sid, range_group_id:null});
         }); });
       }else{
         // 단독 전환 — 남은 사람(대개 본인), 없으면 본인. 단독 기간은 range_group_id로 연속 바 유지.
@@ -14141,17 +14193,18 @@ async function _doCopySharedEvent(ev, rooms){
         const isRange=(!isMulti && dates.length>1);
         const rgid=isRange?('rg_'+genShared()):null; soloCount++;
         dates.forEach(d=>{
-          rows.push({...base, room_id:rid, user_id:owner, virtual_member_id:null, date:d, shared_id:null, range_group_id:rgid});
+          rows.push({...base, ..._rep(d), room_id:rid, user_id:owner, virtual_member_id:null, date:d, shared_id:null, range_group_id:rgid});
         });
       }
     });
     if(!rows.length){ toast('복사할 내용이 없어요'); return; }
     const {error}=await supa.from('events').insert(rows);
     if(error)throw error;
-    let msg=rooms.length+'개 방에 복사됐어요';
+    let msg=liveRooms.length+'개 방에 복사됐어요';
     if(sharedCount&&soloCount) msg='복사 완료 (함께 '+sharedCount+'방·단독 '+soloCount+'방)';
     else if(soloCount&&!sharedCount) msg='복사 완료 (대상 방에 함께 멤버가 없어 단독으로 전환됐어요)';
     else if(sharedCount&&!soloCount) msg='함께 일정 복사 완료 ('+sharedCount+'개 방)';
+    if(skippedRooms) msg+=' · '+skippedRooms+'개 방은 이미 있어서 건너뛰었어요';
     toast(msg);
     await loadEvents();
   }catch(e){ console.error(e); toast('복사 실패: '+((e.message||'').slice(0,40))); }
