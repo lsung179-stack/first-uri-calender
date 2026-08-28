@@ -7340,6 +7340,9 @@ function askRecurringDelete(msg, opts){
     if(futureBtn){ futureBtn.style.display=hasFuture?'':'none'; if(hasFuture)futureBtn.textContent=opts.futureLabel; }
     document.body.appendChild(ov);  // 시트 위로 올림
     ov.classList.add('on');
+    /* ⚠️ 드래그를 놓은 직후 이 모달이 뜨면, 손을 뗀 자리에 뒤늦게 도착하는 click 이 배경을 때려
+       모달이 뜨자마자 사라진다. 열린 직후 잠깐은 배경 탭을 무시한다. */
+    const _openedAt=Date.now();
     try{ if(typeof hideAdBanner==='function') hideAdBanner(); }catch(_){} // 모달 위 광고 겹침 방지
     const finish=(val)=>{
       ov.classList.remove('on');
@@ -7351,7 +7354,7 @@ function askRecurringDelete(msg, opts){
     if(futureBtn)futureBtn.onclick=()=>finish('future');
     allBtn.onclick=()=>finish('all');
     cancelBtn.onclick=()=>finish(null);
-    ov.onclick=(e)=>{if(e.target===ov)finish(null);};
+    ov.onclick=(e)=>{if(e.target===ov&&Date.now()-_openedAt>450)finish(null);};
   });
 }
 
@@ -14244,6 +14247,7 @@ function askMultiRoomScope(msg, isDelete, groupRooms, noun, verb){
     if(roomListEl){ roomListEl.style.display='none'; roomListEl.innerHTML=''; }
     document.body.appendChild(ov);
     ov.classList.add('on');
+    const _openedAt=Date.now();   // 드롭 직후 유령 클릭 방지(askRecurringDelete 와 동일)
     const finish=(val)=>{
       ov.classList.remove('on');
       if(roomListEl){ roomListEl.style.display='none'; roomListEl.innerHTML=''; }
@@ -14284,7 +14288,7 @@ function askMultiRoomScope(msg, isDelete, groupRooms, noun, verb){
     };
     oneBtn.onclick=()=>finish('one');
     cancelBtn.onclick=()=>finish(null);
-    ov.onclick=(e)=>{if(e.target===ov)finish(null);};
+    ov.onclick=(e)=>{if(e.target===ov&&Date.now()-_openedAt>450)finish(null);};
   });
 }
 
@@ -24512,6 +24516,32 @@ function _evCycleAnchor(origin,occDate){
   }catch(_){}
   return occDate;
 }
+/* 끌어 들어올릴 덩어리 = 화면에 실제로 보이는 그 조각들.
+   ⚠️ 펼쳐진 반복 발생은 물리 행이 그 날에 없어 _evCollectGroup 이 빈 배열을 준다 —
+      그대로 쓰면 기간 반복이 하루만 잡히고, 떨어질 칸 테두리도 하나도 안 그려진다. */
+function _evDragSpan(row,fromDate){
+  let grp=[]; try{ grp=_evCollectGroup(row,fromDate); }catch(_){}
+  if(grp.length&&grp.some(function(o){return o.date===fromDate;}))
+    return {dates:[...new Set(grp.map(function(o){return o.date;}))], ids:[...new Set(grp.map(function(o){return o.id;}))]};
+  const span=row._rangeSpanDays||1;
+  if(span>1){
+    const a=_evCycleAnchor(row,fromDate), dates=[];
+    for(let i=0;i<span;i++)dates.push(shiftDateKey(a,i));
+    return {dates:dates, ids:[row.id]};
+  }
+  return {dates:[fromDate], ids:[row.id]};
+}
+/* 그 덩어리의 바들을 전부 들어올린 티가 나게(펼쳐진 사이클은 모든 칸이 같은 id 를 쓴다) */
+function _evLiftBars(span,fallbackBar){
+  const bars=[];
+  (span.dates||[]).forEach(function(dt){
+    document.querySelectorAll('.cal-cell[data-date="'+dt+'"] .cal-evbar[data-evid]').forEach(function(b){
+      if(span.ids.indexOf(b.getAttribute('data-evid'))>=0&&bars.indexOf(b)<0){ b.classList.add('ev-drag-src'); bars.push(b); }
+    });
+  });
+  if(fallbackBar&&bars.indexOf(fallbackBar)<0){ fallbackBar.classList.add('ev-drag-src'); bars.push(fallbackBar); }
+  return bars;
+}
 /* 끌어 옮긴 바가 기간의 중간 조각이면 반복 규칙은 그 기간의 첫 행에만 있다 — 그 행을 찾아 원본으로 삼는다 */
 function _evResolveOrigin(anchorRow,fromDate){
   if(_evHasRepeat(anchorRow))return anchorRow;
@@ -24947,15 +24977,9 @@ function setupEventDrag(){
     _swipeEnabled=false;
     document.body.classList.add('ev-dragging');
     // 기간/그룹(함께·여러날 제외) 일정이면 그룹의 모든 조각을 함께 들어올림 — 전체가 잡혔음을 표시
-    const grp=_evCollectGroup(row,_evDrag.fromDate);
-    _evDrag.groupDates=[...new Set(grp.map(o=>o.date))];
-    const bars=[];
-    grp.forEach(o=>{
-      const b=document.querySelector(`.cal-evbar[data-evid="${o.id}"]`);
-      if(b&&!bars.includes(b)){b.classList.add('ev-drag-src');bars.push(b)}
-    });
-    if(!bars.includes(_evDrag.bar)){_evDrag.bar.classList.add('ev-drag-src');bars.push(_evDrag.bar)}
-    _evDrag.srcBars=bars;
+    const span=_evDragSpan(row,_evDrag.fromDate);
+    _evDrag.groupDates=span.dates;
+    _evDrag.srcBars=_evLiftBars(span,_evDrag.bar);
     _evDrag.ghost=_evMakeGhost(_evDrag.bar,_evDrag.startX,_evDrag.startY,row.title);
     if(navigator.vibrate)navigator.vibrate(15);
     try{_evDrag.bar.setPointerCapture(_evDrag.pid)}catch(_){}
@@ -25040,7 +25064,7 @@ function _evDragFrame(){
     if(newDrop){
       // 기간 전체가 떨어질 칸들을 같은 간격으로 강조
       const diff=_evDayDiff(d.fromDate,newDrop);
-      (d.groupDates||[d.fromDate]).forEach(gd=>{
+      ((d.groupDates&&d.groupDates.length)?d.groupDates:[d.fromDate]).forEach(gd=>{
         const c=document.querySelector(`.cal-cell[data-date="${shiftDateKey(gd,diff)}"]`);
         if(c)c.classList.add('ev-drop-target');
       });
@@ -25092,14 +25116,9 @@ function _beginSheetEvDrag(s){
   _evDragging=true;
   _swipeEnabled=false;
   document.body.classList.add('ev-dragging');
-  const grp=_evCollectGroup(row,s.fromDate);
-  _evDrag.groupDates=[...new Set(grp.map(function(o){return o.date;}))];
-  const bars=[];
-  grp.forEach(function(o){
-    const b=document.querySelector('.cal-evbar[data-evid="'+o.id+'"]');
-    if(b&&bars.indexOf(b)<0){b.classList.add('ev-drag-src');bars.push(b);}
-  });
-  if(bar&&bars.indexOf(bar)<0){bar.classList.add('ev-drag-src');bars.push(bar);}
+  const span=_evDragSpan(row,s.fromDate);
+  _evDrag.groupDates=span.dates;
+  const bars=_evLiftBars(span,bar);
   _evDrag.srcBars=bars;
   // 고스트 색: 바가 있으면 그 색, 없으면 임시 요소로 일정 색 적용
   let ghostSrc=bar,tempSrc=null;
