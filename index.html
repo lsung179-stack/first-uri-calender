@@ -2183,6 +2183,8 @@ body.ev-dragging .cal-cell{cursor:grabbing}
 .ev-photo-remove:active{opacity:.7}
 .ev-photo-hint{font-size:11px;color:var(--mute);width:100%;margin-top:2px;line-height:1.4}
 
+/* 같은 일정이 내 다른 방에도 있을 때 알려주는 줄 */
+.dp-inrooms{margin-top:4px;font-size:11.5px;color:var(--sub);line-height:1.35}
 /* 일자 시트 안 메모/사진 표시 */
 .dp-memo{
   font-size:12px;color:var(--sub);margin-top:6px;line-height:1.5;letter-spacing:.2px;
@@ -5401,7 +5403,7 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
 <div class="mo-overlay" id="roomPickOverlay" onclick="cancelRoomPick()"></div>
 <div class="mo-card" id="roomPickCard">
   <div class="mo-handle"></div>
-  <div class="mo-title">어느 방에 추가할까요?</div>
+  <div class="mo-title" id="roomPickTitle">어느 방에 추가할까요?</div>
   <div class="mo-sub">현재 방에는 기본 저장되고, 선택한 방에도 함께 등록돼요</div>
   <div class="mp-list" id="roomPickList"></div>
   <div class="mo-actions">
@@ -12020,9 +12022,31 @@ function updateTodayBtn(){
 function _syncMonthHeaderBalance(){ /* CSS가 처리 — 측정 없음 */ }
 
 /* ── 날짜 시트 ── */
+/* 이 날짜의 일정이 '내 다른 방'에도 있는지 — 'title|time' → [방 이름]. 시트를 열 때 1회만 조회한다. */
+let _dsOtherRooms=new Map();
+let _dsOtherRoomsKey='';
+async function _loadDsOtherRooms(key){
+  _dsOtherRooms=new Map(); _dsOtherRoomsKey=key;
+  const others=(_myRooms||[]).filter(r=>r.id&&r.id!==_currentRoom?.id);
+  if(others.length<1)return;   // 방이 하나뿐이면 보여줄 게 없다
+  try{
+    const {data}=await supa.from('events').select('room_id,title,time')
+      .in('room_id',others.map(r=>r.id)).eq('date',key);
+    (data||[]).forEach(e=>{
+      const k=(e.title||'')+'|'+(e.time||'');
+      const name=(others.find(r=>r.id===e.room_id)||{}).name||'방';
+      const arr=_dsOtherRooms.get(k)||[];
+      if(arr.indexOf(name)<0)arr.push(name);
+      _dsOtherRooms.set(k,arr);
+    });
+  }catch(_){}
+  if(_dsOtherRoomsKey===key && document.getElementById('dpCard')?.classList.contains('on')) renderDateSheetList();
+}
 function openDateSheet(key){
   closeMainModals();
   _selectedDate=key;
+  // 이전 날짜·이전 방에서 조회해 둔 '다른 방에도 있어요'가 남아 보이지 않게 먼저 비운다
+  _dsOtherRooms=new Map(); _dsOtherRoomsKey='';
   const dt=parseDateKey(key);
   const dowName=DOW_NAMES[dt.getDay()];
   const headInfo=getDayHeaderInfo(dt.getFullYear(),dt.getMonth()+1,dt.getDate());
@@ -12033,6 +12057,7 @@ function openDateSheet(key){
     subEl.innerHTML=`${escapeHtml(headInfo)}`;
   }
   renderDateSheetList();
+  _loadDsOtherRooms(key);   // 다른 방에도 있는지는 뒤이어 채워 넣는다(첫 표시를 늦추지 않게)
   document.getElementById('dpOverlay').classList.add('on');
   document.getElementById('dpCard').classList.add('on');
   _subScreenEnter();
@@ -12247,12 +12272,18 @@ function renderDateSheetList(){
 
     const _canDragSheet=!isVirtual&&!!ev.id;
     const _dragAttr2=_canDragSheet?` data-evdrag="1" data-evid="${ev.id}" data-evdate="${_selectedDate}"`:'';
+    // 같은 일정이 내 다른 방에도 있으면 알려준다 — 같은 복사를 또 하는 걸 막아준다. [2026-08-28]
+    const _otherRooms=(!isVirtual&&_dsOtherRoomsKey===_selectedDate)
+      ? (_dsOtherRooms.get((ev.title||'')+'|'+(ev.time||''))||[]) : [];
+    const otherRoomsHtml=_otherRooms.length
+      ? `<div class="dp-inrooms">다른 방에도 있어요 · ${_otherRooms.map(n=>escapeHtml(n)).join(' · ')}</div>` : '';
     html+=`<div class="dp-item${sharedCls}"${_dragAttr2}>
       <div class="dp-bar" style="background:${hex}"></div>
       <div class="dp-info">
         <div class="dp-title">${t}${virtualTag}</div>
         ${memberChipsHtml}
         ${metaRow}
+        ${otherRoomsHtml}
         ${memoHtml}
         ${photoHtml}
         ${reactionRow}
@@ -13976,8 +14007,18 @@ function openRoomPick(){
     return;
   }
   const curName=escapeHtml(_currentRoom?.name||'현재 방');
+  /* 복사 모드에서 '이미 이 일정이 있는 방' 꼬리표 — 전부 있으면 고를 수 없게(복사해도 건너뜀),
+     일부만 있으면 고를 수 있게 두고 표시만 한다(빠진 날짜는 채워진다). [2026-08-28] */
+  const _haveTag=(rid)=>{
+    const h=(_roomPickMode==='copy')?_roomPickHave.get(rid):null;
+    if(h==='all')return ' <span style="font-size:11px;color:var(--accent)">· 이미 있어요</span>';
+    if(h==='some')return ' <span style="font-size:11px;color:var(--sub)">· 일부 이미 있어요</span>';
+    return '';
+  };
   // 복사(일정·할일)는 '현재 방'도 고를 수 있어야 한다 — 같은 방에 하나 더 만드는 경우가 있다. [2026-08-26]
   const _isCopyMode=(_roomPickMode==='copy'||_roomPickMode==='copytodo');
+  const _titleEl=document.getElementById('roomPickTitle');
+  if(_titleEl)_titleEl.textContent=(_isCopyMode||_roomPickMode==='copydh')?'어느 방에 복사할까요?':'어느 방에 추가할까요?';
   if(_isCopyMode){
     if(subEl)subEl.textContent='선택한 방에 복사돼요 · 현재 방을 고르면 같은 방에 하나 더 만들어요';
     const curChecked=_selectedExtraRooms.includes(_currentRoom?.id);
@@ -14004,12 +14045,13 @@ function openRoomPick(){
   const others=(_myRooms||[]).filter(r=>r.id!==_currentRoom?.id);
   others.forEach(r=>{
     const checked=_selectedExtraRooms.includes(r.id);
+    const full=(_roomPickMode==='copy'&&_roomPickHave.get(r.id)==='all');
     const row=document.createElement('label');
     row.className='mp-item';
-    row.style.cssText='display:flex;align-items:center;gap:10px;padding:12px 10px;cursor:pointer';
+    row.style.cssText='display:flex;align-items:center;gap:10px;padding:12px 10px;cursor:'+(full?'default':'pointer')+(full?';opacity:.55':'');
     row.innerHTML=`
-      <input type="checkbox" value="${r.id}" ${checked?'checked':''} style="width:18px;height:18px;flex-shrink:0">
-      <span style="flex:1;font-size:14px;color:var(--text)">${escapeHtml(r.name||'방')}</span>
+      <input type="checkbox" value="${r.id}" ${checked&&!full?'checked':''} ${full?'disabled':''} style="width:18px;height:18px;flex-shrink:0">
+      <span style="flex:1;font-size:14px;color:var(--text)">${escapeHtml(r.name||'방')}${_haveTag(r.id)}</span>
     `;
     list.appendChild(row);
   });
@@ -14039,7 +14081,9 @@ function cancelRoomPick(){
 
 /* ───────── 일정 복사 (다른 방으로) — 상세 모달의 복사 버튼 ───────── */
 let _copySourceEventId=null;
-function copyEventToRooms(eventId){
+/* 방 선택창에서 '이미 이 일정이 있는 방'을 표시하기 위한 맵(roomId → 'all'|'some') */
+let _roomPickHave=new Map();
+async function copyEventToRooms(eventId){
   const ev=Object.values(_events).flat().find(e=>e.id===eventId);
   if(!ev){ toast('일정을 찾을 수 없어요'); return; }
   _copySourceEventId=eventId;
@@ -14048,7 +14092,48 @@ function copyEventToRooms(eventId){
   const dov=document.getElementById('dpOverlay'); if(dov)dov.classList.remove('on');
   _selectedExtraRooms=[];
   _roomPickMode='copy';
+  // 어느 방에 이미 있는지 미리 확인 — 같은 복사를 반복하는 걸 눈으로 막아준다
+  _roomPickHave=new Map();
+  try{
+    const dates=[...new Set(_copyEventGroup(ev).map(e=>e.date))];
+    _roomPickHave=await _roomsHavingEvent(dates,ev.title,ev.time);
+  }catch(_){}
   openRoomPick();
+}
+/* 이 일정이 실제로 차지하는 행들 — 기간(연속)·여러 날·함께를 한 덩어리로 본다.
+   복사 실행과 '어느 방에 이미 있는지' 표시가 같은 기준을 쓰도록 한 곳에 모았다. [2026-08-28] */
+function _copyEventGroup(ev){
+  if(!ev)return [];
+  let group;
+  if(ev.shared_id){
+    group=Object.values(_events).flat().filter(e=>e.shared_id===ev.shared_id);
+  }else if(ev.is_multi){
+    group=Object.values(_events).flat().filter(e=>e.is_multi&&!e.shared_id&&e.user_id===ev.user_id
+      &&(e.title||'').trim()===(ev.title||'').trim()&&(e.time||'')===(ev.time||'')&&e.color===ev.color);
+  }else{
+    group=findEventGroup(ev);
+  }
+  return (group&&group.length)?group:[ev];
+}
+/* 내 방들 중 '이 일정이 이미 있는 방' — 날짜별로 확인해 전부 있으면 'all', 일부면 'some'.
+   ⚠️ 만든 사람은 안 따진다(함께 일정은 다른 멤버 행일 수 있음) — _copyDupSkipSet 과 같은 기준. */
+async function _roomsHavingEvent(dates, title, time){
+  const out=new Map();
+  const ids=(_myRooms||[]).map(r=>r.id).filter(Boolean);
+  if(!ids.length||!dates.length)return out;
+  try{
+    const {data}=await supa.from('events').select('room_id,date,title,time')
+      .in('room_id',ids).in('date',dates);
+    const byRoom={};
+    (data||[]).forEach(e=>{
+      if((e.title||'')!==(title||'')||(e.time||'')!==(time||''))return;
+      (byRoom[e.room_id]=byRoom[e.room_id]||new Set()).add(e.date);
+    });
+    Object.keys(byRoom).forEach(rid=>{
+      out.set(rid, byRoom[rid].size>=dates.length?'all':'some');
+    });
+  }catch(_){}
+  return out;
 }
 /* 복사 전 중복 확인 — 대상 방에 '같은 날짜·제목·시간' 일정이 이미 있으면 건너뛴다.
    ⚠️ 현재 방은 제외 — 같은 방 복사는 '하나 더 만들기'라 일부러 중복을 만드는 것이다.
@@ -14080,15 +14165,7 @@ async function _doCopyEvent(){
   if(ev.shared_id){ return _doCopySharedEvent(ev, rooms); }
   try{
     // 복사할 날짜 묶음 계산 — 기간(연속)은 findEventGroup, 여러 날(is_multi)은 동일 속성 묶음
-    let group;
-    if(ev.is_multi){
-      const allEvents=Object.values(_events).flat();
-      group=allEvents.filter(e=>e.is_multi&&!e.shared_id&&e.user_id===ev.user_id
-        &&(e.title||'').trim()===(ev.title||'').trim()&&(e.time||'')===(ev.time||'')&&e.color===ev.color);
-    }else{
-      group=findEventGroup(ev);
-    }
-    if(!group||!group.length)group=[ev];
+    const group=_copyEventGroup(ev);
     const dates=[...new Set(group.map(e=>e.date))].sort();
     /* ⚠️ '같은 방 복사'는 방 간 동기화(multi_group_id)로 묶지 않는다 — 묶으면 둘 중 하나만
        고쳐도 나머지가 같이 바뀌어 '하나 더 만든' 게 아니게 된다. 다른 방에만 묶는다. [2026-08-26] */
