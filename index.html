@@ -1040,9 +1040,12 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 /* 방 캐릭터 테마 — 탭바/설정 색 틴트(제네릭, 모든 캐릭터) */
 body.rc-on .cal-tab{color:var(--aL)}
 body.rc-on .cal-tab.on{color:var(--accent);background:transparent}
-/* 전용 아이콘 세트가 없는 캐릭터 폴백: 활성 탭에 캐릭터 얼굴 표시 */
-body.rc-on .cal-tab.on .cal-tab-ico svg{visibility:hidden}
-body.rc-on .cal-tab.on .cal-tab-ico::after{content:"";position:absolute;inset:-4px;background:var(--rc-char-url) center/contain no-repeat;filter:drop-shadow(0 1px 1.5px rgba(30,50,20,.25))}
+/* 전용 아이콘 세트가 없는 캐릭터 폴백: 활성 탭에 캐릭터 얼굴 표시.
+   ⚠️ 반드시 rc-haschar(캐릭터 그림이 실제로 있을 때만)로 좁힐 것 — 그림이 없는 테마
+      (사용자가 만든 커스텀 테마에서 아이콘을 '기본'으로 둔 경우)에서 svg 만 숨겨져
+      활성 탭 아이콘이 통째로 빈칸이 된다. [2026-08-28] */
+body.rc-on.rc-haschar .cal-tab.on .cal-tab-ico svg{visibility:hidden}
+body.rc-on.rc-haschar .cal-tab.on .cal-tab-ico::after{content:"";position:absolute;inset:-4px;background:var(--rc-char-url) center/contain no-repeat;filter:drop-shadow(0 1px 1.5px rgba(30,50,20,.25))}
 body.rc-on .uni-nav-l svg{color:var(--accent);stroke:var(--accent)}
 /* ── 두두(공룡) 전용 아이콘 세트 — 탭바·설정 버튼마다 다른 선사시대 아이콘 ── */
 body.rc-dino .cal-tab[data-rci] .cal-tab-ico svg{display:none}
@@ -23534,7 +23537,7 @@ function _applyRoomCharDecor(ct){
   var _clouds = (_bgScene||ct.custom||ct.plain) ? '' : '<div class="rc-cloud rc-cloud1"></div><div class="rc-cloud rc-cloud2"></div>';
   d.innerHTML=(_bgUrl?('<div class="rc-bg'+(_bgScene?' rc-bg-scene':'')+(ct.custom?' rc-bg-custom':'')+'"></div>'):'')+_clouds+(_charWm?'<div class="rc-char"></div>':'');
   if(_bgUrl){ var bgEl=d.querySelector('.rc-bg'); if(bgEl) bgEl.style.backgroundImage='url("'+_bgUrl+'")'; }
-  if(ct.mascot){ var c=d.querySelector('.rc-char'); if(c) c.style.backgroundImage='url("'+ct.mascot+'")'; document.body.style.setProperty('--rc-char-url','url("'+ct.mascot+'")'); }
+  if(ct.mascot){ var c=d.querySelector('.rc-char'); if(c) c.style.backgroundImage='url("'+ct.mascot+'")'; document.body.style.setProperty('--rc-char-url','url("'+ct.mascot+'")'); document.body.classList.add('rc-haschar'); }
   // 커스텀 테마 — 배경 진하기는 사용자가 정한 값, 스티커는 %좌표로 배치(화면 크기 무관)
   if(ct.custom){
     var cu=ct.custom;
