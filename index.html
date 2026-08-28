@@ -11592,7 +11592,9 @@ function _eventBarHTML(ev,key,y,m,d){
   const sharedMarker=showSharedMarker?`<span class="cal-evbar-marker"></span>`:'';
   const txt=getContrastTextColor(hex);
   const _evRt=ev.repeat_type||(ev.recurring_yearly?'yearly':'none');
-  const _canDrag=!ev._isVirtual&&!ev._yearlyDisplay&&(!_evRt||_evRt==='none')&&!ev.recurring_yearly&&!!ev.id;
+  /* 반복 일정도 끌어 옮길 수 있다 — 놓을 때 '이 일정에만/이후에도/모두'를 물어본다.
+     ⚠️ 함께(shared)·기간(range)·다른 방 복사본(multi)과 겹친 반복은 그룹 처리가 복잡해 제외. [2026-08-26] */
+  const _canDrag=!ev._isVirtual&&!!ev.id&&(_evDragRepeatOK(ev)||((!_evRt||_evRt==='none')&&!ev.recurring_yearly&&!ev._yearlyDisplay));
   const dragAttr=_canDrag?` data-drag="1" data-evid="${ev.id}"`:'';
   const _isOutline=(ev.bar_style==='outline');
   const _barInline=_isOutline?`border-color:${hex}`:`background:${hex};color:${txt}`;
@@ -12221,7 +12223,7 @@ function renderDateSheetList(){
       : '';
 
     const _evRt2=ev.repeat_type||(ev.recurring_yearly?'yearly':'none');
-    const _canDragSheet=!isVirtual&&!ev._yearlyDisplay&&(!_evRt2||_evRt2==='none')&&!ev.recurring_yearly&&!!ev.id;
+    const _canDragSheet=!isVirtual&&!!ev.id&&(_evDragRepeatOK(ev)||((!_evRt2||_evRt2==='none')&&!ev.recurring_yearly&&!ev._yearlyDisplay));
     const _dragAttr2=_canDragSheet?` data-evdrag="1" data-evid="${ev.id}" data-evdate="${_selectedDate}"`:'';
     html+=`<div class="dp-item${sharedCls}"${_dragAttr2}>
       <div class="dp-bar" style="background:${hex}"></div>
@@ -13951,16 +13953,31 @@ function openRoomPick(){
     });
     return;
   }
-  // 현재 방 — 고정 표시 (항상 포함)
   const curName=escapeHtml(_currentRoom?.name||'현재 방');
-  const cur=document.createElement('div');
-  cur.className='mp-item';
-  cur.style.cssText='display:flex;align-items:center;gap:10px;padding:12px 10px;opacity:.7';
-  cur.innerHTML=`
-    <input type="checkbox" checked disabled style="width:18px;height:18px;flex-shrink:0">
-    <span style="flex:1;font-size:14px;color:var(--text)">${curName} <span style="font-size:11px;color:var(--sub)">(현재 방)</span></span>
-  `;
-  list.appendChild(cur);
+  // 복사(일정·할일)는 '현재 방'도 고를 수 있어야 한다 — 같은 방에 하나 더 만드는 경우가 있다. [2026-08-26]
+  const _isCopyMode=(_roomPickMode==='copy'||_roomPickMode==='copytodo');
+  if(_isCopyMode){
+    if(subEl)subEl.textContent='선택한 방에 복사돼요 · 현재 방을 고르면 같은 방에 하나 더 만들어요';
+    const curChecked=_selectedExtraRooms.includes(_currentRoom?.id);
+    const curRow=document.createElement('label');
+    curRow.className='mp-item';
+    curRow.style.cssText='display:flex;align-items:center;gap:10px;padding:12px 10px;cursor:pointer';
+    curRow.innerHTML=`
+      <input type="checkbox" value="${_currentRoom?.id||''}" ${curChecked?'checked':''} style="width:18px;height:18px;flex-shrink:0">
+      <span style="flex:1;font-size:14px;color:var(--text)">${curName} <span style="font-size:11px;color:var(--sub)">(현재 방)</span></span>
+    `;
+    list.appendChild(curRow);
+  }else{
+    // 현재 방 — 고정 표시 (항상 포함)
+    const cur=document.createElement('div');
+    cur.className='mp-item';
+    cur.style.cssText='display:flex;align-items:center;gap:10px;padding:12px 10px;opacity:.7';
+    cur.innerHTML=`
+      <input type="checkbox" checked disabled style="width:18px;height:18px;flex-shrink:0">
+      <span style="flex:1;font-size:14px;color:var(--text)">${curName} <span style="font-size:11px;color:var(--sub)">(현재 방)</span></span>
+    `;
+    list.appendChild(cur);
+  }
   // 다른 방들 — 선택 가능
   const others=(_myRooms||[]).filter(r=>r.id!==_currentRoom?.id);
   others.forEach(r=>{
@@ -14001,8 +14018,6 @@ function cancelRoomPick(){
 /* ───────── 일정 복사 (다른 방으로) — 상세 모달의 복사 버튼 ───────── */
 let _copySourceEventId=null;
 function copyEventToRooms(eventId){
-  const others=(_myRooms||[]).filter(r=>r.id!==_currentRoom?.id);
-  if(!others.length){ toast('복사할 다른 방이 없어요'); return; }
   const ev=Object.values(_events).flat().find(e=>e.id===eventId);
   if(!ev){ toast('일정을 찾을 수 없어요'); return; }
   _copySourceEventId=eventId;
@@ -14036,9 +14051,13 @@ async function _doCopyEvent(){
     }
     if(!group||!group.length)group=[ev];
     const dates=[...new Set(group.map(e=>e.date))].sort();
+    /* ⚠️ '같은 방 복사'는 방 간 동기화(multi_group_id)로 묶지 않는다 — 묶으면 둘 중 하나만
+       고쳐도 나머지가 같이 바뀌어 '하나 더 만든' 게 아니게 된다. 다른 방에만 묶는다. [2026-08-26] */
+    const curId=_currentRoom?.id;
+    const otherRooms=rooms.filter(r=>r!==curId);
     // 그룹 ID: 원본에 있으면 재사용, 없으면 새로 만들어 원본 그룹에도 부여(→ 어느 방에서 수정해도 동기화)
     let mgid=ev.multi_group_id||null;
-    if(!mgid){
+    if(!mgid && otherRooms.length){
       mgid=genShared();
       const gids=group.map(e=>e.id).filter(Boolean);
       if(gids.length){
@@ -14064,7 +14083,7 @@ async function _doCopyEvent(){
           room_id:rid,user_id:_currentUser.id,date:d,
           title:ev.title,time:ev.time||null,end_time:ev.end_time||null,
           color:ev.color||'c-vintage',bar_style:ev.bar_style||'solid',
-          multi_group_id:mgid,range_group_id:rgid,
+          multi_group_id:(rid===curId?null:mgid),range_group_id:rgid,
           memo:ev.memo||null,photo_url:ev.photo_url||null,photo_urls:ev.photo_urls||null,
           is_multi:isMulti,
         }, _rangeRepeatFields(d,dates[0],ev.repeat_type||'none',ev.repeat_weekdays||null,ev.repeat_monthly_mode||null,ev.repeat_nth_week||null,ev.repeat_until||null,!!ev.recurring_yearly,ev.repeat_interval||null,ev.repeat_count||null,ev.repeat_lunar_month||null,ev.repeat_lunar_day||null)));
@@ -14072,7 +14091,7 @@ async function _doCopyEvent(){
     });
     const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
     if(error)throw error;
-    toast(rooms.length+'개 방에 복사됐어요');
+    toast(rooms.length===1&&rooms[0]===curId ? '같은 방에 복사됐어요' : (rooms.length+'개 방에 복사됐어요'));
     await loadEvents();
   }catch(e){ console.error(e); toast('복사 실패: '+((e.message||'').slice(0,40))); }
 }
@@ -14138,8 +14157,7 @@ async function _doCopySharedEvent(ev, rooms){
 /* ───────── 할 일 복사 (다른 방으로) — 일정 복사와 동일 흐름 ───────── */
 let _copySourceTodoId=null;
 function copyTodoToRooms(todoId){
-  const others=(_myRooms||[]).filter(r=>r.id!==_currentRoom?.id);
-  if(!others.length){ toast('복사할 다른 방이 없어요'); return; }
+  // ⚠️ 다른 방이 없어도 '같은 방 복사'가 가능하므로 막지 않는다 [2026-08-26]
   // ⚠️ _todos는 IIFE 내부 → 바깥 스코프에선 window.__getTodos()로 접근
   const _tds=(window.__getTodos?window.__getTodos():[])||[];
   const t=_tds.find(x=>x.id===todoId);
@@ -14166,8 +14184,11 @@ async function _doCopyTodo(){
   if(!t){ toast('할 일을 찾을 수 없어요'); return; }
   try{
     // 그룹 id: 있으면 재사용, 없으면 새로 만들어 원본에도 부여(→ 어느 방에서 수정/이동/삭제해도 동기화)
+    // ⚠️ 같은 방 복사는 방 간 동기화로 묶지 않는다(일정 복사와 같은 이유) [2026-08-26]
+    const curId=_currentRoom?.id;
+    const otherRooms=rooms.filter(r=>r!==curId);
     let mgid=t.multi_group_id||null;
-    if(!mgid){
+    if(!mgid && otherRooms.length){
       mgid=genShared();
       const {error:eU}=await supa.from('todos').update({multi_group_id:mgid}).eq('id',t.id);
       if(eU)throw eU;
@@ -14186,11 +14207,11 @@ async function _doCopyTodo(){
       repeat_nth_week:t.repeat_nth_week||null, repeat_until:t.repeat_until||null,
       repeat_interval:t.repeat_interval||null, repeat_count:t.repeat_count||null,
       repeat_lunar_month:t.repeat_lunar_month||null, repeat_lunar_day:t.repeat_lunar_day||null,
-      memo:t.memo||null, member_keys:null, multi_group_id:mgid,
+      memo:t.memo||null, member_keys:null, multi_group_id:(rid===curId?null:mgid),
     }));
     const {error}=await supa.from('todos').insert(rows);
     if(error)throw error;
-    toast(rooms.length+'개 방에 복사됐어요');
+    toast(rooms.length===1&&rooms[0]===curId ? '같은 방에 복사됐어요' : (rooms.length+'개 방에 복사됐어요'));
     if(window.loadTodos)await window.loadTodos(); (window.safeRender||renderMonthly)();
   }catch(e){ console.error('copy todo failed',e); toast('복사 실패: '+((e.message||'').slice(0,40))); }
 }
@@ -24471,6 +24492,150 @@ function _evLocalMove(id,od,nd){
   (_events[nd]=_events[nd]||[]).push(ev);
   if(!arr.length)delete _events[od];
 }
+/* ══ 드래그로 옮기기·복사하기 (2026-08-26) ══
+   반복 일정은 예전엔 아예 못 끌었다. 이제 끌 수 있고, 놓을 때
+   '이 일정에만 / 이후 일정에도 / 모든 일정에' 중에서 고른다.
+   ⚠️ 함께(shared)·기간(range_group_id)·다른 방 복사본(multi_group_id)과 겹친 반복은
+      그룹 전체를 함께 손봐야 해서 아직 대상이 아니다(수정 화면의 범위 선택과 같은 기준). */
+function _evRepeatOf(ev){ return (ev&&ev.repeat_type)||((ev&&ev.recurring_yearly)?'yearly':'none'); }
+function _evDragRepeatOK(ev){
+  if(!ev)return false;
+  const rt=_evRepeatOf(ev);
+  if(!rt||rt==='none')return false;
+  return !ev.shared_id && !ev.range_group_id && !ev.multi_group_id && !ev.is_multi;
+}
+/* 원본 날짜를 diff 만큼 옮길 때 반복 패턴도 같이 따라가야 한다
+   (매주=요일, 매월 N째주=몇째 줄, 음력=음력 월/일). 안 맞추면 옮긴 뒤 엉뚱한 날에 뜬다. */
+function _evShiftRepeatFields(origin,newDate,diff){
+  const patch={};
+  const rt=_evRepeatOf(origin);
+  if(Array.isArray(origin.repeat_weekdays)&&origin.repeat_weekdays.length){
+    patch.repeat_weekdays=origin.repeat_weekdays.map(function(d){ return ((Number(d)+diff)%7+7)%7; });
+  }
+  if(rt==='monthly'&&origin.repeat_monthly_mode==='nth'){
+    try{
+      const nd=parseDateKey(newDate);
+      const wasLast=(Number(origin.repeat_nth_week)===-1);
+      const row=_calendarRowOfDate(nd.getFullYear(),nd.getMonth(),nd.getDate());
+      // '마지막 줄'이었다면 옮긴 날도 마지막 줄일 때만 -1 을 유지한다
+      const lastDate=_lastRowWeekdayDate?_lastRowWeekdayDate(nd.getFullYear(),nd.getMonth(),nd.getDay()):null;
+      const stillLast=!!(lastDate&&dateKey(lastDate.getFullYear(),lastDate.getMonth(),lastDate.getDate())===newDate);
+      patch.repeat_nth_week=(wasLast&&stillLast)?-1:row;
+    }catch(_){}
+  }
+  if(rt==='lunar'){
+    try{
+      const nd=parseDateKey(newDate);
+      const l=solarToLunarKR(nd.getFullYear(),nd.getMonth()+1,nd.getDate());
+      if(l&&l.lm&&l.ld){ patch.repeat_lunar_month=l.lm; patch.repeat_lunar_day=l.ld; }
+    }catch(_){}
+  }
+  return patch;
+}
+/* 반복 일정을 끌어 옮겼을 때 — 고른 범위대로 적용 */
+async function _evMoveRepeatOccurrence(origin,occDate,toDate,scope){
+  const diff=_evDayDiff(occDate,toDate);
+  if(!diff)return;
+  const base={
+    room_id:_currentRoom.id,user_id:_currentUser.id,
+    title:origin.title,time:origin.time||null,end_time:origin.end_time||null,
+    color:origin.color||'c-vintage',bar_style:origin.bar_style||'solid',
+    memo:origin.memo||null,photo_url:origin.photo_url||null,photo_urls:origin.photo_urls||null,
+  };
+  try{
+    if(scope==='one'){
+      // 반복 규칙은 그대로 두고 이 날짜만 건너뛴 뒤, 옮긴 날에 단독(비반복) 일정으로 새로 만든다
+      const {data:cur,error:e0}=await supa.from('events').select('repeat_except').eq('id',origin.id).maybeSingle();
+      if(e0)throw e0;
+      let ex=Array.isArray(cur&&cur.repeat_except)?cur.repeat_except.slice():[];
+      if(!ex.includes(occDate))ex.push(occDate);
+      const {error:eEx}=await supa.from('events').update({repeat_except:ex}).eq('id',origin.id);
+      if(eEx)throw eEx;
+      const {error:eIns}=await supa.from('events').insert(_attachVirtualMember(Object.assign({date:toDate},base)));
+      if(eIns)throw eIns;
+      toast('이 일정만 옮겼어요');
+    }else if(scope==='future'){
+      // 이 발생일 전날까지만 반복하도록 자르고, 옮긴 날부터 같은 패턴으로 새 원본을 만든다
+      const cutoff=shiftDateKey(occDate,-1);
+      const newUntil=(origin.repeat_until&&origin.repeat_until<cutoff)?origin.repeat_until:cutoff;
+      const {error:eCut}=await supa.from('events').update({repeat_until:newUntil}).eq('id',origin.id);
+      if(eCut)throw eCut;
+      const {error:eIns}=await supa.from('events').insert(_attachVirtualMember(Object.assign({date:toDate},base,{
+        recurring_yearly:!!origin.recurring_yearly,repeat_type:origin.repeat_type||'none',
+        repeat_weekdays:origin.repeat_weekdays||null,repeat_monthly_mode:origin.repeat_monthly_mode||null,
+        repeat_nth_week:origin.repeat_nth_week||null,repeat_until:origin.repeat_until||null,
+        repeat_interval:origin.repeat_interval||null,repeat_count:origin.repeat_count||null,
+        repeat_lunar_month:origin.repeat_lunar_month||null,repeat_lunar_day:origin.repeat_lunar_day||null,
+      },_evShiftRepeatFields(origin,toDate,diff))));
+      if(eIns)throw eIns;
+      toast('이후 일정도 함께 옮겼어요');
+    }else{
+      // 모든 일정 — 원본 날짜를 옮기고 반복 패턴·예외 날짜도 같은 간격으로 따라간다
+      const newOriginDate=shiftDateKey(origin.date,diff);
+      const patch=Object.assign({date:newOriginDate},_evShiftRepeatFields(origin,newOriginDate,diff));
+      if(Array.isArray(origin.repeat_except)&&origin.repeat_except.length){
+        patch.repeat_except=origin.repeat_except.map(function(d){ return shiftDateKey(d,diff); });
+      }
+      if(origin.repeat_until) patch.repeat_until=shiftDateKey(origin.repeat_until,diff);
+      const {error}=await supa.from('events').update(patch).eq('id',origin.id);
+      if(error)throw error;
+      toast('모든 반복 일정을 옮겼어요');
+    }
+    await loadEvents();
+    syncWidgetData(true);
+  }catch(err){
+    console.error('repeat move failed',err);
+    toast('일정 이동에 실패했어요');
+    try{await loadEvents()}catch(_){}
+  }
+}
+/* 끌어서 '복사' — 같은 방, 놓은 날짜에 하나 더 만든다.
+   반복 일정이면 그 발생 하나만 단독(비반복)으로 복사한다(시리즈 통째 복사는 뜻이 애매하다). */
+async function _evCopyToDate(anchorRow,fromDate,toDate){
+  const diff=_evDayDiff(fromDate,toDate);
+  if(!diff)return;
+  const base={
+    room_id:_currentRoom.id,user_id:_currentUser.id,
+    title:anchorRow.title,time:anchorRow.time||null,end_time:anchorRow.end_time||null,
+    color:anchorRow.color||'c-vintage',bar_style:anchorRow.bar_style||'solid',
+    memo:anchorRow.memo||null,photo_url:anchorRow.photo_url||null,photo_urls:anchorRow.photo_urls||null,
+  };
+  try{
+    let rows;
+    if(_evDragRepeatOK(anchorRow)){
+      rows=[Object.assign({date:toDate},base)];
+    }else{
+      const grp=_evCollectGroup(anchorRow,fromDate);
+      const dates=[...new Set((grp.length?grp:[{date:fromDate}]).map(o=>shiftDateKey(o.date,diff)))].sort();
+      const rgid=(dates.length>1&&anchorRow.range_group_id)?('rg_'+genShared()):null;
+      rows=dates.map(function(d){ return Object.assign({date:d,is_multi:!!anchorRow.is_multi,range_group_id:rgid},base); });
+    }
+    const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
+    if(error)throw error;
+    toast(rows.length>1?'같은 방에 복사했어요 (기간 일정)':'같은 방에 복사했어요');
+    await loadEvents();
+    syncWidgetData(true);
+  }catch(err){
+    console.error('drag copy failed',err);
+    toast('복사에 실패했어요');
+  }
+}
+/* 드롭 직후 — 옮길지 복사할지, 반복이면 어디까지 적용할지 물어보고 실행 */
+async function _evDrop(anchorRow,fromDate,toDate){
+  const act=await askRecurringDelete(
+    '<b>'+escapeHtml(anchorRow.title||'일정')+'</b> 을(를) 이 날짜로 어떻게 할까요?',
+    {title:'옮기기 / 복사', oneLabel:'이동', allLabel:'복사'});
+  if(!act)return;
+  if(act==='all')return _evCopyToDate(anchorRow,fromDate,toDate);
+  if(_evDragRepeatOK(anchorRow)){
+    const scope=await askRecurringDelete(
+      '반복되는 일정이에요. 어디까지 옮길까요?',
+      {title:'반복 일정 옮기기', oneLabel:'이 일정에만 적용', futureLabel:'이후 일정에도 적용', allLabel:'모든 일정에 적용'});
+    if(!scope)return;
+    return _evMoveRepeatOccurrence(anchorRow,fromDate,toDate,scope);
+  }
+  return _evMove(anchorRow,fromDate,toDate);
+}
 async function _evMove(anchorRow,fromDate,toDate){
   const diff=_evDayDiff(fromDate,toDate);
   if(!diff)return;
@@ -24679,7 +24844,7 @@ function setupEventDrag(){
     _evSettleGhost(d.ghost,(commit&&d.dropDate)?d.dropDate:d.fromDate);
     if(commit&&d.dropDate){
       if(d.kind==='todo'){ if(d.anchorTodo)_tdMove(d.anchorTodo,d.fromDate,d.dropDate); }
-      else if(d.anchorRow)_evMove(d.anchorRow,d.fromDate,d.dropDate);
+      else if(d.anchorRow)_evDrop(d.anchorRow,d.fromDate,d.dropDate);
     }
   }
 
