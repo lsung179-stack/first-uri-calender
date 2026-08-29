@@ -16470,17 +16470,22 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
       const scope=await askMultiRoomScope('이 일정은 여러 방에 등록돼 있어요.<br>어느 방에 수정 내용을 적용할까요?',false,groupRooms);
       if(scope===null)return 'cancelled';  // 취소 → 수정 모달 유지
       const _f2={date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,repeat_lunar_month:repeatLunarMonth,repeat_lunar_day:repeatLunarDay,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls};
+      /* ⚠️ 삭제와 같은 이유로 날짜 범위를 좁힌다 — multi_group_id 만으로 update 하면
+         같은 일정을 여러 번 복사한 사본들과 여러 날 일정의 다른 날짜까지 한 날짜로 뭉개진다. */
+      const _eGrp=findEventGroup(ev);
+      const _eDates=[...new Set(_eGrp.map(r=>r.date).filter(Boolean))];
+      const _eIn=_eDates.length?_eDates:[ev.date];
       if(scope==='all'){
         // 그룹 전체(모든 방의 내 복사본) 일괄 수정
         const {error}=await supa.from('events').update(_f2)
-          .eq('multi_group_id',ev.multi_group_id).eq('user_id',_currentUser.id);
+          .eq('multi_group_id',ev.multi_group_id).eq('user_id',_currentUser.id).in('date',_eIn);
         if(error)throw error;
         toast('전체 방의 일정이 수정됐어요');
       }else if(Array.isArray(scope)){
         // 선택한 방들만 일괄 수정 (현재 방은 항상 포함)
         const roomsSel=[...new Set([...scope,_currentRoom.id])];
         const {error}=await supa.from('events').update(_f2)
-          .eq('multi_group_id',ev.multi_group_id).eq('user_id',_currentUser.id).in('room_id',roomsSel);
+          .eq('multi_group_id',ev.multi_group_id).eq('user_id',_currentUser.id).in('date',_eIn).in('room_id',roomsSel);
         if(error)throw error;
         toast('선택한 '+roomsSel.length+'개 방의 일정이 수정됐어요');
       }else{
@@ -16834,15 +16839,31 @@ async function deleteEvent(eventId){
     if(!scope)return;
     try{
       const photoUrlsToCleanup=(Array.isArray(ev.photo_urls)&&ev.photo_urls.length)?ev.photo_urls.filter(Boolean):(ev.photo_url?[ev.photo_url]:[]);
+      /* ⚠️ 삭제 범위는 '지금 누른 그 일정'으로 한정해야 한다.
+         예전엔 multi_group_id+room_id 로 지웠는데, 같은 일정을 여러 번 복사하면 그 복사본들이
+         모두 같은 multi_group_id 를 공유하므로 **그 방의 같은 이름 일정이 통째로 날아갔다**
+         (여러 날 일정이면 다른 날짜까지). 이 방만 = 누른 그 행(기간이면 그 기간의 행들)만,
+         전체 방 = 그 날짜들만 다른 방에서도. [2026-08-29] */
+      const _grpRows=findEventGroup(ev);
+      const _delIds=[...new Set(_grpRows.map(r=>r.id).filter(Boolean))];
+      const _delDates=[...new Set(_grpRows.map(r=>r.date).filter(Boolean))];
       if(scope==='all'){
         const {error}=await supa.from('events').delete()
-          .eq('multi_group_id',ev.multi_group_id).eq('user_id',_currentUser.id);
+          .eq('multi_group_id',ev.multi_group_id).eq('user_id',_currentUser.id)
+          .in('date',_delDates.length?_delDates:[ev.date]);
         if(error)throw error;
         toast('전체 방에서 삭제됐어요');
-      }else{
-        // 이 방만 — 같은 방의 그룹 row 전체 삭제 (기간이면 여러 날 포함)
+      }else if(Array.isArray(scope)){
+        const _rooms=[...new Set([...scope,ev.room_id])];
         const {error}=await supa.from('events').delete()
-          .eq('multi_group_id',ev.multi_group_id).eq('room_id',ev.room_id).eq('user_id',_currentUser.id);
+          .eq('multi_group_id',ev.multi_group_id).eq('user_id',_currentUser.id)
+          .in('date',_delDates.length?_delDates:[ev.date]).in('room_id',_rooms);
+        if(error)throw error;
+        toast('선택한 '+_rooms.length+'개 방에서 삭제됐어요');
+      }else{
+        // 이 방만 — 누른 그 일정의 행들만 (기간이면 그 기간 전체, 여러 날이면 그 날짜 하나)
+        const {error}=await supa.from('events').delete()
+          .in('id',_delIds.length?_delIds:[ev.id]);
         if(error)throw error;
         toast('이 방의 일정만 삭제됐어요');
       }
