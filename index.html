@@ -2064,6 +2064,8 @@ body.ev-dragging .cal-cell{cursor:grabbing}
 .ev-range-pair{display:flex;gap:8px;align-items:center}
 .ev-range-box{flex:1;text-align:center;padding:10px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;color:var(--sub);transition:all .12s}
 .ev-range-box.on{background:var(--aP);border-color:var(--accent);color:var(--text)}
+/* 다음에 채울 칸 — 상자를 탭해 시작/종료 중 어디를 고를지 정한다 [2026-08-30] */
+.ev-range-box.active{border-color:var(--accent);box-shadow:0 0 0 2px var(--aP)}
 .ev-range-row .ev-range-arrow{color:var(--sub);font-size:14px}
 .ev-multi-day.range-start{background:var(--accent);color:var(--card)!important;font-weight:700;border-radius:6px 0 0 6px}
 .ev-multi-day.range-end{background:var(--accent);color:var(--card)!important;font-weight:700;border-radius:0 6px 6px 0}
@@ -2104,8 +2106,9 @@ body.ev-dragging .cal-cell{cursor:grabbing}
 .ev-multi-count{font-size:11px;color:var(--sub);text-align:center;padding-top:4px}
 /* 기간+반복(요일기반) 조합 — 달력은 반복 요일 칩이 계산한 기간을 보여주는 미리보기 전용,
    탭으로 직접 고르면 칩 상태와 어긋나므로 클릭 비활성화(회색 안내문으로 표시). [2026-08-13] */
-.ev-multi-cal.range-preview .ev-multi-day{cursor:default;pointer-events:none}
-.ev-multi-cal.range-preview .ev-multi-day:active{transform:none}
+/* [2026-08-30] 기간+요일반복이어도 날짜를 직접 탭해 시작/종료를 정할 수 있게 함(사용자 요청
+   "기간 시작,종료일이 안 눌려") — 탭하면 _evRangeSyncRepFromSpan()이 반복 요일 칩을 그 기간에
+   맞춰 되돌려 맞추므로 둘이 어긋나지 않는다. 옛 pointer-events:none 차단은 제거. */
 .range-preview-hint{font-size:11px;color:var(--sub);text-align:center;padding:2px 0 6px}
 
 /* 캘린더 셀 — 기간 일정 바 (시작·중간·끝) */
@@ -3540,7 +3543,8 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
 .tmc-cell.range-one{background:var(--accent);color:var(--card)!important;font-weight:700;border-radius:8px}
 .tmc-summary{text-align:center;font-size:12px;color:var(--sub);font-weight:600;padding:9px 4px 2px}
 /* 할일 — 기간+반복(요일기반) 미리보기 전용 달력(일정 .ev-multi-cal.range-preview와 대칭). [2026-08-13] */
-#todoMiniCal.range-preview .tmc-cell{cursor:default;pointer-events:none}
+/* [2026-08-30] 일정 폼과 동일 — 기간+요일반복이어도 날짜를 직접 탭할 수 있고,
+   탭하면 _tdRangeSyncRepFromSpan()이 반복 요일 칩을 그 기간에 맞춰 되돌려 맞춘다. */
 .todo-color-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:4px 2px;margin-top:4px}
 .todo-color-dot{width:100%;aspect-ratio:1;height:auto;border-radius:50%;cursor:pointer;border:none;position:relative;transition:transform .12s}
 .todo-color-dot.on{transform:none}
@@ -4765,9 +4769,9 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
         <input type="hidden" id="evStartDate">
         <input type="hidden" id="evEndDate">
         <div class="ev-range-pair">
-          <div class="ev-range-box" id="evRangeStartBox">시작일</div>
+          <div class="ev-range-box" id="evRangeStartBox" onclick="setEvRangeFocus('start')">시작일</div>
           <span class="ev-range-arrow">→</span>
-          <div class="ev-range-box" id="evRangeEndBox">종료일</div>
+          <div class="ev-range-box" id="evRangeEndBox" onclick="setEvRangeFocus('end')">종료일</div>
         </div>
         <!-- 반복(매주/매월N째주) 활성 시 — 반복 요일 칩이 기간을 결정하므로 탭식 미니캘린더 대신
              주 단위 이동만 제공(날짜가 직접 탭 선택과 어긋나는 문제 방지). [2026-08-13] -->
@@ -12917,7 +12921,10 @@ function renderEvUntilCal(){
     html+='<div class="'+cls+'" onclick="pickEvUntilDate(\''+k+'\')">'+d+'</div>';
   }
   const filled=startDow+totalDays;
-  const need=Math.ceil(filled/7)*7;
+  /* 6줄(42칸) 고정 — 달마다 줄 수가 5↔6으로 바뀌면 달력 높이가 변해서, 바텀시트가
+     콘텐츠 높이에 맞춰 자라거나 스크롤이 튀며 위쪽 ‹ › 화살표가 움직인다.
+     (할일 미니달력 renderTodoMiniCal 은 원래부터 42칸 고정) [2026-08-30] */
+  const need=42;
   for(let i=1;i<=need-filled;i++){
     const dt=new Date(y,m+1,i);
     const k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
@@ -15892,6 +15899,7 @@ function setEventMode(mode){
       else{_rangeCalDate=new Date();}
     }
     _rangeCalDate.setDate(1);
+    _evRangeFocus=_rangeStart?'end':'start';
     syncRangeHiddenInputs();
     renderRangeCal();
     renderRangeBoxes();
@@ -16005,7 +16013,10 @@ function renderRangeCal(){
     html+=`<div class="${cls}" onclick="onRangeCellClick('${k}')">${d}</div>`;
   }
   const filled=startDow+totalDays;
-  const need=Math.ceil(filled/7)*7;
+  /* 6줄(42칸) 고정 — 달마다 줄 수가 5↔6으로 바뀌면 달력 높이가 변해서, 바텀시트가
+     콘텐츠 높이에 맞춰 자라거나 스크롤이 튀며 위쪽 ‹ › 화살표가 움직인다.
+     (할일 미니달력 renderTodoMiniCal 은 원래부터 42칸 고정) [2026-08-30] */
+  const need=42;
   for(let i=1;i<=need-filled;i++){
     const dt=new Date(y,m+1,i);
     const k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
@@ -16035,17 +16046,57 @@ function rangeCalNav(diff){
   _rangeCalDate.setMonth(_rangeCalDate.getMonth()+diff);
   renderRangeCal();
 }
+/* 기간+요일반복에서 탭한 기간을 반복 요일(과 매월 N째 줄)로 되돌려 맞춤 — 이 모델은
+   "선택 요일의 최소~최대"가 곧 기간이라, 한 주(일~토)를 넘어가는 기간은 표현할 수 없다.
+   그래서 종료일은 시작일이 속한 주의 토요일까지로 자른다. [2026-08-30] */
+function _evRangeClampToWeek(start,end){
+  if(!start||!end||end<=start)return end;
+  try{
+    const sd=parseDateKey(start).getDay();
+    const maxEnd=shiftDateKey(start,6-sd);
+    return (end>maxEnd)?maxEnd:end;
+  }catch(_){ return end; }
+}
+function _evRangeSyncRepFromSpan(){
+  if(!_rangeStart)return;
+  try{
+    const sd=parseDateKey(_rangeStart).getDay();
+    const ed=_rangeEnd?parseDateKey(_rangeEnd).getDay():sd;
+    const wd=[];
+    for(let d=sd;d<=Math.max(sd,ed);d++)wd.push(d);
+    _evRepeatWeekdays=wd;
+    if(_evRepeatType==='monthly'&&_evMonthlyMode==='nth'){
+      const dt=parseDateKey(_rangeStart);
+      const row=_calendarRowOfDate(dt.getFullYear(),dt.getMonth(),dt.getDate());
+      if(row>=1)_evNthWeek=row;
+    }
+  }catch(_){}
+}
+/* 시작/종료 중 다음 탭이 채울 칸. 상자를 직접 탭해 고를 수도 있다(사용자 요청
+   "기간 시작,종료일이 안 눌려" — 예전엔 상자에 아무 동작이 없었다). [2026-08-30] */
+var _evRangeFocus='start';   // var — 선언보다 앞에 있는 setEventMode 에서 참조돼 TDZ 방지
+function setEvRangeFocus(which){
+  _evRangeFocus=(which==='end')?'end':'start';
+  renderRangeBoxes();
+}
 function onRangeCellClick(key){
-  // 기간+반복(요일기반)이면 달력은 미리보기 전용(CSS pointer-events:none으로도 막혀있지만
-  // 방어적으로 한번 더 확인) — 탭 무시, 반복 요일 칩이 유일한 조작 수단. [2026-08-13]
-  if(_evRepeatUsesWeekday())return;
-  // V1 로직: 첫 탭=시작, 두번째=끝(시작보다 빠르면 swap), 같으면 끝 reset, 끝 있으면 새 시작
-  if(!_rangeStart||_rangeEnd){
-    _rangeStart=key;_rangeEnd=null;
+  // 시작 칸이 대상이면 새 기간 시작, 종료 칸이면 끝을 정한다(시작보다 빠르면 swap)
+  if(_evRangeFocus==='start'||!_rangeStart){
+    _rangeStart=key;_rangeEnd=null;_evRangeFocus='end';
   }else{
-    if(key<_rangeStart){_rangeEnd=_rangeStart;_rangeStart=key;}
-    else if(key===_rangeStart){_rangeEnd=null;}
-    else{_rangeEnd=key;}
+    if(key<_rangeStart){_rangeEnd=_rangeStart;_rangeStart=key;_evRangeFocus='start';}
+    else if(key===_rangeStart){_rangeEnd=null;}   // 종료일 취소 — 계속 종료일을 기다린다
+    else{_rangeEnd=key;_evRangeFocus='start';}
+  }
+  if(_evRepeatUsesWeekday()){
+    // 기간+요일반복 — 한 주를 넘는 기간은 이 반복 모델로 표현할 수 없어 잘라준다
+    const clamped=_evRangeClampToWeek(_rangeStart,_rangeEnd);
+    if(clamped!==_rangeEnd){ _rangeEnd=clamped; toast('반복 기간은 한 주 안에서만 정할 수 있어요'); }
+    syncRangeHiddenInputs();
+    _evRangeSyncRepFromSpan();
+    renderRangeBoxes();
+    syncEvRepeatUI();   // 요일 칩·요약·미리보기까지 한 번에 다시 맞춤
+    return;
   }
   syncRangeHiddenInputs();
   _syncRepWeekdayFromRange();
@@ -16076,8 +16127,10 @@ function renderRangeBoxes(){
   const fmt=k=>{if(!k)return null;const d=parseDateKey(k);return `${d.getMonth()+1}월 ${d.getDate()}일`};
   sBox.textContent=fmt(_rangeStart)||'시작일';
   sBox.classList.toggle('on',!!_rangeStart);
+  sBox.classList.toggle('active',_evRangeFocus==='start');
   eBox.textContent=fmt(_rangeEnd)||'종료일';
   eBox.classList.toggle('on',!!_rangeEnd);
+  eBox.classList.toggle('active',_evRangeFocus==='end');
   if(_rangeStart&&_rangeEnd){
     const days=daysBetween(_rangeStart,_rangeEnd).length;
     cnt.textContent=`${days}일 선택됨`;
@@ -16130,7 +16183,10 @@ function renderDayCal(){
   const todayKey=dateKey(td.getFullYear(),td.getMonth(),td.getDate());
   const prevLast=new Date(y,m,0).getDate();
   const filled=startDow+totalDays;
-  const need=Math.ceil(filled/7)*7;
+  /* 6줄(42칸) 고정 — 달마다 줄 수가 5↔6으로 바뀌면 달력 높이가 변해서, 바텀시트가
+     콘텐츠 높이에 맞춰 자라거나 스크롤이 튀며 위쪽 ‹ › 화살표가 움직인다.
+     (할일 미니달력 renderTodoMiniCal 은 원래부터 42칸 고정) [2026-08-30] */
+  const need=42;
   const trailDays=need-filled;
   // 미리보기는 실제 렌더되는 앞뒤 다른달 꼬리까지 포함한 전체 구간에서 계산(그 칸에도 생길 수 있음)
   const fd=startDow>0?new Date(y,m-1,prevLast-startDow+1):first;
@@ -16218,7 +16274,10 @@ function renderMultiCal(){
   }
   // 뒷 빈 칸 (다음 달 시작)
   const filled=startDow+totalDays;
-  const need=Math.ceil(filled/7)*7;
+  /* 6줄(42칸) 고정 — 달마다 줄 수가 5↔6으로 바뀌면 달력 높이가 변해서, 바텀시트가
+     콘텐츠 높이에 맞춰 자라거나 스크롤이 튀며 위쪽 ‹ › 화살표가 움직인다.
+     (할일 미니달력 renderTodoMiniCal 은 원래부터 42칸 고정) [2026-08-30] */
+  const need=42;
   for(let i=1;i<=need-filled;i++){
     const dt=new Date(y,m+1,i);
     const k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
@@ -22692,7 +22751,10 @@ function renderDhRangeCal(){
     html+=`<div class="${cls}" onclick="onDhRangeCellClick('${k}')">${d}</div>`;
   }
   const filled=startDow+totalDays;
-  const need=Math.ceil(filled/7)*7;
+  /* 6줄(42칸) 고정 — 달마다 줄 수가 5↔6으로 바뀌면 달력 높이가 변해서, 바텀시트가
+     콘텐츠 높이에 맞춰 자라거나 스크롤이 튀며 위쪽 ‹ › 화살표가 움직인다.
+     (할일 미니달력 renderTodoMiniCal 은 원래부터 42칸 고정) [2026-08-30] */
+  const need=42;
   for(let i=1;i<=need-filled;i++){
     const dt=new Date(y,m+1,i);
     const k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
@@ -26706,7 +26768,10 @@ function renderTdUntilCal(){
     html+='<div class="'+cls+'" onclick="pickTdUntilDate(\''+k+'\')">'+d+'</div>';
   }
   const filled=startDow+totalDays;
-  const need=Math.ceil(filled/7)*7;
+  /* 6줄(42칸) 고정 — 달마다 줄 수가 5↔6으로 바뀌면 달력 높이가 변해서, 바텀시트가
+     콘텐츠 높이에 맞춰 자라거나 스크롤이 튀며 위쪽 ‹ › 화살표가 움직인다.
+     (할일 미니달력 renderTodoMiniCal 은 원래부터 42칸 고정) [2026-08-30] */
+  const need=42;
   for(let i=1;i<=need-filled;i++){
     const dt=new Date(y,m+1,i);
     const k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
@@ -27153,10 +27218,33 @@ function renderTodoMiniCal(){
   wrap.innerHTML=head+g+'<div class="tmc-summary" id="todoMiniSummary"></div>';
   updateTodoMiniSummary();
 }
+/* 기간+요일반복 — 탭한 기간을 반복 요일(과 매월 N째 줄)로 되돌려 맞춤. 이 모델은
+   "선택 요일의 최소~최대"가 곧 기간이라 한 주를 넘는 기간은 표현할 수 없어 잘라준다.
+   (일정 폼의 _evRangeClampToWeek/_evRangeSyncRepFromSpan 과 같은 규칙) [2026-08-30] */
+function _tdRangeClampToWeek(start,end){
+  if(!start||!end||end<=start)return end;
+  try{
+    const sd=parseDateKey(start).getDay();
+    const maxEnd=shiftDateKey(start,6-sd);
+    return (end>maxEnd)?maxEnd:end;
+  }catch(_){ return end; }
+}
+function _tdRangeSyncRepFromSpan(){
+  if(!_todoRangeStart)return;
+  try{
+    const sd=parseDateKey(_todoRangeStart).getDay();
+    const ed=_todoRangeEnd?parseDateKey(_todoRangeEnd).getDay():sd;
+    const wd=[];
+    for(let d=sd;d<=Math.max(sd,ed);d++)wd.push(d);
+    _tdRepeatWeekdays=wd;
+    if(_todoRepeat==='monthly'&&_tdMonthlyMode==='nth'){
+      const dt=parseDateKey(_todoRangeStart);
+      const row=_calendarRowOfDate(dt.getFullYear(),dt.getMonth(),dt.getDate());
+      if(row>=1)_tdNthWeek=row;
+    }
+  }catch(_){}
+}
 function todoMiniPick(key){
-  // 기간+반복(요일기반)이면 달력은 미리보기 전용(CSS pointer-events:none으로도 막혀있지만
-  // 방어적으로 한번 더 확인) — 탭 무시, 반복 요일 칩이 유일한 조작 수단. [2026-08-13]
-  if(_todoType==='range'&&_tdRepeatUsesWeekday())return;
   if(_todoType==='single'){
     _todoSingleDate=key;
   } else if(_todoType==='range'){
@@ -27168,6 +27256,11 @@ function todoMiniPick(key){
       if(key<_todoRangeStart){ _todoRangeEnd=_todoRangeStart; _todoRangeStart=key; }
       else _todoRangeEnd=key;
       _todoRangeFocus='start';
+    }
+    if(_tdRepeatUsesWeekday()){
+      const clamped=_tdRangeClampToWeek(_todoRangeStart,_todoRangeEnd);
+      if(clamped!==_todoRangeEnd){ _todoRangeEnd=clamped; toast('반복 기간은 한 주 안에서만 정할 수 있어요'); }
+      _tdRangeSyncRepFromSpan();
     }
     updateRangeChips();
   } else if(_todoType==='multi'){
