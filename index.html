@@ -2064,6 +2064,7 @@ body.ev-dragging .cal-cell{cursor:grabbing}
 .ev-md-date{padding:7px 11px;border-radius:999px;border:1.5px solid var(--border);background:transparent;color:var(--sub);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .12s}
 .ev-md-date.on{background:var(--accent);color:var(--card);border-color:var(--accent)}
 .ev-md-date.cur{cursor:default;opacity:.9}
+.ev-md-hint{margin-top:7px;font-size:11.5px;line-height:1.5;color:var(--sub)}
 .ev-range-row{display:none;flex-direction:column;gap:10px;align-items:stretch;margin-top:8px}
 .ev-range-row.show{display:flex}
 .ev-range-pair{display:flex;gap:8px;align-items:center}
@@ -4753,6 +4754,7 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
           <button type="button" class="ev-mode-btn" id="evMdScopeAll" onclick="setEvMultiDayScope('all')">전부</button>
         </div>
         <div class="ev-md-dates" id="evMdScopeDates" style="display:none"></div>
+        <div class="ev-md-hint" id="evMdScopeHint"></div>
       </div>
       <!-- 반복 (안 함 / 매주 / 매월 / 매년) — 기간 토글과 달력 사이.
            [2026-08-13 재설계] 인라인 컨트롤이 너무 복잡하다는 사용자 피드백 → 요약 버튼 하나로
@@ -14242,6 +14244,17 @@ function syncEvMultiDayScopeRow(ev){
   if(row)row.style.display=show?'':'none';
   const a=document.getElementById('evMdScopeAll');
   if(a)a.textContent=dates.length>1?('전부 ('+dates.length+'일)'):'전부';
+  /* '여러 날 일정인데 왜 하루가 눌려 있지?' 를 없애기 위해 지금 상태를 글로 말해준다.
+     ⚠️ 달력(여러 날 탭)은 '이 일정이 며칠짜리냐'를, 이 줄은 '이번 수정을 어디에 적용하냐'를
+     정하는 서로 다른 컨트롤이라 합치지 않았다 — 합치면 체크 해제가 '제외'인지 '삭제'인지
+     모호해지고, 잘못 읽히는 쪽이 삭제다. [2026-08-31] */
+  const lb=document.getElementById('evMdScopeLabel');
+  if(lb)lb.textContent=show?('여러 날 일정 ('+dates.length+'일) · 이 수정을 어디에 적용할까요?'):'이 수정을 어디에 적용할까요?';
+  const hint=document.getElementById('evMdScopeHint');
+  if(hint)hint.textContent=show?'날짜를 더하거나 빼려면 위 \u2018여러 날\u2019 을 누르세요.':'';
+  /* 여러 날 일정을 수정 중이면 '여러 날' 버튼에 날짜 수를 달아 지금 무엇을 보고 있는지 알린다 */
+  const mb=document.getElementById('evModeMulti');
+  if(mb)mb.textContent=(isMd&&dates.length>1)?('여러 날 ('+dates.length+'일)'):'여러 날';
   setEvMultiDayScope('one');
 }
 /* 여러 날 일정 — 어느 날짜에 적용할지 고른다.
