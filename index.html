@@ -16751,16 +16751,21 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
       const _eDates=[...new Set(_eGrp.map(r=>r.date).filter(Boolean))];
       const _eIn=_eDates.length?_eDates:[ev.date];
       if(_mdAll)delete _f2.date;
+      /* 명의(가상 멤버) 변경도 함께 실어야 한다 — 예전엔 _f2 만 보내서 '전체 방/방 선택' 을
+         고르면 명의 변경이 조용히 사라졌다(이 방만 경로는 원래부터 반영하고 있었다).
+         _eventAuthorKey 는 openEditEvent 가 그 일정의 값으로 채우므로, 안 바꿨으면 같은 값이
+         다시 들어가 아무 것도 안 바뀐다. [2026-08-31] */
+      const _f2v=_withVirtualMemberForUpdate(_f2);
       if(scope==='all'){
         // 그룹 전체(모든 방의 내 복사본) 일괄 수정
-        const {error}=await supa.from('events').update(_f2)
+        const {error}=await supa.from('events').update(_f2v)
           .eq('multi_group_id',ev.multi_group_id).eq('user_id',_currentUser.id).in('date',_eIn);
         if(error)throw error;
         toast('전체 방의 일정이 수정됐어요');
       }else if(Array.isArray(scope)){
         // 선택한 방들만 일괄 수정 (현재 방은 항상 포함)
         const roomsSel=[...new Set([...scope,_currentRoom.id])];
-        const {error}=await supa.from('events').update(_f2)
+        const {error}=await supa.from('events').update(_f2v)
           .eq('multi_group_id',ev.multi_group_id).eq('user_id',_currentUser.id).in('date',_eIn).in('room_id',roomsSel);
         if(error)throw error;
         toast('선택한 '+roomsSel.length+'개 방의 일정이 수정됐어요');
@@ -17116,7 +17121,17 @@ async function deleteEvent(eventId){
     // 여러 날 일정이면 먼저 '이 날짜만/여러 날 전체'를 묻고, 그 다음 방 범위를 묻는다 [2026-08-31]
     const _md=await _askMultiDayScope(ev,true);
     if(!_md)return;
-    const scope=await askMultiRoomScope('이 일정은 여러 방에 함께 등록돼 있어요.<br>전체 방에서 삭제할까요,<br>아니면 이 방에서만 삭제할까요?',true);
+    /* 수정 쪽과 똑같이 방 목록을 넘겨 '방 선택해서 삭제' 도 고를 수 있게 한다 —
+       예전엔 목록을 안 넘겨 그 버튼이 아예 안 떴고(전체/이 방만 2택), 아래 배열 분기는
+       닿을 수 없는 코드였다. [2026-08-31] */
+    let _delRooms=[];
+    try{
+      const {data:grp}=await supa.from('events').select('room_id')
+        .eq('multi_group_id',ev.multi_group_id).eq('user_id',_currentUser.id);
+      const gids=[...new Set((grp||[]).map(g=>g.room_id))];
+      _delRooms=gids.map(id=>({id,name:((_myRooms||[]).find(r=>r.id===id)||{}).name||'방',isCurrent:id===ev.room_id}));
+    }catch(_){}
+    const scope=await askMultiRoomScope('이 일정은 여러 방에 함께 등록돼 있어요.<br>어느 방에서 삭제할까요?',true,_delRooms);
     if(!scope)return;
     try{
       const photoUrlsToCleanup=(Array.isArray(ev.photo_urls)&&ev.photo_urls.length)?ev.photo_urls.filter(Boolean):(ev.photo_url?[ev.photo_url]:[]);
@@ -26225,9 +26240,25 @@ async function deleteTodo(id, occDate){
   try{
     // 여러 방에 함께 등록된 할일(multi_group_id)이면 삭제 범위 선택 (이벤트 삭제와 동일)
     if(t.multi_group_id){
-      const scope=await askMultiRoomScope('이 할 일은 여러 방에 함께 등록돼 있어요.<br>전체 방에서 삭제할까요,<br>아니면 이 방에서만 삭제할까요?',true);
+      /* 일정 삭제와 동일하게 방 목록을 넘겨 '방 선택해서 삭제' 도 고를 수 있게 한다.
+         예전엔 목록을 안 넘겨 그 버튼이 안 떴고, 설령 배열이 와도 아래 else 로 떨어져
+         '이 방만' 으로 조용히 처리됐다. [2026-08-31] */
+      let _tdRooms=[];
+      try{
+        const {data:grp}=await supa.from('todos').select('room_id')
+          .eq('multi_group_id',t.multi_group_id).eq('user_id',_currentUser.id);
+        const gids=[...new Set((grp||[]).map(function(g){return g.room_id;}))];
+        _tdRooms=gids.map(function(id){return {id:id,name:((_myRooms||[]).find(function(r){return r.id===id;})||{}).name||'방',isCurrent:id===t.room_id};});
+      }catch(_){}
+      const scope=await askMultiRoomScope('이 할 일은 여러 방에 함께 등록돼 있어요.<br>어느 방에서 삭제할까요?',true,_tdRooms,'할 일');
       if(!scope)return;  // 취소
-      if(scope==='all'){
+      if(Array.isArray(scope)){
+        const roomsSel=[...new Set([...scope,t.room_id])];
+        const { error } = await supa.from('todos').delete()
+          .eq('multi_group_id',t.multi_group_id).eq('user_id',_currentUser.id).eq('start_date',t.start_date).in('room_id',roomsSel);
+        if(error){ toast('삭제 실패'); return; }
+        toast('선택한 '+roomsSel.length+'개 방에서 삭제됐어요');
+      }else if(scope==='all'){
         // ⚠️ start_date로도 제한 — '여러 날' 할일(날짜별 개별 행이 같은 multi_group_id 공유)에서
         //    이 날짜의 방별 복사본만 삭제(다른 날짜까지 지워지는 것 방지). 단일 방 칸 삭제와 일관.
         const { error } = await supa.from('todos').delete()
@@ -27698,10 +27729,10 @@ async function _doSaveTodo(){
   try{
     if(_editingTodoId){
       // 편집 대상 할일이 여러 방에 묶여 있으면(multi_group_id) 적용 범위 선택
-      let _tmgid=null;
+      let _tmgid=null, _tOldStart=null;
       try{
-        const {data:cur}=await supa.from('todos').select('multi_group_id').eq('id',_editingTodoId).maybeSingle();
-        _tmgid=cur&&cur.multi_group_id;
+        const {data:cur}=await supa.from('todos').select('multi_group_id,start_date').eq('id',_editingTodoId).maybeSingle();
+        _tmgid=cur&&cur.multi_group_id; _tOldStart=cur&&cur.start_date;
       }catch(_){}
       if(_tmgid){
         let groupRooms=[];
@@ -27712,13 +27743,18 @@ async function _doSaveTodo(){
         }catch(_){}
         const scope=await askMultiRoomScope('이 할일은 여러 방에 등록돼 있어요.<br>어느 방에 수정 내용을 적용할까요?',false,groupRooms);
         if(scope===null){ _showTodoSheetFromSub(); return; }  // 취소 → 수정 시트 복귀
+        /* ⚠️ start_date로도 제한한다 — todos의 multi_group_id는 '여러 방 복사본'뿐 아니라
+           '여러 날' 할일의 날짜별 행까지 함께 묶는다(방당 1행 × 날짜 수). 이걸 안 걸면 한 날짜를
+           고쳤을 뿐인데 그 묶음의 모든 날짜 행이 같은 start_date로 뭉개진다(삭제 경로는 이미
+           같은 이유로 start_date를 걸고 있었는데 수정 경로만 빠져 있었다). [2026-08-31] */
+        const _tScope=(q)=>_tOldStart?q.eq('start_date',_tOldStart):q;
         if(scope==='all'){
-          const { error } = await supa.from('todos').update(fields).eq('multi_group_id',_tmgid).eq('user_id',_currentUser.id);
+          const { error } = await _tScope(supa.from('todos').update(fields).eq('multi_group_id',_tmgid).eq('user_id',_currentUser.id));
           if(error){ toast('수정 실패: '+((error.message||'').slice(0,40))); _showTodoSheetFromSub(); return; }
           toast('전체 방의 할일이 수정됐어요');
         } else if(Array.isArray(scope)){
           const roomsSel=[...new Set([...scope,_currentRoom.id])];
-          const { error } = await supa.from('todos').update(fields).eq('multi_group_id',_tmgid).eq('user_id',_currentUser.id).in('room_id',roomsSel);
+          const { error } = await _tScope(supa.from('todos').update(fields).eq('multi_group_id',_tmgid).eq('user_id',_currentUser.id).in('room_id',roomsSel));
           if(error){ toast('수정 실패: '+((error.message||'').slice(0,40))); _showTodoSheetFromSub(); return; }
           toast('선택한 '+roomsSel.length+'개 방의 할일이 수정됐어요');
         } else {
