@@ -4738,6 +4738,15 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
         <button type="button" class="ev-mode-btn" id="evModeRange" onclick="setEventMode('range')">기간</button>
         <button type="button" class="ev-mode-btn" id="evModeMulti" onclick="setEventMode('multi')">여러 날</button>
       </div>
+      <!-- 여러 날 일정을 수정할 때 어디에 적용할지 — 저장을 누른 뒤 모달로 묻는 대신 폼 안에서
+           미리 고르게 한다(저장 전에 무엇이 바뀔지 보이고, 흔한 경우엔 추가 탭이 없다). [2026-08-31] -->
+      <div id="evMdScopeRow" style="display:none;margin-top:8px">
+        <div class="ev-label" id="evMdScopeLabel">이 수정을 어디에 적용할까요?</div>
+        <div class="ev-mode-row">
+          <button type="button" class="ev-mode-btn on" id="evMdScopeOne" onclick="setEvMultiDayScope('one')">이 날짜만</button>
+          <button type="button" class="ev-mode-btn" id="evMdScopeAll" onclick="setEvMultiDayScope('all')">전부</button>
+        </div>
+      </div>
       <!-- 반복 (안 함 / 매주 / 매월 / 매년) — 기간 토글과 달력 사이.
            [2026-08-13 재설계] 인라인 컨트롤이 너무 복잡하다는 사용자 피드백 → 요약 버튼 하나로
            접고, 탭하면 아이폰 캘린더 스타일 팝업(#evRepSheetOverlay)에서 설정. 내부 컨트롤/state는
@@ -13324,6 +13333,7 @@ function openAddEvent(){
   _selectedMode='day';
   _editGroup=[];
   _multiSelected=new Set();
+  try{ syncEvMultiDayScopeRow(null); }catch(_){}
   _dayDate=_selectedDate; _dayCalDate=null;
   // 모드 버튼 표시 reset — 직전 수정에서 숨겨졌을 수 있음
   const dayBtnN=document.getElementById('evModeDay');
@@ -13429,6 +13439,7 @@ async function openEditEvent(eventId){
     // 기간 일정 그룹 감지 (단독 일정만 — 함께 일정은 단일 날짜로 가정)
     _editGroup=findEventGroup(ev);
   }
+  try{ syncEvMultiDayScopeRow(ev); }catch(_){}
   document.getElementById('evModalTitle').textContent='일정 수정';
   const dt=parseDateKey(_selectedDate);
   document.getElementById('evModalDate').textContent=`${dt.getMonth()+1}월 ${dt.getDate()}일 ${DOW_NAMES[dt.getDay()]}요일`;
@@ -14156,6 +14167,30 @@ function _copyEventGroup(ev){
    묶음이 하루뿐이거나 여러 날 일정이 아니면 묻지 않고 그대로 'one'. 취소하면 null. [2026-08-31] */
 function _copyEventGroupDates(ev){
   try{ return [...new Set(_copyEventGroup(ev).map(r=>r.date).filter(Boolean))].length; }catch(_){ return 1; }
+}
+/* 여러 날 일정 수정 범위 — 저장 후 모달로 묻지 않고 폼 안 토글로 미리 고른다. [2026-08-31]
+   'one'=이 날짜만(기본) | 'all'=그 여러 날 전부. 여러 날 일정이 아니면 줄 자체가 안 보인다. */
+var _evMultiDayScope='one';
+var _evMultiDayRows=[];
+function setEvMultiDayScope(v){
+  _evMultiDayScope=(v==='all')?'all':'one';
+  const o=document.getElementById('evMdScopeOne'), a=document.getElementById('evMdScopeAll');
+  if(o)o.classList.toggle('on',_evMultiDayScope==='one');
+  if(a)a.classList.toggle('on',_evMultiDayScope==='all');
+}
+/* 수정 폼을 열 때 호출 — 여러 날(2일 이상) 일정이면 줄을 보여주고 기본 '이 날짜만'으로 맞춘다. */
+function syncEvMultiDayScopeRow(ev){
+  const row=document.getElementById('evMdScopeRow');
+  _evMultiDayRows=[]; _evMultiDayScope='one';
+  const isMd=!!(ev&&ev.is_multi&&!ev.shared_id);
+  let dates=[];
+  if(isMd){ try{ _evMultiDayRows=_copyEventGroup(ev); }catch(_){ _evMultiDayRows=[ev]; }
+    dates=[...new Set(_evMultiDayRows.map(r=>r.date).filter(Boolean))]; }
+  const show=isMd&&dates.length>1&&_selectedMode==='day';
+  if(row)row.style.display=show?'':'none';
+  const a=document.getElementById('evMdScopeAll');
+  if(a)a.textContent=dates.length>1?('여러 날 전부 ('+dates.length+'일)'):'전부';
+  setEvMultiDayScope('one');
 }
 async function _askMultiDayScope(ev, isDelete){
   const solo={scope:'one',dates:ev&&ev.date?[ev.date]:[],rows:ev?[ev]:[]};
@@ -15948,6 +15983,10 @@ function applyModeUI(){
   document.getElementById('evModeRange').classList.toggle('on',_selectedMode==='range');
   document.getElementById('evModeMulti').classList.toggle('on',_selectedMode==='multi');
   document.getElementById('evRangeRow').classList.toggle('show',_selectedMode==='range');
+  /* 기간·여러 날 모드는 폼에서 날짜를 직접 고르므로 적용 범위 줄은 숨긴다 [2026-08-31] */
+  { const _mdr=document.getElementById('evMdScopeRow');
+    if(_mdr&&_selectedMode!=='day')_mdr.style.display='none';
+    else if(_mdr&&_editingEvent){ try{ syncEvMultiDayScopeRow(_editingEvent); }catch(_){} } }
   document.getElementById('evMultiSection').classList.toggle('show',_selectedMode==='multi');
   // 여러 날(multi)은 임의로 콕 찍은 날짜들이라 "반복 패턴"과 개념이 안 맞음(요일이 제각각이라
   // 규칙적으로 뻗어나갈 기준이 없음) — 반복 UI 자체를 숨김. 저장 로직도 _doSaveEvent에서
@@ -16556,9 +16595,10 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
     const _fields={date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,repeat_lunar_month:repeatLunarMonth,repeat_lunar_day:repeatLunarDay,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls};
     /* 여러 날 일정이면 '이 날짜만 / 여러 날 전체'를 먼저 묻는다. 전체를 고르면 날짜는
        바꾸지 않고(여러 날을 하루로 뭉갤 수 없다) 제목·시간·색·메모만 모든 날짜에 적용. [2026-08-31] */
-    const _mdE=await _askMultiDayScope(ev,false);
-    if(_mdE===null)return 'cancelled';
-    const _mdAll=(_mdE.scope==='all');
+    const _mdE=(_evMultiDayRows&&_evMultiDayRows.length)
+      ? {scope:_evMultiDayScope,rows:_evMultiDayRows,dates:[...new Set(_evMultiDayRows.map(r=>r.date).filter(Boolean))]}
+      : {scope:'one',rows:[ev],dates:[ev.date]};
+    const _mdAll=(_mdE.scope==='all'&&_mdE.dates.length>1);
     if(_mdAll)delete _fields.date;
     if(ev.multi_group_id){
       // 그룹(다른 방에도 등록된 동일 일정)에 속한 방 목록 조회 — 방 선택 UI용
