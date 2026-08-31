@@ -13406,6 +13406,10 @@ async function openEditEvent(eventId){
   { const _ol=document.getElementById('evOutline'); if(_ol)_ol.checked=(_selectedStyle==='outline'); }
   _selectedMode='day';
   _editGroup=[];
+  /* ⚠️ 여러 날 선택은 여기서도 반드시 비운다 — 예전엔 openAddEvent 에서만 비워서, 직전에
+     '여러 날'로 일정을 만든 뒤 다른 일정을 수정하면 그때 고른 날짜들이 그대로 남아 있었다
+     (저장하면 그 날짜에 유령 일정이 생기거나 원래 날짜가 지워짐). [2026-08-31] */
+  _multiSelected=new Set();
   _dayDate=_selectedDate; _dayCalDate=null;
   // 이 일정을 만든 사람(가상 멤버면 'v-'+member_id) — 함께 멤버 피커의 기준이 된다. [2026-08-19]
   _evOwnerKey=ev.virtual_member_id?('v-'+ev.virtual_member_id):(ev.user_id||_currentUser?.id);
@@ -15863,6 +15867,12 @@ function setEventMode(mode){
   }
   _selectedMode=mode;
   if(mode==='multi'){
+    /* 수정 중인 '여러 날' 일정이면 그 일정의 날짜를 전부 미리 선택해준다 — 예전엔 누른 날짜
+       하나만 선택된 채로 열려서, 사용자가 보기엔 하루짜리인데 저장하면 나머지 날짜가
+       통째로 사라졌다(고객 제보 2026-08-31 "뭐 하나 수정하니까 싹 다 사라졌어용"). */
+    if(_multiSelected.size===0&&_editingEvent&&_editingEvent.is_multi&&!_editingEvent.shared_id){
+      try{ _copyEventGroup(_editingEvent).forEach(r=>{ if(r&&r.date)_multiSelected.add(r.date); }); }catch(_){}
+    }
     if(_multiSelected.size===0&&_selectedDate){
       _multiSelected.add(_selectedDate);
     }
@@ -16469,13 +16479,19 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
       }catch(_){ targetRooms=[_currentRoom.id]; }
     }
 
-    // 3) 대상 방들의 기존 그룹 row 삭제 (내 것 + 대상 방으로만 제한)
+    // 3) 대상 방들의 기존 row 삭제 (내 것 + 대상 방 + '이 일정이 실제로 쓰는 날짜'로만 제한)
+    /* ⚠️ 예전엔 multi_group_id 만으로 지워서, 같은 일정을 여러 번 복사한 사본들과 여러 날
+       일정의 다른 날짜까지 통째로 날아갔다(고객 제보 2026-08-31). 이 일정이 차지하는 날짜는
+       _copyEventGroup 이 기간·여러 날·단일을 한 기준으로 알려준다(복사와 같은 기준). */
+    const _oldRows=_copyEventGroup(ev);
+    const _oldDates=[...new Set(_oldRows.map(r=>r.date).filter(Boolean))];
+    const _oldIn=_oldDates.length?_oldDates:[ev.date];
     if(mgid){
       const {error:eDel}=await supa.from('events').delete()
-        .eq('multi_group_id',mgid).eq('user_id',_currentUser.id).in('room_id',targetRooms);
+        .eq('multi_group_id',mgid).eq('user_id',_currentUser.id).in('room_id',targetRooms).in('date',_oldIn);
       if(eDel)throw eDel;
     }else{
-      const oldIds=(_editGroup&&_editGroup.length>1)?_editGroup.map(e=>e.id):[ev.id];
+      const oldIds=(_oldRows.length>1)?_oldRows.map(e=>e.id).filter(Boolean):[ev.id];
       const {error:eDel}=await supa.from('events').delete().in('id',oldIds);
       if(eDel)throw eDel;
     }
