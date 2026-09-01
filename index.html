@@ -5629,7 +5629,7 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
     <button class="btn-danger-full" onclick="leaveRoomConfirm()">이 방 나가기</button>
   </div>
   
-  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.1.9 (79)</div>
+  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.1.9 (80)</div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeRoomSettings()">닫기</button>
   </div>
@@ -8990,7 +8990,7 @@ async function init(){
        '권한 prompt'면 아직 OS 팝업을 수락하지 않은 것 → 설정 › 알림 설정에서 켜면 된다. [2026-08-23] */
     try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp));
       const plat=(nat&&C.getPlatform)?C.getPlatform():'web';
-      const _base='build 1.1.9 (79) · '+(nat?'네이티브('+plat+')':'웹')+' · http플러그인 '+(ch?'있음':'없음');
+      const _base='build 1.1.9 (80) · '+(nat?'네이티브('+plat+')':'웹')+' · http플러그인 '+(ch?'있음':'없음');
       bi.textContent=_base;
       (async function(){
         try{
