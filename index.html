@@ -5629,7 +5629,7 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
     <button class="btn-danger-full" onclick="leaveRoomConfirm()">이 방 나가기</button>
   </div>
   
-  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.1.9 (80)</div>
+  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.2.0 (81)</div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeRoomSettings()">닫기</button>
   </div>
@@ -8990,7 +8990,7 @@ async function init(){
        '권한 prompt'면 아직 OS 팝업을 수락하지 않은 것 → 설정 › 알림 설정에서 켜면 된다. [2026-08-23] */
     try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp));
       const plat=(nat&&C.getPlatform)?C.getPlatform():'web';
-      const _base='build 1.1.9 (80) · '+(nat?'네이티브('+plat+')':'웹')+' · http플러그인 '+(ch?'있음':'없음');
+      const _base='build 1.2.0 (81) · '+(nat?'네이티브('+plat+')':'웹')+' · http플러그인 '+(ch?'있음':'없음');
       bi.textContent=_base;
       (async function(){
         try{
@@ -24192,8 +24192,9 @@ function _ctbIconOptions(){
   });
   return out;
 }
-/* 테스트 중 노출 게이트 — 관리자만. 정식 공개 시 이 함수가 true 만 반환하게 바꾸면 된다. */
-function _ctbVisible(){ try{ return typeof isAdmin==='function' && isAdmin(); }catch(_){ return false; } }
+/* 노출 게이트 — 2026-09-01 정식 공개(1.2.0). 다시 숨기려면 이 함수만 false 를 반환하게 하면 된다.
+   ⚠️ 만들기 자체는 openCustomThemeBuilder 안의 isEffectivePremium() 이 막는다(무료는 구독 안내). */
+function _ctbVisible(){ return true; }
 async function openCustomThemeBuilder(id){
   if(!_ctbVisible()) return;
   if(!isEffectivePremium()){
