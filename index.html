@@ -864,17 +864,20 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 /* 빈 레인 자리 — 일정 바와 '정확히' 같은 높이여야 한다.
    예전엔 바 15.7px / 빈칸·할일 15px 이라, 위쪽에 빈 레인이 몇 개냐에 따라
    같은 일정이 날마다 조금씩 다른 높이로 떠 계단처럼 삐뚤삐뚤해졌다. [2026-08-21] */
-.cal-evspacer{font-size:9px;height:calc(1.3em + 2px);flex:none;box-sizing:border-box;pointer-events:none}
+.cal-evspacer{font-size:9px;line-height:1.3;padding:1px 0;min-height:calc(1.3em + 2px);flex:none;box-sizing:border-box;pointer-events:none}
+/* 빈 줄도 글자 한 칸을 품고 있어야 일정 바와 정확히 같은 높이가 된다 —
+   시스템 글자 확대에서 바만 커지고 빈 줄은 그대로면 같은 주의 기간 바가 어긋난다. */
+.cal-evspacer::before,.cal-tdline::before{content:"\00a0"}
 .cal-more{font-size:8px;font-weight:700;color:var(--accent);opacity:.7;padding-left:3px;line-height:1.1;flex:none}
-.cal-tditem{display:flex;align-items:center;gap:3px;font-size:9px;height:calc(1.3em + 2px);flex:none;box-sizing:border-box;line-height:1.3;color:var(--text);padding-left:2px;overflow:hidden;white-space:nowrap}
+.cal-tditem{display:flex;align-items:center;gap:3px;font-size:9px;min-height:calc(1.3em + 2px);flex:none;box-sizing:border-box;line-height:1.3;color:var(--text);padding:1px 0 1px 2px;overflow:hidden;white-space:nowrap}
 .cal-tditem.done{color:var(--done)}
 .cal-tditem.done .cal-tdtxt{text-decoration:line-through}
 .cal-tdchk{width:9px;height:9px;border:1.3px solid var(--accent);border-radius:2px;box-sizing:border-box;flex:none;display:flex;align-items:center;justify-content:center;overflow:visible}
 .cal-tdchk svg{width:11px;height:11px;display:block}
 .cal-tdtxt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cal-tdline{position:relative;font-size:9px;height:calc(1.3em + 2px);flex:none;box-sizing:border-box}
-.cal-tdline-bar{position:absolute;top:6px;height:2px}
-.cal-tdline-lab{position:absolute;top:1px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:3px;white-space:nowrap;padding:0 4px;background:var(--bg);border-radius:4px;font-size:9px;line-height:1.3;color:var(--text);max-width:calc(100% - 4px);overflow:hidden}
+.cal-tdline{position:relative;font-size:9px;line-height:1.3;padding:1px 0;min-height:calc(1.3em + 2px);flex:none;box-sizing:border-box}
+.cal-tdline-bar{position:absolute;top:50%;margin-top:-1px;height:2px}
+.cal-tdline-lab{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:3px;white-space:nowrap;padding:0 4px;background:var(--bg);border-radius:4px;font-size:9px;line-height:1.3;color:var(--text);max-width:calc(100% - 4px);overflow:hidden}
 .cal-tdline.done .cal-tdline-lab{color:var(--done)}
 .cal-tdline.done .cal-tdtxt{text-decoration:line-through}
 /* 격자선 — 세로(우측)/가로(하단) 토글. box-shadow inset으로 레이아웃 안 밀리게 */
@@ -885,7 +888,7 @@ body.grid-h .cal-cell::before{content:'';position:absolute;left:0;bottom:0;width
 /* 날짜·일정만 선 위로 (반응 이모지 등은 자기 z-index 유지) */
 body.grid-v .cal-day-num,body.grid-h .cal-day-num,
 body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
-.cal-evbar{font-size:9px;font-weight:600;padding:1px 4px;margin:0;border-radius:3px;color:#fff;line-height:1.3;height:calc(1.3em + 2px);flex:none;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:var(--accent)}
+.cal-evbar{font-size:9px;font-weight:600;padding:1px 4px;margin:0;border-radius:3px;color:#fff;line-height:1.3;min-height:calc(1.3em + 2px);flex:none;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:var(--accent)}
 .cal-evmore{font-size:9px;color:var(--sub);padding-left:3px;font-weight:500}
 /* 기간 일정 시작 칸: 글자를 이어지는 칸 수만큼 펼쳐 표시 (한 칸 …잘림 방지) */
 .cal-cell.has-range-start{z-index:2}
@@ -3100,16 +3103,20 @@ body.align-right .cal-evbar{text-align:right}
   font-size:8px;color:var(--sub);
   text-align:center;letter-spacing:0;
   margin-top:-2px;margin-bottom:2px;
-  /* 높이를 '고정'(min-height 아님)해 라벨 유무와 무관하게 이벤트 시작 Y를 항상 동일하게 유지.
-     → 기간 일정 바가 공휴일/절기 라벨이 있는 칸에서만 아래로 밀려 삐뚤빼뚤해지던 문제 방지.
-     ⚠️ px 고정이면 안드로이드 '글자 크기 크게' 설정에서 글자가 11px 박스보다 커져
-     세로로 짤려 보임('추석'이 획 일부만 보임) → font-size와 함께 늘어나는 em 단위로 변경.
-     em이라 같은 렌더에서는 모든 셀이 동일 배율로 커져 정렬은 그대로 유지됨. */
-  height:1.375em;box-sizing:border-box;
-  line-height:1.375em;
+  /* 라벨 유무와 무관하게 이벤트 시작 Y를 항상 동일하게 유지해야 한다
+     (안 그러면 기간 일정 바가 공휴일/절기 라벨이 있는 칸에서만 아래로 밀려 삐뚤빼뚤).
+     ⚠️ 그렇다고 높이를 '고정'하면 안 된다 — 휴대폰의 '글자 크게'(최소 글자 크기·시스템 확대)는
+     실제로 그려지는 글자만 키우고 em/px 로 적어둔 높이는 그대로라, 8px 기준 11px 상자에
+     14px 글자가 들어가 '추석'·'백로'가 위아래로 잘려 보였다. [2026-09-02]
+     → 바닥(min-height)만 두고 실제 줄 높이가 상자를 늘리게 한다. line-height 는 단위 없는
+     배수라 확대된 글자 크기를 따라 함께 커진다. 빈 라벨도 아래 :empty 로 글자 한 칸을 품어
+     같은 줄의 모든 칸이 언제나 같은 높이가 된다. */
+  min-height:1.375em;box-sizing:border-box;
+  line-height:1.375;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   padding:0 2px;
 }
+.cal-cell-label:empty::before{content:"\00a0"}
 .cal-cell-label.holiday{color:var(--sun);font-weight:700}
 .cal-cell-label.term{color:var(--gold);font-weight:600}
 
@@ -9575,6 +9582,7 @@ let _selectedMode='day';     // 'day' | 'range' | 'multi'
 let _editGroup=[];           // 같은 기간 그룹 events
 let _editOccurrenceScope=null; // 'one'|'all'|null — 반복 일정의 개별 발생 편집 범위(이 일정만/이후 일정도)
 let _emojiTargetEvent=null;  // 이모지 모달 대상
+let _emojiTargetDate=null;   // 반응을 남길 날짜(반복 일정은 보고 있는 날 기준)
 const REACTIONS=['❤️','👍','🎉','🔥','😂','😢','✨','✅'];
 /* 3-D: 여러 날 모드 (불연속 점선택) */
 let _multiSelected=new Set();  // 선택된 날짜 키 (YYYY-MM-DD)
@@ -10602,27 +10610,18 @@ function showReactionAnimation(){
   // 기존 떠다니는 이모지 제거 (중복 호출 시 누적 방지)
   document.querySelectorAll('.cal-reaction-bubble').forEach(b=>b.remove());
 
-  // target_id별 가장 빠른 날짜 = 그 일정의 "첫날"
-  const firstDateByTarget={};
-  Object.entries(_events).forEach(([date,evs])=>{
-    evs.forEach(ev=>{
-      const tid=ev.shared_id||ev.id;
-      if(!firstDateByTarget[tid]||date<firstDateByTarget[tid]){
-        firstDateByTarget[tid]=date;
-      }
-    });
-  });
-
-  // 날짜별 반응 이모지 배열 (사용자별 반응 그대로 — 중복 OK)
-  // BUG FIX: 함께 일정은 _events에 멤버 수만큼 row가 있어서
-  // 같은 target_id를 여러 번 처리하면 반응이 멤버 수배로 늘어남 — Set으로 가드
+  // 날짜별 반응 이모지 배열 — 반응은 '그 날짜'에 달리므로 화면에 그려진 칸을 그대로 훑는다.
+  // (예전엔 _events 의 물리 행만 봐서 반복 일정은 시작일 칸에서만 말풍선이 떴다. [2026-09-02])
+  // ⚠️ 함께 일정은 같은 날에 멤버 수만큼 행이 있어 Set 으로 한 번만 센다.
   const byDate={};
-  const processedTids=new Set();
-  Object.entries(_events).forEach(([date,evs])=>{
+  document.querySelectorAll('.cal-cell[data-date]').forEach(cell=>{
+    const date=cell.dataset.date;
+    let evs=[]; try{ evs=getDayEvents(date)||[]; }catch(_){ evs=[]; }
+    const seen=new Set();
     evs.forEach(ev=>{
+      if(ev._isVirtual)return;
       const tid=ev.shared_id||ev.id;
-      if(processedTids.has(tid))return;
-      if(firstDateByTarget[tid]!==date)return;
+      if(!tid||seen.has(tid))return;
       // 멤버 탭 필터: 'all'이면 전부 표시. 멤버 탭이면 그 멤버 일정만
       // (단독 본인 일정 + 함께 일정 참여만 통과. 다른 사람 단독 일정은 skip)
       if(_viewingMember&&_viewingMember!=='all'){
@@ -10634,8 +10633,8 @@ function showReactionAnimation(){
           if(ev.user_id!==_viewingMember||ev.virtual_member_id)return;
         }
       }
-      processedTids.add(tid);
-      const rs=_reactions[tid];
+      seen.add(tid);
+      const rs=_reactions[tid+'|'+date];
       if(!rs||!rs.length)return;
       if(!byDate[date])byDate[date]=[];
       rs.forEach(r=>byDate[date].push(r.emoji));
@@ -10685,6 +10684,13 @@ function showReactionAnimation(){
   });
 }
 
+/* 반응은 '일정 시리즈'가 아니라 '그 날짜의 일정'에 붙는다.
+   반복 일정은 DB 행이 시작일 하나뿐이라, 예전엔 어느 날에 눌러도 시작일에만 달리고
+   나머지 날에는 아무것도 안 보였다(=반복 일정은 반응이 안 되는 것처럼 보임).
+   → DB 는 (target_id, user_id, occ_date) 로 구분하고, 화면 키는 'target|날짜'. [2026-09-02]
+   ⚠️ 기간 일정도 같은 규칙 — 반응을 남긴 그 날에만 보인다. */
+function _reactionKey(ev,dateKey){ return (ev.shared_id||ev.id)+'|'+dateKey; }
+
 /* 이모지 반응 로드 — 현재 방의 모든 일정에 대한 멤버별 반응 */
 async function loadReactions(){
   _reactions={};
@@ -10692,15 +10698,17 @@ async function loadReactions(){
   const allEvs=Object.values(_events).flat();
   if(!allEvs.length)return;
   // target_id 목록: 단독은 ev.id, 함께는 ev.shared_id (중복 제거)
-  const targetIds=[...new Set(allEvs.map(e=>e.shared_id||e.id))];
+  // ⚠️ 반복 일정도 시작일 행이 _events 에 있으므로 이 목록만으로 그 시리즈의 모든 날 반응이 다 온다.
+  const targetIds=[...new Set(allEvs.map(e=>e.shared_id||e.id))].filter(Boolean);
   try{
     const {data,error}=await supa.from('event_reactions')
-      .select('target_id,user_id,emoji')
+      .select('target_id,user_id,emoji,occ_date')
       .in('target_id',targetIds);
     if(error)throw error;
     (data||[]).forEach(r=>{
-      if(!_reactions[r.target_id])_reactions[r.target_id]=[];
-      _reactions[r.target_id].push({user_id:r.user_id,emoji:r.emoji});
+      const k=r.target_id+'|'+r.occ_date;
+      if(!_reactions[k])_reactions[k]=[];
+      _reactions[k].push({user_id:r.user_id,emoji:r.emoji});
     });
   }catch(e){
     console.warn('반응 로드 실패:',e);
@@ -12296,20 +12304,19 @@ function renderDateSheetList(){
 
     let reactionHtml='';
     if(!isVirtual){
-      const reactionTargetId=ev.shared_id||ev.id;
-      const reactions=_reactions[reactionTargetId]||[];
+      const reactions=_reactions[_reactionKey(ev,_selectedDate)]||[];
       const myReaction=reactions.find(r=>r.user_id===_currentUser?.id);
       reactions.forEach(r=>{
         const m=_myMembers.find(mm=>mm.user_id===r.user_id);
         const isMineR=r.user_id===_currentUser?.id;
-        const clickHandler=isMineR?`onclick="event.stopPropagation();openEmojiPick('${ev.id}')"`:'';
+        const clickHandler=isMineR?`onclick="event.stopPropagation();openEmojiPick('${ev.id}','${_selectedDate}')"`:'';
         const avInnerR=m&&m.avatar_url?avImg(m.avatar_url,(m?.name||'·').slice(0,1)):escapeHtml((m?.name||'·').slice(0,1));
         const avBgR=escapeHtml(m?.color||'#8b3a2a');
         const emojiContent=(r.emoji&&r.emoji.includes(':'))?svgEmoji(r.emoji):r.emoji;
         reactionHtml+=`<span class="dp-reaction-chip${isMineR?' mine':''}" ${clickHandler} title="${escapeHtml(m?.name||'')}"><span class="dp-reaction-chip-av" style="background:${avBgR}">${avInnerR}</span><span class="dp-reaction-chip-emoji">${emojiContent}</span></span>`;
       });
       if(!myReaction){
-        reactionHtml+=`<button class="dp-reaction-chip-add" onclick="event.stopPropagation();openEmojiPick('${ev.id}')" title="반응 추가">+</button>`;
+        reactionHtml+=`<button class="dp-reaction-chip-add" onclick="event.stopPropagation();openEmojiPick('${ev.id}','${_selectedDate}')" title="반응 추가">+</button>`;
       }
     }
     const reactionRow=reactionHtml?`<div class="dp-reaction-row">${reactionHtml}</div>`:'';
@@ -15722,9 +15729,10 @@ function _notifyTodo(action, todo){
 }
 
 /* ── 이모지 반응 알림 — 함께 일정은 참여자 전원, 단독은 작성자에게. 본인 일정에 본인 반응은 무음 ── */
-function _notifyEmojiReaction(ev, emoji){
+function _notifyEmojiReaction(ev, emoji, occDate){
   try{
     if(!_currentUser||!_currentRoom||!ev||!emoji)return;
+    const evDate=occDate||ev.date;   // 반복 일정은 보고 있던 날짜
     let targetIds=[];
     const isShared=ev.shared_id||(Array.isArray(ev.member_ids)&&ev.member_ids.length>=2);
     if(isShared){
@@ -15742,15 +15750,15 @@ function _notifyEmojiReaction(ev, emoji){
     }
     if(!targetIds.length)return;
     const myName=(_currentProfile&&_currentProfile.name)||'멤버';
-    const dateLabel=ev.date?formatShortDate(ev.date):'';
+    const dateLabel=evDate?formatShortDate(evDate):'';
     const title=`${myName} ${emoji}`;
     const body=`${ev.title||'일정'}에 반응 · ${dateLabel}`;
     supa.functions.invoke('send-push',{
       body:{ user_ids:targetIds, title, body,
-        url:`/?room=${_currentRoom.id}&date=${ev.date}`,
-        tag:`reaction-${ev.date}-${ev.id||''}`, kind:'social' }
+        url:`/?room=${_currentRoom.id}&date=${evDate}`,
+        tag:`reaction-${evDate}-${ev.id||''}`, kind:'social' }
     }).catch(e=>console.warn('반응 알림 발송 실패:',e));
-    _insertNotificationRows(targetIds, _currentRoom.id, ev.date, title, body, 'emoji_reaction');
+    _insertNotificationRows(targetIds, _currentRoom.id, evDate, title, body, 'emoji_reaction');
   }catch(e){console.warn('_notifyEmojiReaction 에러:',e)}
 }
 
@@ -17292,15 +17300,17 @@ async function deleteEvent(eventId){
    ═══════════════════════════════════ */
 
 /* 이모지 모달 — 같은 방 멤버 누구나 어떤 일정에든 자기 반응을 달 수 있음 */
-function openEmojiPick(eventId){
+function openEmojiPick(eventId,dateKey){
   const evs=Object.values(_events).flat();
   const ev=evs.find(e=>e.id===eventId);
   if(!ev){toast('일정을 찾지 못했어요');return}
   if(!_currentUser){toast('로그인이 필요해요');return}
   _emojiTargetEvent=ev;
+  // ⚠️ 반응이 달리는 날짜 — 반복 일정은 화면에 보이는 날과 DB 행의 날짜(ev.date)가 다르다.
+  _emojiTargetDate=dateKey||_selectedDate||ev.date;
   // 본인의 기존 반응 찾기 (있으면 모달에 강조 표시)
   const targetId=ev.shared_id||ev.id;
-  const myR=(_reactions[targetId]||[]).find(r=>r.user_id===_currentUser.id);
+  const myR=(_reactions[targetId+'|'+_emojiTargetDate]||[]).find(r=>r.user_id===_currentUser.id);
   _emojiTargetEvent._currentReaction=myR?myR.emoji:null;
   document.getElementById('emojiSubject').textContent=`"${(ev.title||'').slice(0,20)}" 에 반응`;
   renderEmojiPager();
@@ -17349,9 +17359,15 @@ function renderEmojiPager(){
   label.style.display=multi?'block':'none';
   dots.style.display=multi?'flex':'none';
   
+  // 열자마자 보여줄 페이지 — 이 날짜에 이미 남긴 반응, 없으면 마지막으로 골랐던 이모지가 있는 페이지.
+  // (예전엔 무조건 1페이지로 되돌려서, 매번 원하는 팩까지 스크롤해야 했다. [2026-09-02])
+  const want=cur||_lastPickedEmoji();
+  let startIdx=pages.findIndex(p=>p.emojis.indexOf(want)>=0);
+  if(startIdx<0)startIdx=0;
+
   if(multi){
-    dots.innerHTML=pages.map((p,i)=>`<div class="emoji-dot${i===0?' on':''}" data-idx="${i}"></div>`).join('');
-    label.textContent=pages[0].name;
+    dots.innerHTML=pages.map((p,i)=>`<div class="emoji-dot${i===startIdx?' on':''}" data-idx="${i}"></div>`).join('');
+    label.textContent=pages[startIdx].name;
     pager.onscroll=()=>{
       const pageWidth=pager.clientWidth;
       if(pageWidth<=0)return;
@@ -17362,9 +17378,23 @@ function renderEmojiPager(){
   }else{
     pager.onscroll=null;
   }
-  
-  // 첫 페이지로 리셋
-  pager.scrollLeft=0;
+
+  // ⚠️ .emoji-pager 는 scroll-behavior:smooth 라(손가락 스와이프용) 그냥 옮기면 주르륵 흘러간다.
+  //    잠깐 auto 로 바꿔 '딱' 옮긴 뒤 되돌린다. 카드가 아직 안 그려져 폭이 0일 수 있어 다음 프레임에 한 번 더.
+  const jump=()=>{
+    const w=pager.clientWidth; if(w<=0)return false;
+    const prev=pager.style.scrollBehavior;
+    pager.style.scrollBehavior='auto';
+    pager.scrollLeft=startIdx*w;
+    pager.style.scrollBehavior=prev||'';
+    return true;
+  };
+  if(!jump())requestAnimationFrame(jump);
+  else requestAnimationFrame(jump);
+}
+/* 마지막으로 고른 이모지 — 다음에 피커를 열면 그 자리에서 시작한다 */
+function _lastPickedEmoji(){
+  try{ return localStorage.getItem('uricalv2.lastEmoji')||''; }catch(_){ return ''; }
 }
 var _emojiHidDateSheet=false;
 function closeEmojiPick(){
@@ -17377,20 +17407,24 @@ function closeEmojiPick(){
     _emojiHidDateSheet=false;
   }
   _emojiTargetEvent=null;
+  _emojiTargetDate=null;
 }
 async function setMyReaction(emoji){
   if(!_emojiTargetEvent||!_currentUser)return;
   const targetId=_emojiTargetEvent.shared_id||_emojiTargetEvent.id;
+  const occDate=_emojiTargetDate||_emojiTargetEvent.date;
   try{
     const {error}=await supa.from('event_reactions').upsert({
       target_id:targetId,
       user_id:_currentUser.id,
       emoji:emoji,
+      occ_date:occDate,
       updated_at:new Date().toISOString(),
-    },{onConflict:'target_id,user_id'});
+    },{onConflict:'target_id,user_id,occ_date'});
     if(error)throw error;
+    try{ localStorage.setItem('uricalv2.lastEmoji',emoji); }catch(_){}
     toast(`${emojiDisplayName(emoji)} 반응을 남겼어요`);
-    _notifyEmojiReaction(_emojiTargetEvent, emoji);
+    _notifyEmojiReaction(_emojiTargetEvent, emoji, occDate);
     closeEmojiPick();
     await loadEvents();
     if(_selectedDate)openDateSheet(_selectedDate);
@@ -17401,10 +17435,12 @@ async function setMyReaction(emoji){
 async function removeMyReaction(){
   if(!_emojiTargetEvent||!_currentUser)return;
   const targetId=_emojiTargetEvent.shared_id||_emojiTargetEvent.id;
+  const occDate=_emojiTargetDate||_emojiTargetEvent.date;
   try{
     const {error}=await supa.from('event_reactions').delete()
       .eq('target_id',targetId)
-      .eq('user_id',_currentUser.id);
+      .eq('user_id',_currentUser.id)
+      .eq('occ_date',occDate);
     if(error)throw error;
     toast('반응이 제거됐어요');
     closeEmojiPick();
