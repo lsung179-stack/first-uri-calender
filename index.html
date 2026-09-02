@@ -14811,7 +14811,10 @@ async function _doSaveEvent(){
     return;
   }
   btn.textContent='저장 중...';
-  
+  // ⚠️ 수정 여부는 여기서 미리 기억해 둔다 — saveEditedEvent 의 일부 경로와 아래 closeEventModal()이
+  //    _editingEvent 를 null 로 비우기 때문. (안 그러면 수정해도 '등록했어요' 알림이 가고 일자 시트도 안 열린다)
+  const _wasEditing=!!_editingEvent;
+
   try{
     if(_editingEvent){
       // 수정 — saveEditedEvent 내부에서 그룹 일괄수정/방선택 처리 (다른 방 '추가'는 하지 않음)
@@ -15004,13 +15007,13 @@ async function _doSaveEvent(){
     closeEventModal();
     await loadEvents();
     // 신규 추가 후엔 캘린더 화면으로, 수정 후엔 일자 시트로 (변경 결과 확인용)
-    if(_editingEvent){
+    if(_wasEditing){
       const _sheetDate=(_selectedMode==='day'&&_dayDate)?_dayDate:_selectedDate;
       openDateSheet(_sheetDate);
     }
 
     // ── 5단계: 같은 방 멤버에게 자동 알림 발송 ──
-    if(_editingEvent){
+    if(_wasEditing){
       notifyEventUpdated(title, fmtTimeRange(time,endTime));
     }else{
       notifyEventCreated(title, fmtTimeRange(time,endTime));
