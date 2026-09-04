@@ -28095,6 +28095,9 @@ window.pickTdUntilDate=pickTdUntilDate;
 window.onTdLunarMonth=onTdLunarMonth;
 window.onTdLunarDay=onTdLunarDay;
 window.toggleTodoTimePicker=toggleTodoTimePicker;
+// ⚠️ 이 두 개는 HTML onclick 속성(전역 스코프)에서 부르므로 반드시 window 에 노출해야 한다(코드 23 IIFE 함정).
+window._todoTimeBoxTap=_todoTimeBoxTap;      // 할일 시간 상자 탭
+window._tdRangeShiftWeek=_tdRangeShiftWeek;  // 할일 기간+요일반복 '이전 주 / 다음 주'
 window.closeTodoTimePicker=closeTodoTimePicker;
 window.applyTodoTimePicker=applyTodoTimePicker;
 window.clearTodoTime=clearTodoTime;
