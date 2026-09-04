@@ -325,7 +325,8 @@ const ORDER_FLOW=['pending','paid','making','shipped','done'];
 const TABS=[
   {k:'dash',icon:'📊',label:'대시보드'},
   {k:'subs',icon:'💳',label:'구독'},
-  {k:'orders',icon:'📦',label:'주문'},
+  /* 달력 주문 보류 — 탭만 숨김(hidden). 되돌리려면 hidden:true 만 지우면 된다. [2026-09-04] */
+  {k:'orders',icon:'📦',label:'주문',hidden:true},
   {k:'announce',icon:'📢',label:'공지'},
   {k:'push',icon:'📨',label:'알림'},
   {k:'users',icon:'👥',label:'회원'},
@@ -404,7 +405,7 @@ document.getElementById('logoutBtn').onclick=async()=>{await safeSignOut();showL
 
 function buildNav(){
   const nav=document.getElementById('nav');
-  nav.innerHTML=TABS.map(t=>`<button class="nav-btn${t.k===_tab?' on':''}" data-k="${t.k}" onclick="switchTab('${t.k}')">
+  nav.innerHTML=TABS.filter(t=>!t.hidden).map(t=>`<button class="nav-btn${t.k===_tab?' on':''}" data-k="${t.k}" onclick="switchTab('${t.k}')">
     <span>${t.icon}</span><span>${t.label}</span><span class="badge" id="badge-${t.k}" style="display:none"></span>
   </button>`).join('');
 }
