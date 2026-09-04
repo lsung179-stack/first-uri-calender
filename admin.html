@@ -331,7 +331,7 @@ const TABS=[
   {k:'push',icon:'📨',label:'알림'},
   {k:'users',icon:'👥',label:'회원'},
   {k:'errors',icon:'🐞',label:'에러'},
-  {k:'feedback',icon:'💬',label:'피드백'},
+  {k:'feedback',icon:'💬',label:'피드백',hidden:true},
 ];
 let _tab='dash';
 let _cache={};
@@ -441,7 +441,7 @@ async function renderDash(m){
     {l:'오늘 주문',v:st.orders_today,e:`누적 ${st.total_orders}건`},
     {l:'입금 대기',v:st.orders_pending,e:`${(st.pending_amount||0).toLocaleString()}원`,alert:st.orders_pending>0},
     {l:'오늘 에러',v:st.errors_today,e:'에러 탭에서 확인',alert:st.errors_today>0},
-    {l:'새 피드백',v:st.feedback_new,e:'피드백 탭에서 확인',alert:st.feedback_new>0},
+    {l:'새 피드백',v:st.feedback_new,e:'',alert:st.feedback_new>0},
   ];
   let gr=null; try{ const {data:gd}=await supa.rpc('admin_growth_stats'); gr=(gd&&gd.ok!==false)?gd:null; }catch(_){}
   let co=null; try{ const {data:cd}=await supa.rpc('admin_ads_cohorts'); co=Array.isArray(cd)?cd:null; }catch(_){}
