@@ -157,10 +157,12 @@ public class WidgetCommon {
     }
     static PendingIntent toggleTodo(Context c, String todoId) {
         int rc = RC_TODO_BASE + (todoId == null ? 0 : (todoId.hashCode() & 0x3fffff));
-        Intent i = new Intent(c, UriCalendarWidgetProvider.class);
+        Intent i = new Intent(c, WidgetActionActivity.class);
         i.setAction(ACTION_TOGGLE_TODO);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION
+            | Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
         i.putExtra(EXTRA_TODO, todoId);
-        return PendingIntent.getBroadcast(c, rc, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        return PendingIntent.getActivity(c, rc, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
     private static void cycleRoom(Context c) {
@@ -206,13 +208,37 @@ public class WidgetCommon {
         try { rv.setOnClickPendingIntent(resId(c, "wg_fb_root", "id"), openApp(c, RC_OPEN, null, null)); } catch (Throwable t) {}
         return rv;
     }
+    // 위젯 상태 변경(방 순환·멤버 필터·달/주 이동·새로고침) 실행 인텐트.
+    // ⚠️ 브로드캐스트가 아니라 '보이지 않는 액티비티'(WidgetActionActivity)로 보낸다 — 이유는 그 파일 주석 참고.
+    //    (삼성 앱 절전 등 제한 버킷에서 브로드캐스트만 조용히 버려지는 것으로 보이는 무반응 제보 대응)
     static PendingIntent bcast(Context c, int reqCode, String action, int delta, String user) {
-        Intent i = new Intent(c, UriCalendarWidgetProvider.class);
+        Intent i = new Intent(c, WidgetActionActivity.class);
         i.setAction(action);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION
+            | Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
         if (delta != Integer.MIN_VALUE) i.putExtra(EXTRA_DELTA, delta);
         if (user != null) i.putExtra(EXTRA_USER, user);
-        return PendingIntent.getBroadcast(c, reqCode, i,
+        return PendingIntent.getActivity(c, reqCode, i,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    }
+
+    /* 액션 적용 + 4종 위젯 재렌더. WidgetActionActivity(주 경로)와
+       UriCalendarWidgetProvider.onReceive(옛 브로드캐스트 호환)가 함께 쓴다. */
+    static void handleAction(Context c, Intent intent) {
+        if (!applyAction(c, intent)) return;
+        if (ACTION_REFRESH.equals(intent.getAction())) {
+            // 새로고침 깜빡임: ↻ 아이콘을 잠깐 강조했다가 300ms 후 원복(시각 피드백).
+            setFlash(c, true);
+            refreshAll(c);
+            final Context ctx = c.getApplicationContext();
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(new Runnable() {
+                @Override public void run() {
+                    try { setFlash(ctx, false); refreshAll(ctx); } catch (Throwable t) { /* 무시 */ }
+                }
+            }, 300);
+        } else {
+            refreshAll(c);
+        }
     }
     // 앱 열기(딥링크 route는 앱이 처리) — MainActivity를 런처로 띄우고 extra 전달
     static PendingIntent openApp(Context c, int reqCode, String roomId, String date) {
@@ -648,7 +674,14 @@ public class WidgetCommon {
         Bitmap seal = sealBitmap(room);
         if (seal == null) seal = circleBitmap(null, 0xFF566F8F, room != null ? room.name : "방", dp(c, 26));
         if (seal != null) rv.setImageViewBitmap(sealId, seal);
-        rv.setOnClickPendingIntent(sealId, bcast(c, RC_CYCLE, ACTION_CYCLE_ROOM, Integer.MIN_VALUE, null));
+        // 방이 2개 이상일 때만 '다음 방으로 순환'. 방이 하나뿐이면 순환은 아무 일도 안 하므로
+        // (=탭해도 반응 없는 것처럼 보임) 그 방을 앱에서 열어준다. [2026-09-06]
+        boolean multiRoom = data != null && data.rooms != null && data.rooms.size() >= 2;
+        // ⚠️ openApp(ACTION_MAIN)은 앱 JS로 방 id가 전달되지 않는다(그냥 마지막 화면 복귀).
+        //    딥링크(openScheme)라야 appUrlOpen 이 발화해 그 방 캘린더로 간다.
+        rv.setOnClickPendingIntent(sealId, multiRoom
+            ? bcast(c, RC_CYCLE, ACTION_CYCLE_ROOM, Integer.MIN_VALUE, null)
+            : openScheme(c, RC_OPEN, "com.lsung.uricalendar://open?room=" + (roomId == null ? "" : roomId)));
 
         // '전체' 칩 = 필터 해제
         int allId = resId(c, "wg_all", "id");

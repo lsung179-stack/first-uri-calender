@@ -29,28 +29,12 @@ public class UriCalendarWidgetProvider extends AppWidgetProvider {
         updateAll(context, mgr, new int[]{ appWidgetId });
     }
 
+    /* 옛 브로드캐스트 호환 경로. 지금은 헤더 버튼이 WidgetActionActivity 로 가지만,
+       홈런처에 남아 있는 예전 PendingIntent가 여기로 올 수 있어 그대로 처리한다. */
     @Override
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
-        if (WidgetCommon.applyAction(context, intent)) {
-            if (WidgetCommon.ACTION_REFRESH.equals(intent.getAction())) {
-                // 새로고침 깜빡임: 아이콘 강조로 즉시 렌더 → 300ms 후 원복.
-                // (실제 데이터 새로고침은 refreshAll의 notifyAppWidgetViewDataChanged로 이미 수행됨)
-                WidgetCommon.setFlash(context, true);
-                WidgetCommon.refreshAll(context);
-                final Context ctx = context.getApplicationContext();
-                final PendingResult pr = goAsync();
-                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(new Runnable() {
-                    @Override public void run() {
-                        try { WidgetCommon.setFlash(ctx, false); WidgetCommon.refreshAll(ctx); }
-                        catch (Throwable t) { /* 무시 */ }
-                        finally { try { pr.finish(); } catch (Throwable t) {} }
-                    }
-                }, 300);
-            } else {
-                WidgetCommon.refreshAll(context);
-            }
-        }
+        try { WidgetCommon.handleAction(context, intent); } catch (Throwable t) { /* 무시 */ }
     }
 
     static void updateAll(Context context, AppWidgetManager mgr, int[] ids) {

@@ -43,8 +43,12 @@ public class TodayWidgetProvider extends AppWidgetProvider {
         android.graphics.Bitmap seal = WidgetCommon.sealBitmap(room);
         if (seal == null) seal = WidgetCommon.circleBitmap(null, 0xFF566F8F, room != null ? room.name : "방", WidgetCommon.dp(context, 22));
         if (seal != null) rv.setImageViewBitmap(sealId, seal);
-        rv.setOnClickPendingIntent(sealId,
-            WidgetCommon.bcast(context, WidgetCommon.RC_CYCLE, WidgetCommon.ACTION_CYCLE_ROOM, Integer.MIN_VALUE, null));
+        // 방이 하나뿐이면 순환은 무동작이라 반응 없어 보인다 → 그 방을 앱에서 열어준다. [2026-09-06]
+        boolean multiRoom = data != null && data.rooms != null && data.rooms.size() >= 2;
+        rv.setOnClickPendingIntent(sealId, multiRoom
+            ? WidgetCommon.bcast(context, WidgetCommon.RC_CYCLE, WidgetCommon.ACTION_CYCLE_ROOM, Integer.MIN_VALUE, null)
+            : WidgetCommon.openScheme(context, WidgetCommon.RC_OPEN,
+                "com.lsung.uricalendar://open?room=" + (room != null && room.id != null ? room.id : "") + "&date=" + today));
 
         // 새로고침 (새로고침 중이면 아이콘 강조 = 깜빡임 피드백)
         rv.setTextColor(WidgetCommon.resId(context, "tw_refresh", "id"),

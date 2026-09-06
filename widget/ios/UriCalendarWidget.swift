@@ -322,6 +322,7 @@ struct CalEntry: TimelineEntry {
     var gridH: Bool = false
     var holidays: [String:String] = [:]   // 빨간날(공휴일)
     var flash: Bool = false      // 새로고침 직후 잠깐 흐려짐(깜빡임 피드백)
+    var roomCount: Int = 0       // 내 방 수 — 1개면 씰 탭이 '순환' 대신 '앱 열기'(무반응 방지) [2026-09-06]
 }
 // 새로고침 깜빡임 타임스탬프(App Group). 최근이면 타임라인이 flash 엔트리를 잠깐 넣음.
 let FLASH_KEY = "widget.flashRefresh"
@@ -332,14 +333,14 @@ struct CalProvider: AppIntentTimelineProvider {
     func snapshot(for configuration: CalConfigIntent, in context: Context) async -> CalEntry {
         let room = effectiveRoom(configuration.room?.id) ?? sampleRoom()
         let d = loadWGData()
-        return CalEntry(date: Date(), room: room, memberFilter: effectiveFilter(configuration.member), myUserId: d?.myUserId, gridV: d?.gridV ?? false, gridH: d?.gridH ?? false, holidays: d?.holidays ?? [:])
+        return CalEntry(date: Date(), room: room, memberFilter: effectiveFilter(configuration.member), myUserId: d?.myUserId, gridV: d?.gridV ?? false, gridH: d?.gridH ?? false, holidays: d?.holidays ?? [:], roomCount: d?.rooms.count ?? 0)
     }
     func timeline(for configuration: CalConfigIntent, in context: Context) async -> Timeline<CalEntry> {
         let room = effectiveRoom(configuration.room?.id)
         let d = loadWGData()
         let filter = effectiveFilter(configuration.member)
         func mk(_ date: Date, _ flash: Bool) -> CalEntry {
-            CalEntry(date: date, room: room, memberFilter: filter, myUserId: d?.myUserId, gridV: d?.gridV ?? false, gridH: d?.gridH ?? false, holidays: d?.holidays ?? [:], flash: flash)
+            CalEntry(date: date, room: room, memberFilter: filter, myUserId: d?.myUserId, gridV: d?.gridV ?? false, gridH: d?.gridH ?? false, holidays: d?.holidays ?? [:], flash: flash, roomCount: d?.rooms.count ?? 0)
         }
         // 자정에 '오늘'이 넘어가므로 자정 직후 갱신 예약(그 외는 앱이 reloadAllTimelines)
         let mid = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: 1, to: Date())!)
@@ -425,10 +426,17 @@ struct WGHeader: View {
     private var hiddenCount: Int { max(0, orderedMembers.count - shownMembers.count) }
     var body: some View {
         HStack(spacing: 6) {
-            // 씰 = 방 프로필. 탭하면 다음 방으로 전환(방 여러 개일 때). 실제 앱 씰 이미지.
-            Button(intent: CycleRoomIntent()) {
-                SealIcon(seal: room.seal, name: room.name, pngDataURL: room.sealPng, size: sealSize)
-            }.buttonStyle(.plain)
+            // 씰 = 방 프로필. 방이 여러 개면 탭해서 다음 방으로 전환.
+            // 방이 하나뿐이면 순환이 아무 일도 안 해 '반응 없음'으로 보이므로 그 방을 앱에서 연다. [2026-09-06]
+            if roomCount >= 2 {
+                Button(intent: CycleRoomIntent()) {
+                    SealIcon(seal: room.seal, name: room.name, pngDataURL: room.sealPng, size: sealSize)
+                }.buttonStyle(.plain)
+            } else {
+                Link(destination: URL(string: "com.lsung.uricalendar://open?room=\(room.id)")!) {
+                    SealIcon(seal: room.seal, name: room.name, pngDataURL: room.sealPng, size: sealSize)
+                }
+            }
             // 멤버 아바타 = 그 사람만 보기 (탭). 겹치지 않게 간격, 사진 있으면 사진.
             HStack(spacing: 4) {
                 // 전체 = 필터 해제(모든 멤버 일정). 아무도 선택 안 됐을 때 강조.
@@ -519,6 +527,7 @@ struct SealIcon: View {
 struct TodayView: View {
     let room: WGRoom; let filter: String?
     var myUserId: String? = nil
+    var roomCount: Int = 0            // 1개면 씰 탭이 '앱 열기'(순환은 무동작이라 반응 없어 보임)
     // 작은 위젯 기본 = '내 일정만'. 명시 필터(설정/탭)가 있으면 그걸 우선.
     private var eff: String? { filter ?? myUserId }
     var todays: [WGEvent] { dedupeEvents(room.events.filter { $0.date == todayStr() && (eff == nil || $0.userId == eff) })
@@ -527,10 +536,16 @@ struct TodayView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 5) {
-                // 좌측 상단 방 프로필 씰 — 탭하면 다음 방으로 전환
-                Button(intent: CycleRoomIntent()) {
-                    SealIcon(seal: room.seal, name: room.name, pngDataURL: room.sealPng, size: 20)
-                }.buttonStyle(.plain)
+                // 좌측 상단 방 프로필 씰 — 방이 여러 개면 다음 방으로 전환, 하나뿐이면 앱 열기(무반응 방지)
+                if roomCount >= 2 {
+                    Button(intent: CycleRoomIntent()) {
+                        SealIcon(seal: room.seal, name: room.name, pngDataURL: room.sealPng, size: 20)
+                    }.buttonStyle(.plain)
+                } else {
+                    Link(destination: URL(string: "com.lsung.uricalendar://open?room=\(room.id)")!) {
+                        SealIcon(seal: room.seal, name: room.name, pngDataURL: room.sealPng, size: 20)
+                    }
+                }
                 Text("오늘").font(.system(size: 15, weight: .black)).foregroundColor(.terra)
                 if todays.count + todaysTodos.count > 0 {
                     Text("\(todays.count + todaysTodos.count)").font(.system(size: 10, weight: .black)).foregroundColor(.cream)
@@ -594,6 +609,7 @@ struct GridView: View {
     var gridH: Bool = false
     var myUserId: String? = nil       // 헤더 아바타 '나 먼저' 정렬용
     var holidays: [String:String] = [:]   // 빨간날(공휴일) 'YYYY-MM-DD'→이름
+    var roomCount: Int = 0            // 1개면 씰 탭이 '앱 열기'(순환은 무동작이라 반응 없어 보임)
     private var weekOffset: Int { weekNav ? readWeekOffset() : 0 }   // 2주 페이지(1=14일)
     // 월 위젯 기준 달 (오프셋 적용)
     var monthDate: Date {
@@ -1067,6 +1083,7 @@ struct UpRun { let title: String; let color: String; let start: String; let end:
 struct ComboView: View {
     let room: WGRoom; let filter: String?; var myUserId: String? = nil
     var holidays: [String:String] = [:]
+    var roomCount: Int = 0            // 1개면 씰 탭이 '앱 열기'(순환은 무동작이라 반응 없어 보임)
     // 오늘부터 앞으로의 일정. 같은 제목+색의 '연속 날짜'는 하나의 기간(run)으로 묶음.
     var upcoming: [UpRun] {
         let cal = Calendar.current
@@ -1226,11 +1243,11 @@ struct AdaptiveCalView: View {
             if let room = entry.room {
                 switch family {
                 case .systemSmall:
-                    TodayView(room: room, filter: entry.memberFilter, myUserId: entry.myUserId)
+                    TodayView(room: room, filter: entry.memberFilter, myUserId: entry.myUserId, roomCount: entry.roomCount)
                 case .systemMedium:
-                    GridView(room: room, filter: entry.memberFilter, weeks: 2, weekNav: true, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId, holidays: entry.holidays)
+                    GridView(room: room, filter: entry.memberFilter, weeks: 2, weekNav: true, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId, holidays: entry.holidays, roomCount: entry.roomCount)
                 default:
-                    GridView(room: room, filter: entry.memberFilter, weeks: 6, monthNav: true, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId, holidays: entry.holidays)
+                    GridView(room: room, filter: entry.memberFilter, weeks: 6, monthNav: true, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId, holidays: entry.holidays, roomCount: entry.roomCount)
                 }
             } else { EmptyStateView() }
         }.opacity(entry.flash ? 0.4 : 1)
@@ -1253,7 +1270,7 @@ struct CalendarWidget: Widget {
 struct ComboWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: "UriCombo", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
-            Group { if let room = entry.room { ComboView(room: room, filter: entry.memberFilter, myUserId: entry.myUserId, holidays: entry.holidays) } else { EmptyStateView() } }.opacity(entry.flash ? 0.4 : 1)
+            Group { if let room = entry.room { ComboView(room: room, filter: entry.memberFilter, myUserId: entry.myUserId, holidays: entry.holidays, roomCount: entry.roomCount) } else { EmptyStateView() } }.opacity(entry.flash ? 0.4 : 1)
         }
         .configurationDisplayName("다가오는 일정")
         .description("다가오는 일정 목록 + 이번 달 미니 달력.")
