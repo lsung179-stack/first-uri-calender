@@ -87,8 +87,17 @@ public class WidgetCommon {
     static int gridHeightDp(Context c, int kind) { return sp(c).getInt(kind == 1 ? "twHdp" : "mHdp", 0); }
     static void setGridHeightDp(Context c, int kind, int dp) { sp(c).edit().putInt(kind == 1 ? "twHdp" : "mHdp", dp).apply(); }
     // 새로고침 깜빡임 상태(잠깐 아이콘 강조 후 원복)
-    static boolean isFlash(Context c) { return sp(c).getBoolean("flash", false); }
-    static void setFlash(Context c, boolean on) { sp(c).edit().putBoolean("flash", on).apply(); }
+    // ⚠️ 시각(timestamp)으로 저장한다 — 액티비티 경로(WidgetActionActivity)는 finish() 후 프로세스가
+    //    바로 정리될 수 있어 300ms 뒤 해제 Runnable이 안 돌 수 있다. 그때도 ↻가 빨간 채로 굳지 않도록
+    //    1.5초가 지나면 자동으로 꺼진 것으로 본다. [2026-09-06]
+    private static final long FLASH_MS = 1500L;
+    static boolean isFlash(Context c) {
+        long at = sp(c).getLong("flashAt", 0L);
+        return at > 0L && (System.currentTimeMillis() - at) < FLASH_MS;
+    }
+    static void setFlash(Context c, boolean on) {
+        sp(c).edit().putLong("flashAt", on ? System.currentTimeMillis() : 0L).apply();
+    }
 
     // 상태 브로드캐스트 적용(UriCalendarWidgetProvider.onReceive에서 호출). 처리하면 true.
     static boolean applyAction(Context c, Intent intent) {
