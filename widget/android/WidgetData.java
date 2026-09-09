@@ -42,6 +42,7 @@ public class WidgetData {
 
     // ── 데이터 모델 ──
     public static class WData {
+        public long updatedAt;      // 앱이 이 payload를 쓴 시각(ms) — 위젯 헤더 '동기화 HH:mm' [2026-09-09]
         public String currentRoomId;
         public String myUserId;
         public boolean gridV, gridH;
@@ -64,6 +65,7 @@ public class WidgetData {
 
         static WData parse(JSONObject o) {
             WData d = new WData();
+            d.updatedAt = o.optLong("updatedAt", 0L);
             d.currentRoomId = optStr(o, "currentRoomId");
             d.myUserId = optStr(o, "myUserId");
             d.gridV = o.optBoolean("gridV", false);

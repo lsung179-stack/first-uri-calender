@@ -186,6 +186,27 @@ public class WidgetCommon {
         setFilterUser(c, null);   // 방 바꾸면 멤버 필터 해제
     }
 
+    /* ── '동기화 HH:mm' 스탬프 — 위젯이 보여주는 데이터는 앱이 마지막으로 써 둔 payload(updatedAt)가 전부다.
+       ↻(새로고침)는 그 payload를 다시 읽어 그릴 뿐 서버에서 새로 받아오지 못하므로, 데이터가 언제 것인지
+       헤더에 작게 보여준다(앱을 열면 이 시각이 바뀐다). 오늘 것이면 'HH:mm', 아니면 'M/d HH:mm'. [2026-09-09] */
+    static String syncStampText(WidgetData.WData data) {
+        if (data == null || data.updatedAt <= 0L) return "";
+        java.util.Calendar at = java.util.Calendar.getInstance(); at.setTimeInMillis(data.updatedAt);
+        java.util.Calendar now = java.util.Calendar.getInstance();
+        boolean sameDay = at.get(java.util.Calendar.YEAR) == now.get(java.util.Calendar.YEAR)
+            && at.get(java.util.Calendar.DAY_OF_YEAR) == now.get(java.util.Calendar.DAY_OF_YEAR);
+        String hm = String.format(java.util.Locale.US, "%02d:%02d", at.get(java.util.Calendar.HOUR_OF_DAY), at.get(java.util.Calendar.MINUTE));
+        return "동기화 " + (sameDay ? hm : ((at.get(java.util.Calendar.MONTH) + 1) + "/" + at.get(java.util.Calendar.DAY_OF_MONTH) + " " + hm));
+    }
+    // 레이아웃에 wg_sync(헤더 가운데 빈 공간)가 있으면 스탬프를 채운다(없는 레이아웃이면 무동작).
+    static void wireSyncStamp(Context c, RemoteViews rv, WidgetData.WData data) {
+        int id = resId(c, "wg_sync", "id");
+        if (id == 0) return;
+        rv.setTextViewText(id, syncStampText(data));
+    }
+    // ↻ 글리프 — 새로고침 탭이 실제로 위젯 코드까지 닿았을 때만 잠깐 '✓'(런처의 눌림 효과와 구분). [2026-09-09]
+    static String refreshGlyph(Context c) { return isFlash(c) ? "✓" : "↻"; }
+
     // 4종 위젯 모두 새로고침
     static void refreshAll(Context c) {
         safeUpdate(c, UriCalendarWidgetProvider.class);
@@ -244,7 +265,7 @@ public class WidgetCommon {
                 @Override public void run() {
                     try { setFlash(ctx, false); refreshAll(ctx); } catch (Throwable t) { /* 무시 */ }
                 }
-            }, 300);
+            }, 500);
         } else {
             refreshAll(c);
         }
@@ -728,8 +749,11 @@ public class WidgetCommon {
             rv.setViewVisibility(moreId, android.view.View.GONE);
         }
 
-        // 새로고침 (새로고침 중이면 아이콘 강조 = 깜빡임 피드백)
+        // 새로고침 (새로고침 중이면 아이콘 강조+✓ = 탭이 닿았다는 피드백)
+        rv.setTextViewText(resId(c, "wg_refresh", "id"), refreshGlyph(c));
         rv.setTextColor(resId(c, "wg_refresh", "id"), isFlash(c) ? 0xFFC0503F : 0xFF8A6C52);
         rv.setOnClickPendingIntent(resId(c, "wg_refresh", "id"), bcast(c, RC_REFRESH, ACTION_REFRESH, Integer.MIN_VALUE, null));
+        // 헤더 가운데: 데이터가 언제 것인지(앱이 마지막으로 동기화한 시각)
+        wireSyncStamp(c, rv, data);
     }
 }

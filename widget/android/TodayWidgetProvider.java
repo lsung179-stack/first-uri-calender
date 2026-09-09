@@ -50,7 +50,9 @@ public class TodayWidgetProvider extends AppWidgetProvider {
             : WidgetCommon.openScheme(context, WidgetCommon.RC_OPEN,
                 "com.lsung.uricalendar://open?room=" + (room != null && room.id != null ? room.id : "") + "&date=" + today));
 
-        // 새로고침 (새로고침 중이면 아이콘 강조 = 깜빡임 피드백)
+        // 새로고침 (새로고침 중이면 아이콘 강조+✓ = 탭이 닿았다는 피드백)
+        rv.setTextViewText(WidgetCommon.resId(context, "tw_refresh", "id"), WidgetCommon.refreshGlyph(context));
+        WidgetCommon.wireSyncStamp(context, rv, data);   // 헤더 가운데 '동기화 HH:mm'
         rv.setTextColor(WidgetCommon.resId(context, "tw_refresh", "id"),
             WidgetCommon.isFlash(context) ? 0xFFC0503F : 0xFF8A6C52);
         rv.setOnClickPendingIntent(WidgetCommon.resId(context, "tw_refresh", "id"),
