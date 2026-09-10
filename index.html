@@ -12588,7 +12588,7 @@ function toggleDefaultColor(mode){
   const cur=(mode==='todo')?(typeof window._getTodoColorKey==='function'?window._getTodoColorKey():null):_selectedColor;
   if(!cur)return;
   const noun=(mode==='todo')?'할 일':'일정';
-  if(getDefaultColor(mode)===cur){ setDefaultColor(mode,null); toast('기본 색상을 해제했어요 · 새 '+noun+'은 빈티지로 시작해요'); }
+  if(getDefaultColor(mode)===cur){ setDefaultColor(mode,null); toast('기본 색상을 해제했어요'); }
   else{ setDefaultColor(mode,cur); toast('앞으로 새 '+noun+'은 이 색으로 시작해요'); }
   if(mode==='todo'){ if(typeof window.renderTodoColorPager==='function')window.renderTodoColorPager(); }
   else renderColorPager();
