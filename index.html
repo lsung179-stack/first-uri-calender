@@ -1863,6 +1863,20 @@ body.rc-dino .cal-import-btn[data-rci="cimport"]{background-image:url("https://b
   letter-spacing:.3px;box-shadow:0 2px 8px rgba(139,58,42,.30);
 }
 .ev-color-done-btn:active{transform:scale(.96)}
+/* 기본 색상 — 새 일정/할 일이 처음 여는 색 (기기 로컬 저장) [2026-09-10] */
+.ev-color-head-actions{display:flex;align-items:center;gap:8px}
+.ev-color-default-btn{
+  padding:6px 11px;border-radius:16px;cursor:pointer;font-family:inherit;
+  border:1.5px solid var(--border);background:var(--card);color:var(--sub);
+  font-size:11.5px;font-weight:700;letter-spacing:.2px;white-space:nowrap;transition:transform .12s;
+}
+.ev-color-default-btn:active{transform:scale(.96)}
+.ev-color-default-btn.on{border-color:var(--accent);background:var(--aP);color:var(--accent)}
+.ev-color.def::before{
+  content:'★';position:absolute;right:-4px;top:-5px;width:14px;height:14px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:8.5px;line-height:1;
+  color:var(--accent);background:var(--card);box-shadow:0 0 0 1px var(--border);pointer-events:none;
+}
 
 /* 매년 반복 토글 (생일/기념일 등) */
 .ev-yearly-row{flex-direction:row;align-items:center;justify-content:space-between;margin-top:4px}
@@ -4318,8 +4332,11 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
     <div class="ev-form-row">
       <div class="ev-color-head">
         <div class="ev-label">색상</div>
+        <div class="ev-color-head-actions">
+        <button type="button" class="ev-color-default-btn" id="todoColorDefaultBtn" onclick="toggleDefaultColor('todo')">기본으로 설정</button>
         <button type="button" class="ev-color-edit-btn" id="todoColorEditBtn" onclick="toggleColorLabelEdit('todo')" aria-label="색상 라벨 수정" title="색상 라벨 수정"><svg viewBox="0 0 24 24"><path d="M5 3h14a1 1 0 0 1 1 1v17l-8-4-8 4V4a1 1 0 0 1 1-1z"/></svg></button>
         <button type="button" class="ev-color-done-btn" id="todoColorDoneBtn" onclick="commitColorLabelEdit('todo')" style="display:none">완료</button>
+        </div>
       </div>
       <div class="ev-color-pager-wrap">
         <div class="ev-color-pager" id="todoColorPager"></div>
@@ -4850,8 +4867,11 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
     <div class="ev-form-row">
       <div class="ev-color-head">
         <div class="ev-label">색상</div>
+        <div class="ev-color-head-actions">
+        <button type="button" class="ev-color-default-btn" id="evColorDefaultBtn" onclick="toggleDefaultColor('ev')">기본으로 설정</button>
         <button type="button" class="ev-color-edit-btn" id="evColorEditBtn" onclick="toggleColorLabelEdit('ev')" aria-label="색상 라벨 수정" title="색상 라벨 수정"><svg viewBox="0 0 24 24"><path d="M5 3h14a1 1 0 0 1 1 1v17l-8-4-8 4V4a1 1 0 0 1 1-1z"/></svg></button>
         <button type="button" class="ev-color-done-btn" id="evColorDoneBtn" onclick="commitColorLabelEdit('ev')" style="display:none">완료</button>
+        </div>
       </div>
       <div class="ev-color-pager-wrap">
         <div class="ev-color-pager" id="evColorPager"></div>
@@ -12486,10 +12506,13 @@ function renderColorPager(){
   }
 
   // 페이지 렌더링
+  const _evDefKey=getDefaultColor('ev');
+  _syncDefaultColorBtn('ev',_selectedColor);
   pager.innerHTML=pages.map(p=>{
     const cells=p.colors.map(c=>{
       const on=(c.key===_selectedColor)?' on':'';
-      const swatch=`<button type="button" class="ev-color${on}" data-key="${escapeHtml(c.key)}" style="background:${c.hex}" onclick="selectColor('${escapeHtml(c.key)}')" title="${escapeHtml(c.name||'')}"></button>`;
+      const def=(c.key===_evDefKey)?' def':'';
+      const swatch=`<button type="button" class="ev-color${on}${def}" data-key="${escapeHtml(c.key)}" style="background:${c.hex}" onclick="selectColor('${escapeHtml(c.key)}')" title="${escapeHtml(c.name||'')}"></button>`;
       let nameHtml;
       if(_colorLabelEditMode){
         const v=escapeHtml(colorLabelOf(c.key));
@@ -12538,6 +12561,37 @@ function renderColorPager(){
 function selectColor(key){
   _selectedColor=key;
   renderColorPager();
+}
+
+/* ── 기본 색상 — 새 일정/할 일 폼이 처음 여는 색 (기기 로컬, 일정·할일 따로) [2026-09-10] ──
+   저장값이 지금 못 쓰는 팩 색(프리미엄 만료·팩 사용 해제)이면 빈티지로 폴백. 저장값은 지우지 않아 다시 쓸 수 있게 되면 그대로 복원. */
+const _DEF_COLOR_LS={ev:'uricalv2.defaultColor.ev',todo:'uricalv2.defaultColor.todo'};
+function getDefaultColor(mode){ try{ return localStorage.getItem(_DEF_COLOR_LS[mode]||_DEF_COLOR_LS.ev)||null; }catch(e){ return null; } }
+function setDefaultColor(mode,key){ try{ const k=_DEF_COLOR_LS[mode]||_DEF_COLOR_LS.ev; if(key)localStorage.setItem(k,key); else localStorage.removeItem(k); }catch(e){} }
+function _colorKeyUsable(key){
+  if(!key)return false;
+  if((EVENT_COLORS||[]).some(c=>c.key===key))return true;            // 기본 팔레트
+  const packs=getUnlockedColorPacks();                                 // 지금 사용 중인 팩의 hex 만
+  return (STORE_COLORS||[]).some(p=>packs.includes(p.key)&&(p.colors||[]).includes(key));
+}
+function effectiveDefaultColor(mode){ const k=getDefaultColor(mode); return _colorKeyUsable(k)?k:'c-vintage'; }
+function _syncDefaultColorBtn(mode,selKey){
+  const b=document.getElementById(mode==='todo'?'todoColorDefaultBtn':'evColorDefaultBtn'); if(!b)return;
+  const editing=(mode==='todo')?_todoColorLabelEditMode:_colorLabelEditMode;
+  b.style.display=editing?'none':'';
+  const isDef=!!selKey&&getDefaultColor(mode)===selKey;
+  b.classList.toggle('on',isDef);
+  b.textContent=isDef?'기본 색상 ✓':'기본으로 설정';
+  b.title=isDef?'탭하면 기본 색상을 해제해요':'지금 고른 색으로 새 '+(mode==='todo'?'할 일':'일정')+'을 시작해요';
+}
+function toggleDefaultColor(mode){
+  const cur=(mode==='todo')?(typeof window._getTodoColorKey==='function'?window._getTodoColorKey():null):_selectedColor;
+  if(!cur)return;
+  const noun=(mode==='todo')?'할 일':'일정';
+  if(getDefaultColor(mode)===cur){ setDefaultColor(mode,null); toast('기본 색상을 해제했어요 · 새 '+noun+'은 빈티지로 시작해요'); }
+  else{ setDefaultColor(mode,cur); toast('앞으로 새 '+noun+'은 이 색으로 시작해요'); }
+  if(mode==='todo'){ if(typeof window.renderTodoColorPager==='function')window.renderTodoColorPager(); }
+  else renderColorPager();
 }
 
 /* ── 색상 라벨 편집 모드 (일정/할일 공용) ── */
@@ -13354,7 +13408,7 @@ function openAddEvent(){
   if(!_selectedDate){toast('날짜를 먼저 선택해주세요');return}
   closeMainModals();
   _editingEvent=null;
-  _selectedColor='c-vintage';
+  _selectedColor=effectiveDefaultColor('ev');   // 기본 색상(사용자 설정) — 없으면 빈티지 [2026-09-10]
   resetColorLabelEdit('ev');
   _selectedStyle='solid';
   { const _ol=document.getElementById('evOutline'); if(_ol)_ol.checked=false; }
@@ -26693,7 +26747,7 @@ function openTodoAddSheet(dateKeyStr, opts){
   _todoRangeStart=start; _todoRangeEnd=null; _todoRangeFocus='start';
   _todoMultiDates=[start];
   _todoStartTime=''; _todoEndTime='';
-  _todoColorKey='c-vintage';
+  _todoColorKey=effectiveDefaultColor('todo');   // 기본 색상(사용자 설정) — 없으면 빈티지 [2026-09-10]
   _todoRepeat='none';
   _tdRepeatWeekdays=[]; _tdMonthlyMode='dom'; _tdNthWeek=1; _tdRepeatUntil=null;
   _tdRepeatInterval=1; _tdUntilMode='none'; _tdRepeatCount=null; _tdUntilCalDate=null;
@@ -27254,10 +27308,13 @@ function renderTodoColorPager(){
   for(let i=0;i<pages.length;i++){
     if(pages[i].colors.some(c=>c.key===_todoColorKey)){activePageIdx=i;break}
   }
+  const _tdDefKey=getDefaultColor('todo');
+  _syncDefaultColorBtn('todo',_todoColorKey);
   pager.innerHTML=pages.map(p=>{
     const cells=p.colors.map(c=>{
       const on=(c.key===_todoColorKey)?' on':'';
-      const swatch=`<button type="button" class="ev-color${on}" data-key="${escapeHtml(c.key)}" style="background:${c.hex}" onclick="selectTodoColor('${escapeHtml(c.key)}')" title="${escapeHtml(c.name||'')}"></button>`;
+      const def=(c.key===_tdDefKey)?' def':'';
+      const swatch=`<button type="button" class="ev-color${on}${def}" data-key="${escapeHtml(c.key)}" style="background:${c.hex}" onclick="selectTodoColor('${escapeHtml(c.key)}')" title="${escapeHtml(c.name||'')}"></button>`;
       let nameHtml;
       if(_todoColorLabelEditMode){
         const v=escapeHtml(colorLabelOf(c.key));
@@ -28108,6 +28165,7 @@ window._todoRemoveMulti=removeTodoMultiDate;
 window.saveTodo=saveTodo;
 window.selectTodoColor=selectTodoColor;
 window.renderTodoColorPager=renderTodoColorPager;
+window._getTodoColorKey=function(){ return _todoColorKey; };  // 기본 색상 토글(전역 toggleDefaultColor)이 IIFE 안 상태를 읽는 통로 [2026-09-10]
 window._doSaveTodo=_doSaveTodo;
 window.bindTodoTimeInputs=bindTodoTimeInputs;
 window.safeRender=safeRender;
