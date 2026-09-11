@@ -422,6 +422,7 @@ struct WGHeader: View {
     var weekNav: Bool = false          // 2주 위젯 이전/다음 2주 < >
     var weekLabel: String = ""
     var weekOffset: Int = 0            // 현재 2주 오프셋(라벨 탭=현재로 복귀용)
+    var roomCount: Int = 0             // 1개면 씰 탭이 '앱 열기'(순환은 무동작이라 반응 없어 보임)
     var syncedAt: Date? = nil          // 헤더 가운데 '동기화 HH:mm'(데이터가 언제 것인지) [2026-09-09]
     private var sealSize: CGFloat { compact ? 22 : 26 }
     private var avSize: CGFloat { compact ? 19 : 21 }
@@ -844,7 +845,7 @@ struct GridView: View {
         let usedLanes = usedLaneCount(allRuns)
         let denseCell = rowCount >= 6 || weeks == 2
         VStack(spacing: 0) {
-            WGHeader(room: room, compact: weeks > 2, active: filter, monthNav: monthNav, monthLabel: monthLabel, myUserId: myUserId, weekNav: weekNav, weekLabel: weekLabel, weekOffset: weekOffset, syncedAt: syncedAt)
+            WGHeader(room: room, compact: weeks > 2, active: filter, monthNav: monthNav, monthLabel: monthLabel, myUserId: myUserId, weekNav: weekNav, weekLabel: weekLabel, weekOffset: weekOffset, roomCount: roomCount, syncedAt: syncedAt)
             Color.clear.frame(height: weeks > 2 ? 9 : 7)     // 헤더 ↔ 달력 사이 여백(위아래 균형)
             HStack(spacing: 0) {
                 ForEach(0..<7) { i in
@@ -1146,7 +1147,7 @@ struct ComboView: View {
     }
     var body: some View {
         VStack(spacing: 8) {
-            WGHeader(room: room, active: filter, myUserId: myUserId, syncedAt: syncedAt)
+            WGHeader(room: room, active: filter, myUserId: myUserId, roomCount: roomCount, syncedAt: syncedAt)
             HStack(alignment: .top, spacing: 14) {
                 VStack(alignment: .leading, spacing: 7) {
                     Text("다가오는 일정").font(.system(size: 14, weight: .black)).foregroundColor(.terra)
