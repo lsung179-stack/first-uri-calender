@@ -938,9 +938,13 @@ struct DayCell: View {
     private var layoutPlan: (slots: Int, todos: Int, over: Int, overFits: Bool) {
         var s = max(0, min(max(0, slots.count - resLines), freeLines))
         var t = max(0, min(min(maxTodos, todos.count), freeLines - s))
-        // 넘침 표시(+N)도 한 줄을 먹으므로, 자리가 없으면 할일 → 이벤트 순으로 한 줄 양보
+        /* 넘침 표시(+N)도 한 줄을 먹는다 — 자리가 없으면 '할일' 줄만 한 줄 양보한다.
+           ⚠️ 예전엔 이벤트 바도 한 줄 양보했는데(s -= 1), 칸 예산이 2줄인 6주 달에서
+              일정이 3개만 돼도 '바 1개 + +2'가 되어 "일정이 하나만 보인다"는 제보가 나왔다
+              (실기기 2026-09-13). 이제 바는 그대로 두고, 줄이 안 남으면 아래 overFits=false
+              경로가 '+N'을 칸 우측 하단 배지로 겹쳐 그린다(높이를 차지하지 않음). */
         if hiddenCountFor(s, t) > 0 && freeLines - s - t <= 0 {
-            if t > 0 { t -= 1 } else if s > 1 { s -= 1 }
+            if t > 0 { t -= 1 }
         }
         // 그래도 줄이 안 남으면(일정 1개 + 공휴일로 꽉 찬 칸 등) '+N'을 줄로 쌓지 않고
         // 칸 우측 하단에 작은 배지로 겹쳐 그린다 → 칸이 행 높이를 넘지 않는다. [2026-08-19]
