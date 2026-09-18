@@ -20864,7 +20864,13 @@ function _getUnlocks(){
     const raw=localStorage.getItem('uricalv2.unlocks');
     if(raw){
       const u=JSON.parse(raw);
-      return {color:u.color||[],char:u.char||[]};
+      /* ⚠️ 이 저장소에는 색·캐릭터 팩 말고도 dh(날짜 강조 테마)·dhSeed·rs(스티커 묶음)가 함께 들어 있다.
+         예전엔 여기서 {color,char} 만 새 객체로 돌려줬고, _saveUnlocks 가 그걸 통째로 덮어써
+         컬러·이모지 팩 '사용하기'를 누를 때마다 dh·rs 가 통째로 날아갔다(그 뒤 기본 테마만 저절로 되살아남).
+         → 원본 객체를 그대로 들고 있다가 빠진 키만 보강해 돌려준다. [2026-09-18] */
+      u.color=Array.isArray(u.color)?u.color:[];
+      u.char=Array.isArray(u.char)?u.char:[];
+      return u;
     }
   }catch{}
   return {color:[],char:[]};
