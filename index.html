@@ -9585,6 +9585,11 @@ let _viewingMember='all';    // 현재 보고 있는 멤버: 'all' | user_id (�
 let _selectedTarget='self';  // 'self' | 'all'
 let _selectedMembers=[];     // 함께 선택된 user_id 배열 (본인 포함)
 let _editSharedMemberIds=[]; // 수정 시 원래 함께였던 멤버
+/* 함께 일정은 멤버마다 DB row 가 따로 있고, 달력은 '내 row' 를 골라 그린다(getDayEvents 참고).
+   그래서 색은 멤버마다 다를 수 있다 — 수정 폼을 열 때의 내 색을 기억해 두고, 저장할 때
+   색이 바뀌었으면 '나만/모두' 를 물어본다. [2026-09-20] */
+let _editOrigColor=null;
+let _suppressEventNotify=false;  // 내 색만 바꾼 저장이면 멤버 알림을 보내지 않는다
 let _pickContext='add';      // 'add' | 'edit' | 'todo' | 'todoEdit' (멤버 선택 모달 컨텍스트)
 let _todoTarget='self';      // 할일 대상: 'self' | 'all'
 let _todoMembers=[];         // 함께 할일 멤버 키 배열 (본인 포함)
@@ -10371,7 +10376,13 @@ async function buildWidgetPayload(){
       return { userId:m.user_id||null, name, color:hx(m.color), avatarPng:(m.user_id&&avPngById[m.user_id])||null };
     });
     const re=[];
-    events.filter(e=>e.room_id===r.id).forEach(e=>{
+    /* 함께 일정은 멤버 수만큼 row 가 오고 위젯(iOS·Android 둘 다)은 같은 gid 중 '먼저 들어온' row 의
+       색을 쓴다 — 색이 멤버마다 다를 수 있으므로 내 row 를 앞으로 보내 앱과 같은 색이 나오게 한다.
+       멤버 필터를 걸면 네이티브가 그 멤버 row 만 보므로 그 멤버 색이 나온다(의도대로). [2026-09-20] */
+    const _wgMyId=_currentUser?.id;
+    const _wgEvs=events.filter(e=>e.room_id===r.id).slice().sort((a,b)=>
+      ((b.shared_id&&b.user_id===_wgMyId)?1:0)-((a.shared_id&&a.user_id===_wgMyId)?1:0));
+    _wgEvs.forEach(e=>{
       const rtp=e.repeat_type||(e.recurring_yearly?'yearly':'none');
       const occ=_wgExpandEvent(e, from, to);      // 반복이면 여러 날짜, 비반복이면 [origin]
       if(!occ.length) return;
@@ -11954,11 +11965,19 @@ function _getSearchableEvents(){
   if(_searchCache)return _searchCache;
   const out=[];
   const seenShared=new Set();
-  Object.values(_events).flat().forEach(e=>{
+  const _all=Object.values(_events).flat();
+  /* 함께 일정은 멤버 수만큼 row 가 있고 색이 서로 다를 수 있다 — 대표로 '내 row' 를 골라
+     검색 결과에도 내 색이 뜨게 한다(달력 getDayEvents 와 같은 기준). 순서는 그대로 둔다. [2026-09-20] */
+  const _myId=_currentUser?.id;
+  const _myShared=new Map();
+  _all.forEach(e=>{ if(e.shared_id&&e.user_id===_myId&&!e.virtual_member_id)_myShared.set(e.shared_id+'|'+e.date,e); });
+  _all.forEach(e=>{
     if(e.shared_id){
       const key=e.shared_id+'|'+e.date;
       if(seenShared.has(key))return;
       seenShared.add(key);
+      out.push(_myShared.get(key)||e);
+      return;
     }
     out.push(e);
   });
@@ -13408,6 +13427,7 @@ function openAddEvent(){
   if(!_selectedDate){toast('날짜를 먼저 선택해주세요');return}
   closeMainModals();
   _editingEvent=null;
+  _editOrigColor=null;
   _selectedColor=effectiveDefaultColor('ev');   // 기본 색상(사용자 설정) — 없으면 빈티지 [2026-09-10]
   resetColorLabelEdit('ev');
   _selectedStyle='solid';
@@ -13496,6 +13516,7 @@ async function openEditEvent(eventId){
   closeMainModals();
   _editingEvent=ev;
   _selectedColor=ev.color||'c-vintage';
+  _editOrigColor=ev.color||null;   // 저장 때 '색이 바뀌었는지' 비교 기준(함께 일정 색 적용 범위)
   resetColorLabelEdit('ev');
   _selectedStyle=ev.bar_style||'solid';
   { const _ol=document.getElementById('evOutline'); if(_ol)_ol.checked=(_selectedStyle==='outline'); }
@@ -14875,6 +14896,7 @@ async function _doSaveEvent(){
   // ⚠️ 수정 여부는 여기서 미리 기억해 둔다 — saveEditedEvent 의 일부 경로와 아래 closeEventModal()이
   //    _editingEvent 를 null 로 비우기 때문. (안 그러면 수정해도 '등록했어요' 알림이 가고 일자 시트도 안 열린다)
   const _wasEditing=!!_editingEvent;
+  _suppressEventNotify=false;   // 이번 저장에서 멤버 알림을 건너뛸지(내 색만 바꾼 경우) — 매번 초기화
 
   try{
     if(_editingEvent){
@@ -15075,7 +15097,8 @@ async function _doSaveEvent(){
 
     // ── 5단계: 같은 방 멤버에게 자동 알림 발송 ──
     if(_wasEditing){
-      notifyEventUpdated(title, fmtTimeRange(time,endTime));
+      // 함께 일정에서 '나만 이 색으로' 만 바꾼 저장이면 남의 화면은 그대로다 → 알림 생략
+      if(!_suppressEventNotify) notifyEventUpdated(title, fmtTimeRange(time,endTime));
     }else{
       notifyEventCreated(title, fmtTimeRange(time,endTime));
     }
@@ -16691,6 +16714,29 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
     return;
   }
 
+  /* ── 함께 일정 색상 적용 범위 ──────────────────────────────────────────
+     함께 일정은 멤버마다 row 가 따로 있고 각자 '자기 row' 의 색을 본다.
+     색을 바꿨으면 나만 바꿀지 모두에게 적용할지 물어본다. [2026-09-20]
+     ⚠️ 색 말고 다른 항목(제목·시간·메모 등)은 선택과 무관하게 항상 모두에게 반영된다
+        — 함께 일정의 본문은 공유되는 것이 맞고, 개인화 대상은 색뿐이다. */
+  let _coColorScope='all';                 // 'all'=모두에게, 'me'=내 row 만
+  const _coColorChanged=wasShared&&isNowShared&&!!_editOrigColor&&color!==_editOrigColor;
+  if(_coColorChanged&&(_editSharedMemberIds||[]).includes(_currentUser?.id)){
+    const _pick=await askRecurringDelete(
+      '이 함께 일정의 색을 바꿨어요.<br>어디에 적용할까요?',
+      {title:'색상 적용 범위', oneLabel:'나만 이 색으로 보기', allLabel:'모두에게 적용'});
+    if(!_pick)return;                      // 취소 → 아무것도 저장하지 않음
+    _coColorScope=(_pick==='one')?'me':'all';
+  }
+  /* 내 색만 바꿨고 다른 항목은 그대로면 멤버들에게 '수정했어요' 알림을 보내지 않는다
+     (남의 화면은 아무것도 안 바뀌는데 알림만 가면 혼란스럽다). */
+  _suppressEventNotify=(_coColorScope==='me')
+    && (title||'')===(ev.title||'')
+    && (time||'')===(ev.time||'')
+    && (endTime||'')===(ev.end_time||'')
+    && (memo||'')===(ev.memo||'')
+    && (_dayDate||_selectedDate)===ev.date;
+
   // 함께 일정 + range 모드 — 그룹 전체 삭제 후 새 기간으로 재생성 (멤버 그대로 유지, shared_id 유지)
   if(wasShared&&isNowShared&&_selectedMode==='range'){
     const memberIds=(_selectedMembers&&_selectedMembers.length>=2)
@@ -16704,6 +16750,17 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
     const dates=daysBetween(startStr,endStr);
     if(dates.length>90){toast('함께 기간 일정은 최대 90일까지');return}
 
+    /* 이 경로는 그룹을 통째로 지우고 다시 만든다 — 멤버마다 색이 다를 수 있으므로
+       지우기 전에 '멤버 → 색' 을 읽어 두고 새 row 에 그대로 되돌려 준다.
+       (안 그러면 남의 색이 내 색으로 덮어써진다.) [2026-09-20] */
+    const _oldColorByKey={};
+    try{
+      const {data:_oldRows}=await supa.from('events').select('user_id,virtual_member_id,color').eq('shared_id',ev.shared_id);
+      (_oldRows||[]).forEach(r=>{
+        const k=r.virtual_member_id?('v-'+r.virtual_member_id):r.user_id;
+        if(k&&!(k in _oldColorByKey))_oldColorByKey[k]=r.color;
+      });
+    }catch(_){}
     // 기존 그룹 삭제 (RLS: 같은 방 멤버라면 모두 삭제 가능)
     const {error:eDel}=await supa.from('events').delete().eq('shared_id',ev.shared_id);
     if(eDel)throw eDel;
@@ -16712,9 +16769,13 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
     const rows=[];
     dates.forEach(d=>{
       memberIds.forEach(key=>{
+        // 색: '모두에게' 면 새 색, '나만' 이면 내 row 만 새 색이고 나머지는 원래 자기 색 유지
+        const _cc=(_coColorScope==='me'&&key!==_currentUser?.id)
+          ? (_oldColorByKey[key]||_editOrigColor||color)
+          : color;
         rows.push(_buildCoEventRow(key, Object.assign({
           room_id:_currentRoom.id, date:d,
-          title,time,end_time:endTime,color,bar_style:barStyle,shared_id:ev.shared_id,
+          title,time,end_time:endTime,color:_cc,bar_style:barStyle,shared_id:ev.shared_id,
           memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
         }, _rangeRepeatFields(d,dates[0],repeatType,repeatWeekdays,repeatMonthlyMode,repeatNthWeek,repeatUntil,ry,repeatInterval,repeatCount,repeatLunarMonth,repeatLunarDay))));
       });
@@ -16933,14 +16994,35 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
     const toRemoveReal=toRemove.filter(k=>k && !(typeof k==='string'&&k.startsWith('v-')));
     const toRemoveVirtual=toRemove.filter(k=>typeof k==='string'&&k.startsWith('v-')).map(k=>k.slice(2));
     
+    /* 색 적용 범위 — '모두에게' 면 모든 row 에 새 색을 싣고, '나만' 이면 내 row 에만 싣는다.
+       나머지 row 는 color 필드를 아예 보내지 않아 각자 자기 색이 그대로 남는다. [2026-09-20] */
+    const _coBase={date:(_dayDate||_selectedDate),title,time,end_time:endTime,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,repeat_lunar_month:repeatLunarMonth,repeat_lunar_day:repeatLunarDay,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls};
+    const _coWithColor={..._coBase,color};
+    const _coForOthers=(_coColorScope==='me')?_coBase:_coWithColor;
+
     if(toKeepReal.length){
-      const {error}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,repeat_lunar_month:repeatLunarMonth,repeat_lunar_day:repeatLunarDay,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls})
-        .eq('shared_id',ev.shared_id).in('user_id',toKeepReal);
-      if(error)throw error;
+      const _meId=_currentUser?.id;
+      if(_coColorScope==='me'&&toKeepReal.includes(_meId)){
+        const _others=toKeepReal.filter(u=>u!==_meId);
+        if(_others.length){
+          const {error}=await supa.from('events').update(_coForOthers)
+            .eq('shared_id',ev.shared_id).in('user_id',_others);
+          if(error)throw error;
+        }
+        /* ⚠️ 가상 멤버 row 도 user_id 가 '나' 라서(_buildCoEventRow 참고) user_id 만으로 거르면
+           내 색 변경이 가상 멤버에게까지 번진다 — virtual_member_id is null 로 내 실제 row 만 집는다. */
+        const {error}=await supa.from('events').update(_coWithColor)
+          .eq('shared_id',ev.shared_id).eq('user_id',_meId).is('virtual_member_id',null);
+        if(error)throw error;
+      }else{
+        const {error}=await supa.from('events').update(_coForOthers)
+          .eq('shared_id',ev.shared_id).in('user_id',toKeepReal);
+        if(error)throw error;
+      }
     }
     if(toKeepVirtual.length){
       // 가상 멤버 row UPDATE (virtual_member_id 기준)
-      const {error}=await supa.from('events').update({date:(_dayDate||_selectedDate),title,time,end_time:endTime,color,bar_style:barStyle,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,repeat_lunar_month:repeatLunarMonth,repeat_lunar_day:repeatLunarDay,reminder_sent_at:null,memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls})
+      const {error}=await supa.from('events').update(_coForOthers)
         .eq('shared_id',ev.shared_id).in('virtual_member_id',toKeepVirtual);
       if(error)throw error;
     }
@@ -16961,13 +17043,16 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
     if(toAdd.length){
       const rows=toAdd.map(key=>_buildCoEventRow(key, {
         room_id:_currentRoom.id, date:(_dayDate||_selectedDate),
-        title,time,end_time:endTime,color,bar_style:barStyle,shared_id:ev.shared_id,recurring_yearly:ry,repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,repeat_lunar_month:repeatLunarMonth,repeat_lunar_day:repeatLunarDay,
+        title,time,end_time:endTime,bar_style:barStyle,shared_id:ev.shared_id,recurring_yearly:ry,
+        // 새로 합류한 멤버: '나만' 을 골랐으면 내 새 색이 아니라 그룹이 쓰던 색으로 시작
+        color:((_coColorScope==='me'&&_editOrigColor)?_editOrigColor:color),repeat_type:repeatType,repeat_weekdays:repeatWeekdays,repeat_monthly_mode:repeatMonthlyMode,repeat_nth_week:repeatNthWeek,repeat_until:repeatUntil,repeat_interval:repeatInterval,repeat_count:repeatCount,repeat_lunar_month:repeatLunarMonth,repeat_lunar_day:repeatLunarDay,
         memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
       }));
       const {error}=await supa.from('events').insert(_attachVirtualMember(rows));
       if(error)throw error;
     }
-    toast('함께 일정 수정됨');
+    // 색을 나만 바꾼 경우엔 남의 화면은 그대로라는 걸 토스트로 알려준다
+    toast(_coColorScope==='me'?'수정됨 · 색은 내 화면에만 적용돼요':'함께 일정 수정됨');
   }
 }
 
