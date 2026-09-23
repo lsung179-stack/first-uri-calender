@@ -663,6 +663,8 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .pmf-name{font-size:14px;font-weight:700;color:var(--text)}
 .pmf-desc{font-size:12px;color:var(--sub);margin-top:2px;line-height:1.5}
 .pmf-desc b{color:var(--accent);font-weight:700}
+.pmf-group{font-size:11.5px;font-weight:800;color:var(--mute);letter-spacing:.06em;margin:8px 2px 0}
+.pmf-group:first-child{margin-top:0}
 .pmf-free{display:inline-block;margin-left:4px;padding:1px 7px;border-radius:6px;background:rgba(0,0,0,.05);color:var(--mute);font-size:11px;font-weight:600}
 .prem-note{text-align:center;font-size:12px;color:var(--gold);font-weight:600;margin:14px 0 4px}
 /* 프리미엄 풀스크린 화면 */
@@ -5073,7 +5075,7 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
       <img class="phl-logo" src="icon-180.png" alt="우리 캘린더">
       <div class="phl-eyebrow">P R E M I U M</div>
       <div class="phl-title">우리의 모든 순간을<br>더 특별하게</div>
-      <div class="phl-sub">사진도, 추억도, 기록도 — 제한 없이</div>
+      <div class="phl-sub">꾸미기도, 추억도, 기록도 — 제한 없이</div>
       <span class="prem-status" id="premStatus">—</span>
     </div>
     <div class="prem-planbox">
@@ -5100,15 +5102,21 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
     <div class="prem-featbox">
       <div class="pb-title" style="margin-bottom:12px">프리미엄 기능</div>
       <div class="prem-feature-list">
+        <div class="pmf-group">우리 방 꾸미기</div>
+        <div class="prem-feature"><span class="pmf-ic">🎨</span><div class="pmf-body"><div class="pmf-name">프로필·테마 세트</div><div class="pmf-desc">캐릭터·무늬 <b data-pc="sets">15종</b>으로 방을 한 번에 꾸며요 <span class="pmf-free">무료 기본 6종</span></div></div></div>
+        <div class="prem-feature"><span class="pmf-ic">🖼️</span><div class="pmf-body"><div class="pmf-name">나만의 테마</div><div class="pmf-desc">사진·스티커로 <b>우리 방 배경</b> 직접 만들기</div></div></div>
+        <div class="prem-feature"><span class="pmf-ic">🧸</span><div class="pmf-body"><div class="pmf-name">배경 스티커</div><div class="pmf-desc"><b data-pc="stickers">16묶음</b>을 달력 배경에 마음껏 붙여요</div></div></div>
+        <div class="prem-feature"><span class="pmf-ic">🌈</span><div class="pmf-body"><div class="pmf-name">컬러 팩</div><div class="pmf-desc">일정 색상 팩 <b data-pc="colors">22가지</b> 전부</div></div></div>
+        <div class="prem-feature"><span class="pmf-ic">🐻</span><div class="pmf-body"><div class="pmf-name">캐릭터 이모지</div><div class="pmf-desc">일정에 콕 찍는 <b data-pc="emoji">10가지</b> 캐릭터 팩</div></div></div>
+        <div class="prem-feature"><span class="pmf-ic">✍️</span><div class="pmf-body"><div class="pmf-name">글꼴</div><div class="pmf-desc">한글·영문 글꼴 <b data-pc="fonts">11가지</b> <span class="pmf-free">무료 기본 글꼴</span></div></div></div>
+        <div class="prem-feature"><span class="pmf-ic">📌</span><div class="pmf-body"><div class="pmf-name">날짜 강조</div><div class="pmf-desc">날짜에 <b>내 제목</b>을 붙여 모두에게 · 테마 <span data-pc="dh">6</span>종</div></div></div>
+        <div class="prem-feature"><span class="pmf-ic">🔲</span><div class="pmf-body"><div class="pmf-name">테두리 일정</div><div class="pmf-desc">색 채움 없이 <b>외곽선 스타일</b></div></div></div>
+        <div class="prem-feature"><span class="pmf-ic">🏷️</span><div class="pmf-body"><div class="pmf-name">색상 라벨 이름</div><div class="pmf-desc">색마다 <b>이름 붙이기</b></div></div></div>
+        <div class="pmf-group">기록 · 편의</div>
         <div class="prem-feature"><span class="pmf-ic">📷</span><div class="pmf-body"><div class="pmf-name">일정 사진</div><div class="pmf-desc">한 일정에 <b>최대 5장</b> <span class="pmf-free">무료 1장</span></div></div></div>
-        <div class="prem-feature"><span class="pmf-ic">🖼️</span><div class="pmf-body"><div class="pmf-name">사진 평생 보관</div><div class="pmf-desc">올린 사진 <b>영구 보관</b> <span class="pmf-free">무료 30일</span></div></div></div>
+        <div class="prem-feature"><span class="pmf-ic">🗃️</span><div class="pmf-body"><div class="pmf-name">사진 평생 보관</div><div class="pmf-desc">올린 사진 <b>영구 보관</b> <span class="pmf-free">무료 30일</span></div></div></div>
         <div class="prem-feature"><span class="pmf-ic">✅</span><div class="pmf-body"><div class="pmf-name">진행 중 할일</div><div class="pmf-desc"><b>무제한</b>으로 추가 <span class="pmf-free">무료 5개</span></div></div></div>
         <div class="prem-feature"><span class="pmf-ic">🗂️</span><div class="pmf-body"><div class="pmf-name">완료 할일 보관</div><div class="pmf-desc"><b>평생</b> 보관 <span class="pmf-free">무료 7일</span></div></div></div>
-        <div class="prem-feature"><span class="pmf-ic">🏷️</span><div class="pmf-body"><div class="pmf-name">색상 라벨 이름</div><div class="pmf-desc">색마다 <b>이름 붙이기</b></div></div></div>
-        <div class="prem-feature"><span class="pmf-ic">🔲</span><div class="pmf-body"><div class="pmf-name">테두리 일정</div><div class="pmf-desc">색 채움 없이 <b>외곽선 스타일</b></div></div></div>
-        <div class="prem-feature"><span class="pmf-ic">📌</span><div class="pmf-body"><div class="pmf-name">날짜 강조</div><div class="pmf-desc">원하는 날짜에 <b>내 제목</b>을 붙여 방 모두에게 보여줘요</div></div></div>
-        <div class="prem-feature"><span class="pmf-ic">🎨</span><div class="pmf-body"><div class="pmf-name">스토어 팩</div><div class="pmf-desc"><b>모든 컬러·캐릭터 팩</b> 사용</div></div></div>
-        <div class="prem-feature"><span class="pmf-ic">🪷</span><div class="pmf-body"><div class="pmf-name">고급 방 프로필</div><div class="pmf-desc"><b>입체 프로필 12종</b> <span class="pmf-free">무료 색·문양 꾸미기</span></div></div></div>
         <div class="prem-feature"><span class="pmf-ic">🚫</span><div class="pmf-body"><div class="pmf-name">광고 제거</div><div class="pmf-desc">배너 광고 없이 <b>깔끔하게</b></div></div></div>
       </div>
     </div>
@@ -18040,7 +18048,7 @@ function _rmSyncPreview(){
 function pickSealSet(k){
   if(!_canUseSkin(k)){
     // 무료: 구경은 자유, 선택은 불가
-    showUpgradeModal({message:'고급 프로필은 프리미엄 전용이에요.', feature:'입체 프로필 12종으로 방 카드를 꾸밀 수 있어요.'});
+    showUpgradeModal({message:'고급 프로필은 프리미엄 전용이에요.', feature:'캐릭터·무늬 프로필·테마 세트로 방 카드를 꾸밀 수 있어요.'});
     return;
   }
   _sealSet=k;
@@ -18094,7 +18102,7 @@ function _rmPickCustom(){
 }
 /* 방 프로필(컬러 씰)은 무료 기능 — 프리미엄 게이트 제거(2026-07, 사용자 결정) */
 async function saveRoomMascot(){
-  if(_sealSet&&!_canUseSkin(_sealSet)){ showUpgradeModal({message:'고급 프로필은 프리미엄 전용이에요.', feature:'입체 프로필 12종으로 방 카드를 꾸밀 수 있어요.'}); return; }
+  if(_sealSet&&!_canUseSkin(_sealSet)){ showUpgradeModal({message:'고급 프로필은 프리미엄 전용이에요.', feature:'캐릭터·무늬 프로필·테마 세트로 방 카드를 꾸밀 수 있어요.'}); return; }
   if(_isCustomSkin(_cardSkin)&&!isEffectivePremium()){ showUpgradeModal({message:'나만의 테마는 프리미엄 전용이에요.', feature:'사진과 스티커로 만든 테마를 방마다 골라 쓸 수 있어요.'}); return; }
   const _sk=_cardSkin?CARD_SKINS[_cardSkin]:null;
   if(_sk&&!_sk.free&&!_canUseSkin(_cardSkin)){ showUpgradeModal({message:'컨셉 테마는 프리미엄 전용이에요.', feature:'달빛·실크·한지 등 8가지 배경으로 방 카드를 꾸밀 수 있어요.'}); return; }
@@ -21779,8 +21787,20 @@ function selectPlan(p){
   plans.forEach(function(el){ el.classList.toggle('selected', el.getAttribute('data-plan')===p); });
   try{ _updateTrialCta(); }catch(_){}
 }
+/* 프리미엄 기능 안내의 개수 — 팩이 늘거나 줄어도 맞도록 열 때마다 실제 목록에서 센다 [2026-09-23] */
+function _fillPremCounts(){
+  const n={};
+  try{ n.sets=(CARD_SKIN_PREM||[]).length+'종'; }catch(_){}
+  try{ n.stickers=_stickerPacks().length+'묶음'; }catch(_){}
+  try{ n.colors=STORE_COLORS.length+'가지'; }catch(_){}
+  try{ n.emoji=STORE_EMOJI.length+'가지'; }catch(_){}
+  try{ n.fonts=TEXT_THEMES.filter(t=>t.key!=='default').length+'가지'; }catch(_){}
+  try{ n.dh=String(DH_THEMES.length); }catch(_){}
+  document.querySelectorAll('#premiumCard [data-pc]').forEach(el=>{ const v=n[el.dataset.pc]; if(v) el.textContent=v; });
+}
 function openPremiumSheet(){
   closeMainModals();
+  try{ _fillPremCounts(); }catch(_){}
   const prem=isEffectivePremium();
   const st=document.getElementById('premStatus');
   const btn=document.getElementById('premSubBtn');
@@ -22611,13 +22631,13 @@ function renderStoreThemes(){
 }
 function onStoreSealClick(){
   if(isEffectivePremium()) openSealShowcase();
-  else showUpgradeModal({message:'고급 프로필은 프리미엄 전용이에요.', feature:'입체 프로필 12종으로 방 카드를 꾸밀 수 있어요.'});
+  else showUpgradeModal({message:'고급 프로필은 프리미엄 전용이에요.', feature:'캐릭터·무늬 프로필·테마 세트로 방 카드를 꾸밀 수 있어요.'});
 }
 window.onStoreSealClick=onStoreSealClick;
 /* 스토어 테마 항목 — 쓸 수 있으면(구독·보유) 꾸미러 가기, 아니면 코인 구매/구독 안내 */
 function onStoreThemeItem(k){
   if(_canUseSkin(k)) openSealShowcase();
-  else offerItem('skin',k,{message:'고급 프로필은 프리미엄 전용이에요.', feature:'입체 프로필 12종으로 방 카드를 꾸밀 수 있어요.'});
+  else offerItem('skin',k,{message:'고급 프로필은 프리미엄 전용이에요.', feature:'캐릭터·무늬 프로필·테마 세트로 방 카드를 꾸밀 수 있어요.'});
 }
 window.onStoreThemeItem=onStoreThemeItem;
 /* 스토어 쇼케이스 → 방목록 탭으로 이동 + 편집모드 켜서 연필 노출 */
@@ -24483,7 +24503,7 @@ function _rsWire(){
 /* 스티커 붙이기 — 스토어·시트 공용 */
 window.addRoomSticker=function(url){
   if(!_currentRoom){ toast('방에 먼저 들어가 주세요'); return false; }
-  if(!isEffectivePremium()){
+  if(!_canSticker()){   // 구독 또는 코인으로 산 묶음이 있어야 [2026-09-23 — 산 사용자가 막히던 버그]
     showUpgradeModal({message:'🧸 배경을 스티커로 꾸며볼까요?', feature:'프리미엄이면 방 배경에 원하는 스티커를 마음껏 붙일 수 있어요.'});
     return false;
   }
