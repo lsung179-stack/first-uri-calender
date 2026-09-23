@@ -379,4 +379,4 @@
   - **mono 내림**: 두 목록에서 빼고 `shop_items` skin 'mono' `active=false`, skin 'camp' 30코인 추가(마이그레이션 `shop_items_camp_theme_retire_mono`). 데이터(`THEMES.mono`·`SEAL_SETS.mono`·`CARD_SKINS.mono`·`ROOM_CHAR_THEME.mono`·`body.rc-mono` CSS)는 **이미 고른 사람 화면이 깨지지 않게 남김**(보리·호담 삭제 때와 같은 방식). 스토어 컬러 팩의 '모노톤'(`STORE_COLORS` mono)은 별개라 그대로.
   - **출시 배너**: 스토어 테마 탭의 `.store-mono-hero`(+`MONO_HERO_IMG`) → `.store-camp-hero`(`CAMP_HERO_IMG`, 오른쪽 캐릭터·왼쪽 남색 스크림 위 흰 글씨 'NEW · STARRY CAMPING / 별밤 캠핑', 누르면 `onStoreThemeItem('camp')`). `preloadStoreAssets` 도 교체.
   - 검증: 신규 `camp_verify`(적용 시 rc-camp·data-theme·씬·bg, 레거시 mono 방 그대로 렌더, 목록 맨 앞·mono 없음, 배너, 나만의 테마 색/아이콘 후보, 무료 잠김·코인 구매 시 열림) 전부 통과 + 기존 회귀(coin 73·shared_color 23·default_color 34·dh_unlock 9·save_lock 17) 무회귀.
-  - 임시로 만든 Edge Function `asset-pipe`·SQL `public.tmp_pipe` (Higgsfield CDN → 저장소 복사·미리보기용)는 작업 후 삭제.
+  - 임시 도구 정리: SQL `public.tmp_pipe` 는 삭제. Edge Function `asset-pipe`(Higgsfield CDN → 저장소 복사·미리보기용)는 MCP 에 삭제 기능이 없어 **아무것도 안 하는 410 스텁(v3)으로 덮어씀** — 대시보드에서 지워도 된다. `deploy_version` = `2026-09-23 17:16:55`.
