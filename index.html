@@ -2117,6 +2117,16 @@ body.ev-dragging .cal-cell{cursor:grabbing}
 .ev-drag-ghost.parked{z-index:1999;transition:transform .2s cubic-bezier(.22,1,.36,1)}
 .ev-drag-ghost.parked .ev-drag-ghost-inner{animation:evGhostHover 1.5s ease-in-out infinite}
 @keyframes evGhostHover{0%,100%{transform:translate(-50%,-135%) scale(1.02)}50%{transform:translate(-50%,-150%) scale(1.06)}}
+/* 끄는 중 화면 끝 — 머무르면 달이 넘어간다는 표시(가장자리 그라데이션 + 다음 달 이름 + 차오르는 막대) */
+.ev-edge-hint{position:fixed;top:0;bottom:0;width:56px;z-index:9998;pointer-events:none;opacity:0;transition:opacity .15s ease;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.ev-edge-hint.on{opacity:1}
+.ev-edge-hint.left{left:0;background:linear-gradient(90deg,rgba(0,0,0,.20),rgba(0,0,0,0))}
+.ev-edge-hint.right{right:0;background:linear-gradient(270deg,rgba(0,0,0,.20),rgba(0,0,0,0))}
+.ev-edge-hint b{font-size:12px;font-weight:800;color:#fff;background:var(--accent);border-radius:99px;padding:4px 8px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.ev-edge-hint i{display:block;width:4px;height:64px;border-radius:4px;background:rgba(255,255,255,.55);overflow:hidden;position:relative}
+.ev-edge-hint i::after{content:"";position:absolute;left:0;right:0;bottom:0;height:0;background:var(--accent)}
+.ev-edge-hint.on i::after{animation:evEdgeFill .56s linear forwards}
+@keyframes evEdgeFill{to{height:100%}}
 /* 방금 놓은 일정 바 — 작게 나타났다가 톡 커지며 자리 잡기 */
 .cal-evbar.ev-pop-in{animation:evPopIn .48s cubic-bezier(.22,1.5,.36,1)}
 @keyframes evPopIn{0%{transform:scale(.55);opacity:.2}60%{transform:scale(1.08);opacity:1}100%{transform:scale(1);opacity:1}}
@@ -26327,6 +26337,8 @@ function setupEventDrag(){
     clearTimeout(_evDrag.holdTimer);
     if(_evRaf){cancelAnimationFrame(_evRaf);_evRaf=0;}
     const d=_evDrag;_evDrag=null;
+    clearTimeout(d.edgeTimer); _evEdgeHint(0);
+    setTimeout(_evReleaseKeptTarget,0);   // 달을 넘기며 맡겨 둔 원래 터치 대상 정리(이벤트가 다 끝난 뒤)
     if(!d.active){ if(d.ghost)d.ghost.remove(); return; }   // 길게 누르기 전이면 일반 탭
     try{d.bar.releasePointerCapture(d.pid)}catch(_){}
     (d.srcBars||[d.bar]).forEach(b=>{if(b)b.classList.remove('ev-drag-src')});
@@ -26388,6 +26400,48 @@ function setupEventDrag(){
   window.addEventListener('pointercancel',(e)=>{if(_evDrag&&e.pointerId===_evDrag.pid)_finish(false)});
 }
 
+/* ── 끄는 중 화면 끝에 머무르면 달 넘기기 ── */
+const EV_EDGE_DWELL=560;   // 끝에 머무는 시간(ms)
+function _evEdgeHint(dir){
+  let el=document.getElementById('evEdgeHint');
+  if(!dir){ if(el)el.className='ev-edge-hint'; return; }
+  if(!el){ el=document.createElement('div'); el.id='evEdgeHint'; el.innerHTML='<i></i><b></b>'; document.body.appendChild(el); }
+  el.className='ev-edge-hint';  void el.offsetWidth;          // 채워지는 애니메이션을 처음부터
+  el.className='ev-edge-hint on '+(dir<0?'left':'right');
+  const _m=((_calMonth+(dir<0?-1:1))%12+12)%12;
+  el.querySelector('b').textContent=(_m+1)+'월';
+}
+/* iOS WebKit 은 터치가 시작된 요소가 문서에서 떨어져 나가면 이후 touchmove/pointermove 가 window 까지
+   올라오지 않아 끌기가 멈춘다. 달을 넘기면 renderMonthly 가 칸을 통째로 새로 그리므로, 그 전에
+   원래 잡았던 바를 화면 밖 보관함으로 옮겨 문서에 붙어 있게 한다(포인터 캡처도 그대로 유지). */
+function _evKeepTouchTarget(d){
+  const grid=document.getElementById('calGrid');
+  if(!d||!d.bar||!grid||!grid.contains(d.bar))return;
+  let keep=document.getElementById('evDragKeep');
+  if(!keep){ keep=document.createElement('div'); keep.id='evDragKeep'; keep.setAttribute('aria-hidden','true');
+    keep.style.cssText='position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;opacity:0'; document.body.appendChild(keep); }
+  keep.appendChild(d.bar);
+}
+function _evReleaseKeptTarget(){ const k=document.getElementById('evDragKeep'); if(k&&!_evDrag)k.innerHTML=''; }
+function _evEdgeFlip(dir){
+  const d=_evDrag;
+  if(!d||!d.active||d.edgeDir!==dir)return;
+  _evKeepTouchTarget(d);
+  _evClearDropHl(); d.dropDate=null;
+  if(navigator.vibrate)navigator.vibrate(8);
+  fadeRender(()=>{
+    if(dir<0){ if(_calMonth===0){_calMonth=11;_calYear--}else{_calMonth--} }
+    else{ if(_calMonth===11){_calMonth=0;_calYear++}else{_calMonth++} }
+  },()=>{
+    const d2=_evDrag; if(!d2||!d2.active)return;
+    // 새로 그린 달에서도 잡고 있는 일정(원래 자리)이 흐리게 보이도록
+    const sel=d2.kind==='todo'?('[data-tdid="'+d2.tdid+'"]'):('.cal-evbar[data-evid="'+d2.evid+'"]');
+    document.querySelectorAll('#calGrid '+sel).forEach(b=>b.classList.add('ev-drag-src'));
+    // 계속 끝에 대고 있으면 한 달 더 — 다음 프레임에서 타이머를 다시 건다
+    d2.edgeDir=0;
+    if(!_evRaf)_evRaf=requestAnimationFrame(_evDragFrame);
+  });
+}
 /* 프레임당 1회: 고스트를 transform으로 이동 + 드롭 대상 칸 갱신 */
 function _evDragFrame(){
   _evRaf=0;
@@ -26395,6 +26449,14 @@ function _evDragFrame(){
   if(!d||!d.active)return;
   const x=_evPtrX,y=_evPtrY;
   if(d.ghost)d.ghost.style.transform=_evGhostTransform(x,y);
+  /* 화면 왼쪽/오른쪽 끝에 잠깐 머무르면 이전/다음 달로 넘어간다(끄는 중에는 스와이프가 꺼져 있어서
+     다른 달로 옮길 방법이 없었다 — 고객 요청 2026-09-23). 계속 대고 있으면 한 달씩 더 넘어간다. */
+  const _edgeW=Math.max(26,Math.min(44,innerWidth*0.08));
+  const edge=(x<_edgeW)?-1:(x>innerWidth-_edgeW)?1:0;
+  if(edge!==(d.edgeDir||0)){
+    clearTimeout(d.edgeTimer); d.edgeDir=edge; _evEdgeHint(edge);
+    if(edge)d.edgeTimer=setTimeout(()=>_evEdgeFlip(edge),EV_EDGE_DWELL);
+  }
   const hit=_evCellFromPoint(x,y);
   const newDrop=(hit&&hit.date!==d.fromDate)?hit.date:null;
   if(newDrop!==d.dropDate){
