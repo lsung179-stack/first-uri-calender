@@ -2113,10 +2113,17 @@ body.ev-dragging .cal-cell{cursor:grabbing}
 @keyframes evGhostPop{0%{transform:translate(-50%,-135%) scale(.55);opacity:.35}55%{transform:translate(-50%,-135%) scale(1.2);opacity:1}100%{transform:translate(-50%,-135%) scale(1.08);opacity:1}}
 /* 놓는 순간: 목표 칸으로 미끄러지며 안으로 쏙 들어가듯 축소+페이드 */
 .ev-drag-ghost.dropping{transition:transform .22s cubic-bezier(.22,1,.36,1)}
+/* 옮기기/복사를 고르는 동안: 놓은 칸 위로 미끄러져 살짝 숨 쉬듯 떠 있음(대화상자 오버레이 z 2000 바로 아래) */
+.ev-drag-ghost.parked{z-index:1999;transition:transform .2s cubic-bezier(.22,1,.36,1)}
+.ev-drag-ghost.parked .ev-drag-ghost-inner{animation:evGhostHover 1.5s ease-in-out infinite}
+@keyframes evGhostHover{0%,100%{transform:translate(-50%,-135%) scale(1.02)}50%{transform:translate(-50%,-150%) scale(1.06)}}
+/* 방금 놓은 일정 바 — 작게 나타났다가 톡 커지며 자리 잡기 */
+.cal-evbar.ev-pop-in{animation:evPopIn .48s cubic-bezier(.22,1.5,.36,1)}
+@keyframes evPopIn{0%{transform:scale(.55);opacity:.2}60%{transform:scale(1.08);opacity:1}100%{transform:scale(1);opacity:1}}
 .ev-drag-ghost.dropping .ev-drag-ghost-inner{animation:none;transition:transform .22s cubic-bezier(.22,1,.36,1),opacity .22s ease;transform:translate(-50%,-78%) scale(.36);opacity:0}
 @media (prefers-reduced-motion:reduce){
-  .ev-drag-ghost-inner{animation:none}
-  .ev-drag-ghost.dropping,.ev-drag-ghost.dropping .ev-drag-ghost-inner{transition:none}
+  .ev-drag-ghost-inner,.ev-drag-ghost.parked .ev-drag-ghost-inner,.cal-evbar.ev-pop-in{animation:none}
+  .ev-drag-ghost.dropping,.ev-drag-ghost.dropping .ev-drag-ghost-inner,.ev-drag-ghost.parked{transition:none}
 }
 
 /* 일정 복사 옵션 (방 만들기/입장 시) */
@@ -10258,7 +10265,7 @@ async function loadHolidaysForYear(year){
       const obj=JSON.parse(cached);
       if(obj.expires>Date.now()&&obj.data){
         Object.assign(HOLIDAYS,obj.data); _holidayVer++;
-        return;
+        return true;
       }
     }
   }catch{}
@@ -10283,9 +10290,13 @@ async function loadHolidaysForYear(year){
         expires:Date.now()+7*24*60*60*1000
       }));
     }catch{}
+    return true;
   }catch(e){
     console.warn(`공휴일 API 실패 (${year}), fallback 사용:`,e.message);
-    _loadedYears.delete(year);  // 실패 시 다음 진입에 재시도
+    /* ⚠️ 바로 지우면 renderMonthly → 다시 요청 → 실패 → 다시 그리기가 끝없이 돌았다(오프라인·차단된
+       망에서 달력이 쉬지 않고 새로 그려져 끌기 강조·애니메이션이 지워지고 배터리를 먹음). 1분 뒤에만 재시도. [2026-09-23] */
+    setTimeout(()=>_loadedYears.delete(year),60000);
+    return false;
   }
 }
 
@@ -11600,7 +11611,7 @@ function renderMonthly(){
   if(_calMonth===11)yearsToLoad.push(_calYear+1);
   yearsToLoad.forEach(y=>{
     if(!_loadedYears.has(y)){
-      loadHolidaysForYear(y).then(()=>renderMonthly());
+      loadHolidaysForYear(y).then(ok=>{ if(ok)renderMonthly(); });   // 새 공휴일이 들어왔을 때만 다시 그림
     }
   });
   updateTodayBtn();
@@ -25892,6 +25903,7 @@ async function _evMoveScoped(anchorRow,fromDate,toDate,ctx){
   const moves=rows.map(r=>({id:r.id,od:r.date,nd:shiftDateKey(r.date,diff)}));
   moves.forEach(m=>_evLocalMove(m.id,m.od,m.nd));
   invalidateDayEventsCache(); invalidateSearchCache(); renderMonthly();
+  _evPopBars(moves.map(m=>m.id));
   if(navigator.vibrate)navigator.vibrate(10);
   const mgid=anchorRow.multi_group_id||null;
   try{
@@ -26092,37 +26104,79 @@ async function _evCopyToDate(anchorRow,fromDate,toDate,ctx){
     const dates=[...new Set(srcRows.map(r=>r.date))].sort();
     const needShared=(anchorRow.shared_id&&!soloOut);
     const needRange=(dates.length>1&&anchorRow.range_group_id);
+    /* 새 row 의 id 를 여기서 미리 정해 두면(uuid) 서버 응답을 기다리지 않고 바로 달력에 그릴 수 있다.
+       예전엔 저장 → 전체 다시 읽기가 끝나야 복사본이 나타나서 '놓았는데 한 박자 늦게 뜨는' 느낌이었다
+       (옮기기는 원래부터 즉시 반영). 실패하면 그린 것을 거둬들인다. [2026-09-23] */
+    const _uuid=(typeof crypto!=='undefined'&&crypto.randomUUID)?(()=>crypto.randomUUID()):null;
     const rows=[];
     roomIds.forEach(rid=>{
       const sid=needShared?genShared():null;
       const rg=needRange?('rg_'+genShared()):null;
       srcRows.forEach(r=>{
-        rows.push(_evRowTemplate(r,{room_id:rid,date:shiftDateKey(r.date,diff),shared_id:sid,range_group_id:rg}));
+        const row=_evRowTemplate(r,{room_id:rid,date:shiftDateKey(r.date,diff),shared_id:sid,range_group_id:rg});
+        if(_uuid)row.id=_uuid();
+        rows.push(row);
       });
     });
-    const {error}=await supa.from('events').insert(rows);
-    if(error)throw error;
+    const _local=_uuid?rows.filter(r=>r.room_id===_currentRoom.id):[];
+    if(_local.length){
+      _local.forEach(r=>{ (_events[r.date]=_events[r.date]||[]).push(Object.assign({repeat_type:'none',repeat_except:[]},r)); });
+      invalidateDayEventsCache(); invalidateSearchCache(); renderMonthly();
+      _evPopBars(_local.map(r=>r.id));
+      if(navigator.vibrate)navigator.vibrate(10);
+    }
+    try{
+      const {error}=await supa.from('events').insert(rows);
+      if(error)throw error;
+    }catch(e){
+      if(_local.length){   // 그려 둔 복사본 거둬들이기
+        const _ids=new Set(_local.map(r=>r.id));
+        Object.keys(_events).forEach(k=>{ _events[k]=(_events[k]||[]).filter(x=>!(x&&_ids.has(x.id))); if(!_events[k].length)delete _events[k]; });
+        invalidateDayEventsCache(); invalidateSearchCache(); renderMonthly();
+      }
+      throw e;
+    }
     toast(roomIds.length>1?(roomIds.length+'개 방에 복사했어요'):(rows.length>1?'같은 방에 복사했어요 (기간 일정)':'같은 방에 복사했어요'));
-    await loadEvents();
+    if(!_local.length)await loadEvents();
     syncWidgetData(true);
   }catch(err){
     console.error('drag copy failed',err);
     toast('복사에 실패했어요');
   }
 }
+/* 방금 놓은(복사·이동된) 일정 바를 살짝 튀어오르게 — 어디에 생겼는지 눈에 들어오도록 */
+function _evPopBars(ids){
+  try{
+    const set=new Set(ids||[]);
+    requestAnimationFrame(()=>{
+      document.querySelectorAll('.cal-evbar[data-evid]').forEach(b=>{
+        if(!set.has(b.getAttribute('data-evid')))return;
+        b.classList.remove('ev-pop-in'); void b.offsetWidth; b.classList.add('ev-pop-in');
+        setTimeout(()=>b.classList.remove('ev-pop-in'),520);
+      });
+    });
+  }catch(_){}
+}
 /* 드롭 직후 — 옮길지 복사할지 먼저 묻고, 겹치는 조건(반복·함께·다른 방)을 이어서 묻는다 */
-async function _evDrop(anchorRow,fromDate,toDate){
+async function _evDrop(anchorRow,fromDate,toDate,ghost){
+  /* 묻는 동안 끌던 조각은 놓은 칸 위에 떠 있고(ghost parked), 결정이 나면 그 칸으로 쏙 들어가거나
+     (취소면) 원래 자리로 돌아간다 — 예전엔 놓자마자 사라지고 창만 떠서 흐름이 끊겨 보였다. [2026-09-23] */
+  let _settled=false;
+  const done=ok=>{ if(_settled)return; _settled=true; _evClearDropHl(); if(ghost){ ghost.classList.remove('parked'); _evSettleGhost(ghost,ok?toDate:fromDate); } };
+  try{
   const origin=_evResolveOrigin(anchorRow,fromDate);
   const act=await askRecurringDelete(
     '<b>'+escapeHtml(anchorRow.title||'일정')+'</b> 을(를) 이 날짜로 어떻게 할까요?',
     {title:'옮기기 / 복사', oneLabel:'이동', allLabel:'복사'});
-  if(!act)return;
+  if(!act){ done(false); return; }
   const isCopy=(act==='all');
   const ctx=await _evAskDropScopes(origin,isCopy);
-  if(!ctx)return;
-  if(isCopy)return _evCopyToDate(anchorRow,fromDate,toDate,ctx);
-  if(_evHasRepeat(origin))return _evMoveRepeat(origin,fromDate,toDate,ctx);
-  return _evMoveScoped(anchorRow,fromDate,toDate,ctx);
+  if(!ctx){ done(false); return; }
+  done(true);
+  if(isCopy)return await _evCopyToDate(anchorRow,fromDate,toDate,ctx);
+  if(_evHasRepeat(origin))return await _evMoveRepeat(origin,fromDate,toDate,ctx);
+  return await _evMoveScoped(anchorRow,fromDate,toDate,ctx);
+  }finally{ done(false); }
 }
 /* ⚠️ 이 헬퍼는 IIFE 바깥 스코프라 할일 저장소(_todos, 16786행 IIFE 내부)에 직접 접근 못 함.
    window.__getTodos()로 실제 할일 목록을 가져와야 함(안 그러면 항상 못 찾아 드래그가 시작 안 됨). */
@@ -26206,6 +26260,15 @@ function _evSettleGhost(ghost,date){
   requestAnimationFrame(()=>{ if(ghost)ghost.style.transform=_evGhostTransform(tx,ty); });
   setTimeout(()=>{ if(ghost&&ghost.parentNode)ghost.remove(); },250);
 }
+/* 놓은 칸 위에 고스트를 살짝 작게 띄워 둔다(창이 뜨는 동안) — 창 뒤로 깔리도록 z-index 는 오버레이 바로 아래 */
+function _evParkGhost(ghost,date){
+  if(!ghost)return;
+  const cell=date&&document.querySelector('.cal-cell[data-date="'+date+'"]');
+  if(!cell)return;
+  const r=cell.getBoundingClientRect();
+  ghost.classList.add('parked');
+  requestAnimationFrame(()=>{ if(ghost)ghost.style.transform=_evGhostTransform(r.left+r.width/2, r.top+Math.min(30,r.height*0.4)); });
+}
 function _evCellFromPoint(x,y){
   const el=document.elementFromPoint(x,y);
   if(!el||!el.closest)return null;
@@ -26267,16 +26330,17 @@ function setupEventDrag(){
     if(!d.active){ if(d.ghost)d.ghost.remove(); return; }   // 길게 누르기 전이면 일반 탭
     try{d.bar.releasePointerCapture(d.pid)}catch(_){}
     (d.srcBars||[d.bar]).forEach(b=>{if(b)b.classList.remove('ev-drag-src')});
-    _evClearDropHl();
+    const _parkEv=!!(commit&&d.dropDate&&d.kind!=='todo'&&d.anchorRow);
+    if(!_parkEv)_evClearDropHl();          // 일정은 묻는 동안 놓을 칸 강조를 유지
     document.body.classList.remove('ev-dragging');
     _evDragging=false;
     _evDragSuppressClick=true;      // 드롭 직후 셀 click(날짜시트) 1회 차단
     setTimeout(()=>{_evDragSuppressClick=false},400);
-    // 놓는 자리(커밋이면 드롭날짜, 아니면 원위치)로 고스트가 쏙 들어가는 마무리 애니메이션
+    // 할 일·취소는 곧바로 마무리 애니메이션, 일정은 '옮기기/복사' 를 고르는 동안 놓은 칸 위에 띄워 둔다
+    if(_parkEv){ _evParkGhost(d.ghost,d.dropDate); _evDrop(d.anchorRow,d.fromDate,d.dropDate,d.ghost); return; }
     _evSettleGhost(d.ghost,(commit&&d.dropDate)?d.dropDate:d.fromDate);
     if(commit&&d.dropDate){
       if(d.kind==='todo'){ if(d.anchorTodo)_tdMove(d.anchorTodo,d.fromDate,d.dropDate); }
-      else if(d.anchorRow)_evDrop(d.anchorRow,d.fromDate,d.dropDate);
     }
   }
 
