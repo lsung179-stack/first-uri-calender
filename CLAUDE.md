@@ -47,7 +47,7 @@
 ## Supabase
 - 프로젝트 id: **`bgqzkkaslqchbovzrkao`**
 - 핵심 테이블: `public.subscriptions` (user_id, status, expires_at, plan_type, is_manual)
-- `public.members` (room_id, user_id, color, notifications_enabled, role, is_virtual, virtual_*, **`sort_order` int**=방목록 사용자별 순서, **`seal` text**=개인별 방 프로필 'color:sym', 마이그레이션 `add_members_seal`). RLS `members_update_self`(user_id=auth.uid())로 본인 행 수정 가능.
+- `public.members` (room_id, user_id, color, notifications_enabled, role, is_virtual, virtual_*, **`sort_order` int**=방목록 사용자별 순서, **`seal` text**=개인별 방 프로필 'color:sym', 마이그레이션 `add_members_seal`), **`palette` text[]**=이 방에서 내 일정·할 일 색상 칸에 보일 색 묶음('default'=기본 12색, 그 외=컬러 팩 key, null=전부 — `_myPaletteByRoom`/`_colorPagesForRoom`, 마이그레이션 `add_members_palette`). RLS `members_update_self`(user_id=auth.uid())로 본인 행 수정 가능.
 - `public.rooms` (id, name, code, owner_id, ~~`mascot` text~~). ⚠️ **방 프로필은 2026-07에 방 공유(rooms.mascot)→개인별(members.seal)로 전환** — `rooms.mascot` 컬럼과 RPC `set_room_mascot`은 **미사용 잔존**(마이그레이션 `add_room_mascot`). 클라이언트는 members.seal만 읽고 씀.
 - ~~`public.anniversaries`~~ — **방별 공유 D-day/기념일 기능은 제거됨**(사용자 요청, "느낌 없음"). 클라이언트 코드(스트립/시트/JS/CSS) 전부 삭제. 단 DB 테이블 `anniversaries`(마이그레이션 `create_anniversaries`)는 **그대로 남아있음**(빈 테이블, 미사용). 나중에 재도입하거나 정리할 때 참고.
 - 관리자 RPC: `admin_users_detailed()` — 회원별 활동지표(SECURITY DEFINER, 관리자만).

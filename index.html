@@ -3129,6 +3129,27 @@ body.align-right .cal-evbar{text-align:right}
 #charDetailCard{z-index:1401;left:50%;right:auto;width:100%;max-width:430px;transform:translateX(-50%) translateY(100%)}
 #charDetailCard.on{transform:translateX(-50%) translateY(0)}
 /* 코인 [2026-09-23] — 충전 시트는 스토어·이모지 상세 위에 뜬다 */
+/* 이 방에서 쓸 색 — 일정·할 일 폼(mo-card) 위에서 열린다 */
+#rpalOverlay{z-index:1400}
+#rpalCard{z-index:1401;left:50%;right:auto;width:100%;max-width:430px;transform:translateX(-50%) translateY(100%);max-height:86vh;overflow-y:auto}
+#rpalCard.on{transform:translateX(-50%) translateY(0)}
+#rpalCard .mo-sub{margin-bottom:14px}
+.rpal-row{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;border:1.5px solid var(--border);border-radius:13px;margin-bottom:8px;background:var(--bg);font-family:inherit;cursor:pointer;text-align:left}
+.rpal-row.off .rpal-strip,.rpal-row.off .rpal-name{opacity:.38}
+.rpal-name{font-size:13px;font-weight:800;color:var(--text);width:52px;flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rpal-strip{display:flex;gap:2px;flex:1;min-width:0}.rpal-strip i{flex:1;height:18px;border-radius:4px}
+.rpal-tg{width:40px;height:24px;border-radius:99px;background:var(--mute);position:relative;flex:none;transition:background .15s}
+.rpal-tg::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .15s}
+.rpal-row.on .rpal-tg{background:var(--accent)}.rpal-row.on .rpal-tg::after{left:19px}
+.rpal-note{font-size:11.5px;color:var(--sub);line-height:1.6;background:var(--aP);border-radius:10px;padding:9px 12px;margin-top:6px}
+.rpal-save{width:100%;margin-top:12px;height:46px;border:none;border-radius:12px;background:var(--accent);color:#fff;font-weight:800;font-size:15px;font-family:inherit;cursor:pointer}
+.rpal-more{display:block;width:100%;margin-top:8px;background:none;border:none;color:var(--accent);font-weight:700;font-size:12.5px;font-family:inherit;cursor:pointer;padding:6px}
+.ev-color-room-btn{background:var(--aP);color:var(--accent);border:none;border-radius:99px;padding:5px 10px;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap}
+.ev-color-room-btn.set{background:var(--accent);color:#fff}
+.uni-pal-txt{display:flex;flex-direction:column;align-items:flex-start;gap:1px}
+.uni-pal-txt small{font-size:11px;font-weight:500;color:var(--sub)}
+.uni-pal-dots{display:flex;gap:2px;margin-left:auto;margin-right:8px}.uni-pal-dots i{width:9px;height:9px;border-radius:50%}
+body[data-theme="camp"] .rpal-row{background:#2c4a82}
 #stkDetailOverlay{z-index:1400}
 #stkDetailCard{z-index:1401;left:50%;right:auto;width:100%;max-width:430px;transform:translateX(-50%) translateY(100%)}
 #stkDetailCard.on{transform:translateX(-50%) translateY(0)}
@@ -4461,6 +4482,7 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
       <div class="ev-color-head">
         <div class="ev-label">색상</div>
         <div class="ev-color-head-actions">
+        <button type="button" class="ev-color-room-btn" id="todoColorRoomBtn" onclick="openRoomPalette()">이 방 색상</button>
         <button type="button" class="ev-color-default-btn" id="todoColorDefaultBtn" onclick="toggleDefaultColor('todo')">기본으로 설정</button>
         <button type="button" class="ev-color-edit-btn" id="todoColorEditBtn" onclick="toggleColorLabelEdit('todo')" aria-label="색상 라벨 수정" title="색상 라벨 수정"><svg viewBox="0 0 24 24"><path d="M5 3h14a1 1 0 0 1 1 1v17l-8-4-8 4V4a1 1 0 0 1 1-1z"/></svg></button>
         <button type="button" class="ev-color-done-btn" id="todoColorDoneBtn" onclick="commitColorLabelEdit('todo')" style="display:none">완료</button>
@@ -4536,6 +4558,7 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
       <button class="uni-mini-btn" onclick="copyRoomCode()">복사</button>
     </div>
     <!-- '이 방 테마' 섹션은 방 프로필 카드 배경(기본 배경=테마 6종)으로 통합됨(2026-07-23). 색 섞임 방지. -->
+    <button class="uni-nav" onclick="openRoomPalette()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.8 1.8-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10" cy="7" r="1.2"/><circle cx="14.5" cy="7" r="1.2"/></svg><span class="uni-pal-txt">이 방 라벨 색<small id="uniPaletteSub">전체</small></span></span><span class="uni-pal-dots" id="uniPaletteDots"></span><span class="chev">›</span></button>
     <button class="uni-nav" style="background:var(--kakao);color:var(--kakaoText)" onclick="shareKakao()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 9.06 9.06 0 0 1-3.6-.7L3 21l1.7-5.4A8.38 8.38 0 0 1 4 11.5 8.5 8.5 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5z"/></svg>카카오톡으로 초대</span><span class="chev">›</span></button>
 
     <div class="uni-divider"></div>
@@ -4996,6 +5019,7 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
       <div class="ev-color-head">
         <div class="ev-label">색상</div>
         <div class="ev-color-head-actions">
+        <button type="button" class="ev-color-room-btn" id="evColorRoomBtn" onclick="openRoomPalette()">이 방 색상</button>
         <button type="button" class="ev-color-default-btn" id="evColorDefaultBtn" onclick="toggleDefaultColor('ev')">기본으로 설정</button>
         <button type="button" class="ev-color-edit-btn" id="evColorEditBtn" onclick="toggleColorLabelEdit('ev')" aria-label="색상 라벨 수정" title="색상 라벨 수정"><svg viewBox="0 0 24 24"><path d="M5 3h14a1 1 0 0 1 1 1v17l-8-4-8 4V4a1 1 0 0 1 1-1z"/></svg></button>
         <button type="button" class="ev-color-done-btn" id="evColorDoneBtn" onclick="commitColorLabelEdit('ev')" style="display:none">완료</button>
@@ -5652,6 +5676,16 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
   <div class="coin-packs" id="coinPackList"></div>
   <div class="coin-note">코인은 유효기간이 없어요.<br>테마·컬러·이모지·글꼴·강조·스티커를 하나씩 살 수 있고,<br>산 항목은 구독과 상관없이 계속 쓸 수 있어요.<br>결제·환불은 App Store·Google Play 정책을 따라요.</div>
   <div class="mo-actions"><button class="mo-cancel" onclick="closeCoinShop()">닫기</button></div>
+</div>
+<div class="mo-overlay" id="rpalOverlay" onclick="closeRoomPalette()"></div>
+<div class="mo-card" id="rpalCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">이 방에서 쓸 색</div>
+  <div class="mo-sub" id="rpalSub"></div>
+  <div class="rpal-list" id="rpalList"></div>
+  <div class="rpal-note">· 최소 한 묶음은 켜져 있어야 해요<br>· 이미 만든 일정·할 일 색은 그대로예요<br>· 내 계정에 저장돼 다른 기기에서도 같아요 (다른 멤버 화면엔 영향 없음)</div>
+  <button type="button" class="rpal-save" id="rpalSave" onclick="saveRoomPalette()">저장</button>
+  <button type="button" class="rpal-more" onclick="closeRoomPalette();openStore();setTimeout(function(){try{setStoreTab('color')}catch(_){}},60)">컬러 팩 더 보기 ›</button>
 </div>
 <div class="mo-overlay" id="stkDetailOverlay" onclick="closeStickerPackDetail()"></div>
 <div class="mo-card" id="stkDetailCard">
@@ -8232,11 +8266,11 @@ async function loadRooms(){
   try{
     // 내가 속한 방들의 room_id + 내 순서(sort_order) 가져오기
     const {data:myMems,error:e1}=await supa
-      .from('members').select('room_id,sort_order,seal,card_skin,seal_photo,stickers')
+      .from('members').select('room_id,sort_order,seal,card_skin,seal_photo,stickers,palette')
       .eq('user_id',_currentUser.id);
     if(e1)throw e1;
-    _mySealByRoom={}; _myCardSkinByRoom={}; _mySealPhotoByRoom={}; _myStickersByRoom={};
-    (myMems||[]).forEach(function(m){ _mySealByRoom[m.room_id]=m.seal||null; _myCardSkinByRoom[m.room_id]=m.card_skin||null; _mySealPhotoByRoom[m.room_id]=m.seal_photo||null; _myStickersByRoom[m.room_id]=Array.isArray(m.stickers)?m.stickers:[]; });
+    _mySealByRoom={}; _myCardSkinByRoom={}; _mySealPhotoByRoom={}; _myStickersByRoom={}; _myPaletteByRoom={};
+    (myMems||[]).forEach(function(m){ _myPaletteByRoom[m.room_id]=(Array.isArray(m.palette)&&m.palette.length)?m.palette:null; _mySealByRoom[m.room_id]=m.seal||null; _myCardSkinByRoom[m.room_id]=m.card_skin||null; _mySealPhotoByRoom[m.room_id]=m.seal_photo||null; _myStickersByRoom[m.room_id]=Array.isArray(m.stickers)?m.stickers:[]; });
     // 커스텀 테마는 방 카드/입장 테마보다 먼저 있어야 한다(없으면 custom: 키가 해석 안 돼 기본으로 보임)
     try{ await loadCustomThemes(); }catch(_){}
     try{ _preloadRoomScenes(); }catch(_){}   // 방 입장 전에 각 방 배경씬 미리 캐시(입장 즉시 표시)
@@ -12663,22 +12697,110 @@ function renderColorGrid(){
   renderColorPager();
 }
 
+/* ── 이 방에서 쓸 색(방별 팔레트) [2026-09-23, 고객 요청 "초록 테마 쓸 때 라벨 팔레트를 초록만 쓰고 싶은데 다른 것도 다 나와서"] ──
+   색상 칸의 '페이지' = 기본 12색 + 사용 중인 컬러 팩. 방마다 어느 페이지를 보일지 내가 정한다.
+   저장: members.palette text[] (내 행, 'default'=기본 12색, 그 밖=팩 key, null=전부). 다른 멤버 화면엔 영향 없음. */
+var _myPaletteByRoom={};
+function _colorPagesAll(){
+  const pages=[{key:'default',name:'기본',colors:EVENT_COLORS.map(c=>({key:c.key,hex:c.hex,name:c.name}))}];
+  getUnlockedColorPacks().forEach(packKey=>{
+    const pack=STORE_COLORS.find(p=>p.key===packKey);
+    if(!pack)return;
+    pages.push({key:packKey,name:pack.name,colors:pack.colors.map(hex=>({key:hex,hex,name:''}))});   // hex 자체를 key로 사용
+  });
+  return pages;
+}
+function _roomPalette(roomId){
+  const rid=roomId||(_currentRoom&&_currentRoom.id);
+  const v=rid&&_myPaletteByRoom?_myPaletteByRoom[rid]:null;
+  return (Array.isArray(v)&&v.length)?v:null;
+}
+/* 이 방 색상 칸에 보일 페이지들. selKey(지금 고른 색)가 숨긴 묶음에 있으면 그 묶음도 보여 준다
+   — 예전 일정을 고칠 때 원래 색이 사라져 보이지 않게. 켜 둔 묶음이 다 없어졌으면(팩 사용 해제 등) 전부. */
+function _colorPagesForRoom(selKey){
+  const all=_colorPagesAll(), pal=_roomPalette();
+  if(!pal)return all;
+  const out=all.filter(p=>pal.includes(p.key)||(selKey&&p.colors.some(c=>c.key===selKey)));
+  return out.some(p=>pal.includes(p.key))?out:all;
+}
+let _rpalDraft=null;
+function openRoomPalette(){
+  if(!_currentRoom||!_currentUser){ toast('방에 들어간 뒤에 정할 수 있어요'); return; }
+  const all=_colorPagesAll(), pal=_roomPalette();
+  _rpalDraft=new Set(pal?pal.filter(k=>all.some(p=>p.key===k)):all.map(p=>p.key));
+  if(!_rpalDraft.size)all.forEach(p=>_rpalDraft.add(p.key));
+  document.getElementById('rpalSub').textContent='‘'+(_currentRoom.name||'이 방')+'’ 방 · 켠 묶음만 색상 칸에 보여요';
+  _renderRoomPalette();
+  document.getElementById('rpalOverlay').classList.add('on');
+  document.getElementById('rpalCard').classList.add('on');
+}
+function closeRoomPalette(){
+  document.getElementById('rpalOverlay').classList.remove('on');
+  document.getElementById('rpalCard').classList.remove('on');
+}
+function _renderRoomPalette(){
+  const list=document.getElementById('rpalList'); if(!list)return;
+  list.innerHTML=_colorPagesAll().map(p=>{
+    const on=_rpalDraft.has(p.key);
+    return '<button type="button" class="rpal-row'+(on?' on':' off')+'" onclick="toggleRoomPalettePage(\''+escapeHtml(p.key)+'\')" aria-pressed="'+on+'">'
+      +'<span class="rpal-name">'+escapeHtml(p.name)+'</span>'
+      +'<span class="rpal-strip">'+p.colors.map(c=>'<i style="background:'+c.hex+'"></i>').join('')+'</span>'
+      +'<span class="rpal-tg"></span></button>';
+  }).join('');
+}
+function toggleRoomPalettePage(key){
+  if(!_rpalDraft)return;
+  if(_rpalDraft.has(key)){
+    if(_rpalDraft.size<=1){ toast('최소 한 묶음은 켜져 있어야 해요'); return; }
+    _rpalDraft.delete(key);
+  }else _rpalDraft.add(key);
+  _renderRoomPalette();
+}
+async function saveRoomPalette(){
+  if(!_rpalDraft||!_currentRoom||!_currentUser)return;
+  const all=_colorPagesAll().map(p=>p.key);
+  const picked=all.filter(k=>_rpalDraft.has(k));
+  const val=(picked.length>=all.length)?null:picked;   // 다 켜면 '제한 없음'(null) — 나중에 팩을 새로 켜도 자동으로 보이게
+  const btn=document.getElementById('rpalSave'); if(btn)btn.disabled=true;
+  try{
+    const {error}=await supa.from('members').update({palette:val}).eq('room_id',_currentRoom.id).eq('user_id',_currentUser.id);
+    if(error)throw error;
+    _myPaletteByRoom[_currentRoom.id]=val;
+    closeRoomPalette();
+    toast(val?'이 방에서는 고른 색만 보여요':'이 방에서 모든 색을 보여요');
+    // 열려 있는 폼의 색상 칸 바로 갱신 — 지금 고른 색이 숨겨졌으면 이 방 기본색으로 바꿔 준다
+    try{
+      const evOn=document.getElementById('evCard')?.classList.contains('on');
+      if(evOn){
+        if(!_editingEvent&&!_colorPagesForRoom(null).some(p=>p.colors.some(c=>c.key===_selectedColor)))_selectedColor=effectiveDefaultColor('ev');
+        renderColorPager();
+      }
+      if(document.getElementById('todoAddCard')?.classList.contains('on')&&typeof window.renderTodoColorPager==='function'){
+        if(typeof window._setTodoColorIfHidden==='function')window._setTodoColorIfHidden();
+        window.renderTodoColorPager();
+      }
+    }catch(_){}
+    _syncRoomPaletteUI();
+  }catch(e){
+    console.error('palette save failed',e); toast('저장하지 못했어요');
+  }finally{ if(btn)btn.disabled=false; }
+}
+/* 설정 화면 요약(켠 묶음 이름·색 점) + 폼 버튼 강조 */
+function _syncRoomPaletteUI(){
+  const pal=_roomPalette(), pages=pal?_colorPagesForRoom(null):null;
+  const sub=document.getElementById('uniPaletteSub');
+  if(sub)sub.textContent=pages?pages.map(p=>p.name).join(' · '):'전체';
+  const dots=document.getElementById('uniPaletteDots');
+  if(dots)dots.innerHTML=pages?pages.slice(0,3).map(p=>{ const c=p.colors, pick=[c[2],c[4],c[6]].filter(Boolean); return pick.map(x=>'<i style="background:'+x.hex+'"></i>').join(''); }).join(''):'';
+  ['evColorRoomBtn','todoColorRoomBtn'].forEach(id=>{ const b=document.getElementById(id); if(b)b.classList.toggle('set',!!pal); });
+}
 function renderColorPager(){
   const pager=document.getElementById('evColorPager');
   if(!pager)return;
 
-  // 페이지 구성: 기본 + 해제된 컬러 팩들
-  const pages=[{key:'default',name:'기본',colors:EVENT_COLORS.map(c=>({key:c.key,hex:c.hex,name:c.name}))}];
-  const unlockedPacks=getUnlockedColorPacks();
-  unlockedPacks.forEach(packKey=>{
-    const pack=STORE_COLORS.find(p=>p.key===packKey);
-    if(!pack)return;
-    pages.push({
-      key:packKey,
-      name:pack.name,
-      colors:pack.colors.map(hex=>({key:hex,hex,name:''})) // hex 자체를 key로 사용
-    });
-  });
+  // 페이지 구성: 기본 + 해제된 컬러 팩들 → 이 방에서 쓰기로 한 것만
+  const pages=_colorPagesForRoom(_selectedColor);
+  try{ _syncRoomPaletteUI(); }catch(_){}
 
   // 현재 선택 컬러가 어느 페이지에 있는지 찾기
   let activePageIdx=0;
@@ -12747,15 +12869,24 @@ function selectColor(key){
 /* ── 기본 색상 — 새 일정/할 일 폼이 처음 여는 색 (기기 로컬, 일정·할일 따로) [2026-09-10] ──
    저장값이 지금 못 쓰는 팩 색(프리미엄 만료·팩 사용 해제)이면 빈티지로 폴백. 저장값은 지우지 않아 다시 쓸 수 있게 되면 그대로 복원. */
 const _DEF_COLOR_LS={ev:'uricalv2.defaultColor.ev',todo:'uricalv2.defaultColor.todo'};
-function getDefaultColor(mode){ try{ return localStorage.getItem(_DEF_COLOR_LS[mode]||_DEF_COLOR_LS.ev)||null; }catch(e){ return null; } }
-function setDefaultColor(mode,key){ try{ const k=_DEF_COLOR_LS[mode]||_DEF_COLOR_LS.ev; if(key)localStorage.setItem(k,key); else localStorage.removeItem(k); }catch(e){} }
+/* 이 방에 '쓸 색' 을 정해 뒀으면 기본 색상도 그 방 전용 키에 따로 둔다(초록 방은 초록이 기본) — 안 정한 방은 예전처럼 공용. */
+function _defColorKeyLS(mode){ const base=_DEF_COLOR_LS[mode]||_DEF_COLOR_LS.ev; return _roomPalette()?(base+'.'+_currentRoom.id):base; }
+function getDefaultColor(mode){ try{ return localStorage.getItem(_defColorKeyLS(mode))||null; }catch(e){ return null; } }
+function setDefaultColor(mode,key){ try{ const k=_defColorKeyLS(mode); if(key)localStorage.setItem(k,key); else localStorage.removeItem(k); }catch(e){} }
 function _colorKeyUsable(key){
   if(!key)return false;
   if((EVENT_COLORS||[]).some(c=>c.key===key))return true;            // 기본 팔레트
   const packs=getUnlockedColorPacks();                                 // 지금 사용 중인 팩의 hex 만
   return (STORE_COLORS||[]).some(p=>packs.includes(p.key)&&(p.colors||[]).includes(key));
 }
-function effectiveDefaultColor(mode){ const k=getDefaultColor(mode); return _colorKeyUsable(k)?k:'c-vintage'; }
+function effectiveDefaultColor(mode){
+  const k=getDefaultColor(mode);
+  if(!_roomPalette()) return _colorKeyUsable(k)?k:'c-vintage';
+  // 이 방 색상 칸에 실제로 보이는 색이어야 한다 — 아니면 보이는 첫 묶음의 첫 색으로
+  const pages=_colorPagesForRoom(null);
+  if(k&&_colorKeyUsable(k)&&pages.some(p=>p.colors.some(c=>c.key===k)))return k;
+  return (pages[0]&&pages[0].colors[0]&&pages[0].colors[0].key)||'c-vintage';
+}
 function _syncDefaultColorBtn(mode,selKey){
   const b=document.getElementById(mode==='todo'?'todoColorDefaultBtn':'evColorDefaultBtn'); if(!b)return;
   const editing=(mode==='todo')?_todoColorLabelEditMode:_colorLabelEditMode;
@@ -28050,14 +28181,8 @@ function selectTodoColor(key){ _todoColorKey=key; renderTodoColorPager(); }
 function renderTodoColorPager(){
   const pager=document.getElementById('todoColorPager');
   if(!pager)return;
-  // 페이지 구성: 기본 + 해제된 컬러 팩들 (일정과 동일)
-  const pages=[{key:'default',name:'기본',colors:EVENT_COLORS.map(c=>({key:c.key,hex:c.hex,name:c.name}))}];
-  const unlockedPacks=getUnlockedColorPacks();
-  unlockedPacks.forEach(packKey=>{
-    const pack=STORE_COLORS.find(p=>p.key===packKey);
-    if(!pack)return;
-    pages.push({key:packKey,name:pack.name,colors:pack.colors.map(hex=>({key:hex,hex,name:''}))});
-  });
+  // 페이지 구성: 기본 + 해제된 컬러 팩들 → 이 방에서 쓰기로 한 것만 (일정과 동일)
+  const pages=_colorPagesForRoom(_todoColorKey);
   let activePageIdx=0;
   for(let i=0;i<pages.length;i++){
     if(pages[i].colors.some(c=>c.key===_todoColorKey)){activePageIdx=i;break}
@@ -28745,6 +28870,7 @@ function openUnifiedSettings(){
   setText('uniRoomSub',_currentRoom.name||'—');
   setText('uniRoomName',_currentRoom.name||'—');
   setText('uniRoomCode',_currentRoom.code||'—');
+  try{ _syncRoomPaletteUI(); }catch(_){}
   try{ renderRoomThemeGrid(); }catch(e){}
   showEl('uniRoomNameEditRow',false);
   try{ renderRoomMemberList(); }catch(e){}
@@ -28919,6 +29045,11 @@ window._todoRemoveMulti=removeTodoMultiDate;
 window.saveTodo=saveTodo;
 window.selectTodoColor=selectTodoColor;
 window.renderTodoColorPager=renderTodoColorPager;
+/* 이 방 색을 바꿨을 때 새 할 일 폼의 지금 색이 숨겨진 묶음이면 이 방 기본색으로 */
+window._setTodoColorIfHidden=function(){
+  if(_editingTodoId)return;
+  if(!_colorPagesForRoom(null).some(p=>p.colors.some(c=>c.key===_todoColorKey)))_todoColorKey=effectiveDefaultColor('todo');
+};
 window._getTodoColorKey=function(){ return _todoColorKey; };  // 기본 색상 토글(전역 toggleDefaultColor)이 IIFE 안 상태를 읽는 통로 [2026-09-10]
 window._doSaveTodo=_doSaveTodo;
 window.bindTodoTimeInputs=bindTodoTimeInputs;
