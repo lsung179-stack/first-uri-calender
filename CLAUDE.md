@@ -70,6 +70,7 @@
 - 결제: `onPremiumSubscribe()` → `_applyRcEntitlement()`(구매 직후 낙관 반영 후 서버 재동기화). **구매 복원 `onRestorePurchases()`는 `_applyRcEntitlement` 안 씀** — `loadPremiumStatus()` 후 `_serverPremium`일 때만 프리미엄(기기 Apple ID 구독 신뢰 금지 → 계정 간 프리미엄 누수 방지).
 - `syncPremiumFromRevenueCat()` — **자동 호출 금지**(기기 구독을 직접 읽어 누수 위험). 정의만 두고 호출하지 않음.
 - 광고: `showAdBannerIfNeeded()`, `hideAdBanner()`, `_anySubSheetOpen()`(열린 시트 있으면 광고 숨김), `_elVisible(el)`(실제 보이는 요소만 카운트 — 잔여 `.on` 오판 방지), `_admobDebug`(설정 화면 푸터에 노출).
+- **코인(2026-09-23, 관리자 전용 시험 중)**: 잔액=`coin_ledger` 합계(`my_coin_balance()`), 가격=`shop_items`, 충전상품=`coin_packs`(`coins_30/100/300`), 구매=RPC **`buy_item(type,key)` 하나로만**(서버가 잔액·차감·`user_unlocks` 소유를 한 트랜잭션에서). 소유 판정 `_ownsItem(type,key)`(= `_dbUnlocks.skin/color/char`), 테마 게이트는 **`_canUseSkin(k)`**(구독 OR 무료 테마 OR 산 테마) — 새 테마 게이트를 만들 땐 `isEffectivePremium()` 대신 이걸 쓸 것. 잠긴 버튼 `_lockedBtnHTML`, 구매 제안 `offerItem`, 충전 시트 `openCoinShop`. **공개 스위치 = `_coinVisible()`**(지금 `isAdmin()`). ⚠️ 공개 전 필수: (1) App Store Connect·Play Console 에 소모성 상품 `coins_30/100/300` 등록 + RevenueCat 에 추가, (2) `revenuecat-webhook` 에 코인 적립 분기(NON_RENEWING_PURCHASE→+, CANCELLATION→−, ref=거래 id) — 웹훅 비밀값을 Edge Function 시크릿으로 옮긴 뒤 배포. 관리자 테스트 코인: `select admin_grant_coins('<uid>',100,'메모');`.
 
 
 ## 📝 출시 자료 자동 작성 규칙 (사용자 지시 2026-07-25, 2026-08-22 개정)

@@ -3041,6 +3041,34 @@ body.align-right .cal-evbar{text-align:right}
 #charDetailOverlay{z-index:1400}
 #charDetailCard{z-index:1401;left:50%;right:auto;width:100%;max-width:430px;transform:translateX(-50%) translateY(100%)}
 #charDetailCard.on{transform:translateX(-50%) translateY(0)}
+/* 코인 [2026-09-23] — 충전 시트는 스토어·이모지 상세 위에 뜬다 */
+#coinOverlay{z-index:1410}
+#coinCard{z-index:1411;left:50%;right:auto;width:100%;max-width:430px;transform:translateX(-50%) translateY(100%)}
+#coinCard.on{transform:translateX(-50%) translateY(0)}
+#coinCard .mo-sub{margin-bottom:16px}
+#coinCard .mo-sub b{color:var(--text);font-variant-numeric:tabular-nums}
+.coin-ico{display:inline-block;width:13px;height:13px;border-radius:50%;flex:none;vertical-align:-2px;
+  background:radial-gradient(circle at 35% 30%,#ffe9a3 0,#f5c542 45%,#d49a12 100%);
+  box-shadow:inset 0 0 0 1.5px rgba(160,105,0,.45)}
+.coin-ico-lg{width:30px;height:30px;box-shadow:inset 0 0 0 2.5px rgba(160,105,0,.4)}
+.pack-btn-coin{display:inline-flex;align-items:center;gap:5px;font-variant-numeric:tabular-nums}
+.store-coin-chip{display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 10px 0 8px;border-radius:99px;
+  border:1.5px solid var(--border);background:var(--card);color:var(--text);font-family:inherit;font-size:13px;font-weight:800;
+  font-variant-numeric:tabular-nums;cursor:pointer}
+.store-coin-chip b{color:var(--accent);font-weight:900;margin-inline-start:2px}
+.store-coin-chip:active{transform:scale(.95)}
+.rm-uset-coin{display:inline-flex;align-items:center;gap:5px;font-variant-numeric:tabular-nums}
+.coin-packs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.coin-pack{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 6px 12px;border-radius:16px;
+  border:1.5px solid var(--border);background:var(--card);color:var(--text);font-family:inherit;cursor:pointer}
+.coin-pack:active{transform:scale(.96)}
+.coin-pack-amt{font-size:20px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.1}
+.coin-pack-amt small{font-size:11px;font-weight:700;color:var(--sub);margin-inline-start:2px}
+.coin-bonus{font-size:10.5px;font-weight:800;color:var(--accent);background:var(--aP);border-radius:99px;padding:2px 8px}
+.coin-pack-buy{margin-top:auto;font-size:13px;font-weight:800;color:#fff;background:var(--accent);border-radius:99px;padding:6px 0;width:100%;text-align:center}
+.coin-empty{grid-column:1/-1;text-align:center;font-size:13px;color:var(--mute);padding:18px 0}
+.coin-note{margin-top:14px;font-size:11.5px;line-height:1.6;color:var(--mute);text-align:center}
+
 /* 날짜 강조 추가 시트·팔레트 상세도 스토어(z-index:1300) 안에서 열리므로 그 위로 띄워야 함(안 그러면
    스토어 뒤에 가려져 탭해도 아무 반응 없어 보임 — 캐릭터 상세와 동일한 처리). [2026-08-19] */
 /* 날짜 강조 흐름에서 여는 방 선택 모달은 강조 시트(1401)·관리 시트(1381)·스토어(1300)보다 위여야 한다 */
@@ -5509,6 +5537,15 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
 </div>
 
 <!-- 캐릭터 상세 모달 (스토어에서 카드 클릭 시) -->
+<div class="mo-overlay" id="coinOverlay" onclick="closeCoinShop()"></div>
+<div class="mo-card" id="coinCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title">코인 충전</div>
+  <div class="mo-sub" id="coinBalanceLine">보유 0코인</div>
+  <div class="coin-packs" id="coinPackList"></div>
+  <div class="coin-note">코인은 유효기간이 없어요. 테마·컬러 팩·이모지 팩을 하나씩 살 수 있고,<br>산 항목은 구독과 상관없이 계속 쓸 수 있어요.<br>결제·환불은 App Store·Google Play 정책을 따라요.</div>
+  <div class="mo-actions"><button class="mo-cancel" onclick="closeCoinShop()">닫기</button></div>
+</div>
 <div class="mo-overlay" id="charDetailOverlay" onclick="closeCharDetail()"></div>
 <div class="mo-card" id="charDetailCard">
   <div class="mo-handle"></div>
@@ -5789,6 +5826,7 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
   <div class="store-head">
     <button class="store-close" onclick="backFromStore()" aria-label="뒤로" style="font-size:28px;font-weight:300">‹</button>
     <div class="store-title">스토어</div>
+    <button type="button" class="store-coin-chip" id="storeCoinChip" style="display:none" onclick="openCoinShop()" aria-label="코인 충전"></button>
     <button class="store-close" onclick="closeStore()" aria-label="닫기">✕</button>
   </div>
   <div class="store-trial-banner" id="storeTrialBanner"></div>
@@ -10410,7 +10448,7 @@ async function buildWidgetPayload(){
     // 프리미엄 세트 씰은 구독 만료 시 위젯에서도 기본(첫 글자)으로 복귀 — 앱 _sealInner와 동일 게이트
     let _wgSeal=sealMap[r.id]||null;
     try{ const _sp=(typeof _parseSeal==='function')?_parseSeal(_wgSeal):null;
-      if(_sp&&_sp.set&&typeof _isPremiumSkin==='function'&&_isPremiumSkin(_sp.set)&&typeof _premOn==='function'&&!_premOn()) _wgSeal=null;
+      if(_sp&&_sp.set&&typeof _canUseSkin==='function'&&!_canUseSkin(_sp.set)) _wgSeal=null;   // 산 테마는 위젯에도
     }catch(_){}
     // 강조 → 위젯용 최소 스키마: r=렌더방식, c=색, ink=라벨 글자색, lb=라벨(제목) 쓰는 테마인지, dk=진한 채움(숫자 흰 글자)
     const rh=hls.filter(h=>h.room_id===r.id).map(h=>{
@@ -17792,7 +17830,7 @@ function _sealInner(mascotVal, roomName, photo){
   const p=_parseSeal(mascotVal); if(!p)return null;
   if(p.set){
     // 프리미엄 세트 씰: 구독 만료 시 기본(첫 글자)으로 복귀 — 저장값은 유지(재구독 시 자동 복원)
-    if(typeof _isPremiumSkin==='function' && _isPremiumSkin(p.set) && typeof _premOn==='function' && !_premOn()) return null;
+    if(typeof _canUseSkin==='function' && !_canUseSkin(p.set)) return null;   // 산 테마면 구독 없이도 표시
     return '<div class="r-card-seal has-seal seal-set">'+_sealSetArt(p.set)+'</div>';
   }
   return '<div class="r-card-seal has-seal seal-'+p.color+'">'+_sealGlyph(p.sym, roomName)+'</div>';
@@ -17850,6 +17888,13 @@ function _rmSyncSeg(){
 }
 function setRmTab(t){ _rmTab=t; _rmSyncSeg(); renderRoomMascotPicker(); }
 window.setRmTab=setRmTab;
+/* 방 프로필 편집 — 세트 행 오른쪽 표시: 사용 중 / 선택 / 가격(코인) / 🔒 */
+function _rmSetPill(k,on){
+  if(on) return '<span class="rm-uset-pill on">사용</span>';
+  if(_canUseSkin(k)) return '<span class="rm-uset-pill">선택</span>';
+  const price=_coinVisible()?coinPriceOf('skin',k):null;
+  return price?'<span class="rm-uset-pill rm-uset-coin"><i class="coin-ico"></i>'+price+'</span>':'<span class="rm-set-lock">\uD83D\uDD12</span>';
+}
 function renderRoomMascotPicker(){
   _rmSyncPreview();
   const g=document.getElementById('rmGroups');
@@ -17863,7 +17908,7 @@ function renderRoomMascotPicker(){
       rows+='<button type="button" data-set="'+k+'" class="ep-row rm-uset'+(on?' on':'')+'" onclick="pickUnifiedSet(\''+k+'\')">'
         +'<div class="ep-th">'+_sealSetArt(k)+'</div>'
         +'<div class="ep-body"><div class="ep-t1">'+escapeHtml(_setDisplayName(k))+'</div><div class="ep-t2">프로필 + 테마</div></div>'
-        +'<div class="ep-act">'+(on?'<span class="rm-uset-pill on">사용</span>':(prem?'<span class="rm-uset-pill">선택</span>':'<span class="rm-set-lock">\uD83D\uDD12</span>'))+'</div>'
+        +'<div class="ep-act">'+_rmSetPill(k,on)+'</div>'
         +'</button>';
     });
     var mine='';
@@ -17912,8 +17957,8 @@ async function _ctDeletePhoto(url){
 }
 /* 통합 프리미엄 세트 선택 — 프로필(씰)+테마(카드·앱색)를 함께 적용 */
 function pickUnifiedSet(k){
-  if(!isEffectivePremium()){
-    showUpgradeModal({message:'프로필·테마 세트는 프리미엄 전용이에요.', feature:'캐릭터·무늬 세트를 고르면 방 프로필·카드·앱 색이 한 번에 꾸며져요.'});
+  if(!_canUseSkin(k)){
+    offerItem('skin',k,{message:'프로필·테마 세트는 프리미엄 전용이에요.', feature:'캐릭터·무늬 세트를 고르면 방 프로필·카드·앱 색이 한 번에 꾸며져요.'});
     return;
   }
   _sealSet=k; _cardSkin=k;
@@ -17921,7 +17966,7 @@ function pickUnifiedSet(k){
   const g=document.getElementById('rmGroups');
   if(g) g.querySelectorAll('.rm-uset').forEach(function(b){
     const on=(b.getAttribute('data-set')===k); b.classList.toggle('on',on);
-    const act=b.querySelector('.ep-act'); if(act) act.innerHTML = on?'<span class="rm-uset-pill on">사용</span>':'<span class="rm-uset-pill">선택</span>';
+    const act=b.querySelector('.ep-act'); if(act) act.innerHTML = _rmSetPill(b.getAttribute('data-set'), on);
   });
   _rmSyncPreview();
   try{ if(_currentRoom&&_mascotRoomId===_currentRoom.id){ const th=_cardSkinTheme(k)||_rmBaseTheme||_myTheme||'vintage'; if(THEMES[th]) applyTheme(th); } }catch(_){}
@@ -17970,7 +18015,7 @@ function _rmSyncPreview(){
   }
 }
 function pickSealSet(k){
-  if(!isEffectivePremium()){
+  if(!_canUseSkin(k)){
     // 무료: 구경은 자유, 선택은 불가
     showUpgradeModal({message:'고급 프로필은 프리미엄 전용이에요.', feature:'입체 프로필 12종으로 방 카드를 꾸밀 수 있어요.'});
     return;
@@ -17985,8 +18030,8 @@ function pickSealSet(k){
 }
 function pickCardSkin(k){
   const sk=k?CARD_SKINS[k]:null;
-  if(sk&&!sk.free&&!isEffectivePremium()){
-    showUpgradeModal({message:'컨셉 테마는 프리미엄 전용이에요.', feature:'달빛·실크·한지 등 8가지 배경으로 방 카드를 꾸밀 수 있어요.'});
+  if(sk&&!sk.free&&!_canUseSkin(k)){
+    offerItem('skin',k,{message:'컨셉 테마는 프리미엄 전용이에요.', feature:'달빛·실크·한지 등 8가지 배경으로 방 카드를 꾸밀 수 있어요.'});
     return;
   }
   _sealSet=null;   // 무료 기본 테마 색 선택 = 프리미엄 세트 해제(무료 모드)
@@ -18026,10 +18071,10 @@ function _rmPickCustom(){
 }
 /* 방 프로필(컬러 씰)은 무료 기능 — 프리미엄 게이트 제거(2026-07, 사용자 결정) */
 async function saveRoomMascot(){
-  if(_sealSet&&!isEffectivePremium()){ showUpgradeModal({message:'고급 프로필은 프리미엄 전용이에요.', feature:'입체 프로필 12종으로 방 카드를 꾸밀 수 있어요.'}); return; }
+  if(_sealSet&&!_canUseSkin(_sealSet)){ showUpgradeModal({message:'고급 프로필은 프리미엄 전용이에요.', feature:'입체 프로필 12종으로 방 카드를 꾸밀 수 있어요.'}); return; }
   if(_isCustomSkin(_cardSkin)&&!isEffectivePremium()){ showUpgradeModal({message:'나만의 테마는 프리미엄 전용이에요.', feature:'사진과 스티커로 만든 테마를 방마다 골라 쓸 수 있어요.'}); return; }
   const _sk=_cardSkin?CARD_SKINS[_cardSkin]:null;
-  if(_sk&&!_sk.free&&!isEffectivePremium()){ showUpgradeModal({message:'컨셉 테마는 프리미엄 전용이에요.', feature:'달빛·실크·한지 등 8가지 배경으로 방 카드를 꾸밀 수 있어요.'}); return; }
+  if(_sk&&!_sk.free&&!_canUseSkin(_cardSkin)){ showUpgradeModal({message:'컨셉 테마는 프리미엄 전용이에요.', feature:'달빛·실크·한지 등 8가지 배경으로 방 카드를 꾸밀 수 있어요.'}); return; }
   const sealVal=_sealSet?('set:'+_sealSet):(_sealCustomPicked?(_sealColor+':'+_sealSym):null);   // 직접 꾸미기(색+문양)는 무료
   await _saveMascotValue(sealVal, _cardSkin);
 }
@@ -20945,7 +20990,7 @@ const FREE_TRIAL_MODE=true; // ← 유료화 시 false 로 변경
 })();
 
 /* DB 기반 unlocks (admin이 부여한 무료 unlock) — 본인 것만 캐시 */
-let _dbUnlocks={color:[], char:[]};
+let _dbUnlocks={color:[], char:[], skin:[]};   // 관리자 부여 + 코인 구매(영구 소유)
 
 async function loadMyDbUnlocks(){
   if(!_currentUser)return;
@@ -20961,11 +21006,200 @@ async function loadMyDbUnlocks(){
     _dbUnlocks={
       color:(data||[]).filter(r=>r.pack_type==='color').map(r=>r.pack_key),
       char: (data||[]).filter(r=>r.pack_type==='char').map(r=>r.pack_key),
+      skin: (data||[]).filter(r=>r.pack_type==='skin').map(r=>r.pack_key),
     };
+    // 산 테마가 있으면 방 목록·현재 방 색을 다시 그린다(이 로드가 첫 렌더보다 늦게 끝날 수 있음)
+    if(_dbUnlocks.skin.length){ try{ _refreshPremiumGatedUI(); }catch(_){} }
+    try{ loadCoinState(); }catch(_){}
   }catch(e){
     console.warn('user_unlocks 로드 에러 (무시):',e);
   }
 }
+
+/* ═══ 코인 — 결제로 충전해 테마·컬러 팩·이모지 팩을 하나씩 영구 구매 [2026-09-23] ═══
+   진실은 서버: 잔액=coin_ledger 합계(my_coin_balance), 가격=shop_items, 소유=user_unlocks.
+   구매는 RPC buy_item 하나로만(잔액 확인·차감·소유 기록을 한 트랜잭션에서). 클라이언트는 표시만.
+   충전은 소모성 인앱상품(coins_30/100/300) → RevenueCat 웹훅이 원장에 적립한다.
+   ⚠️ 아직 스토어 상품 등록·웹훅 연결 전이라 관리자에게만 보인다 — 공개할 때 _coinVisible() 만 풀면 된다. */
+let _coinBalance=0;
+let _shopPrices={};        // 'skin:a_cat' → 30
+let _coinPacks=[];         // [{product_id,coins,bonus,sort}]
+let _coinProducts={};      // product_id → 스토어 상품(가격 문자열 포함)
+let _buyingItem=false;
+function _coinVisible(){ return typeof isAdmin==='function' && isAdmin(); }
+function _ownsItem(type,key){ return !!(key && _dbUnlocks[type] && _dbUnlocks[type].indexOf(key)>=0); }
+function coinPriceOf(type,key){ return _shopPrices[type+':'+key]||null; }
+const _COIN_TYPE_LABEL={skin:'테마를', color:'컬러 팩을', char:'이모지 팩을'};
+function _itemName(type,key){
+  if(type==='skin') return (typeof _setDisplayName==='function')?_setDisplayName(key):key;
+  const list=type==='color'?STORE_COLORS:STORE_EMOJI;
+  const p=(list||[]).find(x=>x.key===key);
+  return (p&&p.name)||key;
+}
+async function loadCoinState(){
+  if(!_currentUser||typeof supa==='undefined'||!supa) return;
+  try{
+    const [bal,items,packs]=await Promise.all([
+      supa.rpc('my_coin_balance'),
+      supa.from('shop_items').select('item_type,item_key,price').eq('active',true),
+      supa.from('coin_packs').select('product_id,coins,bonus,sort').eq('active',true).order('sort'),
+    ]);
+    if(!bal.error) _coinBalance=Number(bal.data)||0;
+    if(!items.error){ const m={}; (items.data||[]).forEach(r=>{ m[r.item_type+':'+r.item_key]=r.price; }); _shopPrices=m; }
+    if(!packs.error) _coinPacks=packs.data||[];
+  }catch(e){ console.warn('코인 정보 로드 실패:', e); }
+  _renderCoinChip();
+}
+function _renderCoinChip(){
+  const c=document.getElementById('storeCoinChip');
+  if(c){
+    c.style.display=_coinVisible()?'':'none';
+    c.innerHTML='<i class="coin-ico"></i><span>'+_coinBalance.toLocaleString()+'</span><b>+</b>';
+  }
+  const l=document.getElementById('coinBalanceLine');
+  if(l) l.innerHTML='보유 <b>'+_coinBalance.toLocaleString()+'</b>코인';
+}
+/* 무료 사용자에게 보이는 잠긴 버튼 — 코인 가격이 있으면 가격, 없으면 기존 🔒프리미엄 */
+function _lockedBtnHTML(type,key,cls,onclick){
+  const price=_coinVisible()?coinPriceOf(type,key):null;
+  const oc=onclick?` onclick="${onclick}"`:'';
+  if(price) return `<button class="pack-btn pack-btn-try pack-btn-coin${cls||''}"${oc}><i class="coin-ico"></i>${price}</button>`;
+  return `<button class="pack-btn pack-btn-try${cls||''}"${oc}><span class="pack-btn-lock">🔒</span>프리미엄</button>`;
+}
+/* 잠긴 항목을 눌렀을 때 — 코인으로 이것만 사기 / 프리미엄으로 전부 쓰기 */
+async function offerItem(type,key,upgradeOpts){
+  const price=_coinVisible()?coinPriceOf(type,key):null;
+  if(!price){ showUpgradeModal(upgradeOpts||{}); return; }
+  const name=_itemName(type,key);
+  const msg='<b>'+escapeHtml(name)+'</b> '+_COIN_TYPE_LABEL[type]+' <b>'+price+'코인</b>으로 살 수 있어요.<br>'
+    +'한 번 사면 구독 없이도 계속 쓸 수 있어요.<br><span style="font-size:12px;color:var(--mute)">보유 '+_coinBalance.toLocaleString()+'코인</span>';
+  const pick=await askRecurringDelete(msg,{title:'코인으로 구매', oneLabel:price+'코인으로 구매', allLabel:'프리미엄으로 전부 쓰기'});
+  if(pick==='one') buyItemWithCoins(type,key);
+  else if(pick==='all'){ if(typeof openPremiumSheet==='function') openPremiumSheet(); }
+}
+async function _askTopUp(need){
+  const ok=await vConfirm('코인이 '+need+'개 모자라요. 코인을 충전할까요?',{title:'코인 부족',okText:'충전하기',cancelText:'다음에'});
+  if(ok) openCoinShop();
+}
+async function buyItemWithCoins(type,key){
+  if(_buyingItem) return;
+  const price=coinPriceOf(type,key);
+  if(price&&_coinBalance<price){ _askTopUp(price-_coinBalance); return; }
+  _buyingItem=true;
+  try{
+    const {data,error}=await supa.rpc('buy_item',{p_type:type,p_key:key});
+    if(error) throw error;
+    const r=data||{};
+    if(typeof r.balance==='number') _coinBalance=r.balance;
+    if(r.ok||r.already){
+      if(!_dbUnlocks[type]) _dbUnlocks[type]=[];
+      if(_dbUnlocks[type].indexOf(key)<0) _dbUnlocks[type].push(key);
+      _renderCoinChip();
+      toast(r.already?'이미 가지고 있는 항목이에요':'"'+_itemName(type,key)+'" 구매 완료! 이제 계속 쓸 수 있어요');
+      _afterOwnershipChange(type,key);
+    }else if(r.reason==='insufficient'){
+      _renderCoinChip();
+      _askTopUp(Math.max(1,(r.price||price||0)-_coinBalance));
+    }else{
+      toast('지금은 살 수 없는 항목이에요');
+    }
+  }catch(e){
+    console.warn('코인 구매 실패:', e);
+    toast('구매에 실패했어요. 잠시 후 다시 시도해주세요.');
+  }finally{ _buyingItem=false; }
+}
+/* 소유가 바뀐 뒤 — 열려 있는 화면들을 다시 그림 */
+function _storeOpen(){ const sc=document.getElementById('storeCard'); return !!(sc&&sc.classList.contains('on')); }
+function _rerenderStoreTab(){
+  try{
+    if(!_storeOpen()) return;
+    if(_storeCurrentTab==='theme') renderStoreThemes();
+    else if(_storeCurrentTab==='color') renderStoreColors();
+    else if(_storeCurrentTab==='emoji') renderStoreEmoji();
+  }catch(_){}
+}
+function _afterOwnershipChange(type,key){
+  _rerenderStoreTab();
+  try{
+    const cd=document.getElementById('charDetailCard');
+    if(type==='char'&&key&&cd&&cd.classList.contains('on')) openCharDetail(key);
+  }catch(_){}
+  try{ const rm=document.getElementById('roomMascotCard'); if(rm&&rm.classList.contains('on')) renderRoomMascotPicker(); }catch(_){}
+  if(type==='skin'){
+    try{ _refreshPremiumGatedUI(); }catch(_){}
+    // 스토어는 개인 기본 테마 색으로 보여야 한다(방 테마 재적용이 스토어 색을 바꾸지 않게) — 닫을 때 방 색 복원
+    try{ if(_storeOpen()) applyTheme(_myTheme||'vintage'); }catch(_){}
+  }
+}
+/* 코인 충전 시트 */
+function openCoinShop(){
+  _renderCoinChip();
+  renderCoinShop();
+  const ov=document.getElementById('coinOverlay'), cd=document.getElementById('coinCard');
+  if(ov) ov.classList.add('on'); if(cd) cd.classList.add('on');
+  try{ hideAdBanner(); }catch(_){}
+  _loadCoinProducts();
+}
+function closeCoinShop(){
+  const ov=document.getElementById('coinOverlay'), cd=document.getElementById('coinCard');
+  if(ov) ov.classList.remove('on'); if(cd) cd.classList.remove('on');
+  try{ if(typeof _subScreenExit==='function') _subScreenExit(); }catch(_){}
+}
+function renderCoinShop(){
+  const el=document.getElementById('coinPackList'); if(!el) return;
+  if(!_coinPacks.length){ el.innerHTML='<div class="coin-empty">충전 상품을 불러오는 중이에요</div>'; return; }
+  el.innerHTML=_coinPacks.map(p=>{
+    const sp=_coinProducts[p.product_id];
+    const priceTxt=sp&&sp.priceString?escapeHtml(sp.priceString):(isNativeApp()?'…':'앱에서');
+    return `<button type="button" class="coin-pack" onclick="onBuyCoinPack('${escapeHtml(p.product_id)}')">
+      <i class="coin-ico coin-ico-lg"></i>
+      <span class="coin-pack-amt">${(p.coins+(p.bonus||0)).toLocaleString()}<small>코인</small></span>
+      ${p.bonus?`<span class="coin-bonus">+${p.bonus} 보너스</span>`:''}
+      <span class="coin-pack-buy">${priceTxt}</span>
+    </button>`;
+  }).join('');
+}
+async function _loadCoinProducts(){
+  if(!isNativeApp()) return;
+  const P=_rcPlugin(); if(!P||!_coinPacks.length) return;
+  try{
+    await initRevenueCat(_currentUser&&_currentUser.id);
+    const res=await P.getProducts({productIdentifiers:_coinPacks.map(p=>p.product_id), type:'NON_SUBSCRIPTION'});
+    (res&&res.products||[]).forEach(pr=>{ if(pr&&pr.identifier) _coinProducts[pr.identifier]=pr; });
+    renderCoinShop();
+  }catch(e){ console.warn('코인 상품 로드 실패:', e); }
+}
+let _coinPurchasing=false;
+async function onBuyCoinPack(pid){
+  if(_coinPurchasing) return;
+  if(!isNativeApp()){ toast('코인 충전은 앱에서 할 수 있어요'); return; }
+  const P=_rcPlugin();
+  if(!P){ toast('결제 모듈을 불러오지 못했어요. 앱을 최신 버전으로 업데이트해주세요.'); return; }
+  const product=_coinProducts[pid];
+  if(!product){ toast('상품 정보를 불러오지 못했어요. 잠시 후 다시 시도해주세요.'); _loadCoinProducts(); return; }
+  _coinPurchasing=true;
+  const before=_coinBalance;
+  try{
+    await P.purchaseStoreProduct({product});
+    toast('결제 완료! 코인을 넣고 있어요…');
+    // 적립은 서버 웹훅이 한다 — 잔액이 늘 때까지 잠깐 확인
+    for(const w of [1500,3000,5000,8000,12000]){
+      await new Promise(r=>setTimeout(r,w));
+      await loadCoinState();
+      if(_coinBalance>before){ toast('코인이 충전됐어요 🎉'); break; }
+    }
+    if(_coinBalance<=before) toast('코인 반영이 늦어지고 있어요. 잠시 후 스토어를 다시 열어주세요.');
+    renderCoinShop();
+    _rerenderStoreTab();
+  }catch(e){
+    if(!(e&&(e.userCancelled||/cancel/i.test(String(e.code||''))||/cancel/i.test(String(e.message||''))))){
+      console.warn('코인 결제 실패:', e);
+      toast('결제에 실패했어요. 잠시 후 다시 시도해주세요.');
+    }
+  }finally{ _coinPurchasing=false; }
+}
+window.openCoinShop=openCoinShop; window.closeCoinShop=closeCoinShop;
+window.onBuyCoinPack=onBuyCoinPack; window.offerItem=offerItem; window.buyItemWithCoins=buyItemWithCoins;
 
 function _getUnlocks(){
   try{
@@ -21008,26 +21242,26 @@ function lockCharPack(key){
 }
 /* 사용 가능 여부 — 무료 체험(localStorage) + admin 부여(DB) 둘 다 확인 */
 function hasColorPack(key){
-  if(!isEffectivePremium())return false;             // 무료: 기본 컬러만 (팩 잠김)
+  if(!isEffectivePremium())return _ownsItem('color',key);   // 무료: 코인으로 산 팩만
   if(_getUnlocks().color.includes(key))return true;  // 프리미엄: 본인이 사용 설정한 팩만
   if(_dbUnlocks.color.includes(key))return true;
   return false;
 }
 function hasCharPack(key){
-  if(!isEffectivePremium())return false;             // 무료: 기본만 (팩 잠김)
+  if(!isEffectivePremium())return _ownsItem('char',key);    // 무료: 코인으로 산 팩만
   if(_getUnlocks().char.includes(key))return true;   // 프리미엄: 본인이 사용 설정한 팩만
   if(_dbUnlocks.char.includes(key))return true;
   return false;
 }
 function getUnlockedColorPacks(){
-  if(!isEffectivePremium())return [];                // 무료: 기본 컬러만
+  if(!isEffectivePremium())return (_dbUnlocks.color||[]).slice();   // 무료: 코인으로 산 팩만
   const set=new Set();
   _getUnlocks().color.forEach(k=>set.add(k));        // 프리미엄: 사용 설정한 팩만 팔레트에
   _dbUnlocks.color.forEach(k=>set.add(k));
   return [...set];
 }
 function getUnlockedCharPacks(){
-  if(!isEffectivePremium())return [];                // 무료: 기본만
+  if(!isEffectivePremium())return (_dbUnlocks.char||[]).slice();    // 무료: 코인으로 산 팩만
   const set=new Set();
   _getUnlocks().char.forEach(k=>set.add(k));         // 프리미엄: 사용 설정한 팩만
   _dbUnlocks.char.forEach(k=>set.add(k));
@@ -22128,6 +22362,8 @@ function openStore(){
   renderTrialBanner();
   /* 스티커 탭도 커스텀 꾸미기와 같은 게이트 — 정식 공개 시 _ctbVisible() 만 풀면 된다 */
   try{ var _stb=document.getElementById('storeTabSticker'); if(_stb)_stb.style.display=_ctbVisible()?'':'none'; }catch(_){}
+  _renderCoinChip();
+  try{ loadCoinState().then(function(){ if(_coinVisible()) _rerenderStoreTab(); }); }catch(_){}   // 가격·보유가 늦게 오면 현재 탭만 다시 그림
   setStoreTab('theme');
   document.getElementById('storeCard').classList.add('on');
   _subScreenEnter();
@@ -22322,10 +22558,13 @@ function renderStoreThemes(){
   html+=_ctbMyThemesHTML();
   html+='<div class="store-section-title">프로필 · 테마 <small>PREMIUM SET</small></div>';
   SEAL_SET_ORDER.forEach(function(k){
+    const _oc=`event.stopPropagation();onStoreThemeItem('${k}')`;
     const btn = prem
-      ? `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();onStoreSealClick()">꾸미기</button>`
-      : `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();onStoreSealClick()"><span class="pack-btn-lock">\uD83D\uDD12</span>프리미엄</button>`;
-    html+=`<div class="store-theme-card${_cardSkinCls(k)}"${_cardSkinStyle(k)} onclick="onStoreSealClick()">
+      ? `<button class="pack-btn pack-btn-try" onclick="${_oc}">꾸미기</button>`
+      : (_ownsItem('skin',k)
+          ? `<button class="pack-btn pack-btn-using" onclick="${_oc}">보유 · 꾸미기</button>`
+          : _lockedBtnHTML('skin',k,'',_oc));
+    html+=`<div class="store-theme-card${_cardSkinCls(k)}"${_cardSkinStyle(k)} onclick="onStoreThemeItem('${k}')">
       <div class="stc-body"><div class="stc-name">${escapeHtml(_setDisplayName(k))}</div><div class="stc-sub">프로필 + 테마</div></div>
       <div class="ep-act">${btn}</div>
     </div>`;
@@ -22338,6 +22577,12 @@ function onStoreSealClick(){
   else showUpgradeModal({message:'고급 프로필은 프리미엄 전용이에요.', feature:'입체 프로필 12종으로 방 카드를 꾸밀 수 있어요.'});
 }
 window.onStoreSealClick=onStoreSealClick;
+/* 스토어 테마 항목 — 쓸 수 있으면(구독·보유) 꾸미러 가기, 아니면 코인 구매/구독 안내 */
+function onStoreThemeItem(k){
+  if(_canUseSkin(k)) openSealShowcase();
+  else offerItem('skin',k,{message:'고급 프로필은 프리미엄 전용이에요.', feature:'입체 프로필 12종으로 방 카드를 꾸밀 수 있어요.'});
+}
+window.onStoreThemeItem=onStoreThemeItem;
 /* 스토어 쇼케이스 → 방목록 탭으로 이동 + 편집모드 켜서 연필 노출 */
 function openSealShowcase(){
   closeStore();
@@ -22371,10 +22616,10 @@ function renderStoreColors(){
       ? `onLockColorClick('${escapeHtml(item.key)}')`
       : `onUnlockColorClick('${escapeHtml(item.key)}')`;
     const btn=unlocked
-      ? `<button class="pack-btn pack-btn-using">사용 중</button>`
+      ? `<button class="pack-btn pack-btn-using">${isEffectivePremium()?'사용 중':'보유'}</button>`
       : (isEffectivePremium()
           ? `<button class="pack-btn pack-btn-try">사용하기</button>`
-          : `<button class="pack-btn pack-btn-try"><span class="pack-btn-lock">🔒</span>프리미엄</button>`);
+          : _lockedBtnHTML('color',item.key));
     html+=`
       <div class="theme-card${unlocked?' unlocked':''}" onclick="${_cardClick}" style="cursor:pointer">
         <div class="theme-preview color-pack-preview">
@@ -22394,7 +22639,7 @@ function onUnlockColorClick(key){
   const pack=STORE_COLORS.find(p=>p.key===key);
   if(!pack)return;
   if(!isEffectivePremium()){
-    showUpgradeModal({
+    offerItem('color',key,{
       message:'🎨 예쁜 컬러 팩, 우리 방에 입혀볼까요?',
       feature:'프리미엄이면 모든 컬러 팩을 골라 쓸 수 있어요.'
     });
@@ -22407,6 +22652,7 @@ function onUnlockColorClick(key){
 async function onLockColorClick(key){
   const pack=STORE_COLORS.find(p=>p.key===key);
   if(!pack)return;
+  if(!isEffectivePremium()&&_ownsItem('color',key)){ toast('구매한 컬러 팩은 계속 쓸 수 있어요'); return; }
   if(!await vConfirm(`"${pack.name}" 컬러 팩 사용을 중단할까요?`))return;
   lockColorPack(key);
   toast(`"${pack.name}" 컬러 팩 사용을 중단했어요`);
@@ -22531,10 +22777,10 @@ function renderStoreEmoji(){
   STORE_EMOJI.forEach(item=>{
     const unlocked=hasCharPack(item.key);
     const btn=unlocked
-      ? `<button class="pack-btn pack-btn-using" onclick="event.stopPropagation();onLockCharClick('${escapeHtml(item.key)}')">사용 중</button>`
+      ? `<button class="pack-btn pack-btn-using" onclick="event.stopPropagation();onLockCharClick('${escapeHtml(item.key)}')">${isEffectivePremium()?'사용 중':'보유'}</button>`
       : (isEffectivePremium()
           ? `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();onUnlockCharClick('${escapeHtml(item.key)}')">사용하기</button>`
-          : `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();onUnlockCharClick('${escapeHtml(item.key)}')"><span class="pack-btn-lock">🔒</span>프리미엄</button>`);
+          : _lockedBtnHTML('char',item.key,'',`event.stopPropagation();onUnlockCharClick('${escapeHtml(item.key)}')`));
     html+=`
       <div class="ep-row" onclick="openCharDetail('${escapeHtml(item.key)}')">
         <div class="ep-th">${svgEmoji(item.preview[0])}</div>
@@ -22552,7 +22798,7 @@ function onUnlockCharClick(key){
   const pack=STORE_EMOJI.find(p=>p.key===key);
   if(!pack)return;
   if(!isEffectivePremium()){
-    showUpgradeModal({
+    offerItem('char',key,{
       message:'🐻 귀여운 캐릭터 팩, 써보고 싶으세요?',
       feature:'프리미엄이면 모든 캐릭터 팩을 골라 쓸 수 있어요.'
     });
@@ -22565,6 +22811,7 @@ function onUnlockCharClick(key){
 async function onLockCharClick(key){
   const pack=STORE_EMOJI.find(p=>p.key===key);
   if(!pack)return;
+  if(!isEffectivePremium()&&_ownsItem('char',key)){ toast('구매한 이모지 팩은 계속 쓸 수 있어요'); return; }
   if(!await vConfirm(`"${pack.name}" 캐릭터 팩 사용을 중단할까요?`))return;
   lockCharPack(key);
   toast(`"${pack.name}" 캐릭터 팩 사용을 중단했어요`);
@@ -23802,10 +24049,10 @@ function openCharDetail(charKey){
   if(btnEl){
     const unlocked=hasCharPack(charKey);
     btnEl.innerHTML=unlocked
-      ? `<button class="pack-btn pack-btn-using pack-btn-lg" onclick="onLockCharFromDetail('${escapeHtml(charKey)}')">사용 중</button>`
+      ? `<button class="pack-btn pack-btn-using pack-btn-lg" onclick="onLockCharFromDetail('${escapeHtml(charKey)}')">${isEffectivePremium()?'사용 중':'보유'}</button>`
       : (isEffectivePremium()
           ? `<button class="pack-btn pack-btn-try pack-btn-lg" onclick="onUnlockCharFromDetail('${escapeHtml(charKey)}')">사용하기</button>`
-          : `<button class="pack-btn pack-btn-try pack-btn-lg" onclick="onUnlockCharFromDetail('${escapeHtml(charKey)}')"><span class="pack-btn-lock">🔒</span>프리미엄</button>`);
+          : _lockedBtnHTML('char',charKey,' pack-btn-lg',`onUnlockCharFromDetail('${escapeHtml(charKey)}')`));
   }
   document.getElementById('charDetailOverlay').classList.add('on');
   document.getElementById('charDetailCard').classList.add('on');
@@ -23818,7 +24065,7 @@ function onUnlockCharFromDetail(key){
   const pack=STORE_EMOJI.find(p=>p.key===key);
   if(!pack)return;
   if(!isEffectivePremium()){
-    showUpgradeModal({
+    offerItem('char',key,{
       message:'🐻 귀여운 캐릭터 팩, 써보고 싶으세요?',
       feature:'프리미엄이면 모든 캐릭터 팩을 골라 쓸 수 있어요.'
     });
@@ -23832,6 +24079,7 @@ function onUnlockCharFromDetail(key){
 async function onLockCharFromDetail(key){
   const pack=STORE_EMOJI.find(p=>p.key===key);
   if(!pack)return;
+  if(!isEffectivePremium()&&_ownsItem('char',key)){ toast('구매한 이모지 팩은 계속 쓸 수 있어요'); return; }
   if(!await vConfirm(`"${pack.name}" 캐릭터 팩 사용을 중단할까요?`))return;
   lockCharPack(key);
   toast(`"${pack.name}" 캐릭터 팩 사용을 중단했어요`);
@@ -24038,7 +24286,9 @@ function _isPremiumSkin(skin){
 }
 function _premOn(){ return (typeof isEffectivePremium==='function') && isEffectivePremium(); }
 /* 만료 시 프리미엄 스킨은 미적용(null=기본). 프리미엄이면 그대로. */
-function _effSkin(skin){ return (_isPremiumSkin(skin) && !_premOn()) ? null : skin; }
+/* 이 테마를 쓸 수 있나 — 무료 테마 / 구독 중 / 코인으로 산 테마 [2026-09-23] */
+function _canUseSkin(k){ return !k || !_isPremiumSkin(k) || _premOn() || _ownsItem('skin',k); }
+function _effSkin(skin){ return _canUseSkin(skin) ? skin : null; }
 /* 만료 시 프리미엄 테마(색)는 기본으로 복귀. _myTheme이 무료면 그걸로, 아니면 vintage. 저장값은 유지. */
 function _effTheme(theme){ if(!_premOn() && !_isFreeTheme(theme)) return _isFreeTheme(_myTheme)?_myTheme:'vintage'; return theme; }
 /* 프리미엄 상태 변화(만료·재구독·관리자 토글) 시 씰·테마·카드 게이트를 화면에 즉시 반영 */
@@ -24332,7 +24582,8 @@ async function applyRoomThemeFor(roomId){
   if(_rawSkTheme){
     // 카드 배경 테마 방 → 그 테마 사용. 프리미엄 만료 시 _effTheme으로 기본(vintage/개인 무료테마) 복귀.
     // 옛 user_room_themes(레거시)는 무시 — 카드 배경이 우선(색 섞임/잔존 방지).
-    theme=_effTheme(_rawSkTheme);
+    // 테마를 쓸 수 있으면(구독·구매) 그 색 그대로, 아니면 기본으로 복귀
+    theme=skin?_rawSkTheme:_effTheme(_rawSkTheme);
   }else{
     // 카드 배경이 없는 방만 저장된 방 테마/개인 테마 사용
     try{
