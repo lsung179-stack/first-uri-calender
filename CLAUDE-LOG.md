@@ -380,3 +380,5 @@
   - **출시 배너**: 스토어 테마 탭의 `.store-mono-hero`(+`MONO_HERO_IMG`) → `.store-camp-hero`(`CAMP_HERO_IMG`, 오른쪽 캐릭터·왼쪽 남색 스크림 위 흰 글씨 'NEW · STARRY CAMPING / 별밤 캠핑', 누르면 `onStoreThemeItem('camp')`). `preloadStoreAssets` 도 교체.
   - 검증: 신규 `camp_verify`(적용 시 rc-camp·data-theme·씬·bg, 레거시 mono 방 그대로 렌더, 목록 맨 앞·mono 없음, 배너, 나만의 테마 색/아이콘 후보, 무료 잠김·코인 구매 시 열림) 전부 통과 + 기존 회귀(coin 73·shared_color 23·default_color 34·dh_unlock 9·save_lock 17) 무회귀.
   - 임시 도구 정리: SQL `public.tmp_pipe` 는 삭제. Edge Function `asset-pipe`(Higgsfield CDN → 저장소 복사·미리보기용)는 MCP 에 삭제 기능이 없어 **아무것도 안 하는 410 스텁(v3)으로 덮어씀** — 대시보드에서 지워도 된다. `deploy_version` = `2026-09-23 17:16:55`.
+
+- **별밤 캠핑 배경 캐릭터 위치 올림 (2026-09-23, 사용자 "캐릭터가 너무 밑에 있어서 잘 안 보여 위로 올려줘" + 실기기 캡처)**: 씬 그림(502×900)에서 캐릭터 무리가 세로 70~92% 에 있어 공용 위치(`center 30%`, 크기 `auto 116%`)면 화면 90% 아래 → 탭바 뒤로 숨었다. `body.rc-camp .rc-bg-scene` 만 `background-position:center 142%`(100% 초과 = 더 위로)로 바꿔 캐릭터 무리가 **화면 58~84%**(탭바 위)에 오게 함. 그 대신 그림 아래 끝이 화면 93% 쯤에서 끝나므로 `mask-image:linear-gradient(#000 84%,transparent 93%)` 로 바탕색(#1b3464)에 스며들게 함. 검증: 같은 비율 표시 그림으로 390×844 에서 띠 위치 측정(58.5%~84%, 탭바 92.4%) + camp_verify·coin_verify 무회귀. `deploy_version` 재갱신.

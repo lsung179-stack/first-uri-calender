@@ -1414,7 +1414,10 @@ body[data-theme="camp"] button[onclick="pasteJoinCode()"]{color:var(--aL)!import
 body[data-theme="camp"] .rm-skin[class*="rcs-t_"] .rm-skin-name{color:#33291f}
 body[data-theme="camp"] .uni-nav-prem{background:linear-gradient(135deg,#34528c,#2a4478)}
 /* 씬 자체가 남색 밤하늘이라 다른 테마(.4)보다 진하게 깔아도 글씨를 해치지 않는다 */
-body.rc-camp .rc-decor .rc-bg.rc-bg-scene{opacity:.62;background-position:center 30%}
+/* 캐릭터(모닥불 앞 너구리·고슴도치)가 그림 아래쪽 70~92% 에 있어 기본 위치(30%)면 탭바 뒤로 숨는다(사용자 제보 2026-09-23).
+   그림을 위로 끌어올려 캐릭터 무리가 화면 58~80% 에 오게 한다 — 위치 %가 100을 넘으면 그만큼 더 위로 올라간다.
+   그 대신 그림 아래 끝(화면 93% 쯤)이 드러나므로 마스크로 바탕색에 스며들게 한다 */
+body.rc-camp .rc-decor .rc-bg.rc-bg-scene{opacity:.62;background-position:center 142%;-webkit-mask-image:linear-gradient(to bottom,#000 84%,transparent 93%);mask-image:linear-gradient(to bottom,#000 84%,transparent 93%)}
 body.rc-koi .cal-tab[data-rci] .cal-tab-ico svg{display:none}
 body.rc-koi .cal-tab[data-rci] .cal-tab-ico::after{display:none!important}
 body.rc-koi .cal-tab[data-rci] .cal-tab-ico{background-repeat:no-repeat;background-position:center;background-size:138%}
