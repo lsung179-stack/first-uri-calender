@@ -571,12 +571,14 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .sfh-desc{font-size:12px;color:rgba(255,255,255,.96);margin-bottom:12px;text-shadow:0 1px 4px rgba(10,45,85,.55)}
 .sfh-chips{display:flex;gap:6px;flex-wrap:wrap}
 .sfh-chip{font-size:11px;font-weight:700;color:#fff;background:rgba(255,255,255,.22);border-radius:99px;padding:5px 11px;backdrop-filter:blur(2px);text-shadow:0 1px 2px rgba(10,45,85,.4)}
+/* 별밤 캠핑 출시 히어로 — 그림 오른쪽에 캐릭터, 왼쪽 밤하늘 위에 흰 글씨 [2026-09-23] */
+.store-camp-hero{position:relative;overflow:hidden;border-radius:18px;min-height:128px;padding:20px 44% 20px 18px;margin-bottom:16px;background:#1b3464 center right/cover no-repeat;box-shadow:0 6px 18px rgba(16,30,64,.32);cursor:pointer}
+.store-camp-hero::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(100deg,rgba(16,32,66,.82) 0%,rgba(16,32,66,.55) 42%,rgba(16,32,66,0) 72%)}
+.store-camp-hero > *{position:relative;z-index:1}
+.store-camp-hero .sfh-eyebrow{color:#f2c14e;text-shadow:0 1px 4px rgba(4,10,28,.6)}
+.store-camp-hero .sfh-title{color:#fff;margin-bottom:6px;text-shadow:0 1px 6px rgba(4,10,28,.6)}
+.store-camp-hero .sfh-desc{color:rgba(240,244,252,.92);margin-bottom:0;text-shadow:0 1px 4px rgba(4,10,28,.6)}
 /* 동물 캐릭터 이모지 출시 히어로 (이모지 탭 상단) — 실사/일러스트 동물 사진 배경, 따뜻한 스크림 */
-.store-mono-hero{position:relative;overflow:hidden;border-radius:18px;min-height:118px;padding:18px 42% 18px 18px;margin-bottom:16px;background:#ffffff center right/cover no-repeat;border:1px solid rgba(0,0,0,.10);box-shadow:0 4px 14px rgba(40,32,24,.13)}
-.store-mono-hero::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(100deg,#fff 0%,rgba(255,255,255,.94) 40%,rgba(255,255,255,.55) 64%,rgba(255,255,255,0) 86%)}
-.store-mono-hero .sfh-eyebrow{color:#8c8c8c;text-shadow:none}
-.store-mono-hero .sfh-title{color:#1a1a1a;text-shadow:none;margin-bottom:6px}
-.store-mono-hero .sfh-desc{color:#6b6157;text-shadow:none;margin-bottom:0}
 .store-emoji-hero{position:relative;overflow:hidden;border-radius:18px;min-height:138px;padding:20px 40% 20px 18px;margin-bottom:22px;background:#e8b774 center right/cover no-repeat;box-shadow:0 6px 16px rgba(120,72,30,.30)}
 .store-emoji-hero::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(100deg,rgba(92,52,20,.78) 0%,rgba(118,70,28,.54) 34%,rgba(140,88,40,.12) 62%,rgba(140,88,40,0) 82%)}
 .store-emoji-hero .sfh-eyebrow{color:#ffe1a0;text-shadow:0 1px 4px rgba(60,32,10,.6)}
@@ -1350,6 +1352,69 @@ body.rc-mono .uni-nav[data-rci="notice"] .uni-nav-l::before{background-image:url
 body.rc-mono .uni-nav[data-rci="support"] .uni-nav-l::before{background-image:url("https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/fcbd02342143e88e.png")}
 body.rc-mono .uni-nav[data-rci="delroom"] .uni-nav-l::before{background-image:url("https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/de164e9a08f056f3.png")}
 body.rc-mono .uni-nav[data-rci="leave"] .uni-nav-l::before{background-image:url("https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/9739297c310ad384.png")}
+/* 별밤 캠핑(camp) 아이콘 세트 — 남색 밤 캠핑 손그림 소품(텐트·나침반·쌍안경·밴 등). 배경 제거 PNG [2026-09-23] */
+body.rc-camp .cal-tab[data-rci] .cal-tab-ico svg{display:none}
+body.rc-camp .cal-tab[data-rci] .cal-tab-ico::after{display:none!important}
+body.rc-camp .cal-tab[data-rci] .cal-tab-ico{background-repeat:no-repeat;background-position:center;background-size:contain}
+body.rc-camp .cal-tab[data-rci="rooms"] .cal-tab-ico{background-image:url("https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/ic_rooms.png")}
+body.rc-camp .cal-tab[data-rci="cal"] .cal-tab-ico{background-image:url("https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/ic_cal.png")}
+body.rc-camp .cal-tab[data-rci="todo"] .cal-tab-ico{background-image:url("https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/ic_todo.png")}
+body.rc-camp .cal-tab[data-rci="settings"] .cal-tab-ico{background-image:url("https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/ic_settings.png")}
+body.rc-camp .cal-search-btn[data-rci] > svg,body.rc-camp .cal-import-btn[data-rci] > svg{visibility:hidden}
+body.rc-camp .cal-search-btn[data-rci],body.rc-camp .cal-import-btn[data-rci]{background-repeat:no-repeat;background-position:center;background-size:28px}
+body.rc-camp .cal-search-btn[data-rci="search"]{background-image:url("https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/ic_search.png")}
+body.rc-camp .cal-import-btn[data-rci="cshare"]{background-image:url("https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/ic_cshare.png")}
+body.rc-camp .cal-import-btn[data-rci="cimport"]{background-image:url("https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/ic_cimport.png")}
+body.rc-camp .uni-nav[data-rci] .uni-nav-l > svg{display:none}
+body.rc-camp .uni-nav[data-rci] .uni-nav-l::before{content:"";width:28px;height:28px;flex-shrink:0;background-repeat:no-repeat;background-position:center;background-size:contain}
+body.rc-camp .uni-nav[data-rci="premium"] .uni-nav-l::before{background-image:url("https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/ic_premium.png")}
+body.rc-camp .uni-nav[data-rci="store"] .uni-nav-l::before{background-image:url("https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/ic_store.png")}
+body.rc-camp .uni-nav[data-rci="adv"] .uni-nav-l::before{background-image:url("https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/ic_adv.png")}
+body.rc-camp .uni-nav[data-rci="notif"] .uni-nav-l::before{background-image:url("https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/ic_notif.png")}
+body.rc-camp .uni-nav[data-rci="notice"] .uni-nav-l::before{background-image:url("https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/ic_notice.png")}
+body.rc-camp .uni-nav[data-rci="support"] .uni-nav-l::before{background-image:url("https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/ic_support.png")}
+body.rc-camp .uni-nav[data-rci="delroom"] .uni-nav-l::before{background-image:url("https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/ic_delroom.png")}
+body.rc-camp .uni-nav[data-rci="leave"] .uni-nav-l::before{background-image:url("https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/ic_leave.png")}
+/* 별밤 캠핑 — 앱 첫 어두운 팔레트. 크림/흰색이 하드코딩된 면 위에 var(--text)(달빛 흰색)가 올라가면 글자가 사라지므로
+   그런 면만 한 톤 밝은 남색으로 바꾼다. 팔레트 기준(data-theme)으로 스코프 — 아이콘만 캠핑을 고른 조합엔 영향 없음 [2026-09-23] */
+body[data-theme="camp"] .dp-item,
+body[data-theme="camp"] .mp-item,
+body[data-theme="camp"] .copy-option,
+body[data-theme="camp"] .copy-source-item,
+body[data-theme="camp"] .dhm-item,
+body[data-theme="camp"] .dhm-empty,
+body[data-theme="camp"] .rs-row,
+body[data-theme="camp"] .rs-member-row,
+body[data-theme="camp"] .rs-nav-row,
+body[data-theme="camp"] .code-box,
+body[data-theme="camp"] .oa-card,
+body[data-theme="camp"] .oa-fbtn,
+body[data-theme="camp"] .co-room-row,
+body[data-theme="camp"] .co-cover-card,
+body[data-theme="camp"] .co-ev-row,
+body[data-theme="camp"] .co-month-nav,
+body[data-theme="camp"] .co-ev-empty,
+body[data-theme="camp"] .co-summary,
+body[data-theme="camp"] .co-bank-card,
+body[data-theme="camp"] .co-bank-guide,
+body[data-theme="camp"] .co-pay-fixed,
+body[data-theme="camp"] .co-btn-preview,
+body[data-theme="camp"] .co-mn-btn,
+body[data-theme="camp"] .co-yr-btn{background:#2c4a82}
+body[data-theme="camp"] .dp-btn{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18)}
+body[data-theme="camp"] .dp-btn.del{border-color:rgba(221,116,55,.5)}
+body[data-theme="camp"] .ev-multi-dow.sat,body[data-theme="camp"] .ev-multi-day.sat{color:var(--sat)}
+body[data-theme="camp"] .btn[style*="background:#fff"]{background:transparent!important}
+/* 주황 글씨가 밝은 남색 칩 위에 오면 대비가 모자라다 — 한 톤 밝은 주황(aL)으로 */
+body[data-theme="camp"] .uni-mini-btn,body[data-theme="camp"] .dp-btn.del,body[data-theme="camp"] .check-wrap{color:var(--aL)}
+/* 주황 바탕 버튼의 글씨는 원래 var(--card)(밝은 테마에선 흰색) — 여기선 남색이 되므로 흰색으로 고정 */
+body[data-theme="camp"] .in-app-banner,body[data-theme="camp"] .cal-fab,body[data-theme="camp"] .r-add-btn.on,body[data-theme="camp"] .rs-packtab.on,body[data-theme="camp"] .rs-bar-done,body[data-theme="camp"] .ctb-head-btn,body[data-theme="camp"] .cal-today-chip,body[data-theme="camp"] .dp-add,body[data-theme="camp"] .btn-danger,body[data-theme="camp"] .ev-target-btn.on,body[data-theme="camp"] .ev-mode-btn.on,body[data-theme="camp"] .ev-md-date.on,body[data-theme="camp"] .ev-multi-day.range-start,body[data-theme="camp"] .ev-multi-day.range-end,body[data-theme="camp"] .ev-multi-chip,body[data-theme="camp"] .ev-multi-day.on,body[data-theme="camp"] .ev-multi-day.rep-preview,body[data-theme="camp"] .tt-apply.using,body[data-theme="camp"] .dhm-add,body[data-theme="camp"] .pf-name-save-btn,body[data-theme="camp"] .tmc-cell.sel,body[data-theme="camp"] .tmc-cell.range-start,body[data-theme="camp"] .tmc-cell.range-end,body[data-theme="camp"] .tmc-cell.range-one{color:#fff!important}
+body[data-theme="camp"] button[onclick="pasteJoinCode()"]{color:var(--aL)!important;border-color:rgba(255,255,255,.25)!important}
+/* 방 프로필의 무료 테마 칸(흰색·파스텔)은 밝은 면 그대로 — 이름 글씨만 짙게 */
+body[data-theme="camp"] .rm-skin[class*="rcs-t_"] .rm-skin-name{color:#33291f}
+body[data-theme="camp"] .uni-nav-prem{background:linear-gradient(135deg,#34528c,#2a4478)}
+/* 씬 자체가 남색 밤하늘이라 다른 테마(.4)보다 진하게 깔아도 글씨를 해치지 않는다 */
+body.rc-camp .rc-decor .rc-bg.rc-bg-scene{opacity:.62;background-position:center 30%}
 body.rc-koi .cal-tab[data-rci] .cal-tab-ico svg{display:none}
 body.rc-koi .cal-tab[data-rci] .cal-tab-ico::after{display:none!important}
 body.rc-koi .cal-tab[data-rci] .cal-tab-ico{background-repeat:no-repeat;background-position:center;background-size:138%}
@@ -9871,6 +9936,10 @@ THEMES.c_gaegu={bg:'#fdf4ee',card:'#ffffff',text:'#33241b',sub:'#8a6a54',mute:'#
 /* 나머지 무늬형 프로필 테마 — 달빛(슬레이트블루)·데이지(선샤인옐로)·하트(로즈)·잉어(주홍)·벚꽃(사쿠라핑크) */
 THEMES.moon={bg:'#f1f3f9',card:'#ffffff',text:'#1c2130',sub:'#667088',mute:'#a6adc4',accent:'#7482b0',aL:'#a2adcf',aP:'#dbe0ef',gold:'#b08742',border:'rgba(116,130,176,.24)',borderL:'rgba(116,130,176,.12)',sun:'#c8503a',sat:'#4880c0',dotRGB:'116,130,176'};
 THEMES.daisy={bg:'#fdfaec',card:'#ffffff',text:'#33290f',sub:'#857239',mute:'#cbbb7c',accent:'#d8a828',aL:'#e8c85e',aP:'#f6ecbe',gold:'#b08742',border:'rgba(216,168,40,.26)',borderL:'rgba(216,168,40,.13)',sun:'#c8503a',sat:'#4880c0',dotRGB:'216,168,40'};
+/* 별밤 캠핑 — 앱 최초의 어두운(남색 밤하늘) 팔레트. 모닥불 주황을 포인트로, 글자는 달빛 흰색.
+   다른 팔레트는 모두 밝은 바탕이라 하드코딩된 흰 면·짙은 글자는 아래 body[data-theme="camp"] 블록에서 따로 손본다 [2026-09-23] */
+THEMES.camp={bg:'#1b3464',card:'#243f74',text:'#f2f4fa',sub:'#b4c0dc',mute:'#7d8cb4',accent:'#dd7437',aL:'#f0a070',aP:'#304d86',gold:'#f2c14e',border:'rgba(255,255,255,.16)',borderL:'rgba(255,255,255,.08)',sun:'#ff9a8f',sat:'#93b6ff',dotRGB:'221,116,55',
+  'tabbar-bg':'rgba(20,39,76,.94)','tabbar-border':'rgba(255,255,255,.10)','tabbar-shadow':'0 6px 22px rgba(4,10,28,.45)','tabbar-filter':'none','tab-on-bg':'rgba(255,255,255,.09)'};
 THEMES.koi={bg:'#fdf3ef',card:'#ffffff',text:'#331e15',sub:'#8a5c4a',mute:'#c9a695',accent:'#d85f45',aL:'#e88c72',aP:'#f8d7ca',gold:'#b08742',border:'rgba(216,95,69,.24)',borderL:'rgba(216,95,69,.12)',sun:'#c8503a',sat:'#4880c0',dotRGB:'216,95,69'};
 
 /* 일정 색상 12가지 — 6 원색(선명) + 6 파스텔(부드러움). key는 호환성을 위해 유지 */
@@ -17728,6 +17797,7 @@ const SEAL_SETS={
   tulip:{name:'튤립',zoom:1.3,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/1e2491ea86a1dc61.png',svg:'<defs><radialGradient id="sg_tu" cx="34%" cy="28%" r="80%"><stop offset="0" stop-color="#f4dfa0"/><stop offset="1" stop-color="#e5bd62"/></radialGradient></defs><circle cx="24" cy="24" r="24" fill="url(#sg_tu)"/><circle cx="24" cy="24" r="21.7" fill="none" stroke="#9c742c" stroke-opacity=".33" stroke-width="1.4"/><circle cx="24" cy="24" r="20.5" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width=".8"/><path d="M24 15v20M15.5 19.5C17.5 25.5 20 30 24 33.5M32.5 19.5C30.5 25.5 28 30 24 33.5" fill="none" stroke="#6f9c53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><g transform="translate(19.2 36.5) rotate(32) scale(1)"><path d="M0 0Q2.6 -3.825 0 -8.5Q-2.6 -3.825 0 0Z" fill="#7ca75f" stroke="#527a3a" stroke-width="0.55" stroke-linecap="round" stroke-linejoin="round"/><path d="M0 -1.275V-7.225" stroke="#527a3a" stroke-width=".5" fill="none"/></g><g transform="translate(28.8 36.5) rotate(-32) scale(1)"><path d="M0 0Q2.6 -3.825 0 -8.5Q-2.6 -3.825 0 0Z" fill="#7ca75f" stroke="#527a3a" stroke-width="0.55" stroke-linecap="round" stroke-linejoin="round"/><path d="M0 -1.275V-7.225" stroke="#527a3a" stroke-width=".5" fill="none"/></g><g transform="translate(24 12.2) rotate(0) scale(1)"><path d="M-3 .5C-3-3.4-1.6-5.6 0-5.6 1.6-5.6 3-3.4 3 .5 2 1.9 1 2.6 0 2.6-1 2.6-2 1.9-3 .5Z" fill="#e2903f" stroke="#bd6b24" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M-1.2-4.9C-.6-5.5.6-5.5 1.2-4.9L.8 1.9H-.8Z" fill="#bd6b24" stroke-linecap="round" stroke-linejoin="round"/></g><g transform="translate(14.8 17.2) rotate(-16) scale(1)"><path d="M-3 .5C-3-3.4-1.6-5.6 0-5.6 1.6-5.6 3-3.4 3 .5 2 1.9 1 2.6 0 2.6-1 2.6-2 1.9-3 .5Z" fill="#d96a85" stroke="#b04a63" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M-1.2-4.9C-.6-5.5.6-5.5 1.2-4.9L.8 1.9H-.8Z" fill="#b04a63" stroke-linecap="round" stroke-linejoin="round"/></g><g transform="translate(33.2 17.2) rotate(16) scale(1)"><path d="M-3 .5C-3-3.4-1.6-5.6 0-5.6 1.6-5.6 3-3.4 3 .5 2 1.9 1 2.6 0 2.6-1 2.6-2 1.9-3 .5Z" fill="#e8b83f" stroke="#c29024" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M-1.2-4.9C-.6-5.5.6-5.5 1.2-4.9L.8 1.9H-.8Z" fill="#c29024" stroke-linecap="round" stroke-linejoin="round"/></g><circle cx="10.5" cy="29.5" r="0.8" fill="#fdf3da"/><circle cx="37.5" cy="29.5" r="0.8" fill="#fdf3da"/><circle cx="24" cy="41.5" r="0.8" fill="#fdf3da"/>'},
   snow:{name:'눈꽃',zoom:1.33,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/2200f1a6f4750334.png',svg:'<defs><radialGradient id="sg_sn" cx="34%" cy="28%" r="80%"><stop offset="0" stop-color="#d9e9f7"/><stop offset="1" stop-color="#a9c8e4"/></radialGradient></defs><circle cx="24" cy="24" r="24" fill="url(#sg_sn)"/><circle cx="24" cy="24" r="21.7" fill="none" stroke="#5a80a8" stroke-opacity=".33" stroke-width="1.4"/><circle cx="24" cy="24" r="20.5" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width=".8"/><g transform="translate(24 24) rotate(0) scale(1.18)"><g transform="translate(0 0) rotate(0) scale(1)"><path d="M0 0V-13.5" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M0 -5l-2.7-2.2M0 -5l2.7-2.2M0 -9.3l-2.3-1.9M0 -9.3l2.3-1.9" stroke="#fff" stroke-width="1.1" fill="none" stroke-linecap="round"/><circle cx="0" cy="-13.5" r="0.9" fill="#fff"/></g><g transform="translate(0 0) rotate(60) scale(1)"><path d="M0 0V-13.5" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M0 -5l-2.7-2.2M0 -5l2.7-2.2M0 -9.3l-2.3-1.9M0 -9.3l2.3-1.9" stroke="#fff" stroke-width="1.1" fill="none" stroke-linecap="round"/><circle cx="0" cy="-13.5" r="0.9" fill="#fff"/></g><g transform="translate(0 0) rotate(120) scale(1)"><path d="M0 0V-13.5" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M0 -5l-2.7-2.2M0 -5l2.7-2.2M0 -9.3l-2.3-1.9M0 -9.3l2.3-1.9" stroke="#fff" stroke-width="1.1" fill="none" stroke-linecap="round"/><circle cx="0" cy="-13.5" r="0.9" fill="#fff"/></g><g transform="translate(0 0) rotate(180) scale(1)"><path d="M0 0V-13.5" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M0 -5l-2.7-2.2M0 -5l2.7-2.2M0 -9.3l-2.3-1.9M0 -9.3l2.3-1.9" stroke="#fff" stroke-width="1.1" fill="none" stroke-linecap="round"/><circle cx="0" cy="-13.5" r="0.9" fill="#fff"/></g><g transform="translate(0 0) rotate(240) scale(1)"><path d="M0 0V-13.5" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M0 -5l-2.7-2.2M0 -5l2.7-2.2M0 -9.3l-2.3-1.9M0 -9.3l2.3-1.9" stroke="#fff" stroke-width="1.1" fill="none" stroke-linecap="round"/><circle cx="0" cy="-13.5" r="0.9" fill="#fff"/></g><g transform="translate(0 0) rotate(300) scale(1)"><path d="M0 0V-13.5" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M0 -5l-2.7-2.2M0 -5l2.7-2.2M0 -9.3l-2.3-1.9M0 -9.3l2.3-1.9" stroke="#fff" stroke-width="1.1" fill="none" stroke-linecap="round"/><circle cx="0" cy="-13.5" r="0.9" fill="#fff"/></g><circle cx="0" cy="0" r="2.1" fill="#fff" stroke="#9cc0de" stroke-width="0.5"/></g><g transform="translate(9.5 12.5) rotate(0) scale(0.9)"><path d="M0 -1.6L.45 -.45 1.6 0 .45 .45 0 1.6 -.45 .45 -1.6 0 -.45 -.45Z" fill="rgba(255,255,255,.9)" stroke-linecap="round" stroke-linejoin="round"/></g><g transform="translate(38 34) rotate(0) scale(0.9)"><path d="M0 -1.6L.45 -.45 1.6 0 .45 .45 0 1.6 -.45 .45 -1.6 0 -.45 -.45Z" fill="rgba(255,255,255,.9)" stroke-linecap="round" stroke-linejoin="round"/></g><circle cx="37" cy="11" r="0.75" fill="#fff"/><circle cx="10" cy="36" r="0.75" fill="#fff"/>'},
   camellia:{name:'동백',zoom:1.43,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/a83288cb6d4566c8.png',svg:'<defs><radialGradient id="sg_ca" cx="34%" cy="28%" r="80%"><stop offset="0" stop-color="#f7efdf"/><stop offset="1" stop-color="#e9d8b6"/></radialGradient></defs><circle cx="24" cy="24" r="24" fill="url(#sg_ca)"/><circle cx="24" cy="24" r="21.7" fill="none" stroke="#a2793d" stroke-opacity=".33" stroke-width="1.4"/><circle cx="24" cy="24" r="20.5" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width=".8"/><g transform="translate(11.5 33.5) rotate(-125) scale(1)"><path d="M0 0Q2.8 -3.375 0 -7.5Q-2.8 -3.375 0 0Z" fill="#4d7350" stroke="#33553a" stroke-width="0.55" stroke-linecap="round" stroke-linejoin="round"/><path d="M0 -1.125V-6.375" stroke="#33553a" stroke-width=".5" fill="none"/></g><g transform="translate(35.5 34.5) rotate(125) scale(1)"><path d="M0 0Q2.6 -3.15 0 -7Q-2.6 -3.15 0 0Z" fill="#4d7350" stroke="#33553a" stroke-width="0.55" stroke-linecap="round" stroke-linejoin="round"/><path d="M0 -1.05V-5.95" stroke="#33553a" stroke-width=".5" fill="none"/></g><g transform="translate(35 12) rotate(55) scale(1)"><path d="M0 0Q2.3 -2.7 0 -6Q-2.3 -2.7 0 0Z" fill="#4d7350" stroke="#33553a" stroke-width="0.55" stroke-linecap="round" stroke-linejoin="round"/><path d="M0 -0.8999999999999999V-5.1" stroke="#33553a" stroke-width=".5" fill="none"/></g><g transform="translate(23.4 23.4) rotate(0) scale(1)"><circle cx="3.429011037612589e-16" cy="-5.6" r="4.4" fill="#cf4b4b" stroke="#a12f2f" stroke-width="0.6"/><circle cx="4.3765146455453845" cy="-3.4937257415725624" r="4.4" fill="#cf4b4b" stroke="#a12f2f" stroke-width="0.6"/><circle cx="5.460836384111154" cy="1.2406715866690166" r="4.4" fill="#cf4b4b" stroke="#a12f2f" stroke-width="0.6"/><circle cx="2.4372941564850352" cy="5.041785119852283" r="4.4" fill="#cf4b4b" stroke="#a12f2f" stroke-width="0.6"/><circle cx="-2.4196801932911014" cy="5.0502621478686365" r="4.4" fill="#cf4b4b" stroke="#a12f2f" stroke-width="0.6"/><circle cx="-5.456472362797317" cy="1.2597259043256428" r="4.4" fill="#cf4b4b" stroke="#a12f2f" stroke-width="0.6"/><circle cx="-4.388683361024705" cy="-3.478427569558536" r="4.4" fill="#cf4b4b" stroke="#a12f2f" stroke-width="0.6"/><circle cx="0" cy="0" r="5.3" fill="#da5f57" stroke="#a12f2f" stroke-width="0.55"/><circle cx="0" cy="0" r="2.6" fill="#eec269" stroke="#c79b3f" stroke-width="0.4"/><circle cx="1.9" cy="0" r="0.85" fill="#eec269"/><circle cx="0.9500000000000002" cy="1.6454482671904334" r="0.85" fill="#eec269"/><circle cx="-0.9499999999999995" cy="1.6454482671904336" r="0.85" fill="#eec269"/><circle cx="-1.9" cy="2.326828918379971e-16" r="0.85" fill="#eec269"/><circle cx="-0.9500000000000008" cy="-1.645448267190433" r="0.85" fill="#eec269"/><circle cx="0.9500000000000002" cy="-1.6454482671904334" r="0.85" fill="#eec269"/></g><circle cx="11" cy="15.5" r="0.85" fill="#d98b8b"/><circle cx="38.5" cy="23.5" r="0.85" fill="#d98b8b"/>'},
+  camp:{name:'별밤 캠핑',zoom:0.92,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/seal.png'},
   mono:{name:'심플',zoom:0.85,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/9d6ab8e42977ef00.png'},
   koi:{name:'잉어',zoom:1.14,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/282ed97f997f886b.png',svg:'<defs><radialGradient id="sg_ko" cx="34%" cy="28%" r="80%"><stop offset="0" stop-color="#6d94a8"/><stop offset="1" stop-color="#456d82"/></radialGradient></defs><circle cx="24" cy="24" r="24" fill="url(#sg_ko)"/><circle cx="24" cy="24" r="21.7" fill="none" stroke="#24485c" stroke-opacity=".33" stroke-width="1.4"/><circle cx="24" cy="24" r="20.5" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width=".8"/><path d="M8 34.5a4.4 4.4 0 0 1 8.8 0M20 36.5a4 4 0 0 1 8 0M31.5 34.5a4.2 4.2 0 0 1 8.4 0" fill="none" stroke="rgba(247,240,222,.75)" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.2 34.5a2.2 2.2 0 0 1 4.4 0M22.1 36.5a1.9 1.9 0 0 1 3.8 0M33.7 34.5a2 2 0 0 1 4 0" fill="none" stroke="rgba(247,240,222,.5)" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 19C15.5 11.5 26 10.5 31.5 15.5l5.4-3.6-1.6 5.4 1.6 5.4-5.4-3.6C26 24.1 15.5 23.5 11 19Z" fill="#e69a55" stroke="#bd7231" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16.2" cy="17.4" r="1.15" fill="rgba(30,30,30,.65)"/><path d="M19.5 14.2c1.4 2.9 1.4 6.1 0 9M24.5 14.6c1.1 2.4 1.1 5.1 0 7.4" fill="none" stroke="rgba(120,60,20,.4)" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.5 11.8c1-.9 2.2-1.4 3.6-1.5-.5 1.3-1.4 2.2-2.7 2.7Z" fill="#e69a55" stroke="#bd7231" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M21.5 23.9c1 .9 2.2 1.4 3.6 1.5-.5-1.3-1.4-2.2-2.7-2.7Z" fill="#e69a55" stroke="#bd7231" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="9.5" r="0.8" fill="rgba(247,240,222,.7)"/><g transform="translate(38.5 9.5) rotate(0) scale(0.95)"><path d="M0 -1.6L.45 -.45 1.6 0 .45 .45 0 1.6 -.45 .45 -1.6 0 -.45 -.45Z" fill="rgba(247,240,222,.8)" stroke-linecap="round" stroke-linejoin="round"/></g>'},
   chrysw:{name:'국화',zoom:1.52,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/fa78e278b16c16eb.png',svg:'<defs><radialGradient id="sg_ch" cx="34%" cy="28%" r="80%"><stop offset="0" stop-color="#e2d5f1"/><stop offset="1" stop-color="#bda3dc"/></radialGradient></defs><circle cx="24" cy="24" r="24" fill="url(#sg_ch)"/><circle cx="24" cy="24" r="21.7" fill="none" stroke="#7c5da3" stroke-opacity=".33" stroke-width="1.4"/><circle cx="24" cy="24" r="20.5" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width=".8"/><g transform="translate(12.5 35) rotate(-135) scale(1)"><path d="M0 0Q2.6 -3.15 0 -7Q-2.6 -3.15 0 0Z" fill="#6f9c53" stroke="#4d7338" stroke-width="0.55" stroke-linecap="round" stroke-linejoin="round"/><path d="M0 -1.05V-5.95" stroke="#4d7338" stroke-width=".5" fill="none"/></g><g transform="translate(35.5 35) rotate(135) scale(1)"><path d="M0 0Q2.6 -3.15 0 -7Q-2.6 -3.15 0 0Z" fill="#6f9c53" stroke="#4d7338" stroke-width="0.55" stroke-linecap="round" stroke-linejoin="round"/><path d="M0 -1.05V-5.95" stroke="#4d7338" stroke-width=".5" fill="none"/></g><g transform="translate(24 22.5) rotate(0) scale(1)"><g transform="translate(0 0) rotate(0) scale(1)"><ellipse cx="0" cy="-7.6" rx="2" ry="4.6" fill="#e0a84e" stroke="#b98430" stroke-width=".5"/></g><g transform="translate(0 0) rotate(30) scale(1)"><ellipse cx="0" cy="-7.6" rx="2" ry="4.6" fill="#e0a84e" stroke="#b98430" stroke-width=".5"/></g><g transform="translate(0 0) rotate(60) scale(1)"><ellipse cx="0" cy="-7.6" rx="2" ry="4.6" fill="#e0a84e" stroke="#b98430" stroke-width=".5"/></g><g transform="translate(0 0) rotate(90) scale(1)"><ellipse cx="0" cy="-7.6" rx="2" ry="4.6" fill="#e0a84e" stroke="#b98430" stroke-width=".5"/></g><g transform="translate(0 0) rotate(120) scale(1)"><ellipse cx="0" cy="-7.6" rx="2" ry="4.6" fill="#e0a84e" stroke="#b98430" stroke-width=".5"/></g><g transform="translate(0 0) rotate(150) scale(1)"><ellipse cx="0" cy="-7.6" rx="2" ry="4.6" fill="#e0a84e" stroke="#b98430" stroke-width=".5"/></g><g transform="translate(0 0) rotate(180) scale(1)"><ellipse cx="0" cy="-7.6" rx="2" ry="4.6" fill="#e0a84e" stroke="#b98430" stroke-width=".5"/></g><g transform="translate(0 0) rotate(210) scale(1)"><ellipse cx="0" cy="-7.6" rx="2" ry="4.6" fill="#e0a84e" stroke="#b98430" stroke-width=".5"/></g><g transform="translate(0 0) rotate(240) scale(1)"><ellipse cx="0" cy="-7.6" rx="2" ry="4.6" fill="#e0a84e" stroke="#b98430" stroke-width=".5"/></g><g transform="translate(0 0) rotate(270) scale(1)"><ellipse cx="0" cy="-7.6" rx="2" ry="4.6" fill="#e0a84e" stroke="#b98430" stroke-width=".5"/></g><g transform="translate(0 0) rotate(300) scale(1)"><ellipse cx="0" cy="-7.6" rx="2" ry="4.6" fill="#e0a84e" stroke="#b98430" stroke-width=".5"/></g><g transform="translate(0 0) rotate(330) scale(1)"><ellipse cx="0" cy="-7.6" rx="2" ry="4.6" fill="#e0a84e" stroke="#b98430" stroke-width=".5"/></g><g transform="translate(0 0) rotate(15) scale(1)"><ellipse cx="0" cy="-5" rx="1.5" ry="3.2" fill="#efc172" stroke="#b98430" stroke-width=".4"/></g><g transform="translate(0 0) rotate(45) scale(1)"><ellipse cx="0" cy="-5" rx="1.5" ry="3.2" fill="#efc172" stroke="#b98430" stroke-width=".4"/></g><g transform="translate(0 0) rotate(75) scale(1)"><ellipse cx="0" cy="-5" rx="1.5" ry="3.2" fill="#efc172" stroke="#b98430" stroke-width=".4"/></g><g transform="translate(0 0) rotate(105) scale(1)"><ellipse cx="0" cy="-5" rx="1.5" ry="3.2" fill="#efc172" stroke="#b98430" stroke-width=".4"/></g><g transform="translate(0 0) rotate(135) scale(1)"><ellipse cx="0" cy="-5" rx="1.5" ry="3.2" fill="#efc172" stroke="#b98430" stroke-width=".4"/></g><g transform="translate(0 0) rotate(165) scale(1)"><ellipse cx="0" cy="-5" rx="1.5" ry="3.2" fill="#efc172" stroke="#b98430" stroke-width=".4"/></g><g transform="translate(0 0) rotate(195) scale(1)"><ellipse cx="0" cy="-5" rx="1.5" ry="3.2" fill="#efc172" stroke="#b98430" stroke-width=".4"/></g><g transform="translate(0 0) rotate(225) scale(1)"><ellipse cx="0" cy="-5" rx="1.5" ry="3.2" fill="#efc172" stroke="#b98430" stroke-width=".4"/></g><g transform="translate(0 0) rotate(255) scale(1)"><ellipse cx="0" cy="-5" rx="1.5" ry="3.2" fill="#efc172" stroke="#b98430" stroke-width=".4"/></g><g transform="translate(0 0) rotate(285) scale(1)"><ellipse cx="0" cy="-5" rx="1.5" ry="3.2" fill="#efc172" stroke="#b98430" stroke-width=".4"/></g><g transform="translate(0 0) rotate(315) scale(1)"><ellipse cx="0" cy="-5" rx="1.5" ry="3.2" fill="#efc172" stroke="#b98430" stroke-width=".4"/></g><g transform="translate(0 0) rotate(345) scale(1)"><ellipse cx="0" cy="-5" rx="1.5" ry="3.2" fill="#efc172" stroke="#b98430" stroke-width=".4"/></g><circle cx="0" cy="0" r="2.6" fill="#f6dda2" stroke="#c79b3f" stroke-width="0.5"/><circle cx="0" cy="0" r="1.1" fill="#c79b3f"/></g><circle cx="9.5" cy="20" r="0.8" fill="#f2e6d0"/><circle cx="38.5" cy="20" r="0.8" fill="#f2e6d0"/><circle cx="24" cy="41" r="0.8" fill="#f2e6d0"/>'},
@@ -17762,7 +17832,7 @@ SEAL_SETS.a_dino={name:'두두',zoom:1.05,img:'https://bgqzkkaslqchbovzrkao.supa
 SEAL_SETS.c_gaegu={name:'개구쟁이',zoom:1.2,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/2abc25ef321468c5.png'};
 SEAL_SETS.c_simsul={name:'심술이',zoom:1.2,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/ec9bea4763ae544a.png'};
 SEAL_SETS.c_kkalkal={name:'깔깔이',zoom:1.2,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/b30d18785edd29ea.png'};
-const SEAL_SET_ORDER=['mono', 'a_cat', 'a_rabbit', 'a_bear', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'a_dino', 'c_gaegu', 'nabi', 'moon', 'daisy', 'star', 'koi'];   // 보리·호담·소녀·소년·눈꽃 제거(2026-07-23, 사용자 요청). 데이터는 잔존(레거시 저장값 렌더용)   // 구 전통 5종(plum·lotus·crane·camellia·chrysw)은 데이터만 잔존(레거시 저장값 렌더용)
+const SEAL_SET_ORDER=['camp', 'a_cat', 'a_rabbit', 'a_bear', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'a_dino', 'c_gaegu', 'nabi', 'moon', 'daisy', 'star', 'koi'];   // 보리·호담·소녀·소년·눈꽃 제거(2026-07-23, 사용자 요청). 데이터는 잔존(레거시 저장값 렌더용)   // 구 전통 5종(plum·lotus·crane·camellia·chrysw)은 데이터만 잔존(레거시 저장값 렌더용)
 /* ── 방 카드 배경 스킨 (members.card_skin, 마이그레이션 add_members_card_skin) — 무료 7 + 프리미엄 8 ── */
 const CARD_SKINS={
   butter:{name:'버터',free:true}, blush:{name:'블러쉬',free:true}, mint:{name:'민트',free:true},
@@ -17776,6 +17846,7 @@ const CARD_SKINS={
   tulip:{name:'튤립',img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/803238425456891b.jpg'},
   snow:{name:'눈꽃',img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/054406568dddd0b0.jpg'},
   camellia:{name:'동백',img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/eed5c9d5f920d6fc.jpg'},
+  camp:{name:'별밤 캠핑',dark:true,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/card.jpg'},
   mono:{name:'심플 블랙&화이트',img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/26dc61fa341e944e.jpg'},
   koi:{name:'잉어',img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/95d7551c33ea47fb.jpg'},
   chrysw:{name:'국화',img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/f6d6c67966a108b6.jpg'},
@@ -17823,7 +17894,7 @@ CARD_SKINS.a_dino={name:'두두',img:'https://bgqzkkaslqchbovzrkao.supabase.co/s
 CARD_SKINS.c_gaegu={name:'개구쟁이',img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/7a6187969f8bd5c9.jpg'};
 CARD_SKINS.c_simsul={name:'심술이',img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/e63cb6a448474daf.jpg'};
 CARD_SKINS.c_kkalkal={name:'깔깔이',img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/72597fcc24f0167c.jpg'};
-const CARD_SKIN_PREM=['mono', 'a_cat', 'a_rabbit', 'a_bear', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'a_dino', 'c_gaegu', 'nabi', 'moon', 'daisy', 'star', 'koi'];   // 보리·호담·소녀·소년·눈꽃 제거(2026-07-23, 사용자 요청). CARD_SKINS 데이터는 잔존
+const CARD_SKIN_PREM=['camp', 'a_cat', 'a_rabbit', 'a_bear', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'a_dino', 'c_gaegu', 'nabi', 'moon', 'daisy', 'star', 'koi'];   // 보리·호담·소녀·소년·눈꽃 제거(2026-07-23, 사용자 요청). CARD_SKINS 데이터는 잔존
 function _cardSkinCls(k){ if(_isCustomSkin(k)) return ' rcs-img'; const sk=k&&CARD_SKINS[k]; if(!sk)return ''; if(sk.char) return ' rcs-char'+(sk.dark?' rcs-dark':''); if(sk.img) return ' rcs-img'+(sk.dark?' rcs-dark':''); return ' rcs-'+k+(sk.dark?' rcs-dark':''); }
 function _cardSkinStyle(k){ if(_isCustomSkin(k)){ var cu=_customThemeOf(k); return (cu&&cu.bg_url)?(' style="'+_ctCardBgStyle({url:cu.bg_url,x:cu.card_x,y:cu.card_y})+'"'):''; }
   const sk=k&&CARD_SKINS[k]; if(!sk)return '';
@@ -19901,7 +19972,7 @@ function preloadStoreAssets(){
     if(typeof FRUIT_HERO_IMG!=='undefined'&&FRUIT_HERO_IMG)urls.push(FRUIT_HERO_IMG);
     if(typeof EMOJI_HERO_IMG!=='undefined'&&EMOJI_HERO_IMG)urls.push(EMOJI_HERO_IMG);
     // (SEAL_HERO_IMG는 테마 탭 히어로 제거로 더 이상 화면에 안 뜸 → 프리로드 제외) [2026-08-19]
-    if(typeof MONO_HERO_IMG!=='undefined'&&MONO_HERO_IMG)urls.push(MONO_HERO_IMG);
+    if(typeof CAMP_HERO_IMG!=='undefined'&&CAMP_HERO_IMG)urls.push(CAMP_HERO_IMG);
     if(typeof SEAL_SETS!=='undefined'){ for(var sk in SEAL_SETS){ if(SEAL_SETS[sk]&&SEAL_SETS[sk].img)urls.push(SEAL_SETS[sk].img); } }
     if(typeof CARD_SKINS!=='undefined'){ for(var ck in CARD_SKINS){ var cs=CARD_SKINS[ck]; if(!cs)continue; ['img','char','scene'].forEach(function(f){ if(cs[f])urls.push(cs[f]); }); } }
     urls.forEach(function(u){ try{ var im=new Image(); im.decoding='async'; im.src=u; }catch(_){} });
@@ -22607,10 +22678,10 @@ function renderStoreThemes(){
     </div>
     <div class="sch-art"><i class="sch-a1"></i><i class="sch-a2"></i><i class="sch-a3"></i></div>
   </div>`;
-  html+=`<div class="store-mono-hero" style="background-image:url('${MONO_HERO_IMG}')">
-    <div class="sfh-eyebrow">NEW &middot; BLACK &amp; WHITE</div>
-    <div class="sfh-title">심플 블랙&amp;화이트</div>
-    <div class="sfh-desc">흰 바탕에 손그림 한 줄 &mdash; 군더더기 없는 새 테마</div>
+  html+=`<div class="store-camp-hero" style="background-image:url('${CAMP_HERO_IMG}')" onclick="onStoreThemeItem('camp')">
+    <div class="sfh-eyebrow">NEW &middot; STARRY CAMPING</div>
+    <div class="sfh-title">별밤 캠핑</div>
+    <div class="sfh-desc">모닥불 앞에서 마시멜로 굽는 밤 &mdash; 앱 첫 밤하늘 테마</div>
   </div>`;
   html+=_ctbMyThemesHTML();
   html+='<div class="store-section-title">프로필 · 테마 <small>PREMIUM SET</small></div>';
@@ -22652,7 +22723,7 @@ function openSealShowcase(){
   },180);
 }
 /* ── 컬러 팩 (곧 출시) ── */
-var MONO_HERO_IMG='https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/f30550c844632645.jpg';
+var CAMP_HERO_IMG='https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/banner.jpg';
 var SEAL_HERO_IMG='https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/7de0f3d079820415.jpg';
 var FRUIT_HERO_IMG='https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/d03abce97ca6700d.jpg';
 function renderStoreColors(){
@@ -24272,6 +24343,9 @@ let _currentRoomTheme=null;
 /* 방 카드 스킨(캐릭터) → 자동 테마 + 마스코트 꾸미기 매핑.
    대표 1종(두두 공룡)만 우선 구현 — 다른 캐릭터는 여기에 추가하면 자동 확장. */
 const ROOM_CHAR_THEME={
+  // 별밤 캠핑 — 남색 밤하늘 아래 모닥불 앞 너구리·고슴도치(마시멜로 굽기). 앱 첫 어두운 테마 [2026-09-23]
+  camp:{theme:'camp', cls:'rc-camp', mascot:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/seal.png', bgScene:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/scene.jpg', charInScene:true},
+  // ⚠️ mono(심플 블랙&화이트)는 스토어에서 내림(2026-09-23, 사용자 요청) — 이미 고른 사람 화면이 깨지지 않게 데이터만 남김
   // 심플 블랙&화이트 — 흰 바탕에 옅은 검정 낙서 배경(캐릭터 워터마크 없음: 참고 사진처럼 미니멀하게)
   /* 심플 블랙&화이트 — 배경 낙서를 옅게 깔면 흰 바탕이 탁해 보인다는 평이 많아 완전 흰색으로(장식 없음) [2026-08-24] */
   mono:{theme:'mono', cls:'rc-mono', plain:true, mascot:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/9d6ab8e42977ef00.png'},

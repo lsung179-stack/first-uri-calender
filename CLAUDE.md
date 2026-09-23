@@ -41,6 +41,7 @@
 - **마지막 실제 스토어 출시는 `1.1.8`** — 출시노트 범위 기준선은 이 버전이다(그 이후 누적분을 씀).
 - 🚨 **iOS 앱스토어 앱은 `deploy_version` 으로 갱신되지 않는다** — `capacitor.config.json` 에 `server.url` 이 없어 **IPA 안에 번들된 `www/index.html` 을 그대로 실행**한다. 서비스워커·캐시 비우기·`location.reload()` 모두 같은 번들 파일을 다시 읽을 뿐이다. 즉 `deploy_version` 은 **PWA·브라우저·Android TWA 전용**이고, iOS 앱에 반영하려면 **IPA 재빌드+배포가 유일한 방법**이다(확인법: 그 기기 설정 화면 푸터의 `build …` 문자열).
 - ⚠️ 관리자 계정은 `checkDeployVersionOnStart` 가 `isAdmin()` 이면 즉시 리턴해 **배포 게이트를 우회**한다(새로고침만으로 최신). "관리자는 최신인데 일반 계정은 옛날" 증상의 원인.
+- 🌙 **테마 '별밤 캠핑'(`camp`, 2026-09-23 출시)은 앱 유일의 어두운 팔레트**다 — 크림/흰색을 하드코딩한 새 UI 면을 만들면 `body[data-theme="camp"]` 보정 블록(아이콘 CSS 바로 아래)에도 추가해야 글씨가 안 사라진다. '심플 블랙&화이트'(`mono`)는 같은 날 스토어에서 내림(데이터는 레거시로 잔존).
 - 로컬 `/home/user/appstore` 체크아웃은 origin 보다 뒤처져 있을 수 있다(지금도 그렇다) — 작업 전 `git fetch` 로 원격 기준을 확인할 것.
 
 ## Supabase
