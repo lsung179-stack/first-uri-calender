@@ -3047,10 +3047,13 @@ body.align-right .cal-evbar{text-align:right}
 #coinCard.on{transform:translateX(-50%) translateY(0)}
 #coinCard .mo-sub{margin-bottom:16px}
 #coinCard .mo-sub b{color:var(--text);font-variant-numeric:tabular-nums}
-.coin-ico{display:inline-block;width:13px;height:13px;border-radius:50%;flex:none;vertical-align:-2px;
-  background:radial-gradient(circle at 35% 30%,#ffe9a3 0,#f5c542 45%,#d49a12 100%);
-  box-shadow:inset 0 0 0 1.5px rgba(160,105,0,.45)}
-.coin-ico-lg{width:30px;height:30px;box-shadow:inset 0 0 0 2.5px rgba(160,105,0,.4)}
+.coin-ico{display:inline-block;width:14px;height:14px;flex:none;vertical-align:-2px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CradialGradient id='g' cx='38%25' cy='30%25' r='75%25'%3E%3Cstop offset='0' stop-color='%23FFF1BF'/%3E%3Cstop offset='.42' stop-color='%23F4CB5A'/%3E%3Cstop offset='1' stop-color='%23C98E1C'/%3E%3C/radialGradient%3E%3ClinearGradient id='e' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23E0A93A'/%3E%3Cstop offset='1' stop-color='%238F5E0E'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='31.5' fill='url(%23e)'/%3E%3Ccircle cx='32' cy='32' r='28.6' fill='url(%23g)'/%3E%3Ccircle cx='32' cy='32' r='26.4' fill='none' stroke='%238E3A2A' stroke-width='2.6'/%3E%3Cpath fill='%238E3A2A' d='M13.92 31.29Q13.92 34.28 14.75 35.57Q15.57 36.85 17.35 36.85Q19.13 36.85 19.95 35.56Q20.77 34.27 20.77 31.29Q20.77 28.31 19.95 27.06Q19.13 25.81 17.35 25.81Q15.57 25.81 14.75 27.06Q13.92 28.31 13.92 31.29ZM10.8 31.29Q10.8 24.86 17.35 24.86Q20.59 24.86 22.24 26.49Q23.89 28.12 23.89 31.29Q23.89 34.49 22.22 36.14Q20.55 37.79 17.35 37.79Q14.17 37.79 12.49 36.14Q10.8 34.5 10.8 31.29ZM32.91 36.45Q34.32 36.45 35.09 35.66Q35.86 34.88 35.86 33.34V25.93L34.17 25.69V25H38.45V25.69L37.02 25.93V33.27Q37.02 35.45 35.76 36.61Q34.5 37.78 32.16 37.78Q29.64 37.78 28.29 36.6Q26.94 35.42 26.94 33.19V25.93L25.51 25.69V25H31.52V25.69L29.9 25.93V33.32Q29.9 34.84 30.67 35.65Q31.43 36.45 32.91 36.45ZM44.04 32.26V36.66L45.66 36.91V37.6H39.58V36.91L41.07 36.66V25.93L39.46 25.69V25H45.48Q48.26 25 49.63 25.86Q51.01 26.71 51.01 28.52Q51.01 31.23 48.47 32L51.83 36.66L53.2 36.91V37.6H49.12L45.6 32.26ZM48.07 28.54Q48.07 27.13 47.49 26.58Q46.91 26.03 45.36 26.03H44.04V31.23H45.41Q46.85 31.23 47.46 30.63Q48.07 30.03 48.07 28.54Z'/%3E%3Cpath d='M13.5 22a20 20 0 0 1 12-10.5' fill='none' stroke='%23fff' stroke-opacity='.45' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat}
+.coin-ico-lg,.coin-ico-xl{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CradialGradient id='g' cx='38%25' cy='30%25' r='75%25'%3E%3Cstop offset='0' stop-color='%23FFF1BF'/%3E%3Cstop offset='.42' stop-color='%23F4CB5A'/%3E%3Cstop offset='1' stop-color='%23C98E1C'/%3E%3C/radialGradient%3E%3ClinearGradient id='e' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23E0A93A'/%3E%3Cstop offset='1' stop-color='%238F5E0E'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='31.5' fill='url(%23e)'/%3E%3Ccircle cx='32' cy='32' r='28.6' fill='url(%23g)'/%3E%3Ccircle cx='32' cy='32' r='26.6' fill='none' stroke='%238E3A2A' stroke-width='2.1'/%3E%3Ccircle cx='32' cy='32' r='22.4' fill='none' stroke='%238E3A2A' stroke-width='.8' opacity='.75'/%3E%3Cpath fill='%238E3A2A' d='M17.03 29.69Q17.03 32.11 17.69 33.15Q18.36 34.19 19.81 34.19Q21.24 34.19 21.91 33.15Q22.57 32.11 22.57 29.69Q22.57 27.28 21.91 26.27Q21.24 25.25 19.81 25.25Q18.36 25.25 17.69 26.27Q17.03 27.28 17.03 29.69ZM14.5 29.69Q14.5 24.49 19.81 24.49Q22.42 24.49 23.76 25.81Q25.1 27.13 25.1 29.69Q25.1 32.28 23.75 33.62Q22.39 34.95 19.81 34.95Q17.23 34.95 15.87 33.62Q14.5 32.29 14.5 29.69ZM32.73 33.87Q33.87 33.87 34.5 33.23Q35.12 32.59 35.12 31.35V25.35L33.75 25.16V24.6H37.22V25.16L36.07 25.35V31.29Q36.07 33.06 35.05 34Q34.03 34.94 32.13 34.94Q30.09 34.94 29 33.99Q27.9 33.04 27.9 31.23V25.35L26.75 25.16V24.6H31.61V25.16L30.3 25.35V31.34Q30.3 32.56 30.92 33.22Q31.54 33.87 32.73 33.87ZM42.09 30.48V34.04L43.4 34.24V34.8H38.47V34.24L39.68 34.04V25.35L38.38 25.16V24.6H43.25Q45.5 24.6 46.61 25.29Q47.72 25.98 47.72 27.45Q47.72 29.64 45.67 30.27L48.39 34.04L49.5 34.24V34.8H46.2L43.35 30.48ZM45.35 27.47Q45.35 26.33 44.88 25.88Q44.41 25.44 43.15 25.44H42.09V29.64H43.19Q44.36 29.64 44.86 29.16Q45.35 28.67 45.35 27.47Z'/%3E%3Cpath d='M14.00 39.2H50.00' stroke='%238E3A2A' stroke-width='.9'/%3E%3Ccircle cx='14.00' cy='39.2' r='1.25' fill='%238E3A2A'/%3E%3Ccircle cx='50.00' cy='39.2' r='1.25' fill='%238E3A2A'/%3E%3Cpath d='M13.5 22a20 20 0 0 1 12-10.5' fill='none' stroke='%23fff' stroke-opacity='.45' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E")}
+.coin-ico-lg{width:32px;height:32px}
+.coin-ico-xl{width:64px;height:64px;filter:drop-shadow(0 4px 8px rgba(120,80,10,.28))}
+.coin-hero{display:flex;justify-content:center;margin:2px 0 8px}
+.tt-coin{display:inline-flex;align-items:center;justify-content:center;gap:4px;font-variant-numeric:tabular-nums}
+.store-coin-chip .coin-ico{width:17px;height:17px;vertical-align:-3px}
 .pack-btn-coin{display:inline-flex;align-items:center;gap:5px;font-variant-numeric:tabular-nums}
 .store-coin-chip{display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 10px 0 8px;border-radius:99px;
   border:1.5px solid var(--border);background:var(--card);color:var(--text);font-family:inherit;font-size:13px;font-weight:800;
@@ -5540,10 +5543,11 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
 <div class="mo-overlay" id="coinOverlay" onclick="closeCoinShop()"></div>
 <div class="mo-card" id="coinCard">
   <div class="mo-handle"></div>
+  <div class="coin-hero"><i class="coin-ico coin-ico-xl"></i></div>
   <div class="mo-title">코인 충전</div>
   <div class="mo-sub" id="coinBalanceLine">보유 0코인</div>
   <div class="coin-packs" id="coinPackList"></div>
-  <div class="coin-note">코인은 유효기간이 없어요. 테마·컬러 팩·이모지 팩을 하나씩 살 수 있고,<br>산 항목은 구독과 상관없이 계속 쓸 수 있어요.<br>결제·환불은 App Store·Google Play 정책을 따라요.</div>
+  <div class="coin-note">코인은 유효기간이 없어요.<br>테마·컬러·이모지·글꼴·강조·스티커를 하나씩 살 수 있고,<br>산 항목은 구독과 상관없이 계속 쓸 수 있어요.<br>결제·환불은 App Store·Google Play 정책을 따라요.</div>
   <div class="mo-actions"><button class="mo-cancel" onclick="closeCoinShop()">닫기</button></div>
 </div>
 <div class="mo-overlay" id="charDetailOverlay" onclick="closeCharDetail()"></div>
@@ -20990,7 +20994,7 @@ const FREE_TRIAL_MODE=true; // ← 유료화 시 false 로 변경
 })();
 
 /* DB 기반 unlocks (admin이 부여한 무료 unlock) — 본인 것만 캐시 */
-let _dbUnlocks={color:[], char:[], skin:[]};   // 관리자 부여 + 코인 구매(영구 소유)
+let _dbUnlocks={color:[], char:[], skin:[], sticker:[], font:[], dh:[]};   // 관리자 부여 + 코인 구매(영구 소유)
 
 async function loadMyDbUnlocks(){
   if(!_currentUser)return;
@@ -21007,6 +21011,9 @@ async function loadMyDbUnlocks(){
       color:(data||[]).filter(r=>r.pack_type==='color').map(r=>r.pack_key),
       char: (data||[]).filter(r=>r.pack_type==='char').map(r=>r.pack_key),
       skin: (data||[]).filter(r=>r.pack_type==='skin').map(r=>r.pack_key),
+      sticker:(data||[]).filter(r=>r.pack_type==='sticker').map(r=>r.pack_key),
+      font: (data||[]).filter(r=>r.pack_type==='font').map(r=>r.pack_key),
+      dh:   (data||[]).filter(r=>r.pack_type==='dh').map(r=>r.pack_key),
     };
     // 산 테마가 있으면 방 목록·현재 방 색을 다시 그린다(이 로드가 첫 렌더보다 늦게 끝날 수 있음)
     if(_dbUnlocks.skin.length){ try{ _refreshPremiumGatedUI(); }catch(_){} }
@@ -21029,9 +21036,12 @@ let _buyingItem=false;
 function _coinVisible(){ return typeof isAdmin==='function' && isAdmin(); }
 function _ownsItem(type,key){ return !!(key && _dbUnlocks[type] && _dbUnlocks[type].indexOf(key)>=0); }
 function coinPriceOf(type,key){ return _shopPrices[type+':'+key]||null; }
-const _COIN_TYPE_LABEL={skin:'테마를', color:'컬러 팩을', char:'이모지 팩을'};
+const _COIN_TYPE_LABEL={skin:'테마를', color:'컬러 팩을', char:'이모지 팩을', sticker:'스티커 묶음을', font:'글꼴을', dh:'날짜 강조 테마를'};
 function _itemName(type,key){
   if(type==='skin') return (typeof _setDisplayName==='function')?_setDisplayName(key):key;
+  if(type==='sticker'){ const sp=_stickerPacks().find(x=>x.k===key); return (sp&&sp.n)||key; }
+  if(type==='font'){ const f=TEXT_THEMES.find(x=>x.key===key); return (f&&f.name)||key; }
+  if(type==='dh') return _dhTheme(key).name;
   const list=type==='color'?STORE_COLORS:STORE_EMOJI;
   const p=(list||[]).find(x=>x.key===key);
   return (p&&p.name)||key;
@@ -21116,10 +21126,17 @@ function _rerenderStoreTab(){
     if(_storeCurrentTab==='theme') renderStoreThemes();
     else if(_storeCurrentTab==='color') renderStoreColors();
     else if(_storeCurrentTab==='emoji') renderStoreEmoji();
+    else if(_storeCurrentTab==='text') renderStoreText();
+    else if(_storeCurrentTab==='emphasis') renderStoreEmphasis();
+    else if(_storeCurrentTab==='sticker') renderStoreStickers();
   }catch(_){}
 }
 function _afterOwnershipChange(type,key){
   _rerenderStoreTab();
+  try{ if(type==='dh'&&document.getElementById('dhThemeDetailCard')?.classList.contains('on')) _dhRenderDetail(); }catch(_){}
+  // 글꼴은 사자마자 바로 입혀 준다(산 걸 또 눌러야 적용되면 헷갈림)
+  if(type==='font'&&key){ try{ setFontFamilyPref(key); _rerenderStoreTab(); renderMonthly(); }catch(_){} }
+  try{ if(type==='sticker'&&document.getElementById('dhManageCard')?.classList.contains('on')) setDhmTab(_dhmTab); }catch(_){}
   try{
     const cd=document.getElementById('charDetailCard');
     if(type==='char'&&key&&cd&&cd.classList.contains('on')) openCharDetail(key);
@@ -22400,10 +22417,10 @@ function renderStoreStickers(){
     const prev=p.items.slice(1,5).map(function(it){
       return '<i class="rsp-mini" style="background-image:url(&quot;'+it.u+'&quot;)"></i>'; }).join('');
     const btn=inUse
-      ? '<button class="pack-btn pack-btn-using" onclick="event.stopPropagation();onStickerPackLock(\''+p.k+'\')">사용 중</button>'
+      ? '<button class="pack-btn pack-btn-using" onclick="event.stopPropagation();onStickerPackLock(\''+p.k+'\')">'+(prem?'사용 중':'보유')+'</button>'
       : (prem
           ? '<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();useStickerPack(\''+p.k+'\')">사용하기</button>'
-          : '<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();useStickerPack(\''+p.k+'\')"><span class="pack-btn-lock">🔒</span>프리미엄</button>');
+          : _lockedBtnHTML('sticker',p.k,'','event.stopPropagation();useStickerPack(\''+p.k+'\')'));
     return '<div class="ep-row rsp-row">'
       +'<div class="ep-th rsp-th"><i class="rsp-art" style="background-image:url(&quot;'+rep+'&quot;)"></i></div>'
       +'<div class="ep-body">'
@@ -22711,7 +22728,8 @@ function renderStoreText(){
   const card=(item)=>{
     const applied=item.key===cur;
     const isFreeFont=item.key==='default';            // 기본 글꼴=무료
-    const locked=!_premText && !isFreeFont && !applied;
+    const owned=_ownsItem('font',item.key);           // 코인으로 산 글꼴
+    const locked=!_premText && !isFreeFont && !applied && !owned;
     // 인라인 style 속성 충돌 방지 — 폰트명 큰따옴표를 작은따옴표로
     const fam=(TEXT_THEME_FONT[item.key]||'inherit').replace(/"/g,"'");
     const en=item.cat==='en';
@@ -22719,7 +22737,9 @@ function renderStoreText(){
     const btn=applied
       ? `<button class="tt-apply using" onclick="event.stopPropagation();applyTextTheme('default')">사용 중</button>`
       : (locked
-          ? `<button class="tt-apply" onclick="event.stopPropagation();applyTextTheme('${item.key}')"><span class="pack-btn-lock">🔒</span>프리미엄</button>`
+          ? (_coinVisible()&&coinPriceOf('font',item.key)
+              ? `<button class="tt-apply tt-coin" onclick="event.stopPropagation();applyTextTheme('${item.key}')"><i class="coin-ico"></i>${coinPriceOf('font',item.key)}</button>`
+              : `<button class="tt-apply" onclick="event.stopPropagation();applyTextTheme('${item.key}')"><span class="pack-btn-lock">🔒</span>프리미엄</button>`)
           : `<button class="tt-apply" onclick="event.stopPropagation();applyTextTheme('${item.key}')">사용하기</button>`);
     return `<div class="tt-card${applied?' on':''}${locked?' locked':''}" onclick="applyTextTheme('${applied?'default':item.key}')">
       <div class="tt-preview" style="font-family:${fam}">
@@ -22747,8 +22767,8 @@ async function applyTextTheme(key){
   // 프리미엄 잠금 — 무료는 기본 글꼴만. 그 외 글꼴은 구독 유도.
   if(key!=='default'){
     await ensurePremiumLoaded();
-    if(!isEffectivePremium()){
-      showUpgradeModal({
+    if(!isEffectivePremium()&&!_ownsItem('font',key)){
+      offerItem('font',key,{
         message:'✍️ 우리 방 분위기에 맞는 글꼴로 바꿔보세요',
         feature:'프리미엄이면 모든 글꼴을 자유롭게 쓸 수 있어요.'
       });
@@ -22852,10 +22872,10 @@ function renderStoreEmphasis(){
   DH_THEMES.forEach(t=>{
     const inUse=isDhThemeInUse(t.key);
     const btn=inUse
-      ? `<button class="pack-btn pack-btn-using" onclick="event.stopPropagation();onDhThemeLock('${t.key}')">사용 중</button>`
+      ? `<button class="pack-btn pack-btn-using" onclick="event.stopPropagation();onDhThemeLock('${t.key}')">${prem?'사용 중':'보유'}</button>`
       : (prem
           ? `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();onDhThemeUse('${t.key}')">사용하기</button>`
-          : `<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();onDhThemeUse('${t.key}')"><span class="pack-btn-lock">🔒</span>프리미엄</button>`);
+          : _lockedBtnHTML('dh',t.key,'',`event.stopPropagation();onDhThemeUse('${t.key}')`));
     const dots=t.colors.map(c=>`<span class="dh-dot" style="background:${_dhHexOf(t.key,c.key)}"></span>`).join('');
     const repColor=t.rep||t.colors[0].key;
     html+=`
@@ -22875,7 +22895,7 @@ function renderStoreEmphasis(){
 function onDhThemeUse(key){
   const t=_dhTheme(key);
   if(!isEffectivePremium()){
-    showUpgradeModal({
+    offerItem('dh',key,{
       message:'📌 특별한 날짜를 강조해볼까요?',
       feature:'프리미엄이면 원하는 날짜(구간)에 나만의 제목을 붙여 표시할 수 있어요.'
     });
@@ -22890,6 +22910,7 @@ function onDhThemeUse(key){
    무슨 일이 일어났는지 보이고, 다시 누르면 되돌릴 수 있다. [2026-08-25] */
 function onDhThemeLock(key){
   const t=_dhTheme(key);
+  if(!isEffectivePremium()&&_ownsItem('dh',key)){ toast('구매한 강조 테마는 계속 쓸 수 있어요'); return; }
   if(!lockDhTheme(key))return;
   toast(`"${t.name}" 테마 사용을 중단했어요`);
   renderStoreEmphasis();
@@ -22920,10 +22941,10 @@ function _dhRenderDetail(){
   const actEl=document.getElementById('dhThemeDetailAct');
   if(actEl){
     actEl.innerHTML=isDhThemeInUse(t.key)
-      ? `<button class="pack-btn pack-btn-using" onclick="onDhThemeLock('${t.key}')">사용 중</button>`
+      ? `<button class="pack-btn pack-btn-using" onclick="onDhThemeLock('${t.key}')">${isEffectivePremium()?'사용 중':'보유'}</button>`
       : (isEffectivePremium()
           ? `<button class="pack-btn pack-btn-try" onclick="onDhThemeUse('${t.key}')">사용하기</button>`
-          : `<button class="pack-btn pack-btn-try" onclick="onDhThemeUse('${t.key}')"><span class="pack-btn-lock">🔒</span>프리미엄</button>`);
+          : _lockedBtnHTML('dh',t.key,'',`onDhThemeUse('${t.key}')`));
   }
 }
 function pickDhDetailStyle(key){
@@ -23083,8 +23104,10 @@ function _saveDhUnlocks(list){
     localStorage.setItem('uricalv2.unlocks',JSON.stringify(u));
   }catch(e){}
 }
+/* 날짜 강조를 만들 수 있나 — 구독 중이거나 강조 테마를 하나라도 코인으로 샀으면 [2026-09-23] */
+function _canDh(){ return isEffectivePremium() || !!(_dbUnlocks.dh&&_dbUnlocks.dh.length); }
 function isDhThemeInUse(key){
-  if(!isEffectivePremium())return false;   // 날짜 강조 자체가 프리미엄
+  if(!isEffectivePremium())return _ownsItem('dh',key);   // 무료: 코인으로 산 테마만(산 건 늘 켜짐)
   return _getDhUnlocks().includes(key);
 }
 /* 추가 시트 페이저에 뜨는 테마 목록 = 기본 + 사용 설정한 테마 */
@@ -23327,7 +23350,7 @@ let _dhEditId=null;
 async function openDhCard(presetDate){
   if(!_currentRoom){toast('방에 먼저 들어가 주세요');return;}
   await ensurePremiumLoaded();
-  if(!isEffectivePremium()){
+  if(!_canDh()){
     showUpgradeModal({
       message:'📌 특별한 날짜를 강조해볼까요?',
       feature:'프리미엄이면 원하는 날짜(구간)에 나만의 제목을 붙여 표시할 수 있어요.'
@@ -23373,7 +23396,7 @@ async function openDhEdit(id){
   const h=_dhFindRow(id);            // 전체 보기의 '다른 방' 강조도 수정 가능
   if(!h){toast('날짜 강조를 찾을 수 없어요');return;}
   await ensurePremiumLoaded();
-  if(!isEffectivePremium()){
+  if(!_canDh()){
     showUpgradeModal({
       message:'📌 날짜 강조 수정은 프리미엄 기능이에요',
       feature:'구독하면 만들어둔 강조의 제목·색·기간을 언제든 바꿀 수 있어요.'
@@ -23784,13 +23807,14 @@ async function openDhManage(dateKeyStr){
   /* 날짜 강조는 프리미엄 기능 — 관리 시트 진입 자체를 막고 구독 안내를 띄운다.
      (날짜 시트 우상단 태그 버튼 / 캘린더의 강조 라벨 탭 둘 다 이 함수를 거친다.) [2026-08-19] */
   await ensurePremiumLoaded();
-  if(!isEffectivePremium()){
+  if(!_canDh() && !(_ctbVisible()&&_canSticker())){   // 산 강조 테마나 스티커 묶음이 있으면 들어올 수 있음
     showUpgradeModal({
       message:'📌 특별한 날짜를 강조해볼까요?',
       feature:'프리미엄이면 원하는 날짜(구간)에 나만의 제목을 붙여 표시할 수 있어요.'
     });
     return;
   }
+  if(!_canDh()) _dhmTab='sticker';                   // 스티커만 산 사용자는 스티커 탭으로
   _dhmDate=(dateKeyStr&&/^\d{4}-\d{2}-\d{2}$/.test(dateKeyStr))?dateKeyStr:(_selectedDate||null);
   setDhmTab(_dhmTab||'dh');
   renderDhManageList();
@@ -23806,7 +23830,8 @@ function setDhmTab(tab){
   _dhmTab=tab||'dh';
   /* 스티커 탭은 아직 관리자 전용 — 안 보이면 항상 '날짜 강조'로 */
   try{ var _stb=document.querySelector('#dhManageCard .dhm-tab[data-dhmtab="sticker"]');
-       if(_stb){ _stb.style.display=_ctbVisible()?'':'none'; if(!_ctbVisible()&&_dhmTab==='sticker')_dhmTab='dh'; } }catch(_){}
+       var _stOk=_ctbVisible()&&_canSticker();
+       if(_stb){ _stb.style.display=_stOk?'':'none'; if(!_stOk&&_dhmTab==='sticker')_dhmTab='dh'; } }catch(_){}
   document.querySelectorAll('#dhManageCard .dhm-tab').forEach(b=>{
     b.classList.toggle('on', b.dataset.dhmtab===_dhmTab);
   });
@@ -24956,15 +24981,18 @@ function _saveRsUnlocks(list){
     u.color=u.color||[]; u.char=u.char||[]; u.dh=u.dh||[]; u.rs=list;
     localStorage.setItem('uricalv2.unlocks',JSON.stringify(u)); }catch(e){}
 }
+/* 스티커를 붙일 수 있나 — 구독 중이거나 묶음을 하나라도 코인으로 샀으면(그땐 기본 묶음도 함께) [2026-09-23] */
+function _canSticker(){ return isEffectivePremium() || !!(_dbUnlocks.sticker&&_dbUnlocks.sticker.length); }
 function isStickerPackInUse(k){
-  if(typeof isEffectivePremium==='function' && !isEffectivePremium())return false;
+  if(typeof isEffectivePremium==='function' && !isEffectivePremium())
+    return k==='basic' ? _canSticker() : _ownsItem('sticker',k);   // 무료: 산 묶음(+기본)만
   return _getRsUnlocks().indexOf(k)>=0;
 }
 /* 시트 스티커 탭에 뜨는 묶음 = 기본 + 사용 설정한 묶음 */
 function getUsableStickerPacks(){ return _stickerPacks().filter(function(p){ return isStickerPackInUse(p.k); }); }
 window.useStickerPack=function(k){
   if(!isEffectivePremium()){
-    showUpgradeModal({message:'🧸 배경을 스티커로 꾸며볼까요?', feature:'프리미엄이면 원하는 스티커 묶음을 골라 방 배경에 마음껏 붙일 수 있어요.'});
+    offerItem('sticker',k,{message:'🧸 배경을 스티커로 꾸며볼까요?', feature:'프리미엄이면 원하는 스티커 묶음을 골라 방 배경에 마음껏 붙일 수 있어요.'});
     return;
   }
   var l=_getRsUnlocks(); if(l.indexOf(k)<0){ l.push(k); _saveRsUnlocks(l); }
@@ -24980,6 +25008,7 @@ window.unuseStickerPack=function(k){
 };
 window.onStickerPackLock=function(k){
   var p=_stickerPacks().filter(function(x){ return x.k===k; })[0];
+  if(!isEffectivePremium()){ toast('구매한 스티커 묶음은 계속 쓸 수 있어요'); return; }
   if(!unuseStickerPack(k))return;                 // 마지막 하나면 안내만 하고 그대로 둔다
   toast('"'+(p?p.n:'스티커')+'" 묶음 사용을 중단했어요');
 };
