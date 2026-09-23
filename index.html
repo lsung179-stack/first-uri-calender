@@ -14778,8 +14778,25 @@ function askMultiRoomScope(msg, isDelete, groupRooms, noun, verb){
   });
 }
 
+/* ── 저장 잠금 ────────────────────────────────────────────────────────────
+   예전엔 800ms 시간 스로틀뿐이라, 저장이 800ms 를 넘기면(느린 통신) 그 뒤의 탭이 각각 새 저장을
+   또 시작했다 → 요청이 통신 회복 때 한꺼번에 도착해 같은 일정이 3~4개 생김(실제 DB: 70ms 간격 4건).
+   게다가 위쪽 고정 저장 버튼(evSaveBtnTop)은 저장 중에도 눌렸다(아래 버튼만 disabled).
+   → '저장이 끝날 때까지' 잠그고, 두 버튼을 함께 잠근다. [2026-09-23] */
+let _evSaving=false;
+function _evSetSaving(on,label){
+  _evSaving=!!on;
+  ['evSaveBtn','evSaveBtnTop'].forEach(id=>{
+    const b=document.getElementById(id); if(!b)return;
+    b.disabled=!!on; b.textContent=on?(label||'저장 중...'):'저장';
+  });
+}
 async function saveEvent(){
   if(!_currentRoom||!_currentUser){toast('로그인이 필요해요');return}
+  if(_evSaving){toast('저장 중이에요');return}
+  /* 폼이 닫힌 뒤(저장 직후 등) 늦게 도착한 호출은 무시 — 그때 저장하면 _editingEvent 가 이미 비어
+     '수정'이 '새 일정 추가'로 둔갑해 같은 제목이 하나 더 생긴다. [2026-09-23] */
+  { const _card=document.getElementById('evCard'); if(_card&&!_card.classList.contains('on'))return; }
   // 기본 검증 (제목)
   const title=document.getElementById('evTitle').value.trim();
   if(!title){toast('제목을 입력해주세요');return}
@@ -14848,7 +14865,8 @@ function _extraCoPlanSuffix(plan){
 
 async function _doSaveEvent(){
   if(!_currentRoom||!_currentUser){toast('로그인이 필요해요');_showEvCardFromSub();return}
-  if(!_throttleAction('saveEvent',800)){toast('잠시 후 다시 시도해주세요');_showEvCardFromSub();return}
+  if(_evSaving){toast('저장 중이에요');return}
+  if(!_throttleAction('saveEvent',800)){toast('저장 중이에요');_showEvCardFromSub();return}
   const title=document.getElementById('evTitle').value.trim();
   if(!title){toast('제목을 입력해주세요');_showEvCardFromSub();return}
   if(title.length>40){toast('제목은 40자 이내로');_showEvCardFromSub();return}
@@ -14877,22 +14895,21 @@ async function _doSaveEvent(){
   if(memoRaw.length>500){toast('메모는 500자 이내로');_showEvCardFromSub();return}
   const memo=memoRaw||null;
   
-  const btn=document.getElementById('evSaveBtn');
-  btn.disabled=true;btn.textContent='저장 중...';
+  _evSetSaving(true);
   
   // 사진 업로드 (있을 때) — 실패 시 토스트 후 종료
   let photoUrls=[];
   try{
-    btn.textContent='사진 업로드 중...';
+    _evSetSaving(true,'사진 업로드 중...');
     photoUrls=await uploadEventPhotosIfNeeded();
   }catch(e){
     console.error(e);
     toast('사진 업로드 실패: '+(e.message||'').slice(0,40));
-    btn.disabled=false;btn.textContent='저장';
+    _evSetSaving(false);
     _showEvCardFromSub();
     return;
   }
-  btn.textContent='저장 중...';
+  _evSetSaving(true);
   // ⚠️ 수정 여부는 여기서 미리 기억해 둔다 — saveEditedEvent 의 일부 경로와 아래 closeEventModal()이
   //    _editingEvent 를 null 로 비우기 때문. (안 그러면 수정해도 '등록했어요' 알림이 가고 일자 시트도 안 열린다)
   const _wasEditing=!!_editingEvent;
@@ -14903,7 +14920,10 @@ async function _doSaveEvent(){
       // 수정 — saveEditedEvent 내부에서 그룹 일괄수정/방선택 처리 (다른 방 '추가'는 하지 않음)
       const oldPhotoUrls = (Array.isArray(_editingEvent.photo_urls)&&_editingEvent.photo_urls.length) ? _editingEvent.photo_urls.filter(Boolean) : (_editingEvent.photo_url?[_editingEvent.photo_url]:[]);
       const _editRes=await saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly,memo,photoUrls);
-      if(_editRes==='cancelled'){ return; }  // 방 적용범위 선택에서 취소 → 수정 모달 그대로 유지 (finally에서 버튼 복원)
+      if(_editRes==='cancelled'){ return; }  // 취소·검증 실패 → 수정 모달 그대로 유지, 알림 없음 (finally에서 버튼 복원)
+      /* 반복 '이 일정에만/이후 일정에도' 경로는 자기 안에서 이미 닫고·다시 읽고·일자 시트까지 열었다.
+         예전엔 여기서 한 번 더 닫고 다시 읽어(loadEvents 2회 = 방 전체 재조회 2회) 저장이 두 배로 느렸다. [2026-09-23] */
+      var _editHandled=(_editRes==='handled');
       // 옛 사진 정리 — 새 목록에 없는 사진은 Storage에서 삭제 (fire-and-forget)
       oldPhotoUrls.forEach(u=>{ if(u && !photoUrls.includes(u)) deletePhotoFromStorage(u); });
     }else{
@@ -15087,12 +15107,14 @@ async function _doSaveEvent(){
         setTimeout(function(){ try{ maybeAskPush('event'); }catch(_){} },900);
       }
     }
-    closeEventModal();
-    await loadEvents();
-    // 신규 추가 후엔 캘린더 화면으로, 수정 후엔 일자 시트로 (변경 결과 확인용)
-    if(_wasEditing){
-      const _sheetDate=(_selectedMode==='day'&&_dayDate)?_dayDate:_selectedDate;
-      openDateSheet(_sheetDate);
+    if(!(typeof _editHandled!=='undefined'&&_editHandled)){
+      closeEventModal();
+      await loadEvents();
+      // 신규 추가 후엔 캘린더 화면으로, 수정 후엔 일자 시트로 (변경 결과 확인용)
+      if(_wasEditing){
+        const _sheetDate=(_selectedMode==='day'&&_dayDate)?_dayDate:_selectedDate;
+        openDateSheet(_sheetDate);
+      }
     }
 
     // ── 5단계: 같은 방 멤버에게 자동 알림 발송 ──
@@ -15107,7 +15129,7 @@ async function _doSaveEvent(){
     _showEvCardFromSub();
     console.error(e);
   }finally{
-    btn.disabled=false;btn.textContent='저장';
+    _evSetSaving(false);
   }
 }
 
@@ -16688,10 +16710,11 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
       closeEventModal();
       await loadEvents();
       if(_selectedDate)openDateSheet(_selectedDate);
+      return 'handled';   // 바깥(_doSaveEvent)이 또 닫고 다시 읽지 않게
     }catch(e){
       toast('실패: '+(e.message||'').slice(0,40));console.error(e);
+      return 'cancelled'; // 모달 유지 — 저장 안 됐는데 '수정했어요' 알림이 나가면 안 된다
     }
-    return;
   }
 
   const wasShared=!!ev.shared_id;
@@ -16711,7 +16734,7 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
   // 함께 일정에는 multi 모드 금지 (안전판)
   if((wasShared||isNowShared)&&_selectedMode==='multi'){
     toast('함께 일정은 여러 날로 만들 수 없어요');
-    return;
+    return 'cancelled';
   }
 
   /* ── 함께 일정 색상 적용 범위 ──────────────────────────────────────────
@@ -16725,7 +16748,7 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
     const _pick=await askRecurringDelete(
       '이 함께 일정의 색을 바꿨어요.<br>어디에 적용할까요?',
       {title:'색상 적용 범위', oneLabel:'나만 이 색으로 보기', allLabel:'모두에게 적용'});
-    if(!_pick)return;                      // 취소 → 아무것도 저장하지 않음
+    if(!_pick)return 'cancelled';          // 취소 → 아무것도 저장하지 않고 폼은 그대로
     _coColorScope=(_pick==='one')?'me':'all';
   }
   /* 내 색만 바꿨고 다른 항목은 그대로면 멤버들에게 '수정했어요' 알림을 보내지 않는다
@@ -16742,13 +16765,13 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
     const memberIds=(_selectedMembers&&_selectedMembers.length>=2)
       ?_selectedMembers
       :(_editSharedMemberIds||[]);
-    if(memberIds.length<2){toast('함께 일정은 최소 2명이 필요해요');return}
+    if(memberIds.length<2){toast('함께 일정은 최소 2명이 필요해요');return 'cancelled'}
 
     const startStr=document.getElementById('evStartDate').value;
     const endStr=document.getElementById('evEndDate').value;
-    if(!startStr||!endStr){toast('시작/종료 날짜를 입력해주세요');return}
+    if(!startStr||!endStr){toast('시작/종료 날짜를 입력해주세요');return 'cancelled'}
     const dates=daysBetween(startStr,endStr);
-    if(dates.length>90){toast('함께 기간 일정은 최대 90일까지');return}
+    if(dates.length>90){toast('함께 기간 일정은 최대 90일까지');return 'cancelled'}
 
     /* 이 경로는 그룹을 통째로 지우고 다시 만든다 — 멤버마다 색이 다를 수 있으므로
        지우기 전에 '멤버 → 색' 을 읽어 두고 새 row 에 그대로 되돌려 준다.
@@ -16794,14 +16817,14 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
     let newDates=[];
     if(isMultiMode){
       newDates=[..._multiSelected].sort();
-      if(!newDates.length){toast('날짜를 하나 이상 선택해주세요');return}
-      if(newDates.length>31){toast('한 번에 최대 31일까지');return}
+      if(!newDates.length){toast('날짜를 하나 이상 선택해주세요');return 'cancelled'}
+      if(newDates.length>31){toast('한 번에 최대 31일까지');return 'cancelled'}
     }else{
       const startStr=document.getElementById('evStartDate').value;
       const endStr=document.getElementById('evEndDate').value;
-      if(!startStr||!endStr){toast('시작/종료 날짜를 입력해주세요');return}
+      if(!startStr||!endStr){toast('시작/종료 날짜를 입력해주세요');return 'cancelled'}
       newDates=daysBetween(startStr,endStr);
-      if(newDates.length>180){toast('기간이 너무 길어요 (최대 6개월)');return}
+      if(newDates.length>180){toast('기간이 너무 길어요 (최대 6개월)');return 'cancelled'}
     }
 
     // 2) 방 간 그룹(multi_group_id)이면 적용 범위 선택
