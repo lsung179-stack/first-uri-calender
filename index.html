@@ -3042,15 +3042,25 @@ body.align-right .cal-evbar{text-align:right}
 #charDetailCard{z-index:1401;left:50%;right:auto;width:100%;max-width:430px;transform:translateX(-50%) translateY(100%)}
 #charDetailCard.on{transform:translateX(-50%) translateY(0)}
 /* 코인 [2026-09-23] — 충전 시트는 스토어·이모지 상세 위에 뜬다 */
+#stkDetailOverlay{z-index:1400}
+#stkDetailCard{z-index:1401;left:50%;right:auto;width:100%;max-width:430px;transform:translateX(-50%) translateY(100%)}
+#stkDetailCard.on{transform:translateX(-50%) translateY(0)}
+#stkDetailCard .mo-sub{margin-bottom:14px}
+.stk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stk-tile{background:var(--aP);border:1px solid var(--borderL);border-radius:16px;padding:10px 8px 8px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.stk-tile i{display:block;width:100%;aspect-ratio:1/1;background:no-repeat center/contain}
+.stk-tile span{font-size:11px;font-weight:600;color:var(--sub);white-space:nowrap}
+.stk-detail-action{flex-direction:column;align-items:center;gap:8px}
+.stk-price-hint{font-size:11.5px;color:var(--mute);display:flex;align-items:center;gap:4px}
 #coinOverlay{z-index:1410}
 #coinCard{z-index:1411;left:50%;right:auto;width:100%;max-width:430px;transform:translateX(-50%) translateY(100%)}
 #coinCard.on{transform:translateX(-50%) translateY(0)}
 #coinCard .mo-sub{margin-bottom:16px}
 #coinCard .mo-sub b{color:var(--text);font-variant-numeric:tabular-nums}
-.coin-ico{display:inline-block;width:14px;height:14px;flex:none;vertical-align:-2px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CradialGradient id='g' cx='38%25' cy='30%25' r='75%25'%3E%3Cstop offset='0' stop-color='%23FFF1BF'/%3E%3Cstop offset='.42' stop-color='%23F4CB5A'/%3E%3Cstop offset='1' stop-color='%23C98E1C'/%3E%3C/radialGradient%3E%3ClinearGradient id='e' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23E0A93A'/%3E%3Cstop offset='1' stop-color='%238F5E0E'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='31.5' fill='url(%23e)'/%3E%3Ccircle cx='32' cy='32' r='28.6' fill='url(%23g)'/%3E%3Ccircle cx='32' cy='32' r='26.4' fill='none' stroke='%238E3A2A' stroke-width='2.6'/%3E%3Cpath fill='%238E3A2A' d='M13.92 31.29Q13.92 34.28 14.75 35.57Q15.57 36.85 17.35 36.85Q19.13 36.85 19.95 35.56Q20.77 34.27 20.77 31.29Q20.77 28.31 19.95 27.06Q19.13 25.81 17.35 25.81Q15.57 25.81 14.75 27.06Q13.92 28.31 13.92 31.29ZM10.8 31.29Q10.8 24.86 17.35 24.86Q20.59 24.86 22.24 26.49Q23.89 28.12 23.89 31.29Q23.89 34.49 22.22 36.14Q20.55 37.79 17.35 37.79Q14.17 37.79 12.49 36.14Q10.8 34.5 10.8 31.29ZM32.91 36.45Q34.32 36.45 35.09 35.66Q35.86 34.88 35.86 33.34V25.93L34.17 25.69V25H38.45V25.69L37.02 25.93V33.27Q37.02 35.45 35.76 36.61Q34.5 37.78 32.16 37.78Q29.64 37.78 28.29 36.6Q26.94 35.42 26.94 33.19V25.93L25.51 25.69V25H31.52V25.69L29.9 25.93V33.32Q29.9 34.84 30.67 35.65Q31.43 36.45 32.91 36.45ZM44.04 32.26V36.66L45.66 36.91V37.6H39.58V36.91L41.07 36.66V25.93L39.46 25.69V25H45.48Q48.26 25 49.63 25.86Q51.01 26.71 51.01 28.52Q51.01 31.23 48.47 32L51.83 36.66L53.2 36.91V37.6H49.12L45.6 32.26ZM48.07 28.54Q48.07 27.13 47.49 26.58Q46.91 26.03 45.36 26.03H44.04V31.23H45.41Q46.85 31.23 47.46 30.63Q48.07 30.03 48.07 28.54Z'/%3E%3Cpath d='M13.5 22a20 20 0 0 1 12-10.5' fill='none' stroke='%23fff' stroke-opacity='.45' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat}
-.coin-ico-lg,.coin-ico-xl{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CradialGradient id='g' cx='38%25' cy='30%25' r='75%25'%3E%3Cstop offset='0' stop-color='%23FFF1BF'/%3E%3Cstop offset='.42' stop-color='%23F4CB5A'/%3E%3Cstop offset='1' stop-color='%23C98E1C'/%3E%3C/radialGradient%3E%3ClinearGradient id='e' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23E0A93A'/%3E%3Cstop offset='1' stop-color='%238F5E0E'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='31.5' fill='url(%23e)'/%3E%3Ccircle cx='32' cy='32' r='28.6' fill='url(%23g)'/%3E%3Ccircle cx='32' cy='32' r='26.6' fill='none' stroke='%238E3A2A' stroke-width='2.1'/%3E%3Ccircle cx='32' cy='32' r='22.4' fill='none' stroke='%238E3A2A' stroke-width='.8' opacity='.75'/%3E%3Cpath fill='%238E3A2A' d='M17.03 29.69Q17.03 32.11 17.69 33.15Q18.36 34.19 19.81 34.19Q21.24 34.19 21.91 33.15Q22.57 32.11 22.57 29.69Q22.57 27.28 21.91 26.27Q21.24 25.25 19.81 25.25Q18.36 25.25 17.69 26.27Q17.03 27.28 17.03 29.69ZM14.5 29.69Q14.5 24.49 19.81 24.49Q22.42 24.49 23.76 25.81Q25.1 27.13 25.1 29.69Q25.1 32.28 23.75 33.62Q22.39 34.95 19.81 34.95Q17.23 34.95 15.87 33.62Q14.5 32.29 14.5 29.69ZM32.73 33.87Q33.87 33.87 34.5 33.23Q35.12 32.59 35.12 31.35V25.35L33.75 25.16V24.6H37.22V25.16L36.07 25.35V31.29Q36.07 33.06 35.05 34Q34.03 34.94 32.13 34.94Q30.09 34.94 29 33.99Q27.9 33.04 27.9 31.23V25.35L26.75 25.16V24.6H31.61V25.16L30.3 25.35V31.34Q30.3 32.56 30.92 33.22Q31.54 33.87 32.73 33.87ZM42.09 30.48V34.04L43.4 34.24V34.8H38.47V34.24L39.68 34.04V25.35L38.38 25.16V24.6H43.25Q45.5 24.6 46.61 25.29Q47.72 25.98 47.72 27.45Q47.72 29.64 45.67 30.27L48.39 34.04L49.5 34.24V34.8H46.2L43.35 30.48ZM45.35 27.47Q45.35 26.33 44.88 25.88Q44.41 25.44 43.15 25.44H42.09V29.64H43.19Q44.36 29.64 44.86 29.16Q45.35 28.67 45.35 27.47Z'/%3E%3Cpath d='M14.00 39.2H50.00' stroke='%238E3A2A' stroke-width='.9'/%3E%3Ccircle cx='14.00' cy='39.2' r='1.25' fill='%238E3A2A'/%3E%3Ccircle cx='50.00' cy='39.2' r='1.25' fill='%238E3A2A'/%3E%3Cpath d='M13.5 22a20 20 0 0 1 12-10.5' fill='none' stroke='%23fff' stroke-opacity='.45' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E")}
+.coin-ico{display:inline-block;width:14px;height:14px;flex:none;vertical-align:-2px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='cf' gradientUnits='userSpaceOnUse' x1='8' y1='6' x2='56' y2='60'%3E%3Cstop offset='0' stop-color='%23F6E3AE'/%3E%3Cstop offset='.38' stop-color='%23D4B06A'/%3E%3Cstop offset='.62' stop-color='%23A8823C'/%3E%3Cstop offset='.85' stop-color='%23E4C98C'/%3E%3Cstop offset='1' stop-color='%239C7634'/%3E%3C/linearGradient%3E%3CradialGradient id='cr' cx='42%25' cy='36%25' r='70%25'%3E%3Cstop offset='0' stop-color='%239A4130'/%3E%3Cstop offset='.65' stop-color='%23732A1E'/%3E%3Cstop offset='1' stop-color='%23541C14'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='31.6' fill='url(%23cf)'/%3E%3Ccircle cx='32' cy='32' r='31.6' fill='none' stroke='%237E5A22' stroke-opacity='.55' stroke-width='.8'/%3E%3Ccircle cx='32' cy='32' r='26.4' fill='url(%23cr)'/%3E%3Ccircle cx='32' cy='32' r='24.2' fill='none' stroke='%23D9BC7C' stroke-width='1.2'/%3E%3Cpath fill='%23EBD39C' d='M19.21 37.4Q17.99 37.4 17 36.97Q16.01 36.54 15.3 35.78Q14.6 35.01 14.22 34.02Q13.84 33.03 13.84 31.91Q13.84 30.53 14.37 29.5Q14.91 28.47 15.79 27.78Q16.67 27.09 17.72 26.75Q18.77 26.41 19.81 26.41Q21.06 26.41 22.05 26.86Q23.05 27.31 23.74 28.08Q24.44 28.84 24.8 29.81Q25.17 30.77 25.17 31.79Q25.17 32.98 24.69 33.99Q24.22 35.01 23.39 35.78Q22.57 36.54 21.5 36.97Q20.42 37.4 19.21 37.4ZM19.77 36.98Q20.72 36.98 21.47 36.44Q22.22 35.89 22.65 34.84Q23.08 33.79 23.08 32.28Q23.08 30.72 22.61 29.5Q22.13 28.28 21.25 27.58Q20.37 26.87 19.13 26.87Q17.59 26.87 16.75 28.04Q15.92 29.21 15.92 31.28Q15.92 32.52 16.21 33.56Q16.5 34.61 17.02 35.38Q17.53 36.15 18.24 36.56Q18.94 36.98 19.77 36.98ZM35.78 28.77Q35.78 27.87 35.37 27.34Q34.95 26.8 34.2 26.8Q34.17 26.8 34.17 26.7Q34.17 26.6 34.2 26.6Q34.63 26.6 35.08 26.63Q35.53 26.65 36.05 26.65Q36.51 26.65 36.95 26.63Q37.39 26.6 37.77 26.6Q37.8 26.6 37.8 26.7Q37.8 26.8 37.77 26.8Q37.09 26.8 36.72 27.34Q36.36 27.87 36.36 28.77V33.49Q36.36 34.69 35.83 35.58Q35.31 36.47 34.36 36.95Q33.41 37.44 32.14 37.44Q30.9 37.44 29.92 36.96Q28.95 36.49 28.4 35.6Q27.84 34.71 27.84 33.45V27.97Q27.84 27.48 27.76 27.24Q27.68 26.99 27.41 26.9Q27.15 26.8 26.64 26.8Q26.59 26.8 26.59 26.7Q26.59 26.6 26.64 26.6Q27.08 26.6 27.62 26.63Q28.17 26.65 28.78 26.65Q29.42 26.65 29.96 26.63Q30.51 26.6 30.93 26.6Q30.98 26.6 30.98 26.7Q30.98 26.8 30.93 26.8Q30.42 26.8 30.17 26.91Q29.91 27.01 29.82 27.26Q29.73 27.52 29.73 28.01V32.86Q29.73 34.94 30.56 35.88Q31.39 36.81 32.78 36.81Q34.19 36.81 34.98 35.95Q35.78 35.1 35.78 33.5ZM47.11 37.2Q46.86 37.2 46.29 36.56Q45.72 35.93 44.92 34.72Q44.18 33.6 43.26 32.08Q43.07 32.1 42.87 32.1H42.39Q42.14 32.1 41.94 32.08V35.83Q41.94 36.32 42.02 36.57Q42.11 36.83 42.36 36.91Q42.62 37 43.14 37Q43.17 37 43.17 37.1Q43.17 37.2 43.14 37.2Q42.7 37.2 42.16 37.18Q41.61 37.17 40.97 37.17Q40.36 37.17 39.81 37.18Q39.26 37.2 38.82 37.2Q38.77 37.2 38.77 37.1Q38.77 37 38.82 37Q39.34 37 39.6 36.91Q39.85 36.83 39.94 36.57Q40.04 36.32 40.04 35.83V27.97Q40.04 27.48 39.95 27.24Q39.87 26.99 39.61 26.9Q39.36 26.8 38.83 26.8Q38.8 26.8 38.8 26.7Q38.8 26.6 38.83 26.6Q39.27 26.6 39.82 26.63Q40.36 26.65 40.97 26.65Q41.53 26.65 42.2 26.6Q42.87 26.55 43.46 26.55Q45.02 26.55 45.86 27.12Q46.7 27.69 46.7 28.7Q46.7 29.7 46.14 30.47Q45.63 31.2 44.84 31.6Q46.09 33.49 47.01 34.66Q47.96 35.89 48.7 36.45Q49.45 37 50.13 37Q50.16 37 50.16 37.1Q50.16 37.2 50.13 37.2ZM44.77 29.35Q44.77 28.35 44.57 27.82Q44.36 27.3 44.01 27.1Q43.65 26.91 43.19 26.91Q42.51 26.91 42.23 27.16Q41.94 27.41 41.94 28.01V31.6Q42.17 31.64 42.45 31.65Q42.72 31.67 42.92 31.67Q43.92 31.67 44.35 31.12Q44.77 30.57 44.77 29.35Z'/%3E%3Cpath d='M9.5 21.5a24.5 24.5 0 0 1 14-13' fill='none' stroke='%23fff' stroke-opacity='.5' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat}
+.coin-ico-lg,.coin-ico-xl{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='cf' gradientUnits='userSpaceOnUse' x1='8' y1='6' x2='56' y2='60'%3E%3Cstop offset='0' stop-color='%23F6E3AE'/%3E%3Cstop offset='.38' stop-color='%23D4B06A'/%3E%3Cstop offset='.62' stop-color='%23A8823C'/%3E%3Cstop offset='.85' stop-color='%23E4C98C'/%3E%3Cstop offset='1' stop-color='%239C7634'/%3E%3C/linearGradient%3E%3CradialGradient id='cr' cx='42%25' cy='36%25' r='70%25'%3E%3Cstop offset='0' stop-color='%239A4130'/%3E%3Cstop offset='.65' stop-color='%23732A1E'/%3E%3Cstop offset='1' stop-color='%23541C14'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='31.6' fill='url(%23cf)'/%3E%3Ccircle cx='32' cy='32' r='31.6' fill='none' stroke='%237E5A22' stroke-opacity='.55' stroke-width='.8'/%3E%3Cg stroke='%237E5A22' stroke-opacity='.45' stroke-width='.7'%3E%3Cpath d='M61.2 32L63.2 32'/%3E%3Cpath d='M61.09 34.54L63.08 34.72'/%3E%3Cpath d='M60.76 37.07L62.73 37.42'/%3E%3Cpath d='M60.21 39.56L62.14 40.08'/%3E%3Cpath d='M59.44 41.99L61.32 42.67'/%3E%3Cpath d='M58.46 44.34L60.28 45.19'/%3E%3Cpath d='M57.29 46.6L59.02 47.6'/%3E%3Cpath d='M55.92 48.75L57.56 49.9'/%3E%3Cpath d='M54.37 50.77L55.9 52.05'/%3E%3Cpath d='M52.65 52.65L54.06 54.06'/%3E%3Cpath d='M50.77 54.37L52.05 55.9'/%3E%3Cpath d='M48.75 55.92L49.9 57.56'/%3E%3Cpath d='M46.6 57.29L47.6 59.02'/%3E%3Cpath d='M44.34 58.46L45.19 60.28'/%3E%3Cpath d='M41.99 59.44L42.67 61.32'/%3E%3Cpath d='M39.56 60.21L40.08 62.14'/%3E%3Cpath d='M37.07 60.76L37.42 62.73'/%3E%3Cpath d='M34.54 61.09L34.72 63.08'/%3E%3Cpath d='M32 61.2L32 63.2'/%3E%3Cpath d='M29.46 61.09L29.28 63.08'/%3E%3Cpath d='M26.93 60.76L26.58 62.73'/%3E%3Cpath d='M24.44 60.21L23.92 62.14'/%3E%3Cpath d='M22.01 59.44L21.33 61.32'/%3E%3Cpath d='M19.66 58.46L18.81 60.28'/%3E%3Cpath d='M17.4 57.29L16.4 59.02'/%3E%3Cpath d='M15.25 55.92L14.1 57.56'/%3E%3Cpath d='M13.23 54.37L11.95 55.9'/%3E%3Cpath d='M11.35 52.65L9.94 54.06'/%3E%3Cpath d='M9.63 50.77L8.1 52.05'/%3E%3Cpath d='M8.08 48.75L6.44 49.9'/%3E%3Cpath d='M6.71 46.6L4.98 47.6'/%3E%3Cpath d='M5.54 44.34L3.72 45.19'/%3E%3Cpath d='M4.56 41.99L2.68 42.67'/%3E%3Cpath d='M3.79 39.56L1.86 40.08'/%3E%3Cpath d='M3.24 37.07L1.27 37.42'/%3E%3Cpath d='M2.91 34.54L0.92 34.72'/%3E%3Cpath d='M2.8 32L0.8 32'/%3E%3Cpath d='M2.91 29.46L0.92 29.28'/%3E%3Cpath d='M3.24 26.93L1.27 26.58'/%3E%3Cpath d='M3.79 24.44L1.86 23.92'/%3E%3Cpath d='M4.56 22.01L2.68 21.33'/%3E%3Cpath d='M5.54 19.66L3.72 18.81'/%3E%3Cpath d='M6.71 17.4L4.98 16.4'/%3E%3Cpath d='M8.08 15.25L6.44 14.1'/%3E%3Cpath d='M9.63 13.23L8.1 11.95'/%3E%3Cpath d='M11.35 11.35L9.94 9.94'/%3E%3Cpath d='M13.23 9.63L11.95 8.1'/%3E%3Cpath d='M15.25 8.08L14.1 6.44'/%3E%3Cpath d='M17.4 6.71L16.4 4.98'/%3E%3Cpath d='M19.66 5.54L18.81 3.72'/%3E%3Cpath d='M22.01 4.56L21.33 2.68'/%3E%3Cpath d='M24.44 3.79L23.92 1.86'/%3E%3Cpath d='M26.93 3.24L26.58 1.27'/%3E%3Cpath d='M29.46 2.91L29.28 0.92'/%3E%3Cpath d='M32 2.8L32 0.8'/%3E%3Cpath d='M34.54 2.91L34.72 0.92'/%3E%3Cpath d='M37.07 3.24L37.42 1.27'/%3E%3Cpath d='M39.56 3.79L40.08 1.86'/%3E%3Cpath d='M41.99 4.56L42.67 2.68'/%3E%3Cpath d='M44.34 5.54L45.19 3.72'/%3E%3Cpath d='M46.6 6.71L47.6 4.98'/%3E%3Cpath d='M48.75 8.08L49.9 6.44'/%3E%3Cpath d='M50.77 9.63L52.05 8.1'/%3E%3Cpath d='M52.65 11.35L54.06 9.94'/%3E%3Cpath d='M54.37 13.23L55.9 11.95'/%3E%3Cpath d='M55.92 15.25L57.56 14.1'/%3E%3Cpath d='M57.29 17.4L59.02 16.4'/%3E%3Cpath d='M58.46 19.66L60.28 18.81'/%3E%3Cpath d='M59.44 22.01L61.32 21.33'/%3E%3Cpath d='M60.21 24.44L62.14 23.92'/%3E%3Cpath d='M60.76 26.93L62.73 26.58'/%3E%3Cpath d='M61.09 29.46L63.08 29.28'/%3E%3C/g%3E%3Ccircle cx='32' cy='32' r='27.6' fill='url(%23cr)'/%3E%3Ccircle cx='32' cy='32' r='25.4' fill='none' stroke='url(%23cf)' stroke-width='.9'/%3E%3Cg fill='%23D9BC7C'%3E%3Ccircle cx='54.9' cy='32' r='.55'/%3E%3Ccircle cx='54.62' cy='35.58' r='.55'/%3E%3Ccircle cx='53.78' cy='39.08' r='.55'/%3E%3Ccircle cx='52.4' cy='42.4' r='.55'/%3E%3Ccircle cx='50.53' cy='45.46' r='.55'/%3E%3Ccircle cx='48.19' cy='48.19' r='.55'/%3E%3Ccircle cx='45.46' cy='50.53' r='.55'/%3E%3Ccircle cx='42.4' cy='52.4' r='.55'/%3E%3Ccircle cx='39.08' cy='53.78' r='.55'/%3E%3Ccircle cx='35.58' cy='54.62' r='.55'/%3E%3Ccircle cx='32' cy='54.9' r='.55'/%3E%3Ccircle cx='28.42' cy='54.62' r='.55'/%3E%3Ccircle cx='24.92' cy='53.78' r='.55'/%3E%3Ccircle cx='21.6' cy='52.4' r='.55'/%3E%3Ccircle cx='18.54' cy='50.53' r='.55'/%3E%3Ccircle cx='15.81' cy='48.19' r='.55'/%3E%3Ccircle cx='13.47' cy='45.46' r='.55'/%3E%3Ccircle cx='11.6' cy='42.4' r='.55'/%3E%3Ccircle cx='10.22' cy='39.08' r='.55'/%3E%3Ccircle cx='9.38' cy='35.58' r='.55'/%3E%3Ccircle cx='9.1' cy='32' r='.55'/%3E%3Ccircle cx='9.38' cy='28.42' r='.55'/%3E%3Ccircle cx='10.22' cy='24.92' r='.55'/%3E%3Ccircle cx='11.6' cy='21.6' r='.55'/%3E%3Ccircle cx='13.47' cy='18.54' r='.55'/%3E%3Ccircle cx='15.81' cy='15.81' r='.55'/%3E%3Ccircle cx='18.54' cy='13.47' r='.55'/%3E%3Ccircle cx='21.6' cy='11.6' r='.55'/%3E%3Ccircle cx='24.92' cy='10.22' r='.55'/%3E%3Ccircle cx='28.42' cy='9.38' r='.55'/%3E%3Ccircle cx='32' cy='9.1' r='.55'/%3E%3Ccircle cx='35.58' cy='9.38' r='.55'/%3E%3Ccircle cx='39.08' cy='10.22' r='.55'/%3E%3Ccircle cx='42.4' cy='11.6' r='.55'/%3E%3Ccircle cx='45.46' cy='13.47' r='.55'/%3E%3Ccircle cx='48.19' cy='15.81' r='.55'/%3E%3Ccircle cx='50.53' cy='18.54' r='.55'/%3E%3Ccircle cx='52.4' cy='21.6' r='.55'/%3E%3Ccircle cx='53.78' cy='24.92' r='.55'/%3E%3Ccircle cx='54.62' cy='28.42' r='.55'/%3E%3C/g%3E%3Cpath fill='url(%23cf)' d='M18.57 35.81Q17.33 35.81 16.32 35.37Q15.31 34.93 14.59 34.15Q13.87 33.37 13.49 32.36Q13.1 31.35 13.1 30.21Q13.1 28.81 13.64 27.75Q14.19 26.7 15.08 26Q15.98 25.3 17.05 24.96Q18.13 24.61 19.18 24.61Q20.46 24.61 21.47 25.07Q22.48 25.53 23.19 26.3Q23.9 27.08 24.27 28.07Q24.64 29.05 24.64 30.09Q24.64 31.3 24.16 32.33Q23.67 33.37 22.83 34.15Q22 34.93 20.9 35.37Q19.8 35.81 18.57 35.81ZM19.14 35.38Q20.11 35.38 20.87 34.82Q21.63 34.27 22.07 33.2Q22.51 32.13 22.51 30.59Q22.51 29 22.03 27.75Q21.55 26.51 20.65 25.79Q19.75 25.08 18.49 25.08Q16.92 25.08 16.07 26.27Q15.22 27.46 15.22 29.57Q15.22 30.83 15.52 31.89Q15.81 32.96 16.34 33.74Q16.86 34.53 17.58 34.95Q18.3 35.38 19.14 35.38ZM35.85 27.01Q35.85 26.1 35.43 25.55Q35.01 25.01 34.25 25.01Q34.21 25.01 34.21 24.9Q34.21 24.8 34.25 24.8Q34.68 24.8 35.14 24.83Q35.59 24.85 36.13 24.85Q36.6 24.85 37.05 24.83Q37.5 24.8 37.88 24.8Q37.91 24.8 37.91 24.9Q37.91 25.01 37.88 25.01Q37.18 25.01 36.81 25.55Q36.44 26.1 36.44 27.01V31.82Q36.44 33.04 35.91 33.95Q35.37 34.86 34.4 35.35Q33.43 35.84 32.14 35.84Q30.88 35.84 29.88 35.36Q28.89 34.87 28.33 33.97Q27.77 33.06 27.77 31.78V26.2Q27.77 25.7 27.68 25.45Q27.59 25.2 27.33 25.1Q27.06 25.01 26.54 25.01Q26.49 25.01 26.49 24.9Q26.49 24.8 26.54 24.8Q26.99 24.8 27.54 24.83Q28.09 24.85 28.72 24.85Q29.37 24.85 29.93 24.83Q30.48 24.8 30.91 24.8Q30.96 24.8 30.96 24.9Q30.96 25.01 30.91 25.01Q30.39 25.01 30.13 25.11Q29.87 25.21 29.78 25.47Q29.68 25.73 29.68 26.23V31.18Q29.68 33.3 30.53 34.25Q31.38 35.2 32.79 35.2Q34.23 35.2 35.04 34.33Q35.85 33.46 35.85 31.83ZM47.79 35.6Q47.53 35.6 46.95 34.95Q46.38 34.3 45.56 33.08Q44.8 31.94 43.87 30.38Q43.68 30.4 43.47 30.4H42.99Q42.73 30.4 42.52 30.38V34.2Q42.52 34.7 42.61 34.96Q42.7 35.22 42.95 35.31Q43.21 35.39 43.75 35.39Q43.78 35.39 43.78 35.5Q43.78 35.6 43.75 35.6Q43.3 35.6 42.75 35.58Q42.19 35.57 41.54 35.57Q40.92 35.57 40.35 35.58Q39.79 35.6 39.34 35.6Q39.29 35.6 39.29 35.5Q39.29 35.39 39.34 35.39Q39.88 35.39 40.14 35.31Q40.4 35.22 40.49 34.96Q40.59 34.7 40.59 34.2V26.2Q40.59 25.7 40.5 25.45Q40.41 25.2 40.16 25.1Q39.9 25.01 39.36 25.01Q39.33 25.01 39.33 24.9Q39.33 24.8 39.36 24.8Q39.81 24.8 40.36 24.83Q40.92 24.85 41.54 24.85Q42.11 24.85 42.79 24.8Q43.47 24.75 44.08 24.75Q45.67 24.75 46.52 25.33Q47.38 25.91 47.38 26.94Q47.38 27.96 46.81 28.74Q46.29 29.48 45.48 29.9Q46.76 31.82 47.69 33.01Q48.66 34.27 49.42 34.83Q50.18 35.39 50.87 35.39Q50.9 35.39 50.9 35.5Q50.9 35.6 50.87 35.6ZM45.41 27.6Q45.41 26.58 45.2 26.04Q44.99 25.51 44.63 25.31Q44.27 25.11 43.8 25.11Q43.11 25.11 42.82 25.37Q42.52 25.63 42.52 26.23V29.9Q42.76 29.93 43.04 29.95Q43.32 29.97 43.52 29.97Q44.54 29.97 44.98 29.41Q45.41 28.84 45.41 27.6Z'/%3E%3Cpath d='M11.9 40.4H30.3M33.7 40.4H52.1' stroke='%23D9BC7C' stroke-width='.7'/%3E%3Cpath fill='%23E9D29A' d='M32 39.15L33.25 40.4L32 41.65L30.75 40.4Z'/%3E%3Ccircle cx='11.9' cy='40.4' r='.75' fill='%23D9BC7C'/%3E%3Ccircle cx='52.1' cy='40.4' r='.75' fill='%23D9BC7C'/%3E%3Cpath d='M9.5 21.5a24.5 24.5 0 0 1 14-13' fill='none' stroke='%23fff' stroke-opacity='.5' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E")}
 .coin-ico-lg{width:32px;height:32px}
-.coin-ico-xl{width:64px;height:64px;filter:drop-shadow(0 4px 8px rgba(120,80,10,.28))}
+.coin-ico-xl{width:64px;height:64px;filter:drop-shadow(0 4px 8px rgba(90,30,18,.32))}
 .coin-hero{display:flex;justify-content:center;margin:2px 0 8px}
 .tt-coin{display:inline-flex;align-items:center;justify-content:center;gap:4px;font-variant-numeric:tabular-nums}
 .store-coin-chip .coin-ico{width:17px;height:17px;vertical-align:-3px}
@@ -5549,6 +5559,15 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
   <div class="coin-packs" id="coinPackList"></div>
   <div class="coin-note">코인은 유효기간이 없어요.<br>테마·컬러·이모지·글꼴·강조·스티커를 하나씩 살 수 있고,<br>산 항목은 구독과 상관없이 계속 쓸 수 있어요.<br>결제·환불은 App Store·Google Play 정책을 따라요.</div>
   <div class="mo-actions"><button class="mo-cancel" onclick="closeCoinShop()">닫기</button></div>
+</div>
+<div class="mo-overlay" id="stkDetailOverlay" onclick="closeStickerPackDetail()"></div>
+<div class="mo-card" id="stkDetailCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title" id="stkDetailTitle">스티커</div>
+  <div class="mo-sub" id="stkDetailSub"></div>
+  <div class="stk-grid" id="stkDetailGrid"></div>
+  <div class="char-detail-action stk-detail-action" id="stkDetailAct"></div>
+  <div class="mo-actions"><button class="mo-cancel" onclick="closeStickerPackDetail()">닫기</button></div>
 </div>
 <div class="mo-overlay" id="charDetailOverlay" onclick="closeCharDetail()"></div>
 <div class="mo-card" id="charDetailCard">
@@ -21137,6 +21156,7 @@ function _afterOwnershipChange(type,key){
   // 글꼴은 사자마자 바로 입혀 준다(산 걸 또 눌러야 적용되면 헷갈림)
   if(type==='font'&&key){ try{ setFontFamilyPref(key); _rerenderStoreTab(); renderMonthly(); }catch(_){} }
   try{ if(type==='sticker'&&document.getElementById('dhManageCard')?.classList.contains('on')) setDhmTab(_dhmTab); }catch(_){}
+  try{ if(type==='sticker') _stkDetailRefresh(); }catch(_){}
   try{
     const cd=document.getElementById('charDetailCard');
     if(type==='char'&&key&&cd&&cd.classList.contains('on')) openCharDetail(key);
@@ -22421,7 +22441,7 @@ function renderStoreStickers(){
       : (prem
           ? '<button class="pack-btn pack-btn-try" onclick="event.stopPropagation();useStickerPack(\''+p.k+'\')">사용하기</button>'
           : _lockedBtnHTML('sticker',p.k,'','event.stopPropagation();useStickerPack(\''+p.k+'\')'));
-    return '<div class="ep-row rsp-row">'
+    return '<div class="ep-row rsp-row" onclick="openStickerPackDetail(\''+p.k+'\')">'
       +'<div class="ep-th rsp-th"><i class="rsp-art" style="background-image:url(&quot;'+rep+'&quot;)"></i></div>'
       +'<div class="ep-body">'
       +'<div class="ep-t1">'+escapeHtml(p.n)+'<span class="dh-chip">'+p.items.length+'종</span></div>'
@@ -23846,7 +23866,7 @@ function setDhmTab(tab){
   if(_dhmTab==='sticker') renderDhmStickers();
 }
 /* ── 시트의 스티커 탭 ── */
-var _rsPack='basic';
+var _rsPack='sky';
 function renderDhmStickers(){
   var mine=document.getElementById('dhmStickerMine');
   if(mine){
@@ -23857,9 +23877,8 @@ function renderDhmStickers(){
             +'<i style="background-image:url(&quot;'+st.url+'&quot;)"></i><span>떼기</span></button>'; }).join('')
       : '<div class="rs-empty">아직 붙인 스티커가 없어요</div>';
   }
-  var packs=getUsableStickerPacks();
-  if(!packs.length) packs=_stickerPacks().slice(0,1);
-  if(!packs.some(function(p){ return p.k===_rsPack; })) _rsPack=packs[0].k;
+  var packs=getUsableStickerPacks();                  // 공짜로 끼워주는 묶음 없음 — 비어 있으면 스토어로 안내
+  if(packs.length && !packs.some(function(p){ return p.k===_rsPack; })) _rsPack=packs[0].k;
   var tabs=document.getElementById('dhmStickerPacks');
   if(tabs){
     tabs.innerHTML=packs.map(function(p){
@@ -23868,6 +23887,7 @@ function renderDhmStickers(){
   var grid=document.getElementById('dhmStickerGrid');
   if(grid){
     var pk=packs.filter(function(p){ return p.k===_rsPack; })[0]||packs[0];
+    if(!pk){ grid.innerHTML='<div class="rs-empty">스토어 &gt; 스티커에서 묶음을 골라주세요</div>'; return; }
     grid.innerHTML=(pk?pk.items:[]).map(function(it){
       return '<button type="button" class="ctb-stcell" onclick="rsAddFromSheet(&quot;'+it.u+'&quot;)">'
         +'<i style="background-image:url(&quot;'+it.u+'&quot;)"></i><span>'+escapeHtml(it.n)+'</span></button>'; }).join('');
@@ -24633,26 +24653,26 @@ async function applyRoomThemeFor(roomId){
    이미지는 저장 버튼을 눌렀을 때만 올린다(취소해도 저장소에 쓰레기가 안 남게).  */
 /* 기본 제공 스티커 — 사진을 꾸미는 데 쓰는 다이컷 스티커.
    ⚠️ CDN 직참조라 만료되면 깨진다(다른 테마 이미지와 같은 이슈). 저장 시 업로드하지 않고 이 URL 을 그대로 쓴다. */
+/* 기본 다이컷 18종 — g=스티커 묶음(하늘·축하·일상 6종씩). 화살표는 컨셉이 안 맞아 뺐다 [2026-09-23] */
 var CTB_STICKERS=[
-  {k:'heart',n:'하트',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/39906742cc0b2042.png'},
-  {k:'star',n:'별',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/d8b5e180f5bb8249.png'},
-  {k:'sparkle',n:'반짝',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/299d0776956104c7.png'},
-  {k:'rainbow',n:'무지개',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/475aa20ee923cddf.png'},
-  {k:'cloud',n:'구름',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/ec0232520c509c29.png'},
-  {k:'sun',n:'해',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/cb7625aee7faf2cd.png'},
-  {k:'ribbon',n:'리본',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/bcb42c0323c28ec6.png'},
-  {k:'flower',n:'꽃',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/ecc747c1fdc918b3.png'},
-  {k:'crown',n:'왕관',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/59c434b6b0385c09.png'},
-  {k:'sunglass',n:'선글라스',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/b0984825bae0dce7.png'},
-  {k:'cake',n:'케이크',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/2dc9100140e3636b.png'},
-  {k:'coffee',n:'커피',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/0c1a439d2ec68606.png'},
-  {k:'camera',n:'카메라',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/a7a341ab9f5a244c.png'},
-  {k:'music',n:'음표',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/f31a936d6bb89ab7.png'},
-  {k:'party',n:'폭죽',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/07a7dd3d3dc7c741.png'},
-  {k:'bubble',n:'말풍선',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/de68935d8e419a25.png'},
-  {k:'plant',n:'화분',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/c6772a11b225510e.png'},
-  {k:'moon',n:'달',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/f2c2e9a0f2f11527.png'},
-  {k:'arrow',n:'화살표',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/245ef80b5f15a339.png'}
+  {k:'heart',g:'celebrate',n:'하트',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/39906742cc0b2042.png'},
+  {k:'star',g:'sky',n:'별',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/d8b5e180f5bb8249.png'},
+  {k:'sparkle',g:'sky',n:'반짝',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/299d0776956104c7.png'},
+  {k:'rainbow',g:'sky',n:'무지개',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/475aa20ee923cddf.png'},
+  {k:'cloud',g:'sky',n:'구름',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/ec0232520c509c29.png'},
+  {k:'sun',g:'sky',n:'해',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/cb7625aee7faf2cd.png'},
+  {k:'ribbon',g:'celebrate',n:'리본',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/bcb42c0323c28ec6.png'},
+  {k:'flower',g:'celebrate',n:'꽃',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/ecc747c1fdc918b3.png'},
+  {k:'crown',g:'celebrate',n:'왕관',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/59c434b6b0385c09.png'},
+  {k:'sunglass',g:'daily',n:'선글라스',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/b0984825bae0dce7.png'},
+  {k:'cake',g:'celebrate',n:'케이크',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/2dc9100140e3636b.png'},
+  {k:'coffee',g:'daily',n:'커피',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/0c1a439d2ec68606.png'},
+  {k:'camera',g:'daily',n:'카메라',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/a7a341ab9f5a244c.png'},
+  {k:'music',g:'daily',n:'음표',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/f31a936d6bb89ab7.png'},
+  {k:'party',g:'celebrate',n:'폭죽',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/07a7dd3d3dc7c741.png'},
+  {k:'bubble',g:'daily',n:'말풍선',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/de68935d8e419a25.png'},
+  {k:'plant',g:'daily',n:'화분',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/c6772a11b225510e.png'},
+  {k:'moon',g:'sky',n:'달',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/f2c2e9a0f2f11527.png'}
 ];
 var _ctbStep=1, _ctbEditId=null, _ctbDraft=null, _ctbSel=-1, _ctbFileMode='bg', _ctbSaving=false, _ctbDrag=null, _ctbWired=false;
 function _ctbNewDraft(){ return {name:'', bg_url:'', bg_blob:null, bg_opacity:40, bg_x:50, bg_y:38, bg_zoom:116, bg_ar:0, card_x:50, card_y:50, card_zoom:100, stickers:[], seal_photo:null, color_theme:'', icon_theme:''}; }
@@ -24951,11 +24971,18 @@ window.ctbOpacityInput=function(v){
 window.ctbClearBg=function(){ _ctbDraft.bg_url=''; _ctbDraft.bg_blob=null; _ctbDraft.bg_ar=0; _ctbDraft.bg_x=50; _ctbDraft.bg_y=38; _ctbDraft.bg_zoom=116; ctbRenderStage(); ctbSyncBgCtl(); };
 /* ── 파일 선택 ── */
 window.ctbPickBg=function(){ _ctbFileMode='bg'; var f=_ctbEl('ctbFile'); if(f){ f.value=''; f.click(); } };
-/* 스티커 묶음 — 기본 다이컷 19종 + 앱에 이미 있는 캐릭터 팩(테마별).
+/* 스티커 묶음 — 다이컷 3묶음(하늘·축하·일상, 6종씩) + 앱에 이미 있는 캐릭터 팩(테마별).
+   ⚠️ 무료 '기본 묶음' 은 없다 — 모든 묶음이 구독 또는 개별 구매(코인)여야 쓸 수 있다. [2026-09-23]
    ⚠️ 캐릭터 팩은 ANIMAL_STICKER/CHAR_META 를 그대로 빌려 쓴다(새로 만들지 않음). */
+var STICKER_BASE_PACKS=[
+  {k:'sky',       n:'하늘 한 조각', d:'해·달·별·구름·무지개로 반짝이는 하늘'},
+  {k:'celebrate', n:'오늘은 축하해', d:'생일·기념일에 딱 맞는 하트·케이크·폭죽'},
+  {k:'daily',     n:'소소한 일상',  d:'커피 한 잔, 음악 한 곡 — 평범해서 좋은 하루'},
+];
 function _stickerPacks(){
-  var packs=[{k:'basic', n:'기본', d:'어디에나 어울리는 기본 스티커',
-              items:CTB_STICKERS.map(function(x){ return {u:x.u, n:x.n}; })}];
+  var packs=STICKER_BASE_PACKS.map(function(b){
+    return {k:b.k, n:b.n, d:b.d, items:CTB_STICKERS.filter(function(x){ return x.g===b.k; }).map(function(x){ return {u:x.u, n:x.n}; })};
+  });
   try{
     Object.keys(CHAR_EXPRESSIONS||{}).forEach(function(ck){
       var meta=(CHAR_META||{})[ck]||{}, labels=meta.labels||{};
@@ -24972,8 +24999,13 @@ function _stickerPacks(){
    저장소는 컬러·강조 팩과 같은 localStorage['uricalv2.unlocks'] 를 쓴다(키만 rs). [2026-08-25] */
 function _getRsUnlocks(){
   try{ var raw=localStorage.getItem('uricalv2.unlocks');
-    if(raw){ var u=JSON.parse(raw); if(Array.isArray(u.rs))return u.rs; } }catch(e){}
-  return ['basic'];                                            // 처음엔 기본 묶음으로 시작
+    if(raw){ var u=JSON.parse(raw); if(Array.isArray(u.rs)){
+      // 예전 '기본' 묶음(19종)을 쓰던 구독자는 그걸 나눈 3묶음으로 그대로 이어서
+      if(u.rs.indexOf('basic')>=0){ var nl=u.rs.filter(function(x){ return x!=='basic'; });
+        STICKER_BASE_PACKS.forEach(function(b){ if(nl.indexOf(b.k)<0) nl.push(b.k); }); u.rs=nl;
+        try{ localStorage.setItem('uricalv2.unlocks',JSON.stringify(u)); }catch(e2){} }
+      return u.rs; } } }catch(e){}
+  return STICKER_BASE_PACKS.map(function(b){ return b.k; });   // 구독자는 처음에 다이컷 3묶음이 켜진 채로 시작
 }
 function _saveRsUnlocks(list){
   try{ var raw=localStorage.getItem('uricalv2.unlocks');
@@ -24981,14 +25013,14 @@ function _saveRsUnlocks(list){
     u.color=u.color||[]; u.char=u.char||[]; u.dh=u.dh||[]; u.rs=list;
     localStorage.setItem('uricalv2.unlocks',JSON.stringify(u)); }catch(e){}
 }
-/* 스티커를 붙일 수 있나 — 구독 중이거나 묶음을 하나라도 코인으로 샀으면(그땐 기본 묶음도 함께) [2026-09-23] */
+/* 스티커를 붙일 수 있나 — 구독 중이거나 묶음을 하나라도 코인으로 샀으면 [2026-09-23] */
 function _canSticker(){ return isEffectivePremium() || !!(_dbUnlocks.sticker&&_dbUnlocks.sticker.length); }
 function isStickerPackInUse(k){
   if(typeof isEffectivePremium==='function' && !isEffectivePremium())
-    return k==='basic' ? _canSticker() : _ownsItem('sticker',k);   // 무료: 산 묶음(+기본)만
+    return _ownsItem('sticker',k);                  // 무료: 코인으로 산 묶음만(공짜 묶음 없음)
   return _getRsUnlocks().indexOf(k)>=0;
 }
-/* 시트 스티커 탭에 뜨는 묶음 = 기본 + 사용 설정한 묶음 */
+/* 시트 스티커 탭에 뜨는 묶음 = 사용 설정한 묶음(구독) / 산 묶음(무료) */
 function getUsableStickerPacks(){ return _stickerPacks().filter(function(p){ return isStickerPackInUse(p.k); }); }
 window.useStickerPack=function(k){
   if(!isEffectivePremium()){
@@ -24998,13 +25030,13 @@ window.useStickerPack=function(k){
   var l=_getRsUnlocks(); if(l.indexOf(k)<0){ l.push(k); _saveRsUnlocks(l); }
   var p=_stickerPacks().filter(function(x){ return x.k===k; })[0];
   toast((p?p.n:'스티커')+' 사용 시작 · 달력 스티커 탭에서 골라 붙여요');
-  renderStoreStickers();
+  renderStoreStickers(); _stkDetailRefresh();
 };
 window.unuseStickerPack=function(k){
   var l=_getRsUnlocks();
   if(l.length<=1 && l.indexOf(k)>=0){ toast('적어도 한 묶음은 쓰고 있어야 해요'); return false; }
   _saveRsUnlocks(l.filter(function(x){ return x!==k; }));
-  renderStoreStickers(); return true;
+  renderStoreStickers(); _stkDetailRefresh(); return true;
 };
 window.onStickerPackLock=function(k){
   var p=_stickerPacks().filter(function(x){ return x.k===k; })[0];
@@ -25012,6 +25044,36 @@ window.onStickerPackLock=function(k){
   if(!unuseStickerPack(k))return;                 // 마지막 하나면 안내만 하고 그대로 둔다
   toast('"'+(p?p.n:'스티커')+'" 묶음 사용을 중단했어요');
 };
+/* 스토어 스티커 묶음 상세 — 들어 있는 스티커를 전부 보여주고, '사용하기' 는 구독/코인 구매로 이어진다 */
+var _stkDetailKey=null;
+window.openStickerPackDetail=function(k){
+  var p=_stickerPacks().filter(function(x){ return x.k===k; })[0];
+  if(!p) return;
+  _stkDetailKey=k;
+  var t=document.getElementById('stkDetailTitle'); if(t) t.textContent=p.n;
+  var sb=document.getElementById('stkDetailSub'); if(sb) sb.textContent=p.items.length+'종 · '+(p.d||'');
+  var g=document.getElementById('stkDetailGrid');
+  if(g) g.innerHTML=p.items.map(function(it){
+    return '<div class="stk-tile"><i style="background-image:url(&quot;'+it.u+'&quot;)"></i><span>'+escapeHtml(it.n)+'</span></div>'; }).join('');
+  _stkDetailRefresh();
+  var ov=document.getElementById('stkDetailOverlay'), c=document.getElementById('stkDetailCard');
+  if(ov) ov.classList.add('on'); if(c) c.classList.add('on');
+  try{ hideAdBanner(); }catch(_){}
+};
+window.closeStickerPackDetail=function(){
+  _stkDetailKey=null;
+  var ov=document.getElementById('stkDetailOverlay'), c=document.getElementById('stkDetailCard');
+  if(ov) ov.classList.remove('on'); if(c) c.classList.remove('on');
+  try{ if(typeof _subScreenExit==='function') _subScreenExit(); }catch(_){}
+};
+function _stkDetailRefresh(){
+  var k=_stkDetailKey, el=document.getElementById('stkDetailAct'); if(!k||!el) return;
+  var prem=isEffectivePremium(), inUse=isStickerPackInUse(k);
+  var price=_coinVisible()?coinPriceOf('sticker',k):null;
+  if(inUse) el.innerHTML='<button class="pack-btn pack-btn-using pack-btn-lg" onclick="onStickerPackLock(\''+k+'\')">'+(prem?'사용 중':'보유')+'</button>';
+  else el.innerHTML='<button class="pack-btn pack-btn-try pack-btn-lg" onclick="useStickerPack(\''+k+'\')">사용하기</button>'
+    +(prem?'':'<div class="stk-price-hint">'+(price?'<i class="coin-ico"></i>'+price+'코인 또는 프리미엄으로 쓸 수 있어요':'프리미엄으로 모든 묶음을 쓸 수 있어요')+'</div>');
+}
 window.toggleStickerPack=function(k){ if(isStickerPackInUse(k)) unuseStickerPack(k); else useStickerPack(k); };
 /* ── 기본 제공 스티커 고르기 ── */
 window.openCtbStickerPick=function(){
@@ -26346,6 +26408,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   setupSheetSwipe('vMemberCard',closeVMember);
   setupSheetSwipe('roomPickCard',cancelRoomPick);
   setupSheetSwipe('charDetailCard',closeCharDetail);
+  setupSheetSwipe('stkDetailCard',closeStickerPackDetail);
   setupSheetSwipe('inviteConfirmCard',cancelInviteConfirm);
   setupSheetSwipe('annComposeCard',closeAnnouncementCompose);
   setupSheetSwipe('annMenuCard',closeAnnouncementMenu);
