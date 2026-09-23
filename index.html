@@ -13640,7 +13640,9 @@ async function openEditEvent(eventId){
   // (=암묵적 '모든 일정에 적용'), 이제 origin이든 미래 발생이든 항상 3택을 물어봄(사용자 요청, iOS
   // 스크린샷과 동일 동작). [2026-08-13] '이 일정만 변경'/'이후 일정도 변경' 2택으로 처음 도입.
   const _rtChk=ev.repeat_type||(ev.recurring_yearly?'yearly':'none');
-  const isRecurringOcc=_rtChk!=='none' && !ev.shared_id && !ev.range_group_id && !ev.multi_group_id;
+  /* 함께 일정·여러 방 일정도 '이 일정에만' 을 쓸 수 있다(고객 요청 2026-09-23) — 저장 쪽이 형제 row 를 함께 처리한다.
+     기간(range) 반복만 아직 제외: 한 번의 발생이 여러 날이라 '이 일정만' 의 뜻이 모호하다. */
+  const isRecurringOcc=_rtChk!=='none' && !ev.range_group_id;
   if(isRecurringOcc){
     const scopeLabel={daily:'매일',weekly:'매주',monthly:'매월',yearly:'매년',lunar:'매년 음력'}[_rtChk]||'반복';
     const choice=await askRecurringDelete(
@@ -16807,45 +16809,99 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
     const occDate=_dayDate||_selectedDate;
     const origin=ev;
     try{
-      if(scope==='one'){
-        // 원본(반복 규칙)은 그대로 두고 이 발생일만 예외 처리 + 새 단독(비반복) 일정으로 분리
-        const {data:cur,error:e0}=await supa.from('events').select('repeat_except').eq('id',origin.id).maybeSingle();
-        if(e0)throw e0;
-        let ex=Array.isArray(cur&&cur.repeat_except)?cur.repeat_except.slice():[];
-        try{
-          const _today=_todayKeyStr();
-          const _cut=(occDate<_today)?occDate:_today;
-          if(ex.length>30) ex=ex.filter(d=>d>=_cut);
-        }catch(_){}
-        if(!ex.includes(occDate))ex.push(occDate);
-        const {error:eEx}=await supa.from('events').update({repeat_except:ex}).eq('id',origin.id);
-        if(eEx)throw eEx;
-        const {error:eIns}=await supa.from('events').insert(_attachVirtualMember({
-          room_id:_currentRoom.id,user_id:_currentUser.id,date:occDate,
-          title,time,end_time:endTime,color,bar_style:barStyle,
-          memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
-        }));
-        if(eIns)throw eIns;
-        toast('이 일정만 변경됐어요');
+      /* 같은 반복을 이루는 '형제 row' 와, 떼어낸 뒤 새로 만들 row 의 틀을 정한다. [2026-09-23 확장]
+         · 혼자 일정: 원본 한 줄 → 새 row 한 줄(예전과 같음)
+         · 함께 일정(shared_id): 멤버마다 row 가 있다 → 모든 멤버 row 에 같은 처리를 하고,
+           떼어낸 쪽은 새 shared_id 로 멤버를 그대로 묶어 준다(떼어낸 날도 '함께' 로 남게)
+         · 여러 방 일정(multi_group_id): 방마다 내 row 가 있다 → 어느 방에 적용할지 묻고,
+           고른 방들의 row 에만 같은 처리. 떼어낸 쪽은 새 multi_group_id 로 다시 묶는다. */
+      let sibs=[origin];
+      let makeRows;                 // (fields) => 새로 넣을 row 배열
+      let doneMsg='';
+      if(origin.shared_id){
+        const {data:grp,error:eG}=await supa.from('events')
+          .select('id,user_id,virtual_member_id,color,repeat_except,repeat_until').eq('shared_id',origin.shared_id);
+        if(eG)throw eG;
+        if(grp&&grp.length)sibs=grp;
+        const keyOf=r=>r.virtual_member_id?('v-'+r.virtual_member_id):r.user_id;
+        const oldColor={}; sibs.forEach(r=>{ const k=keyOf(r); if(k&&!(k in oldColor))oldColor[k]=r.color; });
+        // 색을 바꿨다면 일반 수정과 똑같이 '나만 / 모두에게' 를 묻는다(멤버마다 색이 다를 수 있음)
+        let colorAll=true;
+        const colorChanged=!!_editOrigColor&&color!==_editOrigColor;
+        if(colorChanged&&Object.prototype.hasOwnProperty.call(oldColor,_currentUser?.id)){
+          const pick=await askRecurringDelete('이 함께 일정의 색을 바꿨어요.<br>어디에 적용할까요?',
+            {title:'색상 적용 범위', oneLabel:'나만 이 색으로 보기', allLabel:'모두에게 적용'});
+          if(!pick)return 'cancelled';
+          colorAll=(pick!=='one');
+        }
+        // 떼어낸 쪽의 멤버 — 폼에서 고친 멤버 구성을 따른다(2명 미만이면 작성자 혼자 일정)
+        const members=(_selectedTarget==='all'&&(_selectedMembers||[]).length>=2)
+          ? _selectedMembers.slice() : [_evOwnerKey||keyOf(origin)];
+        const sid=(members.length>=2)?genShared():null;
+        makeRows=f=>members.map(k=>{
+          const c=!colorChanged ? (oldColor[k]||color) : ((colorAll||k===_currentUser?.id)?color:(oldColor[k]||color));
+          return _buildCoEventRow(k,Object.assign({},f,{color:c,shared_id:sid}));
+        });
+        doneMsg=(members.length>=2)?' (함께 '+members.length+'명)':'';
+      }else if(origin.multi_group_id){
+        const {data:grp,error:eG}=await supa.from('events')
+          .select('id,room_id,user_id,color,repeat_except,repeat_until')
+          .eq('multi_group_id',origin.multi_group_id).eq('user_id',origin.user_id||_currentUser.id).eq('date',origin.date);
+        if(eG)throw eG;
+        const all=(grp&&grp.length)?grp:[origin];
+        const gids=[...new Set(all.map(r=>r.room_id))];
+        let rooms=[_currentRoom.id];
+        if(gids.length>1){
+          const groupRooms=gids.map(id=>({id,name:((_myRooms||[]).find(r=>r.id===id)?.name)||'방',isCurrent:id===_currentRoom.id}));
+          const sc=await askMultiRoomScope('이 일정은 여러 방에 등록돼 있어요.<br>어느 방에 수정 내용을 적용할까요?',false,groupRooms);
+          if(sc===null)return 'cancelled';
+          rooms=(sc==='all')?gids:(Array.isArray(sc)?[...new Set([...sc,_currentRoom.id])]:[_currentRoom.id]);
+        }
+        sibs=all.filter(r=>rooms.includes(r.room_id));
+        if(!sibs.length)sibs=[origin];
+        const mg=(rooms.length>1)?('mg_'+genShared()):null;
+        makeRows=f=>rooms.map(rid=>Object.assign({},f,{room_id:rid,user_id:origin.user_id||_currentUser.id,multi_group_id:mg}));
+        doneMsg=(rooms.length>1)?' ('+rooms.length+'개 방)':'';
       }else{
-        // 이후 일정도 변경 — 기존 원본은 이 발생일 전날까지만 반복하도록 자르고,
+        // 혼자 일정 — 남이 만든 일정을 고쳐도 떼어낸 날은 원래 작성자의 일정으로 남아야 한다
+        makeRows=f=>[Object.assign({},f,{user_id:origin.user_id||_currentUser.id})];
+      }
+      const base={room_id:_currentRoom.id,date:occDate,title,time,end_time:endTime,color,bar_style:barStyle,
+        memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls};
+      const sibIds=[...new Set(sibs.map(r=>r.id).filter(Boolean))];
+      if(scope==='one'){
+        // 원본(반복 규칙)은 그대로 두고 이 발생일만 예외 처리 + 새 단독(비반복) 일정으로 분리.
+        // 형제 row 마다 예외 목록이 조금씩 다를 수 있어(과거에 한 방만 고친 경우 등) 각자 읽어서 더한다.
+        const {data:cur,error:e0}=await supa.from('events').select('id,repeat_except').in('id',sibIds);
+        if(e0)throw e0;
+        let _cut=occDate;
+        try{ const _today=_todayKeyStr(); _cut=(occDate<_today)?occDate:_today; }catch(_){}
+        for(const row of (cur&&cur.length?cur:[{id:origin.id,repeat_except:origin.repeat_except}])){
+          let ex=Array.isArray(row.repeat_except)?row.repeat_except.slice():[];
+          if(ex.length>30) ex=ex.filter(d=>d>=_cut);
+          if(!ex.includes(occDate))ex.push(occDate);
+          const {error:eEx}=await supa.from('events').update({repeat_except:ex}).eq('id',row.id);
+          if(eEx)throw eEx;
+        }
+        const {error:eIns}=await supa.from('events').insert(_attachVirtualMember(makeRows(base)));
+        if(eIns)throw eIns;
+        toast('이 일정만 변경됐어요'+doneMsg);
+      }else{
+        // 이후 일정도 변경 — 기존 원본들은 이 발생일 전날까지만 반복하도록 자르고,
         // 이 발생일부터는 새 원본으로 분리해(변경된 값+반복 패턴으로) 이어서 반복
         const cutoff=shiftDateKey(occDate,-1);
         const newUntil=(origin.repeat_until && origin.repeat_until<cutoff)?origin.repeat_until:cutoff;
-        const {error:eCut}=await supa.from('events').update({repeat_until:newUntil}).eq('id',origin.id);
+        const {error:eCut}=await supa.from('events').update({repeat_until:newUntil}).in('id',sibIds.length?sibIds:[origin.id]);
         if(eCut)throw eCut;
         const _rep2=getEvRepeatPayload(occDate);
-        const {error:eIns}=await supa.from('events').insert(_attachVirtualMember({
-          room_id:_currentRoom.id,user_id:_currentUser.id,date:occDate,
-          title,time,end_time:endTime,color,bar_style:barStyle,
+        const {error:eIns}=await supa.from('events').insert(_attachVirtualMember(makeRows(Object.assign({},base,{
           recurring_yearly:_rep2.recurring_yearly,repeat_type:_rep2.repeat_type,repeat_weekdays:_rep2.repeat_weekdays,
           repeat_monthly_mode:_rep2.repeat_monthly_mode,repeat_nth_week:_rep2.repeat_nth_week,repeat_until:_rep2.repeat_until,
           repeat_interval:_rep2.repeat_interval,repeat_count:_rep2.repeat_count,
           repeat_lunar_month:_rep2.repeat_lunar_month,repeat_lunar_day:_rep2.repeat_lunar_day,
-          memo,photo_url:(photoUrls[0]||null),photo_urls:photoUrls,
-        }));
+        }))));
         if(eIns)throw eIns;
-        toast('이후 일정이 모두 변경됐어요');
+        toast('이후 일정이 모두 변경됐어요'+doneMsg);
       }
       _editOccurrenceScope=null;
       closeEventModal();

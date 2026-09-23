@@ -388,3 +388,10 @@
   - **다이컷 스티커 묶음 `campnight`**('별밤 캠핑', 스티커 탭 맨 앞): `STICKER_BASE_PACKS` 맨 앞 + `CTB_STICKERS` 6종(g:'campnight') — 모닥불 `st_fire` · 텐트 `st_tent` · 마시멜로 굽기 `st_roast`(너굴) · 등불 산책 `st_lantern`(도치) · 별똥별 `st_meteor` · 나란히 `st_cuddle`(담요 두른 둘). 이모지와 겹치지 않게 **소품·자세 위주**. 다이컷은 이제 24종/4묶음(구독자 기본 '사용 중' 목록도 4묶음). 나만의 테마 만들기의 스티커 후보에도 자동 포함.
   - 가격(`shop_items`, 마이그레이션 `shop_items_camp_emoji_stickers`): char `camp` 20 · sticker `camp` 20 · sticker `campnight` 20. 이모지 탭 히어로의 '10가지 캐릭터 팩' 은 `STORE_EMOJI.length` 로(지금 11).
   - 검증: 신규 `camp_emo_verify`(맨 앞 노출·표정 6종 이미지·표시 이름 '너굴&도치 (냠냠)'·스티커 두 묶음 6종씩·키 중복 없음·스토어 두 탭 노출·팩 개수 문구) 통과 + `coin_verify` 73종(다이컷 3→4묶음 기대값 갱신)·camp_verify·shared_color·default_color·dh_unlock·save_lock 무회귀. 임시 도구(`asset-pipe`/`tmp_pipe`)는 이번에도 쓰고 다시 정리.
+
+- **반복 일정 '이 일정에만 / 이후 일정에도' 를 함께 일정·여러 방 일정에도 (2026-09-23, 고객 카톡 "반복일정 중간에 개별로 수정이 불가한 점도 개선되면")**: 조사해 보니 3택 자체는 8/13~14 에 이미 있었지만 `openEditEvent` 의 `isRecurringOcc` 가 **함께(shared_id)·기간(range_group_id)·여러 방(multi_group_id)** 을 빼고 있어서, 그런 반복 일정은 묻지도 않고 **전체가 수정**됐다(고객이 겪은 것). → 조건을 `!ev.range_group_id` 만 남기고, `saveEditedEvent` 의 범위 저장을 **형제 row 단위**로 확장:
+  - **함께 일정**: 같은 `shared_id` 의 모든 멤버 row 에 `repeat_except`(이 일정만) 또는 `repeat_until`(이후) 을 똑같이 적용. 떼어낸 쪽은 **새 shared_id** 로 멤버를 다시 묶어 그날도 '함께' 로 남김(멤버 구성은 폼에서 고친 대로, 2명 미만이면 작성자 혼자 일정). 색은 멤버마다 원래 색을 유지하고, 색을 바꿨으면 일반 수정과 같은 '나만 / 모두에게' 질문(9/20 기능과 일관).
+  - **여러 방 일정**: 먼저 `askMultiRoomScope`(전체 방 / 방 선택 / 이 방만)로 대상 방을 정하고, 그 방들의 내 row(같은 multi_group_id·같은 원래 날짜)에만 적용. 떼어낸 쪽은 방이 2개 이상이면 **새 multi_group_id** 로 다시 묶음(이 방만이면 묶음 없음).
+  - **혼자 일정**: 예전 코드는 떼어낸 새 row 의 `user_id` 를 **수정한 사람(나)** 으로 넣어서, 방 멤버가 남의 반복 일정을 '이 일정만' 고치면 그날 일정의 주인이 바뀌던 버그가 있었다 → 원래 작성자(`origin.user_id`)로.
+  - **기간+반복**은 여전히 제외(한 번의 발생이 여러 날이라 '이 일정만' 의 뜻이 모호) — 필요하면 별도 설계. 삭제 쪽은 함께 반복의 3택이 이미 있었고(8/17), 여러 방 반복 삭제는 기존대로 방 범위만 묻는다.
+  - 검증: 신규 `occ_verify` 13종(함께: 이 일정만·이후 / 여러 방: 전체 방·이 방만 / 남의 혼자 반복의 작성자 유지 / 색 멤버별 유지) + 기존 회귀(coin 73·shared_color 23·default_color 34·dh 9·save_lock 17·shot 19·camp) 무회귀.
