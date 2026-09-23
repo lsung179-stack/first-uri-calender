@@ -19959,6 +19959,13 @@ var ANIMAL_STICKER={
   'weather:cloud':'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/8d0083a2e8d1b1de.png',
   'weather:storm':'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/7bbc60a0bfadd60d.png',
   'weather:rainbow':'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/da8ca2eba02d7e74.png',
+  // 별밤 캠핑 테마 캐릭터(너굴이·도치) 이모지 [2026-09-23]
+  'camp:like':'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/emo_like.png',
+  'camp:love':'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/emo_love.png',
+  'camp:yum':'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/emo_yum.png',
+  'camp:wow':'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/emo_wow.png',
+  'camp:sleepy':'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/emo_sleepy.png',
+  'camp:cheer':'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/emo_cheer.png',
 };
 /* 이모지 헬퍼 — 동물 키('dog:like')는 <img>, (레거시 캐릭터 SVG는 CHAR_SVG 폴백) */
 function svgEmoji(key){
@@ -19996,6 +20003,7 @@ const CHAR_EXPRESSIONS={
   dino:['like','roar','laugh','love','sulk','cheer'],
   calli:['yar','yaho','crazy','godlife','lucky','injeong'],
   weather:['sun','rain','snow','cloud','storm','rainbow'],
+  camp:['like','love','yum','wow','sleepy','cheer'],
 };
 function charEmojiKeys(charKey){
   return (CHAR_EXPRESSIONS[charKey]||[]).map(e=>`${charKey}:${e}`);
@@ -20020,6 +20028,7 @@ function emojiDisplayName(em){
 
 /* 이모지 팩 — 8동물 캐릭터 팩 (각 팩 6개 고유 감정, 동물마다 그림체 다름) */
 const STORE_EMOJI=[
+  {key:'camp', name:'모닥불 앞 단짝, 너굴이와 도치', desc:'별밤 캠핑 너구리·고슴도치', preview:['camp:like','camp:love','camp:yum','camp:cheer']},
   {key:'calli', name:'감정은 붓글씨로 대신함', desc:'먹붓 유행어 캘리', preview:['calli:yar','calli:yaho','calli:crazy','calli:lucky']},
   {key:'weather', name:'오늘 날씨: 대체로 귀여움', desc:'몽글몽글 날씨 친구', preview:['weather:sun','weather:rain','weather:snow','weather:rainbow']},
   {key:'cat', name:'애교는 만렙, 눈치는 빵점 코코', desc:'플랫벡터 고양이', preview:['cat:like','cat:meh','cat:sulk','cat:smug']},
@@ -22904,7 +22913,7 @@ function renderStoreEmoji(){
   let html=`<div class="store-emoji-hero" style="background-image:url('${EMOJI_HERO_IMG}')">
     <div class="sfh-eyebrow">NEW · ANIMAL STICKERS</div>
     <div class="sfh-title">동물 친구들의<br>귀여운 반응 이모지</div>
-    <div class="sfh-desc">일정에 콕 찍는 10가지 캐릭터 팩</div>
+    <div class="sfh-desc">일정에 콕 찍는 ${STORE_EMOJI.length}가지 캐릭터 팩</div>
   </div>`;
   html+='<div class="store-section-title">캐릭터 이모지 <small>CHARACTER PACK</small></div>';
   // 카카오샵식 리스트: 한 팩=한 행(대표 스티커 74px + 풀 타이틀 + 부제 + 상태 pill). 행 탭=상세 시트.
@@ -24167,6 +24176,7 @@ const CHAR_META={
   dino:{name:'두두', identity:'크레용 낙서 공룡', desc:'좋아요·으르렁·빵터짐·사랑해요·삐짐·화이팅', labels:{like:'좋아요',roar:'으르렁',laugh:'빵터짐',love:'사랑해요',sulk:'삐짐',cheer:'화이팅'}},
   calli:{name:'붓글씨', identity:'먹붓 유행어 캘리', desc:'야르·야호·미쳤다·갓생·럭키비키·인정', labels:{yar:'야르',yaho:'야호',crazy:'미쳤다',godlife:'갓생',lucky:'럭키비키',injeong:'인정'}},
   weather:{name:'날씨', identity:'몽글몽글 날씨 친구', desc:'햇빛·비·눈·흐림·번개·무지개', labels:{sun:'햇빛',rain:'비',snow:'눈',cloud:'흐림',storm:'번개',rainbow:'무지개'}},
+  camp:{name:'너굴&도치', identity:'별밤 캠핑 너구리·고슴도치', desc:'좋아요·좋아해·냠냠·우와·잘자·짠', labels:{like:'좋아요',love:'좋아해',yum:'냠냠',wow:'우와',sleepy:'잘자',cheer:'짠'}},
 };
 
 function openCharDetail(charKey){
@@ -24750,7 +24760,7 @@ async function applyRoomThemeFor(roomId){
    이미지는 저장 버튼을 눌렀을 때만 올린다(취소해도 저장소에 쓰레기가 안 남게).  */
 /* 기본 제공 스티커 — 사진을 꾸미는 데 쓰는 다이컷 스티커.
    ⚠️ CDN 직참조라 만료되면 깨진다(다른 테마 이미지와 같은 이슈). 저장 시 업로드하지 않고 이 URL 을 그대로 쓴다. */
-/* 기본 다이컷 18종 — g=스티커 묶음(하늘·축하·일상 6종씩). 화살표는 컨셉이 안 맞아 뺐다 [2026-09-23] */
+/* 기본 다이컷 24종 — g=스티커 묶음(하늘·축하·일상·별밤 캠핑 6종씩). 화살표는 컨셉이 안 맞아 뺐다 [2026-09-23] */
 var CTB_STICKERS=[
   {k:'heart',g:'celebrate',n:'하트',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/39906742cc0b2042.png'},
   {k:'star',g:'sky',n:'별',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/d8b5e180f5bb8249.png'},
@@ -24769,7 +24779,14 @@ var CTB_STICKERS=[
   {k:'party',g:'celebrate',n:'폭죽',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/07a7dd3d3dc7c741.png'},
   {k:'bubble',g:'daily',n:'말풍선',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/de68935d8e419a25.png'},
   {k:'plant',g:'daily',n:'화분',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/c6772a11b225510e.png'},
-  {k:'moon',g:'sky',n:'달',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/f2c2e9a0f2f11527.png'}
+  {k:'moon',g:'sky',n:'달',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/f2c2e9a0f2f11527.png'},
+  // 별밤 캠핑 묶음 — 테마 캐릭터(너굴이·도치)와 캠핑 소품 다이컷 [2026-09-23]
+  {k:'camp_fire',g:'campnight',n:'모닥불',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/st_fire.png'},
+  {k:'camp_tent',g:'campnight',n:'텐트',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/st_tent.png'},
+  {k:'camp_roast',g:'campnight',n:'마시멜로 굽기',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/st_roast.png'},
+  {k:'camp_lantern',g:'campnight',n:'등불 산책',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/st_lantern.png'},
+  {k:'camp_meteor',g:'campnight',n:'별똥별',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/st_meteor.png'},
+  {k:'camp_cuddle',g:'campnight',n:'나란히',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/st_cuddle.png'}
 ];
 var _ctbStep=1, _ctbEditId=null, _ctbDraft=null, _ctbSel=-1, _ctbFileMode='bg', _ctbSaving=false, _ctbDrag=null, _ctbWired=false;
 function _ctbNewDraft(){ return {name:'', bg_url:'', bg_blob:null, bg_opacity:40, bg_x:50, bg_y:38, bg_zoom:116, bg_ar:0, card_x:50, card_y:50, card_zoom:100, stickers:[], seal_photo:null, color_theme:'', icon_theme:''}; }
@@ -25072,6 +25089,7 @@ window.ctbPickBg=function(){ _ctbFileMode='bg'; var f=_ctbEl('ctbFile'); if(f){ 
    ⚠️ 무료 '기본 묶음' 은 없다 — 모든 묶음이 구독 또는 개별 구매(코인)여야 쓸 수 있다. [2026-09-23]
    ⚠️ 캐릭터 팩은 ANIMAL_STICKER/CHAR_META 를 그대로 빌려 쓴다(새로 만들지 않음). */
 var STICKER_BASE_PACKS=[
+  {k:'campnight', n:'별밤 캠핑', d:'모닥불·텐트·별똥별 — 너굴이와 도치의 캠핑하는 밤'},
   {k:'sky',       n:'하늘 한 조각', d:'해·달·별·구름·무지개로 반짝이는 하늘'},
   {k:'celebrate', n:'오늘은 축하해', d:'생일·기념일에 딱 맞는 하트·케이크·폭죽'},
   {k:'daily',     n:'소소한 일상',  d:'커피 한 잔, 음악 한 곡 — 평범해서 좋은 하루'},
