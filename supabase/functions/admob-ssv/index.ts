@@ -90,12 +90,14 @@ async function verify(rawQuery: string): Promise<boolean> {
   // 키 교체 직후 — 모르는 key_id 로 매번 새로 받지 않게 1분에 한 번만
   if (!key && Date.now() - _keysAt > 60_000) key = await getKey(keyId, true);
   if (!key) return false;
-  return crypto.subtle.verify(
-    { name: "ECDSA", hash: "SHA-256" },
-    key,
-    derToP1363(b64ToBytes(sig)),
-    new TextEncoder().encode(message),
-  );
+  const rs = derToP1363(b64ToBytes(sig));
+  const check = (m: string) =>
+    crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, key!, rs, new TextEncoder().encode(m));
+  // 구글은 %XX 를 푼 문자열에 서명한다(보상 항목이 '코인'처럼 한글이면 둘이 달라짐) — 푼 것 먼저, 원문도 허용
+  let decoded = message;
+  try { decoded = decodeURIComponent(message); } catch { /* 잘못된 % 는 원문으로 */ }
+  if (await check(decoded)) return true;
+  return decoded !== message ? check(message) : false;
 }
 
 Deno.serve(async (req) => {
