@@ -3196,6 +3196,17 @@ body[data-theme="camp"] .rpal-row{background:#2c4a82}
 .coin-bonus{font-size:10.5px;font-weight:800;color:var(--accent);background:var(--aP);border-radius:99px;padding:2px 8px}
 .coin-pack-buy{margin-top:auto;font-size:13px;font-weight:800;color:#fff;background:var(--accent);border-radius:99px;padding:6px 0;width:100%;text-align:center}
 .coin-empty{grid-column:1/-1;text-align:center;font-size:13px;color:var(--mute);padding:18px 0}
+.coin-reward{display:flex;align-items:center;gap:12px;width:100%;margin-top:10px;padding:12px 14px;border-radius:16px;
+  border:1.5px dashed var(--border);background:var(--card);color:var(--text);font-family:inherit;text-align:start;cursor:pointer}
+.coin-reward:active:not(:disabled){transform:scale(.98)}
+.coin-reward:disabled{opacity:.55;cursor:default}
+.coin-reward-ico{flex:none;display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;
+  background:var(--aP);color:var(--accent);font-size:13px;padding-inline-start:2px}
+.coin-reward-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.coin-reward-txt b{font-size:14px;font-weight:800}
+.coin-reward-txt small{font-size:11.5px;color:var(--mute);font-variant-numeric:tabular-nums}
+.coin-reward-amt{flex:none;display:inline-flex;align-items:center;gap:4px;font-size:15px;font-weight:900;color:var(--accent);font-variant-numeric:tabular-nums}
+.coin-reward-amt .coin-ico{width:18px;height:18px}
 .coin-note{margin-top:14px;font-size:11.5px;line-height:1.6;color:var(--mute);text-align:center}
 
 /* 날짜 강조 추가 시트·팔레트 상세도 스토어(z-index:1300) 안에서 열리므로 그 위로 띄워야 함(안 그러면
@@ -5682,6 +5693,7 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
   <div class="mo-title">코인 충전</div>
   <div class="mo-sub" id="coinBalanceLine">보유 0코인</div>
   <div class="coin-packs" id="coinPackList"></div>
+  <button class="coin-reward" id="coinRewardBtn" onclick="onWatchRewardAd()" style="display:none"></button>
   <div class="coin-note">코인은 유효기간이 없어요.<br>테마·컬러·이모지·글꼴·강조·스티커를 하나씩 살 수 있고,<br>산 항목은 구독과 상관없이 계속 쓸 수 있어요.<br>결제·환불은 App Store·Google Play 정책을 따라요.</div>
   <div class="mo-actions"><button class="mo-cancel" onclick="closeCoinShop()">닫기</button></div>
 </div>
@@ -8052,8 +8064,8 @@ async function showAdBannerIfNeeded() {
     const adId = ADMOB_IDS[plat].banner;
     // 배너 크기: 안드로이드는 ADAPTIVE_BANNER(화면 폭 전체) — 고정 BANNER(320px)는
     // 넓은 갤럭시 화면에서 좌측에 붙어 보이던 문제가 있어 전체 폭 배너로 중앙 정렬한다.
-    // iOS는 기존처럼 정상 중앙 정렬되므로 BANNER 유지.
-    const adSize = (plat === 'android') ? 'ADAPTIVE_BANNER' : 'BANNER';
+    // iOS도 ADAPTIVE_BANNER(2026-09-24) — 고정 320×50 보다 화면 폭을 다 써 단가가 높다. 높이는 bannerAdSizeChanged 가 --ad-h 로 반영.
+    const adSize = 'ADAPTIVE_BANNER';
     _adLoading = true;
     try {
       await AdMob.showBanner({
@@ -21377,6 +21389,14 @@ let _coinPacks=[];         // [{product_id,coins,bonus,sort}]
 let _coinProducts={};      // product_id → 스토어 상품(가격 문자열 포함)
 let _buyingItem=false;
 let _coinPublic=false;
+/* 보상형 광고 → 코인. 코인은 앱이 주지 않는다 — 광고를 끝까지 보면 구글이 서버(admob-ssv)로 서명된 확인을 보내고,
+   서버가 credit_ad_reward(거래 id 멱등·하루 상한)로 적립한다. 앱은 잔액이 늘 때까지 확인만 한다.
+   광고 단위 id·1회 코인·하루 상한은 app_config(admob_rewarded_ios/android, ad_reward_coins, ad_reward_daily_cap) — 재빌드 없이 바꿈. */
+let _adRewardCfg={ios:'',android:'',coins:1,cap:10};
+let _adRewardToday=0;
+let _rewardPhase=null;     // null | 'loading' | 'checking'
+let _rewardEarned=false;
+let _rewardListenersOn=false;
 function _coinVisible(){ return _coinPublic || (typeof isAdmin==='function' && isAdmin()); }
 function _ownsItem(type,key){ return !!(key && _dbUnlocks[type] && _dbUnlocks[type].indexOf(key)>=0); }
 function coinPriceOf(type,key){ return _shopPrices[type+':'+key]||null; }
@@ -21393,13 +21413,20 @@ function _itemName(type,key){
 async function loadCoinState(){
   if(!_currentUser||typeof supa==='undefined'||!supa) return;
   try{
-    const [bal,items,packs,pub]=await Promise.all([
+    const [bal,items,packs,pub,adst]=await Promise.all([
       supa.rpc('my_coin_balance'),
       supa.from('shop_items').select('item_type,item_key,price').eq('active',true),
       supa.from('coin_packs').select('product_id,coins,bonus,sort').eq('active',true).order('sort'),
-      supa.from('app_config').select('value').eq('key','coin_public').maybeSingle(),
+      supa.from('app_config').select('key,value').in('key',['coin_public','admob_rewarded_ios','admob_rewarded_android','ad_reward_coins','ad_reward_daily_cap']),
+      supa.rpc('my_ad_reward_status'),
     ]);
-    if(!pub.error) _coinPublic=!!(pub.data&&String(pub.data.value).replace(/"/g,'')==='true');
+    if(!pub.error){
+      const cfg={}; (pub.data||[]).forEach(r=>{ cfg[r.key]=String(r.value==null?'':r.value).replace(/"/g,'').trim(); });
+      _coinPublic=cfg.coin_public==='true';
+      _adRewardCfg={ios:cfg.admob_rewarded_ios||'', android:cfg.admob_rewarded_android||'',
+        coins:parseInt(cfg.ad_reward_coins,10)||1, cap:parseInt(cfg.ad_reward_daily_cap,10)||10};
+    }
+    if(!adst.error&&adst.data){ _adRewardToday=Number(adst.data.today)||0; if(adst.data.cap) _adRewardCfg.cap=Number(adst.data.cap); if(adst.data.coins) _adRewardCfg.coins=Number(adst.data.coins); }
     if(!bal.error) _coinBalance=Number(bal.data)||0;
     if(!items.error){ const m={}; (items.data||[]).forEach(r=>{ m[r.item_type+':'+r.item_key]=r.price; }); _shopPrices=m; }
     if(!packs.error) _coinPacks=packs.data||[];
@@ -21414,7 +21441,71 @@ function _renderCoinChip(){
   }
   const l=document.getElementById('coinBalanceLine');
   if(l) l.innerHTML='보유 <b>'+_coinBalance.toLocaleString()+'</b>코인';
+  _renderCoinReward();
 }
+function _rewardUnit(){ const p=(typeof _admobPlatform==='function')?_admobPlatform():null; return p?(_adRewardCfg[p]||''):''; }
+function _rewardAvailable(){
+  return _coinVisible() && !!_currentUser && typeof _admobReady!=='undefined' && _admobReady && !!_rewardUnit()
+    && (!isEffectivePremium() || isAdmin());
+}
+function _renderCoinReward(){
+  const b=document.getElementById('coinRewardBtn'); if(!b) return;
+  if(!_rewardAvailable()){ b.style.display='none'; return; }
+  b.style.display='';
+  const cap=_adRewardCfg.cap, left=Math.max(0,cap-_adRewardToday);
+  const title=_rewardPhase==='loading'?'광고 불러오는 중…':_rewardPhase==='checking'?'코인 확인 중…':left>0?'광고 보고 코인 받기':'오늘은 다 받았어요';
+  const sub=left>0?('오늘 '+_adRewardToday+' / '+cap+'회'):'내일 다시 받을 수 있어요';
+  b.disabled=!!_rewardPhase||left<=0;
+  b.innerHTML='<span class="coin-reward-ico">▶</span><span class="coin-reward-txt"><b>'+title+'</b><small>'+sub+'</small></span>'
+    +'<span class="coin-reward-amt">+'+_adRewardCfg.coins+'<i class="coin-ico"></i></span>';
+}
+function _ensureRewardListeners(AdMob){
+  if(_rewardListenersOn||!AdMob||!AdMob.addListener) return;
+  _rewardListenersOn=true;
+  try{
+    AdMob.addListener('onRewardedVideoAdReward',function(){ _rewardEarned=true; });
+    AdMob.addListener('onRewardedVideoAdDismissed',function(){ _rewardFinish(); });
+    AdMob.addListener('onRewardedVideoAdFailedToShow',function(){ _rewardFinish(); });
+  }catch(_){}
+}
+async function onWatchRewardAd(){
+  if(_rewardPhase) return;
+  if(!_rewardAvailable()){ toast('지금은 광고를 볼 수 없어요'); return; }
+  if(_adRewardToday>=_adRewardCfg.cap){ toast('오늘은 다 받았어요. 내일 다시 받을 수 있어요'); return; }
+  const AdMob=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.AdMob;
+  if(!AdMob){ toast('광고 모듈을 불러오지 못했어요'); return; }
+  _ensureRewardListeners(AdMob);
+  _rewardPhase='loading'; _rewardEarned=false; _renderCoinReward();
+  try{
+    // ssv.userId = 적립받을 계정 — 서버가 이 값과 구글 서명을 함께 확인한다
+    await AdMob.prepareRewardVideoAd({ adId:_rewardUnit(), ssv:{ userId:_currentUser.id, customData:'coin' } });
+    // iOS 플러그인은 보상 없이 닫으면 이 Promise 를 끝내지 않는다 → 결과는 위 리스너(닫힘/실패)로 받는다
+    AdMob.showRewardVideoAd().catch(function(e){ console.warn('보상형 광고 표시 실패:', e); _rewardFinish(); });
+  }catch(e){
+    console.warn('보상형 광고 로드 실패:', e);
+    _rewardPhase=null; _renderCoinReward();
+    toast('지금은 보여줄 광고가 없어요. 잠시 후 다시 시도해주세요.');
+  }
+}
+async function _rewardFinish(){
+  if(_rewardPhase!=='loading') return;   // 닫힘·실패가 겹쳐 와도 한 번만
+  _rewardPhase='checking'; _renderCoinReward();
+  const earned=_rewardEarned, before=_coinBalance;
+  if(earned) toast('코인을 넣고 있어요…');
+  // 보상 이벤트가 닫힘보다 늦게 오는 기기도 있어, 안 받은 것처럼 보여도 한 번은 확인한다
+  for(const w of (earned?[1500,2500,4000,6000,9000]:[2500])){
+    await new Promise(r=>setTimeout(r,w));
+    await loadCoinState();
+    if(_coinBalance>before) break;
+  }
+  _rewardPhase=null;
+  if(_coinBalance>before) toast('+'+(_coinBalance-before)+'코인 받았어요 🎉');
+  else if(earned) toast('코인 반영이 늦어지고 있어요. 잠시 후 다시 확인해주세요.');
+  else toast('광고를 끝까지 보면 코인을 받아요');
+  renderCoinShop(); _renderCoinReward();
+  try{ _rerenderStoreTab(); }catch(_){}
+}
+window.onWatchRewardAd=onWatchRewardAd;
 /* 무료 사용자에게 보이는 잠긴 버튼 — 코인 가격이 있으면 가격, 없으면 기존 🔒프리미엄 */
 function _lockedBtnHTML(type,key,cls,onclick){
   const price=_coinVisible()?coinPriceOf(type,key):null;
@@ -21510,6 +21601,7 @@ function closeCoinShop(){
   try{ if(typeof _subScreenExit==='function') _subScreenExit(); }catch(_){}
 }
 function renderCoinShop(){
+  _renderCoinReward();
   const el=document.getElementById('coinPackList'); if(!el) return;
   if(!_coinPacks.length){ el.innerHTML='<div class="coin-empty">충전 상품을 불러오는 중이에요</div>'; return; }
   el.innerHTML=_coinPacks.map(p=>{
