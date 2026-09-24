@@ -35,8 +35,9 @@
 - 옛 버전 기반 브랜치/PR(예: `claude/calendar-ads-free-users-l7jsbt`의 PR #2)은 **머지 금지** — 삭제한 관리자 버튼 부활 + 최신 리팩터 덮어쓰기 위험.
 - 배포 버전 확인: 앱 설정 화면 푸터의 `build ...` 문자열(런타임에 JS가 세팅, HTML 정적값과 다를 수 있음).
 
-## 현재 상태 (2026-09-19 기준)
-- **마케팅 버전 `1.2.1` / 앱 내 표시 빌드 `1.2.1 (83)`** — index.html buildInfo 두 곳(정적 5659 + 런타임 9020)에 같은 문자열이 박혀 있다. appstore `codemagic.yaml`(두 브랜치)의 `APP_VERSION`·`ANDROID_VERSION_NAME` 도 `1.2.1`, 빌드번호 하한은 iOS `40`·Android `85`.
+## 현재 상태 (2026-09-24 기준)
+- **마케팅 버전 `1.2.2` / 앱 내 표시 빌드 `1.2.2 (84)`** — index.html buildInfo 두 곳(정적 `id="buildInfo"` + 런타임 `const _base='build …'`)에 같은 문자열이 박혀 있다. appstore `codemagic.yaml`(두 브랜치)의 `APP_VERSION`·`ANDROID_VERSION_NAME` 도 `1.2.2`, 빌드번호 하한은 iOS `41`·Android `86`.
+- 🪙 **1.2.2 = 코인 첫 출시 빌드** — App Store Connect '제출 초안'에 소모품 `coins_30/100/300` 3개가 담겨 있어 **이 앱 버전을 같은 초안에 추가해 함께 심사 제출**해야 한다(첫 소모품 규칙). 제출 시점에 `coin_public`='true'.
 - ⚠️ **표시 빌드번호(83)와 실제 스토어 번호는 별개** — 스토어 번호는 codemagic 이 자동 산정한다(iOS=TestFlight 최신+1, Android=`50+BUILD_NUMBER`). 하한은 "이보다 작아지지 않게" 하는 바닥일 뿐.
 - **마지막 실제 스토어 출시는 `1.1.8`** — 출시노트 범위 기준선은 이 버전이다(그 이후 누적분을 씀).
 - 🚨 **iOS 앱스토어 앱은 `deploy_version` 으로 갱신되지 않는다** — `capacitor.config.json` 에 `server.url` 이 없어 **IPA 안에 번들된 `www/index.html` 을 그대로 실행**한다. 서비스워커·캐시 비우기·`location.reload()` 모두 같은 번들 파일을 다시 읽을 뿐이다. 즉 `deploy_version` 은 **PWA·브라우저·Android TWA 전용**이고, iOS 앱에 반영하려면 **IPA 재빌드+배포가 유일한 방법**이다(확인법: 그 기기 설정 화면 푸터의 `build …` 문자열).
