@@ -9329,6 +9329,79 @@ supa.auth.onAuthStateChange((event,session)=>{
   }
 });
 
+/* ═══════════════════════════════════
+   네이티브(Flutter) 전환 다리 — docs/NATIVE-MIGRATION.md 4장 (2026-09-24)
+   Flutter 앱은 웹뷰 localStorage 를 못 읽으므로, 지금 앱이 로그인 정보·기기 설정을 네이티브 저장소
+   (@capacitor/preferences 기본 그룹 = iOS UserDefaults 'CapacitorStorage.<key>' / Android SharedPreferences
+   'CapacitorStorage' — 둘 다 앱 전용)에 미리 복사해 둔다. 2.0 첫 실행 때 한 번 읽고 지운다.
+   · migr.session = {refresh_token, user_id, at}  — 로그인·토큰 갱신마다 갱신, 로그아웃이면 삭제
+   · migr.prefs   = {uricalv2.* · lastRoomId · agreedTerms …} — 시작·백그라운드 전환 때 갱신
+   · app_config.min_app_version — 이보다 낮은 앱이면 업데이트 안내(min_app_version_force='true' 면 닫기 없음)
+   ═══════════════════════════════════ */
+function _migrPrefs(){ try{ return isNativeApp()&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Preferences||null; }catch(_){ return null; } }
+function _migrSaveSession(session){
+  const P=_migrPrefs(); if(!P) return;
+  try{
+    if(session&&session.refresh_token&&session.user){
+      P.set({key:'migr.session', value:JSON.stringify({refresh_token:session.refresh_token, user_id:session.user.id, at:new Date().toISOString()})});
+    }else{
+      P.remove({key:'migr.session'});
+    }
+  }catch(_){}
+}
+supa.auth.onAuthStateChange((event,session)=>{
+  if(event==='SIGNED_OUT') _migrSaveSession(null);
+  else if(session) _migrSaveSession(session);   // INITIAL_SESSION·SIGNED_IN·TOKEN_REFRESHED·USER_UPDATED
+});
+const _MIGR_PREF_KEYS=['lastRoomId','agreedTerms'];
+function _migrSavePrefs(){
+  const P=_migrPrefs(); if(!P) return;
+  try{
+    const o={};
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);
+      if(!k) continue;
+      if((k.indexOf('uricalv2.')===0 && k!=='uricalv2.deployVersion') || _MIGR_PREF_KEYS.indexOf(k)>=0) o[k]=localStorage.getItem(k);
+    }
+    P.set({key:'migr.prefs', value:JSON.stringify({at:new Date().toISOString(), items:o})});
+  }catch(_){}
+}
+function _appVersionStr(){
+  const m=/build\s+(\d+(?:\.\d+)*)/.exec((document.getElementById('buildInfo')||{}).textContent||'');
+  return m?m[1]:'0';
+}
+function _verLt(a,b){
+  const x=String(a).split('.').map(n=>parseInt(n,10)||0), y=String(b).split('.').map(n=>parseInt(n,10)||0);
+  for(let i=0;i<Math.max(x.length,y.length);i++){ const d=(x[i]||0)-(y[i]||0); if(d) return d<0; }
+  return false;
+}
+async function _checkMinAppVersion(){
+  if(!isNativeApp()) return;
+  try{
+    const {data,error}=await supa.from('app_config').select('key,value').in('key',['min_app_version','min_app_version_force']);
+    if(error||!data) return;
+    const cfg={}; data.forEach(r=>{ cfg[r.key]=String(r.value==null?'':r.value).replace(/"/g,'').trim(); });
+    const min=cfg.min_app_version||'0';
+    if(!_verLt(_appVersionStr(),min)) return;
+    const force=cfg.min_app_version_force==='true';
+    const plat=(window.Capacitor&&window.Capacitor.getPlatform)?window.Capacitor.getPlatform():'';
+    const ios=plat?plat==='ios':/iphone|ipad|ipod/i.test(navigator.userAgent);
+    const url=ios?'https://apps.apple.com/app/id6773996160':'https://play.google.com/store/apps/details?id=app.vercel.first_uri_calender.twa';
+    const open=()=>{ try{ const B=window.Capacitor.Plugins.Browser; if(B&&B.open){ B.open({url}); return; } }catch(_){ } location.href=url; };
+    const msg='새 버전이 나왔어요. 더 좋아진 우리 캘린더를 쓰려면 업데이트해 주세요.';
+    if(force){ while(true){ await vConfirm(msg,{title:'업데이트 필요',okText:'업데이트',cancelText:'업데이트'}); open(); } }
+    else if(await vConfirm(msg,{title:'업데이트 안내',okText:'업데이트',cancelText:'나중에'})) open();
+  }catch(_){}
+}
+(function _migrInit(){
+  if(!isNativeApp()) return;
+  setTimeout(()=>{ _migrSavePrefs(); _checkMinAppVersion(); }, 2500);
+  try{
+    const App=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.App;
+    if(App&&App.addListener) App.addListener('appStateChange', st=>{ if(st&&!st.isActive) _migrSavePrefs(); });
+  }catch(_){}
+})();
+
 /* ═══ 네이티브 딥링크: 카카오 OAuth 콜백(커스텀 스킴) 수신 → 세션 복원 → 앱 복귀 ═══
    웹/PWA에는 영향 없음 (isNativeApp일 때만 동작). 토큰은 implicit flow라 URL hash로 옴. */
 (function setupNativeAuthDeepLink(){

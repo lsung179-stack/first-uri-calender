@@ -1,6 +1,6 @@
 # 우리 캘린더 — 네이티브(Flutter) 전환 설계
 
-> 작성 2026-09-24 · 상태: **초안(결정 대기 항목 있음, 맨 아래)**
+> 작성 2026-09-24 · 상태: **결정 완료(11장) · 1단계 다리 업데이트 구현됨 — 1.2.3 빌드로 출시 예정**
 > 이 문서는 전환 작업의 기준선이다. 결정이 바뀌면 이 문서를 먼저 고친다.
 
 ## 0. 한 줄 요약
@@ -59,17 +59,28 @@ Swift/Kotlin 두 벌 대신 Flutter를 고른 이유: 한 벌로 두 플랫폼, 
 | 위젯 데이터 형식 | Android `CapacitorStorage` SharedPreferences(`roomId`·`filterUser` 등) / iOS App Group UserDefaults | 위젯 빈 화면 |
 | 푸시 토큰 | `fcm_tokens` 테이블 형식 | 푸시 안 옴 |
 
-## 4. 1단계 — "다리 역할 업데이트" (지금 앱의 마지막 웹뷰 빌드)
+## 4. 1단계 — "다리 역할 업데이트" (지금 앱의 마지막 웹뷰 빌드) — ✅ 구현됨(2026-09-24, 1.2.3 에 포함)
 
-Flutter 앱은 웹뷰의 localStorage 를 읽을 수 없다. 그래서 **전환 전에 지금 앱이 필요한 값을 네이티브 저장소로 복사해 두는 업데이트**를 먼저 낸다.
+Flutter 앱은 웹뷰의 localStorage 를 읽을 수 없다. 그래서 **전환 전에 지금 앱이 필요한 값을 네이티브 저장소로 복사해 두는 업데이트**를 먼저 낸다. 코드는 `index.html` 의 `_migrSaveSession` / `_migrSavePrefs` / `_checkMinAppVersion`(로그인 상태 처리 바로 아래).
 
-1. **로그인 유지**: supabase-js 세션(localStorage `sb-bgqzkkaslqchbovzrkao-auth-token`)의 `refresh_token`·`user.id` 를 Preferences(`migr.session`)에 기록. 로그인·토큰 갱신·로그아웃 때마다 갱신, 로그아웃이면 지움.
-   Flutter 첫 실행 → 이 값으로 `setSession`/`refreshSession` → 성공하면 `migr.session` 삭제. 실패하면 그냥 로그인 화면(데이터는 서버에 있으니 손실 없음).
-2. **기기 설정**: `uricalv2.*` 설정(글꼴·크기·주 시작·기본 보기·격자·정렬·마지막 방·읽은 공지·온보딩 여부 등)을 JSON 하나(`migr.prefs`)로 Preferences 에 기록. Flutter 가 한 번 읽어 자기 저장소로 옮긴다.
-3. **최소 지원 버전 스위치**: `app_config.min_app_version` 을 새로 두고, 웹뷰 앱이 이보다 낮으면 "업데이트해 주세요" 안내를 띄우게 한다(2.0 이후 옛 앱 정리용).
-4. 이 업데이트는 **2.0 출시 몇 주 전**에 나가야 대부분 사용자가 받아 둔다. 못 받은 사람은 2.0 에서 한 번 다시 로그인하면 된다.
+| 키 | 내용 | 언제 기록 |
+|---|---|---|
+| `migr.session` | `{refresh_token, user_id, at}` | 로그인·토큰 갱신·첫 세션 확인마다, 로그아웃이면 삭제 |
+| `migr.prefs` | `{at, items:{uricalv2.* · lastRoomId · agreedTerms}}` (`uricalv2.deployVersion`·세션 토큰 제외) | 앱 시작 2.5초 후 · 백그라운드로 갈 때 |
 
-> ⚠️ `refresh_token` 은 민감값 — 기록 위치는 앱 전용 저장소(iOS UserDefaults 앱 영역·Android 앱 전용 SharedPreferences)로 한정하고, **위젯과 공유하는 App Group/CapacitorStorage 에는 쓰지 않는다**(구현 때 Preferences 그룹 분리 확인).
+**저장 위치(Flutter 가 읽는 법)** — `@capacitor/preferences` 기본 그룹:
+- iOS: `UserDefaults.standard` 의 키 **`CapacitorStorage.migr.session`** / **`CapacitorStorage.migr.prefs`** (앱 전용, 위젯 App Group 아님)
+- Android: SharedPreferences 파일 **`CapacitorStorage`** 의 키 `migr.session` / `migr.prefs` (앱 전용 — 위젯도 같은 파일을 읽지만 같은 앱 안이라 밖으로 새지 않음)
+- Flutter 의 `shared_preferences` 는 `flutter.` 접두어·다른 파일을 쓰므로 **플랫폼 채널(또는 파일명 지정 가능한 SharedPreferencesAsync)로 위 위치를 직접 읽는다.**
+- 2.0 첫 실행 순서: `migr.session` 읽기 → `supabase.auth.setSession(refresh_token)`(=refresh) → 성공하면 두 키 삭제. 실패하면 로그인 화면(데이터는 서버에 있어 손실 없음).
+
+**최소 지원 버전 스위치** — `app_config.min_app_version`(기본 `'0'`) · `min_app_version_force`(기본 `'false'`).
+- 네이티브 앱이 시작할 때 자기 버전(`#buildInfo` 의 `build X.Y.Z`)이 이보다 낮으면 "업데이트 안내"(나중에 가능). force=`'true'` 면 어느 버튼이든 스토어로 보내고 다시 안내.
+- 스토어 링크: iOS `https://apps.apple.com/app/id6773996160`, Android `…details?id=app.vercel.first_uri_calender.twa`.
+- 로그인 전(RLS 로 app_config 못 읽음)에는 검사하지 않는다.
+- 2.0 출시 후 옛 웹뷰 앱 정리: 먼저 force 없이 `min_app_version='2.0.0'` → 몇 주 뒤 force.
+
+이 업데이트는 **2.0 출시 몇 주 전**에 나가야 대부분 사용자가 받아 둔다. 못 받은 사람은 2.0 에서 한 번 다시 로그인하면 된다.
 
 ## 5. 기능 목록과 순서
 
@@ -121,7 +132,7 @@ Flutter 앱은 웹뷰의 localStorage 를 읽을 수 없다. 그래서 **전환 
 
 ## 8. 저장소·빌드
 
-- **새 저장소**에서 Flutter 앱을 만든다(이름 결정 필요). 위젯 Swift/Java 는 `appstore/widget/` 에서 옮겨 온다.
+- **새 저장소 `uri-calendar-app`** 에서 Flutter 앱을 만든다. 위젯 Swift/Java 는 `appstore/widget/` 에서 옮겨 온다.
 - Codemagic 에 Flutter 워크플로를 새로 만든다. 서명·번들 ID·패키지명·빌드번호 하한은 지금 설정을 그대로 옮긴다(빌드번호는 지금보다 커야 함).
 - 버전은 **2.0.0** 으로 시작.
 - 전환 기간 지금 앱(`index.html`)은 **버그 수정만** 한다.
@@ -130,7 +141,7 @@ Flutter 앱은 웹뷰의 localStorage 를 읽을 수 없다. 그래서 **전환 
 
 | 단계 | 내용 | 기간(대략) |
 |---|---|---|
-| 0 | 다리 역할 업데이트(1.2.x) 출시 | 1주 |
+| 0 | 다리 역할 업데이트(1.2.3) 출시 — ✅ 코드 완료, 빌드 대기 | 1주 |
 | 1 | Flutter 뼈대: 로그인·세션 이전·방·월 캘린더·일정 CRUD | 3~4주 |
 | 2 | 반복·기간·함께 일정·할 일·푸시·구독·코인·광고 | 3~4주 |
 | 3 | 꾸미기 표시(테마·팩·스티커·강조·글꼴)·스토어·설정·위젯 데이터 | 2~3주 |
@@ -148,10 +159,12 @@ Flutter 앱은 웹뷰의 localStorage 를 읽을 수 없다. 그래서 **전환 
 | 두 벌 유지 부담 | 전환 기간 지금 앱은 버그 수정만 |
 | 심사 거절 | 결제·광고·추적 동의 흐름을 지금과 동일하게 |
 
-## 11. 결정이 필요한 것
+## 11. 결정 (2026-09-24, 사용자 "니가 추천하는 걸로 정해서 진행해줘")
 
-1. 새 저장소 이름(예: `uri-calendar-app`)
-2. 2.0 출시 목표 시점
-3. 네이티브 광고 첫 위치(날짜 시트 아래 / 할 일 목록 / 방 목록 중 하나)
-4. 앱 오프닝 광고를 1차에 넣을지
-5. 2차로 미루는 기능 목록(위 5장) 동의 여부
+| 항목 | 결정 | 이유 |
+|---|---|---|
+| 새 저장소 | **`uri-calendar-app`** (Flutter 개발 시작할 때 생성) | 지금 두 저장소(`first-uri-calender`·`appstore`)와 구분되고 뜻이 바로 보임 |
+| 2.0 출시 목표 | **2027년 1월 중순** (다리 업데이트 1.2.3 은 10월 초) | 개발 8~11주 + 테스트 2주. 연말 심사 지연 기간(12월 말)을 피함 |
+| 네이티브 광고 첫 위치 | **날짜 시트 일정 목록 맨 아래 1칸** | 자주 열리는 화면이면서 목록 끝이라 일정 보기를 방해하지 않음. 지표를 보고 할 일 목록으로 확장 |
+| 앱 오프닝 광고 | **1차 제외** → 2.0 안정 후 지표 보고 결정 | 켤 때마다 광고는 이탈 위험이 가장 큼. 사용자 규모가 작은 지금은 유지율이 더 중요 |
+| 2차로 미루는 기능 | **5장 목록대로 동의** | '돈 낸 것은 첫날부터' 원칙을 지키면서 1차 범위를 줄임 |
