@@ -9349,9 +9349,12 @@ function _migrSaveSession(session){
     }
   }catch(_){}
 }
+let _minVerChecked=false;
 supa.auth.onAuthStateChange((event,session)=>{
   if(event==='SIGNED_OUT') _migrSaveSession(null);
   else if(session) _migrSaveSession(session);   // INITIAL_SESSION·SIGNED_IN·TOKEN_REFRESHED·USER_UPDATED
+  // 로그인 전엔 app_config 를 못 읽어(RLS) 시작 때 검사가 빈손으로 끝난다 → 로그인되면 한 번 더
+  if(session && (event==='SIGNED_IN'||event==='INITIAL_SESSION') && !_minVerChecked){ _minVerChecked=true; setTimeout(()=>_checkMinAppVersion(),1500); }
 });
 const _MIGR_PREF_KEYS=['lastRoomId','agreedTerms'];
 function _migrSavePrefs(){
@@ -9395,7 +9398,7 @@ async function _checkMinAppVersion(){
 }
 (function _migrInit(){
   if(!isNativeApp()) return;
-  setTimeout(()=>{ _migrSavePrefs(); _checkMinAppVersion(); }, 2500);
+  setTimeout(()=>{ _migrSavePrefs(); }, 2500);   // 최소 버전 검사는 세션이 확인된 뒤(위 리스너)에서
   try{
     const App=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.App;
     if(App&&App.addListener) App.addListener('appStateChange', st=>{ if(st&&!st.isActive) _migrSavePrefs(); });

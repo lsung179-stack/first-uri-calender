@@ -55,7 +55,7 @@ Swift/Kotlin 두 벌 대신 Flutter를 고른 이유: 한 벌로 두 플랫폼, 
 | RevenueCat 사용자 ID | Supabase `user.id` | 구독·코인 연결 끊김 |
 | 상품 ID | `premium_1m/3m/12m`, `coins_30/100/300` | 결제 안 됨 |
 | AdMob 앱·광고 단위 | iOS `~4146324211`, Android `~5315935656`, 보상형 `…/2472669914`·`…/3775063169` | 광고·보상 코인 끊김 |
-| 앱 링크 | `uricalendar://add`, `join?code=`, `open?room=&date=`, `login-callback` · 초대 웹 링크 `r.html?join=` | 초대·위젯 탭·로그인 복귀 깨짐 |
+| 앱 링크 | `com.lsung.uricalendar://` — `add`, `join?code=`, `open?room=&date=`, `share`, `login-callback` (Android 는 지금 login-callback 만 등록돼 있음 — 2.0 에서 전부 등록) · 초대 웹 링크 `r.html?join=` | 초대·위젯 탭·로그인 복귀 깨짐 |
 | 위젯 데이터 형식 | Android `CapacitorStorage` SharedPreferences(`roomId`·`filterUser` 등) / iOS App Group UserDefaults | 위젯 빈 화면 |
 | 푸시 토큰 | `fcm_tokens` 테이블 형식 | 푸시 안 옴 |
 
@@ -77,7 +77,7 @@ Flutter 앱은 웹뷰의 localStorage 를 읽을 수 없다. 그래서 **전환 
 **최소 지원 버전 스위치** — `app_config.min_app_version`(기본 `'0'`) · `min_app_version_force`(기본 `'false'`).
 - 네이티브 앱이 시작할 때 자기 버전(`#buildInfo` 의 `build X.Y.Z`)이 이보다 낮으면 "업데이트 안내"(나중에 가능). force=`'true'` 면 어느 버튼이든 스토어로 보내고 다시 안내.
 - 스토어 링크: iOS `https://apps.apple.com/app/id6773996160`, Android `…details?id=app.vercel.first_uri_calender.twa`.
-- 로그인 전(RLS 로 app_config 못 읽음)에는 검사하지 않는다.
+- 로그인 전에는 RLS 로 app_config 를 못 읽으므로, **세션이 확인된 뒤(SIGNED_IN·INITIAL_SESSION) 한 번** 검사한다.
 - 2.0 출시 후 옛 웹뷰 앱 정리: 먼저 force 없이 `min_app_version='2.0.0'` → 몇 주 뒤 force.
 
 이 업데이트는 **2.0 출시 몇 주 전**에 나가야 대부분 사용자가 받아 둔다. 못 받은 사람은 2.0 에서 한 번 다시 로그인하면 된다.
