@@ -56,7 +56,7 @@ Swift/Kotlin 두 벌 대신 Flutter를 고른 이유: 한 벌로 두 플랫폼, 
 | 상품 ID | `premium_1m/3m/12m`, `coins_30/100/300` | 결제 안 됨 |
 | AdMob 앱·광고 단위 | iOS `~4146324211`, Android `~5315935656`, 보상형 `…/2472669914`·`…/3775063169` | 광고·보상 코인 끊김 |
 | 앱 링크 | `com.lsung.uricalendar://` — `add`, `join?code=`, `open?room=&date=`, `share`, `login-callback` (Android 는 지금 login-callback 만 등록돼 있음 — 2.0 에서 전부 등록) · 초대 웹 링크 `r.html?join=` | 초대·위젯 탭·로그인 복귀 깨짐 |
-| 위젯 데이터 형식 | Android `CapacitorStorage` SharedPreferences(`roomId`·`filterUser` 등) / iOS App Group UserDefaults | 위젯 빈 화면 |
+| 위젯 데이터 형식 | 앱→위젯 데이터: Android SharedPreferences `CapacitorStorage` 의 `widget.data` 등 / iOS App Group UserDefaults. 위젯 자체 상태(고른 방·필터)는 Android `uri_widget_state` 파일 — 스키마는 `uri-calendar-app/docs/spec/08` | 위젯 빈 화면 |
 | 푸시 토큰 | `fcm_tokens` 테이블 형식 | 푸시 안 옴 |
 
 ## 4. 1단계 — "다리 역할 업데이트" (지금 앱의 마지막 웹뷰 빌드) — ✅ 구현됨(2026-09-24, 1.2.3 에 포함)

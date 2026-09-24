@@ -17123,7 +17123,8 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
         }
         sibs=all.filter(r=>rooms.includes(r.room_id));
         if(!sibs.length)sibs=[origin];
-        const mg=(rooms.length>1)?('mg_'+genShared()):null;
+        // multi_group_id 는 uuid 컬럼 — 접두어를 붙이면 insert 가 실패해 이미 적은 예외/자르기만 남고 그날 일정이 사라졌다(2026-09-24 수정)
+        const mg=(rooms.length>1)?genShared():null;
         makeRows=f=>rooms.map(rid=>Object.assign({},f,{room_id:rid,user_id:origin.user_id||_currentUser.id,multi_group_id:mg}));
         doneMsg=(rooms.length>1)?' ('+rooms.length+'개 방)':'';
       }else{
