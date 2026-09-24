@@ -16976,7 +16976,22 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
         if(eG)throw eG;
         if(grp&&grp.length)sibs=grp;
         const keyOf=r=>r.virtual_member_id?('v-'+r.virtual_member_id):r.user_id;
+        /* 나만 바꿀지, 멤버 모두에게 적용할지 먼저 묻는다(사용자 요청 2026-09-24).
+           '나만' 이면 내 row 만 예외/자르기 하고 떼어낸 날은 내 혼자 일정이 된다 — 다른 멤버의 반복은 그대로.
+           내가 이 함께 일정의 멤버가 아니면(방 멤버로서 남의 함께 일정을 고치는 경우) '나만' 은 뜻이 없어 묻지 않는다. */
+        const myRows=sibs.filter(r=>keyOf(r)===_currentUser?.id);
+        if(myRows.length&&myRows.length<sibs.length){
+          const who=await askRecurringDelete('함께하는 멤버가 있는 일정이에요.<br>누구에게 적용할까요?',
+            {title:'적용 대상', oneLabel:'나만', allLabel:'멤버 모두'});
+          if(!who)return 'cancelled';
+          if(who==='one'){
+            sibs=myRows;
+            makeRows=f=>[_buildCoEventRow(_currentUser.id,Object.assign({},f,{shared_id:null}))];
+            doneMsg=' (나만)';
+          }
+        }
         const oldColor={}; sibs.forEach(r=>{ const k=keyOf(r); if(k&&!(k in oldColor))oldColor[k]=r.color; });
+        if(!makeRows){
         // 색을 바꿨다면 일반 수정과 똑같이 '나만 / 모두에게' 를 묻는다(멤버마다 색이 다를 수 있음)
         let colorAll=true;
         const colorChanged=!!_editOrigColor&&color!==_editOrigColor;
@@ -16995,6 +17010,7 @@ async function saveEditedEvent(title,time,endTime,color,barStyle,recurringYearly
           return _buildCoEventRow(k,Object.assign({},f,{color:c,shared_id:sid}));
         });
         doneMsg=(members.length>=2)?' (함께 '+members.length+'명)':'';
+        }
       }else if(origin.multi_group_id){
         const {data:grp,error:eG}=await supa.from('events')
           .select('id,room_id,user_id,color,repeat_except,repeat_until')
