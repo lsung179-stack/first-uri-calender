@@ -7397,11 +7397,13 @@ function birthdayToSolarMd(bd, year){
   const p=parseBirthday(bd);
   if(!p)return null;
   if(p.isLunar){
-    const s=lunarToSolar(year, p.month, p.day);
-    if(!s)return null;
-    // 음력 변환 결과가 다음/이전 해로 넘어갈 수도 있음 — year가 맞는 것만 반환
-    if(s.year!==year)return null;
-    return String(s.month).padStart(2,'0')+'-'+String(s.day).padStart(2,'0');
+    // 음력 변환 결과가 다음 해로 넘어갈 수 있다(음력 12월 → 양력 1·2월) — 그 해 음력년과 전년 음력년을
+    // 모두 보고 양력 연도가 year 인 것을 쓴다(예전엔 전년도를 안 봐 1·2월 음력 생일이 안 보였음). [2026-09-24 수정]
+    for(const ly of [year, year-1]){
+      const s=lunarToSolar(ly, p.month, p.day);
+      if(s && s.year===year) return String(s.month).padStart(2,'0')+'-'+String(s.day).padStart(2,'0');
+    }
+    return null;
   }
   return String(p.month).padStart(2,'0')+'-'+String(p.day).padStart(2,'0');
 }
@@ -11334,9 +11336,13 @@ function _originMatchesDate(ev, d){
     // lunarToSolar(y,lm,ld)는 'y년의 그 음력월/일'을 뜻하는 기존 관례(birthdayToSolarMd와 동일 사용법)라
     // d의 연도를 그대로 넘기면 됨 — 반환된 solar.year로 문자열을 만들어야 연말/연초 경계 이동도 정확. [2026-08-14]
     if(!ev.repeat_lunar_month||!ev.repeat_lunar_day)return false;
+    // ⚠️ lunarToSolar 의 첫 인자는 '음력 연도'라, 음력 11·12월이 다음 해 1·2월에 떨어지면 d 의 연도로는
+    //    못 찾는다(음력 2026-12-20 → 양력 2027-01-27). 전년도 음력년도 함께 본다. [2026-09-24 수정]
     const y=parseInt(d.slice(0,4),10);
-    const s=lunarToSolar(y, ev.repeat_lunar_month, ev.repeat_lunar_day);
-    matched=!!(s && (s.year+'-'+String(s.month).padStart(2,'0')+'-'+String(s.day).padStart(2,'0'))===d);
+    matched=[y,y-1].some(function(ly){
+      const s=lunarToSolar(ly, ev.repeat_lunar_month, ev.repeat_lunar_day);
+      return !!(s && (s.year+'-'+String(s.month).padStart(2,'0')+'-'+String(s.day).padStart(2,'0'))===d);
+    });
   }
   if(!matched)return false;
   // 주기(N개월마다)·횟수 판정은 보통 d 자신이지만, '마지막주'가 다음 달로 넘어간 칸은
@@ -11435,7 +11441,9 @@ function _getDayEventsRaw(date){
   const _ws0=_weekStartPref();
   const _firstCol0=(new Date(_yy0,_mm0-1,1).getDay()-_ws0+7)%7;
   const _nthWk=Math.floor((_dn-1+_firstCol0)/7)+1;          // 이 칸의 N번째 달력 줄(1-based)
-  const _isLastOcc=(_dn+7>_daysInMonth);                     // 이 달에서 이 요일의 마지막 등장(=마지막 줄)
+  // '마지막주' = 말일이 든 달력 줄 전체(다음 달로 넘어간 칸 포함) — _originMatchesDate·할일·위젯과 같은 규칙.
+  //  (예전엔 '이 달에서 이 요일의 마지막 등장'이라 위젯과 날짜가 달랐다) [2026-09-24 수정]
+  const _isLastOcc=!!_lastRowOwnerMonth(parseDateKey(date));
   const nthOnes=[];
   (_monthlyNthEvents[_nthWk+'-'+cellDow]||[]).forEach(e=>{ if(e.date<date&&_isSpanCycleStartDow(e,cellDow)&&_repOk(e))nthOnes.push(e); });
   if(_isLastOcc){ (_monthlyNthEvents['-1-'+cellDow]||[]).forEach(e=>{ if(e.date<date&&_isSpanCycleStartDow(e,cellDow)&&_repOk(e))nthOnes.push(e); }); }
@@ -11535,6 +11543,9 @@ function _getDayEventsRaw(date){
     // 기간+반복 가상 사이클 엔트리는 _mkRecurEntry에서 이미 _rangePos 등을 직접 계산해뒀음(물리 인접셀
     // 조회(_events[prevDate])로는 가상 엔트리를 못 찾으므로 여기서 덮어쓰면 안 됨) — 그대로 보존.
     if(ev._virtualSpanAnchor)return;
+    // 펼친 반복 발생(기간 아님)은 옆 칸과 이어 그리지 않는다 — 함께 일정은 옆 칸 물리 행과 shared_id 가
+    // 같아 '기간 끝'(제목 없는 바)으로 잘못 그려지던 문제(매일 반복 다음날 등). [2026-09-24 수정]
+    if(ev._yearlyDisplay){ ev._isRangeEvent=false; ev._isFirstSegment=true; ev._rangePos='single'; return; }
     const prevHas=prevEvs.some(e=>isSameRangeGroup(e,ev));
     const nextHas=nextEvs.some(e=>isSameRangeGroup(e,ev));
     ev._isRangeEvent=(prevHas||nextHas);
@@ -11959,9 +11970,12 @@ function _eventBarHTML(ev,key,y,m,d){
   let rangeCls='';
   let displayTitle=t;
   const _dow=new Date(y,m,d).getDay();
+  // 주 시작 설정(일/월)을 따른다 — 예전엔 일(0)·토(6) 고정이라 월요일 시작이면 줄 가운데서 바가 끊겼다. [2026-09-24 수정]
+  const _ws=getWeekStartPref();
+  const _col=(_dow-_ws+7)%7;          // 이 칸이 그 주의 몇 번째 칸(0~6)
   const _pos=ev._rangePos;
-  const _lOpen=(_pos==='single'||_pos==='start'||_dow===0);
-  const _rOpen=(_pos==='single'||_pos==='end'||_dow===6);
+  const _lOpen=(_pos==='single'||_pos==='start'||_col===0);
+  const _rOpen=(_pos==='single'||_pos==='end'||_col===6);
   rangeCls=(_lOpen?' ev-l-open':' ev-l-join')+(_rOpen?' ev-r-open':' ev-r-join');
   if(_pos==='mid'||_pos==='end')displayTitle='\u00A0';
   let _spillCls='', _hasRangeStart=false;
@@ -11969,9 +11983,9 @@ function _eventBarHTML(ev,key,y,m,d){
     let _spanCols;
     if(ev._virtualSpanAnchor){
       // 기간+반복 가상 사이클 — 물리 인접셀 조회 대신 이미 아는 사이클 길이로 직접 계산
-      _spanCols=Math.min(ev._virtualSpanLen||1, 7-_dow);
+      _spanCols=Math.min((ev._virtualSpanLen||1)-(ev._virtualSpanOffset||0), 7-_col);
     }else{
-      _spanCols=1; let _cd=_dow,_pk=key;
+      _spanCols=1; let _cd=_col,_pk=key;
       while(_cd<6){
         _pk=shiftDateKey(_pk,1);
         const _pe=_events[_pk]||[];
@@ -27295,8 +27309,11 @@ function todoOccursOnDate(t,key){
       // 음력 반복 — 일정 _originMatchesDate와 동일 방식(그 해의 음력 M/D를 양력으로 변환해 비교). [2026-08-14]
       if(!t.repeat_lunar_month||!t.repeat_lunar_day)return false;
       const y=d.getFullYear();
-      const sol=lunarToSolar(y, t.repeat_lunar_month, t.repeat_lunar_day);
-      matched=!!(sol && sol.year===y && (sol.month-1)===d.getMonth() && sol.day===d.getDate());
+      // 음력 연말이 다음 해 1·2월로 넘어가는 경우까지 — 전년도 음력년도 본다(일정과 동일). [2026-09-24 수정]
+      matched=[y,y-1].some(function(ly){
+        const sol=lunarToSolar(ly, t.repeat_lunar_month, t.repeat_lunar_day);
+        return !!(sol && sol.year===y && (sol.month-1)===d.getMonth() && sol.day===d.getDate());
+      });
     }
     if(!matched)return false;
     // 이 발생일이 예외 처리됐으면(반복 발생-범위 삭제/수정의 '이 일정만') 숨김. [2026-08-17 · Gap B]
