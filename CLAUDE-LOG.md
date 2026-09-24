@@ -433,3 +433,9 @@
   - **덤: 콤보 위젯 작은 달력 날짜**(`widget_mini_cell` `mini_day`) — 8/19 월 위젯에 한 수정이 빠져 있던 곳. 16dp 칸 + sp 글자 + 줄바꿈 허용 → 한 줄 고정·`includeFontPadding=false` + `MiniMonthFactory` 에서 `setTextViewTextSize(DIP,10)`.
   - iOS: 월 그리드는 8/19 에 이미 `GeometryReader` 로 남는 높이를 실측해 행 높이를 정확히 주고 '+N' 을 배지로 겹쳐 그리며, 글자도 고정 크기라 같은 문제가 없음 → 변경 없음(위젯 동시 수정 규칙 확인).
   - 검증: `/tmp/awstub` stub 컴파일 30클래스 0오류 · XML 22파일 유효 · 리소스 id 교차검증 · 신규 JVM 단위테스트 `CellBudgetTest` **4,956 경우**(월 180~600dp·2주 110~600dp × 글자 배율 0.85~2.0 × 4/5/6주·2주 × 할일 유무) 전부 '칸 내용 ≤ 칸 높이' 및 '행 합계+헤더 ≤ 위젯 높이', 대표값 4x4(380dp) 6주 달도 일정 2줄 유지. ⚠️ **안드로이드 실기기 검증 없음** — 위젯은 deploy_version 과 무관, **AAB 재빌드·업데이트 후** 반영.
+
+- **2026-09-24 코인 구매 공개 준비** (사용자 "코인 구매 올리자"):
+  - **DB**(마이그레이션 `coin_purchase_credit_refund`): `credit_coin_purchase(p_user,p_product,p_ref,p_note)` — `coin_packs` 의 coins+bonus 만큼 `coin_ledger`(kind='purchase', ref=스토어 거래 id) 적립, 부분 유니크 인덱스 `coin_ledger_store_ref_uniq` 로 **같은 거래 재전송은 무시**(credited:false). `refund_coin_purchase(p_user,p_ref,p_note)` — 그 적립만큼 −(kind='refund', ref='refund:'||거래id), 두 번째 환불은 no-op. 둘 다 service_role 전용(authenticated 실행 불가 확인). 테스트 행은 삭제.
+  - **공개 스위치**: `app_config.coin_public`(기본 `'false'`). 클라이언트 `_coinVisible()` = `_coinPublic || isAdmin()`, `loadCoinState()` 가 이 값을 함께 읽는다 → **SQL 한 줄로 켜고 끔**(재빌드 불필요; iOS 는 이 코드가 든 빌드부터).
+  - **웹훅 v3 소스**(`supabase/functions/revenuecat-webhook/index.ts`, 저장소에 처음 올림): ① 비밀값은 Edge Function 시크릿 `REVENUECAT_WEBHOOK_SECRET` 에서만 읽음(코드 내 기본값 제거, 미설정이면 500) ② `coin_packs` 상품이면 `subscriptions` 에 쓰지 않고 NON_RENEWING_PURCHASE/INITIAL_PURCHASE→`credit_coin_purchase`, CANCELLATION/REFUND→`refund_coin_purchase`(Play 의 `id:base` 접미사 제거). ⚠️ **아직 미배포** — 라이브는 v2(코드 내 기본값 사용, 코인 상품을 받으면 subscriptions 에 expires_at 없는 행이 생김 — 프리미엄 판정엔 영향 없음). 시크릿 등록 후 배포할 것(배포 뒤 인증 없는 POST 가 401 이면 시크릿 적용, 500 'not configured' 면 미설정).
+  - 임시 도구 정리: Edge Function `asset-pipe` → 항상 410 스텁(v8), `public.tmp_pipe` 삭제(마이그레이션 `drop_tmp_pipe`).

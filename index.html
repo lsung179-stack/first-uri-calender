@@ -21369,13 +21369,15 @@ async function loadMyDbUnlocks(){
    진실은 서버: 잔액=coin_ledger 합계(my_coin_balance), 가격=shop_items, 소유=user_unlocks.
    구매는 RPC buy_item 하나로만(잔액 확인·차감·소유 기록을 한 트랜잭션에서). 클라이언트는 표시만.
    충전은 소모성 인앱상품(coins_30/100/300) → RevenueCat 웹훅이 원장에 적립한다.
-   ⚠️ 아직 스토어 상품 등록·웹훅 연결 전이라 관리자에게만 보인다 — 공개할 때 _coinVisible() 만 풀면 된다. */
+   공개 스위치 = app_config.coin_public('true'/'false') — 관리자는 항상 보이고, 일반 사용자는 이 값이 'true' 일 때만 보인다.
+   스토어 상품 등록·웹훅 연결이 끝난 뒤 SQL 로 켠다(재빌드 불필요). */
 let _coinBalance=0;
 let _shopPrices={};        // 'skin:a_cat' → 30
 let _coinPacks=[];         // [{product_id,coins,bonus,sort}]
 let _coinProducts={};      // product_id → 스토어 상품(가격 문자열 포함)
 let _buyingItem=false;
-function _coinVisible(){ return typeof isAdmin==='function' && isAdmin(); }
+let _coinPublic=false;
+function _coinVisible(){ return _coinPublic || (typeof isAdmin==='function' && isAdmin()); }
 function _ownsItem(type,key){ return !!(key && _dbUnlocks[type] && _dbUnlocks[type].indexOf(key)>=0); }
 function coinPriceOf(type,key){ return _shopPrices[type+':'+key]||null; }
 const _COIN_TYPE_LABEL={skin:'테마를', color:'컬러 팩을', char:'이모지 팩을', sticker:'스티커 묶음을', font:'글꼴을', dh:'날짜 강조 테마를'};
@@ -21391,11 +21393,13 @@ function _itemName(type,key){
 async function loadCoinState(){
   if(!_currentUser||typeof supa==='undefined'||!supa) return;
   try{
-    const [bal,items,packs]=await Promise.all([
+    const [bal,items,packs,pub]=await Promise.all([
       supa.rpc('my_coin_balance'),
       supa.from('shop_items').select('item_type,item_key,price').eq('active',true),
       supa.from('coin_packs').select('product_id,coins,bonus,sort').eq('active',true).order('sort'),
+      supa.from('app_config').select('value').eq('key','coin_public').maybeSingle(),
     ]);
+    if(!pub.error) _coinPublic=!!(pub.data&&String(pub.data.value).replace(/"/g,'')==='true');
     if(!bal.error) _coinBalance=Number(bal.data)||0;
     if(!items.error){ const m={}; (items.data||[]).forEach(r=>{ m[r.item_type+':'+r.item_key]=r.price; }); _shopPrices=m; }
     if(!packs.error) _coinPacks=packs.data||[];
