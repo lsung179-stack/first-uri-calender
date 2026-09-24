@@ -104,6 +104,7 @@ public class MiniMonthFactory implements RemoteViewsService.RemoteViewsFactory {
         boolean red = cell.dow == 0 || cell.holiday;   // 일요일/공휴일
         int numColor = cell.isToday ? 0xFFFFFFFF
             : (!cell.inMonth ? (red ? 0x59C0503F : 0x552A1C0F) : (red ? 0xFFC0503F : 0xFF2A1C0F));
+        rv.setTextViewTextSize(id("mini_day", "id"), android.util.TypedValue.COMPLEX_UNIT_DIP, 10f);   // 큰 글씨 설정에서도 16dp 칸 안에
         rv.setTextViewText(id("mini_day", "id"), String.valueOf(cell.day));
         rv.setTextColor(id("mini_day", "id"), numColor);
         rv.setInt(id("mini_day", "id"), "setBackgroundResource",

@@ -29,6 +29,8 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
     private final List<Cell> cells = new ArrayList<>();
     private int laneCap = 2;    // 위젯 높이에 맞춰 산정되는 셀당 표시 줄 수(여백만큼 일정 더 노출)
     private int cellMinPx = 0;  // 셀 최소 높이(px) — 0이면 미적용(기존 동작)
+    private float fontScaleNow = 1f;
+    private boolean todoFits = true;   // 칸이 너무 작으면 할일 줄은 접고 '+N' 배지로(넘치면 GridView 가 스크롤돼 첫 주가 잘림)
     private String roomId = null; // 셀 탭 딥링크(://open?room=&date=)용
     // 공휴일·강조 라벨은 그 칸에만 있으면 그 칸의 일정 바만 한 줄 아래로 밀려서,
     // 여러 날 기간 바가 그 날만 어긋나 '끊겨' 보인다(실기기 제보 2026-08-19).
@@ -36,7 +38,9 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
     //   (앱도 같은 이유로 공휴일 라벨을 고정 높이로 항상 자리 잡아둠 — CLAUDE.md 코드 38)
     private Map<String,String> holidays = new HashMap<>(); // 빨간날(공휴일) 'YYYY-MM-DD'→이름
 
-    GridWidgetFactory(Context c, int kind) { this.ctx = c; this.kind = kind; }
+    private final int widgetId;   // 이 어댑터가 그리는 위젯 — 높이를 위젯마다 따로 읽는다 [2026-09-24]
+    GridWidgetFactory(Context c, int kind) { this(c, kind, android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID); }
+    GridWidgetFactory(Context c, int kind, int widgetId) { this.ctx = c; this.kind = kind; this.widgetId = widgetId; }
 
     static class Cell {
         int day; int dow; boolean inMonth; boolean isToday; String key;
@@ -93,20 +97,23 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
 
         // 위젯 실제 높이에 맞춰 셀 높이 산정 (여백만큼 일정을 더 노출).
         // 표시 줄 수(laneCap)는 공휴일/강조 라벨 예약 줄까지 알아야 정확해서 아래에서 확정한다.
-        laneCap = 2; cellMinPx = 0;
+        laneCap = 2; cellMinPx = 0; todoFits = true;
         int cellDpForLanes = 0;
         int lineDp = 13;
+        fontScaleNow = 1f;
         try {
             float density = ctx.getResources().getDisplayMetrics().density;
-            int hDp = WidgetCommon.gridHeightDp(ctx, kind);
+            int hDp = WidgetCommon.widgetHeightDp(ctx, widgetId, kind);   // 이 위젯의 실제 높이
             if (hDp > 0) {
-                float fontScale = ctx.getResources().getConfiguration().fontScale;
-                int headerDp = WidgetCommon.headerDpFor(fontScale); // 씰 헤더 + 요일 줄 + 여백(글자 배율 반영)
-                lineDp = WidgetCommon.lineDpFor(fontScale);
+                fontScaleNow = ctx.getResources().getConfiguration().fontScale;
+                int headerDp = WidgetCommon.headerDpFor(fontScaleNow, kind); // 레이아웃 실측 합(글자 배율 반영)
+                lineDp = WidgetCommon.lineDpFor(fontScaleNow);
                 int gridDp = hDp - headerDp;
                 int cellDp = gridDp / rows;
-                if (cellDp < 30) cellDp = 30;   // 최소 셀 높이(날짜+1줄) — 작은 위젯도 전체 주 표시
-                cellMinPx = Math.round(cellDp * density);
+                /* ⚠️ 예전엔 최소 30dp 를 강제해 작은 위젯 + 6주 달에서 칸 합계가 그리드보다 커졌다 →
+                   GridView 가 스크롤돼 첫 주가 잘림(갤럭시 제보 2026-09-24). 최소는 날짜 숫자 칸(19dp)만. */
+                if (cellDp < 19) cellDp = 19;
+                cellMinPx = (int) Math.floor(cellDp * density);
                 cellDpForLanes = cellDp;
             }
         } catch (Throwable t) { laneCap = 2; cellMinPx = 0; cellDpForLanes = 0; lineDp = 13; }
@@ -165,8 +172,11 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
               안 보였다(실기기 제보 2026-08-22). 이제 예약은 '그 칸'에만 적용한다 —
               칸 전체 높이는 (예약 줄 + 일정 줄)이 항상 같다 — 예약 줄이 레인을 차지하기 때문. */
         if (cellDpForLanes > 0) {
-            int lines = WidgetCommon.laneBudget(cellDpForLanes, 0, !byTodo.isEmpty(), lineDp);
-            laneCap = Math.max(1, Math.min(MAX_LANE_VIEWS, lines));
+            /* 칸 안에 실제로 들어가는 줄 수 — '+N'·할일 줄까지 빼고 산정해 칸이 절대 목표 높이를 넘지 않게.
+               0 이면(아주 작은 위젯) 날짜 숫자와 '+N' 만. [2026-09-24] */
+            int lines = WidgetCommon.cellLaneBudget(cellDpForLanes, !byTodo.isEmpty(), lineDp, fontScaleNow);
+            laneCap = Math.max(0, Math.min(MAX_LANE_VIEWS, lines));
+            todoFits = cellDpForLanes >= 19 + WidgetCommon.smallLineDpFor(fontScaleNow);
         }
         for (Cell c : cells) {
             int[] ov = new int[]{0};
@@ -254,7 +264,7 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
         }
 
         // 빨간날(공휴일) 바 — 앱은 텍스트 라벨만, 위젯은 빨간 바로 자동 표시
-        if (cell.holiday != null) {
+        if (cell.holiday != null && laneCap > 0) {   // 줄 여유가 0 이면 공휴일 바는 접고 빨간 숫자만
             rv.setViewVisibility(id("cell_holiday", "id"), android.view.View.VISIBLE);
             rv.setTextViewText(id("cell_holiday", "id"), cell.holiday);
             // 공휴일 바만 각진 직사각형이라 다른 일정 바와 이질감이 있었음 → 같은 둥근 칩으로 통일
@@ -339,7 +349,7 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
             }
         }
 
-        if (!cell.todos.isEmpty()) {
+        if (!cell.todos.isEmpty() && todoFits) {
             WidgetData.Todo t = cell.todos.get(0);
             boolean done = WidgetCommon.todoDone(ctx, t);
             String mark = done ? "☑ " : "☐ ";
@@ -359,7 +369,7 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
             rv.setViewVisibility(id("cell_todo", "id"), android.view.View.GONE);
         }
 
-        int over = cell.overflow + (cell.todos.size() > 1 ? cell.todos.size() - 1 : 0);
+        int over = cell.overflow + (cell.todos.size() > (todoFits ? 1 : 0) ? cell.todos.size() - (todoFits ? 1 : 0) : 0);
         if (over > 0) {
             rv.setViewVisibility(id("cell_more", "id"), android.view.View.VISIBLE);
             rv.setTextViewText(id("cell_more", "id"), "+" + over);

@@ -388,12 +388,58 @@ public class WidgetCommon {
         float fs = (fontScale > 0.1f) ? fontScale : 1f;
         return Math.max(13, Math.round(11f * fs) + 2);
     }
-    // 배율이 크면 헤더(‹ 8월 › ↻ 등 sp 글자)도 커져 그리드가 좁아진다 → 추정치에 반영.
-    static int headerDpFor(float fontScale) {
+    /* ── 그리드가 위젯 밖으로 넘치지 않게(= GridView 가 스크롤되지 않게) 하는 계산 [2026-09-24] ──
+       갤럭시 실기기 제보 "첫 주 날짜가 잘림": 칸 합계가 그리드 영역보다 크면 GridView 가 스크롤 가능한
+       상태가 되고, 홈 화면에서 위로 쓸어 올리는 손가락이 위젯을 스치면 살짝 스크롤된 채 굳어
+       첫 주 윗부분이 잘린다. 넘치던 이유 세 가지를 모두 막는다:
+         ① 헤더 추정 52dp ↔ 실제 레이아웃 약 68dp → 레이아웃 값을 그대로 합산(headerDpFor(fs, kind))
+         ② 높이를 '종류별 하나'로 저장 → 위젯마다 옵션에서 직접 읽기(widgetHeightDp)
+         ③ 칸 최소 30dp 강제 + '+N' 줄 미반영 → 최소는 날짜 숫자만, '+N'·할일 줄까지 예산에 포함(cellLaneBudget) */
+    // 그리드 위 영역(루트 위아래 여백 + 헤더 줄 + 요일 줄 + 그리드 위 여백)의 실제 높이(dp) + 안전 여유 4dp.
+    // sp 글자 줄 높이 ≈ 1.33×sp×배율(글꼴 여백 포함). kind: 0=월, 1=2주 (레이아웃 값이 조금 다름).
+    static int headerDpFor(float fontScale, int kind) {
         float fs = (fontScale > 0.1f) ? fontScale : 1f;
-        float extra = Math.max(0f, Math.min(1f, fs - 1f));
-        return 52 + Math.round(20f * extra);
+        float pad = 20f;                                   // wg_root padding 10dp × 위·아래
+        float seal = (kind == 1) ? 24f : 26f;              // 방 도장(ImageView) 높이
+        float arrows = 15f * fs * 1.33f + 4f;              // ‹ › ↻ (15sp, 위아래 패딩 2+2)
+        float headRow = Math.max(seal, arrows);
+        float dowRow = ((kind == 1) ? 5f : 6f) + 10f * fs * 1.33f;   // 요일 줄(10sp) + marginTop
+        float gridTop = 2f;                                // GridView marginTop
+        return (int) Math.ceil(pad + headRow + dowRow + gridTop + 4f);
     }
+    // 7sp 한 줄(할일·'+N') 높이(dp)
+    static int smallLineDpFor(float fontScale) {
+        float fs = (fontScale > 0.1f) ? fontScale : 1f;
+        return (int) Math.ceil(7f * fs * 1.33f) + 1;
+    }
+    /* 칸 높이(dp)에 실제로 들어가는 일정 줄 수. 칸 = 위 여백 2 + 날짜 17 + [일정 줄 × (lineDp + 여백 0.5)]
+       + [할일 줄]. '+N' 은 칸 오른쪽 아래 배지로 겹쳐 그려 높이를 차지하지 않는다.
+       0 이면 날짜 숫자만(아주 작은 위젯). 순수 계산 — 단위테스트 CellBudgetTest. */
+    static int cellLaneBudget(int cellDp, boolean hasTodos, int lineDp, float fontScale) {
+        int small = smallLineDpFor(fontScale);
+        int avail = cellDp - 19 - (hasTodos ? small : 0);
+        int per = Math.max(1, lineDp) + 1;
+        return Math.max(0, avail / per);
+    }
+    /* 이 위젯의 실제 높이(dp). 세로 화면은 MAX_HEIGHT, 가로는 MIN_HEIGHT(안드로이드 문서 규칙).
+       위젯 id 를 모르면 예전처럼 종류별 저장값. */
+    static int widgetHeightDp(Context c, int appWidgetId, int kind) {
+        if (appWidgetId != android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID) {
+            try {
+                android.os.Bundle o = android.appwidget.AppWidgetManager.getInstance(c).getAppWidgetOptions(appWidgetId);
+                if (o != null) {
+                    boolean land = c.getResources().getConfiguration().orientation
+                        == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
+                    int h = o.getInt(land ? android.appwidget.AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT
+                                          : android.appwidget.AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0);
+                    if (h > 0) return h;
+                }
+            } catch (Throwable t) { /* 아래 폴백 */ }
+        }
+        return gridHeightDp(c, kind);
+    }
+    // (구) 헤더 추정 — 월 위젯 기준 새 계산으로 위임. 호출처 호환용.
+    static int headerDpFor(float fontScale) { return headerDpFor(fontScale, 0); }
     static boolean[] rowFlags(boolean[] perCell, int rows) {
         boolean[] out = new boolean[rows];
         if (perCell == null) return out;

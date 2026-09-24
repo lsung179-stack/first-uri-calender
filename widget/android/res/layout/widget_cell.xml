@@ -176,16 +176,29 @@
         android:visibility="gone"
         android:text="" />
 
+</LinearLayout>
+
+    <!-- '+N' = 칸 오른쪽 아래에 겹쳐 그리는 작은 배지(높이를 차지하지 않음).
+         ⚠️ 예전엔 세로 줄 하나였는데 표시 줄 수 계산에 안 들어가 칸이 조금씩 커졌고, 칸 합계가
+            위젯보다 커지면 GridView 가 스크롤돼 첫 주가 잘렸다(갤럭시 제보 2026-09-24).
+            iOS 위젯도 같은 이유로 넘칠 때 배지로 겹쳐 그린다(2026-08-19). -->
     <TextView
         android:id="@+id/cell_more"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="bottom|right"
+        android:layout_marginRight="1dp"
+        android:layout_marginBottom="1dp"
+        android:paddingLeft="2dp"
+        android:paddingRight="2dp"
+        android:includeFontPadding="false"
+        android:background="#E6F7F0E0"
         android:textColor="#8A6C52"
         android:textSize="7sp"
         android:textStyle="bold"
+        android:singleLine="true"
         android:visibility="gone"
         android:text="+1" />
-</LinearLayout>
 
     <!-- 강조 테두리 4변 — 이웃 날짜가 범위 밖인 변만 보이게(격자선에 딱 맞는 사각 경계, 모서리 직각) -->
     <FrameLayout android:id="@+id/cell_hl_t" android:layout_width="match_parent" android:layout_height="2dp" android:layout_gravity="top" android:visibility="gone" />

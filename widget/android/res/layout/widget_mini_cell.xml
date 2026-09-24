@@ -9,11 +9,16 @@
     android:gravity="center_horizontal|top"
     android:paddingTop="2dp">
 
+    <!-- ⚠️ 월 위젯 날짜(widget_cell)와 같은 이유로 한 줄 고정 + 글자 크기는 코드에서 dp 로(시스템 글자 크기 배율과 무관).
+         예전엔 16dp 칸에 sp 글자·줄바꿈 허용이라 큰 글씨 설정에서 두 자리 날짜가 꺾여 잘렸다. [2026-09-24] -->
     <TextView
         android:id="@+id/mini_day"
         android:layout_width="16dp"
         android:layout_height="16dp"
         android:gravity="center"
+        android:includeFontPadding="false"
+        android:singleLine="true"
+        android:maxLines="1"
         android:textColor="#2A1C0F"
         android:textSize="10sp"
         android:textStyle="bold"
