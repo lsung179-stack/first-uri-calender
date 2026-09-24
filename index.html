@@ -921,11 +921,11 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 /* 기본 제공 스티커 고르기 — 만들기 화면(ann-card)보다 위에 떠야 한다 */
 #ctbStickerOverlay{z-index:1500}
 #ctbStickerCard{z-index:1501}
-.ctb-stgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-height:46vh;overflow-y:auto;padding:2px}
-.ctb-stcell{background:var(--aP);border:1px solid var(--borderL);border-radius:14px;padding:8px 6px 6px;cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;align-items:center;gap:4px}
+.ctb-stgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-height:46vh;overflow-y:auto;padding:2px;align-content:start;grid-auto-rows:max-content}
+.ctb-stcell{background:var(--aP);border:1px solid var(--borderL);border-radius:14px;padding:10px 6px 8px;cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;align-items:center;gap:4px}
 .ctb-stcell:active{transform:scale(.95)}
-.ctb-stcell i{display:block;width:100%;aspect-ratio:1/1;background:no-repeat center/contain}
-.ctb-stcell span{font-size:10.5px;font-weight:600;color:var(--sub);white-space:nowrap}
+.ctb-stcell i{display:block;width:82%;aspect-ratio:1/1;background:no-repeat center/contain}
+.ctb-stcell span{font-size:10.5px;font-weight:600;color:var(--sub);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .ctb-banner-edit{width:100%;height:118px;border-radius:14px;border:1px solid var(--border);background:var(--aP);background-size:cover;background-position:center;background-repeat:no-repeat;touch-action:none;cursor:grab;position:relative;overflow:hidden}
 .ctb-banner-edit:active{cursor:grabbing}
 .ctb-banner-edit.empty::after{content:'배경 사진을 먼저 넣어주세요';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--sub)}
@@ -952,7 +952,8 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .sfh-note{margin-top:11px;font-size:10.5px;line-height:1.5;color:#f0c98a;opacity:.9}
 .store-stgrid{max-height:none;overflow:visible;margin-bottom:14px}
 /* 스티커 묶음 탭 + 내가 붙인 목록 */
-.rs-packtabs{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 8px;-webkit-overflow-scrolling:touch}
+.rs-packtabs{display:flex;gap:6px;overflow-x:auto;padding:2px 26px 10px 2px;-webkit-overflow-scrolling:touch;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent)}
+.rs-packtabs::-webkit-scrollbar{display:none}
 .rs-packtab{flex:none;background:var(--aP);border:1px solid var(--borderL);border-radius:999px;padding:6px 13px;font-family:inherit;font-size:12px;font-weight:700;color:var(--sub);cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent}
 .rs-packtab.on{background:var(--accent);color:var(--card);border-color:var(--accent)}
 .rs-mine{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;-webkit-overflow-scrolling:touch}
@@ -983,7 +984,9 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 #dhManageCard.rs-mode{height:85vh;display:flex;flex-direction:column;overflow:hidden}
 #dhManageCard.rs-mode>.ev-topbar{flex:none}
 #dhManageCard.rs-mode #dhmPanelSticker{flex:1;min-height:0;display:flex;flex-direction:column}
-#dhManageCard.rs-mode #dhmPanelSticker .ctb-stgrid{flex:1;min-height:0;max-height:none}
+/* ⚠️ 그리드가 남는 높이를 채우면(flex:1) 기본 align-content:stretch 때문에 줄 높이가 늘어나
+   스티커 칸이 세로로 길쭉해졌다(실기기 캡처 2026-09-24) — 줄은 내용 높이로, 위에서부터 채운다 */
+#dhManageCard.rs-mode #dhmPanelSticker .ctb-stgrid{flex:1;min-height:0;max-height:none;align-content:start;grid-auto-rows:max-content;padding-bottom:10px}
 #dhManageCard.rs-mode #dhmPanelSticker .dhm-add{flex:none}
 #dhManageCard.rs-mode .mo-actions{flex:none}
 .rc-decor .rc-sticker{position:absolute;aspect-ratio:1/1;background-repeat:no-repeat;background-position:center;background-size:contain;pointer-events:none}
