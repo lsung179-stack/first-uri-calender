@@ -987,6 +987,10 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 /* ⚠️ 그리드가 남는 높이를 채우면(flex:1) 기본 align-content:stretch 때문에 줄 높이가 늘어나
    스티커 칸이 세로로 길쭉해졌다(실기기 캡처 2026-09-24) — 줄은 내용 높이로, 위에서부터 채운다 */
 #dhManageCard.rs-mode #dhmPanelSticker .ctb-stgrid{flex:1;min-height:0;max-height:none;align-content:start;grid-auto-rows:max-content;padding-bottom:10px}
+/* 날짜 시트 스티커 고르기는 한 줄에 3개(사용자 요청 2026-09-24 "3x3으로") — 칸이 커져 그림이 잘 보인다 */
+#dhmStickerGrid{grid-template-columns:repeat(3,1fr);gap:12px}
+#dhmStickerGrid .ctb-stcell{padding:12px 8px 9px;border-radius:16px}
+#dhmStickerGrid .ctb-stcell span{font-size:11.5px}
 #dhManageCard.rs-mode #dhmPanelSticker .dhm-add{flex:none}
 #dhManageCard.rs-mode .mo-actions{flex:none}
 .rc-decor .rc-sticker{position:absolute;aspect-ratio:1/1;background-repeat:no-repeat;background-position:center;background-size:contain;pointer-events:none}
