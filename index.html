@@ -981,12 +981,13 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .rsp-prev{display:flex;gap:4px;margin-top:7px}
 .rsp-mini{display:block;width:20px;height:20px;background:no-repeat center/contain;flex:none}
 /* 시트 스티커 탭 — 카드 안에서 그리드만 스크롤하고 아래 버튼은 항상 보이게 [2026-08-25] */
-#dhManageCard.rs-mode{height:85vh;display:flex;flex-direction:column;overflow:hidden}
+/* 높이는 내용만큼(최대 85vh) — 예전엔 85vh 고정이라 스티커가 적으면 그리드와 버튼 사이가 휑하게 비었다(2026-09-24) */
+#dhManageCard.rs-mode{height:auto;max-height:85vh;display:flex;flex-direction:column;overflow:hidden}
 #dhManageCard.rs-mode>.ev-topbar{flex:none}
-#dhManageCard.rs-mode #dhmPanelSticker{flex:1;min-height:0;display:flex;flex-direction:column}
+#dhManageCard.rs-mode #dhmPanelSticker{flex:0 1 auto;min-height:0;display:flex;flex-direction:column}
 /* ⚠️ 그리드가 남는 높이를 채우면(flex:1) 기본 align-content:stretch 때문에 줄 높이가 늘어나
    스티커 칸이 세로로 길쭉해졌다(실기기 캡처 2026-09-24) — 줄은 내용 높이로, 위에서부터 채운다 */
-#dhManageCard.rs-mode #dhmPanelSticker .ctb-stgrid{flex:1;min-height:0;max-height:none;align-content:start;grid-auto-rows:max-content;padding-bottom:10px}
+#dhManageCard.rs-mode #dhmPanelSticker .ctb-stgrid{flex:0 1 auto;min-height:0;max-height:none;align-content:start;grid-auto-rows:max-content;padding-bottom:4px}
 /* 날짜 시트 스티커 고르기는 한 줄에 3개(사용자 요청 2026-09-24 "3x3으로") — 칸이 커져 그림이 잘 보인다 */
 #dhmStickerGrid{grid-template-columns:repeat(3,1fr);gap:12px}
 #dhmStickerGrid .ctb-stcell{padding:12px 8px 9px;border-radius:16px}
