@@ -21444,9 +21444,10 @@ function _renderCoinChip(){
   _renderCoinReward();
 }
 function _rewardUnit(){ const p=(typeof _admobPlatform==='function')?_admobPlatform():null; return p?(_adRewardCfg[p]||''):''; }
+/* 구독자에게도 보인다(사용자 지시 2026-09-24) — 스스로 눌러야 나오는 광고라 '광고 제거' 혜택과 부딪히지 않고,
+   모은 코인은 구독이 끝난 뒤에도 그대로 쓴다. 배너 광고는 여전히 구독자에게 안 나온다. */
 function _rewardAvailable(){
-  return _coinVisible() && !!_currentUser && typeof _admobReady!=='undefined' && _admobReady && !!_rewardUnit()
-    && (!isEffectivePremium() || isAdmin());
+  return _coinVisible() && !!_currentUser && typeof _admobReady!=='undefined' && _admobReady && !!_rewardUnit();
 }
 function _renderCoinReward(){
   const b=document.getElementById('coinRewardBtn'); if(!b) return;
