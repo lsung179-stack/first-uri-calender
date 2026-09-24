@@ -7361,9 +7361,11 @@ function _solarToLunarKR_raw(year, month, day){
   const c=_klc();
   if(c){
     try{
-      c.setSolarDate(year, month, day);
-      const l=c.getLunarCalendar();
-      if(l && l.year) return { lm:l.month, ld:l.day, isLeap:!!l.intercalation };
+      // ⚠️ 범위 밖(2051년~)이면 setSolarDate 가 false 를 돌려주고 직전 계산값이 그대로 남는다 → 확인 후에만 읽는다 [2026-09-24]
+      if(c.setSolarDate(year, month, day)){
+        const l=c.getLunarCalendar();
+        if(l && l.year) return { lm:l.month, ld:l.day, isLeap:!!l.intercalation };
+      }
     }catch(_){}
   }
   // 폴백: lunar-javascript (KASI 라이브러리 미로드 또는 범위 밖)
@@ -7380,9 +7382,12 @@ function lunarToSolar(year, lm, ld){
   const c=_klc();
   if(c){
     try{
-      c.setLunarDate(year, lm, ld, false);
-      const s=c.getSolarCalendar();
-      if(s && s.year) return {year:s.year, month:s.month, day:s.day};
+      // ⚠️ 없는 날짜(작은달 30일 등)면 setLunarDate 가 false 를 돌려주고 직전 계산값이 그대로 남아
+      //    엉뚱한 날에 음력 반복·생일이 뜰 수 있었다 → 성공했을 때만 읽고, 아니면 아래 폴백(없는 날짜면 null) [2026-09-24]
+      if(c.setLunarDate(year, lm, ld, false)){
+        const s=c.getSolarCalendar();
+        if(s && s.year) return {year:s.year, month:s.month, day:s.day};
+      }
     }catch(_){}
   }
   try{
