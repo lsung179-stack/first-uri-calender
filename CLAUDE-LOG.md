@@ -450,3 +450,4 @@
   - 검증: `reward_verify.mjs` 23항목(비공개/단위 미설정/구독자 숨김, 문구·횟수, 연타 1회, SSV 에 계정 id 전달, 끝까지 봄→+1, 건너뜀→안내, 늦은 보상, 광고 없음, 상한, 관리자, 안드로이드 단위 없음, 캠프 테마 대비, 오류 없음) + 기존 `coin_verify` 73항목 통과. ⚠️ 실제 광고·SSV 는 **AdMob 에서 보상형 단위 생성 + SSV 콜백 URL 등록 + app_config 에 단위 id 입력** 후에만 동작, iOS 는 이 코드가 든 빌드부터.
 
 - **2026-09-24 `admob-ssv` v2 — AdMob 'URL 확인' 403 수정**: 보상 항목을 한글('코인')로 만들자 구글 요청에 `reward_item=%EC%BD%94%EC%9D%B8` 가 오는데, 구글은 **%XX 를 푼 문자열에 서명**하므로 원문 그대로 검증하던 v1 은 서명 불일치로 403. → `decodeURIComponent` 한 문자열로 먼저 검증하고 원문도 허용(둘 다 구글 서명이 있어야 통과). 검증: 로그에 남은 구글 실제 테스트 요청을 그대로 재전송 → 200 `no user`, 같은 요청에서 `reward_amount` 만 바꾸면 403.
+- **2026-09-24 보상형 광고 단위 등록 완료**: `app_config.admob_rewarded_ios` = `ca-app-pub-2305246987819297/2472669914`, `admob_rewarded_android` = `ca-app-pub-2305246987819297/3775063169`(둘 다 보상 1 '코인', SSV 콜백 `…/functions/v1/admob-ssv`). AdMob 'URL 확인' 요청 두 번(iOS 13:01·Android 13:07 UTC) 모두 200 확인. 이후 `admob-ssv` 는 이 두 단위에서 온 보상만 적립한다.
