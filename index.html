@@ -18185,7 +18185,7 @@ SEAL_SETS.a_dino={name:'두두',zoom:1.05,img:'https://bgqzkkaslqchbovzrkao.supa
 SEAL_SETS.c_gaegu={name:'개구쟁이',zoom:1.2,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/2abc25ef321468c5.png'};
 SEAL_SETS.c_simsul={name:'심술이',zoom:1.2,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/ec9bea4763ae544a.png'};
 SEAL_SETS.c_kkalkal={name:'깔깔이',zoom:1.2,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/b30d18785edd29ea.png'};
-const SEAL_SET_ORDER=['camp', 'a_cat', 'a_rabbit', 'a_bear', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'a_dino', 'c_gaegu', 'nabi', 'moon', 'daisy', 'star', 'koi'];   // 보리·호담·소녀·소년·눈꽃 제거(2026-07-23, 사용자 요청). 데이터는 잔존(레거시 저장값 렌더용)   // 구 전통 5종(plum·lotus·crane·camellia·chrysw)은 데이터만 잔존(레거시 저장값 렌더용)
+const SEAL_SET_ORDER=['camp', 'mono', 'a_cat', 'a_rabbit', 'a_bear', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'a_dino', 'c_gaegu', 'nabi', 'moon', 'daisy', 'star', 'koi'];   // 보리·호담·소녀·소년·눈꽃 제거(2026-07-23, 사용자 요청). 데이터는 잔존(레거시 저장값 렌더용)   // 구 전통 5종(plum·lotus·crane·camellia·chrysw)은 데이터만 잔존(레거시 저장값 렌더용)
 /* ── 방 카드 배경 스킨 (members.card_skin, 마이그레이션 add_members_card_skin) — 무료 7 + 프리미엄 8 ── */
 const CARD_SKINS={
   butter:{name:'버터',free:true}, blush:{name:'블러쉬',free:true}, mint:{name:'민트',free:true},
@@ -18247,7 +18247,7 @@ CARD_SKINS.a_dino={name:'두두',img:'https://bgqzkkaslqchbovzrkao.supabase.co/s
 CARD_SKINS.c_gaegu={name:'개구쟁이',img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/7a6187969f8bd5c9.jpg'};
 CARD_SKINS.c_simsul={name:'심술이',img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/e63cb6a448474daf.jpg'};
 CARD_SKINS.c_kkalkal={name:'깔깔이',img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/72597fcc24f0167c.jpg'};
-const CARD_SKIN_PREM=['camp', 'a_cat', 'a_rabbit', 'a_bear', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'a_dino', 'c_gaegu', 'nabi', 'moon', 'daisy', 'star', 'koi'];   // 보리·호담·소녀·소년·눈꽃 제거(2026-07-23, 사용자 요청). CARD_SKINS 데이터는 잔존
+const CARD_SKIN_PREM=['camp', 'mono', 'a_cat', 'a_rabbit', 'a_bear', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'a_dino', 'c_gaegu', 'nabi', 'moon', 'daisy', 'star', 'koi'];   // 보리·호담·소녀·소년·눈꽃 제거(2026-07-23, 사용자 요청). CARD_SKINS 데이터는 잔존
 function _cardSkinCls(k){ if(_isCustomSkin(k)) return ' rcs-img'; const sk=k&&CARD_SKINS[k]; if(!sk)return ''; if(sk.char) return ' rcs-char'+(sk.dark?' rcs-dark':''); if(sk.img) return ' rcs-img'+(sk.dark?' rcs-dark':''); return ' rcs-'+k+(sk.dark?' rcs-dark':''); }
 function _cardSkinStyle(k){ if(_isCustomSkin(k)){ var cu=_customThemeOf(k); return (cu&&cu.bg_url)?(' style="'+_ctCardBgStyle({url:cu.bg_url,x:cu.card_x,y:cu.card_y})+'"'):''; }
   const sk=k&&CARD_SKINS[k]; if(!sk)return '';
@@ -24920,7 +24920,7 @@ let _currentRoomTheme=null;
 const ROOM_CHAR_THEME={
   // 별밤 캠핑 — 남색 밤하늘 아래 모닥불 앞 너구리·고슴도치(마시멜로 굽기). 앱 첫 어두운 테마 [2026-09-23]
   camp:{theme:'camp', cls:'rc-camp', mascot:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/seal.png', bgScene:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/scene.jpg', charInScene:true},
-  // ⚠️ mono(심플 블랙&화이트)는 스토어에서 내림(2026-09-23, 사용자 요청) — 이미 고른 사람 화면이 깨지지 않게 데이터만 남김
+  // mono(심플 블랙&화이트) — 2026-09-23 실수로 스토어에서 내렸다가 2026-09-25 복귀(사용자: 지우라던 건 출시 배너였음)
   // 심플 블랙&화이트 — 흰 바탕에 옅은 검정 낙서 배경(캐릭터 워터마크 없음: 참고 사진처럼 미니멀하게)
   /* 심플 블랙&화이트 — 배경 낙서를 옅게 깔면 흰 바탕이 탁해 보인다는 평이 많아 완전 흰색으로(장식 없음) [2026-08-24] */
   mono:{theme:'mono', cls:'rc-mono', plain:true, mascot:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/9d6ab8e42977ef00.png'},
