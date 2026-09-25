@@ -21767,7 +21767,7 @@ function renderCoinShop(){
     const priceTxt=sp&&sp.priceString?escapeHtml(sp.priceString):(isNativeApp()?'…':'앱에서');
     return `<button type="button" class="coin-pack" onclick="onBuyCoinPack('${escapeHtml(p.product_id)}')">
       <i class="coin-ico coin-ico-lg"></i>
-      <span class="coin-pack-amt">${(p.coins+(p.bonus||0)).toLocaleString()}<small>코인</small></span>
+      <span class="coin-pack-amt">${p.coins.toLocaleString()}<small>코인</small></span>
       ${p.bonus?`<span class="coin-bonus">+${p.bonus} 보너스</span>`:''}
       <span class="coin-pack-buy">${priceTxt}</span>
     </button>`;
