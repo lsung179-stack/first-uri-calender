@@ -21493,6 +21493,11 @@ let _adRewardToday=0;
 let _rewardPhase=null;     // null | 'loading' | 'checking'
 let _rewardEarned=false;
 let _rewardListenersOn=false;
+/* 보상형 광고 미리 받기·재시도 [2026-09-25] — 누르는 순간 받기 시작하면 몇 초씩 걸리고, 구글이 그 순간 내줄 광고가 없으면(no fill)
+   바로 '광고가 없어요'로 끝났다. 코인 충전 창을 열 때·한 편 본 직후 다음 광고를 미리 받아 두고, 실패하면 2초·5초 뒤 다시 시도한다.
+   광고는 받은 뒤 1시간이 지나면 만료되므로 50분까지만 쓴다. 받은 계정(SSV userId)이 바뀌면 다시 받는다. */
+let _rewardReadyAt=0, _rewardReadyUid=null, _rewardPreloading=null, _rewardLastErr=null, _rewardShown=false;
+const _REWARD_FRESH_MS=50*60*1000;
 function _coinVisible(){ return _coinPublic || (typeof isAdmin==='function' && isAdmin()); }
 function _ownsItem(type,key){ return !!(key && _dbUnlocks[type] && _dbUnlocks[type].indexOf(key)>=0); }
 function coinPriceOf(type,key){ return _shopPrices[type+':'+key]||null; }
@@ -21557,12 +21562,55 @@ function _renderCoinReward(){
     +'<span class="coin-reward-amt">+'+_adRewardCfg.coins+'<i class="coin-ico"></i></span>';
 }
 function _ensureRewardListeners(AdMob){
-  if(_rewardListenersOn||!AdMob||!AdMob.addListener) return;
-  _rewardListenersOn=true;
+  // 같은 플러그인 객체에는 한 번만 — 객체가 바뀌면(드물지만) 다시 건다
+  if(!AdMob||!AdMob.addListener||_rewardListenersOn===AdMob) return;
+  _rewardListenersOn=AdMob;
   try{
     AdMob.addListener('onRewardedVideoAdReward',function(){ _rewardEarned=true; });
     AdMob.addListener('onRewardedVideoAdDismissed',function(){ _rewardFinish(); });
     AdMob.addListener('onRewardedVideoAdFailedToShow',function(){ _rewardFinish(); });
+    AdMob.addListener('onRewardedVideoAdShowed',function(){ _rewardShown=true; });
+    // 불러오기 실패 이유(구글 오류 코드·메시지) — Promise 거절 문구엔 이유가 없어(iOS 'Loading failed') 이벤트로 받는다
+    AdMob.addListener('onRewardedVideoAdFailedToLoad',function(info){
+      _rewardLastErr={code:(info&&info.code!=null)?info.code:null, message:(info&&info.message)||''};
+    });
+  }catch(_){}
+}
+function _rewardFresh(){ return !!_rewardReadyAt && (Date.now()-_rewardReadyAt)<_REWARD_FRESH_MS && _rewardReadyUid===(_currentUser&&_currentUser.id); }
+function _withTimeout(p, ms){ return Promise.race([p, new Promise(function(_,rej){ setTimeout(function(){ rej(new Error('timeout')); }, ms); })]); }
+/* 한 번 받기(실패하면 throw) — ssv.userId = 적립받을 계정, 서버가 이 값과 구글 서명을 함께 확인한다 */
+async function _prepareRewardOnce(AdMob){
+  _rewardLastErr=null; _rewardReadyAt=0;
+  const uid=_currentUser&&_currentUser.id;
+  await _withTimeout(AdMob.prepareRewardVideoAd({ adId:_rewardUnit(), ssv:{ userId:uid, customData:'coin' } }), 15000);
+  _rewardReadyAt=Date.now(); _rewardReadyUid=uid;
+}
+/* 최대 tries 번(0·2·5초 간격, 한 번에 15초까지) — 실패마다 audit_log 에 이유를 남긴다(관리자만 읽음) */
+async function _prepareRewardRetry(AdMob, tries, why){
+  const waits=[0,2000,5000];
+  for(let i=0;i<tries;i++){
+    if(waits[i]) await new Promise(function(r){ setTimeout(r,waits[i]); });
+    try{ await _prepareRewardOnce(AdMob); return true; }
+    catch(e){
+      const err=_rewardLastErr||{code:null,message:String((e&&e.message)||e||'')};
+      _admobDebug='보상광고실패:'+(err.code!=null?err.code+' ':'')+(err.message||'');
+      console.warn('보상형 광고 로드 실패('+(i+1)+'/'+tries+'):', err);
+      _audit('ad_reward_load_fail',{meta:{platform:_admobPlatform(), unit:_rewardUnit(), attempt:i+1, tries:tries, why:why||'', code:err.code, message:String(err.message||'').slice(0,200)}});
+      // 15초 동안 응답이 없던 건 망 문제 — 더 기다리게 하지 않고 바로 안내한다(광고 없음(no fill)만 다시 시도)
+      if(e&&e.message==='timeout') break;
+    }
+  }
+  return false;
+}
+/* 뒤에서 미리 받기 — 코인 충전 창을 열 때·광고 한 편이 끝난 뒤 */
+function _preloadReward(){
+  try{
+    if(!_rewardAvailable()||_rewardPhase||_rewardPreloading||_rewardFresh()) return;
+    if(_adRewardToday>=_adRewardCfg.cap) return;
+    const AdMob=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.AdMob;
+    if(!AdMob) return;
+    _ensureRewardListeners(AdMob);
+    _rewardPreloading=_prepareRewardRetry(AdMob,1,'preload').finally(function(){ _rewardPreloading=null; });
   }catch(_){}
 }
 async function onWatchRewardAd(){
@@ -21572,16 +21620,26 @@ async function onWatchRewardAd(){
   const AdMob=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.AdMob;
   if(!AdMob){ toast('광고 모듈을 불러오지 못했어요'); return; }
   _ensureRewardListeners(AdMob);
-  _rewardPhase='loading'; _rewardEarned=false; _renderCoinReward();
+  _rewardPhase='loading'; _rewardEarned=false; _rewardShown=false; _renderCoinReward();
   try{
-    // ssv.userId = 적립받을 계정 — 서버가 이 값과 구글 서명을 함께 확인한다
-    await AdMob.prepareRewardVideoAd({ adId:_rewardUnit(), ssv:{ userId:_currentUser.id, customData:'coin' } });
-    // iOS 플러그인은 보상 없이 닫으면 이 Promise 를 끝내지 않는다 → 결과는 위 리스너(닫힘/실패)로 받는다
-    AdMob.showRewardVideoAd().catch(function(e){ console.warn('보상형 광고 표시 실패:', e); _rewardFinish(); });
+    if(_rewardPreloading){ try{ await _rewardPreloading; }catch(_){} }
+    let ok=_rewardFresh();
+    if(!ok) ok=await _prepareRewardRetry(AdMob,3,'tap');
+    if(!ok) throw new Error('load failed');
+    _rewardReadyAt=0;   // 한 번 보여주면 다 쓴 것
+    // iOS 플러그인은 보상 없이 닫으면 이 Promise 를 끝내지 않는다 → 결과는 리스너(닫힘/실패)로 받는다
+    AdMob.showRewardVideoAd().catch(async function(e){
+      console.warn('보상형 광고 표시 실패:', e);
+      if(_rewardShown){ _rewardFinish(); return; }
+      // 보여주기도 전에 거절(만료·준비 안 됨) → 새로 한 번 받아 다시 보여준다
+      const again=await _prepareRewardRetry(AdMob,2,'show-retry');
+      if(again){ _rewardReadyAt=0; AdMob.showRewardVideoAd().catch(function(){ _rewardFinish(); }); }
+      else _rewardFinish();
+    });
   }catch(e){
-    console.warn('보상형 광고 로드 실패:', e);
     _rewardPhase=null; _renderCoinReward();
-    toast('지금은 보여줄 광고가 없어요. 잠시 후 다시 시도해주세요.');
+    const err=_rewardLastErr;
+    toast('지금은 보여줄 광고가 없어요. 잠시 후 다시 시도해주세요.'+((typeof isAdmin==='function'&&isAdmin()&&err)?(' ['+(err.code!=null?err.code+' ':'')+(err.message||'')+']'):''));
   }
 }
 async function _rewardFinish(){
@@ -21601,6 +21659,8 @@ async function _rewardFinish(){
   else toast('광고를 끝까지 보면 코인을 받아요');
   renderCoinShop(); _renderCoinReward();
   try{ _rerenderStoreTab(); }catch(_){}
+  // 다음 광고를 미리 받아 둔다(창이 열려 있을 때만)
+  try{ const cd=document.getElementById('coinCard'); if(cd&&cd.classList.contains('on')) setTimeout(_preloadReward,800); }catch(_){}
 }
 window.onWatchRewardAd=onWatchRewardAd;
 /* 무료 사용자에게 보이는 잠긴 버튼 — 코인 가격이 있으면 가격, 없으면 기존 🔒프리미엄 */
@@ -21691,6 +21751,7 @@ function openCoinShop(){
   if(ov) ov.classList.add('on'); if(cd) cd.classList.add('on');
   try{ hideAdBanner(); }catch(_){}
   _loadCoinProducts();
+  _preloadReward();
 }
 function closeCoinShop(){
   const ov=document.getElementById('coinOverlay'), cd=document.getElementById('coinCard');
