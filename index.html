@@ -3001,6 +3001,23 @@ body.align-right .cal-evbar{text-align:right}
   border:1px solid var(--border);
 }
 .ann-detail-photo img{width:100%;display:block;max-height:480px;object-fit:cover}
+/* 공지 본문 — 글·사진을 블로그처럼 순서대로 [2026-09-25] */
+.ann-rich{white-space:normal}
+.ann-rich .ann-tx{white-space:pre-wrap;word-break:break-word}
+.ann-rich .ann-img{margin:14px 0;border-radius:12px;overflow:hidden;background:var(--bg);border:1px solid var(--border);cursor:pointer}
+.ann-rich .ann-img:first-child{margin-top:2px}
+.ann-rich .ann-img:last-child{margin-bottom:2px}
+.ann-rich .ann-img img{width:100%;height:auto;display:block}
+.ann-blk-hint{font-weight:500;color:var(--mute);letter-spacing:0}
+.ann-blocks{display:flex;flex-direction:column;gap:8px}
+.ann-blocks .ann-blk-ta{min-height:64px;resize:none;overflow:hidden}
+.ann-blocks .ann-blk-ta.first{min-height:120px}
+.ann-blk-img{position:relative;border-radius:10px;overflow:hidden;border:1.5px solid var(--border);background:var(--bg)}
+.ann-blk-img img{width:100%;max-height:220px;object-fit:contain;display:block;background:var(--bg)}
+.ann-blk-acts{position:absolute;top:6px;right:6px;display:flex;gap:6px}
+.ann-blk-acts button{width:30px;height:30px;border-radius:50%;border:none;background:rgba(0,0,0,.62);color:#fff;font-size:14px;line-height:30px;padding:0;cursor:pointer;font-family:inherit}
+.ann-blk-acts button:disabled{opacity:.35}
+.ann-blk-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}
 /* 공지사항 팝업 사진 */
 .ann-popup-photo{
   margin:10px 18px 0;border-radius:12px;overflow:hidden;
@@ -6218,21 +6235,13 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
   </div>
   
   <div class="ann-compose-field">
-    <div class="ann-compose-label">본문</div>
-    <textarea class="ann-compose-textarea" id="annComposeBodyInput" placeholder="공지사항 내용을 입력하세요" maxlength="2000"></textarea>
-    <div class="ann-compose-counter"><span id="annComposeBodyCount">0</span>/2000</div>
-  </div>
-  
-  <div class="ann-compose-field">
-    <div class="ann-compose-label">사진 (선택)</div>
-    <div class="ev-photo-row" id="annPhotoRow">
-      <button type="button" class="ev-photo-pick-btn" id="annPhotoPickBtn" onclick="pickAnnPhoto()">📷 사진 선택</button>
-      <div class="ev-photo-preview" id="annPhotoPreview" style="display:none">
-        <img id="annPhotoPreviewImg" alt="첨부 사진">
-        <button type="button" class="ev-photo-remove" onclick="removeAnnPhoto()" aria-label="사진 제거">✕</button>
-      </div>
-      <input type="file" id="annPhotoFile" accept="image/*" hidden onchange="onAnnPhotoSelected(event)">
+    <div class="ann-compose-label">본문 <span class="ann-blk-hint">· 글을 쓰다가 넣고 싶은 곳에서 '사진 넣기'</span></div>
+    <div class="ann-blocks" id="annBlocks"></div>
+    <div class="ann-blk-tools">
+      <button type="button" class="ev-photo-pick-btn" id="annPhotoPickBtn" onmousedown="event.preventDefault()" onclick="pickAnnPhoto()">📷 사진 넣기</button>
+      <div class="ann-compose-counter"><span id="annComposeBodyCount">0</span>/2000</div>
     </div>
+    <input type="file" id="annPhotoFile" accept="image/*" multiple hidden onchange="onAnnPhotoSelected(event)">
   </div>
   
   <div class="ann-compose-field">
@@ -19482,8 +19491,7 @@ function openAnnouncementDetail(id){
       <div class="ann-detail-title">${escapeHtml(ann.title)}</div>
       <div class="ann-detail-date">${dateStr}</div>
       <div class="ann-detail-divider"></div>
-      ${ann.image_url?`<div class="ann-detail-photo" onclick="openPhotoView('${escapeHtml(ann.image_url)}')"><img src="${escapeHtml(ann.image_url)}" alt="공지 사진" loading="lazy"></div>`:''}
-      <div class="ann-detail-body">${escapeHtml(ann.body||'')}</div>
+      <div class="ann-detail-body">${_annContentHTML(ann)}</div>
     </div>
   `;
 }
@@ -19512,33 +19520,86 @@ function formatAnnDateLong(iso){
 /* ── 작성 / 수정 모달 ── */
 let _annEditId=null;  // 수정 모드면 ID, 새 글이면 null
 
-/* 공지사항 사진 첨부 상태 */
-let _annPhotoBlob=null;
-let _annPhotoPreviewUrl=null;
-let _annExistingPhotoUrl=null;
-let _annPhotoRemoved=false;
+/* ══ 공지 본문 = 글·사진 블록 (네이버 블로그처럼 글 사이에 사진) [2026-09-25] ══
+   저장: announcements.blocks = [{t:'text',v}|{t:'img',u}] (사진이 있을 때만, 없으면 null).
+   옛 앱(1.2.2 이하)은 blocks 를 모르므로 body(글만 이어 붙인 것)·image_url(첫 사진)도 함께 채운다.
+   편집 중엔 항상 글로 시작·끝나고 사진 사이에도 글 칸이 있게 정리한다(_annNormBlocks). */
+let _annBlocks=[{t:'text',v:''}];   // 편집 중 블록 — 사진은 {t:'img', u(올린 주소)|blob+prev(새 사진)}
+let _annCaret=null;                 // 마지막 커서 {bi, pos} — '사진 넣기'가 여기를 둘로 나눈다
+let _annOrigUrls=[];                // 수정 전 사진 주소들(저장 후 안 쓰게 된 건 Storage 에서 지움)
 
-function _resetAnnPhotoState(){
-  if(_annPhotoPreviewUrl){try{URL.revokeObjectURL(_annPhotoPreviewUrl)}catch(_){}}
-  _annPhotoBlob=null;
-  _annPhotoPreviewUrl=null;
-  _annExistingPhotoUrl=null;
-  _annPhotoRemoved=false;
-  const pickBtn=document.getElementById('annPhotoPickBtn');
-  const prev=document.getElementById('annPhotoPreview');
-  const previewImg=document.getElementById('annPhotoPreviewImg');
-  if(pickBtn)pickBtn.style.display='';
-  if(prev)prev.style.display='none';
-  if(previewImg)previewImg.src='';
+/* 공지 한 건의 블록 — blocks 가 있으면 그대로, 없으면 예전 방식(사진 위 + 글) */
+function _annBlocksOf(ann){
+  if(ann && Array.isArray(ann.blocks) && ann.blocks.length){
+    return ann.blocks.filter(b=>b && ((b.t==='text' && typeof b.v==='string') || (b.t==='img' && b.u)));
+  }
+  const out=[];
+  if(ann && ann.image_url) out.push({t:'img',u:ann.image_url});
+  if(ann && ann.body) out.push({t:'text',v:ann.body});
+  return out;
 }
-function _showAnnExistingPhoto(url){
-  _annExistingPhotoUrl=url;
-  const pickBtn=document.getElementById('annPhotoPickBtn');
-  const prev=document.getElementById('annPhotoPreview');
-  const previewImg=document.getElementById('annPhotoPreviewImg');
-  if(previewImg)previewImg.src=url;
-  if(prev)prev.style.display='';
-  if(pickBtn)pickBtn.style.display='none';
+function _annImgUrls(ann){ return _annBlocksOf(ann).filter(b=>b.t==='img').map(b=>b.u).concat(ann&&ann.image_url?[ann.image_url]:[]).filter((u,i,a)=>u&&a.indexOf(u)===i); }
+/* 보기(상세·팝업) — 글은 줄바꿈 그대로, 사진은 가로 꽉 차게(자르지 않음) */
+function _annContentHTML(ann){
+  return '<div class="ann-rich">'+_annBlocksOf(ann).map(b=>{
+    if(b.t==='img') return '<div class="ann-img" data-u="'+escapeHtml(b.u)+'" onclick="openPhotoView(this.dataset.u)"><img src="'+escapeHtml(b.u)+'" alt="공지 사진" loading="lazy"></div>';
+    const v=String(b.v||'').replace(/^\n+|\n+$/g,'');
+    return v?'<div class="ann-tx">'+escapeHtml(v)+'</div>':'';
+  }).join('')+'</div>';
+}
+
+/* ── 편집 블록 정리: 붙은 글 합치기, 글로 시작·끝, 사진 사이엔 빈 글 칸 ── */
+function _annJoinText(a,b){
+  a=a||''; b=b||'';
+  if(!a) return b; if(!b) return a;
+  return a.replace(/\n+$/,'')+'\n\n'+b.replace(/^\n+/,'');   // 사진 자리 = 문단 경계 → 빈 줄 하나로 잇는다
+}
+function _annNormBlocks(){
+  const out=[];
+  _annBlocks.forEach(b=>{
+    const last=out[out.length-1];
+    if(b.t==='text'){
+      if(last && last.t==='text') last.v=_annJoinText(last.v,b.v);
+      else out.push({t:'text',v:b.v||''});
+    }else{
+      if(!last || last.t==='img') out.push({t:'text',v:''});
+      out.push(b);
+    }
+  });
+  if(!out.length || out[out.length-1].t!=='text') out.push({t:'text',v:''});
+  _annBlocks=out;
+}
+function _annTextLen(){ return _annBlocks.reduce((n,b)=>n+(b.t==='text'?(b.v||'').length:0),0); }
+function _annFit(ta){ try{ ta.style.height='auto'; ta.style.height=(ta.scrollHeight+3)+'px'; }catch(_){} }
+function renderAnnBlocks(focusBi,focusPos){
+  _annNormBlocks();
+  const box=document.getElementById('annBlocks'); if(!box) return;
+  box.innerHTML=_annBlocks.map((b,i)=>{
+    if(b.t==='img'){
+      const src=b.prev||b.u||'';
+      return '<div class="ann-blk-img"><img src="'+escapeHtml(src)+'" alt="넣은 사진">'
+        +'<div class="ann-blk-acts">'
+        +'<button type="button" onclick="annMoveImg('+i+',-1)" aria-label="위로"'+(i===1&&!(_annBlocks[0].v||'').trim()?' disabled':'')+'>↑</button>'
+        +'<button type="button" onclick="annMoveImg('+i+',1)" aria-label="아래로"'+(i===_annBlocks.length-2&&!(_annBlocks[i+1].v||'').trim()?' disabled':'')+'>↓</button>'
+        +'<button type="button" onclick="annRemoveImg('+i+')" aria-label="사진 빼기">✕</button></div></div>';
+    }
+    const ph=i===0?'공지사항 내용을 입력하세요':'글을 이어 쓰세요 (비워 두면 사진만 이어져요)';
+    return '<textarea class="ann-compose-textarea ann-blk-ta'+(i===0?' first':'')+'" data-bi="'+i+'" placeholder="'+ph+'"></textarea>';
+  }).join('');
+  box.querySelectorAll('textarea[data-bi]').forEach(ta=>{
+    const bi=Number(ta.dataset.bi);
+    ta.value=_annBlocks[bi].v||'';
+    const mark=()=>{ _annCaret={bi, pos:ta.selectionStart||0}; };
+    ta.addEventListener('input',()=>{ _annBlocks[bi].v=ta.value; _annFit(ta); mark(); updateAnnComposeCounters(); });
+    ['focus','click','keyup','select'].forEach(ev=>ta.addEventListener(ev,mark));
+    _annFit(ta);
+    if(bi===focusBi){ try{ ta.focus({preventScroll:true}); const p=Math.min(focusPos||0,ta.value.length); ta.setSelectionRange(p,p); _annCaret={bi,pos:p}; }catch(_){} }
+  });
+  updateAnnComposeCounters();
+}
+function _resetAnnPhotoState(){
+  _annBlocks.forEach(b=>{ if(b.prev){ try{URL.revokeObjectURL(b.prev)}catch(_){} } });
+  _annBlocks=[{t:'text',v:''}]; _annCaret=null; _annOrigUrls=[];
 }
 
 /* 파일 선택 트리거 */
@@ -19546,78 +19607,103 @@ function pickAnnPhoto(){
   const f=document.getElementById('annPhotoFile');
   if(f)f.click();
 }
-/* 사진 선택됨 → 리사이즈 → 미리보기 */
+/* 사진 고름(여러 장 가능) → 리사이즈 → 마지막 커서 자리에 끼워 넣기(글을 둘로 나눔) */
 async function onAnnPhotoSelected(e){
-  let file=e?.target?.files?.[0];
-  if(!file)return;
-  const isHeic=/^image\/hei[cf]/i.test(file.type) || /\.heic$/i.test(file.name) || /\.heif$/i.test(file.name);
-  if(!/^image\//.test(file.type) && !isHeic){toast('이미지 파일만 가능해요');return}
+  const files=Array.from(e?.target?.files||[]);
+  if(e?.target)e.target.value='';
+  if(!files.length)return;
   const btn=document.getElementById('annPhotoPickBtn');
   const origBtnText=btn?.textContent;
+  const made=[];
   try{
-    if(isHeic){
-      if(btn){btn.textContent='HEIC 변환 중...';btn.disabled=true}
-      try{
-        const heic2any=await loadHeic2Any();
-        const converted=await heic2any({blob:file, toType:'image/jpeg', quality:0.92});
-        const cBlob=Array.isArray(converted)?converted[0]:converted;
-        const newName=(file.name||'photo').replace(/\.hei[cf]$/i,'.jpg');
-        file=new File([cBlob], newName, {type:'image/jpeg'});
-      }catch(err){
-        console.error('HEIC 변환 실패:',err);
-        toast('HEIC 사진 변환에 실패했어요. 다른 사진을 선택해주세요');
-        return;
+    for(let file of files){
+      const isHeic=/^image\/hei[cf]/i.test(file.type) || /\.heic$/i.test(file.name) || /\.heif$/i.test(file.name);
+      if(!/^image\//.test(file.type) && !isHeic){toast('이미지 파일만 가능해요');continue}
+      if(isHeic){
+        if(btn){btn.textContent='HEIC 변환 중...';btn.disabled=true}
+        try{
+          const heic2any=await loadHeic2Any();
+          const converted=await heic2any({blob:file, toType:'image/jpeg', quality:0.92});
+          const cBlob=Array.isArray(converted)?converted[0]:converted;
+          file=new File([cBlob], (file.name||'photo').replace(/\.hei[cf]$/i,'.jpg'), {type:'image/jpeg'});
+        }catch(err){
+          console.error('HEIC 변환 실패:',err);
+          toast('HEIC 사진 변환에 실패했어요. 다른 사진을 선택해주세요');
+          continue;
+        }
       }
+      const blob=await resizeEventImage(file, 1600, 0.82);
+      made.push({t:'img', blob, prev:URL.createObjectURL(blob)});
     }
-    const blob=await resizeEventImage(file, 1600, 0.82);
-    if(_annPhotoPreviewUrl){try{URL.revokeObjectURL(_annPhotoPreviewUrl)}catch(_){}}
-    _annPhotoBlob=blob;
-    _annPhotoPreviewUrl=URL.createObjectURL(blob);
-    _annPhotoRemoved=false;
-    _annExistingPhotoUrl=null;
-    const prev=document.getElementById('annPhotoPreview');
-    const previewImg=document.getElementById('annPhotoPreviewImg');
-    const pickBtn=document.getElementById('annPhotoPickBtn');
-    if(previewImg)previewImg.src=_annPhotoPreviewUrl;
-    if(prev)prev.style.display='';
-    if(pickBtn)pickBtn.style.display='none';
   }catch(err){
     console.error(err);
     toast('사진 처리에 실패했어요');
   }finally{
-    if(btn){btn.textContent=origBtnText||'📷 사진 선택';btn.disabled=false}
-    if(e?.target)e.target.value='';
+    if(btn){btn.textContent=origBtnText||'📷 사진 넣기';btn.disabled=false}
   }
+  if(!made.length)return;
+  _annNormBlocks();
+  let bi=_annCaret&&_annBlocks[_annCaret.bi]&&_annBlocks[_annCaret.bi].t==='text'?_annCaret.bi:_annBlocks.length-1;
+  const cur=_annBlocks[bi], text=cur.v||'';
+  const pos=_annCaret&&_annCaret.bi===bi?Math.min(_annCaret.pos,text.length):text.length;
+  const before=text.slice(0,pos).replace(/\n+$/,''), after=text.slice(pos).replace(/^\n+/,'');
+  cur.v=before;
+  _annBlocks.splice(bi+1,0,...made,{t:'text',v:after});
+  renderAnnBlocks(bi+made.length*2, 0);   // 정리 후 '마지막 사진 다음 글 칸' = bi + 2×장수
 }
-function removeAnnPhoto(){
-  if(_annPhotoPreviewUrl){try{URL.revokeObjectURL(_annPhotoPreviewUrl)}catch(_){}}
-  _annPhotoBlob=null;
-  _annPhotoPreviewUrl=null;
-  _annExistingPhotoUrl=null;
-  _annPhotoRemoved=true;
-  const pickBtn=document.getElementById('annPhotoPickBtn');
-  const prev=document.getElementById('annPhotoPreview');
-  const previewImg=document.getElementById('annPhotoPreviewImg');
-  if(pickBtn)pickBtn.style.display='';
-  if(prev)prev.style.display='none';
-  if(previewImg)previewImg.src='';
-}
-/* Storage에 사진 업로드 (event-photos bucket의 announcements/ 경로 공유) */
-async function uploadAnnPhotoIfNeeded(){
-  if(_annPhotoBlob){
-    const ext='jpg';
+/* 사진 위·아래로 — 이웃한 글의 한 문단(줄)만큼씩 움직인다. 사이 글이 비었으면 옆 사진과 자리 바꿈 */
+window.annMoveImg=function(i,dir){
+  _annNormBlocks();
+  const img=_annBlocks[i]; if(!img||img.t!=='img')return;
+  const nb=_annBlocks[i+dir], far=_annBlocks[i-dir];   // nb=가려는 쪽 글, far=반대쪽 글
+  if(!nb||nb.t!=='text'||!far||far.t!=='text')return;
+  const lines=(nb.v||'').split('\n');
+  const sep=(nb.v||'').indexOf('\n\n')>=0?'\n\n':'\n';
+  let k=-1;
+  if(dir>0){ for(let j=0;j<lines.length;j++){ if(lines[j].trim()){k=j;break} } }
+  else { for(let j=lines.length-1;j>=0;j--){ if(lines[j].trim()){k=j;break} } }
+  if(k<0){
+    // 사이 글이 비었다 → 그 너머 사진과 자리 바꿈(없으면 이미 맨 끝)
+    const other=_annBlocks[i+dir*2];
+    if(!other||other.t!=='img')return;
+    _annBlocks[i+dir*2]=img; _annBlocks[i]=other;
+    renderAnnBlocks(); return;
+  }
+  const chunk=lines[k];
+  if(dir>0){
+    nb.v=lines.slice(k+1).join('\n').replace(/^\n+/,'');
+    far.v=far.v?far.v.replace(/\n+$/,'')+sep+chunk:chunk;
+  }else{
+    nb.v=lines.slice(0,k).join('\n').replace(/\n+$/,'');
+    far.v=far.v?chunk+sep+far.v.replace(/^\n+/,''):chunk;
+  }
+  renderAnnBlocks();
+};
+window.annRemoveImg=function(i){
+  const b=_annBlocks[i]; if(!b||b.t!=='img')return;
+  if(b.prev){ try{URL.revokeObjectURL(b.prev)}catch(_){} }
+  _annBlocks.splice(i,1);
+  renderAnnBlocks();
+};
+/* 새 사진 올리기 → [{t,v}|{t,u}] (빈 글 칸은 뺀다) */
+async function _annUploadBlocks(){
+  const out=[];
+  for(const b of _annBlocks){
+    if(b.t==='text'){ const v=(b.v||'').replace(/^\n+|\n+$/g,''); if(v.trim()) out.push({t:'text',v}); continue; }
+    if(b.u && !b.blob){ out.push({t:'img',u:b.u}); continue; }
     const uid=_currentUser?.id||'anon';
     const rand=Math.random().toString(36).slice(2,10);
-    const path=`announcements/${uid}_${Date.now()}_${rand}.${ext}`;
+    const path=`announcements/${uid}_${Date.now()}_${rand}.jpg`;
     const {data:up,error}=await supa.storage.from('event-photos')
-      .upload(path,_annPhotoBlob,{contentType:'image/jpeg',upsert:false});
+      .upload(path,b.blob,{contentType:'image/jpeg',upsert:false});
     if(error)throw error;
     const {data:pub}=supa.storage.from('event-photos').getPublicUrl(up.path);
-    return pub?.publicUrl||null;
+    const u=pub?.publicUrl||null;
+    if(!u)throw new Error('사진 주소를 받지 못했어요');
+    b.u=u; b.blob=null;          // 저장이 실패해 다시 눌러도 두 번 올리지 않게
+    out.push({t:'img',u});
   }
-  if(_annPhotoRemoved)return null;
-  if(_annExistingPhotoUrl)return _annExistingPhotoUrl;
-  return null;
+  return out;
 }
 /* 공지사항 옛 사진 Storage 정리 */
 async function deleteAnnPhotoFromStorage(url){
@@ -19638,8 +19724,8 @@ function openAnnouncementCompose(){
   _resetAnnPhotoState();
   document.getElementById('annComposeTitle').textContent='새 공지사항';
   document.getElementById('annComposeTitleInput').value='';
-  document.getElementById('annComposeBodyInput').value='';
   document.getElementById('annComposeShowOnOpen').checked=false;
+  renderAnnBlocks();
   updateAnnComposeCounters();
   document.getElementById('annComposeOverlay').classList.add('on');
   document.getElementById('annComposeCard').classList.add('on');
@@ -19653,13 +19739,13 @@ function openAnnouncementEditCurrent(){
   _resetAnnPhotoState();
   document.getElementById('annComposeTitle').textContent='공지사항 수정';
   document.getElementById('annComposeTitleInput').value=ann.title||'';
-  document.getElementById('annComposeBodyInput').value=ann.body||'';
   document.getElementById('annComposeShowOnOpen').checked=!!ann.show_on_open;
-  // 기존 사진 있으면 미리보기
-  if(ann.image_url)_showAnnExistingPhoto(ann.image_url);
-  updateAnnComposeCounters();
+  _annBlocks=_annBlocksOf(ann).map(b=>b.t==='img'?{t:'img',u:b.u}:{t:'text',v:b.v});
+  _annOrigUrls=_annImgUrls(ann);
   document.getElementById('annComposeOverlay').classList.add('on');
   document.getElementById('annComposeCard').classList.add('on');
+  renderAnnBlocks();       // 시트가 보인 뒤 그려야 글 칸 높이가 맞는다
+  setTimeout(()=>{ document.querySelectorAll('#annBlocks textarea').forEach(_annFit); },320);
 }
 function closeAnnouncementCompose(){
   document.getElementById('annComposeOverlay').classList.remove('on');
@@ -19669,7 +19755,7 @@ function closeAnnouncementCompose(){
 }
 function updateAnnComposeCounters(){
   const t=document.getElementById('annComposeTitleInput').value.length;
-  const b=document.getElementById('annComposeBodyInput').value.length;
+  const b=_annTextLen();
   const tc=document.getElementById('annComposeTitleCount');
   const bc=document.getElementById('annComposeBodyCount');
   if(tc)tc.textContent=t;
@@ -19678,29 +19764,29 @@ function updateAnnComposeCounters(){
 async function saveAnnouncement(){
   if(!isAdmin()){ toast('권한이 없어요'); return; }
   const title=(document.getElementById('annComposeTitleInput').value||'').trim();
-  const body=(document.getElementById('annComposeBodyInput').value||'').trim();
   const show_on_open=!!document.getElementById('annComposeShowOnOpen').checked;
   if(!title){ toast('제목을 입력해주세요'); return; }
   if(title.length>60){ toast('제목은 60자 이내로 입력해주세요'); return; }
-  if(body.length>2000){ toast('본문은 2000자 이내로 입력해주세요'); return; }
+  if(_annTextLen()>2000){ toast('본문은 2000자 이내로 입력해주세요'); return; }
   
   const wasNew=!_annEditId;
   
   try{
-    // 사진 업로드 (있으면)
-    let image_url=null;
+    // 새 사진 올리기
+    let blocks;
     try{
-      image_url=await uploadAnnPhotoIfNeeded();
+      blocks=await _annUploadBlocks();
     }catch(uploadErr){
       console.error('사진 업로드 실패:',uploadErr);
       const msg=(uploadErr?.message||'').slice(0,80);
       toast('사진 업로드 실패: '+(msg||'권한 확인 필요'));
       return;
     }
-    
-    // 페이로드 — 사진 있으면 image_url 포함, 없으면 빼서 컬럼 없는 DB와도 호환
-    const fullPayload={ title, body, show_on_open, image_url };
-    const minPayload={ title, body, show_on_open };
+    const imgs=blocks.filter(b=>b.t==='img').map(b=>b.u);
+    // 옛 앱용: 글만 이어 붙인 body + 첫 사진 image_url
+    const body=blocks.filter(b=>b.t==='text').map(b=>b.v).join('\n\n');
+    const image_url=imgs[0]||null;
+    const fullPayload={ title, body, show_on_open, image_url, blocks: imgs.length?blocks:null };
     
     async function doSave(payload){
       if(_annEditId){
@@ -19709,20 +19795,12 @@ async function saveAnnouncement(){
       return await supa.from('announcements').insert(payload);
     }
     
-    // 1차 시도: image_url 포함
     let result=await doSave(fullPayload);
-    
-    // image_url 컬럼이 DB에 없으면 자동 fallback (사진 없을 때만)
-    if(result.error && /image_url|column.*not.*exist|schema cache/i.test(result.error.message||'')){
-      if(image_url){
-        toast('image_url 컬럼이 없어 사진 첨부 불가. SQL 먼저 실행해주세요');
-        console.error('컬럼 없음 — SQL 미실행:',result.error);
-        return;
-      }
-      console.warn('image_url 컬럼 없음 — 사진 없이 재시도');
-      result=await doSave(minPayload);
+    if(result.error && /blocks|column.*not.*exist|schema cache/i.test(result.error.message||'')){
+      toast('공지 저장 칸(blocks)이 아직 없어요. DB 먼저 갱신해주세요');
+      console.error('blocks 컬럼 없음:',result.error);
+      return;
     }
-    
     if(result.error){
       console.error(result.error);
       const m=(result.error.message||'').slice(0,100);
@@ -19730,16 +19808,15 @@ async function saveAnnouncement(){
       return;
     }
     
-    // 수정 모드: 옛 사진 정리
+    // 수정 모드: 더 이상 안 쓰는 옛 사진 정리
     if(_annEditId){
-      const old=_announcements.find(a=>a.id===_annEditId);
-      const oldUrl=old?.image_url||null;
-      if(oldUrl&&oldUrl!==image_url)await deleteAnnPhotoFromStorage(oldUrl);
+      for(const u of _annOrigUrls){ if(imgs.indexOf(u)<0) await deleteAnnPhotoFromStorage(u); }
       toast('수정되었습니다');
     }else{
       toast(show_on_open?'등록 완료 — 이용자에겐 이렇게 보여요':'공지가 등록되었습니다');
     }
     
+    const editedId=_annEditId;
     closeAnnouncementCompose();
     await loadAnnouncements();
     
@@ -19750,7 +19827,7 @@ async function saveAnnouncement(){
         if(just)showAnnouncementPopup(just);
       }, 400);
     }else{
-      if(_annEditId)openAnnouncementDetail(_annEditId);
+      if(editedId)openAnnouncementDetail(editedId);
       else renderAnnouncementList();
     }
     syncAnnouncementBadge();
@@ -19784,17 +19861,13 @@ function showAnnouncementPopup(ann){
   if(!ann)return;
   document.getElementById('annPopupTitle').textContent=ann.title||'';
   document.getElementById('annPopupDate').textContent=formatAnnDateLong(ann.created_at);
-  document.getElementById('annPopupBody').textContent=ann.body||'';
-  // 사진
+  // 글·사진을 순서대로 한 스크롤 안에(사진을 따로 떼어 위에 자르던 예전 방식 대신) [2026-09-25]
+  const bodyEl=document.getElementById('annPopupBody');
+  bodyEl.innerHTML=_annContentHTML(ann); bodyEl.scrollTop=0;
   const photoEl=document.getElementById('annPopupPhoto');
   const photoImg=document.getElementById('annPopupPhotoImg');
-  if(ann.image_url){
-    if(photoImg)photoImg.src=ann.image_url;
-    if(photoEl){photoEl.style.display='';photoEl.onclick=()=>openPhotoView(ann.image_url)}
-  }else{
-    if(photoEl)photoEl.style.display='none';
-    if(photoImg)photoImg.src='';
-  }
+  if(photoEl)photoEl.style.display='none';
+  if(photoImg)photoImg.src='';
   // 팝업 뜨는 순간 그 공지는 본 걸로 처리
   markAnnouncementRead(ann.id);
   document.getElementById('annPopupOverlay').classList.add('on');
@@ -19865,14 +19938,14 @@ async function deleteAnnouncementCurrent(){
   try{
     // 삭제 전 사진 URL 캐싱
     const oldAnn=_announcements.find(a=>a.id===_annCurrentId);
-    const photoUrlToCleanup=oldAnn?.image_url||null;
+    const photoUrlsToCleanup=oldAnn?_annImgUrls(oldAnn):[];
     const { error }=await supa
       .from('announcements')
       .delete()
       .eq('id', _annCurrentId);
     if(error){ console.error(error); toast('삭제에 실패했어요'); return; }
     // Storage 정리
-    if(photoUrlToCleanup)await deleteAnnPhotoFromStorage(photoUrlToCleanup);
+    for(const u of photoUrlsToCleanup) await deleteAnnPhotoFromStorage(u);
     toast('삭제되었습니다');
     _annCurrentId=null;
     await loadAnnouncements();
@@ -19884,9 +19957,7 @@ async function deleteAnnouncementCurrent(){
 /* 작성 모달 인풋 카운터 자동 갱신 (DOM 로드 후 바인딩) */
 document.addEventListener('DOMContentLoaded',()=>{
   const ti=document.getElementById('annComposeTitleInput');
-  const bi=document.getElementById('annComposeBodyInput');
   if(ti)ti.addEventListener('input',updateAnnComposeCounters);
-  if(bi)bi.addEventListener('input',updateAnnComposeCounters);
 });
 
 /* ═══════════════════════════════════
