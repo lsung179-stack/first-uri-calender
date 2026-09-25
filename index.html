@@ -8209,6 +8209,7 @@ async function loadPremiumStatus(){
     try{ renderRoomThemeGrid(); }catch(_){} // 프리미엄 확정 후 이 방 테마 섹션 표시/숨김 갱신
     // 프리미엄 상태가 바뀌었으면 씰·테마·카드 게이트 즉시 반영(만료→기본, 재구독→복원)
     try{ const _nowPrem=(typeof isEffectivePremium==='function')?isEffectivePremium():_isPremium; if(_nowPrem!==_prevPrem) _refreshPremiumGatedUI(); }catch(_){}
+    try{ renderRoomStickers(); }catch(_){}   // 무료 확정 시 구독 스티커 숨김(상태가 그대로여도 첫 확정은 여기서)
   }catch(e){ console.warn('프리미엄 상태 오류:',e); }
 }
 /* 제한 체크 직전 호출 — 아직 로드 안 됐으면 1회 로드 (진입 경로 누락 대비) */
@@ -21467,6 +21468,7 @@ async function loadMyDbUnlocks(){
     };
     // 산 테마가 있으면 방 목록·현재 방 색을 다시 그린다(이 로드가 첫 렌더보다 늦게 끝날 수 있음)
     if(_dbUnlocks.skin.length){ try{ _refreshPremiumGatedUI(); }catch(_){} }
+    try{ renderRoomStickers(); }catch(_){}   // 코인으로 산 묶음 스티커는 무료여도 보인다
     try{ loadCoinState(); }catch(_){}
   }catch(e){
     console.warn('user_unlocks 로드 에러 (무시):',e);
@@ -21732,6 +21734,7 @@ function _afterOwnershipChange(type,key){
   if(type==='font'&&key){ try{ setFontFamilyPref(key); _rerenderStoreTab(); renderMonthly(); }catch(_){} }
   try{ if(type==='sticker'&&document.getElementById('dhManageCard')?.classList.contains('on')) setDhmTab(_dhmTab); }catch(_){}
   try{ if(type==='sticker') _stkDetailRefresh(); }catch(_){}
+  try{ if(type==='sticker') renderRoomStickers(); }catch(_){}
   try{
     const cd=document.getElementById('charDetailCard');
     if(type==='char'&&key&&cd&&cd.classList.contains('on')) openCharDetail(key);
@@ -22440,6 +22443,7 @@ function _applyRcEntitlement(customerInfo, planLabel){
     _serverPremiumInfo={ is_premium:true, expires_at:ent.expirationDate||ent.expiresDate||null, plan_type:planLabel||'premium', is_manual:false };
     _premiumLoaded=true;
     _recomputePremium();
+    try{ renderRoomStickers(); }catch(_){}   // 재구독 → 숨겨 둔 스티커 바로 다시 보이게
     try{ hideAdBanner(); document.body.classList.remove('has-ad'); }catch(_){}
     try{ if(typeof openPremiumSheet==='function' && document.getElementById('premiumCard') && document.getElementById('premiumCard').classList.contains('on')) openPremiumSheet(); }catch(_){}
     // 웹훅이 subscriptions를 채우도록 여러 번(웹훅 지연 대비) 서버 상태로 재동기화
@@ -24459,12 +24463,13 @@ var _rsPack='sky';
 function renderDhmStickers(){
   var mine=document.getElementById('dhmStickerMine');
   if(mine){
-    var list=_roomStickers();
-    mine.innerHTML = list.length
-      ? list.map(function(st,i){
+    var list=_roomStickers(), vis=_rsVisibleIdx(), hid=list.length-vis.length;
+    mine.innerHTML = (vis.length
+      ? vis.map(function(i){ var st=list[i];
           return '<button type="button" class="rs-mine-cell" onclick="rsRemoveAt('+i+')" title="탭하면 뗍니다">'
             +'<i style="background-image:url(&quot;'+st.url+'&quot;)"></i><span>떼기</span></button>'; }).join('')
-      : '<div class="rs-empty">아직 붙인 스티커가 없어요</div>';
+      : (hid ? '' : '<div class="rs-empty">아직 붙인 스티커가 없어요</div>'))
+      + (hid ? '<div class="rs-empty">구독이 끝나 스티커 '+hid+'개를 숨겨 두었어요 · 다시 구독하면 그대로 보여요</div>' : '');
   }
   var packs=getUsableStickerPacks();                  // 공짜로 끼워주는 묶음 없음 — 비어 있으면 스토어로 안내
   if(packs.length && !packs.some(function(p){ return p.k===_rsPack; })) _rsPack=packs[0].k;
@@ -24495,7 +24500,7 @@ window.rsRemoveAt=async function(i){
   renderRoomStickers(); renderDhmStickers(); _rsSaveSoon();
 };
 window.rsEditFromManage=function(){
-  if(!_roomStickers().length){ toast('먼저 스티커를 골라주세요'); return; }
+  if(!_rsVisibleIdx().length){ toast('먼저 스티커를 골라주세요'); return; }
   closeDhManage();
   /* 이 시트는 '날짜 시트' 위에서 열린다 → 그것까지 닫아야 달력이 온전히 보인다.
      안 닫으면 편집 모드로 들어가도 아래 절반을 날짜 목록이 가린다. [2026-08-25] */
@@ -24935,7 +24940,7 @@ function _refreshPremiumGatedUI(){
   try{
     if(typeof _currentRoom!=='undefined' && _currentRoom && typeof applyRoomThemeFor==='function') applyRoomThemeFor(_currentRoom.id);
     else if(typeof applyTheme==='function') applyTheme(_effTheme(typeof _myTheme!=='undefined'?_myTheme:'vintage'));
-  }catch(_){}
+  }catch(_){}  try{ renderRoomStickers(); if(document.getElementById('dhManageCard')?.classList.contains('on')) setDhmTab(_dhmTab); }catch(_){}   // 구독 끝 → 스티커 숨김 / 재구독 → 복원
 }
 /* ══ 방 배경 스티커(개인) ══
    ⚠️ 테마 데코(#rcDecor)와 별개 레이어다 — 테마를 바꿔도, 테마가 아예 없어도 그대로 남는다.
@@ -24947,11 +24952,33 @@ function _roomStickers(){
   if(!Array.isArray(a)){ a=[]; if(_currentRoom) (_myStickersByRoom=_myStickersByRoom||{})[_currentRoom.id]=a; }
   return a;
 }
+/* 구독이 끝나면 스티커를 숨긴다(지우지 않음 — 다시 구독하면 그대로 돌아온다). [2026-09-25]
+   무료 상태에선 코인으로 산 묶음의 스티커만 보인다. 서버 상태를 받기 전엔 숨기지 않는다(구독자 깜빡임 방지). */
+var _rsPackOfUrl=null;
+function _rsPackOf(url){
+  if(!_rsPackOfUrl){ _rsPackOfUrl={}; try{ _stickerPacks().forEach(function(p){ p.items.forEach(function(it){ if(!_rsPackOfUrl[it.u]) _rsPackOfUrl[it.u]=p.k; }); }); }catch(_){} }
+  return _rsPackOfUrl[url]||null;
+}
+function _rsGateOn(){
+  if(typeof isEffectivePremium==='function' && isEffectivePremium()) return false;
+  return (typeof isAdmin==='function' && isAdmin()) || !!_premiumLoaded;
+}
+function _rsVisible(st){
+  if(!st) return false;
+  if(!_rsGateOn()) return true;
+  var k=_rsPackOf(st.url);
+  return !!(k && _ownsItem('sticker',k));
+}
+/* 지금 보이는 스티커의 원래 목록 번호(편집·떼기는 원래 번호로 한다) */
+function _rsVisibleIdx(){
+  var out=[]; _roomStickers().forEach(function(st,i){ if(_rsVisible(st)) out.push(i); }); return out;
+}
 function renderRoomStickers(){
   var host=document.querySelector('.app'); if(!host) return;
   var layer=document.getElementById('roomStickers');
-  var list=_roomStickers();
-  if(!_currentRoom || (!list.length && !_rsEdit)){ if(layer) layer.remove(); return; }
+  var list=_roomStickers(), vis=_rsVisibleIdx();
+  if(_rsSel>=0 && vis.indexOf(_rsSel)<0) _rsSel=-1;
+  if(!_currentRoom || (!vis.length && !_rsEdit)){ if(layer) layer.remove(); return; }
   if(!layer){
     layer=document.createElement('div'); layer.id='roomStickers'; layer.className='rs-layer';
     var decor=document.getElementById('rcDecor');
@@ -24960,7 +24987,8 @@ function renderRoomStickers(){
     else host.insertBefore(layer, host.firstChild);
   }
   layer.classList.toggle('editing', !!_rsEdit);
-  layer.innerHTML=list.map(function(st,i){
+  layer.innerHTML=vis.map(function(i){
+    var st=list[i];
     return '<div class="rs-sticker'+(_rsEdit&&i===_rsSel?' on':'')+'" data-i="'+i+'" style="left:'+_ctNum(st.x,50)+'%;top:'+_ctNum(st.y,50)+'%;width:'+_ctNum(st.s,20)+'%;'
       +'transform:translate(-50%,-50%) rotate('+_ctNum(st.r,0)+'deg);background-image:url(&quot;'+st.url+'&quot;)"></div>';
   }).join('');
@@ -24980,7 +25008,8 @@ function _rsSaveSoon(){
 /* 편집 모드 — 실제 달력 화면 위에서 끌어 옮기고 두 손가락으로 확대 */
 window.startRoomStickerEdit=function(){
   if(!_currentRoom){ toast('방에 먼저 들어가 주세요'); return; }
-  _rsEdit=true; _rsSel=_roomStickers().length?0:-1;
+  var _v0=_rsVisibleIdx();
+  _rsEdit=true; _rsSel=_v0.length?_v0[0]:-1;
   try{ hideTabbar(); }catch(_){}      // 아래 막대가 탭바와 겹치지 않게
   renderRoomStickers(); _rsSyncBar();
 };
@@ -24993,7 +25022,8 @@ window.rsDeleteSelected=function(){
   var list=_roomStickers();
   if(_rsSel<0||_rsSel>=list.length){ toast('옮길 스티커를 먼저 탭해주세요'); return; }
   list.splice(_rsSel,1);
-  _rsSel=list.length?Math.min(_rsSel,list.length-1):-1;
+  var _vd=_rsVisibleIdx();
+  _rsSel=_vd.length?(_vd.filter(function(i){ return i>=_rsSel; })[0]!=null?_vd.filter(function(i){ return i>=_rsSel; })[0]:_vd[_vd.length-1]):-1;
   renderRoomStickers(); _rsSyncBar(); _rsSaveSoon();
 };
 function _rsSyncBar(){
