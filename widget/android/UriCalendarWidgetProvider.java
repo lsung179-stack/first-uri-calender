@@ -3,7 +3,7 @@ package com.lsung.uricalendar.widget;
 /*
  * 우리 캘린더 — Android 월 위젯(large). RemoteViews + GridView 컬렉션.
  * 모든 상태 브로드캐스트(방순환·필터·달이동·새로고침)의 중앙 수신자 →
- * WidgetCommon.applyAction 후 4종 위젯 모두 refreshAll.
+ * WidgetCommon.applyAction 후 5종 위젯 모두 refreshAll.
  */
 
 import android.appwidget.AppWidgetManager;
@@ -61,6 +61,8 @@ public class UriCalendarWidgetProvider extends AppWidgetProvider {
         WidgetData.Room room = data != null ? data.pickRoom(WidgetCommon.selectedRoomId(context)) : null;
 
         WidgetCommon.wireGridHeader(context, rv, data, room);
+        // 요일 머리줄 — 앱 '주 시작 요일'(weekStart) 순서 [2026-09-26]
+        WidgetCommon.wireDowHeader(context, rv, "wg_dow", WidgetCommon.weekStart(data));
 
         // 달 이동
         int off = WidgetCommon.monthOffset(context);

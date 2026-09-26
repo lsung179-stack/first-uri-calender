@@ -2,7 +2,8 @@
 // ⚠️ 빌드 전 코드: 이 환경에선 컴파일/실행 불가. 다음 빌드(Xcode/Codemagic) 때 검증.
 // 데이터: 앱(bridge.js)이 App Group UserDefaults(group.com.lsung.uricalendar)의
 //   "widget.data" 키에 기록한 JSON을 읽는다. 스키마는 widget/bridge.js 주석 참조.
-// 위젯 4종: 오늘(small) · 2주 캘린더(medium) · 콤보/월(large, 편집 전환).
+// 위젯: 오늘(small) · 2주 캘린더(medium) · 월(large) — 한 위젯(UriCalendar)이 크기로 전환,
+//       다가오는 일정+미니 달력(UriCombo, large), 이번 주 목록(UriWeek, large — 2026-09-26).
 // 공통: 방 선택(AppIntent) + 멤버 필터 + ＋추가(딥링크) + 할일 체크(AppIntent).
 
 import WidgetKit
@@ -19,6 +20,7 @@ struct WGData: Codable {
     var gridV: Bool? = nil         // 세로 격자선(앱 설정 연동)
     var gridH: Bool? = nil         // 가로 격자선
     var holidays: [String:String]? = nil   // 빨간날(공휴일) 'YYYY-MM-DD'→이름 — 날짜 빨간색 + 빨간 일정바
+    var weekStart: Int? = nil      // 한 주 시작 요일 0=일 1=월(앱 설정 '주 시작 요일') — 옛 payload엔 없음 → 0 [2026-09-26]
     let rooms: [WGRoom]
 }
 struct WGRoom: Codable, Identifiable {
@@ -55,15 +57,15 @@ func hlFor(_ room: WGRoom, _ key: String, _ filter: String? = nil, _ myUserId: S
     return best
 }
 // 어느 변에 테두리를 그릴지 — 위/아래/좌/우 이웃 날짜가 범위 밖이면 그 변이 바깥 경계.
-// 앱 _dhSideFlags와 동일(위젯은 항상 일요일 시작이라 col = dow).
-func hlSides(_ h: WGHighlight, _ key: String, _ dow: Int) -> (top: Bool, bottom: Bool, left: Bool, right: Bool) {
+// 앱 _dhSideFlags와 동일. col = 화면 칸 위치(0=첫 칸) — 주 시작 요일(weekStart)을 반영한 값 [2026-09-26].
+func hlSides(_ h: WGHighlight, _ key: String, _ col: Int) -> (top: Bool, bottom: Bool, left: Bool, right: Bool) {
     func inR(_ k: String) -> Bool { return k >= h.s && k <= h.e }
     func shift(_ k: String, _ n: Int) -> String {
         guard let d = parse(k), let m = Calendar.current.date(byAdding: .day, value: n, to: d) else { return "" }
         return fmt(m)
     }
     return (top: !inR(shift(key, -7)), bottom: !inR(shift(key, 7)),
-            left: dow == 0 || !inR(shift(key, -1)), right: dow == 6 || !inR(shift(key, 1)))
+            left: col == 0 || !inR(shift(key, -1)), right: col == 6 || !inR(shift(key, 1)))
 }
 // 채움형(fill/deep)인지 — 날짜 숫자 뒤에 색을 깔고, 진한 색이면 숫자를 흰 글자로
 func hlIsFill(_ h: WGHighlight) -> Bool { return h.r == "fill" || h.r == "deep" }
@@ -338,6 +340,7 @@ struct CalEntry: TimelineEntry {
     var flash: Bool = false      // 새로고침 직후 잠깐 흐려짐(깜빡임 피드백)
     var roomCount: Int = 0       // 내 방 수 — 1개면 씰 탭이 '순환' 대신 '앱 열기'(무반응 방지) [2026-09-06]
     var syncedAt: Date? = nil    // 앱이 payload를 쓴 시각 — 헤더 '동기화 HH:mm' [2026-09-09]
+    var weekStart: Int = 0       // 한 주 시작 요일 0=일 1=월 — 2주·월·미니 달력·이번 주 위젯 첫 칸 [2026-09-26]
 }
 // 새로고침 깜빡임 타임스탬프(App Group). 최근이면 타임라인이 flash 엔트리를 잠깐 넣음.
 let FLASH_KEY = "widget.flashRefresh"
@@ -348,14 +351,14 @@ struct CalProvider: AppIntentTimelineProvider {
     func snapshot(for configuration: CalConfigIntent, in context: Context) async -> CalEntry {
         let room = effectiveRoom(configuration.room?.id) ?? sampleRoom()
         let d = loadWGData()
-        return CalEntry(date: Date(), room: room, memberFilter: effectiveFilter(configuration.member), myUserId: d?.myUserId, gridV: d?.gridV ?? false, gridH: d?.gridH ?? false, holidays: d?.holidays ?? [:], roomCount: d?.rooms.count ?? 0, syncedAt: syncedDate(d))
+        return CalEntry(date: Date(), room: room, memberFilter: effectiveFilter(configuration.member), myUserId: d?.myUserId, gridV: d?.gridV ?? false, gridH: d?.gridH ?? false, holidays: d?.holidays ?? [:], roomCount: d?.rooms.count ?? 0, syncedAt: syncedDate(d), weekStart: wsOf(d))
     }
     func timeline(for configuration: CalConfigIntent, in context: Context) async -> Timeline<CalEntry> {
         let room = effectiveRoom(configuration.room?.id)
         let d = loadWGData()
         let filter = effectiveFilter(configuration.member)
         func mk(_ date: Date, _ flash: Bool) -> CalEntry {
-            CalEntry(date: date, room: room, memberFilter: filter, myUserId: d?.myUserId, gridV: d?.gridV ?? false, gridH: d?.gridH ?? false, holidays: d?.holidays ?? [:], flash: flash, roomCount: d?.rooms.count ?? 0, syncedAt: syncedDate(d))
+            CalEntry(date: date, room: room, memberFilter: filter, myUserId: d?.myUserId, gridV: d?.gridV ?? false, gridH: d?.gridH ?? false, holidays: d?.holidays ?? [:], flash: flash, roomCount: d?.rooms.count ?? 0, syncedAt: syncedDate(d), weekStart: wsOf(d))
         }
         // 자정에 '오늘'이 넘어가므로 자정 직후 갱신 예약(그 외는 앱이 reloadAllTimelines)
         let mid = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: 1, to: Date())!)
@@ -400,6 +403,22 @@ func sampleRoom() -> WGRoom {
 func todayStr() -> String { fmt(Date()) }
 func fmt(_ d: Date) -> String { let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; return f.string(from: d) }
 func parse(_ s: String) -> Date? { let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; return f.date(from: s) }
+/* ── 한 주 시작 요일(앱 설정 '주 시작 요일') [2026-09-26] ──
+   payload.weekStart: 0=일요일 시작(기본·옛 payload), 1=월요일 시작.
+   dow 는 언제나 '진짜 요일'(0=일)이고 화면 칸 위치(col)만 weekStart 만큼 돌린다 →
+   일요일 빨강 같은 색 규칙은 dow 로, 첫 칸/끝 칸(기간 바 모서리·강조 테두리)은 col 로 판단한다.
+   Android WidgetCommon.weekStart/colOf/weekStartOf 와 동일. */
+let DOW_KO = ["일","월","화","수","목","금","토"]
+func wsOf(_ d: WGData?) -> Int { return (d?.weekStart ?? 0) == 1 ? 1 : 0 }
+// 진짜 요일(0=일) → 화면 칸 위치(0=첫 칸)
+func colOf(_ dow: Int, _ ws: Int) -> Int { return ((dow - ws) % 7 + 7) % 7 }
+// 그 날짜가 든 주의 첫날(0시)
+func weekStartDate(_ day: Date, _ ws: Int) -> Date {
+    let cal = Calendar.current
+    let t = cal.startOfDay(for: day)
+    let back = colOf(cal.component(.weekday, from: t) - 1, ws)
+    return cal.date(byAdding: .day, value: -back, to: t) ?? t
+}
 // start~end(포함) 날짜 문자열 목록 — 레인 점유 판정용
 func runDays(_ start: String, _ end: String) -> [String] {
     guard var d = parse(start), let e = parse(end) else { return [start] }
@@ -639,6 +658,7 @@ struct GridView: View {
     var holidays: [String:String] = [:]   // 빨간날(공휴일) 'YYYY-MM-DD'→이름
     var roomCount: Int = 0            // 1개면 씰 탭이 '앱 열기'(순환은 무동작이라 반응 없어 보임)
     var syncedAt: Date? = nil         // 헤더 '동기화 HH:mm' [2026-09-09]
+    var weekStart: Int = 0            // 첫 칸 요일 0=일 1=월(앱 '주 시작 요일') — 월요일 시작이면 일요일은 끝 칸 [2026-09-26]
     private var weekOffset: Int { weekNav ? readWeekOffset() : 0 }   // 2주 페이지(1=14일)
     // 월 위젯 기준 달 (오프셋 적용)
     var monthDate: Date {
@@ -663,15 +683,13 @@ struct GridView: View {
     }
     var startDate: Date {
         let cal = Calendar.current
-        if weeks == 2 { // 이번 주 일요일부터(+ 2주 페이지 오프셋)
-            let today = cal.startOfDay(for: Date())
-            let wd = cal.component(.weekday, from: today) - 1
-            let sun = cal.date(byAdding: .day, value: -wd, to: today)!
-            return cal.date(byAdding: .day, value: weekOffset * 14, to: sun)!
-        } else { // 기준 달 1일이 포함된 주의 일요일
+        if weeks == 2 { // 이번 주 첫날(weekStart 요일)부터(+ 2주 페이지 오프셋)
+            let first = weekStartDate(Date(), weekStart)
+            return cal.date(byAdding: .day, value: weekOffset * 14, to: first)!
+        } else { // 기준 달 1일이 포함된 주의 첫날(weekStart 요일)
             let comp = cal.dateComponents([.year, .month], from: monthDate)
             let first = cal.date(from: comp)!
-            let wd = cal.component(.weekday, from: first) - 1
+            let wd = colOf(cal.component(.weekday, from: first) - 1, weekStart)
             return cal.date(byAdding: .day, value: -wd, to: first)!
         }
     }
@@ -690,7 +708,7 @@ struct GridView: View {
         let cal = Calendar.current
         let comp = cal.dateComponents([.year, .month], from: monthDate)
         guard let first = cal.date(from: comp) else { return 5 }
-        let offset = cal.component(.weekday, from: first) - 1        // 1일의 요일(0=일)
+        let offset = colOf(cal.component(.weekday, from: first) - 1, weekStart)   // 1일이 몇 번째 칸인지
         let dim = cal.range(of: .day, in: .month, for: first)?.count ?? 30
         return Int(ceil(Double(offset + dim) / 7.0))                 // 4·5·6
     }
@@ -849,8 +867,9 @@ struct GridView: View {
             Color.clear.frame(height: weeks > 2 ? 9 : 7)     // 헤더 ↔ 달력 사이 여백(위아래 균형)
             HStack(spacing: 0) {
                 ForEach(0..<7) { i in
-                    Text(["일","월","화","수","목","금","토"][i]).font(.system(size: 10, weight: .bold))
-                        .foregroundColor(i == 0 ? .sunRed : .mutedBrown).frame(maxWidth: .infinity)
+                    let wdi = (weekStart + i) % 7      // 주 시작 요일부터 — 일요일은 어디 있든 빨강
+                    Text(DOW_KO[wdi]).font(.system(size: 10, weight: .bold))
+                        .foregroundColor(wdi == 0 ? .sunRed : .mutedBrown).frame(maxWidth: .infinity)
                 }
             }.padding(.bottom, 2)
             /* 남는 높이를 실측해 주(week) 행마다 '정확한' 높이를 준다.
@@ -877,7 +896,7 @@ struct GridView: View {
                             let dKey = fmt(d)
                             let dHl = hlFor(room, dKey, filter, myUserId)   // 날짜 강조 — 보고 있는 멤버의 것만
                             DayCell(date: d, slots: Array(pair.0.prefix(usedLanes)), overflow: pair.1, isToday: fmt(d) == todayStr(),
-                                    dow: cal.component(.weekday, from: d) - 1, roomId: room.id, inMonth: inM,
+                                    dow: cal.component(.weekday, from: d) - 1, roomId: room.id, inMonth: inM, col: c,
                                     rightLine: gridV && c < 6, bottomLine: gridH && w < rowCount - 1,
                                     holiday: holidays[fmt(d)],
                                     todos: dTodos, maxTodos: weeks == 2 ? max(0, 3 - usedLanes) : 1, dense: rowCount >= 6 || weeks == 2,
@@ -904,6 +923,7 @@ struct VLine: Shape {
 }
 struct DayCell: View {
     let date: Date; let slots: [DayBar?]; let overflow: Int; let isToday: Bool; let dow: Int; let roomId: String; let inMonth: Bool
+    var col: Int = -1                 // 화면 칸 위치(0=첫 칸) — 주 시작 요일 반영. -1 이면 dow(일요일 시작) [2026-09-26]
     var rightLine: Bool = false; var bottomLine: Bool = false
     var holiday: String? = nil        // 빨간날(공휴일) 이름 — 있으면 날짜 빨강 + 빨간 바 자동 표시
     var todos: [WGTodo] = []          // 그 날 할일 (이벤트 바 아래에 체크박스 줄로)
@@ -917,6 +937,8 @@ struct DayCell: View {
     var lineBudget: Int = 99
     private var numBox: CGFloat { dense ? 16 : 18 }
     private var barH: CGFloat { dense ? 10.5 : 12 }
+    // 첫 칸/끝 칸 판단용 칸 위치(색은 dow, 모서리·테두리는 이 값)
+    private var colIdx: Int { col >= 0 ? col : dow }
     // 예약은 칸별 — 공휴일/라벨이 '이 칸에' 있을 때만 줄을 쓴다(없는 칸은 일정으로 채움).
     private var holidayLine: Bool { holiday != nil }
     // 라벨·공휴일 줄을 먼저 빼고 남는 줄을 이벤트 → 할일 순으로 채운다.
@@ -965,9 +987,9 @@ struct DayCell: View {
     // 기간 바: 주 안에서 이어지는 쪽은 각지게+딱 붙게, 끝/주경계는 둥글게 → 옆칸과 맞닿아 연속.
     // 테두리 일정(outline)은 채움 대신 색 테두리 + 먹색 글자(앱 .ev-outline과 동일).
     @ViewBuilder private func barView(_ b: DayBar) -> some View {
-        let roundL = !b.contLeft || dow == 0
-        let roundR = !b.contRight || dow == 6
-        let showTitle = !b.contLeft || dow == 0     // 시작일/주 시작에만 제목
+        let roundL = !b.contLeft || colIdx == 0
+        let roundR = !b.contRight || colIdx == 6
+        let showTitle = !b.contLeft || colIdx == 0  // 시작일/주 시작(첫 칸)에만 제목
         let showMark = b.shared && !b.contLeft       // 함께 일정: 시작 칸 왼쪽에 얇은 띠 (앱 .cal-evbar-marker)
         // 모서리 라운드는 2pt (실기기 피드백 2026-08-22: 3pt는 커 보임 / 안드로이드 2dp와 동일)
         let shape = UnevenRoundedRectangle(
@@ -1002,7 +1024,7 @@ struct DayCell: View {
        테마별로 두께/선 모양만 다르다: 폴더=굵게, 점선=대시, 꽃=둥근 점(위젯 크기에선 꽃 그림이 뭉개져
        같은 색 도트로 근사 — 안드로이드와 동일 정책). [2026-08-19] */
     @ViewBuilder private func hlBorder(_ h: WGHighlight) -> some View {
-        let f = hlSides(h, fmt(date), dow)
+        let f = hlSides(h, fmt(date), colIdx)
         let col = Color(hexStr: h.c)
         let w: CGFloat = h.r == "folder" ? 2.2 : (h.r == "dashed" ? 1.4 : 1.3)
         let dash: [CGFloat]? = h.r == "dashed" ? [2.6, 2.0] : (h.r == "flower" ? [0.1, 3.2] : nil)
@@ -1118,6 +1140,7 @@ struct ComboView: View {
     var holidays: [String:String] = [:]
     var roomCount: Int = 0            // 1개면 씰 탭이 '앱 열기'(순환은 무동작이라 반응 없어 보임)
     var syncedAt: Date? = nil         // 헤더 '동기화 HH:mm' [2026-09-09]
+    var weekStart: Int = 0            // 미니 달력 첫 칸 요일 [2026-09-26]
     // 오늘부터 앞으로의 일정. 같은 제목+색의 '연속 날짜'는 하나의 기간(run)으로 묶음.
     var upcoming: [UpRun] {
         let cal = Calendar.current
@@ -1181,7 +1204,7 @@ struct ComboView: View {
                     ForEach(room.todos.filter { $0.date == todayStr() && todoVisibleFor($0, filter) }.prefix(1)) { t in TodoRow(t: t) }
                 }.frame(maxWidth: .infinity, alignment: .leading)
                 Rectangle().fill(Color.mutedBrown.opacity(0.2)).frame(width: 1)
-                MiniMonth(room: room, filter: filter, myUserId: myUserId, holidays: holidays).frame(maxWidth: .infinity)
+                MiniMonth(room: room, filter: filter, myUserId: myUserId, holidays: holidays, weekStart: weekStart).frame(maxWidth: .infinity)
             }
         }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)   // 넘쳐도 위(헤더)가 잘리지 않게 상단 고정 [2026-08-19]
         .padding(16).widgetBg()
@@ -1191,6 +1214,7 @@ struct MiniMonth: View {
     let room: WGRoom; let filter: String?
     var myUserId: String? = nil      // 날짜 강조는 멤버별이라 '전체'일 때 내 것을 그리려면 필요
     var holidays: [String:String] = [:]
+    var weekStart: Int = 0           // 첫 칸 요일 0=일 1=월 [2026-09-26]
     func hasEvent(_ d: Date) -> [Color] {
         let s = fmt(d)
         return dedupeEvents(room.events.filter { $0.date == s && (filter == nil || $0.userId == filter) }).prefix(3).map { Color(hexStr: $0.color) }
@@ -1201,7 +1225,7 @@ struct MiniMonth: View {
         let base = cal.date(byAdding: .month, value: off, to: Date()) ?? Date()
         let comp = cal.dateComponents([.year, .month], from: base)
         let first = cal.date(from: comp)!
-        let wd = cal.component(.weekday, from: first) - 1
+        let wd = colOf(cal.component(.weekday, from: first) - 1, weekStart)
         let start = cal.date(byAdding: .day, value: -wd, to: first)!
         let baseMonth = cal.component(.month, from: base)
         let cols = Array(repeating: GridItem(.flexible(), spacing: 1), count: 7)
@@ -1219,8 +1243,9 @@ struct MiniMonth: View {
                 }.buttonStyle(.plain)
             }
             HStack(spacing: 0) { ForEach(0..<7) { i in
-                Text(["일","월","화","수","목","금","토"][i]).font(.system(size: 8, weight: .bold))
-                    .foregroundColor(i == 0 ? .sunRed : .mutedBrown).frame(maxWidth: .infinity) } }
+                let wdi = (weekStart + i) % 7
+                Text(DOW_KO[wdi]).font(.system(size: 8, weight: .bold))
+                    .foregroundColor(wdi == 0 ? .sunRed : .mutedBrown).frame(maxWidth: .infinity) } }
             LazyVGrid(columns: cols, spacing: 2) {
                 ForEach(0..<35, id: \.self) { i in
                     let d = cal.date(byAdding: .day, value: i, to: start)!
@@ -1244,6 +1269,232 @@ struct MiniMonth: View {
     }
 }
 
+// MARK: - ⑤ 이번 주 (large) — 오늘이 든 한 주 7일을 하루 한 줄로 [2026-09-26]
+// 줄마다 왼쪽 날짜(숫자+요일), 오른쪽 항목 최대 2개 + 넘치면 '+N'. 항목 = 공휴일 → 일정 → 할 일.
+// 할 일 체크는 이 위젯에선 안 한다(보기 전용 — 승인된 설계). 줄을 누르면 앱이 그 날짜로 열린다.
+// Android 짝: WeekWidgetProvider.java (같은 정렬·필터·배치 규칙).
+
+extension Color {
+    static let wkCard = Color(hexStr: "#fbf2e0")    // 카드 배경(다른 위젯보다 한 톤 밝게)
+    static let wkText = Color(hexStr: "#3a2418")
+    static let wkSub = Color(hexStr: "#8a6a4d")
+    static let wkMute = Color(hexStr: "#b8a285")
+    static let wkSun = Color(hexStr: "#d4382a")     // 일요일·공휴일
+    static let wkSat = Color(hexStr: "#1f5b9a")     // 토요일
+}
+// '19:00' / '19:00~20:30' → 앞의 시각만(숫자와 ':'). 없으면 "".
+func wkShortTime(_ t: String) -> String {
+    let head = String(t.prefix { $0.isASCII && ($0.isNumber || $0 == ":") })
+    return head.contains(":") ? head : ""
+}
+// 날짜 키 ± n일
+func wkShift(_ key: String, _ n: Int) -> String {
+    guard let d = parse(key), let m = Calendar.current.date(byAdding: .day, value: n, to: d) else { return "" }
+    return fmt(m)
+}
+struct WeekItem {
+    enum Kind { case holiday, event, todo }
+    let kind: Kind
+    let title: String
+    var time: String = ""
+    var color: String = "#8b3a2a"
+    var outline: Bool = false
+    var multi: Bool = false
+    var ord: Int = 0
+    var userId: String? = nil
+    var todo: WGTodo? = nil
+    var together: Bool = false     // 함께 할 일(memberKeys 2명 이상) → '함'
+}
+/* 그 날짜의 일정 — 멤버 필터 적용, 같은 gid 는 하나로(함께 일정 복사본, 2주/월 위젯과 동일).
+   정렬: 여러 날 일정 먼저(2주/월 위젯이 기간 바를 위 줄에 두는 것과 같은 순서) → ord(사용자 배치 순서)
+         → 시간(종일 먼저) → 제목.
+   '여러 날' = 앞/뒷날에 같은 gid 가 있거나 같은 일정(제목·색·테두리·함께 여부)이 붙어 있음. */
+func weekDayEvents(_ room: WGRoom, _ filter: String?, _ key: String) -> [WeekItem] {
+    let prev = wkShift(key, -1), next = wkShift(key, 1)
+    func gk(_ e: WGEvent) -> String { "\(e.title)|\(e.color.lowercased())|\(e.style == "outline")|\(e.shared)" }
+    var neigh = Set<String>()
+    for e in room.events where (e.date == prev || e.date == next) && (filter == nil || e.userId == filter) {
+        neigh.insert(gk(e))
+        if let g = e.gid, !g.isEmpty { neigh.insert("g:" + g) }
+    }
+    var seen = Set<String>()
+    var out: [WeekItem] = []
+    for e in room.events where e.date == key && (filter == nil || e.userId == filter) {
+        let g = e.gid ?? ""
+        if !g.isEmpty { if seen.contains(g) { continue }; seen.insert(g) }
+        let multi = neigh.contains(gk(e)) || (!g.isEmpty && neigh.contains("g:" + g))
+        out.append(WeekItem(kind: .event, title: e.title, time: wkShortTime(e.time), color: e.color,
+                            outline: e.style == "outline", multi: multi, ord: e.ord, userId: e.userId))
+    }
+    out.sort { a, b in
+        if a.multi != b.multi { return a.multi }
+        if a.ord != b.ord { return a.ord < b.ord }
+        if a.time != b.time { return a.time < b.time }     // "" (종일) 이 먼저
+        return a.title < b.title
+    }
+    return out
+}
+// 한 줄(하루)의 전체 항목 — 공휴일 → 일정 → 할 일
+func weekDayItems(_ room: WGRoom, _ filter: String?, _ key: String, _ holidays: [String:String]) -> [WeekItem] {
+    var out: [WeekItem] = []
+    if let hn = holidays[key], !hn.isEmpty { out.append(WeekItem(kind: .holiday, title: hn)) }
+    out.append(contentsOf: weekDayEvents(room, filter, key))
+    for t in room.todos where t.date == key && todoVisibleFor(t, filter) {
+        out.append(WeekItem(kind: .todo, title: t.title, color: t.color, userId: t.userId, todo: t,
+                            together: (t.memberKeys?.count ?? 0) >= 2))
+    }
+    return out
+}
+struct WeekView: View {
+    let room: WGRoom; let filter: String?
+    var holidays: [String:String] = [:]
+    var weekStart: Int = 0
+    private var days: [Date] {
+        let cal = Calendar.current
+        let s = weekStartDate(Date(), weekStart)
+        return (0..<7).map { cal.date(byAdding: .day, value: $0, to: s) ?? s }
+    }
+    private var rangeText: String {
+        let cal = Calendar.current
+        let ds = days
+        let a = cal.dateComponents([.month, .day], from: ds[0]), b = cal.dateComponents([.month, .day], from: ds[6])
+        return "\(a.month ?? 0).\(a.day ?? 0) – \(b.month ?? 0).\(b.day ?? 0)"
+    }
+    // 방 멤버 첫 글자(userId → 글자). 혼자 쓰는 방이면 사람 동그라미를 숨긴다(시안).
+    private var initials: [String: String] {
+        var m: [String: String] = [:]
+        for x in room.members { if let u = x.userId, !u.isEmpty { m[u] = String(x.name.trimmingCharacters(in: .whitespaces).prefix(1)) } }
+        return m
+    }
+    var body: some View {
+        let ds = days
+        let today = todayStr()
+        let ini = initials
+        let showWho = ini.count >= 2
+        VStack(spacing: 6) {
+            // 헤더: 제목 · 날짜 범위 · 방 이름 · 새로고침(↻) — 보내기 버튼은 사용자 요청으로 모든 위젯에서 뺐다(v30), 여기도 없음
+            HStack(spacing: 6) {
+                Text("이번 주").font(.system(size: 14, weight: .bold, design: .serif)).foregroundColor(.wkText).lineLimit(1).fixedSize()
+                Text(rangeText).font(.system(size: 10).monospacedDigit()).foregroundColor(.wkSub).lineLimit(1).fixedSize()
+                Spacer(minLength: 4)
+                Text(room.name).font(.system(size: 10)).foregroundColor(.wkSub).lineLimit(1)
+                // 새로고침 — 2주/월 위젯 헤더(WGHeader)와 같은 버튼
+                Button(intent: RefreshIntent()) {
+                    Image(systemName: "arrow.clockwise").font(.system(size: 12, weight: .bold)).foregroundColor(.mutedBrown).frame(width: 20, height: 20)
+                }.buttonStyle(.plain)
+            }
+            /* 남는 높이를 7줄로 나누고, 줄 높이에 맞춰 '한 줄에 몇 개'와 '+N 위치'를 정한다 —
+               넘치면 위젯 밖으로 밀려 잘리므로(월 위젯 2026-08-19 교훈) 줄이 행 높이를 넘지 않게. */
+            GeometryReader { geo in
+                let rowH = geo.size.height / 7
+                let itemH: CGFloat = 16          // 항목 한 줄(11pt 글자 + 간격)
+                let moreH: CGFloat = 13          // '+N' 줄
+                let avail = rowH - 8             // 줄 위아래 여백 4+4
+                let maxItems = avail >= itemH * 2 ? 2 : 1
+                let moreBelow = avail >= itemH * CGFloat(maxItems) + moreH
+                VStack(spacing: 0) {
+                    ForEach(0..<7, id: \.self) { i in
+                        let d = ds[i]
+                        let key = fmt(d)
+                        WeekRow(date: d, key: key, isToday: key == today, holiday: holidays[key],
+                                items: weekDayItems(room, filter, key, holidays),
+                                maxItems: maxItems, moreBelow: moreBelow, roomId: room.id,
+                                showWho: showWho, initials: ini)
+                            .frame(height: rowH)
+                            .overlay(alignment: .top) { if i > 0 { Rectangle().fill(Color.terra.opacity(0.10)).frame(height: 0.6) } }
+                    }
+                }.frame(width: geo.size.width, height: geo.size.height, alignment: .top)
+            }
+        }
+        .padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 10)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .widgetURL(URL(string: "com.lsung.uricalendar://open?room=\(room.id)"))   // 줄 밖을 누르면 그 방 열기
+        .widgetBg(.wkCard)
+    }
+}
+struct WeekRow: View {
+    let date: Date; let key: String; let isToday: Bool; let holiday: String?
+    let items: [WeekItem]; let maxItems: Int; let moreBelow: Bool; let roomId: String
+    let showWho: Bool; let initials: [String: String]
+    private var dow: Int { Calendar.current.component(.weekday, from: date) - 1 }
+    private var red: Bool { dow == 0 || (holiday?.isEmpty == false) }
+    private var dowColor: Color { red ? .wkSun : (dow == 6 ? .wkSat : .wkSub) }
+    private var numColor: Color { isToday ? .terra : (red ? .wkSun : (dow == 6 ? .wkSat : .wkText)) }
+    private func who(_ it: WeekItem) -> String {
+        guard showWho else { return "" }
+        if it.kind == .todo && it.together { return "함" }
+        guard let u = it.userId else { return "" }
+        return initials[u] ?? ""
+    }
+    @ViewBuilder private func avatar(_ s: String) -> some View {
+        Circle().fill(Color.terra).frame(width: 13, height: 13)
+            .overlay(Text(s).font(.system(size: 7.5, weight: .bold)).foregroundColor(.white))
+    }
+    @ViewBuilder private func itemLine(_ it: WeekItem, more: Int) -> some View {
+        HStack(spacing: 5) {
+            switch it.kind {
+            case .holiday:
+                Text(it.title).font(.system(size: 9.5, weight: .bold)).foregroundColor(.wkSun).lineLimit(1)
+            case .event:
+                let c = Color(hexStr: it.color)
+                Group {
+                    if it.outline { RoundedRectangle(cornerRadius: 1.5).stroke(c, lineWidth: 1) }
+                    else { RoundedRectangle(cornerRadius: 1.5).fill(c) }
+                }.frame(width: 3, height: 12)
+                if !it.time.isEmpty {
+                    Text(it.time).font(.system(size: 9.5).monospacedDigit()).foregroundColor(.wkSub).lineLimit(1).fixedSize()
+                }
+                Text(it.title).font(.system(size: 11, weight: .semibold)).foregroundColor(.wkText).lineLimit(1)
+                let w = who(it)
+                if !w.isEmpty { avatar(w) }
+            case .todo:
+                let c = Color(hexStr: it.color)
+                let done = it.todo.map { todoDone($0) } ?? false
+                RoundedRectangle(cornerRadius: 3).stroke(c.opacity(done ? 0.55 : 1), lineWidth: 1.4).frame(width: 10, height: 10)
+                    .background(done ? RoundedRectangle(cornerRadius: 3).fill(c.opacity(0.55)) : nil)
+                Text(it.title).font(.system(size: 11, weight: done ? .regular : .semibold))
+                    .foregroundColor(done ? .wkMute : .wkText).strikethrough(done, color: .wkMute).lineLimit(1)
+                let w = who(it)
+                if !w.isEmpty { avatar(w) }
+            }
+            if more > 0 {
+                Text("+\(more)").font(.system(size: 9.5, weight: .bold)).foregroundColor(.wkSub).fixedSize()
+            }
+            Spacer(minLength: 0)
+        }.frame(height: 14)
+    }
+    var body: some View {
+        let shown = Array(items.prefix(maxItems))
+        let more = items.count - shown.count
+        Link(destination: URL(string: "com.lsung.uricalendar://open?room=\(roomId)&date=\(key)")!) {
+            HStack(alignment: .top, spacing: 8) {
+                VStack(spacing: 1) {
+                    Text("\(Calendar.current.component(.day, from: date))")
+                        .font(.system(size: 14, weight: .bold).monospacedDigit()).foregroundColor(numColor)
+                    Text(DOW_KO[dow]).font(.system(size: 9)).foregroundColor(dowColor)
+                }.frame(width: 30).padding(.top, 1)
+                VStack(alignment: .leading, spacing: 2) {
+                    if items.isEmpty {
+                        Text("일정 없음").font(.system(size: 10)).foregroundColor(.wkMute).padding(.top, 2)
+                    } else {
+                        ForEach(Array(shown.enumerated()), id: \.offset) { idx, it in
+                            // 자리가 없으면 '+N'을 마지막 항목 줄 끝에 붙인다
+                            itemLine(it, more: (!moreBelow && idx == shown.count - 1) ? more : 0)
+                        }
+                        if moreBelow && more > 0 {
+                            Text("+\(more)").font(.system(size: 9.5, weight: .bold)).foregroundColor(.wkSub).padding(.leading, 8)
+                        }
+                    }
+                }.frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.vertical, 4).padding(.trailing, 4)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .background(isToday ? RoundedRectangle(cornerRadius: 8).fill(Color.terra.opacity(0.07)) : nil)
+            .contentShape(Rectangle())
+        }.buttonStyle(.plain)
+    }
+}
+
 // MARK: - 위젯 엔트리 뷰 (패밀리별 분기)
 
 // 방 없음(로그인/입장 전) 안내 화면 — 위젯 공통
@@ -1257,9 +1508,9 @@ struct EmptyStateView: View {
 }
 
 extension View {
-    @ViewBuilder func widgetBg() -> some View {
-        if #available(iOSApplicationExtension 17.0, *) { self.containerBackground(Color.cream, for: .widget) }
-        else { self.background(Color.cream) }
+    @ViewBuilder func widgetBg(_ bg: Color = .cream) -> some View {
+        if #available(iOSApplicationExtension 17.0, *) { self.containerBackground(bg, for: .widget) }
+        else { self.background(bg) }
     }
 }
 
@@ -1279,9 +1530,9 @@ struct AdaptiveCalView: View {
                 case .systemSmall:
                     TodayView(room: room, filter: entry.memberFilter, myUserId: entry.myUserId, roomCount: entry.roomCount, syncedAt: entry.syncedAt)
                 case .systemMedium:
-                    GridView(room: room, filter: entry.memberFilter, weeks: 2, weekNav: true, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId, holidays: entry.holidays, roomCount: entry.roomCount, syncedAt: entry.syncedAt)
+                    GridView(room: room, filter: entry.memberFilter, weeks: 2, weekNav: true, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId, holidays: entry.holidays, roomCount: entry.roomCount, syncedAt: entry.syncedAt, weekStart: entry.weekStart)
                 default:
-                    GridView(room: room, filter: entry.memberFilter, weeks: 6, monthNav: true, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId, holidays: entry.holidays, roomCount: entry.roomCount, syncedAt: entry.syncedAt)
+                    GridView(room: room, filter: entry.memberFilter, weeks: 6, monthNav: true, gridV: entry.gridV, gridH: entry.gridH, myUserId: entry.myUserId, holidays: entry.holidays, roomCount: entry.roomCount, syncedAt: entry.syncedAt, weekStart: entry.weekStart)
                 }
             } else { EmptyStateView() }
         }.opacity(entry.flash ? 0.4 : 1)
@@ -1304,10 +1555,23 @@ struct CalendarWidget: Widget {
 struct ComboWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: "UriCombo", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
-            Group { if let room = entry.room { ComboView(room: room, filter: entry.memberFilter, myUserId: entry.myUserId, holidays: entry.holidays, roomCount: entry.roomCount, syncedAt: entry.syncedAt) } else { EmptyStateView() } }.opacity(entry.flash ? 0.4 : 1)
+            Group { if let room = entry.room { ComboView(room: room, filter: entry.memberFilter, myUserId: entry.myUserId, holidays: entry.holidays, roomCount: entry.roomCount, syncedAt: entry.syncedAt, weekStart: entry.weekStart) } else { EmptyStateView() } }.opacity(entry.flash ? 0.4 : 1)
         }
         .configurationDisplayName("다가오는 일정")
         .description("다가오는 일정 목록 + 이번 달 미니 달력.")
+        .supportedFamilies([.systemLarge])
+        .contentMarginsDisabled()
+    }
+}
+
+// ③ 이번 주 (큰 위젯) — 7일을 하루 한 줄 목록으로. 별도 종류 [2026-09-26]
+struct WeekWidget: Widget {
+    var body: some WidgetConfiguration {
+        AppIntentConfiguration(kind: "UriWeek", intent: CalConfigIntent.self, provider: CalProvider()) { entry in
+            Group { if let room = entry.room { WeekView(room: room, filter: entry.memberFilter, holidays: entry.holidays, weekStart: entry.weekStart) } else { EmptyStateView() } }.opacity(entry.flash ? 0.4 : 1)
+        }
+        .configurationDisplayName("이번 주")
+        .description("이번 주 7일을 하루 한 줄로 — 요일마다 일정과 할 일을 한눈에.")
         .supportedFamilies([.systemLarge])
         .contentMarginsDisabled()
     }
@@ -1318,5 +1582,6 @@ struct UriCalendarWidgetBundle: WidgetBundle {
     var body: some Widget {
         CalendarWidget()
         ComboWidget()
+        WeekWidget()
     }
 }

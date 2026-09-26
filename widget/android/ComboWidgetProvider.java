@@ -39,6 +39,8 @@ public class ComboWidgetProvider extends AppWidgetProvider {
         String today = WidgetCommon.todayKey();
 
         WidgetCommon.wireGridHeader(context, rv, data, room);
+        // 미니 달력 요일 머리줄 — 앱 '주 시작 요일'(weekStart) 순서 [2026-09-26]
+        WidgetCommon.wireDowHeader(context, rv, "cb_dow", WidgetCommon.weekStart(data));
 
         // 다가오는 일정 (기간 묶음)
         List<WidgetCommon.UpRun> up = room != null ? WidgetCommon.upcoming(room.events, filter) : new java.util.ArrayList<>();

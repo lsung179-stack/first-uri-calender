@@ -2,6 +2,7 @@ package com.lsung.uricalendar.widget;
 
 /*
  * 2주 위젯(medium). 이번 주 시작 + weekOffset*14 부터 14칸. 헤더 주 이동(‹ 라벨 ›).
+ * 주 시작 요일 = payload.weekStart(0=일 1=월).
  */
 
 import android.appwidget.AppWidgetManager;
@@ -50,11 +51,14 @@ public class TwoWeekWidgetProvider extends AppWidgetProvider {
 
         WidgetCommon.wireGridHeader(context, rv, data, room);
 
-        // 주 이동 라벨: 표시 2주의 시작~끝(M.d~M.d)
+        // 요일 머리줄 — 앱 '주 시작 요일'(weekStart) 순서 [2026-09-26]
+        int ws = WidgetCommon.weekStart(data);
+        WidgetCommon.wireDowHeader(context, rv, "wg_dow", ws);
+
+        // 주 이동 라벨: 표시 2주의 시작~끝(M.d~M.d) — 시작 = 오늘이 든 주의 첫날(weekStart 기준)
         int off = WidgetCommon.weekOffset(context);
-        java.util.Calendar s = java.util.Calendar.getInstance();
-        int dow = s.get(java.util.Calendar.DAY_OF_WEEK) - 1;
-        s.add(java.util.Calendar.DAY_OF_MONTH, -dow + off * 14);
+        java.util.Calendar s = WidgetCommon.weekStartOf(java.util.Calendar.getInstance(), ws);
+        s.add(java.util.Calendar.DAY_OF_MONTH, off * 14);
         java.util.Calendar e = (java.util.Calendar) s.clone();
         e.add(java.util.Calendar.DAY_OF_MONTH, 13);
         String label = (s.get(java.util.Calendar.MONTH) + 1) + "." + s.get(java.util.Calendar.DAY_OF_MONTH)

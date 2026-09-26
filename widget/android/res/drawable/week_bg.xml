@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- '이번 주' 위젯 배경: 밝은 크림 카드(#FBF2E0) 라운드 사각 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#FBF2E0" />
+    <corners android:radius="20dp" />
+</shape>

@@ -1,7 +1,7 @@
 package com.lsung.uricalendar.widget;
 
 /*
- * 콤보(large) 위젯의 우측 미니 월 그리드 — 35칸(5주). 작은 날짜 숫자 + 이벤트 점 최대 3개.
+ * 콤보(large) 위젯의 우측 미니 월 그리드 — 35칸(5주). 첫 칸 요일은 payload.weekStart. 작은 날짜 숫자 + 이벤트 점 최대 3개.
  * comboOffset(달 이동) 반영. 멤버 필터 적용.
  */
 
@@ -56,7 +56,8 @@ public class MiniMonthFactory implements RemoteViewsService.RemoteViewsFactory {
         int year = disp.get(Calendar.YEAR), month0 = disp.get(Calendar.MONTH);
         Calendar first = Calendar.getInstance();
         first.clear(); first.set(year, month0, 1);
-        int wd = first.get(Calendar.DAY_OF_WEEK) - 1;
+        // 첫 칸 요일 = 앱 '주 시작 요일'(payload.weekStart 0=일 1=월) [2026-09-26]
+        int wd = WidgetCommon.colOf(first.get(Calendar.DAY_OF_WEEK) - 1, WidgetCommon.weekStart(data));
         Calendar start = (Calendar) first.clone();
         start.add(Calendar.DAY_OF_MONTH, -wd);
 

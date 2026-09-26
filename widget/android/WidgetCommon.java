@@ -7,7 +7,7 @@ package com.lsung.uricalendar.widget;
  *  · 기간 런(run)/레인(lane) 계산, 다가오는 일정 묶기, 색/날짜 유틸, 씰/아바타 비트맵.
  *
  * 모든 상태 브로드캐스트는 UriCalendarWidgetProvider(항상 Manifest 등록됨)로 보내고,
- * 거기서 상태 갱신 후 4종 위젯을 모두 새로고침(refreshAll)한다.
+ * 거기서 상태 갱신 후 5종 위젯을 모두 새로고침(refreshAll)한다.
  */
 
 import android.app.PendingIntent;
@@ -59,6 +59,7 @@ public class WidgetCommon {
     static final int RC_COMBO_PREV = 10, RC_COMBO_NEXT = 11, RC_COMBO_RESET = 12;
     static final int RC_FILTER_ALL = 13, RC_FILTER_BASE = 14; // 14,15,16,17 = 멤버 슬롯 0..3
     static final int RC_ADD = 20, RC_OPEN = 21;
+    static final int RC_WEEK_DAY_BASE = 40;  // 이번 주 위젯 날짜 줄 0..6 (40~46)
 
     // ── 위젯-로컬 상태 ──
     static SharedPreferences sp(Context c) { return c.getSharedPreferences(STATE_PREFS, Context.MODE_PRIVATE); }
@@ -207,12 +208,13 @@ public class WidgetCommon {
     // ↻ 글리프 — 새로고침 탭이 실제로 위젯 코드까지 닿았을 때만 잠깐 '✓'(런처의 눌림 효과와 구분). [2026-09-09]
     static String refreshGlyph(Context c) { return isFlash(c) ? "✓" : "↻"; }
 
-    // 4종 위젯 모두 새로고침
+    // 5종 위젯 모두 새로고침
     static void refreshAll(Context c) {
         safeUpdate(c, UriCalendarWidgetProvider.class);
         safeUpdate(c, TwoWeekWidgetProvider.class);
         safeUpdate(c, TodayWidgetProvider.class);
         safeUpdate(c, ComboWidgetProvider.class);
+        safeUpdate(c, WeekWidgetProvider.class);
     }
     private static void safeUpdate(Context c, Class<?> cls) {
         try {
@@ -223,6 +225,7 @@ public class WidgetCommon {
             else if (cls == TwoWeekWidgetProvider.class) TwoWeekWidgetProvider.updateAll(c, mgr, ids);
             else if (cls == TodayWidgetProvider.class) TodayWidgetProvider.updateAll(c, mgr, ids);
             else if (cls == ComboWidgetProvider.class) ComboWidgetProvider.updateAll(c, mgr, ids);
+            else if (cls == WeekWidgetProvider.class) WeekWidgetProvider.updateAll(c, mgr, ids);
         } catch (Throwable t) { /* 한 종류 실패해도 나머지 진행 */ }
     }
 
@@ -252,7 +255,7 @@ public class WidgetCommon {
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
-    /* 액션 적용 + 4종 위젯 재렌더. WidgetActionActivity(주 경로)와
+    /* 액션 적용 + 5종 위젯 재렌더. WidgetActionActivity(주 경로)와
        UriCalendarWidgetProvider.onReceive(옛 브로드캐스트 호환)가 함께 쓴다. */
     static void handleAction(Context c, Intent intent) {
         if (!applyAction(c, intent)) return;
@@ -337,6 +340,33 @@ public class WidgetCommon {
     }
     static String todayKey() { Calendar c = Calendar.getInstance(); return fmt(c); }
 
+    /* ── 한 주 시작 요일(앱 설정 '주 시작 요일') [2026-09-26] ──
+       payload.weekStart: 0=일요일 시작(기본·옛 payload), 1=월요일 시작.
+       dow 는 언제나 '진짜 요일'(0=일)이고, 화면의 칸 위치(col)만 weekStart 만큼 돌린다 →
+       일요일 빨강 같은 색 규칙은 dow 로, 첫 칸/끝 칸(기간 바 모서리·강조 테두리)은 col 로 판단한다. */
+    static final String[] DOW_KO = { "일", "월", "화", "수", "목", "금", "토" };
+    static int weekStart(WidgetData.WData d) { return (d != null && d.weekStart == 1) ? 1 : 0; }
+    // 진짜 요일(0=일) → 화면 칸 위치(0=첫 칸)
+    static int colOf(int dow, int ws) { return ((dow - ws) % 7 + 7) % 7; }
+    // 그 날짜가 든 주의 첫날(시간 0시). Calendar 는 복사해서 쓴다.
+    static Calendar weekStartOf(Calendar day, int ws) {
+        Calendar s = (Calendar) day.clone();
+        s.set(Calendar.HOUR_OF_DAY, 0); s.set(Calendar.MINUTE, 0); s.set(Calendar.SECOND, 0); s.set(Calendar.MILLISECOND, 0);
+        s.add(Calendar.DAY_OF_MONTH, -colOf(s.get(Calendar.DAY_OF_WEEK) - 1, ws));
+        return s;
+    }
+    /* 요일 머리줄(7칸 TextView: prefix0..prefix6)을 weekStart 순서로 채운다. 일요일만 빨강(기존 색 그대로).
+       레이아웃에 해당 id 가 없으면(옛 레이아웃) 무동작. */
+    static void wireDowHeader(Context c, RemoteViews rv, String prefix, int ws) {
+        for (int i = 0; i < 7; i++) {
+            int id = resId(c, prefix + i, "id");
+            if (id == 0) continue;
+            int dow = (ws + i) % 7;
+            rv.setTextViewText(id, DOW_KO[dow]);
+            rv.setTextColor(id, dow == 0 ? 0xFFC0503F : 0xFF8A6C52);
+        }
+    }
+
     /* ── 날짜 강조(date_highlights) ──────────────────────────────
        그 날짜에 걸린 강조 1건(겹치면 시작일이 이른 것) — 앱 _dhForDate와 동일 규칙.
        (Room.hls는 파싱 때 시작일 오름차순으로 정렬돼 있어 앞에서 처음 걸리는 게 정답) */
@@ -356,13 +386,13 @@ public class WidgetCommon {
     }
     /* 어느 변에 테두리를 그릴지 [top,bottom,left,right] — 위/아래/좌/우 이웃 날짜가 범위 밖이면
        그 변이 바깥 경계. 여러 주에 걸친 범위도 이 규칙만으로 자연스럽게 이어진다(앱 _dhSideFlags와 동일).
-       위젯은 항상 일요일 시작이라 col = dow. */
-    static boolean[] hlSides(WidgetData.Highlight h, String key, int dow) {
+       col = 화면 칸 위치(0=첫 칸). 주 시작 요일(weekStart)을 반영한 값을 넘긴다 [2026-09-26]. */
+    static boolean[] hlSides(WidgetData.Highlight h, String key, int col) {
         return new boolean[]{
             !hlIn(h, addDays(key, -7)),
             !hlIn(h, addDays(key, 7)),
-            dow == 0 || !hlIn(h, addDays(key, -1)),
-            dow == 6 || !hlIn(h, addDays(key, 1))
+            col == 0 || !hlIn(h, addDays(key, -1)),
+            col == 6 || !hlIn(h, addDays(key, 1))
         };
     }
     /* 칸별 플래그(42칸)를 줄(7칸)별로 접는다.

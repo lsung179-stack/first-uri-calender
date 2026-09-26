@@ -1387,6 +1387,7 @@ body.rc-camp .uni-nav[data-rci="delroom"] .uni-nav-l::before{background-image:ur
 body.rc-camp .uni-nav[data-rci="leave"] .uni-nav-l::before{background-image:url("https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/ic_leave.png")}
 /* 별밤 캠핑 — 앱 첫 어두운 팔레트. 크림/흰색이 하드코딩된 면 위에 var(--text)(달빛 흰색)가 올라가면 글자가 사라지므로
    그런 면만 한 톤 밝은 남색으로 바꾼다. 팔레트 기준(data-theme)으로 스코프 — 아이콘만 캠핑을 고른 조합엔 영향 없음 [2026-09-23] */
+body[data-theme="camp"] .wk-ev,
 body[data-theme="camp"] .dp-item,
 body[data-theme="camp"] .mp-item,
 body[data-theme="camp"] .copy-option,
@@ -3571,6 +3572,55 @@ body[data-theme="camp"] .rpal-row{background:#2c4a82}
 /* ── 1. 캘린더 헤더 제거에 따른 보정 ── */
 .cal-member-tabs{padding-top:4px}
 .cal-grid{padding-bottom:calc(86px + env(safe-area-inset-bottom))}
+/* ── 주간 보기 (2026-09-26) ── 월|주 전환 + 하루 한 줄 목록 */
+.cal-view-seg{display:flex;padding:2px;border-radius:99px;background:rgba(139,58,42,.10);flex-shrink:0}
+.cal-view-seg button{border:0;background:transparent;font-family:inherit;font-size:11px;font-weight:700;color:var(--sub);padding:3px 7px;border-radius:99px;cursor:pointer;line-height:1.2;-webkit-tap-highlight-color:transparent}
+.cal-view-seg button.on{background:var(--accent);color:var(--card)}
+.cal-week-range{display:none;font-size:10.5px;color:var(--sub);margin-top:1px;font-variant-numeric:tabular-nums;white-space:nowrap}
+#calendarScreen.week-mode .cal-week-range{display:block}
+#calendarScreen.week-mode .cal-month-name{font-size:18px;letter-spacing:0}
+#calendarScreen.week-mode .cal-month-center{gap:0}
+#calendarScreen.week-mode .cal-month-arrow{padding-left:4px;padding-right:4px}
+#calendarScreen.week-mode #calWeekHead,#calendarScreen.week-mode #calGrid{display:none}
+.cal-week-list{flex:1;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 12px calc(96px + env(safe-area-inset-bottom));transition:opacity .2s ease}
+.cal-week-list.fading{opacity:.35}
+.wk-day{display:grid;grid-template-columns:44px minmax(0,1fr);gap:10px;padding:10px 4px;border-bottom:1px solid var(--borderL,rgba(139,58,42,.10));cursor:pointer;-webkit-tap-highlight-color:transparent}
+.wk-day:last-child{border-bottom:0}
+.wk-day.today{background:linear-gradient(90deg,rgba(139,58,42,.07),transparent 75%);border-radius:10px}
+.wk-date{text-align:center;padding-top:2px}
+.wk-num{font-family:var(--ff-serif);font-size:21px;font-weight:700;line-height:1.05;color:var(--text);font-variant-numeric:tabular-nums}
+.wk-dow{font-size:11px;color:var(--sub);margin-top:2px}
+.wk-day.sun .wk-num,.wk-day.sun .wk-dow{color:var(--sun)}
+.wk-day.sat .wk-num,.wk-day.sat .wk-dow{color:var(--sat)}
+.wk-day.today .wk-num span{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:1.5px solid var(--accent);color:var(--accent)}
+.wk-items{display:flex;flex-direction:column;gap:5px;min-width:0}
+.wk-lab{font-size:11px;font-weight:700;color:var(--sun)}
+.wk-lab.term,.wk-lab.anniv,.wk-lab.lunar{color:var(--gold,#b08742)}
+.wk-lab .wk-hl{display:inline-block;margin-left:6px;padding:0 6px;border-radius:5px;border:1.2px solid;font-size:10px;font-weight:700;vertical-align:1px}
+.wk-ev{display:grid;grid-template-columns:4px minmax(0,1fr);gap:9px;background:var(--card);border:1px solid var(--borderL,rgba(139,58,42,.10));border-radius:9px;padding:7px 10px 7px 0;overflow:hidden}
+.wk-ev .wk-bar{border-radius:0 3px 3px 0}
+.wk-ev.outline .wk-bar{background:transparent!important;border:1.5px solid;border-left:0}
+.wk-ev.virt{background:transparent;border-style:dashed}
+.wk-ti{font-size:13.5px;font-weight:600;line-height:1.35;color:var(--text);overflow-wrap:anywhere}
+.wk-meta{font-size:11px;color:var(--sub);margin-top:2px;display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;font-variant-numeric:tabular-nums}
+.wk-meta .dp-member-chip{padding:2px 7px 2px 2px;font-size:10.5px}
+.wk-meta .dp-member-chip-av{width:15px;height:15px;font-size:8px}
+.wk-with{font-size:10px;font-weight:700;color:var(--gold,#b08742)}
+.wk-td{display:flex;align-items:flex-start;gap:9px;padding:3px 2px 3px 4px}
+.wk-chk{width:17px;height:17px;border:1.8px solid;border-radius:5px;flex:none;display:flex;align-items:center;justify-content:center;margin-top:1px;cursor:pointer}
+.wk-chk svg{width:12px;height:12px}
+.wk-td-body{min-width:0;flex:1}
+.wk-td .wk-ti{font-weight:500;font-size:13px}
+.wk-td.done .wk-ti{text-decoration:line-through;color:var(--mute)}
+.wk-td .dp-members-chips{margin-top:3px;gap:3px}
+.wk-td .dp-member-chip{padding:2px 7px 2px 2px;font-size:10.5px}
+.wk-td .dp-member-chip-av{width:15px;height:15px;font-size:8px}
+.todo-card-done .td-doneby-name{color:#4f7d4f;font-weight:700}
+.td-doneby{display:inline-flex;align-items:center;gap:3px;background:rgba(79,125,79,.13);color:#4f7d4f;border-radius:99px;padding:1px 8px;font-size:10.5px;font-weight:700;line-height:1.5;white-space:nowrap;text-decoration:none}
+.wk-empty{font-size:12px;color:var(--mute);padding:3px 0}
+body[data-theme="camp"] .td-doneby{color:#a9d8a2;background:rgba(169,216,162,.14)}
+body[data-theme="camp"] .todo-card-done .td-doneby-name{color:#a9d8a2}
+body[data-theme="camp"] .cal-view-seg{background:rgba(255,255,255,.10)}
 .cal-fab{bottom:calc(86px + env(safe-area-inset-bottom))}
 .cal-today-btn{bottom:calc(86px + env(safe-area-inset-bottom))}
 .cal-cell{position:relative}
@@ -3628,6 +3678,7 @@ body[data-theme="camp"] .rpal-row{background:#2c4a82}
    콘텐츠·FAB는 배너+탭바 높이만큼만 확보. 광고 사라지면 클래스 제거로 원복. */
 :root{ --ad-h:62px; } /* AdMob 배너 기본 높이 (배너 로드 시 실제 값으로 갱신됨; Android 적응형 배너가 더 높을 수 있어 기본값 상향) */
 body.has-ad .cal-grid{ padding-bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)) !important; }
+body.has-ad .cal-week-list{ padding-bottom:calc(var(--ad-h) + 90px + env(safe-area-inset-bottom)) !important; }
 body.has-ad .todo-list{ padding-bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)) !important; }
 body.has-ad #roomsContent{ padding-bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)) !important; }
 body.has-ad .uni-scroll{ padding-bottom:calc(var(--ad-h) + 74px + env(safe-area-inset-bottom)) !important; }
@@ -4351,6 +4402,8 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
       <!-- 방 씰(현재 방) — 누르면 방 목록이 뜨고, 눌러서 드래그(놓는 방으로 이동) 또는 항목 탭으로 방 전환 -->
       <button class="cal-room-seal-btn" id="calRoomSealBtn" onpointerdown="_sealPointerDown(event)" aria-label="방 전환" style="display:none;touch-action:none"></button>
       <button class="cal-search-btn" data-rci="search" onclick="openSearch()" aria-label="검색"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.5" y2="16.5"/></svg></button>
+      <!-- 월 / 주 보기 전환 (주간 보기 2026-09-26) — 마지막 선택을 기억 -->
+      <div class="cal-view-seg" id="calViewSeg" role="group" aria-label="월·주 보기"><button type="button" data-v="month" onclick="setCalView('month')">월</button><button type="button" data-v="week" onclick="setCalView('week')">주</button></div>
       <!-- 방 선택 팝업(씰 롱프레스/탭) -->
       <div class="room-seal-picker" id="roomSealPicker" aria-hidden="true"><div class="rsp-list" id="rspList"></div></div>
     </div>
@@ -4359,6 +4412,7 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
       <div class="cal-month-title" onclick="openDatePicker()">
         <div class="cal-month-year" id="calYear">2026</div>
         <div class="cal-month-name" id="calMonthName">5월</div>
+        <div class="cal-week-range" id="calWeekRange"></div>
       </div>
       <button class="cal-month-arrow" onclick="nextMonth()">›</button>
     </div>
@@ -4384,6 +4438,8 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
   <div class="cal-grid" id="calGrid">
     <!-- renderMonthly()가 여기 채움 -->
   </div>
+  <!-- 주간 보기 — renderWeekList()가 채움(월 보기일 땐 숨김) -->
+  <div class="cal-week-list" id="calWeekList" hidden></div>
   <button class="cal-fab" id="calFab" onclick="calFabAdd()" aria-label="일정 추가" style="display:none">+</button>
 </div>
 
@@ -10213,6 +10269,7 @@ function getWeekStartPref(){
 function setWeekStartPref(value){
   const n=value===1?1:0;
   try{ localStorage.setItem('uricalv2.weekStart', String(n)); }catch(e){}
+  try{ syncWidgetData(true); }catch(_){}   // 위젯도 같은 첫 요일로
   renderWeekHead();
   if(typeof renderMonthly==='function')renderMonthly();
 }
@@ -10763,7 +10820,9 @@ async function buildWidgetPayload(){
     for(let _hi=0; _hi<=140 && _hk<=to; _hi++){ if(HOLIDAYS[_hk]) holidays[_hk]=HOLIDAYS[_hk]; _hk=shiftDateKey(_hk,1); }
   }catch(_){}
   return { updatedAt:Date.now(), currentRoomId:(_currentRoom?_currentRoom.id:(outRooms[0]?outRooms[0].id:null)),
-           myUserId:(_currentUser?_currentUser.id:null), gridV:gv, gridH:gh, holidays:holidays, rooms:outRooms };
+           myUserId:(_currentUser?_currentUser.id:null), gridV:gv, gridH:gh, holidays:holidays,
+           weekStart:(function(){ try{ return getWeekStartPref(); }catch(_){ return 0; } })(),   // 0=일 1=월 — 2주·월·이번 주 위젯의 첫 요일 [2026-09-26]
+           rooms:outRooms };
 }
 /* ═══ 위젯이 오프라인 낙관 토글한 할일(widget.pendingTodoToggles)을 앱 포그라운드 복귀 시 Supabase에 반영 ═══
    위젯은 iOS17+ 인터랙티브라 App Group에 todoId를 append만 하고, 실제 DB 반영은 앱이 여기서 flush.
@@ -12635,6 +12694,7 @@ function renderDateSheetList(){
           <div class="dp-title">${escapeHtml(t.title||'')}</div>
           ${(function(){const c=_authorChipHtml(t.user_id);return c?`<div class="dp-members-chips">${c}</div>`:'';})()}
           ${tr?`<div class="dp-meta">${tr}</div>`:''}
+          ${(function(){ try{ const c=window._todoDoneByChipHtml?window._todoDoneByChipHtml(t):''; return c?`<div class="dp-meta">${c}</div>`:''; }catch(_){ return ''; } })()}
           ${tdInRoomsHtml}
           ${memoHtml}
         </div>
@@ -27891,9 +27951,10 @@ function buildTodoCard(t,multi){
         else keepLab='오늘 삭제 예정';
       }catch(e){}
     }
+    const doneBy=_todoDoneByName(t);   // 누가 완료했는지(멤버 2명 이상 방) [2026-09-26]
     metaInner=
       '<span class="td-dday done">완료</span>'
-      +(doneLab?('<span class="todo-card-done">'+escapeHtml(doneLab)+' 완료</span>'):'')
+      +((doneLab||doneBy)?('<span class="todo-card-done">'+(doneBy?'<b class="td-doneby-name">✓ '+escapeHtml(doneBy)+'</b> · ':'')+escapeHtml(doneLab)+' 완료</span>'):'')
       +(keepLab?('<span class="todo-card-keep">'+escapeHtml(keepLab)+'</span>'):'');
   }else{
     const dateLab=_tdDateLabel(t);
@@ -29376,6 +29437,206 @@ _wrap('openAddEvent', function(orig){
 _wrap('closeEventModal', function(orig){
   return function(){ const r=orig.apply(this,arguments); showTabbar(); return r; };
 });
+/* ════════════════════════════════════════════════════════════
+   주간 보기 (2026-09-26, 사용자 승인 초안 A — 날짜별 목록)
+   · 달력 머리 '월|주'로 전환, 마지막 선택 기억(localStorage uricalv2.calView)
+   · 한 주 시작 = 고급 설정 '주 시작 요일'(getWeekStartPref)
+   · 표시 월(_calYear/_calMonth) = 그 주 마지막 날의 달 → 월 격자 레인 계산(_daySheetItems 순서)을 그대로 재사용
+   · ‹ › / 좌우 밀기 / 오늘 = 주 단위, 날짜 줄 탭 = 날짜 시트
+   ════════════════════════════════════════════════════════════ */
+let _calView=(function(){ try{ return localStorage.getItem('uricalv2.calView')==='week'?'week':'month'; }catch(_){ return 'month'; } })();
+let _wkStart=null;   // 보고 있는 주의 첫 날(Date, 자정)
+function _wkAdd(d,n){ return new Date(d.getFullYear(),d.getMonth(),d.getDate()+n); }
+function _wkStartOf(d){ const ws=getWeekStartPref(); return _wkAdd(d,-((d.getDay()-ws+7)%7)); }
+function _wkKey(d){ return dateKey(d.getFullYear(),d.getMonth(),d.getDate()); }
+/* 주가 지금 표시 월(격자)에 걸쳐 있는지 — 시작 또는 끝 날이 그 달이면 격자 안 */
+function _wkInShownMonth(){
+  if(!_wkStart) return false;
+  const e=_wkAdd(_wkStart,6), inM=function(d){ return d.getFullYear()===_calYear&&d.getMonth()===_calMonth; };
+  return inM(_wkStart)||inM(e);
+}
+/* 월이 바뀌었으면(날짜 이동·오늘·방 전환 등) 그 달의 알맞은 주로 — 오늘이 그 달이면 오늘 주, 아니면 1일이 든 주 */
+function _wkEnsure(){
+  if(_wkStart && _wkStart.getDay()!==getWeekStartPref()) _wkStart=_wkStartOf(_wkStart);   // 주 시작 설정이 바뀜
+  if(_wkInShownMonth()) return;
+  const t=new Date();
+  const base=(t.getFullYear()===_calYear&&t.getMonth()===_calMonth)?t:new Date(_calYear,_calMonth,1);
+  _wkStart=_wkStartOf(base);
+}
+function _wkSyncMonth(){ const e=_wkAdd(_wkStart,6); _calYear=e.getFullYear(); _calMonth=e.getMonth(); }
+/* '9월 4주' — 주 마지막 날의 달 기준, 그 달 1일이 든 주가 1주 */
+function _wkTitle(){
+  const e=_wkAdd(_wkStart,6), first=new Date(e.getFullYear(),e.getMonth(),1);
+  const off=(first.getDay()-getWeekStartPref()+7)%7;
+  return { y:e.getFullYear(), m:e.getMonth()+1, n:Math.floor((e.getDate()-1+off)/7)+1,
+           range:(_wkStart.getMonth()+1)+'.'+_wkStart.getDate()+' – '+(e.getMonth()+1)+'.'+e.getDate() };
+}
+function setCalView(v){
+  v=(v==='week')?'week':'month';
+  if(v===_calView){ _calApplyView(); return; }
+  _calView=v;
+  try{ localStorage.setItem('uricalv2.calView',v); }catch(_){}
+  if(v==='week'){ _wkStart=null; _wkEnsure(); }
+  try{ renderMonthly(); }catch(_){ _calApplyView(); }
+}
+/* 할 일 '완료한 사람' 배지 — 멤버가 2명 이상인 방에서만(혼자면 늘 나라서 생략) */
+function _todoDoneByName(t){
+  if(!t||!t.is_done||!t.done_by) return '';
+  if(((_myMembers||[]).length)<2) return '';
+  const m=(typeof _todoMemberByKey==='function')?_todoMemberByKey(t.done_by):null;
+  return (m&&(m.name||'').trim())||'';
+}
+function _todoDoneByChipHtml(t){
+  const nm=_todoDoneByName(t); if(!nm) return '';
+  let at=''; try{ if(t.done_at){ const d=new Date(t.done_at), now=new Date();
+    const same=d.toDateString()===now.toDateString();
+    at=(same?'':(d.getMonth()+1)+'/'+d.getDate()+' ')+pad(d.getHours())+':'+pad(d.getMinutes()); } }catch(_){}
+  return '<span class="td-doneby">✓ '+escapeHtml(nm)+' 완료'+(at?' · '+at:'')+'</span>';
+}
+window.setCalView=setCalView;
+window._todoDoneByChipHtml=_todoDoneByChipHtml;
+function _calApplyView(){
+  const scr=document.getElementById('calendarScreen'), list=document.getElementById('calWeekList');
+  const week=(_calView==='week');
+  if(scr) scr.classList.toggle('week-mode',week);
+  if(list) list.hidden=!week;
+  const seg=document.getElementById('calViewSeg');
+  if(seg) seg.querySelectorAll('button').forEach(function(b){ b.classList.toggle('on',b.dataset.v===_calView); });
+  if(!week) return;
+  _wkEnsure();
+  const T=_wkTitle();
+  const yEl=document.getElementById('calYear'), mEl=document.getElementById('calMonthName'), rEl=document.getElementById('calWeekRange');
+  if(yEl) yEl.textContent=T.y+'년';
+  if(mEl) mEl.textContent=T.m+'월 '+T.n+'주';
+  if(rEl) rEl.textContent=T.range;
+  // 오늘 칩 — 이번 주가 아닐 때만
+  const btn=document.getElementById('todayBtn');
+  if(btn){ const t=new Date(); btn.classList.toggle('show', !(t>=_wkStart && t<_wkAdd(_wkStart,7))); }
+  renderWeekList();
+}
+function renderWeekList(){
+  const box=document.getElementById('calWeekList'); if(!box||!_wkStart) return;
+  const multi=((_myMembers||[]).length>1);
+  const now=new Date(), todayKey=dateKey(now.getFullYear(),now.getMonth(),now.getDate());
+  const chk='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
+  let html='';
+  for(let i=0;i<7;i++){
+    const d=_wkAdd(_wkStart,i), key=_wkKey(d), dow=d.getDay();
+    const isHol=!!HOLIDAYS[key];
+    const cls=['wk-day'];
+    if(key===todayKey) cls.push('today');
+    if(dow===0||isHol) cls.push('sun'); else if(dow===6) cls.push('sat');
+    // 라벨: 공휴일·절기·기념일(+ 음력 설정 시 음력) / 날짜 강조 제목
+    let labHtml='';
+    try{
+      const lab=getDayLabel(d.getFullYear(),d.getMonth()+1,d.getDate());
+      let hlTag='';
+      const hl=(typeof _dhForDate==='function')?_dhForDate(key):null;
+      if(hl&&hl.title){ let hx='#8b3a2a'; try{ hx=_dhHexOf(_dhThemeKeyOf(hl),hl.style_key); }catch(_){}
+        hlTag='<span class="wk-hl" style="border-color:'+hx+';color:'+hx+'">'+escapeHtml(hl.title)+'</span>'; }
+      if((lab&&lab.text)||hlTag) labHtml='<div class="wk-lab '+((lab&&lab.type)||'')+'">'+escapeHtml((lab&&lab.text)||'')+hlTag+'</div>';
+    }catch(_){}
+    let items=[];
+    try{ items=_daySheetItems(key).combined.filter(function(x){ return x.kind!=='todo'||_todoVisibleForView(x.t); }); }catch(e){ console.warn('week items',e); }
+    let body='';
+    items.forEach(function(item){
+      if(item.kind==='todo'){
+        const t=item.t, hex=todoHex(t.color), done=!!t.is_done;
+        let tr=''; try{ tr=fmtTimeRange(t.start_time,t.end_time); }catch(_){ tr=t.start_time||''; }
+        const chips=multi?(todoMemberChipsHtml(t)||''):'';
+        const doneBy=_todoDoneByChipHtml(t);
+        body+='<div class="wk-td'+(done?' done':'')+'">'
+          +'<div class="wk-chk" style="border-color:'+(done?'var(--done)':hex)+';color:'+(done?'#fff':hex)+';'+(done?'background:var(--done)':'')+'" onclick="event.stopPropagation();window.toggleTodoDone(\''+t.id+'\')">'+(done?chk:'')+'</div>'
+          +'<div class="wk-td-body"><div class="wk-ti">'+escapeHtml(t.title||'')+'</div>'
+          +((tr||doneBy)?'<div class="wk-meta">'+(tr?'<span>'+escapeHtml(tr)+'</span>':'')+doneBy+'</div>':'')
+          +chips+'</div></div>';
+        return;
+      }
+      const ev=item.ev, hex=colorHex(ev.color);
+      const meta=[];
+      let tm=''; try{ tm=fmtTimeRange(ev.time,ev.end_time); }catch(_){ tm=ev.time||''; }
+      if(ev._isRangeEvent) meta.push('기간');
+      else if(ev.is_multi) meta.push('여러 날');
+      meta.push(tm||'종일');
+      if((ev.repeat_type&&ev.repeat_type!=='none')||ev.recurring_yearly) meta.push('↻ 반복');
+      let chips='';
+      if(multi && !ev._isVirtual){
+        chips+=_authorChipHtml(ev.user_id)||'';
+        if(ev._isShared){
+          const ids=(ev._memberIds||[]).filter(function(u){ return u!==ev.user_id; });
+          if(ids.length){
+            chips+='<span class="wk-with">함께</span>'+ids.slice(0,3).map(function(u){ return _todoMemberChip(_todoMemberByKey(u)); }).join('')
+              +(ids.length>3?'<span class="wk-with">+'+(ids.length-3)+'명</span>':'');
+          }
+        }
+      }
+      body+='<div class="wk-ev'+(ev.bar_style==='outline'?' outline':'')+(ev._isVirtual?' virt':'')+'">'
+        +'<div class="wk-bar" style="background:'+hex+';border-color:'+hex+'"></div>'
+        +'<div><div class="wk-ti">'+escapeHtml(ev.title||'')+'</div>'
+        +'<div class="wk-meta"><span>'+escapeHtml(meta.join(' · '))+'</span>'+chips+'</div></div></div>';
+    });
+    if(!items.length) body='<div class="wk-empty">+ 일정 추가</div>';
+    html+='<div class="'+cls.join(' ')+'" data-date="'+key+'" onclick="openDateSheet(\''+key+'\')">'
+      +'<div class="wk-date"><div class="wk-num"><span>'+d.getDate()+'</span></div><div class="wk-dow">'+WEEKDAY_NAMES_FULL[dow]+'</div></div>'
+      +'<div class="wk-items">'+labHtml+body+'</div></div>';
+  }
+  box.innerHTML=html;
+}
+function _wkStep(n){
+  const list=document.getElementById('calWeekList');
+  if(list) list.classList.add('fading');
+  setTimeout(function(){
+    _wkStart=_wkAdd(_wkStart||_wkStartOf(new Date()),7*n); _wkSyncMonth();
+    try{ renderMonthly(); }catch(_){}
+    if(list){ list.scrollTop=0; requestAnimationFrame(function(){ list.classList.remove('fading'); }); }
+  },120);
+}
+/* _wrap 은 이미 한 번 감싼 함수는 건너뛰므로(__wrapped) 주간 보기 훅은 그 위에 한 겹 더 씌운다 */
+function _wrapMore(name, makeWrapper){
+  const orig=window[name]; if(typeof orig!=='function'){ console.warn('[_wrapMore] 없음:',name); return; }
+  const w=makeWrapper(orig); try{ w.__wrapped=true; }catch(_){}
+  window[name]=w;
+}
+// 월 렌더 뒤 보기 적용(월 격자는 숨겨져도 그려 둠 — 레인·표시 순서를 주간 목록이 그대로 씀)
+_wrapMore('renderMonthly', function(orig){
+  return function(){ const r=orig.apply(this,arguments); try{ _calApplyView(); }catch(e){ console.warn('week view',e); } return r; };
+});
+_wrapMore('prevMonth', function(orig){ return function(){ if(_calView==='week') return _wkStep(-1); return orig.apply(this,arguments); }; });
+_wrapMore('nextMonth', function(orig){ return function(){ if(_calView==='week') return _wkStep(1); return orig.apply(this,arguments); }; });
+_wrapMore('goToday', function(orig){
+  return function(){
+    if(_calView==='week'){ _wkStart=_wkStartOf(new Date()); _wkSyncMonth(); try{ renderMonthly(); }catch(_){} return; }
+    return orig.apply(this,arguments);
+  };
+});
+// 검색·위젯 등으로 특정 날짜의 시트를 열면 그 날이 든 주로 옮긴다
+_wrapMore('openDateSheet', function(orig){
+  return function(key){
+    try{
+      if(_calView==='week' && key && _wkStart){
+        const d=parseDateKey(key);
+        if(d<_wkStart || d>=_wkAdd(_wkStart,7)){ _wkStart=_wkStartOf(d); _wkSyncMonth(); renderMonthly(); }
+      }
+    }catch(_){}
+    return orig.apply(this,arguments);
+  };
+});
+// 주간 목록 좌우 밀기 = 주 이동
+(function(){
+  function bind(){
+    const el=document.getElementById('calWeekList'); if(!el||el._wkSwipe) return; el._wkSwipe=1;
+    let sx=0, sy=0, on=false;
+    el.addEventListener('touchstart',function(e){ if(e.touches.length!==1){ on=false; return; } sx=e.touches[0].clientX; sy=e.touches[0].clientY; on=true; },{passive:true});
+    el.addEventListener('touchend',function(e){
+      if(!on) return; on=false;
+      const t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy;
+      if(Math.abs(dx)<45||Math.abs(dx)<Math.abs(dy)*1.3) return;
+      _wkStep(dx<0?1:-1);
+    },{passive:true});
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bind); else bind();
+})();
+
 // openDateSheet → 데이 시트 탭 초기화 + 할일 렌더
 _wrap('openDateSheet', function(orig){
   return function(){ return orig.apply(this,arguments); };

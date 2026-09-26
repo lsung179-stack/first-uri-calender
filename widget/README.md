@@ -62,6 +62,7 @@ npx cap sync ios                        # 플러그인 새로 깔았으면 한 �
 
 ### 3b. Swift 위젯 (widget/ios/UriCalendarWidget.swift — 작성 완료, ⚠️Xcode 컴파일 검증 필요)
 - 4종: 오늘(systemSmall)·2주 캘린더(systemMedium)·콤보=오늘+미니월(systemLarge). 월 그리드는 `GridView(weeks:6)`로 large 편집 옵션 추가 가능.
+- 2026-09-26: **'이번 주' 위젯 추가**(iOS kind `UriWeek` systemLarge / Android `WeekWidgetProvider` 4×4) — 오늘이 든 주 7일을 하루 한 줄 목록으로(헤더 오른쪽 ↻ 새로고침, 보내기 버튼 없음). 2주·월·미니 달력·이번 주 모두 payload `weekStart`(0=일, 1=월)로 첫 요일을 정한다.
 - `AppIntentConfiguration` + `RoomEntity`(App Group에서 방 목록 읽음)로 **방 선택**, `memberUserId` 파라미터로 **멤버 필터**.
 - `ToggleTodoIntent`(iOS17+): 할일 체크 → App Group `widget.pendingTodoToggles`에 기록 + widget.data 낙관 반영.
 - ＋버튼/빈칸 = `com.lsung.uricalendar://add?room=` 딥링크(Link).

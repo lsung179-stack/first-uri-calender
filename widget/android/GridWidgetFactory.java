@@ -4,6 +4,7 @@ package com.lsung.uricalendar.widget;
  * 그리드 셀 어댑터 — 월(large) + 2주(medium) 위젯 공용.
  *   kind=MONTH:  표시 달(monthOffset 반영) 5·6주 동적, 이전/다음달 회색.
  *   kind=TWOWEEK: 이번 주 시작 + weekOffset*14 부터 14칸(2주).
+ *   첫 칸 요일 = payload.weekStart(0=일, 1=월) — 월요일 시작이면 일요일은 맨 끝 칸(빨강 유지). [2026-09-26]
  * 각 셀: 날짜 숫자 + 기간 런(연속 바) 최대 2줄 + 할일 1개 + 넘침(+N).
  * 멤버 필터(WidgetCommon.filterUser) 적용. 런/레인 계산은 WidgetCommon 공용.
  */
@@ -43,7 +44,8 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
     GridWidgetFactory(Context c, int kind, int widgetId) { this.ctx = c; this.kind = kind; this.widgetId = widgetId; }
 
     static class Cell {
-        int day; int dow; boolean inMonth; boolean isToday; String key;
+        // dow=진짜 요일(0=일, 색 판단) · col=화면 칸 위치(0=첫 칸, weekStart 반영 — 모서리/테두리 판단)
+        int day; int dow; int col; boolean inMonth; boolean isToday; String key;
         WidgetCommon.DayBar[] bars = new WidgetCommon.DayBar[0];
         int overflow;
         String holiday; // 빨간날 이름(있으면 빨간 바 + 빨간 숫자)
@@ -73,13 +75,15 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
         holidays = (data != null && data.holidays != null) ? data.holidays : new HashMap<String,String>();
         String filter = WidgetCommon.filterUser(ctx);
         String todayKey = WidgetCommon.todayKey();
+        int ws = WidgetCommon.weekStart(data);   // 0=일 1=월 — 앱 '주 시작 요일' [2026-09-26]
 
         Calendar start = Calendar.getInstance();
         start.set(Calendar.MILLISECOND, 0); start.set(Calendar.SECOND, 0); start.set(Calendar.MINUTE, 0); start.set(Calendar.HOUR_OF_DAY, 0);
         int rows, dispMonth0;
         if (kind == TWOWEEK) {
-            int dow = start.get(Calendar.DAY_OF_WEEK) - 1; // 0=일
-            start.add(Calendar.DAY_OF_MONTH, -dow + WidgetCommon.weekOffset(ctx) * 14);
+            // 오늘이 든 주의 첫날(weekStart 기준) + 2주 페이지 오프셋
+            int back = WidgetCommon.colOf(start.get(Calendar.DAY_OF_WEEK) - 1, ws);
+            start.add(Calendar.DAY_OF_MONTH, -back + WidgetCommon.weekOffset(ctx) * 14);
             rows = 2;
             dispMonth0 = -1; // 2주는 달 흐림 없음
         } else {
@@ -88,7 +92,7 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
             int year = disp.get(Calendar.YEAR); dispMonth0 = disp.get(Calendar.MONTH);
             Calendar first = Calendar.getInstance();
             first.clear(); first.set(year, dispMonth0, 1);
-            int offset = first.get(Calendar.DAY_OF_WEEK) - 1;
+            int offset = WidgetCommon.colOf(first.get(Calendar.DAY_OF_WEEK) - 1, ws);   // 1일이 몇 번째 칸인지
             int dim = first.getActualMaximum(Calendar.DAY_OF_MONTH);
             rows = (int) Math.ceil((offset + dim) / 7.0);
             start.clear(); start.set(year, dispMonth0, 1);
@@ -139,13 +143,14 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
             Cell cell = new Cell();
             cell.day = d.get(Calendar.DAY_OF_MONTH);
             cell.dow = d.get(Calendar.DAY_OF_WEEK) - 1;
+            cell.col = i % 7;   // 칸 위치 = 시작일부터의 순서(시작일이 weekStart 요일이므로 자동으로 맞음)
             cell.inMonth = (dispMonth0 < 0) || d.get(Calendar.MONTH) == dispMonth0;
             cell.key = WidgetCommon.fmt(d);
             cell.isToday = cell.key.equals(todayKey);
             cell.holiday = holidays.get(cell.key);
             cell.hl = WidgetCommon.hlFor(room, cell.key, filter, data != null ? data.myUserId : null);
             if (cell.hl != null) {
-                cell.hlSides = WidgetCommon.hlSides(cell.hl, cell.key, cell.dow);
+                cell.hlSides = WidgetCommon.hlSides(cell.hl, cell.key, cell.col);
                 cell.hlStart = cell.key.equals(cell.hl.start);
             }
             List<WidgetData.Todo> tl = byTodo.get(cell.key);
@@ -181,7 +186,7 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
         for (Cell c : cells) {
             int[] ov = new int[]{0};
             // 예약 줄이 레인 0..reserve-1 을 이미 점유하므로 cap 은 '칸 전체 줄 수'를 그대로 쓴다.
-            c.bars = WidgetCommon.cellBars(runs, c.key, c.dow, laneCap, ov, c.reserve);
+            c.bars = WidgetCommon.cellBars(runs, c.key, c.col, laneCap, ov, c.reserve);
             c.overflow = ov[0];
         }
     }
@@ -299,7 +304,7 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
             }
             if (b != null) {
                 final float _density = ctx.getResources().getDisplayMetrics().density;
-                boolean showTitle = !b.contLeft || cell.dow == 0;
+                boolean showTitle = !b.contLeft || cell.col == 0;   // 첫 칸(주 시작)에서 제목 다시
                 boolean showMark = b.shared && !b.contLeft;   // 함께 일정: 시작 칸 왼쪽에 얇은 띠(▎, 텍스트색=대비색)
                 rv.setViewVisibility(evViews[s], android.view.View.VISIBLE);
                 String _bt = showTitle ? (b.title == null ? "" : b.title) : " ";
@@ -330,8 +335,8 @@ public class GridWidgetFactory implements RemoteViewsService.RemoteViewsFactory 
                 } else {
                     // 단일 일정 = 양끝 여백 + 살짝 둥근 칩 / 기간 = 이어지는 변만 각지게(연결 유지).
                     // (rounded chip은 tint 필요 → API 31+에서만, 미만은 기존 flat 색으로 폴백)
-                    boolean lR = !b.contLeft || cell.dow == 0;   // 왼쪽 끝(둥글게)
-                    boolean rR = !b.contRight || cell.dow == 6;   // 오른쪽 끝(둥글게)
+                    boolean lR = !b.contLeft || cell.col == 0;   // 왼쪽 끝(둥글게) — 첫 칸
+                    boolean rR = !b.contRight || cell.col == 6;   // 오른쪽 끝(둥글게) — 끝 칸
                     if ((lR || rR) && android.os.Build.VERSION.SDK_INT >= 31) {
                         int shape = (lR && rR) ? id("ev_chip_single", "drawable")
                                   : lR ? id("ev_chip_start", "drawable")

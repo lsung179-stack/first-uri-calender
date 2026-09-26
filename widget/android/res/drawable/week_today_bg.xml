@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- '이번 주' 위젯 오늘 줄: 강조색(#8B3A2A) 7% 옅은 칠 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#128B3A2A" />
+    <corners android:radius="8dp" />
+</shape>
