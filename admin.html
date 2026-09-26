@@ -292,6 +292,20 @@ tbody tr:hover{background:rgba(139,58,42,.025)}
   </div>
 </div>
 
+<!-- 회원별 코인·구매 내역 모달 -->
+<div class="modal" id="coinUserModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div class="mt">🪙 <span id="coinUserName"></span> 님 코인·구매 내역</div>
+      <button class="x-btn" onclick="closeCoinUser()" aria-label="닫기">✕</button>
+    </div>
+    <div class="modal-body" id="coinUserBody"></div>
+    <div class="modal-foot">
+      <button class="mf-cancel" onclick="closeCoinUser()">닫기</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -325,6 +339,7 @@ const ORDER_FLOW=['pending','paid','making','shipped','done'];
 const TABS=[
   {k:'dash',icon:'📊',label:'대시보드'},
   {k:'subs',icon:'💳',label:'구독'},
+  {k:'coins',icon:'🪙',label:'코인·구매'},
   /* 달력 주문 보류 — 탭만 숨김(hidden). 되돌리려면 hidden:true 만 지우면 된다. [2026-09-04] */
   {k:'orders',icon:'📦',label:'주문',hidden:true},
   {k:'announce',icon:'📢',label:'공지'},
@@ -421,6 +436,7 @@ function switchTab(k){
   m.innerHTML='<div class="loading">불러오는 중…</div>';
   if(k==='dash')renderDash(m);
   else if(k==='subs')renderSubs(m);
+  else if(k==='coins')renderCoins(m);
   else if(k==='orders')renderOrders(m);
   else if(k==='announce')renderAnnounce(m);
   else if(k==='push')renderPush(m);
@@ -1286,6 +1302,172 @@ async function showSubHistory(userId,name){
 }
 function closeSubHist(){document.getElementById('subHistModal').classList.remove('on');}
 function subFilter(k){_subFilter=k;_subPage=0;drawSubs(document.getElementById('main'));}
+
+/* ══ 코인·구매 탭 — 충전·광고 보상·코인으로 산 품목·환불·관리자 지급 내역 [2026-09-26] ══
+   데이터: admin_coin_stats / admin_coin_ledger_page / admin_user_coin_detail (관리자만). 읽기 전용. */
+const COIN_PACK={coins_30:{coins:30,bonus:0,won:1500},coins_100:{coins:100,bonus:10,won:3900},coins_300:{coins:300,bonus:50,won:9900}};  // 원화 = 스토어 가격(수수료 떼기 전)
+const COIN_KIND={purchase:'충전',ad:'광고 보상',spend:'코인 사용',refund:'환불',grant:'관리자 지급',adjust:'관리자 차감'};
+const COIN_KIND_COLOR={purchase:'var(--st-paid)',ad:'var(--st-shipped)',spend:'var(--accent)',refund:'var(--st-pending)',grant:'var(--gold)',adjust:'var(--st-done)'};
+const ITEM_TYPE={skin:'테마',color:'컬러 팩',char:'이모지 팩',sticker:'스티커 묶음',font:'글꼴',dh:'날짜 강조'};
+const UNLOCK_SRC={coin:'코인 구매',admin:'관리자 지급',etc:'기타'};
+/* 품목 이름 — 앱의 _itemName 결과(2026-09-26 기준 판매 품목). 없으면 키를 그대로 */
+const ITEM_NAME={"char:bear":"꿀곰이","char:calli":"붓글씨","char:camp":"너굴이와 도치","char:cat":"코코","char:chicken":"꼬꼬","char:dino":"두두","char:fox":"여우비","char:monkey":"몽당이","char:mouse":"콩이","char:rabbit":"달이","char:weather":"날씨","color:autumn":"가을","color:blossom":"블라썸","color:boksung":"복숭아","color:candysky":"캔디 스카이","color:earth":"어스 톤","color:forest":"숲","color:grape":"포도","color:jelly":"젤리 팩","color:macaron":"마카롱","color:melon":"메론","color:mono":"모노톤","color:neon":"네온","color:ocean":"바다","color:peach":"피치","color:spice":"스파이스","color:spring":"봄","color:sunset":"노을","color:sunshine":"선샤인","color:vintage":"빈티지","color:vivid":"비비드","color:watermelon":"수박","color:woodland":"우드","dh:basic":"클래식 프레임","dh:dashed":"섬세한 점선","dh:deep":"딥 솔리드","dh:fill":"소프트 워시","dh:flower":"플로럴 보더","dh:folder":"아카이브 탭","font:abril":"Abril","font:bebas":"Bebas Neue","font:diphylleia":"디필레이아","font:gaegu":"개구","font:gamja":"감자꽃","font:gugi":"구기","font:himelody":"하이멜로디","font:jua":"주아","font:pen":"나눔펜","font:playfair":"Playfair","font:stylish":"스타일리시","skin:a_bear":"꿀곰이","skin:a_cat":"코코","skin:a_chicken":"꼬꼬","skin:a_dino":"두두","skin:a_fox":"여우비","skin:a_monkey":"몽당이","skin:a_mouse":"콩이","skin:a_rabbit":"달이","skin:c_gaegu":"개구쟁이","skin:camp":"별밤 캠핑","skin:daisy":"데이지","skin:koi":"잉어","skin:mono":"심플 블랙&화이트","skin:moon":"달빛","skin:nabi":"나비 정원","skin:star":"별똥별","sticker:bear":"꿀곰","sticker:calli":"붓글씨","sticker:camp":"너굴&도치","sticker:campnight":"별밤 캠핑","sticker:cat":"코코","sticker:celebrate":"오늘은 축하해","sticker:chicken":"꼬꼬","sticker:daily":"소소한 일상","sticker:dino":"두두","sticker:dog":"보리","sticker:fox":"여우비","sticker:monkey":"몽당","sticker:mouse":"콩이","sticker:penguin":"뽀글","sticker:rabbit":"달이","sticker:sky":"하늘 한 조각","sticker:tiger":"호담","sticker:weather":"날씨"};
+const COIN_PAGE_SIZE=30;
+let _coinKind='all', _coinSearch='', _coinPage=0, _coinStatsCache=null, _coinSearchTm=null;
+
+function won(n){ return '₩'+Number(n||0).toLocaleString('ko-KR'); }
+function packLabel(pid){ const p=COIN_PACK[pid]; return p?(p.coins+'코인'+(p.bonus?' +'+p.bonus+' 보너스':'')):(pid||'-'); }
+function itemLabel(ref){
+  const i=String(ref||'').indexOf(':'); if(i<0) return esc(ref||'-');
+  const t=ref.slice(0,i), k=ref.slice(i+1);
+  return `${esc(ITEM_TYPE[t]||t)} · <b>${esc(ITEM_NAME[ref]||k)}</b>`;
+}
+function storeLabel(note){
+  const n=String(note||'');
+  const st=/APP_STORE/i.test(n)?'App Store':/PLAY_STORE/i.test(n)?'Google Play':'';
+  const test=/SANDBOX/i.test(n);
+  return (st?st:'')+(test?(st?' · ':'')+'<span style="color:var(--st-pending);font-weight:700">테스트 결제</span>':'');
+}
+function coinRowDesc(r){
+  if(r.kind==='purchase'||r.kind==='refund'){ const s=storeLabel(r.note); return `${esc(packLabel(r.product_id))}${s?' · '+s:''}`; }
+  if(r.kind==='spend') return itemLabel(r.ref);
+  if(r.kind==='ad') return '동영상 광고 1편';
+  return esc(r.note||'-');
+}
+function coinDelta(d){ const v=Number(d||0); return `<b style="color:${v>=0?'var(--st-paid)':'var(--st-pending)'}">${v>=0?'+':''}${v.toLocaleString('ko-KR')}</b>`; }
+
+async function renderCoins(m){
+  _coinPage=0;
+  m.innerHTML='<div class="loading">불러오는 중…</div>';
+  try{
+    const {data,error}=await supa.rpc('admin_coin_stats');
+    if(error) throw error;
+    if(!data||data.ok===false) throw new Error((data&&data.error)||'권한 오류');
+    _coinStatsCache=data;
+  }catch(e){ m.innerHTML=errBox(e); return; }
+  await drawCoins(m);
+}
+
+async function drawCoins(m){
+  const st=_coinStatsCache||{};
+  const K={}; (st.kinds||[]).forEach(k=>K[k.kind]=k);
+  const z={n_all:0,coins_all:0,n_30d:0,coins_30d:0,n_today:0,coins_today:0,users_all:0};
+  const pur=K.purchase||z, ad=K.ad||z, sp=K.spend||z, rf=K.refund||z, gr=K.grant||z;
+  const prods=st.products||[];
+  const rev=(key)=>prods.reduce((s,p)=>s+(p[key]||0)*((COIN_PACK[p.product_id]||{}).won||0),0);
+  const refundWon=(st.refund_products||[]).reduce((s,p)=>s+(p.n_all||0)*((COIN_PACK[p.product_id]||{}).won||0),0);
+  const liveAll=prods.reduce((s,p)=>s+(p.n_all||0),0), live30=prods.reduce((s,p)=>s+(p.n_30d||0),0),
+        liveToday=prods.reduce((s,p)=>s+(p.n_today||0),0), testAll=prods.reduce((s,p)=>s+(p.n_test||0),0);
+
+  let res;
+  try{
+    res=await supa.rpc('admin_coin_ledger_page',{p_kind:_coinKind,p_search:_coinSearch,p_limit:COIN_PAGE_SIZE,p_offset:_coinPage*COIN_PAGE_SIZE});
+    if(res.error) throw res.error;
+  }catch(e){ m.innerHTML=errBox(e); return; }
+  const rows=(res.data&&res.data.rows)||[], total=(res.data&&res.data.total)||0;
+
+  const cards=[
+    {l:'코인 충전 (실결제)',v:liveAll+'건',e:`30일 ${live30}건 · 테스트 ${testAll}건 별도`},
+    {l:'충전 매출 (추정)',v:won(rev('n_all')-refundWon),e:`30일 ${won(rev('n_30d'))} · 수수료 떼기 전`},
+    {l:'오늘 충전',v:liveToday+'건',e:`오늘 ${won(rev('n_today'))}`},
+    {l:'광고 보상',v:ad.n_all+'편',e:`오늘 ${ad.n_today}편 · ${ad.users_all}명`},
+    {l:'코인으로 산 품목',v:sp.n_all+'건',e:`${(-sp.coins_all).toLocaleString('ko-KR')}코인 사용 · ${st.spenders||0}명`},
+    {l:'유통 중 코인',v:(st.circulating||0).toLocaleString('ko-KR'),e:`잔액 있는 회원 ${st.holders||0}명`},
+    {l:'환불',v:rf.n_all+'건',e:rf.n_all?`${won(refundWon)} 차감`:'없음',alert:rf.n_all>0},
+    {l:'관리자 지급',v:gr.n_all+'건',e:`${gr.coins_all.toLocaleString('ko-KR')}코인`},
+  ];
+  const top=st.top_items||[];
+  const srcs=st.unlock_sources||[];
+
+  m.innerHTML=`
+    <div class="page-title">코인·구매 내역</div>
+    <div class="page-sub">${fmtDate(new Date().toISOString())} 기준 · 오늘/30일은 한국 시간 기준 · 매출은 스토어 가격 기준 추정(수수료·세금 떼기 전, 테스트 결제 제외)</div>
+
+    <div class="stat-grid">
+      ${cards.map(c=>`<div class="stat-card${c.alert?' alert':''}">
+        <div class="sc-label">${c.l}</div>
+        <div class="sc-val">${c.v}</div>
+        <div class="sc-extra">${c.e}</div>
+      </div>`).join('')}
+    </div>
+
+    <div class="page-sub" style="margin-top:6px;font-weight:700">💰 충전 상품별</div>
+    ${!prods.length?`<div class="empty" style="padding:20px"><div class="e-emoji">🪙</div>아직 충전 내역이 없어요</div>`:`
+    <div class="clist">${prods.map(p=>`<div class="ccard">
+      <div class="ccard-top"><span class="ccard-title" style="font-size:14px">${esc(packLabel(p.product_id))}</span><span class="ccard-date">${won((COIN_PACK[p.product_id]||{}).won||0)}</span></div>
+      <div class="ccard-meta" style="border-top:none;padding-top:2px">실결제 <b>${p.n_all}</b>건 · 30일 ${p.n_30d}건 · 오늘 ${p.n_today}건 · 테스트 ${p.n_test}건 · 구매자 ${p.buyers}명</div>
+    </div>`).join('')}</div>`}
+
+    <div class="page-sub" style="margin-top:18px;font-weight:700">🛍 코인으로 많이 산 품목</div>
+    ${!top.length?`<div class="empty" style="padding:20px"><div class="e-emoji">🛍</div>아직 코인으로 산 품목이 없어요</div>`:`
+    <div class="clist">${top.map((t,i)=>`<div class="ccard" style="padding:12px 15px">
+      <div class="ccard-top" style="margin-bottom:0"><span style="font-size:14px">${i+1}. ${itemLabel(t.ref)}</span><span class="ccard-date">${t.n}건 · ${t.coins}코인</span></div>
+    </div>`).join('')}</div>`}
+
+    ${srcs.length?`
+    <div class="page-sub" style="margin-top:18px;font-weight:700">📦 회원이 가진 품목 (출처별)</div>
+    <div class="chips" style="flex-wrap:wrap">
+      ${srcs.map(r=>`<span class="chip" style="cursor:default">${esc(UNLOCK_SRC[r.source]||r.source)} · ${esc(ITEM_TYPE[r.pack_type]||r.pack_type)} <b style="color:var(--accent)">${r.n}</b></span>`).join('')}
+    </div>`:''}
+
+    <div class="page-sub" style="margin-top:20px;font-weight:700">📜 전체 거래 내역 (${total})</div>
+    <div class="chips">
+      ${[['all','전체'],['purchase','충전'],['ad','광고 보상'],['spend','코인 사용'],['refund','환불'],['grant','관리자 지급']]
+        .map(([k,l])=>`<button class="chip${k===_coinKind?' on':''}" onclick="coinKind('${k}')">${l}</button>`).join('')}
+    </div>
+    <div class="head-row"><div class="search" style="flex:1"><input id="coinSearch" placeholder="이름·이메일·품목·상품 검색" value="${esc(_coinSearch)}"></div></div>
+    ${!rows.length?`<div class="empty" style="padding:24px"><div class="e-emoji">🪙</div>${_coinSearch||_coinKind!=='all'?'해당하는 내역이 없어요':'아직 내역이 없어요'}</div>`:`
+    <div class="clist">${rows.map(r=>`<div class="ccard">
+      <div class="ccard-top">
+        <span><span class="status-badge" style="background:${COIN_KIND_COLOR[r.kind]||'#777'}">${esc(COIN_KIND[r.kind]||r.kind)}</span>
+          <a href="javascript:void 0" class="ccard-title" style="font-size:14px;color:var(--ink)" data-uid="${esc(r.user_id)}" data-name="${esc(r.name||'')}" onclick="showCoinUser(this.dataset.uid,this.dataset.name)">${esc(r.name||'(이름 없음)')}</a></span>
+        <span class="ccard-date">${fmtDate(r.created_at)}</span>
+      </div>
+      <div class="ccard-body" style="display:flex;justify-content:space-between;gap:10px;font-size:13px"><span>${coinRowDesc(r)}</span><span>${coinDelta(r.delta)}</span></div>
+      <div class="ccard-meta">${esc(r.email||'-')}${r.ref&&r.kind!=='spend'?' · <span class="t-dim">'+esc(r.ref)+'</span>':''}</div>
+    </div>`).join('')}</div>
+    ${pager('goCoinPage',_coinPage,total,COIN_PAGE_SIZE).replace('명)','건)')}`}
+  `;
+  const si=document.getElementById('coinSearch');
+  if(si) si.oninput=e=>{
+    _coinSearch=e.target.value.trim(); _coinPage=0;
+    clearTimeout(_coinSearchTm);
+    _coinSearchTm=setTimeout(()=>{
+      drawCoins(m).then(()=>{ const el=document.getElementById('coinSearch'); if(el){ el.focus(); el.setSelectionRange(el.value.length,el.value.length); } });
+    },300);
+  };
+}
+function coinKind(k){ _coinKind=k; _coinPage=0; drawCoins(document.getElementById('main')); }
+function goCoinPage(p){ _coinPage=Math.max(0,p); drawCoins(document.getElementById('main')); }
+
+/* 회원 한 명 — 잔액·가진 품목·거래 내역 */
+async function showCoinUser(uid,name){
+  document.getElementById('coinUserModal').classList.add('on');
+  document.getElementById('coinUserName').textContent=name||'(이름 없음)';
+  const body=document.getElementById('coinUserBody');
+  body.innerHTML='<div class="loading">불러오는 중…</div>';
+  const {data,error}=await supa.rpc('admin_user_coin_detail',{p_user:uid});
+  if(error||!data||data.ok===false){ body.innerHTML=errBox(error||{message:(data&&data.error)||'권한 오류'}); return; }
+  const pf=data.profile||{}, led=data.ledger||[], un=data.unlocks||[];
+  body.innerHTML=`
+    <div class="ccard" style="margin-bottom:12px">
+      <div class="ccard-top"><span class="ccard-title" style="font-size:14px">보유 코인</span><span style="font-size:18px;font-weight:800;color:var(--accent)">${Number(data.balance||0).toLocaleString('ko-KR')}</span></div>
+      <div class="ccard-meta" style="border-top:none;padding-top:0">${esc(pf.email||'-')}${pf.provider?' · '+esc(pf.provider):''}${pf.created_at?' · 가입 '+fmtDay(pf.created_at):''}</div>
+    </div>
+    <div class="page-sub" style="font-weight:700;margin:4px 0 8px">가진 품목 (${un.length})</div>
+    ${!un.length?'<div class="t-dim" style="margin-bottom:12px">없음</div>':`
+    <div class="clist" style="margin-bottom:12px">${un.map(u=>`<div class="ccard" style="padding:10px 13px">
+      <div class="ccard-top" style="margin-bottom:0"><span style="font-size:13px">${itemLabel(u.pack_type+':'+u.pack_key)}</span><span class="ccard-date">${esc(UNLOCK_SRC[u.source]||u.source)} · ${fmtDay(u.granted_at)}</span></div>
+    </div>`).join('')}</div>`}
+    <div class="page-sub" style="font-weight:700;margin:4px 0 8px">거래 내역 (${led.length}${led.length>=300?'+':''})</div>
+    ${!led.length?'<div class="t-dim">없음</div>':`
+    <div class="clist">${led.map(r=>`<div class="ccard" style="padding:10px 13px">
+      <div class="ccard-top" style="margin-bottom:4px"><span class="status-badge" style="background:${COIN_KIND_COLOR[r.kind]||'#777'}">${esc(COIN_KIND[r.kind]||r.kind)}</span><span class="ccard-date">${fmtDate(r.created_at)}</span></div>
+      <div style="display:flex;justify-content:space-between;gap:10px;font-size:13px"><span>${coinRowDesc(r)}</span><span>${coinDelta(r.delta)}</span></div>
+    </div>`).join('')}</div>`}
+  `;
+}
+function closeCoinUser(){ document.getElementById('coinUserModal').classList.remove('on'); }
 
 applyBrandLogos();
 checkSession();

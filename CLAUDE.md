@@ -53,6 +53,7 @@
 - `public.rooms` (id, name, code, owner_id, ~~`mascot` text~~). ⚠️ **방 프로필은 2026-07에 방 공유(rooms.mascot)→개인별(members.seal)로 전환** — `rooms.mascot` 컬럼과 RPC `set_room_mascot`은 **미사용 잔존**(마이그레이션 `add_room_mascot`). 클라이언트는 members.seal만 읽고 씀.
 - ~~`public.anniversaries`~~ — **방별 공유 D-day/기념일 기능은 제거됨**(사용자 요청, "느낌 없음"). 클라이언트 코드(스트립/시트/JS/CSS) 전부 삭제. 단 DB 테이블 `anniversaries`(마이그레이션 `create_anniversaries`)는 **그대로 남아있음**(빈 테이블, 미사용). 나중에 재도입하거나 정리할 때 참고.
 - `public.announcements` (title, body, image_url, show_on_open, **`blocks` jsonb**=글·사진 순서 `[{t:'text',v}|{t:'img',u}]`, 사진 있을 때만 — 2026-09-25 블로그형 공지. 옛 앱 호환 위해 body(글만)·image_url(첫 사진)도 함께 저장, 마이그레이션 `add_announcements_blocks`).
+- 관리자 RPC(코인·구매 탭, 2026-09-26): `admin_coin_stats()`·`admin_coin_ledger_page(kind,search,limit,offset)`·`admin_user_coin_detail(uid)` — `admin.html` '🪙 코인·구매' 탭. 새 품목을 팔면 `admin.html` `ITEM_NAME`, 충전 가격이 바뀌면 `COIN_PACK.won` 도 갱신.
 - 관리자 RPC: `admin_users_detailed()` — 회원별 활동지표(SECURITY DEFINER, 관리자만).
 - 관리자 RPC: `admin_growth_stats()` — WAU/MAU·활성화율·7일 리텐션·구독전환·공유방 비율 + **초대 지표**(invite_joins_7d/30d, invite_conv_num/den=30일 신규 중 가입 7일 내 타인 방 입장, cancel_pending=해지예약)(대시보드 성장 섹션).
 - 관리자 RPC: `admin_ads_cohorts()` — 최근 8주 주간 가입 코호트: 가입→7일 생존(일정·last_sign_in 기준, 7일 경과분만 분모)→초대 합류→체험(TRIAL)→유료(NORMAL)→해지예약. 체험/유료 판별=subscriptions.period_type, SANDBOX 제외(마이그레이션 `add_invite_metrics_and_ads_cohorts`).
