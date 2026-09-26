@@ -44,6 +44,7 @@
 - ⚠️ 관리자 계정은 `checkDeployVersionOnStart` 가 `isAdmin()` 이면 즉시 리턴해 **배포 게이트를 우회**한다(새로고침만으로 최신). "관리자는 최신인데 일반 계정은 옛날" 증상의 원인.
 - 🌙 **테마 '별밤 캠핑'(`camp`, 2026-09-23 출시)은 앱 유일의 어두운 팔레트**다 — 크림/흰색을 하드코딩한 새 UI 면을 만들면 `body[data-theme="camp"]` 보정 블록(아이콘 CSS 바로 아래)에도 추가해야 글씨가 안 사라진다. '심플 블랙&화이트'(`mono`)는 같은 날 실수로 내렸다가 **2026-09-25 복귀**(사용자가 지우라던 건 mono 출시 배너였음 — 배너는 계속 없음, 테마는 판매 중).
 - 🚀 **네이티브(Flutter) 전환 준비 중** — 설계는 [`docs/NATIVE-MIGRATION.md`](./docs/NATIVE-MIGRATION.md). 바꾸면 안 되는 값(iOS `com.lsung.uricalendar`, **Android 패키지 `app.vercel.first_uri_calender.twa`**, App Group, 상품·광고 ID, 앱 링크, 위젯 데이터 키)과 1단계 '다리 역할 업데이트'가 정리돼 있다. **다리 업데이트는 구현 완료(1.2.3 에 포함)** — `index.html` `_migrSaveSession`(Preferences `migr.session`)·`_migrSavePrefs`(`migr.prefs`)·`_checkMinAppVersion`(`app_config.min_app_version`/`min_app_version_force`, 기본 '0'/'false'). 결정: 새 저장소 `uri-calendar-app`, 2.0 목표 2027년 1월 중순, 네이티브 광고 첫 위치 = **설정 탭 목록 중간('꾸미기'와 '기타' 사이, 사용자 지정)** — 설정 화면에선 하단 배너 숨김, 2.0부터, 앱 오프닝 광고 1차 제외. 전환 기간 `index.html` 은 버그 수정 위주.
+- 🔒 **보안 규칙(2026-09-26)** — ① DB 값을 HTML 에 넣을 땐 escapeHtml, **onclick 속성 안 JS 문자열엔 `_jsStr`**(escapeHtml 로는 못 막음), style 색엔 `_safeColor`/`colorHex`. ② 외부 스크립트·CSS 는 **정확한 버전 + `integrity`(SRI)** — 버전 올리면 해시 재계산. ③ `vercel.json` 에 CSP·보안 헤더가 있다 — **새 외부 도메인을 쓰면 CSP 에 추가**. 자세한 건 `CLAUDE-LOG.md` '보안 점검·수정 — XSS·CSP·SRI'.
 - 로컬 `/home/user/appstore` 체크아웃은 origin 보다 뒤처져 있을 수 있다(지금도 그렇다) — 작업 전 `git fetch` 로 원격 기준을 확인할 것.
 
 ## Supabase

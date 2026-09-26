@@ -7,8 +7,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" media="print" onload="this.media='all'">
-<noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css"></noscript>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable.css" integrity="sha384-ibFbybJ6PggxRvIHmU1Ev0cJP1iQRYYeVs/vOrlRzPEyHM79xSfKH2pMLOlIbzJA" crossorigin="anonymous" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable.css" integrity="sha384-ibFbybJ6PggxRvIHmU1Ev0cJP1iQRYYeVs/vOrlRzPEyHM79xSfKH2pMLOlIbzJA" crossorigin="anonymous"></noscript>
 <!-- 장식 폰트(16종): 초기 렌더를 막지 않도록 비동기 로드. 설정에서 선택 시 즉시 사용 가능 -->
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Pen+Script&family=Gowun+Dodum&family=Song+Myung&family=Gowun+Batang&family=Do+Hyeon&family=Black+Han+Sans&family=Gaegu&family=Gamja+Flower&family=Hi+Melody&family=Stylish&family=Diphylleia&family=Gugi&family=Playfair+Display:wght@400;600&family=Bebas+Neue&family=Abril+Fatface&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Pen+Script&family=Gowun+Dodum&family=Song+Myung&family=Gowun+Batang&family=Do+Hyeon&family=Black+Han+Sans&family=Gaegu&family=Gamja+Flower&family=Hi+Melody&family=Stylish&family=Diphylleia&family=Gugi&family=Playfair+Display:wght@400;600&family=Bebas+Neue&family=Abril+Fatface&display=swap" rel="stylesheet"></noscript>
@@ -6445,10 +6445,11 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
   <span class="room-switch-name" id="roomSwitchName"></span>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.6.11/lunar.min.js"></script>
+<!-- [보안 2026-09-26] 외부 스크립트는 정확한 버전 + SRI(integrity) 고정 — CDN 파일이 바뀌면 브라우저가 실행을 거부한다. 버전을 올릴 땐 npm 패키지 파일의 sha384 를 다시 계산해 함께 바꿀 것 -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.6.11/lunar.js" integrity="sha384-h95f5kuknZ64NQiT7hkBBfGjTT7oHqbJ8KrifdpFE8OTh+rYDeE/lcadQpOiqSFe" crossorigin="anonymous"></script>
 <!-- KASI(한국천문연구원) 기준 음력 — lunar-javascript(중국 표준시)가 신월 경계에서 한국 음력과 하루 어긋나는 문제 보정용. 음력 날짜 변환은 이걸 우선 쓰고, 24절기/삼복은 lunar-javascript 유지 -->
-<script src="https://cdn.jsdelivr.net/npm/korean-lunar-calendar@0.4.0/dist/korean-lunar-calendar.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/korean-lunar-calendar@0.4.0/dist/korean-lunar-calendar.min.js" integrity="sha384-J28JVzvU3zvws/FJIBo0zQNoX7H9uqtTTBn7d5RU/UVsVkkzas7c/aEpMNxbxWGa" crossorigin="anonymous"></script>
 <!-- ⚡ jspdf·html2canvas는 공유/내보내기 전용(부팅 시 불필요) → 첫 사용 때 지연 로드(ensureHtml2Canvas/ensureJsPDF). 콜드스타트 ~200KB 블로킹 제거. -->
 
 <script>
@@ -7144,6 +7145,13 @@ let _pendingSignupEmail='';
 /* 인증 관련 에러를 사용자 친화적 한글 메시지로 변환 */
 function _authErr(error, fallback){
   const m=((error&&error.message)||'').toLowerCase();
+  // 약한/유출된 비밀번호 (Supabase '유출 비밀번호 차단' — code weak_password, reasons 에 'pwned') [2026-09-26]
+  const _code=String((error&&error.code)||'').toLowerCase();
+  const _reasons=((error&&error.reasons)||[]).map(r=>String(r).toLowerCase());
+  if(_code==='weak_password'||m.includes('weak_password')||m.includes('weak')||m.includes('pwned')||m.includes('easy to guess')||_reasons.includes('pwned')){
+    if(_reasons.includes('length')||m.includes('at least')) return '비밀번호가 너무 짧아요. 더 길게 만들어주세요';
+    return '너무 흔하거나 유출된 적 있는 비밀번호예요. 다른 비밀번호로 해주세요';
+  }
   // 메일 시간당 총량 한도 (약 1시간 대기) — security purposes보다 먼저 체크
   if(m.includes('email rate')||m.includes('over_email'))
     return '메일 전송 한도를 초과했어요. 1시간 후 다시 시도해주세요';
@@ -7214,6 +7222,7 @@ async function doEmailAuth(){
       if(error){
         const m=(error.message||'').toLowerCase();
         if(m.includes('already')||m.includes('registered'))toast('이미 가입된 이메일이에요. 로그인해주세요');
+        else if((error.code==='weak_password'||/weak|pwned|easy to guess/.test(m))&&!m.includes('at least'))toast(_authErr(error,'가입에 실패했어요'));
         else if(m.includes('password'))toast('비밀번호는 6자 이상이어야 해요');
         else toast(_authErr(error,'가입에 실패했어요'));
         return;
@@ -8792,6 +8801,12 @@ document.addEventListener('pointerup',_shEnd,{passive:true});
 document.addEventListener('pointercancel',_shEnd,{passive:true});
 
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+/* [보안 2026-09-26] 자리별 안전 처리 — escapeHtml 은 '글자 자리'용이다.
+   onclick="f('…')" 처럼 속성 안 JS 문자열에는 _jsStr, style 의 색 자리에는 _safeColor, CSS url() 에는 _cssUrl 을 쓴다.
+   (escapeHtml 의 &#39; 는 브라우저가 속성을 읽을 때 다시 ' 로 풀려 JS 문자열을 끊는다) */
+function _jsStr(s){return String(s==null?'':s).replace(/[\\'"`<>&\n\r\u2028\u2029]/g,c=>'\\u'+c.charCodeAt(0).toString(16).padStart(4,'0'))}
+function _safeColor(c,fb){c=String(c==null?'':c).trim();return /^(#[0-9a-fA-F]{3,8}|[a-zA-Z]{3,24}|rgba?\([0-9.,%\s]+\)|hsla?\([0-9.,%\sdeg]+\)|var\(--[a-zA-Z0-9-]+\))$/.test(c)?c:(fb||'#8b3a2a')}
+function _cssUrl(u){u=String(u==null?'':u).trim();if(!/^(https:|http:|data:image\/|blob:|\.?\/|[a-zA-Z0-9_-]+\/)/i.test(u))return '';return u.replace(/["'()\\\s<>]/g,c=>'%'+c.charCodeAt(0).toString(16).padStart(2,'0'))}
 
 /* 본인 프로필 정보를 미리 로드 (생일·사진을 캘린더에 반영하기 위해) */
 async function loadCurrentProfile(force){
@@ -9977,8 +9992,8 @@ function renderEventAuthorPicker(){
     const initial=(a.name||'?').trim().charAt(0).toUpperCase();
     const keyArg=a.key===null?'null':`'${a.key}'`;
     const iconHtml=a.avatar
-      ?`<div class="ev-author-icon" style="background:${a.color}"><img src="${escapeHtml(a.avatar)}" alt=""></div>`
-      :`<div class="ev-author-icon" style="background:${a.color}">${escapeHtml(initial)}</div>`;
+      ?`<div class="ev-author-icon" style="background:${_safeColor(a.color)}"><img src="${escapeHtml(a.avatar)}" alt=""></div>`
+      :`<div class="ev-author-icon" style="background:${_safeColor(a.color)}">${escapeHtml(initial)}</div>`;
     return `<button type="button" class="ev-author-btn${on?' on':''}" onclick="setEventAuthor(${keyArg})">${iconHtml}<span>${escapeHtml(a.name)}</span></button>`;
   }).join('');
   row.style.display='flex';
@@ -10256,7 +10271,7 @@ const EVENT_COLORS=[
 function colorHex(key){
   if(!key)return'#8b3a2a';
   // hex 직접 입력(#로 시작) 그대로 반환 — 컬러 팩에서 사용
-  if(typeof key==='string'&&key.startsWith('#'))return key;
+  if(typeof key==='string'&&key.startsWith('#'))return /^#[0-9a-fA-F]{3,8}$/.test(key)?key:'#8b3a2a';  // [보안] 색 칸에 다른 글자가 끼면 기본색
   const c=EVENT_COLORS.find(x=>x.key===key);
   return c?c.hex:'#8b3a2a';
 }
@@ -10789,7 +10804,7 @@ async function buildWidgetPayload(){
   let members=[]; try{ const {data}=await supa.from('members').select('room_id,user_id,color,is_virtual,virtual_name').in('room_id',roomIds); members=data||[]; }catch(_){}
   const realIds=[...new Set(members.filter(m=>m.user_id&&!m.is_virtual).map(m=>m.user_id))];
   let profById={};
-  if(realIds.length){ try{ const {data}=await supa.from('profiles').select('id,name,email,avatar_url').in('id',realIds); (data||[]).forEach(p=>{profById[p.id]=p;}); }catch(_){} }
+  if(realIds.length){ try{ const {data}=await supa.from('profiles').select('id,name,avatar_url').in('id',realIds); /* [개인정보] 다른 멤버 이메일은 받지 않는다 */ (data||[]).forEach(p=>{profById[p.id]=p;}); }catch(_){} }
   // 멤버 프로필 사진을 작은 PNG(dataURL)로 유저별 1회 래스터화 → 위젯이 실제 사진 표시
   const avPngById={};
   try{ await Promise.all(realIds.map(async function(id){ const u=profById[id]&&profById[id].avatar_url; if(u){ avPngById[id]=await _wgAvatarPng(u); } })); }catch(_){}
@@ -10809,7 +10824,7 @@ async function buildWidgetPayload(){
   const outRooms=rooms.map(r=>{
     const rm=members.filter(m=>m.room_id===r.id).map(m=>{
       const name=m.is_virtual?(m.virtual_name||'멤버')
-        :((profById[m.user_id]&&profById[m.user_id].name)||(profById[m.user_id]&&profById[m.user_id].email?profById[m.user_id].email.split('@')[0]:'멤버'));
+        :((profById[m.user_id]&&profById[m.user_id].name)||'멤버');
       return { userId:m.user_id||null, name, color:hx(m.color), avatarPng:(m.user_id&&avPngById[m.user_id])||null };
     });
     const re=[];
@@ -11144,7 +11159,7 @@ function showReactionAnimation(){
       bubble.style.top=pos.top;
       bubble.innerHTML=(typeof em==='string'&&em.includes(':'))
         ? svgEmoji(em)
-        : `<span>${em}</span>`;
+        : `<span>${escapeHtml(em)}</span>`;
       // stagger
       bubble.style.animationDelay=(globalIdx*0.10)+'s';
       cell.appendChild(bubble);
@@ -11201,7 +11216,7 @@ async function loadRoomMembers(){
     const realUserIds=membersRaw.filter(m=>m.user_id&&!m.is_virtual).map(m=>m.user_id);
     let profiles=[];
     if(realUserIds.length){
-      const {data:p}=await supa.from('profiles').select('id,name,email,birthday,avatar_url').in('id',realUserIds);
+      const {data:p}=await supa.from('profiles').select('id,name,birthday,avatar_url').in('id',realUserIds);  // [개인정보] 다른 멤버 이메일은 받지 않는다(이름은 모든 프로필에 있음)
       profiles=p||[];
     }
     _myMembers=membersRaw.map(m=>{
@@ -11220,7 +11235,7 @@ async function loadRoomMembers(){
         };
       }else{
         const p=profiles.find(pp=>pp.id===m.user_id);
-        const name=(p&&p.name)||(p&&p.email?p.email.split('@')[0]:'익명');
+        const name=(p&&p.name)||'익명';
         const birthday=(p&&p.birthday)||null;
         const avatar_url=(p&&p.avatar_url)||null;
         const notif=m.notifications_enabled===false?false:true;
@@ -12805,7 +12820,7 @@ function renderDateSheetList(){
         const clickHandler=isMineR?`onclick="event.stopPropagation();openEmojiPick('${ev.id}','${_selectedDate}')"`:'';
         const avInnerR=m&&m.avatar_url?avImg(m.avatar_url,(m?.name||'·').slice(0,1)):escapeHtml((m?.name||'·').slice(0,1));
         const avBgR=escapeHtml(m?.color||'#8b3a2a');
-        const emojiContent=(r.emoji&&r.emoji.includes(':'))?svgEmoji(r.emoji):r.emoji;
+        const emojiContent=(r.emoji&&r.emoji.includes(':'))?svgEmoji(r.emoji):escapeHtml(r.emoji||'');
         reactionHtml+=`<span class="dp-reaction-chip${isMineR?' mine':''}" ${clickHandler} title="${escapeHtml(m?.name||'')}"><span class="dp-reaction-chip-av" style="background:${avBgR}">${avInnerR}</span><span class="dp-reaction-chip-emoji">${emojiContent}</span></span>`;
       });
       if(!myReaction){
@@ -12825,7 +12840,7 @@ function renderDateSheetList(){
           if(_evPhotoExpired){
             return `<div class="dp-photo-thumb dp-photo-locked" onclick="event.stopPropagation();openPremiumSheet()" title="보관 기간 만료"><img src="${escapeHtml(u)}" alt="첨부 사진" loading="lazy"><span class="dp-photo-lock-ov">${_LOCK_SVG}</span></div>`;
           }
-          return `<div class="dp-photo-thumb" onclick="event.stopPropagation();openPhotoView('${escapeHtml(u)}')"><img src="${escapeHtml(u)}" alt="첨부 사진" loading="lazy">`+
+          return `<div class="dp-photo-thumb" data-u="${escapeHtml(u)}" onclick="event.stopPropagation();openPhotoView(this.dataset.u)"><img src="${escapeHtml(u)}" alt="첨부 사진" loading="lazy">`+
             ((_evKeepLeft!==null&&_evKeepLeft<=7)?`<span class="dp-photo-keep">${_evKeepLeft>0?('D-'+_evKeepLeft):'만료'}</span>`:'')+
             `</div>`;
         }).join('')+`</div>`
@@ -14545,8 +14560,8 @@ function renderMemberPickList(){
     const tagHtml=m.is_virtual?' <span class="mp-item-tag">가상</span>':'';
     // 아바타 (사진 있으면 사진, 없으면 첫 글자)
     const stampHtml=m.avatar_url
-      ?`<div class="mp-item-stamp" style="background:${m.is_virtual?(m.color||'#8b5a3c'):''};overflow:hidden">${avImg(m.avatar_url,initial,'style="width:100%;height:100%;object-fit:cover"')}</div>`
-      :`<div class="mp-item-stamp" style="background:${m.is_virtual?(m.color||'#8b5a3c'):''}">${escapeHtml(initial)}</div>`;
+      ?`<div class="mp-item-stamp" style="background:${m.is_virtual?_safeColor(m.color,'#8b5a3c'):''};overflow:hidden">${avImg(m.avatar_url,initial,'style="width:100%;height:100%;object-fit:cover"')}</div>`
+      :`<div class="mp-item-stamp" style="background:${m.is_virtual?_safeColor(m.color,'#8b5a3c'):''}">${escapeHtml(initial)}</div>`;
     div.innerHTML=`
       ${stampHtml}
       <div class="mp-item-info">
@@ -15872,6 +15887,7 @@ function loadHeic2Any(){
   _heic2anyPromise=new Promise((resolve,reject)=>{
     const s=document.createElement('script');
     s.src='https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+    s.integrity='sha384-OTofQ0MEeiSgh62havBcemCIK0gqj809wX6UA0uPISNMRnR6NZyCdGzX3SbLrgwL'; s.crossOrigin='anonymous';  // [보안] SRI
     s.async=true;
     s.onload=()=>{
       if(window.heic2any)resolve(window.heic2any);
@@ -15884,19 +15900,21 @@ function loadHeic2Any(){
 }
 /* ⚡ 공유/내보내기 전용 라이브러리 지연 로드 (첫 사용 때만) — 콜드스타트 블로킹 제거 */
 const _scriptPromises={};
-function _loadScriptOnce(src, ready){
+function _loadScriptOnce(src, ready, integrity){
   try{ if(ready&&ready())return Promise.resolve(); }catch(_){}
   if(_scriptPromises[src])return _scriptPromises[src];
   _scriptPromises[src]=new Promise((resolve,reject)=>{
     const s=document.createElement('script'); s.src=src; s.async=true;
+    if(integrity){ s.integrity=integrity; s.crossOrigin='anonymous'; }   // [보안] SRI
     s.onload=()=>resolve();
     s.onerror=()=>{ delete _scriptPromises[src]; reject(new Error('script load fail')); };
     document.head.appendChild(s);
   });
   return _scriptPromises[src];
 }
-function ensureHtml2Canvas(){ return _loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', ()=>typeof window.html2canvas==='function'); }
-function ensureJsPDF(){ return _loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', ()=>!!(window.jspdf&&window.jspdf.jsPDF)); }
+// [보안 2026-09-26] cdnjs → jsDelivr npm 원본 파일(같은 버전) + SRI. 해시는 npm 패키지 파일 sha384.
+function ensureHtml2Canvas(){ return _loadScriptOnce('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js', ()=>typeof window.html2canvas==='function', 'sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H'); }
+function ensureJsPDF(){ return _loadScriptOnce('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js', ()=>!!(window.jspdf&&window.jspdf.jsPDF), 'sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk'); }
 
 /* 사진 큰 보기 모달 */
 function openPhotoView(url){
@@ -18872,7 +18890,7 @@ function renderRoomMemberList(){
       actions=`<button class="rs-kick-btn" onclick="openVMember('${m.member_id}')">편집</button>`;
     } else if(canKick && !isMe && !m.is_virtual){
       // 일반 멤버: 내보내기 버튼 (owner/admin만)
-      actions=`<button class="rs-kick-btn" onclick="kickMember('${m.user_id}','${escapeHtml(m.name).replace(/'/g,"\\'")}')">내보내기</button>`;
+      actions=`<button class="rs-kick-btn" onclick="kickMember('${_jsStr(m.user_id)}','${_jsStr(m.name)}')">내보내기</button>`;
     }
     // 아바타: 사진 있으면 사진, 없으면 첫 글자
     const stamp=m.avatar_url
@@ -19363,6 +19381,8 @@ async function _audit(actionType, opts={}){
    같은 에러 1분 내 중복 차단 (스팸 방지).
    ═══════════════════════════════════════════════════════════ */
 const _errorReportThrottle={};
+/* [보안 2026-09-26] 에러 기록용 주소 — 해시(#access_token·refresh_token)와 로그인·초대 관련 쿼리 값은 버린다 */
+function _redactUrl(h){ try{ const u=new URL(String(h||'')); u.hash=''; ['code','access_token','refresh_token','token','token_hash','provider_token','error_description','join'].forEach(k=>{ if(u.searchParams.has(k)) u.searchParams.set(k,'_'); }); return u.toString(); }catch(_){ return ''; } }
 async function _reportError(opts){
   try{
     if(!_currentUser)return;
@@ -19374,7 +19394,7 @@ async function _reportError(opts){
       user_id:_currentUser.id,
       message:(opts.message||'').slice(0,500),
       stack:(opts.stack||'').slice(0,2000),
-      url:(location.href||'').slice(0,300),
+      url:_redactUrl(location.href).slice(0,300),   // [보안] 로그인 직후 주소의 #access_token 등은 지우고 기록
       user_agent:(navigator.userAgent||'').slice(0,300),
       meta:opts.meta||{},
     });
@@ -21504,7 +21524,7 @@ function renderOrderAdmin(){
     const nextSt=idx>=0&&idx<OA_FLOW.length-1?OA_FLOW[idx+1]:null;
     return `<div class="oa-card">
       <div class="oa-card-top">
-        <span class="oa-status" style="background:${stColor}">${OA_STATUS[o.status]||o.status}</span>
+        <span class="oa-status" style="background:${stColor}">${OA_STATUS[o.status]||escapeHtml(o.status||'')}</span>
         <span class="oa-date">${dstr}</span>
       </div>
       <div class="oa-name">${escapeHtml(o.recipient_name)} <span class="oa-phone">${escapeHtml(o.phone)}</span></div>
@@ -21602,7 +21622,7 @@ function renderMyOrders(){
   const body=document.getElementById('myOrdersBody');
   if(!_myOrders.length){ body.innerHTML=`<div style="text-align:center;padding:46px 10px;color:var(--sub)"><div style="font-size:30px;margin-bottom:8px">📭</div>아직 주문 내역이 없어요.</div>`; return; }
   body.innerHTML=`<div class="oa-list">`+_myOrders.map(o=>{
-    const badge=`<span class="oa-status" style="background:${MY_COLOR[o.status]||'#666'}">${MY_STATUS[o.status]||o.status}</span>`;
+    const badge=`<span class="oa-status" style="background:${MY_COLOR[o.status]||'#666'}">${MY_STATUS[o.status]||escapeHtml(o.status||'')}</span>`;
     const detail=`<div class="mo-od" id="myod-${o.id}">
         <div><b>주문번호</b> ${escapeHtml(String(o.id).slice(0,8))}</div>
         <div><b>받는 분</b> ${escapeHtml(o.recipient_name||'-')} · ${escapeHtml(o.phone||'-')}</div>
@@ -22867,9 +22887,9 @@ async function doAdminGrantSearch(){
       const avatar=u.avatar_url
         ? `<div class="ag-user-avatar has-photo"><img src="${escapeHtml(u.avatar_url)}" alt=""></div>`
         : `<div class="ag-user-avatar">${escapeHtml((u.name||'?').charAt(0))}</div>`;
-      const safeMeta=JSON.stringify({name:u.name||'',email:u.email||'',avatar_url:u.avatar_url||''}).replace(/"/g,'&quot;');
+      const safeMeta=escapeHtml(JSON.stringify({name:u.name||'',email:u.email||'',avatar_url:u.avatar_url||''}));  // [보안] & ' " 모두 엔티티로 — 속성·JSON 문자열을 못 벗어나게
       return `
-        <div class="ag-user-card" onclick='selectAdminGrantUser("${u.id}", ${safeMeta})'>
+        <div class="ag-user-card" onclick="selectAdminGrantUser('${_jsStr(u.id)}', ${safeMeta})">
           ${avatar}
           <div class="ag-user-meta">
             <div class="ag-user-name">${escapeHtml(u.name||'(이름 없음)')}</div>
@@ -27466,8 +27486,8 @@ function _shortMD(k){ const d=parseDateKey(k); return (d.getMonth()+1)+'월 '+d.
 function _korDow(k){ const d=parseDateKey(k); return DOW_NAMES[d.getDay()]; }
 function _korShort(k){ return _shortMD(k)+' ('+_korDow(k)+')'; }
 function _korFull(k){ const d=parseDateKey(k); return (d.getMonth()+1)+'월 '+d.getDate()+'일 '+DOW_NAMES[d.getDay()]+'요일'; }
-function todoHex(c){ if(!c) return '#8b3a2a'; if(c.charAt(0)==='#') return c; try{ const h=colorHex(c); return h||c; }catch(e){ return c; } }
-function _curHex(){ try{ if(typeof _todoColorKey==='string'&&_todoColorKey.charAt(0)==='#') return _todoColorKey; const f=(EVENT_COLORS||[]).find(x=>x.key===_todoColorKey); return f?f.hex:'#8b3a2a'; }catch(e){ return '#8b3a2a'; } }
+function todoHex(c){ if(!c) return '#8b3a2a'; return colorHex(String(c)); }  // [보안] colorHex 가 # 값도 검사한다
+function _curHex(){ try{ if(typeof _todoColorKey==='string'&&_todoColorKey.charAt(0)==='#') return colorHex(_todoColorKey); const f=(EVENT_COLORS||[]).find(x=>x.key===_todoColorKey); return f?f.hex:'#8b3a2a'; }catch(e){ return '#8b3a2a'; } }
 function fmtClock(t){ if(!t) return ''; const p=t.split(':'); const h=parseInt(p[0],10), m=parseInt(p[1]||'0',10); const ap=h<12?'오전':'오후'; let hh=h%12; if(hh===0)hh=12; return ap+' '+hh+':'+String(m).padStart(2,'0'); }
 
 /* ---------- 상태 ---------- */

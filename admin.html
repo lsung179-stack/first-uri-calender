@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="only light">
 <title>우리 캘린더 · 관리자</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700;800&family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
 :root{
@@ -354,6 +354,8 @@ let _editAnnId=null;
 let _ordFilter='all', _ordSearch='', _usrSearch='', _fbFilter='all', _usrFilter='all';
 
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+/* [보안 2026-09-26] onclick="f('…')" 안의 JS 문자열용 — esc 의 &#39; 는 속성을 읽을 때 ' 로 되살아나 문자열을 끊는다 */
+function jsq(s){return String(s==null?'':s).replace(/[\\'"`<>&\n\r\u2028\u2029]/g,c=>'\\u'+c.charCodeAt(0).toString(16).padStart(4,'0'));}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.remove('show'),2200);}
 function fmtDate(s){if(!s)return '-';const d=new Date(s);const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;}
 function fmtDay(s){if(!s)return '-';const d=new Date(s);const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())}`;}
@@ -547,7 +549,7 @@ function drawOrders(m){
   const FILTERS=[['all','전체'],['pending','입금대기'],['paid','입금확인'],['making','제작중'],['shipped','배송중'],['done','완료'],['canceled','취소']];
   let list=_ordFilter==='all'?_cache.orders:_cache.orders.filter(o=>o.status===_ordFilter);
   if(_ordSearch)list=list.filter(o=>(o.recipient_name||'').toLowerCase().includes(_ordSearch)||(o.phone||'').includes(_ordSearch));
-  const badge=st=>`<span class="status-badge" style="background:${ORDER_COLOR[st]||'#777'}">${ORDER_STATUS[st]||st}</span>`;
+  const badge=st=>`<span class="status-badge" style="background:${ORDER_COLOR[st]||'#777'}">${ORDER_STATUS[st]||esc(st)}</span>`;
   const nextB=o=>{const i=ORDER_FLOW.indexOf(o.status);return (i>=0&&i<ORDER_FLOW.length-1)?`<button class="mini-btn mb-solid" onclick="ordNext('${o.id}','${ORDER_FLOW[i+1]}')">→ ${ORDER_STATUS[ORDER_FLOW[i+1]]}</button>`:'';};
   const cancelB=o=>(o.status!=='canceled'&&o.status!=='done')?`<button class="mini-btn mb-gray" onclick="ordNext('${o.id}','canceled')">취소</button>`:'';
   const delB=o=>`<button class="mini-btn mb-del" onclick="ordDelete('${o.id}')">🗑 삭제</button>`;
@@ -908,7 +910,7 @@ function drawFeedback(m){
     ${!list.length?`<div class="empty"><div class="e-emoji">💬</div>피드백이 없어요</div>`:`
     <div class="clist">${list.map(f=>`<div class="ccard">
       <div class="ccard-top">
-        <span><span class="status-badge" style="background:${FB_COLOR[f.status]||'#777'}">${FB_STATUS[f.status]||f.status}</span> <span class="t-dim" style="font-size:12px">${FB_CAT[f.category]||f.category||''}</span></span>
+        <span><span class="status-badge" style="background:${FB_COLOR[f.status]||'#777'}">${FB_STATUS[f.status]||esc(f.status)}</span> <span class="t-dim" style="font-size:12px">${FB_CAT[f.category]||esc(f.category||'')}</span></span>
         <span class="ccard-date">${fmtDate(f.created_at)}</span>
       </div>
       <div class="ccard-body">${esc(f.message)}</div>
@@ -1075,8 +1077,8 @@ function expiredCard(r){
     <div class="ccard-body" style="font-size:13px">${esc(r.email||'-')}</div>
     <div class="ccard-meta">만료일 ${fmtDay(r.expires_at)}${r.is_manual?' · 수동':''}</div>
     <div class="ccard-actions">
-      <button class="mini-btn mb-accent" onclick="quickExtend('${r.user_id}','${esc(r.name||'')}')">＋ 재부여</button>
-      <button class="mini-btn mb-gray" onclick="showSubHistory('${r.user_id}','${esc(r.name||'')}')">이력</button>
+      <button class="mini-btn mb-accent" onclick="quickExtend('${jsq(r.user_id)}','${jsq(r.name||'')}')">＋ 재부여</button>
+      <button class="mini-btn mb-gray" onclick="showSubHistory('${jsq(r.user_id)}','${jsq(r.name||'')}')">이력</button>
     </div>
   </div>`;
 }
@@ -1084,7 +1086,7 @@ function expiredCard(r){
 function subCard(r,withRevoke){
   const left=r.days_left;
   const urgent=left<=3;
-  const planLabel=r.is_manual?'수동':(r.plan_type==='yearly'?'연간':r.plan_type==='monthly'?'월간':r.plan_type);
+  const planLabel=r.is_manual?'수동':(r.plan_type==='yearly'?'연간':r.plan_type==='monthly'?'월간':esc(r.plan_type));
   const planColor=r.is_manual?'var(--gold)':(r.plan_type==='yearly'?'var(--st-done)':'var(--accent)');
   return `<div class="ccard">
     <div class="ccard-top">
@@ -1094,11 +1096,11 @@ function subCard(r,withRevoke){
     <div class="ccard-body" style="font-size:13px">${esc(r.email||'-')}</div>
     <div class="ccard-meta">만료 ${fmtDay(r.expires_at)}${r.manual_reason?' · 사유: '+esc(r.manual_reason):''}</div>
     ${withRevoke?`<div class="ccard-actions">
-      <button class="mini-btn mb-accent" onclick="quickExtend('${r.user_id}','${esc(r.name||'')}')">＋연장</button>
-      <button class="mini-btn mb-solid" onclick="showSubHistory('${r.user_id}','${esc(r.name||'')}')">이력</button>
+      <button class="mini-btn mb-accent" onclick="quickExtend('${jsq(r.user_id)}','${jsq(r.name||'')}')">＋연장</button>
+      <button class="mini-btn mb-solid" onclick="showSubHistory('${jsq(r.user_id)}','${jsq(r.name||'')}')">이력</button>
       <button class="mini-btn mb-gray" onclick="revokeSub('${r.id}')">회수</button>
     </div>`:`<div class="ccard-actions">
-      <button class="mini-btn mb-accent" onclick="showSubHistory('${r.user_id}','${esc(r.name||'')}')">이력 보기</button>
+      <button class="mini-btn mb-accent" onclick="showSubHistory('${jsq(r.user_id)}','${jsq(r.name||'')}')">이력 보기</button>
     </div>`}
   </div>`;
 }
@@ -1209,7 +1211,7 @@ function onSubUserSearch(e){
     const box=document.getElementById('subUserResults');
     if(error){box.innerHTML='<div class="sg-noresult">검색 실패</div>';return;}
     if(!data||!data.length){box.innerHTML='<div class="sg-noresult">결과 없음</div>';return;}
-    box.innerHTML=data.map(u=>`<button class="sg-result" onclick='pickSubUser(${JSON.stringify(u).replace(/'/g,"&#39;")})'>
+    box.innerHTML=data.map(u=>`<button class="sg-result" onclick="pickSubUser(${esc(JSON.stringify(u))})">
       <span class="sg-result-name">${esc(u.name||'(이름 없음)')}</span>
       <span class="sg-result-email">${esc(u.email||'')}</span>
     </button>`).join('');
@@ -1288,9 +1290,9 @@ async function showSubHistory(userId,name){
   const STATUS={active:'활성',expired:'만료',cancelled:'취소'};
   const SCOLOR={active:'var(--st-paid)',expired:'var(--st-canceled)',cancelled:'var(--st-pending)'};
   body.innerHTML=`<div class="clist">${rows.map(r=>{
-    const stLabel=r.is_current?'현재 활성':(STATUS[r.status]||r.status);
+    const stLabel=r.is_current?'현재 활성':(STATUS[r.status]||esc(r.status));
     const stColor=r.is_current?'var(--st-paid)':(SCOLOR[r.status]||'#777');
-    const plan=r.is_manual?'수동':(r.plan_type==='yearly'?'연간':r.plan_type==='monthly'?'월간':r.plan_type);
+    const plan=r.is_manual?'수동':(r.plan_type==='yearly'?'연간':r.plan_type==='monthly'?'월간':esc(r.plan_type));
     return `<div class="ccard" style="${r.is_current?'border-color:var(--st-paid);border-width:2px':''}">
       <div class="ccard-top">
         <span><span class="status-badge" style="background:${stColor}">${stLabel}</span> <span class="t-dim" style="font-size:12px">${plan}</span></span>
@@ -1316,7 +1318,7 @@ const COIN_PAGE_SIZE=30;
 let _coinKind='all', _coinSearch='', _coinPage=0, _coinStatsCache=null, _coinSearchTm=null;
 
 function won(n){ return '₩'+Number(n||0).toLocaleString('ko-KR'); }
-function packLabel(pid){ const p=COIN_PACK[pid]; return p?(p.coins+'코인'+(p.bonus?' +'+p.bonus+' 보너스':'')):(pid||'-'); }
+function packLabel(pid){ const p=COIN_PACK[pid]; return p?(p.coins+'코인'+(p.bonus?' +'+p.bonus+' 보너스':'')):String(pid||'-'); }
 function itemLabel(ref){
   const i=String(ref||'').indexOf(':'); if(i<0) return esc(ref||'-');
   const t=ref.slice(0,i), k=ref.slice(i+1);
