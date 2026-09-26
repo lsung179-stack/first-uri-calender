@@ -3573,8 +3573,9 @@ body[data-theme="camp"] .rpal-row{background:#2c4a82}
 .cal-member-tabs{padding-top:4px}
 .cal-grid{padding-bottom:calc(86px + env(safe-area-inset-bottom))}
 /* ── 주간 보기 (2026-09-26) ── 월|주 전환 + 하루 한 줄 목록 */
+.cal-month-right{gap:5px}   /* 월|주 버튼이 들어가 오른쪽이 넓어짐 — 아이폰 SE 에서 오늘 칩이 끝에 닿지 않게 */
 .cal-view-seg{display:flex;padding:2px;border-radius:99px;background:rgba(139,58,42,.10);flex-shrink:0}
-.cal-view-seg button{border:0;background:transparent;font-family:inherit;font-size:11px;font-weight:700;color:var(--sub);padding:3px 7px;border-radius:99px;cursor:pointer;line-height:1.2;-webkit-tap-highlight-color:transparent}
+.cal-view-seg button{border:0;background:transparent;font-family:inherit;font-size:11px;font-weight:700;color:var(--sub);padding:3px 6px;border-radius:99px;cursor:pointer;line-height:1.2;-webkit-tap-highlight-color:transparent}
 .cal-view-seg button.on{background:var(--accent);color:var(--card)}
 .cal-week-range{display:none;font-size:10.5px;color:var(--sub);margin-top:1px;font-variant-numeric:tabular-nums;white-space:nowrap}
 #calendarScreen.week-mode .cal-week-range{display:block}
@@ -4402,8 +4403,6 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
       <!-- 방 씰(현재 방) — 누르면 방 목록이 뜨고, 눌러서 드래그(놓는 방으로 이동) 또는 항목 탭으로 방 전환 -->
       <button class="cal-room-seal-btn" id="calRoomSealBtn" onpointerdown="_sealPointerDown(event)" aria-label="방 전환" style="display:none;touch-action:none"></button>
       <button class="cal-search-btn" data-rci="search" onclick="openSearch()" aria-label="검색"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.5" y2="16.5"/></svg></button>
-      <!-- 월 / 주 보기 전환 (주간 보기 2026-09-26) — 마지막 선택을 기억 -->
-      <div class="cal-view-seg" id="calViewSeg" role="group" aria-label="월·주 보기"><button type="button" data-v="month" onclick="setCalView('month')">월</button><button type="button" data-v="week" onclick="setCalView('week')">주</button></div>
       <!-- 방 선택 팝업(씰 롱프레스/탭) -->
       <div class="room-seal-picker" id="roomSealPicker" aria-hidden="true"><div class="rsp-list" id="rspList"></div></div>
     </div>
@@ -4417,6 +4416,8 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
       <button class="cal-month-arrow" onclick="nextMonth()">›</button>
     </div>
     <div class="cal-month-right">
+      <!-- 월 / 주 보기 전환 (주간 보기 2026-09-26) — 마지막 선택을 기억 -->
+      <div class="cal-view-seg" id="calViewSeg" role="group" aria-label="월·주 보기"><button type="button" data-v="month" onclick="setCalView('month')">월</button><button type="button" data-v="week" onclick="setCalView('week')">주</button></div>
       <!-- 다른 방 일정 가져오기 -->
       <button class="cal-import-btn" id="calImportBtn" data-rci="cimport" onclick="openImportEvents()" aria-label="다른 방 일정 가져오기" title="다른 방 일정 가져오기"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
       <button class="cal-today-chip" id="todayBtn" onclick="goToday()">오늘</button>
