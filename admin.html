@@ -870,7 +870,8 @@ async function renderErrors(m){
   const _euids=[...new Set(_cache.errors.map(er=>er.user_id).filter(Boolean))];
   const _enameMap={};
   if(_euids.length){
-    const {data:_eprofs}=await supa.from('profiles').select('id,name,email').in('id',_euids);
+    // [보안 2차] profiles.email 을 직접 읽지 않고 관리자 전용 RPC 로(나중에 이메일 열 권한 회수 대비)
+    const {data:_eprofs}=await supa.rpc('admin_profiles_by_ids',{p_ids:_euids});
     (_eprofs||[]).forEach(p=>{ _enameMap[p.id]=(p.name&&String(p.name).trim())||p.email||''; });
   }
   const _errUserLabel=(uid)=>{
@@ -1206,8 +1207,8 @@ function onSubUserSearch(e){
   clearTimeout(_subSearchTm);
   if(q.length<2){document.getElementById('subUserResults').innerHTML='';return;}
   _subSearchTm=setTimeout(async()=>{
-    const {data,error}=await supa.from('profiles').select('id,name,email')
-      .or(`name.ilike.%${q}%,email.ilike.%${q}%`).limit(10);
+    // [보안 2차] 관리자 전용 RPC(이름·이메일 검색, 이메일은 auth.users 기준)
+    const {data,error}=await supa.rpc('admin_search_users',{p_q:q,p_limit:10});
     const box=document.getElementById('subUserResults');
     if(error){box.innerHTML='<div class="sg-noresult">검색 실패</div>';return;}
     if(!data||!data.length){box.innerHTML='<div class="sg-noresult">결과 없음</div>';return;}
