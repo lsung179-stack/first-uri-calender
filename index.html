@@ -3605,7 +3605,7 @@ body[data-theme="camp"] .rpal-row{background:#2c4a82}
 .wk-dow{font-size:11px;color:var(--sub);margin-top:2px}
 .wk-day.sun .wk-num,.wk-day.sun .wk-dow{color:var(--sun)}
 .wk-day.sat .wk-num,.wk-day.sat .wk-dow{color:var(--sat)}
-.wk-day.today .wk-num span{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:1.5px solid var(--accent);color:var(--accent)}
+.wk-day.today .wk-num span{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:1.5px solid var(--accent);color:var(--accent);box-sizing:border-box;padding-bottom:2px}   /* 세리프 숫자는 글자 상자 안에서 아래로 약 1px 처져 보여 원 정중앙에 오도록 1px 올림(4배 확대 실측) */
 .wk-items{display:flex;flex-direction:column;gap:5px;min-width:0}
 .wk-lab{font-size:11px;font-weight:700;color:var(--sun)}
 .wk-lab.term,.wk-lab.anniv,.wk-lab.lunar{color:var(--gold,#b08742)}
