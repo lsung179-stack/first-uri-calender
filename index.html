@@ -160,17 +160,17 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
   /* fixed 요소들 가운데 정렬 */
   .toast{left:50%!important;transform:translateX(-50%) translateY(20px)!important}
   .toast.on{transform:translateX(-50%) translateY(0)!important}
-  .loading{width:430px;height:844px;max-height:calc(100vh - 40px);left:50%;top:50%;transform:translate(-50%,-50%);inset:auto;border-radius:24px}
-  .mo-overlay{width:430px;height:844px;max-height:calc(100vh - 40px);left:50%;top:50%;transform:translate(-50%,-50%);inset:auto;border-radius:24px}
-  .r-footer{left:50%!important;right:auto!important;width:430px!important;transform:translateX(-50%)!important;bottom:calc(50vh - 422px + 20px)!important}
+  .loading{inset:auto;width:430px;height:844px;max-height:calc(100vh - 40px);left:50%!important;top:50%!important;right:auto!important;bottom:auto!important;transform:translate(-50%,-50%);border-radius:24px}
+  .mo-overlay{inset:auto;width:430px;height:844px;max-height:calc(100vh - 40px);left:50%!important;top:50%!important;right:auto!important;bottom:auto!important;transform:translate(-50%,-50%);border-radius:24px}
+  .r-footer{left:50%!important;right:auto!important;width:430px!important;transform:translateX(-50%)!important;bottom:calc(max(20px, 50vh - 422px) + 20px)!important}
   .mo-card,.dp-card{
     left:50%!important;right:auto!important;width:430px!important;
-    bottom:calc(50vh - 422px + 20px)!important;
-    max-height:600px!important;
+    bottom:calc(max(20px, 50vh - 422px) + 20px)!important;
+    max-height:min(600px, calc(100vh - 60px))!important;
     transform:translateX(-50%) translateY(100%)!important;
   }
   .mo-card.on,.dp-card.on{transform:translateX(-50%) translateY(0)!important}
-  .cal-fab{right:calc(50vw - 215px + 24px)!important;bottom:calc(50vh - 422px + 80px)!important}
+  .cal-fab{right:calc(50vw - 215px + 24px)!important;bottom:calc(max(20px, 50vh - 422px) + 80px)!important}
   /* .app 밖 화면들도 폰 프레임 안에 맞춤 (설정 화면 + 풀스크린 시트) */
   #settingsScreen{
     inset:auto;left:50%;top:50%;
@@ -184,7 +184,7 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
     width:430px!important;height:844px!important;max-height:calc(100vh - 40px)!important;
     border-radius:24px;animation:none!important;
   }
-  .cal-tabbar{max-width:398px!important;bottom:calc(50vh - 422px + 16px)!important}
+  .cal-tabbar{max-width:398px!important;bottom:calc(max(20px, 50vh - 422px) + 16px)!important}
 }
 .screen{position:absolute;inset:0;padding:0 28px;display:flex;flex-direction:column;align-items:center;justify-content:safe center;overflow-y:auto;-webkit-overflow-scrolling:touch;opacity:0;pointer-events:none;transition:opacity .35s ease}
 .screen.show{opacity:1;pointer-events:auto}
@@ -3645,6 +3645,8 @@ body.has-ad .dp-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-ins
 body.has-ad .onb-overlay{ padding-bottom:calc(var(--ad-h) + 16px + env(safe-area-inset-bottom)); }
 body.has-ad .onb-card{ max-height:calc(100dvh - 32px - var(--ad-h) - env(safe-area-inset-bottom)); }
 body.has-ad .agree-sheet{ padding-bottom:calc(var(--ad-h) + 24px + env(safe-area-inset-bottom)); }
+/* 약관 동의 시트는 .app 안에 있어 .app 밖의 탭바·+버튼이 그 위를 덮는다 → 열려 있는 동안 숨김 [2026-09-26] */
+body.agree-open .cal-tabbar,body.agree-open .cal-fab,body.agree-open .cal-today-btn,body.agree-open #todoFab,body.agree-open .r-footer{ opacity:0 !important; pointer-events:none !important; }
 body.has-ad .ann-popup{ max-height:calc(72vh - var(--ad-h)); }
 .cal-tab{
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
@@ -3838,11 +3840,11 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
 
 /* ── 데스크탑(>=480px) 프레임 보정 ── */
 @media (min-width:480px){
-  .cal-tabbar{left:50%!important;right:auto!important;width:398px!important;max-width:398px!important;transform:translateX(-50%)!important;bottom:calc(50vh - 422px + 14px)!important}
+  .cal-tabbar{left:50%!important;right:auto!important;width:398px!important;max-width:398px!important;transform:translateX(-50%)!important;bottom:calc(max(20px, 50vh - 422px) + 14px)!important}
   .cal-tabbar.tabbar-gone{transform:translateX(-50%) translateY(14px)!important}
-  .r-footer{bottom:calc(50vh - 422px + 88px)!important}
-  .cal-fab{bottom:calc(50vh - 422px + 90px)!important}
-  .cal-today-btn{bottom:calc(50vh - 422px + 90px)!important}
+  .r-footer{bottom:calc(max(20px, 50vh - 422px) + 88px)!important}
+  .cal-fab{bottom:calc(max(20px, 50vh - 422px) + 90px)!important}
+  .cal-today-btn{bottom:calc(max(20px, 50vh - 422px) + 90px)!important}
 }
 
 </style>
@@ -6860,11 +6862,13 @@ function openAgree(onConfirm){
   updateAgreeBtn();
   document.getElementById('agreeOverlay').classList.add('on');
   document.getElementById('agreeSheet').classList.add('on');
+  document.body.classList.add('agree-open');
   try{ _subScreenEnter(); }catch(_){}   // 광고가 '동의하고 계속' 버튼을 가리지 않게 [2026-09-26]
 }
 function closeAgree(){
   document.getElementById('agreeOverlay').classList.remove('on');
   document.getElementById('agreeSheet').classList.remove('on');
+  document.body.classList.remove('agree-open');
   try{ _subScreenExit(); }catch(_){}
 }
 function toggleAgree(key){
