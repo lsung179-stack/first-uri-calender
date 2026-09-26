@@ -337,10 +337,10 @@ input,textarea,[contenteditable="true"],.cal-evbar,.dpc-evbar,.r-card-code,.ev-t
 .loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:1000;transition:opacity .3s ease}
 .loading.hide{opacity:0;pointer-events:none}
 /* 시작 로딩 = 앱 로고(폰 시작 화면과 같은 로고·같은 크림 바탕 → 이어져 보이게, 로고는 정중앙·점은 그 아래 따로). 아이폰 시작 화면은 정사각 이미지를
-   화면 높이에 맞춰 채우므로 로고 지름 ≈ 화면 높이의 34% — 같은 크기로 둔다(가로 화면·넓은 화면은 폭 기준 상한). [2026-09-26] */
+   화면 높이에 맞춰 채우므로 로고 지름 ≈ 화면 높이의 17%(사용자 요청으로 절반, 아이폰 splash.png 도 같이 절반) — 같은 크기로 둔다(가로 화면·넓은 화면은 폭 기준 상한). [2026-09-26] */
 .loading{flex-direction:column}
-.loading-logo{width:min(34vh,62vw,300px);height:auto;aspect-ratio:1/1;object-fit:contain;display:block;-webkit-user-drag:none;user-select:none}
-.loading-dots{position:absolute;left:50%;transform:translateX(-50%);top:calc(50% + min(17vh,31vw,150px) + 22px);display:flex;gap:6px;height:6px;opacity:0;animation:ldDotsIn .3s ease 1.2s forwards}   /* 1.2초 넘게 걸릴 때만 '진행 중' 점 */
+.loading-logo{width:min(17vh,31vw,150px);height:auto;aspect-ratio:1/1;object-fit:contain;display:block;-webkit-user-drag:none;user-select:none}
+.loading-dots{position:absolute;left:50%;transform:translateX(-50%);top:calc(50% + min(8.5vh,15.5vw,75px) + 18px);display:flex;gap:6px;height:6px;opacity:0;animation:ldDotsIn .3s ease 1.2s forwards}   /* 1.2초 넘게 걸릴 때만 '진행 중' 점 */
 .loading-dots i{width:6px;height:6px;border-radius:50%;background:var(--accent);opacity:.25;animation:ldDot 1s ease-in-out infinite}
 .loading-dots i:nth-child(2){animation-delay:.15s}.loading-dots i:nth-child(3){animation-delay:.3s}
 @keyframes ldDotsIn{to{opacity:1}}
