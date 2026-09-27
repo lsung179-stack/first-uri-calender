@@ -3247,7 +3247,50 @@ body[data-theme="camp"] .rpal-row{background:#2c4a82}
 /* 날짜 강조 흐름에서 여는 방 선택 모달은 강조 시트(1401)·관리 시트(1381)·스토어(1300)보다 위여야 한다 */
 #roomPickOverlay.rp-top{z-index:1500}
 #roomPickCard.rp-top{z-index:1501}
-#dhOverlay,#dhThemeOverlay{z-index:1400}
+#dhOverlay,#dhThemeOverlay,#skpOverlay{z-index:1400}
+#skpCard{z-index:1401}
+/* 스토어 테마 미리보기 — 작은 휴대폰 화면에 그 테마의 색·배경·아이콘·프로필로 이번 달 캘린더를 그린다 [2026-09-27]
+   안쪽은 전부 이 상자에 걸린 --bg/--card/--text… 변수로 칠한다(앱 전체 테마는 건드리지 않음). */
+.skp-phone{position:relative;width:min(100%,258px);aspect-ratio:9/15.2;margin:14px auto 12px;border-radius:26px;overflow:hidden;background:var(--bg);color:var(--text);border:5px solid #1d1a18;box-shadow:0 10px 30px rgba(40,25,10,.25);font-family:inherit;isolation:isolate}
+.skp-phone-inner{position:absolute;inset:0;background:var(--bg);color:var(--text)}
+.skp-decor{position:absolute;inset:0;z-index:0;pointer-events:none}
+.skp-bg{position:absolute;inset:0;background-repeat:repeat;background-position:center;background-size:90px 90px;opacity:.24}
+.skp-bg.scene{background-repeat:no-repeat;background-position:center 38%;background-size:auto 116%;opacity:.4}
+.skp-phone.skp-camp .skp-bg.scene{opacity:.62;background-position:center 142%;-webkit-mask-image:linear-gradient(to bottom,#000 84%,transparent 93%);mask-image:linear-gradient(to bottom,#000 84%,transparent 93%)}
+.skp-char{position:absolute;left:50%;top:56%;width:86%;aspect-ratio:1;transform:translate(-50%,-50%);background:center/contain no-repeat;opacity:.17}
+.skp-in{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;padding:12px 9px 0}
+.skp-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px}
+.skp-seal{width:30px;height:30px;border-radius:50%;flex:none;background:var(--card) center/cover no-repeat;border:1.5px solid var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.skp-title{text-align:center;line-height:1.05}
+.skp-title small{display:block;font-size:8.5px;color:var(--sub)}
+.skp-title b{font-family:var(--ff-serif);font-size:19px;font-weight:700;color:var(--text)}
+.skp-seg{display:flex;border-radius:99px;background:var(--aP);padding:2px;flex:none}
+.skp-seg i{font-style:normal;font-size:8.5px;font-weight:700;padding:2px 6px;border-radius:99px;color:var(--sub)}
+.skp-seg i.on{background:var(--accent);color:#fff}
+.skp-dow,.skp-grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.skp-dow{font-size:8.5px;font-weight:700;color:var(--sub);text-align:center;margin-bottom:2px}
+.skp-dow .su{color:var(--sun)} .skp-dow .sa{color:var(--sat)}
+.skp-grid{flex:1;grid-auto-rows:1fr;border-top:1px solid var(--borderL)}
+.skp-d{position:relative;padding:2px 1px 0;text-align:center;font-size:9.5px;font-weight:600;color:var(--text);min-width:0;overflow:hidden}
+.skp-d.o{color:var(--mute);opacity:.7}
+.skp-d.su{color:var(--sun)} .skp-d.sa{color:var(--sat)}
+.skp-d .n{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%}
+.skp-d.t .n{border:1.5px solid var(--accent);color:var(--accent);font-weight:800}
+.skp-d .hl{display:block;font-size:6.5px;font-weight:700;color:var(--sun);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.skp-ev{display:block;margin:1px 1px 0;padding:0 2px;border-radius:3px;font-size:6.5px;font-weight:700;line-height:11px;height:11px;color:#fff;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.skp-ev.cont{margin-left:-1px;border-top-left-radius:0;border-bottom-left-radius:0;color:transparent}
+.skp-ev.lead{margin-right:-1px;border-top-right-radius:0;border-bottom-right-radius:0}
+.skp-tab{margin:6px 6px 10px;display:flex;justify-content:space-around;align-items:center;padding:5px 4px;border-radius:99px;background:var(--tabbar-bg);border:1px solid var(--tabbar-border);box-shadow:var(--tabbar-shadow)}
+.skp-tab span{display:flex;flex-direction:column;align-items:center;gap:1px;font-size:6.5px;font-weight:700;color:var(--mute);padding:3px 7px;border-radius:99px}
+.skp-tab span.on{color:var(--accent);background:var(--tab-on-bg)}
+.skp-tab .ic{width:17px;height:17px;background:center/138% no-repeat;display:flex;align-items:center;justify-content:center}
+.skp-tab .ic svg{width:14px;height:14px}
+.skp-act{display:flex;flex-direction:column;gap:8px;margin:2px 0 4px}
+.skp-btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:13px 16px;border-radius:14px;border:none;font-family:inherit;font-size:15px;font-weight:800;cursor:pointer}
+.skp-btn:active{transform:scale(.98)}
+.skp-btn.pri{background:var(--accent);color:#fff}
+.skp-btn.sec{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+.skp-bal{text-align:center;font-size:12px;color:var(--mute);margin-top:-2px}
 #dhCard,#dhThemeDetailCard{z-index:1401}
 .char-expr-grid{
   display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
@@ -4882,6 +4925,19 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
   <div class="mo-actions">
     <button class="btn btn-primary" id="dhSaveBtn" onclick="saveDateHighlight()">저장</button>
     <button class="mo-cancel" onclick="closeDhCard()">취소</button>
+  </div>
+</div>
+
+<!-- 스토어 테마 미리보기 — 그 테마를 쓰면 캘린더가 어떻게 보이는지 + 코인/프리미엄 결제 [2026-09-27] -->
+<div class="mo-overlay" id="skpOverlay" onclick="closeSkinPreview()"></div>
+<div class="mo-card" id="skpCard">
+  <div class="mo-handle"></div>
+  <div class="mo-title" id="skpName">테마</div>
+  <div class="mo-sub">프로필 + 테마 · 캘린더에 이렇게 적용돼요</div>
+  <div class="skp-phone" id="skpPhone"></div>
+  <div class="skp-act" id="skpAct"></div>
+  <div class="mo-actions">
+    <button class="mo-cancel" onclick="closeSkinPreview()">닫기</button>
   </div>
 </div>
 
@@ -23468,11 +23524,150 @@ function onStoreSealClick(){
 }
 window.onStoreSealClick=onStoreSealClick;
 /* 스토어 테마 항목 — 쓸 수 있으면(구독·보유) 꾸미러 가기, 아니면 코인 구매/구독 안내 */
-function onStoreThemeItem(k){
-  if(_canUseSkin(k)) openSealShowcase();
-  else offerItem('skin',k,{message:'고급 프로필은 프리미엄 전용이에요.', feature:'캐릭터·무늬 프로필·테마 세트로 방 카드를 꾸밀 수 있어요.'});
-}
+/* 스토어 테마 항목 → 미리보기 시트(그 테마로 그린 이번 달 캘린더) + 코인 구매 / 프리미엄 / 꾸미러 가기 [2026-09-27]
+   예전엔 누르자마자 구매 창이 떠서 "캘린더가 어떻게 바뀌는지" 모르고 사야 했다. */
+function onStoreThemeItem(k){ openSkinPreview(k); }
 window.onStoreThemeItem=onStoreThemeItem;
+var _skpKey=null;
+var _SKP_UPGRADE={message:'고급 프로필은 프리미엄 전용이에요.', feature:'캐릭터·무늬 프로필·테마 세트로 방 카드를 꾸밀 수 있어요.'};
+/* 테마 아이콘(body.rc-… .cal-tab[data-rci=…]) 주소를 스타일시트에서 찾아 둔다 — 미리보기 탭바에 같은 아이콘을 쓰려고 */
+var _skpIconCache={};
+function _skpIcons(cls){
+  if(!cls) return {};
+  if(_skpIconCache[cls]) return _skpIconCache[cls];
+  var out={};
+  try{
+    var want=['rooms','cal','todo','settings'];
+    for(var i=0;i<document.styleSheets.length;i++){
+      var rules; try{ rules=document.styleSheets[i].cssRules; }catch(_){ continue; }
+      if(!rules) continue;
+      for(var j=0;j<rules.length;j++){
+        var r=rules[j], sel=r.selectorText||'';
+        if(sel.indexOf('body.'+cls+' ')!==0 || sel.indexOf('.cal-tab-ico')<0) continue;
+        var bi=r.style&&r.style.backgroundImage; if(!bi||bi==='none') continue;
+        want.forEach(function(w){ if(sel.indexOf('[data-rci="'+w+'"]')>0) out[w]=bi; });
+      }
+    }
+  }catch(_){}
+  _skpIconCache[cls]=out;
+  return out;
+}
+var _SKP_TAB_SVG={
+  rooms:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7"/><path d="M6 10.5V20h12v-9.5"/></svg>',
+  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M3 9.5h18M8 2.5v3M16 2.5v3"/></svg>',
+  todo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 5.6l1.3 1.3L7.5 4.6"/><path d="M4 11.6l1.3 1.3 2.2-2.3"/><path d="M4 17.6l1.3 1.3 2.2-2.3"/></svg>',
+  settings:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg>'
+};
+function _skpPhoneHTML(k){
+  var ct=_skinCT(k)||{};
+  var themeKey=_cardSkinTheme(k)||'vintage';
+  var t=THEMES[themeKey]||THEMES.vintage;
+  // 이 상자 안에서만 쓰는 테마 변수(앱 전체 테마는 그대로)
+  var vars=Object.assign({},TABBAR_DEFAULTS,t);
+  var style=Object.keys(vars).filter(function(x){return x!=='dotRGB';}).map(function(x){return '--'+x+':'+vars[x];}).join(';');
+  // 배경 — 실제 캘린더(_applyRoomCharDecor)와 같은 규칙: 씬 사진 > 무늬 > 없음(plain), 씬이 없으면 캐릭터 워터마크
+  var bgUrl=ct.bgScene||(ct.bgSvg?('data:image/svg+xml,'+encodeURIComponent(ct.bgSvg)):(ct.bg||''));
+  var charWm=ct.mascot&&!ct.charInScene&&!ct.bgScene&&!ct.plain;
+  var decor='';
+  if(!ct.plain){
+    if(bgUrl) decor+='<div class="skp-bg'+(ct.bgScene?' scene':'')+'" style="background-image:url(&quot;'+escapeHtml(bgUrl)+'&quot;)"></div>';
+    if(charWm) decor+='<div class="skp-char" style="background-image:url(&quot;'+escapeHtml(ct.mascot)+'&quot;)"></div>';
+  }
+  // 이번 달(주 시작은 사용자 설정) — 오늘 표시·공휴일 이름까지 실제 캘린더처럼
+  var now=new Date(), y=now.getFullYear(), m=now.getMonth(), today=now.getDate();
+  var ws=0; try{ ws=(typeof getWeekStartPref==='function'&&getWeekStartPref()===1)?1:0; }catch(_){}
+  var dows=['일','월','화','수','목','금','토'];
+  var dowHTML=''; for(var i=0;i<7;i++){ var dw=(i+ws)%7; dowHTML+='<span class="'+(dw===0?'su':dw===6?'sa':'')+'">'+dows[dw]+'</span>'; }
+  var first=new Date(y,m,1).getDay(), lead=(first-ws+7)%7, dim=new Date(y,m+1,0).getDate();
+  var rows=Math.ceil((lead+dim)/7), cells=rows*7;
+  // 예시 일정 — 테마 색으로(실제 일정 색은 멤버 색이지만 분위기를 보여주려고)
+  var evc=[t.accent,t.aL||t.accent,t.sat||t.accent];
+  var sample={};
+  function put(d,html){ if(d>=1&&d<=dim){ (sample[d]=sample[d]||[]).push(html); } }
+  // 달 전체에 고르게(오늘 칸엔 하나) — 이틀짜리 여행은 같은 주 안에서만 이어지게
+  var trip=(function(){ for(var d=11;d<=dim-1;d++){ if((lead+d-1)%7<6) return d; } return 11; })();
+  put(4,'<span class="skp-ev" style="background:'+evc[1]+'">점심 약속</span>');
+  put(today,'<span class="skp-ev" style="background:'+evc[0]+'">병원 예약</span>');
+  put(trip,'<span class="skp-ev lead" style="background:'+evc[2]+'">가족 여행</span>');
+  put(trip+1,'<span class="skp-ev cont" style="background:'+evc[2]+'">.</span>');
+  put(Math.min(dim,trip+7===today?trip+8:trip+7),'<span class="skp-ev" style="background:'+evc[0]+'">생일 🎂</span>');
+  var grid='';
+  for(var c=0;c<cells;c++){
+    var dn=c-lead+1, other=dn<1||dn>dim;
+    var dt=new Date(y,m,dn), dw2=dt.getDay(), key=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
+    var hol=(typeof HOLIDAYS!=='undefined'&&HOLIDAYS[key])||'';
+    var cls='skp-d'+(other?' o':'')+((dw2===0||hol)?' su':dw2===6?' sa':'')+(!other&&dn===today?' t':'');
+    grid+='<div class="'+cls+'"><span class="n">'+dt.getDate()+'</span>'
+      +(hol&&!other?'<span class="hl">'+escapeHtml(String(hol).split('·')[0])+'</span>':'')
+      +(!other&&sample[dn]?sample[dn].join(''):'')+'</div>';
+  }
+  var icons=_skpIcons(ct.cls);
+  var tabs=[['rooms','방목록'],['cal','캘린더'],['todo','우리할일'],['settings','설정']].map(function(tb){
+    var ic=icons[tb[0]];
+    return '<span class="'+(tb[0]==='cal'?'on':'')+'"><i class="ic"'+(ic?' style=\'background-image:'+ic.replace(/'/g,'&#39;')+'\'':'')+'>'+(ic?'':_SKP_TAB_SVG[tb[0]])+'</i>'+tb[1]+'</span>';
+  }).join('');
+  var seal=ct.mascot?' style="background-image:url(&quot;'+escapeHtml(ct.mascot)+'&quot;)"':'';
+  return '<div class="skp-phone-inner" style="'+style+'">'
+    +'<div class="skp-decor">'+decor+'</div>'
+    +'<div class="skp-in">'
+    +'<div class="skp-head"><span class="skp-seal"'+seal+'></span>'
+    +'<span class="skp-title"><small>'+y+'년</small><b>'+(m+1)+'월</b></span>'
+    +'<span class="skp-seg"><i class="on">월</i><i>주</i></span></div>'
+    +'<div class="skp-dow">'+dowHTML+'</div>'
+    +'<div class="skp-grid">'+grid+'</div>'
+    +'<div class="skp-tab">'+tabs+'</div>'
+    +'</div></div>';
+}
+function _skpRenderAct(){
+  var k=_skpKey, act=document.getElementById('skpAct'); if(!act||!k) return;
+  if(_canUseSkin(k)){
+    act.innerHTML='<button class="skp-btn pri" onclick="closeSkinPreview();openSealShowcase()">'+(_ownsItem('skin',k)&&!isEffectivePremium()?'보유 중 · 꾸미러 가기':'이 테마로 꾸미러 가기')+'</button>';
+    return;
+  }
+  var price=_coinVisible()?coinPriceOf('skin',k):null;
+  var h='';
+  if(price){
+    h+='<button class="skp-btn pri" onclick="onSkinPreviewBuy()"><i class="coin-ico"></i>'+price+'코인으로 구매</button>';
+    h+='<div class="skp-bal">보유 '+(_coinBalance||0).toLocaleString()+'코인 · 한 번 사면 구독 없이도 계속 써요</div>';
+    h+='<button class="skp-btn sec" onclick="onSkinPreviewPremium()">프리미엄으로 모든 테마 쓰기</button>';
+  }else{
+    h+='<button class="skp-btn pri" onclick="onSkinPreviewPremium()">프리미엄으로 쓰기</button>';
+  }
+  act.innerHTML=h;
+}
+function openSkinPreview(k){
+  if(!k) return;
+  _skpKey=k;
+  var nm=document.getElementById('skpName'); if(nm) nm.textContent=_setDisplayName(k);
+  var ph=document.getElementById('skpPhone');
+  if(ph){ ph.className='skp-phone'+((_skinCT(k)||{}).cls==='rc-camp'?' skp-camp':''); ph.innerHTML=_skpPhoneHTML(k); }
+  _skpRenderAct();
+  var ov=document.getElementById('skpOverlay'), cd=document.getElementById('skpCard');
+  if(ov)ov.classList.add('on'); if(cd){ cd.scrollTop=0; cd.classList.add('on'); }
+}
+window.openSkinPreview=openSkinPreview;
+function closeSkinPreview(){
+  var ov=document.getElementById('skpOverlay'), cd=document.getElementById('skpCard');
+  if(ov)ov.classList.remove('on'); if(cd)cd.classList.remove('on');
+}
+window.closeSkinPreview=closeSkinPreview;
+async function onSkinPreviewBuy(){
+  var k=_skpKey; if(!k) return;
+  var price=coinPriceOf('skin',k);
+  // 코인이 모자라면 충전 창이 떠야 하므로 미리보기는 닫는다(충전 창이 이 시트 뒤에 깔리지 않게)
+  if(price&&(_coinBalance||0)<price){ closeSkinPreview(); buyItemWithCoins('skin',k); return; }
+  await buyItemWithCoins('skin',k);
+  if(_skpKey===k) _skpRenderAct();   // 샀으면 '꾸미러 가기'로 바뀐다
+}
+window.onSkinPreviewBuy=onSkinPreviewBuy;
+function onSkinPreviewPremium(){
+  var k=_skpKey;
+  closeSkinPreview();
+  var price=_coinVisible()&&k?coinPriceOf('skin',k):null;
+  if(price&&typeof openPremiumSheet==='function') openPremiumSheet();
+  else showUpgradeModal(_SKP_UPGRADE);
+}
+window.onSkinPreviewPremium=onSkinPreviewPremium;
 /* 스토어 쇼케이스 → 방목록 탭으로 이동 + 편집모드 켜서 연필 노출 */
 function openSealShowcase(){
   closeStore();
