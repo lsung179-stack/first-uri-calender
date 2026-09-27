@@ -27272,6 +27272,9 @@ function setupEventDrag(){
     if(!d.active){ if(d.ghost)d.ghost.remove(); return; }   // 길게 누르기 전이면 일반 탭
     try{d.bar.releasePointerCapture(d.pid)}catch(_){}
     (d.srcBars||[d.bar]).forEach(b=>{if(b)b.classList.remove('ev-drag-src')});
+    // 끄는 중에 달을 넘겼다 돌아오면 새로 그린 바에도 흐림이 붙어 있다 — 화면에 남은 흐림을 전부 걷는다
+    // (예전엔 원래 목록만 지워, 같은 자리에 도로 놓으면 일정이 흐린 채 남았다 — 사용자 제보 2026-09-27)
+    document.querySelectorAll('.ev-drag-src').forEach(b=>b.classList.remove('ev-drag-src'));
     const _parkEv=!!(commit&&d.dropDate&&d.kind!=='todo'&&d.anchorRow);
     if(!_parkEv)_evClearDropHl();          // 일정은 묻는 동안 놓을 칸 강조를 유지
     document.body.classList.remove('ev-dragging');
@@ -27366,7 +27369,7 @@ function _evEdgeFlip(dir){
     const d2=_evDrag; if(!d2||!d2.active)return;
     // 새로 그린 달에서도 잡고 있는 일정(원래 자리)이 흐리게 보이도록
     const sel=d2.kind==='todo'?('[data-tdid="'+d2.tdid+'"]'):('.cal-evbar[data-evid="'+d2.evid+'"]');
-    document.querySelectorAll('#calGrid '+sel).forEach(b=>b.classList.add('ev-drag-src'));
+    document.querySelectorAll('#calGrid '+sel).forEach(b=>{ b.classList.add('ev-drag-src'); (d2.srcBars=d2.srcBars||[]).push(b); });
     // 계속 끝에 대고 있으면 한 달 더 — 다음 프레임에서 타이머를 다시 건다
     d2.edgeDir=0;
     if(!_evRaf)_evRaf=requestAnimationFrame(_evDragFrame);
