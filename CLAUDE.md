@@ -36,7 +36,7 @@
 - 배포 버전 확인: 앱 설정 화면 푸터의 `build ...` 문자열(런타임에 JS가 세팅, HTML 정적값과 다를 수 있음).
 
 ## 현재 상태 (2026-09-24 기준)
-- **마케팅 버전 `1.2.3` / 앱 내 표시 빌드 `1.2.3 (85)`**(2026-09-27 승격) — index.html buildInfo 두 곳(정적 `id="buildInfo"` + 런타임 `const _base='build …'`)에 같은 문자열이 박혀 있다. appstore `codemagic.yaml`(두 브랜치)의 `APP_VERSION`·`ANDROID_VERSION_NAME` 도 `1.2.3`, 빌드번호 하한은 iOS `42`·Android `87`.
+- **마케팅 버전 `1.2.4` / 앱 내 표시 빌드 `1.2.4 (86)`**(2026-09-27 승격 — 1.2.3 은 TestFlight 까지만, 광고 실기기 수정 후 재빌드) — index.html buildInfo 두 곳(정적 `id="buildInfo"` + 런타임 `const _base='build …'`)에 같은 문자열이 박혀 있다. appstore `codemagic.yaml`(두 브랜치)의 `APP_VERSION`·`ANDROID_VERSION_NAME` 도 `1.2.4`, 빌드번호 하한은 iOS `43`·Android `88`.
 - 🪙 **1.2.2 = 코인 첫 출시 빌드** — App Store Connect '제출 초안'에 소모품 `coins_30/100/300` 3개가 담겨 있어 **이 앱 버전을 같은 초안에 추가해 함께 심사 제출**해야 한다(첫 소모품 규칙). ✅ 2026-09-24 양 스토어 제출 완료, `coin_public`='true' 켬.
 - ⚠️ **표시 빌드번호(83)와 실제 스토어 번호는 별개** — 스토어 번호는 codemagic 이 자동 산정한다(iOS=TestFlight 최신+1, Android=`50+BUILD_NUMBER`). 하한은 "이보다 작아지지 않게" 하는 바닥일 뿐.
 - **마지막 실제 스토어 출시는 `1.1.8`** — 출시노트 범위 기준선은 이 버전이다(그 이후 누적분을 씀).
