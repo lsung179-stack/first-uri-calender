@@ -146,8 +146,11 @@ body{background:var(--cream);color:var(--ink);font-family:'Noto Sans KR',sans-se
 function androidIntentUrl(){
   var host = 'first-uri-calender.vercel.app';
   var fallback = encodeURIComponent('https://' + host + '/r.html?join=' + window._code + '&noauto=1');
-  return 'intent://' + host + '/?join=' + window._code
-    + '#Intent;scheme=https;package=app.vercel.first_uri_calender.twa'
+  // [2026-09-27] 안드로이드 앱(Capacitor)은 https 주소가 아니라 com.lsung.uricalendar://login-callback 만
+  //   브라우저에서 열 수 있게 등록돼 있다(옛 TWA 때의 https 주소는 더 이상 앱이 받지 않아 늘 대체 주소로 떨어졌다).
+  //   → 그 주소에 join 을 실어 연다. 앱은 토큰 없이 join 만 있으면 초대로 처리한다(1.2.3 이후 빌드).
+  return 'intent://login-callback?join=' + window._code
+    + '#Intent;scheme=com.lsung.uricalendar;package=app.vercel.first_uri_calender.twa'
     + ';action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE'
     + ';S.browser_fallback_url=' + fallback + ';end';
 }

@@ -9575,7 +9575,10 @@ async function _checkMinAppVersion(){
       try{
         var url=event&&event.url; if(!url) return;
         // ── 초대 딥링크: com.lsung.uricalendar://join?code=XXXXXX ──
-        if(url.indexOf('com.lsung.uricalendar://join')===0){
+        // [2026-09-27] 안드로이드는 login-callback 주소만 브라우저에서 앱을 열 수 있어 초대 페이지(r.html)가
+        //   com.lsung.uricalendar://login-callback?join=XXXXXX 로 연다 — 로그인 토큰·code 가 없고 join 만 있으면 초대.
+        var _lcJoin=url.indexOf(NATIVE_AUTH_REDIRECT)===0 && /[?&]join=/.test(url) && !/access_token=|[?&#]code=|[?&#]error/.test(url);
+        if(url.indexOf('com.lsung.uricalendar://join')===0 || _lcJoin){
           var jp=new URLSearchParams(url.split('?')[1]||'');
           var jcode=(jp.get('code')||jp.get('join')||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
           if(jcode){
