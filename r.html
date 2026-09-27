@@ -134,12 +134,19 @@ body{background:var(--cream);color:var(--ink);font-family:'Noto Sans KR',sans-se
     }).catch(function(){});
   }
 
-  // 카톡·인스타 등 Android 인앱브라우저 → 자동으로 앱 열기 시도 (세션당 1회, 실패 시 이 페이지 유지)
+  // 앱이 설치돼 있으면 이 페이지를 거치지 않고 앱으로 바로 들어간다.
+  //  · 일반 브라우저·문자·메일에서 누른 링크: 운영체제가 앱을 바로 연다(iOS 유니버설 링크 /
+  //    Android 앱 링크 — .well-known/apple-app-site-association·assetlinks.json + 앱 빌드 설정). 이 페이지는 안 뜸.
+  //  · 카톡·인스타 등 앱 안 브라우저는 그 기능이 안 먹는다 → 페이지가 열리자마자 앱 열기를 자동으로 시도
+  //    (세션당 1회, 앱이 없으면 이 페이지가 그대로 남는다). [2026-09-27 iOS 앱 안 브라우저도 추가]
   try{
-    var inApp = /kakaotalk|naver\(inapp|fb_iab|fban|fbav|instagram|line\//i.test(ua);
-    if(code && isAndroid && inApp && !params.get('noauto') && !sessionStorage.getItem('r.autoOpen')){
+    var inApp = /kakaotalk|naver\(inapp|fb_iab|fban|fbav|instagram|line\/|daumapps|everytimeapp|band\//i.test(ua);
+    if(code && (isAndroid || isIOS) && inApp && !params.get('noauto') && !sessionStorage.getItem('r.autoOpen')){
       sessionStorage.setItem('r.autoOpen', '1');
-      setTimeout(function(){ try{ location.href = androidIntentUrl(); }catch(e){} }, 250);
+      setTimeout(function(){
+        try{ location.href = isAndroid ? androidIntentUrl() : iosSchemeUrl(); }catch(e){}
+        setTimeout(function(){ if(!document.hidden) document.getElementById('appHint').classList.add('on'); }, 1600);
+      }, 250);
     }
   }catch(e){}
 })();
@@ -154,6 +161,9 @@ function androidIntentUrl(){
     + ';action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE'
     + ';S.browser_fallback_url=' + fallback + ';end';
 }
+function iosSchemeUrl(){
+  return 'com.lsung.uricalendar://join?code=' + window._code;
+}
 function openApp(){
   var code = window._code; if(!code) return;
   // 앱 전환 전에 코드를 미리 복사 — 미설치자가 설치 후 '붙여넣기'로 이어가도록 (사실상 deferred deep link)
@@ -163,7 +173,7 @@ function openApp(){
     if(!document.hidden) document.getElementById('appHint').classList.add('on');
   }, 1600);
   if(window._isAndroid){ location.href = androidIntentUrl(); }
-  else { location.href = 'com.lsung.uricalendar://join?code=' + code; }
+  else { location.href = iosSchemeUrl(); }
 }
 function copyCode(){
   var code = window._code; if(!code) return;

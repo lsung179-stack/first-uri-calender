@@ -1,0 +1,12 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["ZZ9B9BWM8T.com.lsung.uricalendar"],
+        "components": [
+          { "/": "/r.html", "comment": "방 초대 링크 — 앱이 설치돼 있으면 앱으로 바로 연다" }
+        ]
+      }
+    ]
+  }
+}

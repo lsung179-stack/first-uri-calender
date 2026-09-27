@@ -9571,23 +9571,34 @@ async function _checkMinAppVersion(){
   try{
     var App=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.App;
     if(!App||!App.addListener) return;
+    // ── 초대 링크 3가지 ──
+    //  · com.lsung.uricalendar://join?code=XXXXXX (iOS 초대 페이지 버튼)
+    //  · com.lsung.uricalendar://login-callback?join=XXXXXX (안드로이드 초대 페이지 — 이 주소만 브라우저에서 앱을
+    //    열 수 있게 등록돼 있다, 2026-09-27) — 로그인 토큰·code·오류 없이 join 만 있을 때만 초대
+    //  · https://first-uri-calender.vercel.app/r.html?join=XXXXXX (2026-09-27 유니버설 링크/앱 링크 —
+    //    앱이 설치돼 있으면 초대 링크를 누르는 순간 운영체제가 앱을 바로 연다)
+    function _isInviteUrl(url){
+      return url.indexOf('com.lsung.uricalendar://join')===0
+        || (url.indexOf(NATIVE_AUTH_REDIRECT)===0 && /[?&]join=/.test(url) && !/access_token=|[?&#]code=|[?&#]error/.test(url))
+        || /^https:\/\/first-uri-calender\.vercel\.app\/r\.html\?/i.test(url);
+    }
+    var _inviteSeen={};
+    async function _handleInviteUrl(url){
+      // 앱을 연 링크가 리스너와 getLaunchUrl 양쪽으로 올 수 있다 → 10초 안 같은 주소는 한 번만
+      if(_inviteSeen[url] && Date.now()-_inviteSeen[url]<10000) return;
+      _inviteSeen[url]=Date.now();
+      var jp=new URLSearchParams((url.split('?')[1]||'').split('#')[0]);
+      var jcode=(jp.get('code')||jp.get('join')||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+      if(jcode){
+        _pendingJoinCode=jcode;
+        savePendingJoinCode(jcode);
+        if(_currentUser){ try{ await tryHandlePendingJoin(); }catch(_){} }
+      }
+    }
     App.addListener('appUrlOpen', async function(event){
       try{
         var url=event&&event.url; if(!url) return;
-        // ── 초대 딥링크: com.lsung.uricalendar://join?code=XXXXXX ──
-        // [2026-09-27] 안드로이드는 login-callback 주소만 브라우저에서 앱을 열 수 있어 초대 페이지(r.html)가
-        //   com.lsung.uricalendar://login-callback?join=XXXXXX 로 연다 — 로그인 토큰·code 가 없고 join 만 있으면 초대.
-        var _lcJoin=url.indexOf(NATIVE_AUTH_REDIRECT)===0 && /[?&]join=/.test(url) && !/access_token=|[?&#]code=|[?&#]error/.test(url);
-        if(url.indexOf('com.lsung.uricalendar://join')===0 || _lcJoin){
-          var jp=new URLSearchParams(url.split('?')[1]||'');
-          var jcode=(jp.get('code')||jp.get('join')||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
-          if(jcode){
-            _pendingJoinCode=jcode;
-            savePendingJoinCode(jcode);
-            if(_currentUser){ try{ await tryHandlePendingJoin(); }catch(_){} }
-          }
-          return;
-        }
+        if(_isInviteUrl(url)){ await _handleInviteUrl(url); return; }
         // ── 위젯 ＋ 딥링크: com.lsung.uricalendar://add?room=<roomId> ──
         // 위젯의 ＋버튼이 이 스킴을 씀 → 해당 방으로 진입 후 오늘 날짜시트(추가 버튼 포함) 오픈.
         if(url.indexOf('com.lsung.uricalendar://add')===0){
@@ -9684,6 +9695,17 @@ async function _checkMinAppVersion(){
         }catch(_){}
       }
     });
+    // 앱이 꺼져 있을 때 초대 링크로 켜진 경우(콜드 스타트) — 리스너보다 먼저 온 링크를 놓치지 않게 한 번 더 확인
+    try{
+      if(App.getLaunchUrl){
+        // (화면 새로고침 뒤에도 같은 주소를 돌려주므로 한 번 처리한 주소는 기억해 두고 다시 처리하지 않는다)
+        App.getLaunchUrl().then(function(r){
+          var u=r&&r.url; if(!u||!_isInviteUrl(u)) return;
+          try{ if(sessionStorage.getItem('uricalv2.launchInvite')===u) return; sessionStorage.setItem('uricalv2.launchInvite',u); }catch(_){}
+          _handleInviteUrl(u);
+        }).catch(function(){});
+      }
+    }catch(_){}
   }catch(e){ /* noop */ }
 })();
 
