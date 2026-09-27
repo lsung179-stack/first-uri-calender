@@ -3752,6 +3752,13 @@ body.has-ad .toast{ bottom:calc(var(--ad-h) + 84px + env(safe-area-inset-bottom)
 /* 바텀시트(방 만들기/입장/날짜 등)의 하단 액션 버튼이 네이티브 광고 배너에 가리지 않게
    광고 높이만큼 아래 여백 확보. 콘텐츠가 길면 overflow-y로 스크롤됨. */
 body.has-ad .mo-card{ padding-bottom:calc(var(--ad-h) + 28px + env(safe-area-inset-bottom)) !important; }
+/* 일정·할 일 입력 창 광고(2026-09-27, 사용자 "입력할 때 창을 한 개 띄우고 맨 상단에 광고") — 무료 사용자만.
+   입력 창을 화면 가득(상태바 아래 배너 밑부터 바닥까지) 띄우고, 배너는 화면 맨 위(TOP_CENTER).
+   넓은 화면(프레임)에선 프레임 윗선과 배너 아래 중 더 낮은 쪽부터. */
+body.has-ad-top #evCard,body.has-ad-top #todoAddCard{ top:calc(env(safe-area-inset-top) + var(--ad-h) + 6px) !important; max-height:none !important; border-radius:18px 18px 0 0; }
+@media (min-width:480px){
+  body.has-ad-top #evCard,body.has-ad-top #todoAddCard{ top:max(calc(env(safe-area-inset-top) + var(--ad-h) + 8px), calc(50vh - 422px + 20px)) !important; max-height:none !important; }
+}
 /* 날짜 시트는 광고를 숨기지 않는다(2026-09-27) — 시트 자체를 배너 바로 위까지만 올려, 목록이 광고 뒤로
    지나가거나 가려지지 않게 한다(시트 아래 = 광고). 넓은 화면(프레임)에선 프레임 바닥과 배너 위 중 더 높은 쪽. */
 body.has-ad .dp-card{ bottom:calc(var(--ad-h) + env(safe-area-inset-bottom)) !important; padding-bottom:22px !important; max-height:calc(80vh - var(--ad-h)) !important; }
@@ -8153,6 +8160,13 @@ const ADMOB_IDS = {
 };
 let _admobReady = false;
 let _admobBannerShowing = false;
+/* 배너 위치 — 네이티브에 만들어 둔 배너가 어디 있는지('bottom'|'top'), 없으면 null.
+   일정·할 일 입력 창이 열리면 화면 맨 위(TOP_CENTER)로, 그 외엔 맨 아래. [2026-09-27]
+   ⚠️ 안드로이드 플러그인(8.0.0)은 이미 만든 배너에 showBanner 를 다시 부르면 광고만 새로 받고
+   위치도 안 바뀌고, hideBanner 로 숨긴 뒤엔 보이게 하지도 않는다(GONE 유지) →
+   같은 위치면 resumeBanner, 위치가 바뀌면 removeBanner 후 새로 만든다. */
+let _adPos = null;
+let _adHidden = false;
 let _adLoading = false; // showBanner 로딩(비동기) 진행 중 여부 — 중복 호출·타이밍 경쟁 방지
 let _admobDebug = 'init안됨'; // 디버깅용 상태 문자열
 
@@ -8181,15 +8195,27 @@ async function initAdMob() {
       const _adLoadEvents=['bannerAdLoaded','bannerViewDidReceiveAd','onBannerAdLoaded','bannerAdOpened','bannerAdSizeChanged','onAdLoaded'];
       _adLoadEvents.forEach(function(ev){
         try{
-          AdMob.addListener(ev, function(){
-            if(_anySubSheetOpen() || !_currentUser || isEffectivePremium()){
+          AdMob.addListener(ev, function(info){
+            // ⚠️ hideBanner 자체가 'bannerAdSizeChanged(높이 0)'를 보내므로, 그걸 받고 또 숨기면
+            //    숨김↔이벤트가 끝없이 오간다(시트가 열려 있는 내내 네이티브 호출 반복 — 배터리). 높이 0 알림·이미 숨긴 상태는 무시. [2026-09-27]
+            if(ev==='bannerAdSizeChanged'){ var _h=info&&(info.height!=null?info.height:(info.size&&info.size.height)); if(!(parseFloat(_h)>0)) return; }
+            if(_adHidden && !_admobBannerShowing) return;
+            if(!_adWant()){
               try{ AdMob.hideBanner(); }catch(_){}
-              _admobBannerShowing=false;
+              _admobBannerShowing=false; if(_adPos) _adHidden=true;
               try{ document.body.classList.remove('has-ad'); }catch(_){}
               _admobDebug='로드이벤트_시트열림_숨김';
             }
           });
         }catch(_){}
+      });
+    }catch(_){}
+    // 광고를 못 받으면(no fill 등) 플러그인이 배너를 없앤다 → 다음엔 새로 만들게 상태를 비우고, 입력 창 위 빈자리도 거둔다
+    try{
+      AdMob.addListener('bannerAdFailedToLoad', function(){
+        _adPos=null; _adHidden=false; _admobBannerShowing=false;
+        try{ document.body.classList.remove('has-ad','has-ad-top'); }catch(_){}
+        _admobDebug='배너로드실패';
       });
     }catch(_){}
     // ★ 배너 실제 높이를 받아 CSS 변수(--ad-h)에 반영 → 탭바/콘텐츠 여백을 기기 크기에 맞춰 자동 조정
@@ -8216,17 +8242,11 @@ async function initAdMob() {
 async function showAdBannerIfNeeded() {
   try {
     if (!_admobReady) { _admobDebug='ready안됨'; return; }
-    // 로그인 전(welcome/email 화면)에는 광고를 띄우지 않는다
-    if (!_currentUser) { _admobDebug='로그인전(광고숨김)'; hideAdBanner(); return; }
-    if (isEffectivePremium()) { _admobDebug='프리미엄(광고없음)'; hideAdBanner(); return; } // 프리미엄이면 광고 없음
-    // 풀스크린 시트/모달(일정·할일 추가수정, 스토어, 프리미엄, 고급설정, 공지, 고객센터)이
-    // 하나라도 열려 있으면 광고를 띄우지 않는다 → 캘린더/방목록/우리할일/설정 메인 화면에서만 표시
-    // 광고는 지정된 메인 화면(방목록·캘린더·우리할일·설정)에서만 표시 — 그 외 화면(사진갤러리 등)은 숨김
-    const _AD_ALLOWED_SCREENS=['roomsScreen','calendarScreen','todoScreen','settingsScreen'];
-    const _curScreen=document.querySelector('.screen.show');
-    if(!_curScreen || _AD_ALLOWED_SCREENS.indexOf(_curScreen.id)<0){ _admobDebug='허용화면아님(광고숨김)'; hideAdBanner(); return; }
-    if (_anySubSheetOpen()) { _admobDebug='모달열림(광고숨김)'; hideAdBanner(); return; }
-    if (_admobBannerShowing) { _admobDebug='이미표시중'; return; }
+    const want=_adWant();   // 'bottom' | 'top' | null(숨김) — 이유는 _admobDebug 에
+    if (!want) { hideAdBanner(); return; }
+    // 입력 창 광고는 창을 광고 아래로 먼저 내려 자리를 잡아 둔다(광고가 늦게 와도 입력 중에 화면이 튀지 않게)
+    try{ if(want==='top') document.body.classList.add('has-ad-top'); else document.body.classList.remove('has-ad-top'); }catch(_){}
+    if (_admobBannerShowing && _adPos===want) { _admobDebug='이미표시중'; return; }
     if (_adLoading) { _admobDebug='로딩중(중복방지)'; return; } // 이미 배너 로딩 중이면 중복 showBanner 방지
     const plat = _admobPlatform();
     if (!plat) return;
@@ -8239,33 +8259,69 @@ async function showAdBannerIfNeeded() {
     const adSize = 'ADAPTIVE_BANNER';
     _adLoading = true;
     try {
-      await AdMob.showBanner({
-        adId,
-        adSize,
-        position: 'BOTTOM_CENTER',
-        margin: 0, // 화면 최하단에 붙임 — 탭바는 --ad-h + 10px 위 (오클릭 방지 여백, AdMob 정책)
-        isTesting: false, // 프로덕션 모드 (실광고)
-      });
+      let resumed=false;
+      if (_adPos===want && _adHidden) {
+        // 같은 자리에 숨겨 둔 배너 — 다시 보이기만(안드로이드는 이걸 해야 보인다)
+        try { await AdMob.resumeBanner(); resumed=true; } catch(_){ resumed=false; }
+      }
+      if (!resumed) {
+        if (_adPos && _adPos!==want) { try { await AdMob.removeBanner(); } catch(_){} _adPos=null; }
+        await AdMob.showBanner({
+          adId,
+          adSize,
+          position: want==='top' ? 'TOP_CENTER' : 'BOTTOM_CENTER',
+          margin: 0, // 아래: 화면 최하단(탭바는 --ad-h + 16px 위, 오클릭 방지 여백) / 위: 상태바 바로 아래(입력 창은 그 아래부터)
+          isTesting: false, // 프로덕션 모드 (실광고)
+        });
+        _adPos = want;
+      }
+      _adHidden = false;
     } finally {
       _adLoading = false;
     }
-    // ★ 배너 로딩(await)이 끝나는 사이에 시트가 열렸거나 프리미엄/로그아웃 됐을 수 있음 → 재확인 후 즉시 숨김
-    if (!_currentUser || isEffectivePremium() || _anySubSheetOpen()) {
-      try { await AdMob.hideBanner(); } catch(_){}
+    // ★ 배너 로딩(await)이 끝나는 사이에 시트가 열리고 닫혔거나 프리미엄/로그아웃 됐을 수 있음 → 재확인
+    const now=_adWant();
+    if (now!==want) {
       _admobBannerShowing = false;
-      try{ document.body.classList.remove('has-ad'); }catch(_){}
-      _admobDebug = '표시직후_모달감지_숨김';
+      if (!now) hideAdBanner(); else setTimeout(showAdBannerIfNeeded, 0);   // 자리가 바뀌었으면 옮긴다
+      _admobDebug = '표시직후_상태바뀜';
       return;
     }
     _admobBannerShowing = true;
-    _admobDebug = '배너표시됨';
-    try{ document.body.classList.add('has-ad'); }catch(_){} // 콘텐츠 하단 여백 + 탭바 올림
+    _admobDebug = '배너표시됨('+want+')';
+    try{ if(want==='bottom') document.body.classList.add('has-ad'); else document.body.classList.remove('has-ad'); }catch(_){} // 콘텐츠 하단 여백 + 탭바 올림
   } catch(e) { _admobDebug='banner오류:'+(e&&e.message||e); console.warn('AdMob showBanner:', e); }
+}
+/* 지금 광고를 어디에 보여야 하나 — 'bottom'(메인 화면·날짜 시트) / 'top'(일정·할 일 입력 창) / null(숨김) */
+const _AD_FORM_IDS=['evCard','evOverlay','todoAddCard','todoAddOverlay'];
+function _formAdOpen(){
+  for(const id of ['evCard','todoAddCard']){ const e=document.getElementById(id); if(e&&e.classList.contains('on')&&_elVisible(e)) return true; }
+  return false;
+}
+function _adWant(){
+  // 로그인 전(welcome/email 화면)에는 광고를 띄우지 않는다
+  if (!_currentUser) { _admobDebug='로그인전(광고숨김)'; return null; }
+  if (isEffectivePremium()) { _admobDebug='프리미엄(광고없음)'; return null; } // 프리미엄이면 광고 없음
+  // 광고는 지정된 메인 화면(방목록·캘린더·우리할일·설정)에서만 표시 — 그 외 화면(사진갤러리 등)은 숨김
+  const _AD_ALLOWED_SCREENS=['roomsScreen','calendarScreen','todoScreen','settingsScreen'];
+  const _curScreen=document.querySelector('.screen.show');
+  if(!_curScreen || _AD_ALLOWED_SCREENS.indexOf(_curScreen.id)<0){ _admobDebug='허용화면아님(광고숨김)'; return null; }
+  // 일정·할 일 입력 창 — 창 맨 위에 광고(그 위에 다른 창(시간·반복·색 고르기 등)이 또 열리면 숨김)
+  if (_formAdOpen()) {
+    if (_anySubSheetOpen(_AD_FORM_IDS)) { _admobDebug='입력창위_다른창(광고숨김)'; return null; }
+    return 'top';
+  }
+  // 풀스크린 시트/모달(스토어, 프리미엄, 고급설정, 공지, 고객센터 등)이 열려 있으면 숨김 — 날짜 시트는 예외(아래 배너 유지)
+  if (_anySubSheetOpen()) { _admobDebug='모달열림(광고숨김)'; return null; }
+  return 'bottom';
 }
 
 async function hideAdBanner() {
   try {
     try{ document.body.classList.remove('has-ad'); }catch(_){} // 광고 공간 복원 (콘텐츠 끝까지, 탭바 원위치)
+    // 입력 창 위 광고 자리는 입력 창이 열려 있는 동안 유지(시간·반복 고르기 창이 잠깐 덮을 때 창이 위아래로 튀지 않게)
+    try{ if(!_formAdOpen() || !_currentUser || isEffectivePremium()) document.body.classList.remove('has-ad-top'); }catch(_){}
+    if (_adPos) _adHidden = true;
     const { AdMob } = window.Capacitor.Plugins;
     if (!AdMob) { _admobBannerShowing = false; return; }
     // ★ _admobBannerShowing 여부와 무관하게 무조건 hideBanner 호출 —
@@ -8288,7 +8344,8 @@ const _AD_OK_SHEET_IDS=['dpCard','dpOverlay'];
 function _elVisible(el){
   try{ return !!(el && (el.offsetWidth>0 || el.offsetHeight>0 || el.getClientRects().length>0)); }catch(_){ return true; }
 }
-function _anySubSheetOpen(){
+function _anySubSheetOpen(except){
+  const _skip=except&&except.length?except:null;
   // ★ 실제로 '보이는' 모달/시트만 열림으로 카운트한다.
   //   (닫혔는데 .on 클래스만 남은 잔여 요소가 광고를 영구히 숨기던 버그 방지 —
   //    광고는 로드됐지만 매번 '시트 열림'으로 오판돼 숨겨지던 문제)
@@ -8297,29 +8354,34 @@ function _anySubSheetOpen(){
     // 날짜 시트(그날 일정 목록)는 광고를 가리지 않는다 — 배너가 목록 아래(시트 맨 밑)에 보인다.
     // 시트는 body.has-ad 일 때 아래 여백(--ad-h)을 비워 둬 '+ 일정/할 일' 버튼과 겹치지 않는다. [2026-09-27 사용자 요청]
     if(_AD_OK_SHEET_IDS.indexOf(els[i].id)>=0) continue;
+    if(_skip && _skip.indexOf(els[i].id)>=0) continue;
     if(_elVisible(els[i])) return true;
   }
   for(const id of _AD_HIDE_SHEET_IDS){
+    if(_skip && _skip.indexOf(id)>=0) continue;
     const el = document.getElementById(id);
     if(el && el.classList.contains('on') && _elVisible(el)) return true;
   }
   return false;
 }
 function _subScreenEnter(){
-  try{ hideAdBanner(); }catch(_){}
+  // 창이 열릴 때 — 입력 창이면 광고를 맨 위로 옮기고, 그 외 창이면 숨긴다.
+  // (할 일 입력 창처럼 .on 을 붙이기 전에 부르는 곳이 있어 한 틱 뒤에 판단)
+  if(_formAdOpen()){ try{ showAdBannerIfNeeded(); }catch(_){} }
+  else { try{ if(!_adWant()) hideAdBanner(); }catch(_){} }
+  setTimeout(function(){ try{ if(_adWant()) showAdBannerIfNeeded(); else hideAdBanner(); }catch(_){} },0);
   // ★ 배너가 지연 로딩돼 시트를 연 "직후"에 뜨는 경우 대비 — 잠시 동안 반복 숨김(시트가 아직 열려 있을 때만)
   // ⚠️ 첫 타이머가 150ms였는데 시트 슬라이드업(0.28s) 한가운데라, _anySubSheetOpen의
   //    레이아웃 읽기가 애니메이션 프레임을 깎아먹었다 → 애니메이션이 끝난 뒤부터 확인. [2026-08-19 성능]
   [400,800,1300].forEach(function(ms){
-    setTimeout(function(){ if(_anySubSheetOpen()){ try{ hideAdBanner(); }catch(_){} } }, ms);
+    setTimeout(function(){ try{ const w=_adWant(); if(!w) hideAdBanner(); else if(!(_admobBannerShowing&&_adPos===w)) showAdBannerIfNeeded(); }catch(_){} }, ms);
   });
 }
 function _subScreenExit(){
   // 닫은 직후엔 아직 .on이 남아있을 수 있어 한 틱 뒤에 검사
+  // (입력 창 위에 떴던 시간·반복 고르기 창을 닫으면 입력 창 맨 위 광고를 다시 보여야 해서 _adWant 로 판단)
   setTimeout(function(){
-    if(!_anySubSheetOpen()){
-      try{ showAdBannerIfNeeded(); }catch(_){}  // 프리미엄이면 함수 내부에서 알아서 표시 안 함
-    }
+    try{ if(_adWant()) showAdBannerIfNeeded(); }catch(_){}  // 프리미엄이면 _adWant 가 null
   }, 0);
 }
 
