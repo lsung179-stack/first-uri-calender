@@ -3255,6 +3255,8 @@ body[data-theme="camp"] .rpal-row{background:#2c4a82}
 .skp-phone-inner{position:absolute;inset:0;background:var(--bg);color:var(--text)}
 .skp-decor{position:absolute;inset:0;z-index:0;pointer-events:none}
 .skp-bg{position:absolute;inset:0;background-repeat:repeat;background-position:center;background-size:90px 90px;opacity:.24}
+.skp-bg{transition:opacity .35s ease}
+.skp-phone .skp-bg.ld{opacity:0!important}
 .skp-bg.scene{background-repeat:no-repeat;background-position:center 38%;background-size:auto 116%;opacity:.4}
 .skp-phone.skp-camp .skp-bg.scene{opacity:.62;background-position:center 142%;-webkit-mask-image:linear-gradient(to bottom,#000 84%,transparent 93%);mask-image:linear-gradient(to bottom,#000 84%,transparent 93%)}
 .skp-char{position:absolute;left:50%;top:56%;width:86%;aspect-ratio:1;transform:translate(-50%,-50%);background:center/contain no-repeat;opacity:.17}
@@ -20643,6 +20645,10 @@ function preloadStoreAssets(){
     if(typeof SEAL_SETS!=='undefined'){ for(var sk in SEAL_SETS){ if(SEAL_SETS[sk]&&SEAL_SETS[sk].img)urls.push(SEAL_SETS[sk].img); } }
     if(typeof CARD_SKINS!=='undefined'){ for(var ck in CARD_SKINS){ var cs=CARD_SKINS[ck]; if(!cs)continue; ['img','char','scene'].forEach(function(f){ if(cs[f])urls.push(cs[f]); }); } }
     urls.forEach(function(u){ try{ var im=new Image(); im.decoding='async'; im.src=u; }catch(_){} });
+    // 테마 미리보기 시트 그림 — 스토어 화면 그림이 먼저 받아지게 조금 뒤에, 받아 둔 건 디코딩까지 해 둔다
+    setTimeout(function(){
+      try{ _skpPreloadUrls().forEach(function(u){ _preloadSceneUrl(u); }); }catch(_){}
+    },600);
   }catch(_){}
 }
 /* 캐릭터(동물)별 6개 표정 키 (동물마다 다름) */
@@ -23531,26 +23537,44 @@ window.onStoreThemeItem=onStoreThemeItem;
 var _skpKey=null;
 var _SKP_UPGRADE={message:'고급 프로필은 프리미엄 전용이에요.', feature:'캐릭터·무늬 프로필·테마 세트로 방 카드를 꾸밀 수 있어요.'};
 /* 테마 아이콘(body.rc-… .cal-tab[data-rci=…]) 주소를 스타일시트에서 찾아 둔다 — 미리보기 탭바에 같은 아이콘을 쓰려고 */
-var _skpIconCache={};
+var _skpIconCache=null;   // { 'rc-camp': {rooms:'url(...)', cal:…}, … } — 스타일시트를 한 번만 훑는다
 function _skpIcons(cls){
   if(!cls) return {};
-  if(_skpIconCache[cls]) return _skpIconCache[cls];
-  var out={};
-  try{
-    var want=['rooms','cal','todo','settings'];
-    for(var i=0;i<document.styleSheets.length;i++){
-      var rules; try{ rules=document.styleSheets[i].cssRules; }catch(_){ continue; }
-      if(!rules) continue;
-      for(var j=0;j<rules.length;j++){
-        var r=rules[j], sel=r.selectorText||'';
-        if(sel.indexOf('body.'+cls+' ')!==0 || sel.indexOf('.cal-tab-ico')<0) continue;
-        var bi=r.style&&r.style.backgroundImage; if(!bi||bi==='none') continue;
-        want.forEach(function(w){ if(sel.indexOf('[data-rci="'+w+'"]')>0) out[w]=bi; });
+  if(!_skpIconCache){
+    _skpIconCache={};
+    try{
+      var want=['rooms','cal','todo','settings'], re=/^body\.(rc-[\w-]+) \.cal-tab\[data-rci="(\w+)"\] \.cal-tab-ico$/;
+      for(var i=0;i<document.styleSheets.length;i++){
+        var rules; try{ rules=document.styleSheets[i].cssRules; }catch(_){ continue; }
+        if(!rules) continue;
+        for(var j=0;j<rules.length;j++){
+          var r=rules[j], sel=r.selectorText; if(!sel||sel.indexOf('.cal-tab-ico')<0) continue;
+          var bi=r.style&&r.style.backgroundImage; if(!bi||bi==='none') continue;
+          sel.split(',').forEach(function(one){
+            var m=re.exec(one.trim()); if(!m||want.indexOf(m[2])<0) return;
+            (_skpIconCache[m[1]]=_skpIconCache[m[1]]||{})[m[2]]=bi;
+          });
+        }
       }
-    }
+    }catch(_){}
+  }
+  return _skpIconCache[cls]||{};
+}
+/* 미리보기에 쓰는 그림(배경 씬·프로필·탭 아이콘)을 스토어를 열 때 미리 받아 둔다 —
+   안 그러면 시트가 뜬 뒤 배경이 한 박자 늦게 나타났다(사용자 제보 2026-09-27). */
+function _skpPreloadUrls(){
+  var urls=[];
+  try{
+    (typeof SEAL_SET_ORDER!=='undefined'?SEAL_SET_ORDER:[]).forEach(function(k){
+      var ct=_skinCT(k); if(!ct) return;
+      if(ct.bgScene) urls.push(ct.bgScene);
+      else if(ct.bg) urls.push(ct.bg);
+      if(ct.mascot) urls.push(ct.mascot);
+      var ic=_skpIcons(ct.cls);
+      Object.keys(ic).forEach(function(w){ var m=/url\(["']?([^"')]+)["']?\)/.exec(ic[w]); if(m) urls.push(m[1]); });
+    });
   }catch(_){}
-  _skpIconCache[cls]=out;
-  return out;
+  return urls;
 }
 var _SKP_TAB_SVG={
   rooms:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7"/><path d="M6 10.5V20h12v-9.5"/></svg>',
@@ -23627,9 +23651,10 @@ function _skpRenderAct(){
   var price=_coinVisible()?coinPriceOf('skin',k):null;
   var h='';
   if(price){
+    // 순서: 프리미엄 → 코인(+보유 코인 안내) — 사용자 지시 2026-09-27
+    h+='<button class="skp-btn sec" onclick="onSkinPreviewPremium()">프리미엄으로 모든 테마 쓰기</button>';
     h+='<button class="skp-btn pri" onclick="onSkinPreviewBuy()"><i class="coin-ico"></i>'+price+'코인으로 구매</button>';
     h+='<div class="skp-bal">보유 '+(_coinBalance||0).toLocaleString()+'코인 · 한 번 사면 구독 없이도 계속 써요</div>';
-    h+='<button class="skp-btn sec" onclick="onSkinPreviewPremium()">프리미엄으로 모든 테마 쓰기</button>';
   }else{
     h+='<button class="skp-btn pri" onclick="onSkinPreviewPremium()">프리미엄으로 쓰기</button>';
   }
@@ -23640,7 +23665,18 @@ function openSkinPreview(k){
   _skpKey=k;
   var nm=document.getElementById('skpName'); if(nm) nm.textContent=_setDisplayName(k);
   var ph=document.getElementById('skpPhone');
-  if(ph){ ph.className='skp-phone'+((_skinCT(k)||{}).cls==='rc-camp'?' skp-camp':''); ph.innerHTML=_skpPhoneHTML(k); }
+  if(ph){
+    ph.className='skp-phone'+((_skinCT(k)||{}).cls==='rc-camp'?' skp-camp':'');
+    ph.innerHTML=_skpPhoneHTML(k);
+    // 배경 그림을 아직 못 받았으면(스토어 열자마자 누른 경우) 색·달력부터 보여주고 그림은 받는 대로 부드럽게 나타나게
+    try{
+      var bg=ph.querySelector('.skp-bg'), m=bg&&/url\("?([^")]+)"?\)/.exec(bg.style.backgroundImage||'');
+      if(m){
+        var im=new Image(); im.src=m[1];
+        if(!im.complete){ bg.classList.add('ld'); var done=function(){ bg.classList.remove('ld'); }; im.onload=done; im.onerror=done; }
+      }
+    }catch(_){}
+  }
   _skpRenderAct();
   var ov=document.getElementById('skpOverlay'), cd=document.getElementById('skpCard');
   if(ov)ov.classList.add('on'); if(cd){ cd.scrollTop=0; cd.classList.add('on'); }
