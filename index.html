@@ -3989,6 +3989,9 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
   window.addEventListener('orientationchange', setVH);
 })();
 </script>
+<script>/* [2026-09-28] App Store 심사 2.3.10 — iPhone 앱에선 Android·Google Play 문구를 숨긴다(.and-only), Android 앱에선 iOS 전용 문구를 숨긴다(.ios-only). 웹은 둘 다 보임 */
+try{var _cp=window.Capacitor&&window.Capacitor.getPlatform&&window.Capacitor.getPlatform();if(_cp==='ios'||_cp==='android')document.documentElement.classList.add('plat-'+_cp);}catch(_){}</script>
+<style>.plat-ios .and-only{display:none!important}.plat-android .ios-only{display:none!important}</style>
 </head>
 <body>
 
@@ -5424,7 +5427,7 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
       <div class="pn-title">유의사항</div>
       <ul class="prem-notice-list">
         <li>구독은 선택한 기간이 종료되기 24시간 전에 자동으로 갱신되며 해당 금액이 청구됩니다.</li>
-        <li>결제는 기기에 로그인된 Apple 계정(iOS) 또는 Google 계정(Android)으로 청구됩니다.</li>
+        <li>결제는 이 기기의 앱 스토어 계정으로 청구됩니다.</li>
         <li>자동 갱신은 기간 종료 24시간 전까지 각 스토어의 계정 설정에서 언제든 해지할 수 있습니다.</li>
         <li>구독을 해지해도 이미 결제된 기간이 끝날 때까지는 프리미엄 기능을 계속 이용할 수 있습니다.</li>
         <li>구독 상품 결제 후 제공되는 기능을 이용한 경우, 관련 법령에 따라 환불이 제한될 수 있습니다.</li>
@@ -5558,7 +5561,7 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
     <p>① 만 14세 이상부터 가입할 수 있습니다.<br>② 가입은 이메일·비밀번호 또는 카카오 계정으로 가능하며, 이메일 가입 시 이메일로 발송되는 인증번호 입력이 필요합니다.<br>③ 서비스의 기본 기능은 무료로 제공되며, 일부 기능은 프리미엄 구독을 통해 이용할 수 있습니다.</p>
 
     <h3>제5조 (유료 서비스 및 결제)</h3>
-    <p>① <b>구독 플랜 및 가격</b><br>· 1개월: ₩3,900 / 3개월: ₩10,900 / 12개월: ₩39,900<br>· 가격은 부가세 포함이며, 사전 공지 후 변경될 수 있습니다.<br><br>② <b>결제 방식</b><br>결제는 App Store(Apple) 또는 Google Play Store를 통해 이루어지며, 각 플랫폼의 결제 정책 및 이용약관이 함께 적용됩니다. 회사는 결제 정보(카드번호 등)를 직접 저장하지 않습니다.<br><br>③ <b>구독 해지 및 자동 갱신 취소</b><br>구독은 선택한 기간이 종료되기 최소 24시간 전 자동으로 갱신됩니다. 자동 갱신을 원하지 않는 경우 만료 24시간 전까지 각 스토어에서 직접 해지하셔야 합니다.<br>· <b>iPhone(iOS)</b>: 설정 앱 → 상단 Apple 계정 → 구독 → 우리 캘린더 → 구독 취소<br>· <b>Android</b>: Google Play 스토어 앱 → 프로필 아이콘 → 결제 및 구독 → 구독 → 우리 캘린더 → 구독 취소<br>해지 후에도 현재 구독 기간이 끝날 때까지는 프리미엄 기능을 계속 이용하실 수 있습니다.<br><br>④ <b>청약철회 및 환불</b><br>회원은 결제일로부터 7일 이내에 청약철회를 요청할 수 있습니다. 다만 프리미엄 기능을 이미 사용하는 등 「전자상거래 등에서의 소비자보호에 관한 법률」 제17조 제2항 각 호에 해당하는 경우 청약철회가 제한될 수 있습니다. 환불은 결제가 이루어진 App Store 또는 Google Play Store의 환불 정책에 따라 각 플랫폼을 통해 신청하실 수 있습니다.<br><br>⑤ <b>구독 혜택 소멸</b><br>구독이 만료되거나 해지된 경우, 프리미엄 기능(추가 사진, 무제한 할일, 완료 할일 평생 보관 등)은 즉시 제한됩니다.</p>
+    <p>① <b>구독 플랜 및 가격</b><br>· 1개월: ₩3,900 / 3개월: ₩10,900 / 12개월: ₩39,900<br>· 가격은 부가세 포함이며, 사전 공지 후 변경될 수 있습니다.<br><br>② <b>결제 방식</b><br>결제는 App Store(Apple)<span class="and-only"> 또는 Google Play 스토어</span>를 통해 이루어지며, 각 플랫폼의 결제 정책 및 이용약관이 함께 적용됩니다. 회사는 결제 정보(카드번호 등)를 직접 저장하지 않습니다.<br><br>③ <b>구독 해지 및 자동 갱신 취소</b><br>구독은 선택한 기간이 종료되기 최소 24시간 전 자동으로 갱신됩니다. 자동 갱신을 원하지 않는 경우 만료 24시간 전까지 각 스토어에서 직접 해지하셔야 합니다.<br>· <b>iPhone(iOS)</b>: 설정 앱 → 상단 Apple 계정 → 구독 → 우리 캘린더 → 구독 취소<span class="and-only"><br>· <b>Android</b>: Google Play 스토어 앱 → 프로필 아이콘 → 결제 및 구독 → 구독 → 우리 캘린더 → 구독 취소</span><br>해지 후에도 현재 구독 기간이 끝날 때까지는 프리미엄 기능을 계속 이용하실 수 있습니다.<br><br>④ <b>청약철회 및 환불</b><br>회원은 결제일로부터 7일 이내에 청약철회를 요청할 수 있습니다. 다만 프리미엄 기능을 이미 사용하는 등 「전자상거래 등에서의 소비자보호에 관한 법률」 제17조 제2항 각 호에 해당하는 경우 청약철회가 제한될 수 있습니다. 환불은 결제가 이루어진 App Store<span class="and-only"> 또는 Google Play 스토어</span>의 환불 정책에 따라 각 플랫폼을 통해 신청하실 수 있습니다.<br><br>⑤ <b>구독 혜택 소멸</b><br>구독이 만료되거나 해지된 경우, 프리미엄 기능(추가 사진, 무제한 할일, 완료 할일 평생 보관 등)은 즉시 제한됩니다.</p>
 
     <h3>제6조 (회원의 의무)</h3>
     <p>회원은 다음 행위를 해서는 안 됩니다.<br>① 타인의 정보를 도용하는 행위<br>② 욕설, 혐오, 차별적 표현을 사용하는 행위<br>③ 저작권 등 타인의 권리를 침해하는 행위<br>④ 서비스의 정상적인 운영을 방해하는 행위<br>⑤ 관련 법령에 위배되는 행위</p>
@@ -5596,7 +5599,7 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
     <h3>1. 수집하는 개인정보 항목</h3>
     <p><b>가입 시 수집</b><br>· 이메일, 비밀번호 (이메일 가입 시)<br>· 이름, 프로필 사진, 카카오 계정 식별자 (카카오 가입 시)</p>
     <p><b>서비스 이용 중 수집</b><br>· 일정 정보 (제목, 날짜, 시간, 메모, 사진)<br>· 멤버 정보 (색상, 생일 — 선택)<br>· 이모지 반응 기록</p>
-    <p><b>유료 서비스 이용 시 수집</b><br>· 구독 상태 및 만료일<br>· RevenueCat 구독 식별자 (결제 처리용 ID)<br>· App Store 또는 Google Play 결제 영수증 정보 (카드번호 등 원시 결제 정보는 회사가 저장하지 않습니다)</p>
+    <p><b>유료 서비스 이용 시 수집</b><br>· 구독 상태 및 만료일<br>· RevenueCat 구독 식별자 (결제 처리용 ID)<br>· App Store<span class="and-only"> 또는 Google Play</span> 결제 영수증 정보 (카드번호 등 원시 결제 정보는 회사가 저장하지 않습니다)</p>
     <p><b>자동 수집</b><br>· 푸시 알림 토큰<br>· 기기 정보 (User-Agent)<br>· 접속 로그 (변조 방지 목적)</p>
 
     <h3>2. 개인정보 이용 목적</h3>
@@ -5609,7 +5612,7 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
     <p>회사는 회원의 개인정보를 외부에 제공하지 않습니다. 다만, 다음의 경우는 예외로 합니다.<br>· 회원이 사전에 동의한 경우<br>· 법령에 의거하거나 수사기관의 적법한 요청이 있는 경우</p>
 
     <h3>5. 처리 위탁</h3>
-    <p>서비스 제공을 위해 다음 업체에 일부 업무를 위탁합니다.<br>· <b>Supabase</b> (데이터베이스·인증·인프라)<br>· <b>Vercel</b> (웹 호스팅)<br>· <b>RevenueCat</b> (인앱 구독 결제 처리 및 구독 상태 관리)<br>· <b>Apple / Google</b> (App Store·Play Store 인앱 결제 처리)<br>· <b>Kakao</b> (카카오 로그인 — 카카오 이용 시)<br>· <b>Apple/Google/Mozilla</b> (웹 푸시 알림 전송)</p>
+    <p>서비스 제공을 위해 다음 업체에 일부 업무를 위탁합니다.<br>· <b>Supabase</b> (데이터베이스·인증·인프라)<br>· <b>Vercel</b> (웹 호스팅)<br>· <b>RevenueCat</b> (인앱 구독 결제 처리 및 구독 상태 관리)<br>· <b>Apple<span class="and-only"> / Google</span></b> (App Store<span class="and-only">·Play 스토어</span> 인앱 결제 처리)<br>· <b>Kakao</b> (카카오 로그인 — 카카오 이용 시)<br>· <b>Apple/Google/Mozilla</b> (웹 푸시 알림 전송)</p>
 
     <h3>6. 개인정보 국외 이전</h3>
     <p>서비스는 아래 해외 사업자의 인프라를 이용하며, 이 과정에서 개인정보가 국외로 이전·처리될 수 있습니다.<br>· <b>Supabase Inc.</b> (미국) — 데이터베이스·인증, 가입·이용 정보 전체, 서비스 이용 기간 동안 보유·이용<br>· <b>Vercel Inc.</b> (미국) — 웹 호스팅, 접속 정보, 서비스 이용 기간 동안<br>· <b>RevenueCat, Inc.</b> (미국) — 구독 결제 처리, 구독 식별자·영수증 정보, 구독 이용 기간 동안<br>· <b>Apple Inc. / Google LLC</b> (미국) — 인앱 결제·푸시 알림 전송, 결제 영수증·알림 토큰, 서비스 이용 기간 동안<br>이전 방법: 서비스 이용 시 정보통신망을 통한 전송. 회원은 개인정보의 국외 이전을 거부할 수 있으나, 이 경우 서비스 이용이 제한될 수 있습니다.</p>
@@ -5866,7 +5869,7 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
   <div class="mo-sub" id="coinBalanceLine">보유 0코인</div>
   <div class="coin-packs" id="coinPackList"></div>
   <button class="coin-reward" id="coinRewardBtn" onclick="onWatchRewardAd()" style="display:none"></button>
-  <div class="coin-note">코인은 유효기간이 없어요.<br>테마·컬러·이모지·글꼴·강조·스티커를 하나씩 살 수 있고,<br>산 항목은 구독과 상관없이 계속 쓸 수 있어요.<br>결제·환불은 App Store·Google Play 정책을 따라요.</div>
+  <div class="coin-note">코인은 유효기간이 없어요.<br>테마·컬러·이모지·글꼴·강조·스티커를 하나씩 살 수 있고,<br>산 항목은 구독과 상관없이 계속 쓸 수 있어요.<br>결제·환불은 앱을 내려받은 스토어의 정책을 따라요.</div>
   <div class="mo-actions"><button class="mo-cancel" onclick="closeCoinShop()">닫기</button></div>
 </div>
 <div class="mo-overlay" id="rpalOverlay" onclick="closeRoomPalette()"></div>
@@ -6035,7 +6038,7 @@ body[data-theme="mono"] .uni-mini-btn{background:var(--accent);color:#fff}
     <button class="btn-danger-full" onclick="leaveRoomConfirm()">이 방 나가기</button>
   </div>
   
-  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.2.4 (86)</div>
+  <div style="text-align:center;opacity:.45;font-size:11px;padding:10px 0 2px;line-height:1.5" id="buildInfo">build 1.2.5 (87)</div>
   <div class="mo-actions">
     <button class="mo-cancel" onclick="closeRoomSettings()">닫기</button>
   </div>
@@ -9533,7 +9536,7 @@ async function init(){
        '권한 prompt'면 아직 OS 팝업을 수락하지 않은 것 → 설정 › 알림 설정에서 켜면 된다. [2026-08-23] */
     try{ const bi=document.getElementById('buildInfo'); if(bi){ const C=window.Capacitor; const nat=!!(C&&C.isNativePlatform&&C.isNativePlatform()); const ch=!!(C&&((C.Plugins&&C.Plugins.CapacitorHttp)||C.CapacitorHttp));
       const plat=(nat&&C.getPlatform)?C.getPlatform():'web';
-      const _base='build 1.2.4 (86) · '+(nat?'네이티브('+plat+')':'웹')+' · http플러그인 '+(ch?'있음':'없음');
+      const _base='build 1.2.5 (87) · '+(nat?'네이티브('+plat+')':'웹')+' · http플러그인 '+(ch?'있음':'없음');
       bi.textContent=_base;
       (async function(){
         try{

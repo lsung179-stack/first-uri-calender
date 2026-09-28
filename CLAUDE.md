@@ -36,7 +36,8 @@
 - 배포 버전 확인: 앱 설정 화면 푸터의 `build ...` 문자열(런타임에 JS가 세팅, HTML 정적값과 다를 수 있음).
 
 ## 현재 상태 (2026-09-24 기준)
-- **마케팅 버전 `1.2.4` / 앱 내 표시 빌드 `1.2.4 (86)`**(2026-09-27 승격 — 1.2.3 은 TestFlight 까지만, 광고 실기기 수정 후 재빌드) — index.html buildInfo 두 곳(정적 `id="buildInfo"` + 런타임 `const _base='build …'`)에 같은 문자열이 박혀 있다. appstore `codemagic.yaml`(두 브랜치)의 `APP_VERSION`·`ANDROID_VERSION_NAME` 도 `1.2.4`, 빌드번호 하한은 iOS `43`·Android `88`.
+- **마케팅 버전 `1.2.5` / 앱 내 표시 빌드 `1.2.5 (87)`**(2026-09-28 승격 — iOS 1.2.4 가 심사 2.3.10(앱 안 Android·Google Play 문구)으로 거절돼 고쳐서 다시 빌드) — index.html buildInfo 두 곳(정적 `id="buildInfo"` + 런타임 `const _base='build …'`)에 같은 문자열이 박혀 있다. appstore `codemagic.yaml`(두 브랜치)의 `APP_VERSION`·`ANDROID_VERSION_NAME` 도 `1.2.5`, 빌드번호 하한은 iOS `44`·Android `89`.
+- 🍎 **iPhone 앱에 Android·Google Play 문구가 보이면 심사 거절(2.3.10, 2026-09-28 실제 발생)** — 스토어·결제 안내는 플랫폼 중립 문구로 쓰고, 꼭 필요한 Android 전용 문구는 `<span class="and-only">`(iOS 앱에서 숨김), iOS 전용은 `.ios-only`(Android 앱에서 숨김). `<html>` 에 `plat-ios`/`plat-android` 클래스를 `</head>` 직전 스크립트가 붙인다. 스토어 설명·새 기능·스크린샷에도 안드로이드·갤럭시·구글 플레이를 쓰지 말 것.
 - 🪙 **1.2.2 = 코인 첫 출시 빌드** — App Store Connect '제출 초안'에 소모품 `coins_30/100/300` 3개가 담겨 있어 **이 앱 버전을 같은 초안에 추가해 함께 심사 제출**해야 한다(첫 소모품 규칙). ✅ 2026-09-24 양 스토어 제출 완료, `coin_public`='true' 켬.
 - ⚠️ **표시 빌드번호(83)와 실제 스토어 번호는 별개** — 스토어 번호는 codemagic 이 자동 산정한다(iOS=TestFlight 최신+1, Android=`50+BUILD_NUMBER`). 하한은 "이보다 작아지지 않게" 하는 바닥일 뿐.
 - **마지막 실제 스토어 출시는 `1.1.8`** — 출시노트 범위 기준선은 이 버전이다(그 이후 누적분을 씀).
