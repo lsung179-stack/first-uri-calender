@@ -52,6 +52,7 @@
 ## Supabase
 - 프로젝트 id: **`bgqzkkaslqchbovzrkao`**
 - 핵심 테이블: `public.subscriptions` (user_id, status, expires_at, plan_type, is_manual)
+- `public.events.created_by` uuid = **일정을 만든 사람**(2026-09-29, 마이그레이션 `add_events_created_by`) — 트리거 `events_created_by` 가 insert 때 `auth.uid()` 로 채우고(앱이 보낸 값은 무시 — 위장 불가) update 로는 안 바뀐다. 서버(service_role) 삽입·그 전 일정은 null. **함께 일정은 참여자마다 한 줄씩 저장**되고 화면은 '내 줄'을 대표로 쓰므로, 이름표 맨 앞은 `created_by`(index.html `_leadId`, Flutter `DayEvent.leadId`)로 보여 준다 — null 이면 예전처럼 행 주인.
 - `public.members` (room_id, user_id, color, notifications_enabled, role, is_virtual, virtual_*, **`sort_order` int**=방목록 사용자별 순서, **`seal` text**=개인별 방 프로필 'color:sym', 마이그레이션 `add_members_seal`), **`palette` text[]**=이 방에서 내 일정·할 일 색상 칸에 보일 색 묶음('default'=기본 12색, 그 외=컬러 팩 key, null=전부 — `_myPaletteByRoom`/`_colorPagesForRoom`, 마이그레이션 `add_members_palette`). RLS `members_update_self`(user_id=auth.uid())로 본인 행 수정 가능.
 - `public.rooms` (id, name, code, owner_id, ~~`mascot` text~~). ⚠️ **방 프로필은 2026-07에 방 공유(rooms.mascot)→개인별(members.seal)로 전환** — `rooms.mascot` 컬럼과 RPC `set_room_mascot`은 **미사용 잔존**(마이그레이션 `add_room_mascot`). 클라이언트는 members.seal만 읽고 씀.
 - ~~`public.anniversaries`~~ — **방별 공유 D-day/기념일 기능은 제거됨**(사용자 요청, "느낌 없음"). 클라이언트 코드(스트립/시트/JS/CSS) 전부 삭제. 단 DB 테이블 `anniversaries`(마이그레이션 `create_anniversaries`)는 **그대로 남아있음**(빈 테이블, 미사용). 나중에 재도입하거나 정리할 때 참고.

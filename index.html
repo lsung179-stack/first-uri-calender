@@ -11859,7 +11859,10 @@ function _getDayEventsRaw(date){
       // 본인 row 우선 (수정 권한)
       const myRow=sharedRows.find(e=>e.user_id===_currentUser?.id);
       const baseRow=myRow||ev;
-      result.push({...baseRow,_isShared:true,_memberIds:memberIds,_memberCount:memberIds.length});
+      /* 이름표 맨 앞 = 만든 사람(events.created_by, 2026-09-29) — 예전 일정은 비어 있어 이 행 주인(=나)으로 */
+      const creator=(sharedRows.find(e=>e.created_by)||{}).created_by;
+      const leadId=(creator&&memberIds.includes(creator))?creator:baseRow.user_id;
+      result.push({...baseRow,_isShared:true,_memberIds:memberIds,_memberCount:memberIds.length,_leadId:leadId});
     }else{
       result.push({...ev,_isShared:false});
     }
@@ -12962,10 +12965,11 @@ function renderDateSheetList(){
     const isVirtual=ev._isVirtual;
     const t=escapeHtml(ev.title||'');
     const tm=escapeHtml(fmtTimeRange(ev.time, ev.end_time));
-    const authorChip=_authorChipHtml(ev.user_id);
+    const _lead=(ev._isShared&&ev._leadId)||ev.user_id;
+    const authorChip=_authorChipHtml(_lead);
     let memberChipsHtml='';
     if(ev._isShared){
-      const ids=(ev._memberIds||[]).filter(uid=>uid!==ev.user_id);
+      const ids=(ev._memberIds||[]).filter(uid=>uid!==_lead);
       const maxShow=4;
       const shown=ids.slice(0,maxShow);
       const remaining=ids.length-shown.length;
@@ -29996,9 +30000,10 @@ function renderWeekList(){
       if((ev.repeat_type&&ev.repeat_type!=='none')||ev.recurring_yearly) meta.push('↻ 반복');
       let chips='';
       if(multi && !ev._isVirtual){
-        chips+=_authorChipHtml(ev.user_id)||'';
+        const lead=(ev._isShared&&ev._leadId)||ev.user_id;
+        chips+=_authorChipHtml(lead)||'';
         if(ev._isShared){
-          const ids=(ev._memberIds||[]).filter(function(u){ return u!==ev.user_id; });
+          const ids=(ev._memberIds||[]).filter(function(u){ return u!==lead; });
           if(ids.length){
             chips+='<span class="wk-with">함께</span>'+ids.slice(0,3).map(function(u){ return _todoMemberChip(_todoMemberByKey(u)); }).join('')
               +(ids.length>3?'<span class="wk-with">+'+(ids.length-3)+'명</span>':'');
