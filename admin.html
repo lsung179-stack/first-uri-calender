@@ -461,6 +461,7 @@ async function renderDash(m){
   ];
   let gr=null; try{ const {data:gd}=await supa.rpc('admin_growth_stats'); gr=(gd&&gd.ok!==false)?gd:null; }catch(_){}
   let co=null; try{ const {data:cd}=await supa.rpc('admin_ads_cohorts'); co=Array.isArray(cd)?cd:null; }catch(_){}
+  let fu=null; try{ const {data:fd}=await supa.rpc('admin_funnel_stats',{p_days:30}); fu=Array.isArray(fd)?fd:null; }catch(_){}
   const G=gr||{}; const pctOf=(a,b)=>b>0?Math.round(a/b*100):0;
   const gcards=[
     {l:'주간 활성 (WAU)', v:G.active_7d||0, e:`전체의 ${pctOf(G.active_7d,G.total_users)}% · 일정 ${(G.events_7d||0).toLocaleString()}건`},
@@ -510,6 +511,32 @@ async function renderDash(m){
         초대 합류 = 가입 7일 내 타인 방 입장 · 체험/유료/해지예약 = 실결제(PRODUCTION) 기준, 유료 = 체험 후 결제 전환
       </div>
     </div>` : '';
+  /* 결제 흐름(2.0.2 앱부터 기록, 2026-10-01) — 단계마다 '몇 명(몇 번)'. 위에서 아래로 줄어드는 깔때기 */
+  const FUNNEL_ROWS=[
+    ['upsell_view','잠긴 기능 → 체험 안내 봄'],['upsell_go','└ 무료로 체험하기 누름'],['upsell_skip','└ 다음에'],
+    ['premium_view','프리미엄 화면 봄'],['subscribe_tap','└ 구독 버튼 누름'],['subscribe_ok','└ 구독 완료'],['subscribe_cancel','└ 결제창에서 취소'],['subscribe_fail','└ 결제 실패'],
+    ['offer_view','코인으로 사기 제안 봄'],['offer_coin','└ 코인으로 구매 누름'],['coin_buy_ok','└ 코인으로 구매 완료'],['coin_buy_short','└ 코인 부족'],['offer_premium','└ 프리미엄으로 전부 쓰기'],['offer_skip','└ 취소'],
+    ['coinshop_view','코인 충전 창 봄'],['coinpack_tap','└ 충전 상품 누름'],['coinpack_ok','└ 충전 결제 완료'],['coinpack_cancel','└ 결제창에서 취소'],['coinpack_fail','└ 결제 실패'],
+    ['restore_tap','구매 복원 누름'],['restore_ok','└ 복원됨'],['restore_none','└ 복원할 구독 없음'],
+  ];
+  const fuMap={}; (fu||[]).forEach(r=>{fuMap[r.step]=r;});
+  const funnelHtml = fu ? `
+    <div class="page-sub" style="margin:20px 0 4px;font-weight:800;color:var(--accent);font-size:14px">💳 결제 흐름 (최근 30일 · 2.0.2 앱부터)</div>
+    <div class="chart-card" style="overflow-x:auto">
+      ${fu.length===0 ? '<div style="font-size:12.5px;color:var(--sub)">아직 기록이 없어요 — 2.0.2 이상 앱에서 결제 화면이 열리면 쌓여요</div>' : `
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:360px">
+        <thead><tr style="color:var(--sub)">
+          <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)">단계</th>
+          <th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)">사람</th>
+          <th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)">횟수</th>
+        </tr></thead>
+        <tbody>${FUNNEL_ROWS.map(([k,l])=>{const r=fuMap[k]; const sub=l.startsWith('└');
+          return `<tr><td style="padding:6px 8px;border-bottom:1px solid var(--line);${sub?'color:var(--sub);padding-left:18px':'font-weight:700'}">${esc(l)}</td>
+            <td style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)">${r?r.users:0}</td>
+            <td style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);color:var(--sub)">${r?r.events:0}</td></tr>`;}).join('')}</tbody>
+      </table>`}
+      <div style="font-size:11px;color:var(--sub);margin-top:8px;line-height:1.6">관리자·무료 테스트 계정 제외 · 프리미엄 화면은 메뉴에서 연 것도 포함</div>
+    </div>` : '';
   const daily=st.signups_daily||[];
   const maxc=Math.max(1,...daily.map(d=>d.cnt));
   m.innerHTML=`
@@ -523,6 +550,7 @@ async function renderDash(m){
       </div>`).join('')}
     </div>
 ${growthHtml}
+${funnelHtml}
 ${cohortHtml}
     <div class="chart-card">
       <div class="chart-title">최근 14일 가입 추이</div>
