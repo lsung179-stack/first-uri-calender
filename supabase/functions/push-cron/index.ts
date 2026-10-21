@@ -16,10 +16,16 @@
 // v20(2026-10-10): 같은 일정 판단에 '제목·시간이 같음'도 더한다 — 묶음 표시(multi_group_id) 없이
 //   여러 방에 따로 만든 같은 일정이 아침 다이제스트에 '창게스탄, 창게스탄'처럼 두 번 나오던 것(사용자 제보).
 //   daily(목록·개수)와 reminder(1시간 전 알림) 모두 유저별로 sameEventKeys() 중 하나라도 겹치면 1회만.
+// v21(2026-10-21): 반복 일정을 넣는다 — 예전엔 .eq('date', today) 라 반복 일정은 처음 시작한 날에만 아침 요약·
+//   1시간 전 알림에 나오고, 반복 일정만 있는 방은 '오늘 일정 없어요' 안내까지 받았다(사용자 이탈 점검).
+//   eventsOn() = 오늘 날짜 줄 + 오늘 이전에 시작한 반복 줄 중 오늘 발생하는 것(recur.ts — 앱과 같은 규칙, 실데이터 224개·2년치 대조 일치).
+//   1시간 전 알림은 reminder_sent_at 이 '오늘(KST)'이면 보낸 것으로 본다(반복 줄은 한 줄로 날마다 보내야 해서).
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import webpush from 'npm:web-push@3.6.7'
+import KoreanLunarCalendar from 'npm:korean-lunar-calendar@0.4.0'
+import { occursOn } from './recur.ts'
 
 const VAPID_PUBLIC = Deno.env.get('VAPID_PUBLIC_KEY')!
 const VAPID_PRIVATE = Deno.env.get('VAPID_PRIVATE_KEY')!
@@ -153,10 +159,7 @@ async function prefOffSet(supa: any, userIds: string[], key: string): Promise<Se
 async function handleDaily(supa: any) {
   const today = kstDateStr()
 
-  const { data: events } = await supa
-    .from('events')
-    .select('id, user_id, title, time, room_id, multi_group_id')
-    .eq('date', today)
+  const events = await eventsOn(supa, today, 'id, user_id, title, time, room_id, multi_group_id')
 
   if (!events || events.length === 0) {
     return json({ mode: 'daily', message: 'no events today', sent: 0 })
@@ -217,10 +220,7 @@ async function handleDaily(supa: any) {
 async function handleEmptyRooms(supa: any) {
   const today = kstDateStr()
 
-  const { data: todayEvents } = await supa
-    .from('events')
-    .select('room_id')
-    .eq('date', today)
+  const todayEvents = await eventsOn(supa, today, 'id, room_id')
   const roomsWithEvents = new Set<string>((todayEvents ?? []).map((e: any) => e.room_id))
 
   const { data: mems } = await supa
@@ -388,12 +388,9 @@ async function handleReminder(supa: any) {
   const today = kstDateStr()
   const nowKstMin = kstMinutesOfDay()
 
-  const { data: events } = await supa
-    .from('events')
-    .select('id, user_id, title, time, date, room_id, multi_group_id')
-    .eq('date', today)
-    .not('time', 'is', null)
-    .is('reminder_sent_at', null)
+  // 오늘 이미 보낸 것(reminder_sent_at 이 오늘 KST)은 뺀다 — 반복 줄은 한 줄이라 날마다 다시 보낼 수 있어야 한다
+  const events = (await eventsOn(supa, today, 'id, user_id, title, time, date, room_id, multi_group_id, reminder_sent_at', true))
+    .filter((e: any) => kstDateOf(e.reminder_sent_at) !== today)
 
   if (!events || events.length === 0) {
     return json({ mode: 'reminder', message: 'nothing to remind', sent: 0 })
@@ -598,6 +595,66 @@ async function pushToUser(supa: any, userId: string, payload: any): Promise<{ se
   }
 
   return { sent, fcmSent: fcmSent + apnsSent }
+}
+
+// ── 오늘 보이는 일정(반복 포함) ──
+const REPEAT_COLS = 'repeat_type, recurring_yearly, repeat_weekdays, repeat_monthly_mode, repeat_nth_week, repeat_until, repeat_interval, repeat_count, repeat_lunar_month, repeat_lunar_day, repeat_except, range_group_id'
+
+function lunarToSolar(ly: number, lm: number, ld: number) {
+  try {
+    const c = new (KoreanLunarCalendar as any)()
+    if (!c.setLunarDate(ly, lm, ld, false)) return null
+    const s = c.getSolarCalendar()
+    return s && s.year ? { year: s.year, month: s.month, day: s.day } : null
+  } catch (_e) { return null }
+}
+
+// 한 번에 1000줄 제한을 넘어 끝까지(id 순)
+async function fetchAll(build: () => any): Promise<any[]> {
+  const out: any[] = []
+  for (let i = 0; i < 50; i++) {
+    const { data, error } = await build().order('id').range(i * 1000, i * 1000 + 999)
+    if (error) throw error
+    out.push(...(data ?? []))
+    if (!data || data.length < 1000) break
+  }
+  return out
+}
+
+// day 에 보이는 일정 — 그날 줄(건너뛴 날 제외) + 그 전에 시작한 반복 줄의 그날 발생(date 를 day 로 바꿔 돌려준다).
+// 기간+반복(같은 range_group_id 여러 줄)은 사이클 시작일에만 — 이어지는 날마다 알리지 않는다.
+async function eventsOn(supa: any, day: string, cols: string, onlyTimed = false): Promise<any[]> {
+  const sel = `${cols}, ${REPEAT_COLS}`
+  const sameDay = await fetchAll(() => {
+    let q = supa.from('events').select(sel).eq('date', day)
+    if (onlyTimed) q = q.not('time', 'is', null)
+    return q
+  })
+  const reps = await fetchAll(() => {
+    let q = supa.from('events').select(sel).lt('date', day)
+      .or('repeat_type.in.(daily,weekly,monthly,yearly,lunar),recurring_yearly.eq.true')
+    if (onlyTimed) q = q.not('time', 'is', null)
+    return q
+  })
+  const span: Record<string, number> = {}
+  const gids = [...new Set(reps.map((e: any) => e.range_group_id).filter(Boolean))]
+  if (gids.length) {
+    const rows = await fetchAll(() => supa.from('events').select('id, range_group_id').in('range_group_id', gids))
+    for (const r of rows) span[r.range_group_id] = (span[r.range_group_id] ?? 0) + 1
+  }
+  const out = sameDay.filter((e: any) => occursOn(e, day, lunarToSolar))
+  for (const e of reps) {
+    const sd = e.range_group_id ? Math.max(1, span[e.range_group_id] ?? 1) : 1
+    if (occursOn(e, day, lunarToSolar, sd)) out.push({ ...e, date: day, origin_date: e.date })
+  }
+  return out
+}
+
+function kstDateOf(ts: string | null | undefined): string | null {
+  if (!ts) return null
+  const t = new Date(ts).getTime()
+  if (isNaN(t)) return null
+  return new Date(t + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
 }
 
 function kstDateStr() {
