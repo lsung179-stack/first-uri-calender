@@ -3380,44 +3380,52 @@ body[data-theme="camp"] .rpal-row{background:#2c4a82}
 .cal-cell-label:empty::before{content:"\00a0"}
 .cal-cell-label.holiday{color:var(--sun);font-weight:700}
 .cal-cell-label.term{color:var(--gold);font-weight:600}
-/* D-day [2026-10-22 시험판] */
-.cal-cell-label.dday{color:#c93a60;font-weight:700}
+/* D-day [2026-10-22 시험판 → 같은 날 다시 짬: 하트·분홍 고정 없앰, 색은 테마 따라(--dd-ink = 테마 accent 를 읽히게 진하게), 앱 미니 달력, 편집 버튼] */
+.cal-cell-label.dday{color:var(--dd-ink,var(--accent));font-weight:700}
 .cal-dday-row{display:flex;gap:6px;padding:2px 12px 6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .cal-dday-row::-webkit-scrollbar{display:none}
 .cal-dday-row[hidden]{display:none}
-.dd-chip{flex:none;display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 11px;border-radius:15px;border:none;background:rgba(139,58,42,.07);color:var(--text);font:500 12.5px/1 inherit;font-family:inherit;cursor:pointer;white-space:nowrap}
-.dd-chip b{color:var(--accent);font-weight:700}
-.dd-chip.since{background:#fbedf1;color:#a52b4f;font-weight:700}
-.dd-chip.since b{color:#a52b4f}
-.dd-chip.add{background:none;border:1px dashed var(--border);color:var(--sub)}
-.dd-heart{width:12px;height:12px;flex:none}
-.dd-hero{border-radius:18px;background:#fbedf1;padding:18px;margin:4px 0 18px;color:#2a2420}
-.dd-hero-top{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:#a52b4f}
-.dd-hero-num{display:flex;align-items:baseline;gap:3px;margin-top:8px}
-.dd-hero-num span:first-child{font-family:var(--ff-serif);font-size:50px;font-weight:700;line-height:1}
-.dd-hero-num span:last-child{font-size:18px;font-weight:700}
-.dd-hero-sub{font-size:12.5px;color:#6e5f63;margin-top:6px}
-.dd-bar{height:7px;border-radius:4px;background:#f3d3dd;overflow:hidden;margin-top:12px}
-.dd-bar i{display:block;height:100%;background:#c93a60;border-radius:4px}
-.dd-hero-next{font-size:13px;font-weight:700;color:#a52b4f;margin-top:8px}
-.dd-sec{font-size:12.5px;font-weight:700;color:var(--sub);margin:16px 0 4px}
-.dd-row{display:flex;align-items:center;gap:12px;width:100%;min-height:54px;border:none;border-bottom:1px solid var(--border);background:none;padding:6px 2px;font-family:inherit;color:var(--text);text-align:left;cursor:pointer}
-.dd-row-main{flex:1;min-width:0}
-.dd-row-t{font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dd-row-s{font-size:12px;color:var(--sub);margin-top:2px}
-.dd-row-d{font-size:15px;font-weight:700;color:var(--accent);white-space:nowrap}
-.dd-row.mile{cursor:default;min-height:46px}
-.dd-row.mile .dd-row-d{color:var(--sub)}
-.dd-row.mile.next .dd-row-t,.dd-row.mile.next .dd-row-d{color:#c93a60}
-.dd-empty{text-align:center;color:var(--sub);font-size:13px;line-height:1.7;padding:18px 0 6px}
+.dd-chip{flex:none;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:15px;border:none;background:var(--aP);color:var(--text);font-size:12.5px;font-weight:500;font-family:inherit;cursor:pointer;white-space:nowrap;max-width:62vw}
+.dd-chip .dd-chip-t{overflow:hidden;text-overflow:ellipsis}
+.dd-chip b{color:var(--dd-ink,var(--accent));font-weight:800;flex:none}
+.dd-chip.add{background:none;border:1px dashed var(--border);color:var(--sub);font-weight:600}
+.dd-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 14px}
+.dd-head .mo-title{text-align:left}
+.dd-add-btn{flex:none;height:40px;padding:0 16px;border-radius:20px;border:none;background:var(--accent);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.dd-list{display:flex;flex-direction:column;gap:10px}
+.dd-card{display:flex;align-items:center;gap:12px;border-radius:16px;background:var(--aP);padding:14px 14px 14px 16px;color:var(--text)}
+.dd-card-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.dd-card-t{font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dd-card-s{font-size:12px;color:var(--sub)}
+.dd-card-n{font-size:12px;font-weight:700;color:var(--dd-ink,var(--accent))}
+.dd-card-v{flex:none;font-size:22px;font-weight:800;color:var(--dd-ink,var(--accent));font-variant-numeric:tabular-nums;letter-spacing:-.3px}
+.dd-edit{flex:none;display:inline-flex;align-items:center;gap:4px;height:34px;padding:0 12px;border-radius:17px;border:1px solid var(--border);background:var(--card);color:var(--text);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.dd-edit svg{width:14px;height:14px}
+.dd-sec{font-size:12.5px;font-weight:700;color:var(--sub);margin:20px 0 6px}
+.dd-mile{display:flex;align-items:center;gap:10px;min-height:44px;border-bottom:1px solid var(--borderL,var(--border));font-size:14px}
+.dd-mile-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dd-mile-t small{color:var(--sub);font-size:12px;margin-left:6px}
+.dd-mile-d{flex:none;font-weight:700;color:var(--sub);font-variant-numeric:tabular-nums}
+.dd-mile.next .dd-mile-d,.dd-mile.next .dd-mile-t b{color:var(--dd-ink,var(--accent))}
+.dd-empty{text-align:center;color:var(--sub);font-size:13.5px;line-height:1.75;padding:22px 0 8px}
+.dd-field{display:flex;flex-direction:column;gap:6px}
+.dd-date-btn{width:100%;box-sizing:border-box;min-height:50px;border-radius:14px;border:1px solid var(--border);background:var(--card);color:var(--text);font-family:inherit;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:space-between;padding:0 16px;cursor:pointer;text-align:left}
+.dd-date-btn span{color:var(--sub);font-size:12px;font-weight:500}
+.dd-cal{margin-top:8px}
+.dd-cal .tmc-head{gap:6px}
+.dd-ym{display:flex;gap:6px;align-items:center}
+.dd-ym select{appearance:none;-webkit-appearance:none;border:1px solid var(--border);background:var(--card);color:var(--text);font-family:inherit;font-size:13px;font-weight:700;border-radius:10px;padding:6px 22px 6px 10px;background-image:linear-gradient(45deg,transparent 50%,var(--sub) 50%),linear-gradient(135deg,var(--sub) 50%,transparent 50%);background-position:calc(100% - 11px) 50%,calc(100% - 7px) 50%;background-size:4px 4px;background-repeat:no-repeat}
+.dd-cal .tmc-nav{min-width:36px;min-height:36px}
+.tmc-cell.dd-today{box-shadow:inset 0 0 0 1.5px var(--sub)}
 .dd-seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.dd-seg button{min-height:58px;border-radius:14px;border:1px solid var(--border);background:var(--bg,#faf7f4);font-family:inherit;color:var(--sub);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer}
-.dd-seg button.on{border:2px solid var(--text);background:var(--card);color:var(--text)}
+.dd-seg button{min-height:52px;border-radius:14px;border:1px solid var(--border);background:var(--card);font-family:inherit;color:var(--sub);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;padding:6px}
+.dd-seg button.on{border:2px solid var(--accent);color:var(--text);background:var(--aP)}
 .dd-seg b{font-size:14px}
 .dd-seg small{font-size:11.5px}
-.dd-check{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text);min-height:44px}
-.dd-check input{width:20px;height:20px;accent-color:var(--accent)}
-.dd-del{background:none;border:none;color:#c0392b;font-family:inherit;font-size:13px;padding:12px;cursor:pointer}
+.dd-preview{border-radius:14px;background:var(--aP);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;color:var(--sub)}
+.dd-preview b{font-size:20px;color:var(--dd-ink,var(--accent));font-weight:800}
+.dd-del{background:none;border:1px solid rgba(192,57,43,.35);border-radius:14px;color:#c0392b;font-family:inherit;font-size:14px;font-weight:600;padding:13px;cursor:pointer}
+body[data-theme="camp"] .dd-del{color:#ffb3aa;border-color:rgba(255,154,143,.45)}
 
 /* 주간 뷰 토글 — cal-month-row 안 좌측에 배치 */
 .cal-view-toggle{position:absolute;left:14px;top:50%;transform:translateY(-50%);display:flex;gap:4px;background:var(--card);border:1px solid var(--borderL);border-radius:14px;padding:3px;font-size:0;z-index:5}
@@ -10755,6 +10763,8 @@ function applyTheme(name){
     }
   });
   // theme-color meta 업데이트 (상태바 색)
+  // D-day 글씨색 — 테마 accent 를 aP 위에서 읽히게(대비 4.5) 조정 [2026-10-22]
+  try{ if(typeof _ddInkFor==='function') r.style.setProperty('--dd-ink', _ddInkFor(t.accent,t.aP)); }catch(_){}
   const tc=document.querySelector('meta[name="theme-color"]');
   if(tc) tc.setAttribute('content', t.bg);
   // is-dark 클래스 안전망 제거 (혹시 남아있을 경우)
@@ -12485,52 +12495,67 @@ function _dayAbsSlots(key,y,m,d){
   return res;
 }
 
-/* ═══ D-day [2026-10-22 시험판] ═══
+/* ═══ D-day [2026-10-22 시험판 — 같은 날 사용자 피드백으로 다시 짬] ═══
    저장 = anniversaries(room_id, created_by, title, date, kind, repeat_yearly) — 방 멤버 모두 보고, 만든 사람만 고치고 지운다(RLS).
-   kind: 'since'(그날을 1일로 세기) | 'since0'(그날을 0일로) | 'countdown'(그날까지 D-). repeat_yearly = countdown 매년(생일).
-   보이기: 관리자 또는 app_config.dday_public='true' — _ddayOn(). 표시: 달 이름 밑 칩 줄(#calDdayRow, 최대 3개)·
-   날짜 칸 분홍 라벨(500일·2주년·다가오는 날, 공휴일 라벨이 없을 때만)·모아보기/추가 시트(#ddCard). */
+   세는 법은 하나로: 앞으로 올 날 'D-N' → 그날 'D-day' → 지난 뒤는 kind 로 갈림
+     kind 'since'     = 'N일'(그날 = 1일) + 100일·n주년 기념일을 날짜 칸·목록에 보여 준다
+     kind 'countdown' = 'D+N' (옛 'since0' 도 여기로)
+   repeat_yearly = 매년(생일 등) — 늘 다음에 올 날까지 'D-N', 그날 'D-day'.
+   (예전엔 '그날부터/그날까지' 중 고르게 해 앞날을 '그날부터'로 만들면 '-28일'로 보였다 — 사용자 "+로 만들었는대 -로 뜨고")
+   색: --dd-ink(applyTheme 이 _ddInkFor 로 넣음 = 테마 accent 를 aP 위에서 대비 4.5 가 될 때까지 명도만 조정). 하트·분홍 고정 없음.
+   보이기: 관리자 또는 app_config.dday_public='true' — _ddayOn(). */
 var _ddays=[], _ddayPublic=null, _ddayRoomId=null, _ddEdit=null, _ddView='list', _ddVer=0, _ddLoadSeq=0, _ddLabelCache={k:null,map:{}};
-var _DD_HEART='<svg class="dd-heart" viewBox="0 0 24 24" fill="#c93a60" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.2 3.1 4.5 6.7 4.5c2.1 0 3.6 1.2 5.3 3.1 1.7-1.9 3.2-3.1 5.3-3.1 3.6 0 5.8 3.7 4.3 7.2C19.5 16.4 12 21 12 21z"/></svg>';
 function _ddayOn(){ return (typeof isAdmin==='function'&&isAdmin()) || _ddayPublic===true; }
 function _ddTodayKey(){ const t=new Date(); return dateKey(t.getFullYear(),t.getMonth(),t.getDate()); }
 /** b - a (일) */
 function _ddDiff(a,b){ const A=parseDateKey(a),B=parseDateKey(b); return Math.round((Date.UTC(B.getFullYear(),B.getMonth(),B.getDate())-Date.UTC(A.getFullYear(),A.getMonth(),A.getDate()))/86400000); }
-function _ddIsSince(x){ return x.kind==='since'||x.kind==='since0'; }
-function _ddOff(x){ return x.kind==='since0'?0:1; }
-/** 그날부터 세기 — 오늘이 몇 일째(그날을 1일로 세면 그날=1) */
-function _ddCount(x,today){ return _ddDiff(x.date,today)+_ddOff(x); }
+function _ddIsSince(x){ return x.kind==='since'&&!x.repeat_yearly; }
 /** 그 해의 같은 월·일(2월 29일은 평년엔 28일) */
 function _ddYearly(base,y){ const p=base.split('-').map(Number); const dim=new Date(y,p[1],0).getDate(); return dateKey(y,p[1]-1,Math.min(p[2],dim)); }
-/** 그날까지 세기 — 다음에 올 날(매년이면 올해 또는 내년) */
-function _ddNextOcc(x,today){
+/** 다음에 올 날 — 매년이면 오늘 이후 가장 가까운 그날, 아니면 그날 */
+function _ddNext(x,today){
   if(!x.repeat_yearly) return x.date;
   const y=parseDateKey(today).getFullYear();
   let k=_ddYearly(x.date,y); if(k<today) k=_ddYearly(x.date,y+1);
   return k<x.date?x.date:k;
 }
-/** 그날부터 세기의 기념일 — 100일 단위 + 매년(n주년), [from,to] 안 */
+/** 오늘 기준 표시 값 — {v:'D-29'|'D-day'|'523일'|'D+12', d: 그날까지 남은 일(음수=지남)} */
+function _ddVal(x,today){
+  const k=_ddNext(x,today), d=_ddDiff(today,k);
+  if(d>0) return {v:'D-'+d.toLocaleString(),d};
+  if(d===0) return {v:_ddIsSince(x)?'1일':'D-day',d};
+  return {v:_ddIsSince(x)?(1-d).toLocaleString()+'일':'D+'+(-d).toLocaleString(),d};
+}
+/** 'N일'로 세는 D-day 의 기념일 — 100일 단위 + 매년(n주년), [from,to] 안 */
 function _ddMilestones(x,from,to){
-  const out=[], off=_ddOff(x);
-  const n0=Math.max(1,Math.ceil((_ddDiff(x.date,from)+off)/100));
-  for(let n=n0*100;n<=40000;n+=100){ const k=shiftDateKey(x.date,n-off); if(k>to) break; if(k>=from) out.push({key:k,label:n+'일'}); }
+  const out=[];
+  const n0=Math.max(1,Math.ceil((_ddDiff(x.date,from)+1)/100));
+  for(let n=n0*100;n<=40000;n+=100){ const k=shiftDateKey(x.date,n-1); if(k>to) break; if(k>=from) out.push({key:k,label:n.toLocaleString()+'일'}); }
   const sy=parseDateKey(x.date).getFullYear(), y1=parseDateKey(to).getFullYear();
   for(let y=Math.max(sy+1,parseDateKey(from).getFullYear());y<=y1;y++){ const k=_ddYearly(x.date,y); if(k>=from&&k<=to) out.push({key:k,label:(y-sy)+'주년'}); }
   out.sort((a,b)=>a.key<b.key?-1:a.key>b.key?1:0);
   return out;
 }
 function _ddShort(t,n){ t=String(t||''); return t.length>n?t.slice(0,n)+'…':t; }
-function _ddDLabel(d){ return d===0?'D-day':(d>0?'D-'+d:'D+'+(-d)); }
-function _ddFmt(k){
+function _ddFmt(k,full){
   const d=parseDateKey(k), w='일월화수목금토'[d.getDay()];
-  return d.getFullYear()===new Date().getFullYear()?`${d.getMonth()+1}월 ${d.getDate()}일(${w})`:`${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()}(${w})`;
+  return (full||d.getFullYear()!==new Date().getFullYear())?`${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${w})`:`${d.getMonth()+1}월 ${d.getDate()}일 (${w})`;
 }
-/** 함께한 날(먼저 만든 순) → 다가오는 날(가까운 순) → 지난 날 */
+/** 순서: 오늘·앞으로 올 날(가까운 순) → 지난 날(먼저 만든 순) */
 function _ddSorted(today){
-  const s=_ddays.filter(_ddIsSince).map(x=>({x,since:true,n:_ddCount(x,today)}));
-  const c=_ddays.filter(x=>!_ddIsSince(x)).map(x=>{ const k=_ddNextOcc(x,today); return {x,since:false,key:k,d:_ddDiff(today,k)}; });
-  c.sort((a,b)=>((a.d<0)-(b.d<0))||(Math.abs(a.d)-Math.abs(b.d)));
-  return s.concat(c);
+  const rows=_ddays.map((x,i)=>({x,i,val:_ddVal(x,today)}));
+  rows.sort((a,b)=>{ const fa=a.val.d>=0, fb=b.val.d>=0; if(fa!==fb) return fa?-1:1; return fa?(a.val.d-b.val.d):(a.i-b.i); });
+  return rows;
+}
+/** 테마 글씨색 — accent 를 aP 위에서 읽히게(대비 4.5) 명도만 조정. 어두운 테마(별밤 캠핑)는 밝게 */
+function _ddRgb(c){ const m=/^#?([0-9a-f]{6})$/i.exec(String(c||'').trim()); return m?[0,2,4].map(i=>parseInt(m[1].substr(i,2),16)):null; }
+function _ddLum(r){ const f=v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)}; return 0.2126*f(r[0])+0.7152*f(r[1])+0.0722*f(r[2]); }
+function _ddInkFor(accent,bg){
+  const a=_ddRgb(accent), b=_ddRgb(bg); if(!a||!b) return accent||'';
+  const cr=c=>{ const x=_ddLum(c),y=_ddLum(b); return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05); };
+  const dark=_ddLum(b)<0.2; let c=a.slice();
+  for(let i=0;i<60&&cr(c)<4.5;i++) c=c.map(v=>dark?v+(255-v)*0.1:v*0.93);
+  return '#'+c.map(v=>Math.round(Math.max(0,Math.min(255,v))).toString(16).padStart(2,'0')).join('');
 }
 /** 날짜 칸 라벨 — cellHtml 이 부른다(그 달만 한 번 계산해 둔다) */
 function _ddayLabelOn(key){
@@ -12540,11 +12565,11 @@ function _ddayLabelOn(key){
     const map={}, y=+key.slice(0,4), m=+key.slice(5,7)-1;
     const from=dateKey(y,m,1), to=dateKey(y,m,new Date(y,m+1,0).getDate());
     const sinces=_ddays.filter(_ddIsSince);
-    sinces.forEach(x=>_ddMilestones(x,from,to).forEach(ms=>{ if(!map[ms.key]) map[ms.key]=(sinces.length>1?_ddShort(x.title,4)+' ':'')+ms.label; }));
-    _ddays.filter(x=>!_ddIsSince(x)).forEach(x=>{
+    _ddays.forEach(x=>{
       const k=x.repeat_yearly?_ddYearly(x.date,y):x.date;
       if(k>=from&&k<=to&&k>=x.date&&!map[k]) map[k]=_ddShort(x.title,6);
     });
+    sinces.forEach(x=>_ddMilestones(x,from,to).forEach(ms=>{ if(!map[ms.key]) map[ms.key]=(sinces.length>1?_ddShort(x.title,3)+' ':'')+ms.label; }));
     _ddLabelCache={k:mk,map};
   }
   return _ddLabelCache.map[key]||'';
@@ -12572,17 +12597,15 @@ function renderDdayRow(){
   const el=document.getElementById('calDdayRow'); if(!el) return;
   if(!_currentRoom||!_ddayOn()){ el.hidden=true; el.innerHTML=''; return; }
   const today=_ddTodayKey();
-  const items=_ddSorted(today).filter(it=>it.since||it.d>=0).slice(0,3);
-  el.innerHTML=items.length?items.map(it=>it.since
-      ?`<button type="button" class="dd-chip since" onclick="openDdaySheet()">${_DD_HEART}${escapeHtml(_ddShort(it.x.title,8))} ${it.n.toLocaleString()}일</button>`
-      :`<button type="button" class="dd-chip" onclick="openDdaySheet()">${escapeHtml(_ddShort(it.x.title,8))} <b>${_ddDLabel(it.d)}</b></button>`).join('')
-    :`<button type="button" class="dd-chip add" onclick="openDdaySheet('add')">+ D-day 추가</button>`;
+  const items=_ddSorted(today).slice(0,3);
+  el.innerHTML=items.length
+    ?items.map(it=>`<button type="button" class="dd-chip" onclick="openDdaySheet()"><span class="dd-chip-t">${escapeHtml(it.x.title)}</span><b>${it.val.v}</b></button>`).join('')
+    :`<button type="button" class="dd-chip add" onclick="openDdaySheet('add')">+ D-day</button>`;
   el.hidden=false;
 }
 function openDdaySheet(view){
   if(!_currentRoom) return;
-  _ddView=view==='add'?'form':'list';
-  _ddEdit=view==='add'?{title:'',date:_ddTodayKey(),kind:'since',repeat_yearly:false}:null;
+  if(view==='add') _ddNewEdit(); else { _ddView='list'; _ddEdit=null; }
   _ddRender();
   const ov=document.getElementById('ddOverlay'), cd=document.getElementById('ddCard');
   if(ov)ov.classList.add('on'); if(cd){ cd.scrollTop=0; cd.classList.add('on'); }
@@ -12598,97 +12621,121 @@ function _ddRender(){
   const b=document.getElementById('ddBody'); if(!b) return;
   b.innerHTML=_ddView==='form'?_ddFormHtml():_ddListHtml();
 }
+function _ddCanEdit(x){ return !!(_currentUser&&(x.created_by===_currentUser.id||isAdmin())); }
+var _DD_PEN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg>';
 function _ddListHtml(){
   const today=_ddTodayKey(), all=_ddSorted(today);
-  let h='<div class="mo-title">우리의 D-day</div>';
-  const first=all.find(it=>it.since);
-  if(first){
-    const x=first.x, n=first.n;
-    const todayMs=_ddMilestones(x,today,today)[0];
-    const next=_ddMilestones(x,shiftDateKey(today,1),shiftDateKey(today,3700))[0];
-    const prev=_ddMilestones(x,x.date,today).pop();
-    const startK=prev?prev.key:x.date;
-    let pct=0, nextTx='';
-    if(next){ const span=Math.max(1,_ddDiff(startK,next.key)); pct=Math.min(100,Math.max(0,Math.round(_ddDiff(startK,today)/span*100))); nextTx=`${next.label}까지 ${_ddDiff(today,next.key)}일 남았어요`; }
-    if(todayMs) nextTx=`오늘은 ${todayMs.label}이에요`;
-    h+=`<div class="dd-hero">
-      <div class="dd-hero-top">${_DD_HEART}${escapeHtml(x.title)}</div>
-      <div class="dd-hero-num"><span>${n.toLocaleString()}</span><span>일</span></div>
-      <div class="dd-hero-sub">${escapeHtml(_ddFmt(x.date))}부터 · ${x.kind==='since0'?'그날을 0일로':'그날을 1일로'} 세요</div>
-      ${next?`<div class="dd-bar"><i style="width:${pct}%"></i></div>`:''}
-      ${nextTx?`<div class="dd-hero-next">${escapeHtml(nextTx)}</div>`:''}
-    </div>`;
-  }
-  const rows=all.filter(it=>it!==first);
-  if(rows.length){
-    h+='<div class="dd-sec">D-day</div>';
-    h+=rows.map(it=>{
+  let h=`<div class="dd-head"><div class="mo-title">D-day</div><button type="button" class="dd-add-btn" onclick="_ddOpenAdd()">+ 추가</button></div>`;
+  if(!all.length){
+    h+='<div class="dd-empty">여행·시험·생일까지 남은 날을 세거나<br>시작한 날부터 며칠째인지 세어 보세요.<br>방 멤버 모두에게 보여요.</div>';
+  }else{
+    h+='<div class="dd-list">'+all.map(it=>{
       const x=it.x;
-      const sub=it.since?`${_ddFmt(x.date)}부터`:`${_ddFmt(it.key)}${x.repeat_yearly?' · 매년':''}`;
-      const right=it.since?`${it.n.toLocaleString()}일`:_ddDLabel(it.d);
-      return `<button type="button" class="dd-row" onclick="_ddOpenEdit('${_jsStr(x.id)}')"><div class="dd-row-main"><div class="dd-row-t">${escapeHtml(x.title)}</div><div class="dd-row-s">${escapeHtml(sub)}</div></div><div class="dd-row-d">${right}</div></button>`;
-    }).join('');
-  }
-  if(first){
-    const ms=_ddMilestones(first.x,today,shiftDateKey(today,3700)).filter(m=>m.key>=today).slice(0,4);
+      let sub=_ddFmt(x.repeat_yearly?_ddNext(x,today):x.date)+(x.repeat_yearly?' · 매년':'');
+      let note='';
+      if(_ddIsSince(x)&&it.val.d<=0){
+        const todayMs=_ddMilestones(x,today,today)[0];
+        const next=_ddMilestones(x,shiftDateKey(today,1),shiftDateKey(today,3700))[0];
+        note=todayMs?`오늘 ${todayMs.label}이에요`:(next?`${next.label}까지 ${_ddDiff(today,next.key)}일`:'');
+        sub=_ddFmt(x.date)+'부터';
+      }
+      const edit=_ddCanEdit(x)?`<button type="button" class="dd-edit" onclick="_ddOpenEdit('${_jsStr(x.id)}')" aria-label="${escapeHtml(x.title)} 편집">${_DD_PEN}편집</button>`:'';
+      return `<div class="dd-card"><div class="dd-card-main"><div class="dd-card-t">${escapeHtml(x.title)}</div><div class="dd-card-s">${escapeHtml(sub)}</div>${note?`<div class="dd-card-n">${escapeHtml(note)}</div>`:''}</div><div class="dd-card-v">${it.val.v}</div>${edit}</div>`;
+    }).join('')+'</div>';
+    // 다가오는 기념일 — 'N일'로 세는 D-day 들의 100일·n주년(가까운 5개)
+    const ms=[];
+    _ddays.filter(_ddIsSince).forEach(x=>_ddMilestones(x,today,shiftDateKey(today,3700)).slice(0,6).forEach(m=>ms.push({x,m})));
+    ms.sort((a,b)=>a.m.key<b.m.key?-1:a.m.key>b.m.key?1:0);
     if(ms.length){
-      h+=`<div class="dd-sec">다가오는 기념일 · ${escapeHtml(_ddShort(first.x.title,10))}</div>`;
-      h+=ms.map((m,i)=>`<div class="dd-row mile${i===0?' next':''}"><div class="dd-row-main"><div class="dd-row-t">${m.label}</div><div class="dd-row-s">${escapeHtml(_ddFmt(m.key))}</div></div><div class="dd-row-d">${_ddDLabel(_ddDiff(today,m.key))}</div></div>`).join('');
+      h+='<div class="dd-sec">다가오는 기념일</div>';
+      h+=ms.slice(0,5).map((o,i)=>{ const d=_ddDiff(today,o.m.key); return `<div class="dd-mile${i===0?' next':''}"><div class="dd-mile-t"><b>${escapeHtml(_ddShort(o.x.title,10))} ${o.m.label}</b><small>${escapeHtml(_ddFmt(o.m.key))}</small></div><div class="dd-mile-d">${d===0?'오늘':'D-'+d.toLocaleString()}</div></div>`; }).join('');
     }
-    h+=`<button type="button" class="dd-row" style="min-height:44px;border-bottom:none" onclick="_ddOpenEdit('${_jsStr(first.x.id)}')"><div class="dd-row-main"><div class="dd-row-s">'${escapeHtml(_ddShort(first.x.title,12))}' 고치기</div></div></button>`;
   }
-  if(!all.length) h+='<div class="dd-empty">사귄 날·결혼기념일처럼 함께한 날을 세거나<br>여행·생일까지 남은 날을 세어 보세요.<br>방 멤버 모두에게 보여요.</div>';
-  h+=`<div class="mo-actions"><button class="btn btn-primary" onclick="_ddOpenAdd()">+ D-day 추가</button><button class="mo-cancel" onclick="closeDdaySheet()">닫기</button></div>`;
+  h+=`<div class="mo-actions"><button class="mo-cancel" onclick="closeDdaySheet()">닫기</button></div>`;
   return h;
 }
-function _ddOpenAdd(){ _ddView='form'; _ddEdit={title:'',date:_ddTodayKey(),kind:'since',repeat_yearly:false}; _ddRender(); }
+function _ddNewEdit(){
+  const t=_ddTodayKey(), d=parseDateKey(t);
+  _ddView='form'; _ddEdit={title:'',date:t,since:true,yearly:false,calOpen:true,calY:d.getFullYear(),calM:d.getMonth()};
+}
+function _ddOpenAdd(){ _ddNewEdit(); _ddRender(); }
 window._ddOpenAdd=_ddOpenAdd;
 function _ddOpenEdit(id){
   const x=_ddays.find(r=>r.id===id); if(!x) return;
-  const mine=_currentUser&&x.created_by===_currentUser.id;
-  if(!mine&&!isAdmin()){ toast('만든 사람만 고칠 수 있어요'); return; }
-  _ddView='form'; _ddEdit={id:x.id,title:x.title||'',date:x.date,kind:x.kind||'countdown',repeat_yearly:!!x.repeat_yearly}; _ddRender();
+  if(!_ddCanEdit(x)){ toast('만든 사람만 고칠 수 있어요'); return; }
+  const d=parseDateKey(x.date);
+  _ddView='form'; _ddEdit={id:x.id,title:x.title||'',date:x.date,since:x.kind==='since',yearly:!!x.repeat_yearly,calOpen:false,calY:d.getFullYear(),calM:d.getMonth()};
+  _ddRender();
 }
 window._ddOpenEdit=_ddOpenEdit;
+/** 앱 미니 달력(할 일 폼 .tmc-* 와 같은 모양) + 연·월 바로 고르기 */
+function _ddCalHtml(){
+  const e=_ddEdit, y=e.calY, m=e.calM, today=_ddTodayKey();
+  const ws=(typeof getWeekStartPref==='function')?getWeekStartPref():0;
+  const fdow=(new Date(y,m,1).getDay()-ws+7)%7, dim=new Date(y,m+1,0).getDate();
+  const dows=ws===1?['월','화','수','목','금','토','일']:['일','월','화','수','목','금','토'];
+  let yo='', mo='';
+  for(let yy=2100;yy>=1900;yy--) yo+=`<option value="${yy}"${yy===y?' selected':''}>${yy}년</option>`;
+  for(let mm=0;mm<12;mm++) mo+=`<option value="${mm}"${mm===m?' selected':''}>${mm+1}월</option>`;
+  let g=`<div class="todo-mini-cal dd-cal"><div class="tmc-head"><button type="button" class="tmc-nav" onclick="_ddCalNav(-1)" aria-label="이전 달">‹</button><div class="dd-ym"><select id="ddCalY" onchange="_ddCalYM()" aria-label="연도">${yo}</select><select id="ddCalM" onchange="_ddCalYM()" aria-label="월">${mo}</select></div><button type="button" class="tmc-nav" onclick="_ddCalNav(1)" aria-label="다음 달">›</button></div><div class="tmc-grid">`;
+  dows.forEach((d,i)=>{ const cls=ws===1?(i===5?'a':(i===6?'s':'')):(i===0?'s':(i===6?'a':'')); g+=`<div class="tmc-dow ${cls}">${d}</div>`; });
+  for(let i=0;i<fdow;i++) g+='<div></div>';
+  for(let dd=1;dd<=dim;dd++){
+    const key=dateKey(y,m,dd), dow=new Date(y,m,dd).getDay();
+    let c='tmc-cell'; if(dow===0||(typeof HOLIDAYS!=='undefined'&&HOLIDAYS[key])) c+=' sun'; else if(dow===6) c+=' sat';
+    if(key===e.date) c+=' sel'; else if(key===today) c+=' dd-today';
+    g+=`<div class="${c}" role="button" tabindex="0" onclick="_ddCalPick('${key}')">${dd}</div>`;
+  }
+  return g+'</div></div>';
+}
+function _ddCalNav(dir){ const e=_ddEdit; if(!e) return; let m=e.calM+dir, y=e.calY; if(m<0){m=11;y--;} if(m>11){m=0;y++;} if(y<1900||y>2100) return; e.calM=m; e.calY=y; _ddRender(); }
+window._ddCalNav=_ddCalNav;
+function _ddCalYM(){ const e=_ddEdit; if(!e) return; const ys=document.getElementById('ddCalY'), ms=document.getElementById('ddCalM'); if(ys) e.calY=+ys.value; if(ms) e.calM=+ms.value; _ddRender(); }
+window._ddCalYM=_ddCalYM;
+function _ddCalPick(k){ const e=_ddEdit; if(!e||!/^\d{4}-\d{2}-\d{2}$/.test(k)) return; e.date=k; e.calOpen=false; _ddRender(); }
+window._ddCalPick=_ddCalPick;
+function _ddToggleCal(){ const e=_ddEdit; if(!e) return; e.calOpen=!e.calOpen; if(e.calOpen){ const d=parseDateKey(e.date); e.calY=d.getFullYear(); e.calM=d.getMonth(); } _ddRender(); }
+window._ddToggleCal=_ddToggleCal;
+function _ddSet(k,v){ const e=_ddEdit; if(!e) return; e[k]=v; _ddRender(); }
+window._ddSet=_ddSet;
+function _ddOnTitle(v){ if(_ddEdit) _ddEdit.title=v; }
+window._ddOnTitle=_ddOnTitle;
 function _ddFormHtml(){
-  const e=_ddEdit, since=_ddIsSince(e);
-  return `<div class="mo-title">${e.id?'D-day 고치기':'D-day 추가'}</div>
-  <div class="mo-form" style="margin-top:18px">
-    <div><div class="mo-label">이름</div><input class="fi" id="ddTitle" maxlength="30" placeholder="예: 우리 사귄 날, 제주 여행" value="${escapeHtml(e.title)}"></div>
-    <div><div class="mo-label">날짜</div><input class="fi" id="ddDate" type="date" min="1900-01-01" max="2100-12-31" value="${escapeHtml(e.date)}"></div>
-    <div><div class="mo-label">세는 방법</div><div class="dd-seg">
-      <button type="button" class="${since?'on':''}" aria-pressed="${since}" onclick="_ddSetMode('since')"><b>그날부터 세기</b><small>+일 · 사귄 날·결혼</small></button>
-      <button type="button" class="${since?'':'on'}" aria-pressed="${!since}" onclick="_ddSetMode('countdown')"><b>그날까지 세기</b><small>D- · 여행·생일</small></button>
+  const e=_ddEdit, today=_ddTodayKey();
+  const pv=_ddVal({date:e.date,kind:e.since?'since':'countdown',repeat_yearly:e.yearly},today);
+  return `<div class="dd-head"><div class="mo-title">${e.id?'D-day 편집':'D-day 추가'}</div></div>
+  <div class="mo-form">
+    <div class="dd-field"><div class="mo-label">이름</div><input class="fi" id="ddTitle" maxlength="30" placeholder="예: 제주 여행, 수능, 엄마 생신, 금연 시작" value="${escapeHtml(e.title)}" oninput="_ddOnTitle(this.value)"></div>
+    <div class="dd-field"><div class="mo-label">날짜</div>
+      <button type="button" class="dd-date-btn" onclick="_ddToggleCal()" aria-expanded="${!!e.calOpen}">${escapeHtml(_ddFmt(e.date,true))}<span>${e.calOpen?'접기':'바꾸기'}</span></button>
+      ${e.calOpen?_ddCalHtml():''}
+    </div>
+    <div class="dd-field"><div class="mo-label">반복</div><div class="dd-seg">
+      <button type="button" class="${e.yearly?'':'on'}" aria-pressed="${!e.yearly}" onclick="_ddSet('yearly',false)"><b>한 번</b><small>여행·시험·시작한 날</small></button>
+      <button type="button" class="${e.yearly?'on':''}" aria-pressed="${e.yearly}" onclick="_ddSet('yearly',true)"><b>매년</b><small>생일·기념일</small></button>
     </div></div>
-    ${since
-      ?`<label class="dd-check"><input type="checkbox" id="ddFromOne" ${e.kind!=='since0'?'checked':''}>그날을 1일로 세기 <span style="color:var(--sub);font-size:12px">(보통 이렇게 세요)</span></label>`
-      :`<label class="dd-check"><input type="checkbox" id="ddYearly" ${e.repeat_yearly?'checked':''}>매년 돌아오는 날 <span style="color:var(--sub);font-size:12px">(생일·기념일)</span></label>`}
+    ${e.yearly?'':`<div class="dd-field"><div class="mo-label">그날이 지나면</div><div class="dd-seg">
+      <button type="button" class="${e.since?'on':''}" aria-pressed="${e.since}" onclick="_ddSet('since',true)"><b>1일, 2일 …</b><small>그날 = 1일 · 100일·1주년 표시</small></button>
+      <button type="button" class="${e.since?'':'on'}" aria-pressed="${!e.since}" onclick="_ddSet('since',false)"><b>D+1, D+2 …</b><small>지난 날수만</small></button>
+    </div></div>`}
+    <div class="dd-preview"><span>오늘 기준</span><b>${pv.v}</b></div>
   </div>
   <div class="mo-actions">
     <button class="btn btn-primary" id="ddSaveBtn" onclick="saveDday()">저장</button>
-    ${e.id?'<button class="dd-del" onclick="deleteDday()">삭제</button>':''}
+    ${e.id?'<button class="dd-del" onclick="deleteDday()">이 D-day 지우기</button>':''}
     <button class="mo-cancel" onclick="_ddBack()">${_ddays.length?'목록으로':'닫기'}</button>
   </div>`;
 }
-function _ddCapture(){
-  const e=_ddEdit; if(!e) return;
-  const t=document.getElementById('ddTitle'), d=document.getElementById('ddDate'), f=document.getElementById('ddFromOne'), y=document.getElementById('ddYearly');
-  if(t) e.title=t.value; if(d) e.date=d.value;
-  if(f) e.kind=f.checked?'since':'since0';
-  if(y) e.repeat_yearly=y.checked;
-}
-function _ddSetMode(m){ _ddCapture(); if(m==='since'){ if(!_ddIsSince(_ddEdit)) _ddEdit.kind='since'; } else _ddEdit.kind='countdown'; _ddRender(); }
-window._ddSetMode=_ddSetMode;
 function _ddBack(){ if(!_ddays.length){ closeDdaySheet(); return; } _ddView='list'; _ddEdit=null; _ddRender(); }
 window._ddBack=_ddBack;
 async function saveDday(){
-  _ddCapture();
   const e=_ddEdit; if(!e||!_currentRoom||!_currentUser) return;
+  const t=document.getElementById('ddTitle'); if(t) e.title=t.value;
   const title=(e.title||'').trim();
-  if(!title){ toast('이름을 입력해주세요'); return; }
+  if(!title){ toast('이름을 입력해주세요'); if(t) t.focus(); return; }
   if(!/^\d{4}-\d{2}-\d{2}$/.test(e.date||'')||e.date<'1900-01-01'||e.date>'2100-12-31'){ toast('날짜를 골라주세요'); return; }
   const btn=document.getElementById('ddSaveBtn'); if(btn) btn.disabled=true;
-  const row={title:title.slice(0,30),date:e.date,kind:_ddIsSince(e)?e.kind:'countdown',repeat_yearly:!_ddIsSince(e)&&!!e.repeat_yearly};
+  const row={title:title.slice(0,30),date:e.date,kind:(!e.yearly&&e.since)?'since':'countdown',repeat_yearly:!!e.yearly};
   try{
     if(e.id){ const {error}=await supa.from('anniversaries').update(row).eq('id',e.id); if(error) throw error; }
     else{ const {error}=await supa.from('anniversaries').insert(Object.assign({},row,{room_id:_currentRoom.id,created_by:_currentUser.id})); if(error) throw error; }
