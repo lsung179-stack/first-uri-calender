@@ -16,12 +16,43 @@
 <meta name="supported-color-schemes" content="light">
 <meta name="theme-color" content="#f3e6cf">
 <script>
-/* 폰트 크기 즉시 적용: body 생성 후 가능한 빠른 시점에 클래스 부착 */
+/* 폰트 크기 즉시 적용(2026-10-23 슬라이더) — uricalv2.fontSize: 'small'(-1)|'normal'(0)|'large'(1)|숫자(-1~2, 0.25 간격).
+   크기 표 [선택자, 작게, 보통, 크게, 손글씨 보통, 손글씨 크게] — 예전 body.fs-small/fs-large 규칙과 같은 값.
+   단계 t 에서 = t<0 ? 보통+(보통-작게)·t : 보통+(크게-보통)·t (1 을 넘으면 같은 기울기로 더 커짐, 2.0 앱 fontScaleLerp 와 같다) */
+window.__FS_RULES=[
+  ['.dp-title',13.5,15,19,16.5],['.dp-meta',10,11,14,12.5],['.dp-member-chip',10,11,14],['.dp-memo',11.5,12,16,13],
+  ['.dp-reaction-chip',11,12,14.5],['.cal-evbar',8.5,9,11.5,11.5,13],['.cal-day-num',12,13,16],
+  ['.ann-detail-title',20,22,27],['.ann-detail-body',13,14,17],['.ann-popup-title',16,17,21],['.ann-popup-body',12,13,16],
+  ['.rs-nav-row-label',12,13,16.5],['.rs-nav-row-sub',10,11,14],['.rs-section-title',11.5,13,15],['.mo-title',18,20,24],
+  ['.mo-sub',12,13,16.5],['.cs-btn-title',13.5,15,18],['.cal-member-tab-name',9,10,13],['.btn',13.5,15,17],
+  ['.dp-add',12.5,14,16],['.dp-empty',12,13,14.5],['.ev-label',10,11,12.5],['.toast',12,13,14.5],
+  ['.onb-title',19,21,23],['.onb-desc',12,13.5,15],['.onb-ft',11,12.5,14],['.onb-ft b',12.5,14,15.5],['.onb-next',13.5,15,17],['.onb-dismiss',11,12.5,14]
+];
+window._fontScaleOf=function(raw){
+  if(raw==='small')return -1; if(raw==='large')return 1;
+  var v=parseFloat(raw); if(!isFinite(v))return 0;
+  v=Math.max(-1,Math.min(2,v)); return Math.round(v/0.25)*0.25;
+};
+window._fsLerp=function(t,n,s,l){ return t<0 ? n+(n-s)*t : n+(l-n)*t; };
+window._applyFontScale=function(t){
+  if(!document.body)return;
+  document.body.classList.remove('fs-small','fs-large');
+  var st=document.getElementById('fsScaleStyle');
+  if(!t){ if(st)st.textContent=''; document.body.classList.remove('fs-on'); return; }
+  if(!st){ st=document.createElement('style'); st.id='fsScaleStyle'; document.head.appendChild(st); }
+  var r=function(v){ return Math.round(v*10)/10; }, css='';
+  window.__FS_RULES.forEach(function(x){
+    css+='body.fs-on '+x[0]+'{font-size:'+r(window._fsLerp(t,x[2],x[1],x[3]))+'px}\n';
+    if(x[4]) css+='body.fs-on.ff-pen '+x[0]+'{font-size:'+r(window._fsLerp(t,x[4],x[1],x[5]||x[3]))+'px}\n';
+  });
+  st.textContent=css;
+  document.body.classList.add('fs-on');
+};
 (function(){
   try{
-    var fs=localStorage.getItem('uricalv2.fontSize');
-    if(fs==='small'||fs==='large'){
-      var apply=function(){if(document.body)document.body.classList.add('fs-'+fs)};
+    var t=window._fontScaleOf(localStorage.getItem('uricalv2.fontSize'));
+    if(t){
+      var apply=function(){ window._applyFontScale(t); };
       if(document.body)apply();
       else document.addEventListener('DOMContentLoaded',apply,{once:true});
     }
@@ -2838,71 +2869,26 @@ body.ff-jua{letter-spacing:-.2px}
 .emoji-pack-preview .emoji-cell svg{width:100%;height:100%;display:block}
 
 /* ═════════════════ 폰트 크기 조절 ═════════════════ */
-/* body.fs-small / body.fs-large 가 붙으면 일자 시트 + 캘린더 셀의 텍스트가 살짝 작/크게.
-   기본(보통)은 클래스 없음. 레이아웃 영향 최소화를 위해 ±1~2px만 조절. */
-body.fs-small .dp-title{font-size:13.5px}
-body.fs-small .dp-meta{font-size:10px}
-body.fs-small .dp-member-chip{font-size:10px}
-body.fs-small .dp-memo{font-size:11.5px}
-body.fs-small .dp-reaction-chip{font-size:11px}
-body.fs-small .cal-evbar{font-size:8.5px}
-body.fs-small .cal-day-num{font-size:12px}
-/* 작게 — 공지/설정/멤버/모달/공통 텍스트 */
-body.fs-small .ann-detail-title{font-size:20px}
-body.fs-small .ann-detail-body{font-size:13px}
-body.fs-small .ann-popup-title{font-size:16px}
-body.fs-small .ann-popup-body{font-size:12px}
-body.fs-small .rs-nav-row-label{font-size:12px}
-body.fs-small .rs-nav-row-sub{font-size:10px}
-body.fs-small .rs-section-title{font-size:11.5px}
-body.fs-small .mo-title{font-size:18px}
-body.fs-small .mo-sub{font-size:12px}
-body.fs-small .cs-btn-title{font-size:13.5px}
-body.fs-small .cal-member-tab-name{font-size:9px}
-body.fs-small .btn{font-size:13.5px}
-body.fs-small .dp-add{font-size:12.5px}
-body.fs-small .dp-empty{font-size:12px}
-body.fs-small .ev-label{font-size:10px}
-body.fs-small .toast{font-size:12px}
-/* 온보딩(환영 슬라이드) 텍스트 */
-body.fs-small .onb-title{font-size:19px}
-body.fs-small .onb-desc{font-size:12px}
-body.fs-small .onb-ft{font-size:11px}
-body.fs-small .onb-ft b{font-size:12.5px}
-body.fs-small .onb-next{font-size:13.5px}
-body.fs-small .onb-dismiss{font-size:11px}
-
-body.fs-large .dp-title{font-size:19px}
-body.fs-large .dp-meta{font-size:14px}
-body.fs-large .dp-member-chip{font-size:14px}
-body.fs-large .dp-memo{font-size:16px}
-body.fs-large .dp-reaction-chip{font-size:14.5px}
-body.fs-large .cal-evbar{font-size:11.5px}
-body.fs-large .cal-day-num{font-size:16px}
-/* 크게 — 공지/설정/멤버/모달/공통 텍스트 (한 단계 더 크게) */
-body.fs-large .ann-detail-title{font-size:27px}
-body.fs-large .ann-detail-body{font-size:17px}
-body.fs-large .ann-popup-title{font-size:21px}
-body.fs-large .ann-popup-body{font-size:16px}
-body.fs-large .rs-nav-row-label{font-size:16.5px}
-body.fs-large .rs-nav-row-sub{font-size:14px}
-body.fs-large .rs-section-title{font-size:15px}
-body.fs-large .mo-title{font-size:24px}
-body.fs-large .mo-sub{font-size:16.5px}
-body.fs-large .cs-btn-title{font-size:18px}
-body.fs-large .cal-member-tab-name{font-size:13px}
-body.fs-large .btn{font-size:17px}
-body.fs-large .dp-add{font-size:16px}
-body.fs-large .dp-empty{font-size:14.5px}
-body.fs-large .ev-label{font-size:12.5px}
-body.fs-large .toast{font-size:14.5px}
-/* 온보딩(환영 슬라이드) 텍스트 */
-body.fs-large .onb-title{font-size:23px}
-body.fs-large .onb-desc{font-size:15px}
-body.fs-large .onb-ft{font-size:14px}
-body.fs-large .onb-ft b{font-size:15.5px}
-body.fs-large .onb-next{font-size:17px}
-body.fs-large .onb-dismiss{font-size:14px}
+/* 2026-10-23: 작게·보통·크게 3단계(body.fs-small/fs-large 고정 62줄) → 슬라이더 13칸(-1~2).
+   크기 표는 맨 위 <head> 스크립트의 __FS_RULES(선택자·작게·보통·크게·손글씨 보통·손글씨 크게),
+   지금 단계 값은 _applyFontScale 이 <style id="fsScaleStyle"> 에 'body.fs-on 선택자{font-size}' 로 써 넣는다.
+   (-1·1 에서는 예전 작게·크게 값과 똑같다. 2 = 새 최대) */
+/* 미리보기·눈금 */
+.fsz-row{display:flex;align-items:flex-start;gap:8px}
+.fsz-row .gop-val{margin-top:3px}
+.fsz-a{font-weight:700;color:var(--sub);line-height:1;flex:none}
+.fsz-a.sm{font-size:13px;margin-top:4px}.fsz-a.lg{font-size:20px;margin-top:0}
+.fsz-track{flex:1;min-width:0;display:flex;flex-direction:column;gap:13px;padding-top:9px}
+.fsz-track .gop-range{width:100%;flex:none;height:4px}
+.fsz-ticks{position:relative;height:15px;margin:0 11px}
+.fsz-ticks span{position:absolute;top:0;transform:translateX(-50%);font-size:11px;color:var(--sub);white-space:nowrap}
+.fsz-preview{margin-top:12px;display:flex;gap:14px;align-items:flex-start;padding:12px 14px 14px;border:1px solid var(--border);border-radius:12px;background:var(--card)}
+.fsz-pv-cell{width:64px;flex:none;display:flex;flex-direction:column;gap:4px;text-align:center}
+.fsz-pv-num{color:var(--text);font-weight:500;font-variant-numeric:tabular-nums;line-height:1.2}
+.fsz-pv-bar{background:var(--accent);color:#fff;border-radius:3px;text-align:left;padding:1px 4px;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden}
+.fsz-pv-txt{flex:1;min-width:0}
+.fsz-pv-t{font-weight:700;color:var(--text);line-height:1.35}
+.fsz-pv-s{color:var(--sub);margin-top:3px;line-height:1.5}
 
 /* ═════════════════ 블럭 내 텍스트 정렬 ═════════════════ */
 /* 기본: left (현재 cal-evbar 스타일). center/right는 body 클래스로 토글. */
@@ -6363,10 +6349,19 @@ try{var _cp=window.Capacitor&&window.Capacitor.getPlatform&&window.Capacitor.get
 
     <div class="rs-section">
       <div class="rs-section-title">폰트 크기</div>
-      <div class="dm-row" id="fontSizeRow">
-        <button class="dm-btn" data-fs="small" onclick="onFontSizeSelect('small')">작게</button>
-        <button class="dm-btn" data-fs="normal" onclick="onFontSizeSelect('normal')">보통</button>
-        <button class="dm-btn" data-fs="large" onclick="onFontSizeSelect('large')">크게</button>
+      <div class="fsz-row">
+        <span class="fsz-a sm" aria-hidden="true">가</span>
+        <div class="fsz-track">
+          <input type="range" class="gop-range" id="fontScaleRange" min="-1" max="2" step="0.25" value="0"
+                 aria-label="폰트 크기" oninput="onFontScaleInput(this.value)" onchange="onFontScaleInput(this.value)">
+          <div class="fsz-ticks" aria-hidden="true"><span style="left:0">작게</span><span style="left:33.333%">보통</span><span style="left:66.667%">크게</span><span style="left:100%">최대</span></div>
+        </div>
+        <span class="fsz-a lg" aria-hidden="true">가</span>
+        <span class="gop-val" id="fontScaleVal">100%</span>
+      </div>
+      <div class="fsz-preview" aria-hidden="true">
+        <div class="fsz-pv-cell"><div class="fsz-pv-num" id="fszPvNum">22</div><div class="fsz-pv-bar" id="fszPvBar">치과</div></div>
+        <div class="fsz-pv-txt"><div class="fsz-pv-t" id="fszPvT">치과 정기검진</div><div class="fsz-pv-s" id="fszPvS">오후 3:00 · 메모가 이렇게 보여요</div></div>
       </div>
     </div>
 
@@ -9511,7 +9506,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     applyTheme('vintage');
   }catch(e){}
   // 폰트 크기 초기 적용 (head 인라인 스크립트가 못 잡은 케이스 안전망)
-  try{ applyFontSize(getFontSizePref()); }catch(e){}
+  try{ window._applyFontScale(getFontScale()); }catch(e){}
   // 글꼴 초기 적용 (head 인라인 스크립트가 못 잡은 케이스 안전망)
   try{ applyFontFamily(getFontFamilyPref()); }catch(e){}
   // 일정 텍스트 정렬 초기 적용
@@ -10555,37 +10550,40 @@ function getContrastTextColor(hex){
 
 
 /* ── 폰트 크기 (작게 / 보통 / 크게) ── */
-function getFontSizePref(){
-  try{
-    const v=localStorage.getItem('uricalv2.fontSize');
-    if(v==='small'||v==='large')return v;
-    return 'normal';
-  }catch(e){ return 'normal'; }
+/* 폰트 크기(2026-10-23 슬라이더) — 단계 -1(예전 작게)·0(보통)·1(예전 크게)·2(새 최대), 0.25 간격 13칸.
+   저장: -1/0/1 은 예전 문자열(small|normal|large) 그대로(옛 앱·2.0 앱과 호환), 그 밖은 숫자. 2.0 앱과 같은 규칙. */
+function getFontScale(){ try{ return window._fontScaleOf(localStorage.getItem('uricalv2.fontSize')); }catch(e){ return 0; } }
+/** 예전 3단계 이름(다른 곳에서 부르던 값) — 가장 가까운 단계 */
+function getFontSizePref(){ const t=getFontScale(); return t<=-0.5?'small':(t>=0.5?'large':'normal'); }
+function _fontScaleRaw(t){ return t===-1?'small':(t===0?'normal':(t===1?'large':String(t))); }
+function setFontScale(t){
+  t=window._fontScaleOf(String(t));
+  try{ localStorage.setItem('uricalv2.fontSize', _fontScaleRaw(t)); }catch(e){}
+  window._applyFontScale(t);
 }
-function setFontSizePref(value){
-  const v=(value==='small'||value==='large')?value:'normal';
-  try{ localStorage.setItem('uricalv2.fontSize', v); }catch(e){}
-  applyFontSize(v);
-}
-function applyFontSize(v){
-  if(!document.body)return;
-  document.body.classList.remove('fs-small','fs-large');
-  if(v==='small')document.body.classList.add('fs-small');
-  else if(v==='large')document.body.classList.add('fs-large');
-}
-function onFontSizeSelect(value){
-  if(!['small','normal','large'].includes(value))return;
-  setFontSizePref(value);
+/** 예전 이름 그대로 부르는 곳(가져오기 등)을 위해 남김 */
+function setFontSizePref(value){ setFontScale(value==='small'?-1:(value==='large'?1:0)); }
+function applyFontSize(v){ window._applyFontScale(typeof v==='number'?v:window._fontScaleOf(v)); }
+/** 표시 % — 날짜 숫자 크기(작게 12 · 보통 13 · 크게 16) 기준(2.0 앱과 같음) */
+function _fontScalePct(t){ return Math.round(window._fsLerp(t,13,12,16)/13*100); }
+function onFontScaleInput(v){
+  const t=window._fontScaleOf(String(v));
+  if(t!==getFontScale()) setFontScale(t);
   syncFontSizeButtons();
 }
 function syncFontSizeButtons(){
-  const pref=getFontSizePref();
-  const row=document.getElementById('fontSizeRow');
-  if(!row)return;
-  row.querySelectorAll('.dm-btn').forEach(b=>{
-    if(b.dataset.fs===pref)b.classList.add('on');
-    else b.classList.remove('on');
-  });
+  const t=getFontScale();
+  const rg=document.getElementById('fontScaleRange'); if(rg&&+rg.value!==t) rg.value=String(t);
+  const val=document.getElementById('fontScaleVal'); if(val) val.textContent=_fontScalePct(t)+'%';
+  if(rg) rg.setAttribute('aria-valuetext',_fontScalePct(t)+'%');
+  if(rg) rg.style.background=`linear-gradient(to right,var(--accent) ${(t+1)/3*100}%,var(--border) ${(t+1)/3*100}%)`;
+  const pen=document.body&&document.body.classList.contains('ff-pen');
+  const L=(n,sm,lg)=>Math.round(window._fsLerp(t,n,sm,lg)*10)/10+'px';
+  const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.style.fontSize=v; };
+  set('fszPvNum',L(13,12,16));
+  set('fszPvBar',pen?L(11.5,8.5,13):L(9,8.5,11.5));
+  set('fszPvT',pen?L(16.5,13.5,19):L(15,13.5,19));
+  set('fszPvS',pen?L(13,11.5,16):L(12,11.5,16));
 }
 
 /* ── 주 시작 요일 (0=일, 1=월) ── */
