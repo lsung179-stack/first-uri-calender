@@ -42,10 +42,11 @@ window._applyFontScale=function(t){
   if(!document.body)return;
   document.body.classList.remove('fs-small','fs-large');
   var st=document.getElementById('fsScaleStyle');
-  if(!t){ if(st)st.textContent=''; document.body.classList.remove('fs-on'); document.documentElement.style.removeProperty('--fsk'); return; }
+  if(!t){ if(st)st.textContent=''; document.body.classList.remove('fs-on'); document.documentElement.style.removeProperty('--fsk'); document.documentElement.style.removeProperty('--fsk-r'); return; }
   window._fsT=t;
-  document.documentElement.style.setProperty('--fsk',String(Math.round(Math.min(window._fsK(t),window._fsCap())*1000)/1000));
-  if(!window._fsResizeOn){ window._fsResizeOn=true; window.addEventListener('resize',function(){ if(window._fsT) document.documentElement.style.setProperty('--fsk',String(Math.round(Math.min(window._fsK(window._fsT),window._fsCap())*1000)/1000)); }); }
+  window._fsSet=function(){ var k=String(Math.round(Math.min(window._fsK(window._fsT),window._fsCap())*1000)/1000); document.documentElement.style.setProperty('--fsk',k); document.documentElement.style.setProperty('--fsk-r',k); };
+  window._fsSet();
+  if(!window._fsResizeOn){ window._fsResizeOn=true; window.addEventListener('resize',function(){ if(window._fsT) window._fsSet(); }); }
   if(!st){ st=document.createElement('style'); st.id='fsScaleStyle'; document.head.appendChild(st); }
   var r=function(v){ return Math.round(v*10)/10; }, css='';
   window.__FS_RULES.forEach(function(x){
@@ -885,6 +886,9 @@ body.fs-on .r-card-name{white-space:normal;word-break:keep-all;overflow-wrap:any
 /* 캘린더 그리드 */
 /* 글씨 크기 조절(--fsk)에서 빼는 곳 — 캘린더 칸 안은 __FS_RULES 표로 따로 맞추고, 인쇄 달력·테마 미리보기는 정해진 그림 크기 */
 #calGrid,#coPreviewBody,#skpPhone,.fsk-fixed{--fsk:1}
+/* 달 표시줄(검색·‹ 월 ›·월|주·오늘)은 아이콘으로 꽉 찬 한 줄이라 1.15 까지만(좁은 폰 최대 단계에서 '‹'가 검색 아이콘과 겹쳤다) — 2.0 앱 MonthRow 와 같음 */
+.cal-month-row{--fsk:min(var(--fsk-r,1),1.15)}
+@media (max-width:374px){.cal-month-row{--fsk:1}}   /* 아이폰 SE 처럼 좁은 폰은 이 줄만 보통 크기(오늘 칩이 뜨면 자리가 없다) */
 /* 글씨를 키우면 한국어는 띄어쓰기에서만 줄을 바꾼다('새 일정 추 / 가' 처럼 낱말 중간에서 끊기지 않게). 너무 긴 낱말만 아무 데서나 */
 body.fs-on{word-break:keep-all;overflow-wrap:anywhere}
 body.fs-on #calGrid{word-break:normal;overflow-wrap:normal}
