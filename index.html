@@ -3371,13 +3371,11 @@ body[data-theme="camp"] .rpal-row{background:#2c4a82}
 .ev-dd-hint{font-size:11px;font-weight:400;color:var(--sub);margin-left:6px}
 .ev-dd-seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .ev-dd-seg button{min-height:42px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--sub);font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
-.ev-dd-seg button b{font-size:15px;margin-right:2px}
+.ev-dd-seg button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:4px 2px}
+.ev-dd-seg button small{font-size:10.5px;font-weight:500;color:var(--sub);white-space:nowrap}
 .ev-dd-seg button.on{border:2px solid var(--accent);background:var(--aP);color:var(--text)}
-.ev-dd-check{display:flex;align-items:flex-start;gap:8px;font-size:13.5px;color:var(--text);margin-top:10px}
-.ev-dd-check input{width:19px;height:19px;flex:none;accent-color:var(--accent);margin:1px 0 0}
-.ev-dd-check small{display:block;font-size:11.5px;color:var(--sub);margin-top:1px}
 .ev-dd-preview{margin-top:8px;border-radius:10px;background:var(--aP);padding:9px 12px;font-size:12.5px;color:var(--sub);line-height:1.55}
-.ev-dd-preview b{color:var(--dd-ink,var(--accent));font-size:14px}
+.ev-dd-preview b{color:var(--dd-ink,var(--accent));font-size:14px;white-space:nowrap}
 .ev-dd-preview:empty{display:none}
 .dd-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:1px;flex:none}
 .cal-dday-row{display:flex;gap:6px;padding:2px 12px 6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
@@ -5191,13 +5189,12 @@ try{var _cp=window.Capacitor&&window.Capacitor.getPlatform&&window.Capacitor.get
       </div>
       <!-- D-day 로도 보기(2026-10-23) — 관리자 또는 dday_public. 하루·기간 + 반복 안 함/매년일 때만 -->
       <div class="ev-form-row" id="evDdayRow" style="display:none;margin-top:6px">
-        <div class="ev-label">D-day <span class="ev-dd-hint">캘린더 위 줄에 남은 날·지난 날로 보여요</span></div>
+        <div class="ev-label">D-day <span class="ev-dd-hint">캘린더 위 줄에 표시해요</span></div>
         <div class="ev-dd-seg" role="group" aria-label="D-day">
           <button type="button" data-dd="off" onclick="setEvDday(null)">안 함</button>
-          <button type="button" data-dd="down" onclick="setEvDday('down')"><b>−</b> 남은 날</button>
-          <button type="button" data-dd="up" onclick="setEvDday('since')"><b>+</b> 지난 날</button>
+          <button type="button" data-dd="down" onclick="setEvDday('down')">D-day<small>D-3 → D-day → D+1</small></button>
+          <button type="button" data-dd="since" onclick="setEvDday('since')">N일째<small>그날이 1일째</small></button>
         </div>
-        <label class="ev-dd-check" id="evDdayDay1"><input type="checkbox" id="evDdayDay1Chk" onchange="setEvDday(this.checked?'since':'since0')"><span>시작한 날을 1일로 세기 <small>끄면 D-day, D+1, D+2 …</small></span></label>
         <div class="ev-dd-preview" id="evDdayPreview"></div>
       </div>
       <!-- 하루 모드 — 날짜 이동용 미니 달력 -->
@@ -12526,7 +12523,7 @@ function _dayAbsSlots(key,y,m,d){
    저장 = anniversaries(room_id, created_by, title, date, kind, repeat_yearly) — 방 멤버 모두 보고, 만든 사람만 고치고 지운다(RLS).
    세는 법은 하나로: 앞으로 올 날 'D-N' → 그날 'D-day' → 지난 뒤는 kind 로 갈림
      kind 'since'     = 'N일'(그날 = 1일) + 100일·n주년 기념일을 날짜 칸·목록에 보여 준다
-     kind 'countdown' = 'D+N' (옛 'since0' 도 여기로)
+     kind 'countdown' = 'D+N' (옛 'since0' 도 여기로 — 2026-10-23 사용자 "D-day / N일째 이렇게 가는게 더 깔끔" 으로 선택지는 둘뿐)
    repeat_yearly = 매년(생일 등) — 늘 다음에 올 날까지 'D-N', 그날 'D-day'.
    (예전엔 '그날부터/그날까지' 중 고르게 해 앞날을 '그날부터'로 만들면 '-28일'로 보였다 — 사용자 "+로 만들었는대 -로 뜨고")
    색: --dd-ink(applyTheme 이 _ddInkFor 로 넣음 = 테마 accent 를 aP 위에서 대비 4.5 가 될 때까지 명도만 조정). 하트·분홍 고정 없음.
@@ -12537,8 +12534,8 @@ function _ddTodayKey(){ const t=new Date(); return dateKey(t.getFullYear(),t.get
 /** b - a (일) */
 function _ddDiff(a,b){ const A=parseDateKey(a),B=parseDateKey(b); return Math.round((Date.UTC(B.getFullYear(),B.getMonth(),B.getDate())-Date.UTC(A.getFullYear(),A.getMonth(),A.getDate()))/86400000); }
 function _ddIsSince(x){ return x.kind==='since'&&!x.repeat_yearly; }
-/** 지난 날 세기(+) — 'since'(그날=1일) | 'since0'(D+N). 나머지는 남은 날 세기(−) */
-function _ddIsUp(x){ return (x.kind==='since'||x.kind==='since0')&&!x.repeat_yearly; }
+/** 'N일째'로 세는 D-day(옛 이름 유지) — 'since' 만. 'since0'(옛 D+N)은 D-day 와 같은 표시 */
+function _ddIsUp(x){ return _ddIsSince(x); }
 /** 그 해의 같은 월·일(2월 29일은 평년엔 28일) */
 function _ddYearly(base,y){ const p=base.split('-').map(Number); const dim=new Date(y,p[1],0).getDate(); return dateKey(y,p[1]-1,Math.min(p[2],dim)); }
 /** 다음에 올 날 — 매년이면 오늘 이후 가장 가까운 그날, 아니면 그날 */
@@ -12552,8 +12549,8 @@ function _ddNext(x,today){
 function _ddVal(x,today){
   const k=_ddNext(x,today), d=_ddDiff(today,k);
   if(d>0) return {v:'D-'+d.toLocaleString(),d};
-  if(d===0) return {v:_ddIsSince(x)?'1일':'D-day',d};
-  return {v:_ddIsSince(x)?(1-d).toLocaleString()+'일':'D+'+(-d).toLocaleString(),d};
+  if(d===0) return {v:_ddIsSince(x)?'1일째':'D-day',d};
+  return {v:_ddIsSince(x)?(1-d).toLocaleString()+'일째':'D+'+(-d).toLocaleString(),d};
 }
 /** 'N일'로 세는 D-day 의 기념일 — 100일 단위 + 매년(n주년), [from,to] 안 */
 function _ddMilestones(x,from,to){
@@ -12600,7 +12597,7 @@ function _ddayLabelOn(key){
   return _ddLabelCache.map[key]||'';
 }
 /* D-day = 'D-day 로도 보기'를 켠 일정(events.dday, 2026-10-23 — 사용자 "일정생성이랑 디데이랑 통합 … 일정바가 생성되고 상단 상자 색상도 일정바 색상이랑 동일하게").
-   events.dday: 'down'(남은 날) | 'since'(지난 날, 그날=1일) | 'since0'(지난 날, D+N). 하루·기간 + 반복 안 함/매년만.
+   events.dday: 'down'(D-day: D-N → D-day → D+N) | 'since'(N일째: 그날=1일째, 100일·n주년) | 'since0'(옛 값, D-day 와 같은 표시). 하루·기간 + 반복 안 함/매년만.
    함께 일정(참여자마다 한 줄)·기간(날짜마다 한 줄)은 한 개로 모은다(shared_id / range_group_id, 기간은 첫날).
    예전 따로 만든 D-day(anniversaries)는 더 이상 읽지 않는다. */
 async function loadDdays(){
@@ -12728,7 +12725,7 @@ function _ddListHtml(){
       const x=it.x;
       let sub=_ddFmt(x.repeat_yearly?_ddNext(x,today):x.date)+(x.repeat_yearly?' · 매년':'');
       let note='';
-      if(_ddIsUp(x)&&it.val.d>0) note=`시작하면 ${_ddIsSince(x)?'1일':'D-day'}부터 세요`;
+      if(_ddIsSince(x)&&it.val.d>0) note=`${_ddFmt(x.date)}이 1일째예요`;
       if(_ddIsSince(x)&&it.val.d<=0){
         const todayMs=_ddMilestones(x,today,today)[0];
         const next=_ddMilestones(x,shiftDateKey(today,1),shiftDateKey(today,3700))[0];
@@ -12771,7 +12768,7 @@ function _ddOpenEdit(evId,date){
 window._ddOpenEdit=_ddOpenEdit;
 
 /* ── 일정 폼의 D-day 줄 ── */
-var _evDday=null;   // null | 'down' | 'since' | 'since0'
+var _evDday=null;   // null | 'down'(D-day) | 'since'(N일째)
 /** D-day 를 켤 수 있는 일정 — 하루·기간 + 반복 안 함/매년 */
 function _evDdayAllowed(){
   if(typeof _ddayOn!=='function'||!_ddayOn()) return false;
@@ -12780,17 +12777,15 @@ function _evDdayAllowed(){
 }
 function _evDdayEffective(){ return _evDdayAllowed()?(_evDday||null):null; }
 function _evDdayDate(){ return (_selectedMode==='range'&&_rangeStart)?_rangeStart:(_dayDate||_selectedDate); }
-function setEvDday(v){ _evDday=v||null; renderEvDdayRow(); }
+function setEvDday(v){ _evDday=(v==='down'||v==='since')?v:null; renderEvDdayRow(); }
 window.setEvDday=setEvDday;
 function renderEvDdayRow(){
   const row=document.getElementById('evDdayRow'); if(!row) return;
   const ok=_evDdayAllowed();
   row.style.display=ok?'':'none';
   if(!ok) return;
-  const v=_evDday, up=v==='since'||v==='since0';
-  row.querySelectorAll('.ev-dd-seg button').forEach(b=>{ const k=b.dataset.dd; const on=(k==='off'&&!v)||(k==='down'&&v==='down')||(k==='up'&&up); b.classList.toggle('on',on); b.setAttribute('aria-pressed',on?'true':'false'); });
-  const c1=document.getElementById('evDdayDay1'); if(c1) c1.style.display=up?'':'none';
-  const chk=document.getElementById('evDdayDay1Chk'); if(chk) chk.checked=v!=='since0';
+  const v=_evDday;
+  row.querySelectorAll('.ev-dd-seg button').forEach(b=>{ const k=b.dataset.dd; const on=(k==='off'&&!v)||k===v; b.classList.toggle('on',on); b.setAttribute('aria-pressed',on?'true':'false'); });
   const pv=document.getElementById('evDdayPreview'); if(!pv) return;
   if(!v){ pv.innerHTML=''; return; }
   const date=_evDdayDate(); if(!date){ pv.innerHTML=''; return; }
@@ -12799,8 +12794,8 @@ function renderEvDdayRow(){
   let tail='';
   if(v==='down'||yearly){ const k=_ddNext(x,today); tail=k===today?' · 오늘이 그날이에요':` → ${escapeHtml(_ddFmt(k))} <b>D-day</b>`; }
   else{
-    const d=_ddDiff(today,date), off=v==='since'?1:0, c=Math.max(0,-d)+off, n=(Math.floor(c/100)+1)*100, k=shiftDateKey(date,n-off);
-    tail=d>0?` → ${escapeHtml(_ddFmt(date))}부터 <b>${v==='since'?'1일':'D-day'}</b>`:` → ${escapeHtml(_ddFmt(k))} <b>${_ddVal(x,k).v}</b>`;
+    const d=_ddDiff(today,date), c=Math.max(0,-d)+1, n=(Math.floor(c/100)+1)*100, k=shiftDateKey(date,n-1);
+    tail=d>0?` → ${escapeHtml(_ddFmt(date))} <b>1일째</b>`:` → ${escapeHtml(_ddFmt(k))} <b>${_ddVal(x,k).v}</b>`;
   }
   pv.innerHTML=`캘린더 위에 오늘 <b>${escapeHtml(now)}</b>${tail}`;
 }
@@ -14614,7 +14609,7 @@ async function openEditEvent(eventId){
   let ev=evs.find(e=>e.id===eventId);
   if(!ev)ev=Object.values(_events).flat().find(e=>e.id===eventId);
   if(!ev){toast('일정 정보를 찾지 못했어요');return}
-  _evDday=ev.dday||null;
+  _evDday=ev.dday==='since0'?'down':(ev.dday||null);   // 옛 'since0'(D+N)은 D-day 와 같은 표시라 합침
   // 편집 대상으로 열었던 날짜(반복 일정의 가상 발생일이면 origin의 실제 날짜와 다름)
   const viewDate=_selectedDate;
   _editOccurrenceScope=null;
