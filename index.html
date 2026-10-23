@@ -3372,7 +3372,6 @@ body[data-theme="camp"] .rpal-row{background:#2c4a82}
 .ev-dd-seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .ev-dd-seg button{min-height:42px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--sub);font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
 .ev-dd-seg button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:4px 2px}
-.ev-dd-seg button small{font-size:10.5px;font-weight:500;color:var(--sub);white-space:nowrap}
 .ev-dd-seg button.on{border:2px solid var(--accent);background:var(--aP);color:var(--text)}
 .ev-dd-preview{margin-top:8px;border-radius:10px;background:var(--aP);padding:9px 12px;font-size:12.5px;color:var(--sub);line-height:1.55}
 .ev-dd-preview b{color:var(--dd-ink,var(--accent));font-size:14px;white-space:nowrap}
@@ -5192,8 +5191,8 @@ try{var _cp=window.Capacitor&&window.Capacitor.getPlatform&&window.Capacitor.get
         <div class="ev-label">D-day <span class="ev-dd-hint">캘린더 위 줄에 표시해요</span></div>
         <div class="ev-dd-seg" role="group" aria-label="D-day">
           <button type="button" data-dd="off" onclick="setEvDday(null)">안 함</button>
-          <button type="button" data-dd="down" onclick="setEvDday('down')">D-day<small>D-3 → D-day → D+1</small></button>
-          <button type="button" data-dd="since" onclick="setEvDday('since')">N일째<small>그날이 1일째</small></button>
+          <button type="button" data-dd="down" onclick="setEvDday('down')">D-day</button>
+          <button type="button" data-dd="since" onclick="setEvDday('since')">N일째</button>
         </div>
         <div class="ev-dd-preview" id="evDdayPreview"></div>
       </div>
