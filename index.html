@@ -12081,6 +12081,7 @@ function shiftDateKey(key,diff){
 
 /* ── 캘린더 렌더 ── */
 function renderMonthly(){
+  if(typeof _ddView!=='undefined'&&_ddView!==_ddViewKey()){ try{ renderDdayRow(); }catch(_){} }   // 멤버 탭이 바뀌면 D-day 줄도
   document.getElementById('calYear').textContent=_calYear+'년';
   document.getElementById('calMonthName').textContent=MONTH_NAMES[_calMonth];
   
@@ -12527,6 +12528,20 @@ function _dayAbsSlots(key,y,m,d){
    (예전엔 '그날부터/그날까지' 중 고르게 해 앞날을 '그날부터'로 만들면 '-28일'로 보였다 — 사용자 "+로 만들었는대 -로 뜨고")
    색: --dd-ink(applyTheme 이 _ddInkFor 로 넣음 = 테마 accent 를 aP 위에서 대비 4.5 가 될 때까지 명도만 조정). 하트·분홍 고정 없음.
    보이기: 관리자 또는 app_config.dday_public='true' — _ddayOn(). */
+/* 멤버 탭(2026-10-23 사용자 "디데이를 함께로 선정한 멤버만 해당 프로필에서 표시하고 일정이랑 똑같이 사용자마다 색상을 다르게"):
+   _ddAll = 방의 D-day 전부(멤버별 행 색 byKey 포함), _ddays = 지금 보는 멤버 탭에 맞춘 것(_ddSync).
+   멤버 탭에서는 그 멤버가 낀 일정만(함께 = 참여자, 혼자 = 그 사람) — 일정 바 필터와 같은 규칙. '전체'는 모두.
+   색은 내 줄 → (내가 안 낀 일정이면) 보고 있는 멤버 줄 → 첫 줄. 함께 일정의 '나만 이 색으로 보기'는 내 줄 색만 바꾸므로 그대로 따라온다. */
+var _ddAll=[], _ddView=null;
+function _ddViewKey(){ return (typeof _viewingMember!=='undefined'&&_viewingMember)||'all'; }
+function _ddSync(){
+  const v=_ddViewKey(), me=_currentUser&&_currentUser.id;
+  _ddView=v;
+  _ddays=_ddAll.filter(x=>v==='all'||x.members.includes(v)).map(x=>{
+    const r=(me&&x.byKey[me])||x.byKey[v]||x.byKey[x.members[0]]||{};
+    return Object.assign({},x,{color:r.color,outline:r.outline,evId:r.evId||x.evId,date:r.date||x.date});
+  });
+}
 var _ddays=[], _ddayPublic=null, _ddayRoomId=null, _ddVer=0, _ddLoadSeq=0, _ddLabelCache={k:null,map:{}};
 function _ddayOn(){ return (typeof isAdmin==='function'&&isAdmin()) || _ddayPublic===true; }
 function _ddTodayKey(){ const t=new Date(); return dateKey(t.getFullYear(),t.getMonth(),t.getDate()); }
@@ -12567,8 +12582,8 @@ function _ddFmt(k,full){
   return (full||d.getFullYear()!==new Date().getFullYear())?`${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${w})`:`${d.getMonth()+1}월 ${d.getDate()}일 (${w})`;
 }
 /** 순서: 오늘·앞으로 올 날(가까운 순) → 지난 날(먼저 만든 순) */
-function _ddSorted(today){
-  const rows=_ddays.map((x,i)=>({x,i,val:_ddVal(x,today)}));
+function _ddSorted(today,list){
+  const rows=(list||_ddays).map((x,i)=>({x,i,val:_ddVal(x,today)}));
   rows.sort((a,b)=>{ const fa=a.val.d>=0, fb=b.val.d>=0; if(fa!==fb) return fa?-1:1; return fa?(a.val.d-b.val.d):(a.i-b.i); });
   return rows;
 }
@@ -12585,7 +12600,7 @@ function _ddInkFor(accent,bg){
 /** 날짜 칸 라벨 — cellHtml 이 부른다(그 달만 한 번 계산해 둔다) */
 function _ddayLabelOn(key){
   if(!_ddays.length||!_ddayOn()) return '';
-  const mk=key.slice(0,7)+'|'+_ddVer;
+  const mk=key.slice(0,7)+'|'+_ddVer+'|'+_ddView;
   if(_ddLabelCache.k!==mk){
     const map={}, y=+key.slice(0,4), m=+key.slice(5,7)-1;
     const from=dateKey(y,m,1), to=dateKey(y,m,new Date(y,m+1,0).getDate());
@@ -12602,28 +12617,34 @@ function _ddayLabelOn(key){
 async function loadDdays(){
   const room=_currentRoom; if(!room||typeof supa==='undefined'||!supa) return;
   const seq=++_ddLoadSeq;
-  if(_ddayRoomId!==room.id){ _ddays=[]; _ddayRoomId=room.id; _ddVer++; renderDdayRow(); }
+  if(_ddayRoomId!==room.id){ _ddAll=[]; _ddays=[]; _ddayRoomId=room.id; _ddVer++; renderDdayRow(); }
   try{
     if(_ddayPublic===null){
       try{ const r=await supa.from('app_config').select('value').eq('key','dday_public').maybeSingle(); _ddayPublic=!!(r.data&&r.data.value==='true'); }catch(_){ _ddayPublic=false; }
     }
     if(!_ddayOn()){ renderDdayRow(); return; }
     const {data,error}=await supa.from('events')
-      .select('id,title,date,color,bar_style,dday,repeat_type,recurring_yearly,shared_id,range_group_id,user_id,created_by,created_at')
+      .select('id,title,date,color,bar_style,dday,repeat_type,recurring_yearly,shared_id,range_group_id,user_id,virtual_member_id,created_by,created_at')
       .eq('room_id',room.id).not('dday','is',null).order('date',{ascending:true});
     if(seq!==_ddLoadSeq||!_currentRoom||_currentRoom.id!==room.id) return;
     if(error) throw error;
     const seen={}, out=[];
     (data||[]).forEach(r=>{
       const k=r.shared_id?('s:'+r.shared_id):(r.range_group_id?('g:'+r.range_group_id):('e:'+r.id));
-      if(seen[k]) return; seen[k]=1;   // date 오름차순이라 기간은 첫날이 먼저
-      const yearly=r.repeat_type==='yearly'||(!!r.recurring_yearly&&(!r.repeat_type||r.repeat_type==='none'));
-      out.push({id:'e:'+r.id, evId:r.id, title:r.title||'일정', date:r.date, color:r.color, outline:r.bar_style==='outline',
-        kind:r.dday==='down'?'countdown':r.dday, repeat_yearly:yearly, created_by:r.created_by||r.user_id, created_at:r.created_at});
+      const who=r.virtual_member_id?('v-'+r.virtual_member_id):r.user_id;
+      let x=seen[k];
+      if(!x){
+        const yearly=r.repeat_type==='yearly'||(!!r.recurring_yearly&&(!r.repeat_type||r.repeat_type==='none'));
+        x=seen[k]={id:k, evId:r.id, title:r.title||'일정', date:r.date, members:[], byKey:{},
+          kind:r.dday==='down'?'countdown':r.dday, repeat_yearly:yearly, created_by:r.created_by||r.user_id, created_at:r.created_at};
+        out.push(x);
+      }
+      // date 오름차순이라 멤버마다 첫 줄 = 기간의 첫날
+      if(who&&!x.byKey[who]){ x.members.push(who); x.byKey[who]={evId:r.id,date:r.date,color:r.color,outline:r.bar_style==='outline'}; }
     });
     out.sort((a,b)=>String(a.created_at||'')<String(b.created_at||'')?-1:1);
     const had=_ddays.length;
-    _ddays=out; _ddVer++;
+    _ddAll=out; _ddSync(); _ddVer++;
     renderDdayRow();
     if(had||_ddays.length) (window.safeRender||renderMonthly)();
     if(document.getElementById('ddCard')&&document.getElementById('ddCard').classList.contains('on')) _ddRender();
@@ -12639,9 +12660,14 @@ function _ddChipStyle(x){
 /** 순서 — 사람마다·이 기기에(방별). 저장된 순서가 없으면 가까운 날 순 */
 function _ddOrderKey(){ return 'uricalv2.ddOrder.'+((_currentRoom&&_currentRoom.id)||''); }
 function _ddLoadOrder(){ try{ const v=JSON.parse(localStorage.getItem(_ddOrderKey())||'[]'); return Array.isArray(v)?v:[]; }catch(_){ return []; } }
-function _ddSaveOrder(ids){ try{ localStorage.setItem(_ddOrderKey(),JSON.stringify(ids)); }catch(_){} }
-function _ddOrdered(today){
-  const base=_ddSorted(today), ord=_ddLoadOrder(); if(!ord.length) return base;
+function _ddSaveOrder(ids){
+  // 멤버 탭에선 일부만 보이므로, 안 보이는 것의 자리는 그대로 두고 보이는 것끼리만 순서를 바꾼다
+  const vis=new Set(ids), full=_ddOrdered(_ddTodayKey(),_ddAll).map(r=>r.x.id);
+  const q=ids.slice(), merged=full.map(id=>vis.has(id)?q.shift():id).concat(q);
+  try{ localStorage.setItem(_ddOrderKey(),JSON.stringify(merged)); }catch(_){}
+}
+function _ddOrdered(today,list){
+  const base=_ddSorted(today,list), ord=_ddLoadOrder(); if(!ord.length) return base;
   const pos={}; ord.forEach((id,i)=>{ pos[id]=i; });
   return base.slice().sort((a,b)=>{ const pa=pos[a.x.id], pb=pos[b.x.id]; if(pa==null&&pb==null) return 0; if(pa==null) return 1; if(pb==null) return -1; return pa-pb; });
 }
@@ -12686,6 +12712,7 @@ function _ddBindChipDrag(el){
 }
 function renderDdayRow(){
   const el=document.getElementById('calDdayRow'); if(!el) return;
+  if(_ddView!==_ddViewKey()) _ddSync();
   if(!_currentRoom||!_ddayOn()){ el.hidden=true; el.innerHTML=''; return; }
   if(_ddDrag&&_ddDrag.on) return;   // 끄는 중엔 다시 그리지 않는다
   const items=_ddOrdered(_ddTodayKey());
