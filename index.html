@@ -12548,8 +12548,8 @@ function _ddNext(x,today){
 function _ddVal(x,today){
   const k=_ddNext(x,today), d=_ddDiff(today,k);
   if(d>0) return {v:'D-'+d.toLocaleString(),d};
-  if(d===0) return {v:_ddIsSince(x)?'1일째':'D-day',d};
-  return {v:_ddIsSince(x)?(1-d).toLocaleString()+'일째':'D+'+(-d).toLocaleString(),d};
+  if(d===0) return {v:_ddIsSince(x)?'1일':'D-day',d};
+  return {v:_ddIsSince(x)?(1-d).toLocaleString()+'일':'D+'+(-d).toLocaleString(),d};
 }
 /** 'N일'로 세는 D-day 의 기념일 — 100일 단위 + 매년(n주년), [from,to] 안 */
 function _ddMilestones(x,from,to){
@@ -12724,7 +12724,7 @@ function _ddListHtml(){
       const x=it.x;
       let sub=_ddFmt(x.repeat_yearly?_ddNext(x,today):x.date)+(x.repeat_yearly?' · 매년':'');
       let note='';
-      if(_ddIsSince(x)&&it.val.d>0) note=`${_ddFmt(x.date)}이 1일째예요`;
+      if(_ddIsSince(x)&&it.val.d>0) note=`${_ddFmt(x.date)}부터 1일로 세요`;
       if(_ddIsSince(x)&&it.val.d<=0){
         const todayMs=_ddMilestones(x,today,today)[0];
         const next=_ddMilestones(x,shiftDateKey(today,1),shiftDateKey(today,3700))[0];
@@ -12794,7 +12794,7 @@ function renderEvDdayRow(){
   if(v==='down'||yearly){ const k=_ddNext(x,today); tail=k===today?' · 오늘이 그날이에요':` → ${escapeHtml(_ddFmt(k))} <b>D-day</b>`; }
   else{
     const d=_ddDiff(today,date), c=Math.max(0,-d)+1, n=(Math.floor(c/100)+1)*100, k=shiftDateKey(date,n-1);
-    tail=d>0?` → ${escapeHtml(_ddFmt(date))} <b>1일째</b>`:` → ${escapeHtml(_ddFmt(k))} <b>${_ddVal(x,k).v}</b>`;
+    tail=d>0?` → ${escapeHtml(_ddFmt(date))} <b>1일</b>`:` → ${escapeHtml(_ddFmt(k))} <b>${_ddVal(x,k).v}</b>`;
   }
   pv.innerHTML=`캘린더 위에 오늘 <b>${escapeHtml(now)}</b>${tail}`;
 }
