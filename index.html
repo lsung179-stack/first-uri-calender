@@ -7904,11 +7904,14 @@ function askRecurringDelete(msg, opts){
       try{ if(typeof _subScreenExit==='function') _subScreenExit(); }catch(_){} // 닫히면 광고 복원(메인 화면이면)
       resolve(val);
     };
-    oneBtn.onclick=()=>finish('one');
-    if(futureBtn)futureBtn.onclick=()=>finish('future');
-    allBtn.onclick=()=>finish('all');
-    cancelBtn.onclick=()=>finish(null);
-    ov.onclick=(e)=>{if(e.target===ov&&Date.now()-_openedAt>450)finish(null);};
+    /* opts.armMs: 열린 직후 그 시간 동안은 버튼도 고르지 않는다(끌어 놓은 손가락이 바로 다시 닿는 경우)
+       opts.lockOutside: 바깥(배경)을 눌러도 닫지 않는다 — '취소' 버튼으로만 (2026-10-25 사용자 "안내모달이 순각적으로 떴다가 누르기 전에 바로 없어져") */
+    const _armed=()=>!(opts&&opts.armMs)||Date.now()-_openedAt>=opts.armMs;
+    oneBtn.onclick=()=>{ if(_armed())finish('one'); };
+    if(futureBtn)futureBtn.onclick=()=>{ if(_armed())finish('future'); };
+    allBtn.onclick=()=>{ if(_armed())finish('all'); };
+    cancelBtn.onclick=()=>{ if(_armed())finish(null); };
+    ov.onclick=(e)=>{if(e.target===ov&&!(opts&&opts.lockOutside)&&Date.now()-_openedAt>450)finish(null);};
   });
 }
 
@@ -15877,7 +15880,7 @@ function closeRoomPick(){
 /* 다른 방 연동 일정 — 수정/삭제 범위 선택
    반환: 'all'(전체 방) | [room_id...](선택 방) | 'one'(이 방만) | null(취소)
    groupRooms: [{id,name,isCurrent}] 그룹에 속한 방 목록 (방 선택 UI용) */
-function askMultiRoomScope(msg, isDelete, groupRooms, noun, verb){
+function askMultiRoomScope(msg, isDelete, groupRooms, noun, verb, opts){
   return new Promise(resolve=>{
     const ov=document.getElementById('mrsOverlay');
     if(!ov){resolve('one');return;}
@@ -15890,14 +15893,14 @@ function askMultiRoomScope(msg, isDelete, groupRooms, noun, verb){
     if(msg)document.getElementById('mrsMsg').innerHTML=msg;
     const _n=noun||'일정';
     const _v=verb||(isDelete?'삭제':'수정');      // 옮기기 등 다른 동작에도 쓰인다
-    document.getElementById('mrsTitle').textContent='다른 방에도 등록된 '+_n+' '+_v;
-    const allLabel=isDelete?'전체 방에서 삭제':'전체 방에 적용';
+    document.getElementById('mrsTitle').textContent=(opts&&opts.title)||('다른 방에도 등록된 '+_n+' '+_v);
+    const allLabel=(opts&&opts.allLabel)||(isDelete?'전체 방에서 삭제':'전체 방에 적용');
     allBtn.textContent=allLabel;
     oneBtn.textContent='이 방만';
     let pickMode=false;
     if(pickBtn){
       pickBtn.style.display=(rooms.length>=2)?'':'none';
-      pickBtn.textContent=isDelete?'방 선택해서 삭제':'방 선택해서 적용';
+      pickBtn.textContent=(opts&&opts.pickLabel)||(isDelete?'방 선택해서 삭제':'방 선택해서 적용');
     }
     if(roomListEl){ roomListEl.style.display='none'; roomListEl.innerHTML=''; }
     document.body.appendChild(ov);
@@ -15925,7 +15928,9 @@ function askMultiRoomScope(msg, isDelete, groupRooms, noun, verb){
       });
       roomListEl.style.display='';
     };
+    const _armed=()=>!(opts&&opts.armMs)||Date.now()-_openedAt>=opts.armMs;
     allBtn.onclick=()=>{
+      if(!_armed())return;
       if(pickMode){
         const checks=roomListEl.querySelectorAll('input[type="checkbox"]:checked');
         const ids=Array.from(checks).map(c=>c.value);
@@ -15935,15 +15940,16 @@ function askMultiRoomScope(msg, isDelete, groupRooms, noun, verb){
       }
     };
     if(pickBtn)pickBtn.onclick=()=>{
+      if(!_armed())return;
       pickMode=true;
       renderRoomList();
-      allBtn.textContent=isDelete?'선택한 방에서 삭제':'선택한 방에 적용';
+      allBtn.textContent=(opts&&opts.pickDoneLabel)||(isDelete?'선택한 방에서 삭제':'선택한 방에 적용');
       pickBtn.style.display='none';
       oneBtn.style.display='none';
     };
-    oneBtn.onclick=()=>finish('one');
-    cancelBtn.onclick=()=>finish(null);
-    ov.onclick=(e)=>{if(e.target===ov&&Date.now()-_openedAt>450)finish(null);};
+    oneBtn.onclick=()=>{ if(_armed())finish('one'); };
+    cancelBtn.onclick=()=>{ if(_armed())finish(null); };
+    ov.onclick=(e)=>{if(e.target===ov&&!(opts&&opts.lockOutside)&&Date.now()-_openedAt>450)finish(null);};
   });
 }
 
@@ -27313,29 +27319,78 @@ async function _evGroupRooms(mgid){
   }catch(_){ return {ids:[_currentRoom.id], list:[]}; }
 }
 /* 겹치는 만큼 차례로 물어본다. 하나라도 취소하면 전체 취소(null). */
-async function _evAskDropScopes(row,isCopy){
-  const ctx={repeat:null, member:'all', rooms:'one', roomIds:[_currentRoom.id]};
+/* 끌어 놓은 뒤 묻는 창 공통 — 바깥을 눌러도 안 닫히고('취소'로만), 뜬 직후 0.45초는 버튼도 안 고른다.
+   (2026-10-25 사용자 "안내모달이 순각적으로 떴다가 누르기 전에 바로 없어져" — 놓은 손가락이 바로 다시 닿거나
+    뒤늦은 탭이 배경을 때려 창이 닫혔다) */
+const _DROP_ASK={lockOutside:true, armMs:450};
+async function _evAskDropScopes(row,isCopy,fromDate){
+  const ctx={repeat:null, member:'all', rooms:'one', roomIds:[_currentRoom.id], twins:null};
   if(!isCopy && _evHasRepeat(row)){
     ctx.repeat=await askRecurringDelete('반복되는 일정이에요. 어디까지 옮길까요?',
-      {title:'반복 일정 옮기기',oneLabel:'이 일정에만 적용',futureLabel:'이후 일정에도 적용',allLabel:'모든 일정에 적용'});
+      Object.assign({title:'반복 일정 옮기기',oneLabel:'이 일정에만 적용',futureLabel:'이후 일정에도 적용',allLabel:'모든 일정에 적용'},_DROP_ASK));
     if(!ctx.repeat)return null;
   }
   if(row.shared_id){
     const m=await askRecurringDelete('함께하는 멤버가 있는 일정이에요.',
-      {title:'함께 일정', oneLabel:'나만', allLabel:'함께한 멤버 모두'});
+      Object.assign({title:'함께 일정', oneLabel:'나만', allLabel:'함께한 멤버 모두'},_DROP_ASK));
     if(!m)return null;
     ctx.member=(m==='all')?'all':'me';
   }
   if(row.multi_group_id){
     const {ids,list}=await _evGroupRooms(row.multi_group_id);
-    const sc=await askMultiRoomScope('이 일정은 여러 방에 등록돼 있어요.<br>어느 방에 적용할까요?',false,list,'일정',isCopy?'복사':'옮기기');
+    const sc=await askMultiRoomScope('이 일정은 여러 방에 등록돼 있어요.<br>어느 방에 적용할까요?',false,list,'일정',isCopy?'복사':'옮기기',_DROP_ASK);
     if(sc===null)return null;
     ctx.rooms=sc;
     if(sc==='all')ctx.roomIds=ids.length?ids:[_currentRoom.id];
     else if(Array.isArray(sc))ctx.roomIds=[...new Set([...sc,_currentRoom.id])];
     else ctx.roomIds=[_currentRoom.id];
+    return ctx;
   }
+  /* 다른 방에도 적용(2026-10-25 사용자 "이동 복사 했을때 다른방에도 적용시킬건지 선택할 수 있게 해줘")
+     · 복사 — 내 다른 방에도 같은 날짜로 복사할지(이 방만 / 방 골라서 / 전체 방). 여러 방 복사본은 새 묶음으로 잇는다.
+     · 이동 — 다른 방에 따로 만든 같은 일정(내 일정·같은 날·같은 제목·같은 시간, 묶음 없음)이 있으면 같이 옮길지.
+       하루 일정만(반복·함께·기간은 방마다 모양이 달라 섞지 않는다). */
+  const others=(_myRooms||[]).filter(r=>r&&r.id&&r.id!==_currentRoom.id);
+  if(!others.length)return ctx;
+  const cur={id:_currentRoom.id,name:_currentRoom.name||'이 방',isCurrent:true};
+  if(isCopy){
+    const list=[cur].concat(others.map(r=>({id:r.id,name:r.name||'방'})));
+    const sc=await askMultiRoomScope('<b>'+escapeHtml(row.title||'일정')+'</b> 을(를) 다른 방에도 복사할까요?',false,list,'일정','복사',
+      Object.assign({title:'다른 방에도 복사', allLabel:'전체 방에 복사', pickLabel:'방 골라서 복사', pickDoneLabel:'고른 방에 복사'},_DROP_ASK));
+    if(sc===null)return null;
+    if(sc==='all'){ ctx.rooms='all'; ctx.roomIds=list.map(r=>r.id); }
+    else if(Array.isArray(sc)){ ctx.rooms='pick'; ctx.roomIds=[...new Set([...sc,_currentRoom.id])]; }
+    return ctx;
+  }
+  if(_evHasRepeat(row)||row.shared_id||row.range_group_id||(row._rangeSpanDays||1)>1||!fromDate)return ctx;
+  const twins=await _evFindTwins(row,fromDate,others.map(r=>r.id));
+  if(!twins.length)return ctx;
+  const list=[cur].concat(twins.map(t=>({id:t.room_id,name:((others.find(r=>r.id===t.room_id)||{}).name)||'방'})));
+  const sc=await askMultiRoomScope('다른 방에도 같은 일정이 있어요.<br>같이 옮길까요?',false,list,'일정','옮기기',
+    Object.assign({title:'다른 방의 같은 일정', allLabel:'전체 방에서 옮기기', pickLabel:'방 골라서 옮기기', pickDoneLabel:'고른 방에서 옮기기'},_DROP_ASK));
+  if(sc===null)return null;
+  if(sc==='all')ctx.twins=twins;
+  else if(Array.isArray(sc))ctx.twins=twins.filter(t=>sc.indexOf(t.room_id)>=0);
   return ctx;
+}
+/* 다른 방에 따로 만든 같은 일정 — 내 것, 같은 날·제목·시간, 묶음·함께·기간·반복 없음. 방마다 하나 */
+async function _evFindTwins(row,date,roomIds){
+  if(!roomIds||!roomIds.length||!row.title)return [];
+  try{
+    let q=supa.from('events').select('id,room_id,repeat_type,recurring_yearly')
+      .in('room_id',roomIds).eq('user_id',_currentUser.id).eq('date',date).eq('title',row.title)
+      .is('multi_group_id',null).is('shared_id',null).is('range_group_id',null).is('virtual_member_id',null);
+    q=row.time?q.eq('time',row.time):q.is('time',null);
+    const {data,error}=await q;
+    if(error)throw error;
+    const seen={}, out=[];
+    (data||[]).forEach(r=>{
+      if(seen[r.room_id])return;
+      if((r.repeat_type&&r.repeat_type!=='none')||r.recurring_yearly)return;
+      seen[r.room_id]=1; out.push(r);
+    });
+    return out;
+  }catch(e){ console.warn('같은 일정 찾기 실패',e); return []; }
 }
 /* 원본 row 하나를 새 날짜용 insert row 로 — 식별자(id)만 빼고 그대로 옮겨 담는다 */
 function _evRowTemplate(r,over){
@@ -27384,7 +27439,13 @@ async function _evMoveScoped(anchorRow,fromDate,toDate,ctx){
       const res=await Promise.all(moves.map(m=>supa.from('events')
         .update(Object.assign({date:m.nd},patch)).eq('id',m.id)));
       if((res||[]).some(r=>r&&r.error))throw ((res.find(r=>r&&r.error)||{}).error)||new Error('move failed');
-      toast(soloOut?'나만 옮겼어요 · 내 일정으로 분리됐어요':(rows.length>1?'기간 일정을 옮겼어요':'일정을 옮겼어요'));
+      // 다른 방에 따로 만든 같은 일정도 같이(고른 방만)
+      const tw=(ctx.twins||[]).map(t=>t.id);
+      if(tw.length){
+        const {error:eT}=await supa.from('events').update({date:shiftDateKey(fromDate,diff)}).in('id',tw);
+        if(eT)throw eT;
+      }
+      toast(tw.length?((tw.length+1)+'개 방의 일정을 옮겼어요'):(soloOut?'나만 옮겼어요 · 내 일정으로 분리됐어요':(rows.length>1?'기간 일정을 옮겼어요':'일정을 옮겼어요')));
     }
     syncWidgetData(true);
     if(soloOut)await loadEvents();
@@ -27546,7 +27607,9 @@ async function _evCopyToDate(anchorRow,fromDate,toDate,ctx){
   if(!diff)return;
   ctx=ctx||{member:'all',rooms:'one',roomIds:[_currentRoom.id]};
   const soloOut=(anchorRow.shared_id&&ctx.member==='me');
-  const roomIds=(anchorRow.multi_group_id&&ctx.rooms!=='one')?ctx.roomIds:[_currentRoom.id];
+  const roomIds=(ctx.rooms!=='one'&&Array.isArray(ctx.roomIds)&&ctx.roomIds.length)?ctx.roomIds:[_currentRoom.id];
+  // 여러 방에 복사하면 복사본끼리 새 묶음으로 잇는다(나중에 옮기거나 고칠 때 '어느 방에 적용할까요?'를 묻게) — 2.0 앱과 같음
+  const newMgid=(roomIds.length>1)?genShared():null;
   try{
     let srcRows;
     const grp=_evCollectGroup(anchorRow,fromDate);
@@ -27574,10 +27637,14 @@ async function _evCopyToDate(anchorRow,fromDate,toDate,ctx){
     const _uuid=(typeof crypto!=='undefined'&&crypto.randomUUID)?(()=>crypto.randomUUID()):null;
     const rows=[];
     roomIds.forEach(rid=>{
-      const sid=needShared?genShared():null;
+      const here=(rid===_currentRoom.id);
+      // 다른 방엔 내 줄만(함께한 멤버·가상 멤버는 그 방에 없을 수 있다) — 그 방에선 내 혼자 일정
+      const src=here?srcRows:srcRows.filter(r=>r.user_id===_currentUser.id&&!r.virtual_member_id);
+      if(!src.length)return;
+      const sid=(needShared&&here)?genShared():null;
       const rg=needRange?('rg_'+genShared()):null;
-      srcRows.forEach(r=>{
-        const row=_evRowTemplate(r,{room_id:rid,date:shiftDateKey(r.date,diff),shared_id:sid,range_group_id:rg});
+      src.forEach(r=>{
+        const row=_evRowTemplate(r,{room_id:rid,date:shiftDateKey(r.date,diff),shared_id:sid,range_group_id:rg,multi_group_id:newMgid});
         if(_uuid)row.id=_uuid();
         rows.push(row);
       });
@@ -27631,10 +27698,10 @@ async function _evDrop(anchorRow,fromDate,toDate,ghost){
   const origin=_evResolveOrigin(anchorRow,fromDate);
   const act=await askRecurringDelete(
     '<b>'+escapeHtml(anchorRow.title||'일정')+'</b> 을(를) 이 날짜로 어떻게 할까요?',
-    {title:'옮기기 / 복사', oneLabel:'이동', allLabel:'복사'});
+    Object.assign({title:'옮기기 / 복사', oneLabel:'이동', allLabel:'복사'},_DROP_ASK));
   if(!act){ done(false); return; }
   const isCopy=(act==='all');
-  const ctx=await _evAskDropScopes(origin,isCopy);
+  const ctx=await _evAskDropScopes(origin,isCopy,fromDate);
   if(!ctx){ done(false); return; }
   done(true);
   if(isCopy)return await _evCopyToDate(anchorRow,fromDate,toDate,ctx);
