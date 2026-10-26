@@ -67,6 +67,8 @@ window._applyFontScale=function(t){
     }
   }catch(e){}
 })();
+/* D-day 칩 크기(2026-10-26 고급 설정 'D-day 크기') — uricalv2.ddScale 0.8~1.6, <html> 의 --dd-k */
+(function(){ try{ var k=parseFloat(localStorage.getItem('uricalv2.ddScale')); if(isFinite(k)&&k!==1) document.documentElement.style.setProperty('--dd-k',String(Math.max(0.8,Math.min(1.6,k)))); }catch(e){} })();
 /* 글꼴 즉시 적용: 텍스트 테마 폰트 클래스 부착 (날짜 숫자·일정·제목 연동) */
 (function(){
   try{
@@ -3399,7 +3401,7 @@ body[data-theme="camp"] .rpal-row{background:#2c4a82}
 .cal-dday-row{display:flex;gap:6px;padding:2px 12px 6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .cal-dday-row::-webkit-scrollbar{display:none}
 .cal-dday-row[hidden]{display:none}
-.dd-chip{flex:none;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:15px;border:none;background:var(--aP);color:var(--text);font-size:calc(12.5px*var(--fsk,1));font-weight:500;font-family:inherit;cursor:pointer;white-space:nowrap;max-width:62vw;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;transition:transform .15s ease,box-shadow .15s ease}
+.dd-chip{flex:none;display:inline-flex;align-items:center;gap:calc(6px*var(--dd-k,1));height:calc(30px*var(--dd-k,1)*min(var(--fsk,1),1.2));padding:0 calc(12px*var(--dd-k,1));border-radius:99px;border:none;background:var(--aP);color:var(--text);font-size:calc(12.5px*var(--fsk,1)*var(--dd-k,1));font-weight:500;font-family:inherit;cursor:pointer;white-space:nowrap;max-width:62vw;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;transition:transform .15s ease,box-shadow .15s ease}
 .dd-chip.dd-lift{transform:scale(1.08);box-shadow:0 6px 18px rgba(0,0,0,.18);position:relative;z-index:2}
 .cal-dday-row.dd-dragging{touch-action:none}
 .dd-chip .dd-chip-t{overflow:hidden;text-overflow:ellipsis}
@@ -4019,6 +4021,13 @@ body.has-ad .ann-popup{ max-height:calc(72vh - var(--ad-h)); }
 /* uni-nav 좌측 라벨 + SVG 아이콘 (탭바와 동일 stroke 스타일) */
 .uni-nav-l{display:flex;align-items:center;gap:11px}
 .uni-nav-l svg{width:20px;height:20px;flex-shrink:0;display:block}
+/* 고급 설정 종류 목록 */
+.adv-item{text-align:left}
+.adv-item-t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.adv-item-t b{font-weight:600}
+.adv-item-t small{font-size:calc(11.5px*var(--fsk,1));font-weight:400;color:var(--sub)}
+.adv-pane[hidden],.adv-menu[hidden]{display:none}
+.dd-scale-pv{padding:12px 4px 2px!important;pointer-events:none}
 .plan-toggle{transition:background .15s ease,border-color .15s ease,color .15s ease}
 .plan-toggle.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .plan-toggle.off{background:var(--bg);border-color:var(--mute);color:var(--sub)}
@@ -6356,12 +6365,19 @@ try{var _cp=window.Capacitor&&window.Capacitor.getPlatform&&window.Capacitor.get
 <div class="ann-card" id="advCard">
   <div class="ann-head">
     <button class="ann-back" onclick="backFromAdvSettings()" aria-label="뒤로">‹</button>
-    <div class="ann-title">고급 설정</div>
+    <div class="ann-title" id="advTitle">고급 설정</div>
     <button class="ann-head-btn" onclick="closeAdvSettings()" aria-label="닫기">✕</button>
   </div>
   <div class="ann-body" style="padding:20px">
-
-    <div class="rs-section">
+    <!-- 종류 목록(2026-10-26 사용자 "고급설정에 종류가 많아서 좀 복잡해 … 종류가 뜨고 해당 종류를 누르고 들어가서 설정") — 누르면 그 종류 화면(advPane) -->
+    <div class="adv-menu" id="advMenu">
+      <button class="uni-nav adv-item" onclick="advOpen('font')"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l6-16 6 16"/><path d="M6.5 14h7"/><path d="M17 20l2.5-6.5L22 20"/><path d="M18 18h3"/></svg><span class="adv-item-t"><b>글씨 크기</b><small id="advSubFont">100%</small></span></span><span class="chev">›</span></button>
+      <button class="uni-nav adv-item" id="advItemDday" onclick="advOpen('dday')" style="display:none"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="10" rx="5"/><path d="M8 12h3M14 10.5v3"/></svg><span class="adv-item-t"><b>D-day 크기</b><small id="advSubDday">100%</small></span></span><span class="chev">›</span></button>
+      <button class="uni-nav adv-item" onclick="advOpen('cal')"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="adv-item-t"><b>달력 보기</b><small id="advSubCal">주 시작 요일 · 첫 화면</small></span></span><span class="chev">›</span></button>
+      <button class="uni-nav adv-item" onclick="advOpen('ev')"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h13"/></svg><span class="adv-item-t"><b>일정 표시</b><small id="advSubEv">정렬 · 격자선</small></span></span><span class="chev">›</span></button>
+    </div>
+    <div class="adv-pane" data-pane="font" data-title="글씨 크기" hidden>
+<div class="rs-section">
       <div class="rs-section-title">폰트 크기</div>
       <div class="fsz-row">
         <span class="fsz-a sm" aria-hidden="true">가</span>
@@ -6378,16 +6394,40 @@ try{var _cp=window.Capacitor&&window.Capacitor.getPlatform&&window.Capacitor.get
         <div class="fsz-pv-txt"><div class="fsz-pv-t" id="fszPvT">치과 정기검진</div><div class="fsz-pv-s" id="fszPvS">오후 3:00 · 메모가 이렇게 보여요</div></div>
       </div>
     </div>
-
+    </div>
+    <div class="adv-pane" data-pane="dday" data-title="D-day 크기" hidden>
     <div class="rs-section">
+      <div class="rs-section-title">캘린더 위 D-day 크기</div>
+      <div class="gop-row">
+        <span class="fsz-a sm" aria-hidden="true">D</span>
+        <input type="range" class="gop-range" id="ddScaleRange" min="0.8" max="1.6" step="0.05" value="1"
+               aria-label="D-day 크기" oninput="onDdScaleInput(this.value)" onchange="onDdScaleInput(this.value)">
+        <span class="fsz-a lg" aria-hidden="true">D</span>
+        <span class="gop-val" id="ddScaleVal">100%</span>
+      </div>
+      <div class="dd-scale-pv cal-dday-row" id="ddScalePv" aria-hidden="true"></div>
+      <div style="font-size:calc(11.5px*var(--fsk,1));color:var(--sub);margin-top:7px">달 이름 밑 D-day 줄의 칩 크기예요 · 이 기기에만 적용돼요</div>
+    </div>
+    </div>
+    <div class="adv-pane" data-pane="cal" data-title="달력 보기" hidden>
+<div class="rs-section">
       <div class="rs-section-title">주 시작 요일</div>
       <div class="dm-row" id="weekStartRow">
         <button class="dm-btn" data-ws="0" onclick="onWeekStartSelect(0)">일요일</button>
         <button class="dm-btn" data-ws="1" onclick="onWeekStartSelect(1)">월요일</button>
       </div>
     </div>
-
-    <div class="rs-section">
+<div class="rs-section">
+      <div class="rs-section-title">첫 화면 기본 보기</div>
+      <div style="font-size:calc(12px*var(--fsk,1));color:var(--sub);margin-bottom:8px">방에 들어갈 때 처음 보여줄 화면이에요</div>
+      <div class="dm-row" id="defaultViewRow">
+        <button class="dm-btn" data-dv="all" onclick="onDefaultViewSelect('all')">전체</button>
+        <button class="dm-btn" data-dv="me" onclick="onDefaultViewSelect('me')">내 일정</button>
+      </div>
+    </div>
+    </div>
+    <div class="adv-pane" data-pane="ev" data-title="일정 표시" hidden>
+<div class="rs-section">
       <div class="rs-section-title">일정 텍스트 정렬</div>
       <div class="dm-row" id="alignRow">
         <button class="dm-btn" data-align="left" onclick="onAlignSelect('left')">왼쪽</button>
@@ -6395,8 +6435,7 @@ try{var _cp=window.Capacitor&&window.Capacitor.getPlatform&&window.Capacitor.get
         <button class="dm-btn" data-align="right" onclick="onAlignSelect('right')">오른쪽</button>
       </div>
     </div>
-
-    <div class="rs-section">
+<div class="rs-section">
       <div class="rs-section-title">격자선</div>
       <div style="font-size:calc(12px*var(--fsk,1));color:var(--sub);margin-bottom:8px">달력 칸 사이에 선을 표시해요</div>
       <div class="dm-row" id="gridVRow" style="margin-bottom:8px">
@@ -6417,16 +6456,7 @@ try{var _cp=window.Capacitor&&window.Capacitor.getPlatform&&window.Capacitor.get
       <div class="gop-preview" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
       <div style="font-size:calc(11.5px*var(--fsk,1));color:var(--sub);margin-top:7px" id="gridOpacityHint">값이 클수록 선이 진해져요</div>
     </div>
-
-    <div class="rs-section">
-      <div class="rs-section-title">첫 화면 기본 보기</div>
-      <div style="font-size:calc(12px*var(--fsk,1));color:var(--sub);margin-bottom:8px">방에 들어갈 때 처음 보여줄 화면이에요</div>
-      <div class="dm-row" id="defaultViewRow">
-        <button class="dm-btn" data-dv="all" onclick="onDefaultViewSelect('all')">전체</button>
-        <button class="dm-btn" data-dv="me" onclick="onDefaultViewSelect('me')">내 일정</button>
-      </div>
     </div>
-
   </div>
 </div>
 
@@ -9997,7 +10027,7 @@ async function _checkMinAppVersion(){
       ['todoAddCard', function(){ closeTodoAddSheet(); }],   // 할일 추가/수정 → 탭바 복원됨
       ['premiumCard', function(){ closePremiumSheet(); }],   // 프리미엄 구독 (기존 무반응 버그 수정)
       ['storeCard', function(){ closeStore(); }],
-      ['advCard', function(){ closeAdvSettings(); }],
+      ['advCard', function(){ backFromAdvSettings(); }],
       ['notifSetCard', function(){ closeNotifSettings(); }],
       ['myOrdersCard', function(){ closeMyOrders(); }],
       ['profileCard', function(){ closeProfile(); }],
@@ -20765,8 +20795,65 @@ function syncDefaultViewButtons(){
   });
 }
 
+/* ── 고급 설정 종류 목록 → 종류 화면(2026-10-26) ── */
+var _advPane=null;
+function advOpen(k){
+  const pane=document.querySelector('#advCard .adv-pane[data-pane="'+k+'"]'); if(!pane) return;
+  _advPane=k;
+  document.getElementById('advMenu').hidden=true;
+  document.querySelectorAll('#advCard .adv-pane').forEach(p=>{ p.hidden=(p!==pane); });
+  const t=document.getElementById('advTitle'); if(t) t.textContent=pane.dataset.title||'고급 설정';
+  if(k==='dday') syncDdScaleUI();
+  const body=document.querySelector('#advCard .ann-body'); if(body) body.scrollTop=0;
+}
+window.advOpen=advOpen;
+function advShowMenu(){
+  _advPane=null;
+  document.querySelectorAll('#advCard .adv-pane').forEach(p=>{ p.hidden=true; });
+  const m=document.getElementById('advMenu'); if(m) m.hidden=false;
+  const t=document.getElementById('advTitle'); if(t) t.textContent='고급 설정';
+  advSyncSubs();
+}
+/** 목록의 현재 값 한 줄 */
+function advSyncSubs(){
+  const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  try{ set('advSubFont',_fontScalePct(getFontScale())+'%'); }catch(_){}
+  try{ set('advSubDday',Math.round(getDdScale()*100)+'%'); }catch(_){}
+  try{ set('advSubCal',(getWeekStartPref()===1?'월요일':'일요일')+' 시작 · 첫 화면 '+(getDefaultViewPref()==='me'?'내 일정':'전체')); }catch(_){}
+  try{
+    const al={left:'왼쪽',center:'가운데',right:'오른쪽'}[getAlignPref()]||'왼쪽';
+    const v=getGridPref('v')==='on', h=getGridPref('h')==='on';
+    set('advSubEv','정렬 '+al+' · 격자선 '+((v&&h)?'가로·세로':(v?'세로':(h?'가로':'끔'))));
+  }catch(_){}
+  const dd=document.getElementById('advItemDday');
+  if(dd) dd.style.display=(typeof _ddayOn==='function'&&_ddayOn())?'':'none';
+}
+/* D-day 칩 크기 */
+function getDdScale(){ try{ const k=parseFloat(localStorage.getItem('uricalv2.ddScale')); return isFinite(k)?Math.max(0.8,Math.min(1.6,k)):1; }catch(_){ return 1; } }
+function setDdScale(k){
+  k=Math.round(Math.max(0.8,Math.min(1.6,+k||1))*20)/20;
+  try{ localStorage.setItem('uricalv2.ddScale',String(k)); }catch(_){}
+  if(k===1) document.documentElement.style.removeProperty('--dd-k');
+  else document.documentElement.style.setProperty('--dd-k',String(k));
+}
+function onDdScaleInput(v){ setDdScale(v); syncDdScaleUI(); }
+window.onDdScaleInput=onDdScaleInput;
+function syncDdScaleUI(){
+  const k=getDdScale();
+  const rg=document.getElementById('ddScaleRange'); if(rg){ if(+rg.value!==k) rg.value=String(k); rg.setAttribute('aria-valuetext',Math.round(k*100)+'%'); const pc=(k-0.8)/0.8*100; rg.style.background=`linear-gradient(to right,var(--accent) ${pc}%,var(--border) ${pc}%)`; }
+  const val=document.getElementById('ddScaleVal'); if(val) val.textContent=Math.round(k*100)+'%';
+  const pv=document.getElementById('ddScalePv');
+  if(pv){
+    // 미리보기 — 내 D-day 가 있으면 앞의 두 개, 없으면 예시
+    let items=[];
+    try{ items=_ddOrdered(_ddTodayKey()).slice(0,2).map(it=>`<span class="dd-chip dd-colored" style="${_ddChipStyle(it.x)}"><span class="dd-chip-t">${escapeHtml(it.x.title)}</span><b>${it.val.v}</b></span>`); }catch(_){}
+    if(!items.length) items=['<span class="dd-chip"><span class="dd-chip-t">여행</span><b>D-12</b></span>','<span class="dd-chip"><span class="dd-chip-t">우리</span><b>523일</b></span>'];
+    pv.innerHTML=items.join('');
+  }
+}
 function openAdvSettings(){
   closeMainModals();
+  advShowMenu();
   document.getElementById('advCard').classList.add('on');
   // 토글 상태 동기화 (시트 안에 있는 모든 컨트롤)
   try{ syncFontSizeButtons(); }catch(_){}
@@ -20942,6 +21029,7 @@ async function ntfEnablePush(){
    시트는 통합 설정(settingsScreen) 위에 떠 있으므로 닫기만 하면 설정 화면이 다시 보인다.
    (옛 룸 정보 시트 roomSetCard는 더 이상 열지 않음 — 통합 설정으로 일원화) */
 function backFromAdvSettings(){
+  if(_advPane){ advShowMenu(); return; }   // 종류 화면이면 목록으로
   closeAdvSettings();
 }
 function backFromStore(){
