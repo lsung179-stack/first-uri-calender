@@ -1129,7 +1129,11 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .ddx-in{width:100%;box-sizing:border-box;padding:13px 14px;border:1px solid var(--border);border-radius:12px;background:var(--card);font-size:calc(15px*var(--fsk,1));font-family:inherit;color:var(--text)}
 .ddx-date{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--card);font-size:calc(15px*var(--fsk,1));font-weight:700;color:var(--text)}
 .ddx-date small{font-size:calc(12px*var(--fsk,1));font-weight:700;color:var(--accent);white-space:nowrap}
-.ddx-date input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;font-size:calc(16px*var(--fsk,1))}
+.ddx-date{width:100%;font-family:inherit;text-align:left;cursor:pointer}
+.ddx-date.open{border-color:var(--accent)}
+.ddx-cal{margin-top:8px}
+.ddx-cal .ev-multi-day{padding:0}
+.ddx-cal-today{display:block;margin:6px auto 0;padding:5px 12px;border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--accent);font-family:inherit;font-size:calc(12px*var(--fsk,1));font-weight:700;cursor:pointer}
 .ddx-seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .ddx-seg button{padding:11px 6px;border-radius:12px;border:1px solid var(--border);background:var(--card);font-family:inherit;color:var(--sub);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
 .ddx-seg button b{font-size:calc(15px*var(--fsk,1));color:var(--text)}
@@ -10919,6 +10923,16 @@ function getWeekStartPref(){
     return v===1?1:0;
   }catch(e){ return 0; }
 }
+/* 미니 달력(.ev-multi-cal) 요일 머리줄을 주 시작 요일에 맞춤 — 칸 배치(startDow)와 짝. [2026-10-28] */
+function _miniDowsHtml(){
+  const ws=getWeekStartPref(), o=[];
+  for(let i=0;i<7;i++){ const d=(i+ws)%7; o.push(`<div class="ev-multi-dow${d===0?' sun':(d===6?' sat':'')}">${WEEKDAY_NAMES_FULL[d]}</div>`); }
+  return o.join('');
+}
+function _syncMiniDows(){
+  const ws=String(getWeekStartPref());
+  document.querySelectorAll('.ev-multi-dows').forEach(el=>{ if(el.dataset.ws!==ws){ el.innerHTML=_miniDowsHtml(); el.dataset.ws=ws; } });
+}
 function setWeekStartPref(value){
   const n=value===1?1:0;
   try{ localStorage.setItem('uricalv2.weekStart', String(n)); }catch(e){}
@@ -13205,7 +13219,8 @@ function _ddxRender(){
     <div class="ev-label">이름</div>
     <input class="ddx-in" id="ddxTitle" maxlength="40" placeholder="예) 우리 1주년, 여행 가는 날" value="${escapeHtml(_ddx.title)}" oninput="_ddx.title=this.value;document.getElementById('ddxPv').innerHTML=_ddxPreviewHtml()">
     <div class="ev-label">날짜</div>
-    <label class="ddx-date"><span>${escapeHtml(_ddFmt(_ddx.date,true))}</span><small>바꾸기</small><input type="date" value="${escapeHtml(_ddx.date)}" onchange="if(this.value){_ddx.date=this.value;_ddxRender();}" aria-label="날짜 바꾸기"></label>
+    <button type="button" class="ddx-date${_ddx.calOpen?' open':''}" onclick="_ddxCalToggle()" aria-expanded="${!!_ddx.calOpen}"><span>${escapeHtml(_ddFmt(_ddx.date,true))}</span><small>${_ddx.calOpen?'접기':'바꾸기'}</small></button>
+    ${_ddx.calOpen?`<div class="ev-multi-cal ddx-cal" id="ddxCal">${_ddxCalHtml()}</div>`:''}
     <div class="ev-label">세는 법</div>
     <div class="ddx-seg"><button type="button" class="${_ddx.kind==='down'?'on':''}" onclick="_ddx.kind='down';_ddxRender()"><b>D-day</b><span>그날까지 남은 날</span></button><button type="button" class="${_ddx.kind==='since'?'on':''}" onclick="_ddx.kind='since';_ddxRender()"><b>N일째</b><span>그날부터 함께한 날</span></button></div>
     ${_ddx.kind==='down'?sw(_ddx.yearly,"_ddx.yearly=!_ddx.yearly;_ddxRender()",'매년 반복','생일·기념일처럼 해마다 다시 세요'):''}
@@ -13227,6 +13242,29 @@ function _ddxRender(){
     };
   }
 }
+/* D-day 날짜 — 휴대폰 기본 날짜 창 대신 앱 미니 달력(.ev-multi-cal, 일정 폼과 같은 모양·주 시작 요일 따름). [2026-10-28] */
+function _ddxCalHtml(){
+  const sel=_ddx.date, base=parseDateKey(_ddx.calYm||sel);
+  const y=base.getFullYear(), m=base.getMonth(), ws=getWeekStartPref();
+  const lead=(new Date(y,m,1).getDay()-ws+7)%7, today=_ddTodayKey();
+  let cells='';
+  for(let i=0;i<42;i++){
+    const dt=new Date(y,m,1-lead+i), k=dateKey(dt.getFullYear(),dt.getMonth(),dt.getDate()), dw=dt.getDay();
+    let c='ev-multi-day'+(dt.getMonth()!==m?' other':'')+(dw===0?' sun':(dw===6?' sat':''))+(k===today?' today':'')+(k===sel?' on':'');
+    cells+=`<button type="button" class="${c}" onclick="_ddxPick('${k}')" aria-label="${dt.getMonth()+1}월 ${dt.getDate()}일">${dt.getDate()}</button>`;
+  }
+  return `<div class="ev-multi-nav"><button type="button" class="ev-multi-nav-btn" onclick="_ddxCalNav(-1)" aria-label="이전 달">‹</button><div class="ev-multi-nav-title">${y}년 ${m+1}월</div><button type="button" class="ev-multi-nav-btn" onclick="_ddxCalNav(1)" aria-label="다음 달">›</button></div>
+    <div class="ev-multi-dows" data-ws="${ws}">${_miniDowsHtml()}</div><div class="ev-multi-grid">${cells}</div>
+    ${sel!==today?`<button type="button" class="ddx-cal-today" onclick="_ddxPick('${today}')">오늘로</button>`:''}`;
+}
+function _ddxCalToggle(){ _ddx.calOpen=!_ddx.calOpen; _ddx.calYm=null; _ddxRender(); }
+function _ddxCalNav(d){
+  const b=parseDateKey(_ddx.calYm||_ddx.date); b.setDate(1); b.setMonth(b.getMonth()+d);
+  _ddx.calYm=dateKey(b.getFullYear(),b.getMonth(),1);
+  const c=document.getElementById('ddxCal'); if(c) c.innerHTML=_ddxCalHtml();
+}
+function _ddxPick(k){ _ddx.date=k; _ddx.calOpen=false; _ddx.calYm=null; _ddxRender(); }
+window._ddxCalToggle=_ddxCalToggle; window._ddxCalNav=_ddxCalNav; window._ddxPick=_ddxPick;
 function _ddxColor(k){
   _ddx.color=k;
   document.querySelectorAll('#ddxPager .ev-color').forEach(b=>b.classList.toggle('on',b.getAttribute('onclick')===`_ddxColor('${_jsStr(k)}')`));
@@ -14656,7 +14694,8 @@ function renderEvUntilCal(){
   if(title)title.textContent=y+'년 '+(m+1)+'월';
   const first=new Date(y,m,1);
   const last=new Date(y,m+1,0);
-  const startDow=first.getDay();
+  const startDow=(first.getDay()-getWeekStartPref()+7)%7;   // 앞 꼬리 칸 수 — 주 시작 요일 설정 따름
+  _syncMiniDows();
   const totalDays=last.getDate();
   const td=new Date();
   const todayKey=dateKey(td.getFullYear(),td.getMonth(),td.getDate());
@@ -17994,7 +18033,8 @@ function renderRangeCal(){
 
   const first=new Date(y,m,1);
   const last=new Date(y,m+1,0);
-  const startDow=first.getDay();
+  const startDow=(first.getDay()-getWeekStartPref()+7)%7;   // 앞 꼬리 칸 수 — 주 시작 요일 설정 따름
+  _syncMiniDows();
   const totalDays=last.getDate();
   const td=new Date();
   const todayKey=dateKey(td.getFullYear(),td.getMonth(),td.getDate());
@@ -18182,7 +18222,8 @@ function renderDayCal(){
   if(title)title.textContent=`${y}년 ${m+1}월`;
   const first=new Date(y,m,1);
   const last=new Date(y,m+1,0);
-  const startDow=first.getDay();
+  const startDow=(first.getDay()-getWeekStartPref()+7)%7;   // 앞 꼬리 칸 수 — 주 시작 요일 설정 따름
+  _syncMiniDows();
   const totalDays=last.getDate();
   const td=new Date();
   const todayKey=dateKey(td.getFullYear(),td.getMonth(),td.getDate());
@@ -18252,7 +18293,8 @@ function renderMultiCal(){
   
   const first=new Date(y,m,1);
   const last=new Date(y,m+1,0);
-  const startDow=first.getDay();
+  const startDow=(first.getDay()-getWeekStartPref()+7)%7;   // 앞 꼬리 칸 수 — 주 시작 요일 설정 따름
+  _syncMiniDows();
   const totalDays=last.getDate();
   const td=new Date();
   const todayKey=dateKey(td.getFullYear(),td.getMonth(),td.getDate());
@@ -25751,7 +25793,8 @@ function renderDhRangeCal(){
   title.textContent=`${y}년 ${m+1}월`;
   const first=new Date(y,m,1);
   const last=new Date(y,m+1,0);
-  const startDow=first.getDay();
+  const startDow=(first.getDay()-getWeekStartPref()+7)%7;   // 앞 꼬리 칸 수 — 주 시작 요일 설정 따름
+  _syncMiniDows();
   const totalDays=last.getDate();
   const td=new Date();
   const todayKey=dateKey(td.getFullYear(),td.getMonth(),td.getDate());
@@ -30089,7 +30132,8 @@ function renderTdUntilCal(){
   if(title)title.textContent=y+'년 '+(m+1)+'월';
   const first=new Date(y,m,1);
   const last=new Date(y,m+1,0);
-  const startDow=first.getDay();
+  const startDow=(first.getDay()-getWeekStartPref()+7)%7;   // 앞 꼬리 칸 수 — 주 시작 요일 설정 따름
+  _syncMiniDows();
   const totalDays=last.getDate();
   const td=new Date();
   const todayKey=dateKey(td.getFullYear(),td.getMonth(),td.getDate());
