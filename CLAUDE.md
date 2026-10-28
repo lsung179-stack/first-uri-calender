@@ -86,6 +86,7 @@
 - `_recomputePremium()` → `_isPremium = _serverPremium` (**서버가 유일한 진실**). 기기 엔타이틀먼트로 프리미엄 부여 금지.
 - `loadPremiumStatus()` → RPC `my_premium_status` 호출 → `_serverPremium` 설정.
 - `isEffectivePremium()` → 관리자는 `_adminPlanOverride`, 일반 유저는 `_isPremium`.
+- 구독 화면 들어오는 길(2026-10-28 넓힘): `openPremiumSheet(src, ctx)` — src=어디서 왔는지(audit `funnel.premium_view` meta.src: settings·store_banner·theme_preview·offer·upsell·rooms_nudge·direct), ctx={title,sub,img,key} 면 화면 맨 위 '들어온 이유' 띠(`#premCtx`). **`showUpgradeModal` 은 확인 창 없이 바로 구독 화면**(이유 띠 포함). 무료 사용자에게만: 설정 '프리미엄 구독' 줄 '7일 무료' 배지(`#uniPremBadge`), 방 목록 위 안내 카드(`_premNudgeHTML`, 닫으면 7일 숨김 `uricalv2.premNudgeAt`), 스토어 위 띠 누르면 구독 화면, 테마 미리보기 주 버튼 '7일 무료로 이 테마 쓰기'(코인은 보조). 상태가 바뀌면 `_syncPremEntries()`.
 - 결제: `onPremiumSubscribe()` → `_applyRcEntitlement()`(구매 직후 낙관 반영 후 서버 재동기화). **구매 복원 `onRestorePurchases()`는 `_applyRcEntitlement` 안 씀** — `loadPremiumStatus()` 후 `_serverPremium`일 때만 프리미엄(기기 Apple ID 구독 신뢰 금지 → 계정 간 프리미엄 누수 방지).
 - `syncPremiumFromRevenueCat()` — **자동 호출 금지**(기기 구독을 직접 읽어 누수 위험). 정의만 두고 호출하지 않음.
 - **주간 보기(2026-09-26)**: `setCalView('month'|'week')`(기억 `uricalv2.calView`), `renderWeekList`/`_calApplyView`/`_wkEnsure`, 주 시작 = `getWeekStartPref()`(위젯 payload `weekStart` 도 같은 값). 할 일 완료한 사람 = `todos.done_by` → `_todoDoneByChipHtml`(멤버 2명 이상 방만). 위젯: 새 큰 위젯 '이번 주'(iOS `UriWeek`, Android `WeekWidgetProvider`).

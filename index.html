@@ -731,6 +731,15 @@ body.fs-on .r-card-name{white-space:normal;word-break:keep-all;overflow-wrap:any
 .upg-note{margin-top:12px;font-size:calc(12px*var(--fsk,1));color:var(--gold);font-weight:600;letter-spacing:.3px}
 /* 프리미엄 구독 안내 시트 */
 .uni-nav-prem{background:linear-gradient(135deg,#fbf2e0,#f3e4c4);border-color:var(--gold);color:var(--accent);font-weight:700}
+.uni-prem-badge{margin-left:auto;margin-right:6px;padding:3px 9px;border-radius:99px;background:#8b3a2a;color:#fff;font-size:calc(11px*var(--fsk,1));font-weight:800;white-space:nowrap}
+/* 방 목록 위 '7일 무료' 안내 카드(무료 사용자, 닫으면 7일 동안 안 보임) [2026-10-28] */
+.r-prem-nudge{position:relative;display:flex;align-items:center;gap:12px;margin:0 0 12px;padding:12px 40px 12px 12px;border-radius:16px;background:linear-gradient(110deg,#17120e 0%,#2d2117 60%,#3b2a1a 100%);box-shadow:0 4px 14px rgba(60,40,20,.14);cursor:pointer;overflow:hidden}
+.rpn-seals{display:flex;flex:none}.rpn-seals img{width:36px;height:36px;border-radius:50%;border:2px solid #fbf2e0;background:#fff}.rpn-seals img+img{margin-left:-12px}
+.rpn-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.rpn-t b{font-size:calc(13.5px*var(--fsk,1));color:#fff6ea;line-height:1.3}
+.rpn-t span{font-size:calc(11.5px*var(--fsk,1));color:rgba(255,246,234,.78);line-height:1.35}
+.rpn-go{flex:none;padding:7px 12px;border-radius:99px;background:#f28a1e;color:#1a120b;font-size:calc(12px*var(--fsk,1));font-weight:800;white-space:nowrap}
+.rpn-x{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:28px;height:28px;border:0;background:none;color:rgba(255,246,234,.6);font-size:calc(15px*var(--fsk,1));cursor:pointer}
 .prem-hero{text-align:center;padding:6px 0 4px}
 .prem-crown{font-size:calc(34px*var(--fsk,1));line-height:1}
 .prem-title{font-family:var(--ff-serif);font-size:calc(20px*var(--fsk,1));font-weight:800;color:var(--text);margin-top:6px}
@@ -772,6 +781,13 @@ body.fs-on .r-card-name{white-space:normal;word-break:keep-all;overflow-wrap:any
 /* 선택된 플랜은 어느 테마에서나 크림 면 — 글씨는 테마 글자색(어두운 테마에선 밝은색)이 아니라 짙은 색으로 고정 [2026-10-28] */
 .prem-plan.selected .pp-name,.prem-plan.selected .pp-price{color:#2a2119}
 .prem-plan.selected .pp-desc{color:#6d5c4c}
+/* 들어온 이유 띠(잠긴 테마·기능에서 왔을 때) — 테마와 상관없이 크림 면·짙은 글씨 [2026-10-28] */
+.prem-ctx{display:flex;align-items:center;gap:12px;margin:12px 16px 4px;padding:10px 12px;border-radius:14px;background:#fbf2e0;border:1px solid rgba(176,135,66,.35)}
+.pcx-img{width:76px;height:44px;flex:none;border-radius:10px;background:#1b1611 right center/cover no-repeat}
+.pcx-ic{width:44px;height:44px;flex:none;border-radius:12px;background:#f1dfbf;display:flex;align-items:center;justify-content:center;font-size:calc(20px*var(--fsk,1))}
+.pcx-t{min-width:0;display:flex;flex-direction:column;gap:2px}
+.pcx-t b{font-size:calc(14px*var(--fsk,1));color:#2a2119;line-height:1.35}
+.pcx-t span{font-size:calc(12px*var(--fsk,1));color:#6d5c4c;line-height:1.4}
 .pp-radio{width:22px;height:22px;border-radius:50%;border:2px solid var(--mute);flex-shrink:0;position:relative}
 .prem-plan.selected .pp-radio{border-color:var(--accent)}
 .prem-plan.selected .pp-radio::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--accent)}
@@ -1852,6 +1868,9 @@ body.rc-dino .cal-import-btn[data-rci="cimport"]{background-image:url("https://b
 }
 .store-trial-notice .trial-icon{font-size:calc(16px*var(--fsk,1));flex-shrink:0}
 .store-trial-notice .trial-text{flex:1;line-height:1.4;font-weight:500;color:var(--text)}
+.store-trial-notice.stn-go{cursor:pointer}
+.stn-cta{flex:none;font-size:calc(12px*var(--fsk,1));font-weight:800;color:#8b3a2a;white-space:nowrap}
+.store-trial-notice .trial-text{color:#3a2418}
 
 /* ═══ 달력 주문하기 (캘린더 굿즈) ═══ */
 .co-hero{background:linear-gradient(160deg,#f3e6cf,#f8f0e0);border:1px solid rgba(139,58,42,.18);border-radius:14px;padding:20px 18px;margin-bottom:18px;text-align:center}
@@ -4963,7 +4982,7 @@ try{var _cp=window.Capacitor&&window.Capacitor.getPlatform&&window.Capacitor.get
     <div class="uni-divider"></div>
 
     <div class="uni-sec-label">프리미엄</div>
-    <button class="uni-nav uni-nav-prem" data-rci="premium" onclick="openPremiumSheet()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>프리미엄 구독</span><span class="chev">›</span></button>
+    <button class="uni-nav uni-nav-prem" data-rci="premium" onclick="openPremiumSheet('settings')"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>프리미엄 구독</span><span class="uni-prem-badge" id="uniPremBadge" hidden>7일 무료</span><span class="chev">›</span></button>
 
     <div class="uni-sec-label" style="margin-top:14px">꾸미기</div>
     <button class="uni-nav" data-rci="store" onclick="openStore()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>스토어</span><span class="chev">›</span></button>
@@ -5601,6 +5620,7 @@ try{var _cp=window.Capacitor&&window.Capacitor.getPlatform&&window.Capacitor.get
     <button class="ann-head-btn" onclick="closePremiumSheet()" aria-label="닫기">✕</button>
   </div>
   <div class="ann-body">
+    <div class="prem-ctx" id="premCtx" hidden></div>
     <div class="prem-hero-lux">
       <div class="phl-glow"></div>
       <img class="phl-logo" src="icon-180.png" alt="우리 캘린더">
@@ -8011,16 +8031,11 @@ async function showUpgradeModal(opts){
     toast(opts.message||'프리미엄 전용 기능이에요');
     return;
   }
-  const msg=(opts.message||'프리미엄 전용 기능이에요.')
-    + (opts.feature?(' '+opts.feature):'')
-    + ' 지금 시작하면 첫 7일은 무료로 모든 프리미엄 기능을 써볼 수 있어요.';
-  let goSub=false;
-  try{
-    goSub=await vConfirm(msg,{title:'7일 무료 체험',okText:'무료로 체험하기',cancelText:'다음에'});
-  }catch(_){ goSub=true; }
-  if(!goSub) return;
+  // 예전엔 '7일 무료 체험' 확인 창을 한 번 더 거쳤다(45일간 안내 16번 → 구독 화면 6번, 2026-10-28 기록) —
+  // 이제 바로 구독 화면으로 가고, 무엇 때문에 왔는지는 화면 맨 위 띠로 보여 준다
+  try{ _audit('funnel.upsell_view',{meta:{src:'pwa'}}); }catch(_){}
   if(typeof openPremiumSheet==='function'){
-    openPremiumSheet();
+    openPremiumSheet('upsell',{title:opts.message||'프리미엄 전용 기능이에요', sub:(opts.feature?opts.feature+' ':'')+'첫 7일은 무료로 전부 써 볼 수 있어요.', img:opts.img||null, key:opts.key||null});
   }else{
     toast(opts.message||'프리미엄 전용 기능이에요');
   }
@@ -8053,6 +8068,7 @@ function _applyAdminPlanUI(){
   try{ if(_adminPlanOverride){ hideAdBanner(); } else { showAdBannerIfNeeded(); } }catch(_){}
   // 씰·테마·카드 게이트 즉시 반영 (무료 토글 시 프리미엄 씰/테마 → 기본으로 바로 전환)
   try{ if(typeof _refreshPremiumGatedUI==='function') _refreshPremiumGatedUI(); }catch(_){}
+  try{ _syncPremEntries(); if(_myRooms) renderRooms(_myRooms,_roomCountMap||{}); }catch(_){}
 }
 
 /* 프리미엄 수동부여(전체체험·개별관리) UI 제거 — 필요 시 관리자가 subscriptions에
@@ -8699,6 +8715,7 @@ function _recomputePremium(){
   // → 표시/기능 판정에는 서버 상태만 사용한다.
   _isPremium = _serverPremium;
   _premiumInfo = _serverPremiumInfo || null;
+  try{ if(typeof _syncPremEntries==='function') _syncPremEntries(); }catch(_){}
 }
 const FREE_LIMITS={ photosPerEvent:1, activeTodos:5, doneTodoDays:7 };  // 방·인원은 무제한(제한 없음)
 const PREMIUM_DONE_DAYS=0;  // 프리미엄: 완료 할일 평생 보관(만료 없음). 무료는 FREE_LIMITS.doneTodoDays=7
@@ -9028,11 +9045,39 @@ function renderEmpty(){
   `;
 }
 
+/* 방 목록 위 '7일 무료' 안내 — 무료 사용자에게만, 닫으면 7일 동안 숨김(uricalv2.premNudgeAt) [2026-10-28] */
+function _premNudgeOn(){
+  try{
+    if(!_currentUser||(typeof isEffectivePremium==='function'&&isEffectivePremium())) return false;
+    var t=+localStorage.getItem('uricalv2.premNudgeAt')||0;
+    return Date.now()-t>7*864e5;
+  }catch(_){ return false; }
+}
+function _premNudgeHTML(){
+  if(!_premNudgeOn()) return '';
+  var seals=['hnight','garden','camp'].map(function(k){ var st=SEAL_SETS[k]; return st&&st.img?'<img src="'+st.img+'" alt="">':''; }).join('');
+  return '<div class="r-prem-nudge" onclick="onPremNudgeGo()"><div class="rpn-seals">'+seals+'</div>'
+    +'<div class="rpn-t"><b>테마 전부 7일 무료</b><span>새 테마 2종·스티커·이모지까지</span></div>'
+    +'<span class="rpn-go">써 보기</span>'
+    +'<button type="button" class="rpn-x" aria-label="닫기" onclick="event.stopPropagation();onPremNudgeClose()">✕</button></div>';
+}
+function onPremNudgeGo(){ openPremiumSheet('rooms_nudge'); }
+function onPremNudgeClose(){
+  try{ localStorage.setItem('uricalv2.premNudgeAt',String(Date.now())); }catch(_){}
+  try{ _audit('funnel.nudge_close',{meta:{src:'rooms_nudge'}}); }catch(_){}
+  var el=document.querySelector('.r-prem-nudge'); if(el) el.remove();
+}
+window.onPremNudgeGo=onPremNudgeGo; window.onPremNudgeClose=onPremNudgeClose;
+/* 무료/구독 상태가 바뀔 때 들어오는 길 표시를 맞춤(설정 배지·방 목록 카드) */
+function _syncPremEntries(){
+  try{ var b=document.getElementById('uniPremBadge'); if(b) b.hidden=!!(typeof isEffectivePremium==='function'&&isEffectivePremium()); }catch(_){}
+  try{ var n=document.querySelector('.r-prem-nudge'); if(n&&!_premNudgeOn()) n.remove(); }catch(_){}
+}
 function renderRooms(rooms,countMap){
   const c=document.getElementById('roomsContent');
   if(!rooms.length){renderEmpty();return}
   const _editBtn=(rooms.length>=1)?`<button class="r-reorder-btn${_roomEditMode?' on':''}" onclick="event.stopPropagation();toggleRoomEdit()">${_roomEditMode?'완료':'편집'}</button>`:'';
-  let html=`<div class="r-section-row"><span class="r-section-title">내 방</span><span class="r-section-count">· ${rooms.length}</span>${_editBtn}</div>`;
+  let html=_premNudgeHTML()+`<div class="r-section-row"><span class="r-section-title">내 방</span><span class="r-section-count">· ${rooms.length}</span>${_editBtn}</div>`;
   rooms.forEach(r=>{
     const cnt=countMap[r.id]||1;
     const safeName=escapeHtml(r.name||'(이름 없음)');
@@ -22844,9 +22889,9 @@ async function offerItem(type,key,upgradeOpts){
   const name=_itemName(type,key);
   const msg='<b>'+escapeHtml(name)+'</b> '+_COIN_TYPE_LABEL[type]+' <b>'+price+'코인</b>으로 살 수 있어요.<br>'
     +'한 번 사면 구독 없이도 계속 쓸 수 있어요.<br><span style="font-size:calc(12px*var(--fsk,1));color:var(--mute)">보유 '+_coinBalance.toLocaleString()+'코인</span>';
-  const pick=await askRecurringDelete(msg,{title:'코인으로 구매', oneLabel:price+'코인으로 구매', allLabel:'프리미엄으로 전부 쓰기'});
+  const pick=await askRecurringDelete(msg,{title:'코인으로 구매', oneLabel:price+'코인으로 구매', allLabel:'7일 무료로 전부 쓰기'});
   if(pick==='one') buyItemWithCoins(type,key);
-  else if(pick==='all'){ if(typeof openPremiumSheet==='function') openPremiumSheet(); }
+  else if(pick==='all'){ if(typeof openPremiumSheet==='function') openPremiumSheet('offer',{title:name+' '+(_COIN_TYPE_LABEL[type]||'')+'도 포함돼요', sub:'구독하면 테마·스티커·이모지 전부를 쓸 수 있어요. 첫 7일은 무료.', key:type+':'+key}); }
 }
 async function _askTopUp(need){
   const ok=await vConfirm('코인이 '+need+'개 모자라요. 코인을 충전할까요?',{title:'코인 부족',okText:'충전하기',cancelText:'다음에'});
@@ -23535,7 +23580,15 @@ function _fillPremCounts(){
   try{ n.dh=String(DH_THEMES.length); }catch(_){}
   document.querySelectorAll('#premiumCard [data-pc]').forEach(el=>{ const v=n[el.dataset.pc]; if(v) el.textContent=v; });
 }
-function openPremiumSheet(){
+/* 구독 화면 — src: 어디서 들어왔는지(기록용), ctx: {title, sub, img} 들어온 이유를 맨 위에 보여 줌(잠긴 테마·기능에서 들어온 경우) [2026-10-28] */
+function _premCtxHTML(ctx){
+  if(!ctx||!ctx.title) return '';
+  return (ctx.img?'<div class="pcx-img" style="background-image:url(&quot;'+escapeHtml(ctx.img)+'&quot;)"></div>':'<div class="pcx-ic">🔒</div>')
+    +'<div class="pcx-t"><b>'+escapeHtml(ctx.title)+'</b>'+(ctx.sub?'<span>'+escapeHtml(ctx.sub)+'</span>':'')+'</div>';
+}
+function openPremiumSheet(src,ctx){
+  try{ _audit('funnel.premium_view',{meta:{src:(typeof src==='string'?src:'')||'direct', ctx:(ctx&&ctx.key)||null}}); }catch(_){}
+  try{ var pc=document.getElementById('premCtx'); if(pc){ var h=(!isEffectivePremium())?_premCtxHTML(ctx):''; pc.innerHTML=h; pc.hidden=!h; } }catch(_){}
   closeMainModals();
   try{ _fillPremCounts(); }catch(_){}
   const prem=isEffectivePremium();
@@ -24239,9 +24292,10 @@ function renderTrialBanner(){
     </div>`;
   }else{
     banner.innerHTML=`
-    <div class="store-trial-notice">
+    <div class="store-trial-notice stn-go" onclick="openPremiumSheet('store_banner')">
       <span class="trial-icon">🎁</span>
       <span class="trial-text"><b>첫 7일 무료</b> — 모든 테마·컬러·글꼴·캐릭터 팩을 골라 쓸 수 있어요</span>
+      <span class="stn-cta">시작하기 ›</span>
     </div>`;
   }
 }
@@ -24501,11 +24555,11 @@ function _skpRenderAct(){
   var h='';
   if(price){
     // 순서: 프리미엄 → 코인(+보유 코인 안내) — 사용자 지시 2026-09-27
-    h+='<button class="skp-btn sec" onclick="onSkinPreviewPremium()">프리미엄으로 모든 테마 쓰기</button>';
-    h+='<button class="skp-btn pri" onclick="onSkinPreviewBuy()"><i class="coin-ico"></i>'+price+'코인으로 구매</button>';
+    h+='<button class="skp-btn pri" onclick="onSkinPreviewPremium()">7일 무료로 이 테마 쓰기</button>';
+    h+='<button class="skp-btn sec" onclick="onSkinPreviewBuy()"><i class="coin-ico"></i>'+price+'코인으로 소장하기</button>';
     h+='<div class="skp-bal">보유 '+(_coinBalance||0).toLocaleString()+'코인 · 한 번 사면 구독 없이도 계속 써요</div>';
   }else{
-    h+='<button class="skp-btn pri" onclick="onSkinPreviewPremium()">프리미엄으로 쓰기</button>';
+    h+='<button class="skp-btn pri" onclick="onSkinPreviewPremium()">7일 무료로 이 테마 쓰기</button>';
   }
   act.innerHTML=h;
 }
@@ -24549,9 +24603,8 @@ window.onSkinPreviewBuy=onSkinPreviewBuy;
 function onSkinPreviewPremium(){
   var k=_skpKey;
   closeSkinPreview();
-  var price=_coinVisible()&&k?coinPriceOf('skin',k):null;
-  if(price&&typeof openPremiumSheet==='function') openPremiumSheet();
-  else showUpgradeModal(_SKP_UPGRADE);
+  var sk=k&&CARD_SKINS[k];
+  openPremiumSheet('theme_preview',{title:_setDisplayName(k)+' 테마는 프리미엄으로 쓸 수 있어요', sub:'다른 테마·스티커·이모지까지 전부, 첫 7일은 무료예요.', img:(sk&&sk.img)||null, key:'skin:'+k});
 }
 window.onSkinPreviewPremium=onSkinPreviewPremium;
 /* 스토어 쇼케이스 → 방목록 탭으로 이동 + 편집모드 켜서 연필 노출 */
