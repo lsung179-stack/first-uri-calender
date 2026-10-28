@@ -570,6 +570,16 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .rcs-goldfoil{background:radial-gradient(circle at 84% 24%,rgba(206,168,96,.4) 0 2px,transparent 3.5px),radial-gradient(circle at 68% 74%,rgba(206,168,96,.32) 0 1.5px,transparent 3px),radial-gradient(circle at 24% 34%,rgba(206,168,96,.28) 0 1.5px,transparent 3px),linear-gradient(135deg,#f8efd8,#eeddb6)!important;box-shadow:inset 0 0 0 1.5px rgba(194,160,107,.5)!important}
 .rcs-aurora{background:radial-gradient(circle at 76% 18%,rgba(126,222,196,.28),transparent 42%),radial-gradient(circle at 30% 70%,rgba(160,132,222,.3),transparent 46%),linear-gradient(135deg,#1f2f4c,#2c4658 45%,#3b3a5e 80%,#22304c)!important;border-color:rgba(126,222,196,.22)!important}
 .rcs-dark .r-card-name,.rcs-dark .rm-cardprev-name{color:#f6efdc!important}
+/* 어두운 팔레트(camp·hnight)에선 글자색이 밝은 색이라, 밝은 그림 카드(어두운 표시가 없는 rcs-img/rcs-char) 위에선 이름이 사라졌다
+   (사용자 캡처 2026-10-28 '가족방'·'친구2') — 그런 카드만 짙은 글씨로 [2026-10-28] */
+body[data-theme="camp"] .rcs-img:not(.rcs-dark) .r-card-name,body[data-theme="hnight"] .rcs-img:not(.rcs-dark) .r-card-name,
+body[data-theme="camp"] .rcs-char:not(.rcs-dark) .r-card-name,body[data-theme="hnight"] .rcs-char:not(.rcs-dark) .r-card-name,
+body[data-theme="camp"] .rcs-img:not(.rcs-dark) .rm-cardprev-name,body[data-theme="hnight"] .rcs-img:not(.rcs-dark) .rm-cardprev-name,
+body[data-theme="camp"] .store-theme-card.rcs-img:not(.rcs-dark) .stc-name,body[data-theme="hnight"] .store-theme-card.rcs-img:not(.rcs-dark) .stc-name{color:#33291f!important}
+body[data-theme="camp"] .rcs-img:not(.rcs-dark) .r-card-meta,body[data-theme="hnight"] .rcs-img:not(.rcs-dark) .r-card-meta,
+body[data-theme="camp"] .rcs-char:not(.rcs-dark) .r-card-meta,body[data-theme="hnight"] .rcs-char:not(.rcs-dark) .r-card-meta,
+body[data-theme="camp"] .rcs-img:not(.rcs-dark) .r-card-arrow,body[data-theme="hnight"] .rcs-img:not(.rcs-dark) .r-card-arrow,
+body[data-theme="camp"] .store-theme-card.rcs-img:not(.rcs-dark) .stc-sub,body[data-theme="hnight"] .store-theme-card.rcs-img:not(.rcs-dark) .stc-sub{color:rgba(51,41,31,.72)!important}
 .rcs-dark .r-card-meta,.rcs-dark .rm-cardprev-chev,.rcs-dark .r-card-arrow,.rcs-dark .rm-bpname{color:rgba(246,239,220,.72)!important}
 .rcs-dark .r-card-seal-letter{color:#f6efdc}
 .rcs-dark .r-card-grip{color:rgba(246,239,220,.6)}
@@ -1588,6 +1598,12 @@ body[data-theme="hnight"] .uni-nav-prem{background:linear-gradient(135deg,#3a2d2
    위 끝은 마스크로 바탕색에 스며들게(그림 하늘색과 바탕색이 조금 달라도 경계가 안 보이게) [2026-10-28] */
 body.rc-hnight .rc-decor .rc-bg.rc-bg-scene,body.rc-garden .rc-decor .rc-bg.rc-bg-scene{background-size:cover;background-position:center bottom;-webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 30%);mask-image:linear-gradient(to bottom,transparent 0%,#000 30%)}
 body.rc-hnight .rc-decor .rc-bg.rc-bg-scene{opacity:calc(.36*var(--bg-k,1))}
+/* 할로윈 나이트 — 달 이름을 영어 할로윈 글씨(Jolly Lodger)로, 연도는 숫자만(사용자 "할로윈테마 월을 영어로 할로윈폰트 전월 적용"). 글꼴은 테마를 쓸 때만 받는다(_hnLoadFont) */
+body.rc-hnight .cal-month-name[data-en]{font-size:0!important;line-height:1;overflow:visible}
+body.rc-hnight .cal-month-name[data-en]::after{content:attr(data-en);display:block;font-family:'Jolly Lodger','Noto Serif KR',serif;font-weight:400;font-size:calc(34px*min(var(--fsk,1),1.15));line-height:1;letter-spacing:.5px;color:var(--aL);white-space:nowrap}
+#calendarScreen.week-mode .cal-month-name[data-en]::after{font-size:calc(26px*min(var(--fsk,1),1.15))}
+body.rc-hnight .cal-month-year[data-en]{font-size:0!important}
+body.rc-hnight .cal-month-year[data-en]::after{content:attr(data-en);font-size:calc(11px*min(var(--fsk,1),1.15));letter-spacing:.32em;padding-left:.32em;font-weight:700;color:var(--sub)}
 body.rc-garden .rc-decor .rc-bg.rc-bg-scene{opacity:calc(.32*var(--bg-k,1))}
 /* 씬 자체가 남색 밤하늘이라 다른 테마(.4)보다 진하게 깔아도 글씨를 해치지 않는다 */
 /* 캐릭터(모닥불 앞 너구리·고슴도치)가 그림 아래쪽 70~92% 에 있어 기본 위치(30%)면 탭바 뒤로 숨는다(사용자 제보 2026-09-23).
@@ -11058,6 +11074,8 @@ function pad(n){return String(n).padStart(2,'0')}
 function dateKey(y,m,d){return `${y}-${pad(m+1)}-${pad(d)}`}
 function parseDateKey(k){const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)}
 const MONTH_NAMES=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+/* 할로윈 나이트 테마의 달 이름(영어, Jolly Lodger 글씨) — #calMonthName[data-en] 로 넘기고 CSS 가 바꿔 그린다 [2026-10-28] */
+const MONTH_NAMES_EN=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DOW_NAMES=['일','월','화','수','목','금','토'];
 function daysInMonth(y,m){return new Date(y,m+1,0).getDate()}
 function firstDow(y,m){return new Date(y,m,1).getDay()}
@@ -12279,6 +12297,7 @@ function renderMonthly(){
   if(typeof _ddView!=='undefined'&&_ddView!==_ddViewKey()){ try{ renderDdayRow(); }catch(_){} }   // 멤버 탭이 바뀌면 D-day 줄도
   document.getElementById('calYear').textContent=_calYear+'년';
   document.getElementById('calMonthName').textContent=MONTH_NAMES[_calMonth];
+  try{ document.getElementById('calYear').dataset.en=String(_calYear); document.getElementById('calMonthName').dataset.en=MONTH_NAMES_EN[_calMonth]; }catch(_){}
   
   const grid=document.getElementById('calGrid');
   const fdow=firstDow(_calYear,_calMonth);  // 이달 1일의 요일 (0=일, 6=토)
@@ -26513,6 +26532,13 @@ function _ctPanScale(el, o){
   out.y = oy>0.5 ? (100/oy) : 0;
   return out;
 }
+/* 할로윈 나이트 달 이름 글꼴 — 처음 쓸 때 한 번만 받는다 */
+function _hnLoadFont(){
+  if(document.getElementById('hnFont')) return;
+  var l=document.createElement('link'); l.id='hnFont'; l.rel='stylesheet';
+  l.href='https://fonts.googleapis.com/css2?family=Jolly+Lodger&display=swap';
+  document.head.appendChild(l);
+}
 function _ctNum(v,dflt){ var n=Number(v); return isFinite(n)?n:dflt; }
 function _ctOpacity(v){ var n=Number(v); if(!isFinite(n))n=40; return Math.max(0,Math.min(100,n)); }
 function _applyRoomCharDecor(ct){
@@ -26520,6 +26546,7 @@ function _applyRoomCharDecor(ct){
   if(!ct) return;
   document.body.classList.add('rc-on');
   if(ct.cls) document.body.classList.add(ct.cls);
+  if(ct.cls==='rc-hnight') _hnLoadFont();
   // .app 스택 컨텍스트 안 첫 자식으로 데코 삽입(콘텐츠 뒤에 그려짐)
   var host=document.querySelector('.app')||document.body;
   var d=document.createElement('div'); d.id='rcDecor'; d.className='rc-decor';
@@ -30752,8 +30779,8 @@ function _calApplyView(){
   _wkEnsure();
   const T=_wkTitle();
   const yEl=document.getElementById('calYear'), mEl=document.getElementById('calMonthName'), rEl=document.getElementById('calWeekRange');
-  if(yEl) yEl.textContent=T.y+'년';
-  if(mEl) mEl.textContent=T.m+'월 '+T.n+'주';
+  if(yEl){ yEl.textContent=T.y+'년'; yEl.dataset.en=String(T.y); }
+  if(mEl){ mEl.textContent=T.m+'월 '+T.n+'주'; mEl.dataset.en=MONTH_NAMES_EN[T.m-1]+' · W'+T.n; }
   if(rEl) rEl.textContent=T.range;
   // 오늘 칩 — 이번 주가 아닐 때만
   const btn=document.getElementById('todayBtn');
