@@ -634,17 +634,19 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .store-camp-hero .sfh-eyebrow{color:#f2c14e;text-shadow:0 1px 4px rgba(4,10,28,.6)}
 .store-camp-hero .sfh-title{color:#fff;margin-bottom:6px;text-shadow:0 1px 6px rgba(4,10,28,.6)}
 .store-camp-hero .sfh-desc{color:rgba(240,244,252,.92);margin-bottom:0;text-shadow:0 1px 4px rgba(4,10,28,.6)}
-/* 할로윈 나이트·초록 정원 출시 히어로(2026-10-28) — 그림 왼쪽이 비어 있어 스크림 없이 글씨를 올린다. 두 장이 붙어 나오므로 간격을 좁힘 */
-.store-hn-hero,.store-gd-hero{margin-bottom:10px}
-.store-hn-hero{background-color:#0c0a09;box-shadow:0 6px 18px rgba(0,0,0,.35)}
-.store-hn-hero::before{background:linear-gradient(100deg,rgba(8,6,5,.6) 0%,rgba(8,6,5,.25) 46%,rgba(8,6,5,0) 70%)}
-.store-hn-hero .sfh-eyebrow{color:#f6a33c}
-.store-hn-hero .sfh-title{color:#f3e7d3}
-.store-gd-hero{background-color:#fbf6ea;box-shadow:0 6px 18px rgba(31,74,63,.16)}
-.store-gd-hero::before{background:none}
-.store-gd-hero .sfh-eyebrow{color:#2f9c80;text-shadow:none}
-.store-gd-hero .sfh-title{color:#1f4a3f;text-shadow:none}
-.store-gd-hero .sfh-desc{color:#4f6e64;text-shadow:none}
+/* 할로윈 나이트·초록 정원 출시 히어로 — 한 장 통합(2026-10-28). 왼쪽 글씨, 오른쪽에 두 테마 배너를 카드처럼 겹쳐 놓음 */
+.store-new-hero{position:relative;overflow:hidden;display:flex;align-items:center;gap:8px;min-height:164px;padding:18px 12px 18px 18px;margin-bottom:16px;border-radius:18px;background:linear-gradient(120deg,#fbf5ea 0%,#f3eadb 100%);box-shadow:0 6px 18px rgba(60,40,20,.14);cursor:pointer}
+.snh-text{flex:1 1 48%;min-width:0;position:relative;z-index:2}
+.store-new-hero .sfh-eyebrow{color:#d96d18;text-shadow:none}
+.store-new-hero .sfh-title{color:#2a2119;text-shadow:none;margin-bottom:6px;font-size:calc(19px*var(--fsk,1));line-height:1.3}
+.store-new-hero .sfh-desc{color:#6d5c4c;text-shadow:none;margin-bottom:0}
+.snh-cards{position:relative;flex:0 0 50%;align-self:stretch;min-height:132px;margin:-6px -4px -6px 0}
+.snh-card{position:absolute;width:100%;aspect-ratio:720/305;right:0;border:2px solid #fff;border-radius:12px;padding:0;background:#111 right center/cover no-repeat;box-shadow:0 6px 14px rgba(0,0,0,.22);cursor:pointer;overflow:hidden}
+.snh-card span{position:absolute;left:8px;bottom:6px;font-size:calc(10.5px*var(--fsk,1));font-weight:800;padding:3px 8px;border-radius:99px;white-space:nowrap}
+.snh-hn{top:2px;right:6%;transform:rotate(-4deg);z-index:2}
+.snh-hn span{background:rgba(0,0,0,.72);color:#f6a33c}
+.snh-gd{bottom:2px;right:-2%;transform:rotate(3deg);background-color:#fcf6e9;z-index:3}
+.snh-gd span{background:rgba(255,255,255,.9);color:#1f7a63}
 /* 동물 캐릭터 이모지 출시 히어로 (이모지 탭 상단) — 실사/일러스트 동물 사진 배경, 따뜻한 스크림 */
 .store-emoji-hero{position:relative;overflow:hidden;border-radius:18px;min-height:138px;padding:20px 40% 20px 18px;margin-bottom:22px;background:#e8b774 center right/cover no-repeat;box-shadow:0 6px 16px rgba(120,72,30,.30)}
 .store-emoji-hero::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(100deg,rgba(92,52,20,.78) 0%,rgba(118,70,28,.54) 34%,rgba(140,88,40,.12) 62%,rgba(140,88,40,0) 82%)}
@@ -24315,15 +24317,17 @@ function renderStoreThemes(){
     </div>
     <div class="sch-art"><i class="sch-a1"></i><i class="sch-a2"></i><i class="sch-a3"></i></div>
   </div>`;
-  html+=`<div class="store-camp-hero store-hn-hero" style="background-image:url('${HNIGHT_HERO_IMG}')" onclick="onStoreThemeItem('hnight')">
-    <div class="sfh-eyebrow">NEW &middot; HALLOWEEN NIGHT</div>
-    <div class="sfh-title">할로윈 나이트</div>
-    <div class="sfh-desc">보름달 아래 유령의 집 &mdash; 호박이와 부기가 지키는 10월 밤</div>
-  </div>
-  <div class="store-camp-hero store-gd-hero" style="background-image:url('${GARDEN_HERO_IMG}')" onclick="onStoreThemeItem('garden')">
-    <div class="sfh-eyebrow">NEW &middot; GREEN GARDEN</div>
-    <div class="sfh-title">초록 정원</div>
-    <div class="sfh-desc">별이 내려앉는 작은 온실 &mdash; 무당이와 팽이의 느긋한 정원</div>
+  // 새 테마 출시 배너 — 두 테마를 한 장에(2026-10-28 사용자 "스토어에 배너를 하나로 통합해줘"). 카드를 누르면 그 테마 미리보기
+  html+=`<div class="store-new-hero" onclick="onStoreThemeItem('hnight')">
+    <div class="snh-text">
+      <div class="sfh-eyebrow">NEW &middot; 새 테마 2종</div>
+      <div class="sfh-title">할로윈 나이트<br>&amp; 초록 정원</div>
+      <div class="sfh-desc">이모지·스티커·컬러 팩도 함께</div>
+    </div>
+    <div class="snh-cards">
+      <button type="button" class="snh-card snh-gd" style="background-image:url('${GARDEN_HERO_IMG}')" onclick="event.stopPropagation();onStoreThemeItem('garden')" aria-label="초록 정원 미리보기"><span>초록 정원</span></button>
+      <button type="button" class="snh-card snh-hn" style="background-image:url('${HNIGHT_HERO_IMG}')" onclick="event.stopPropagation();onStoreThemeItem('hnight')" aria-label="할로윈 나이트 미리보기"><span>할로윈 나이트</span></button>
+    </div>
   </div>`;
   html+=_ctbMyThemesHTML();
   html+='<div class="store-section-title">프로필 · 테마 <small>PREMIUM SET</small></div>';
