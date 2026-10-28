@@ -579,6 +579,8 @@ body[data-theme="camp"] .store-theme-card.rcs-img:not(.rcs-dark) .stc-name,body[
 body[data-theme="camp"] .rcs-img:not(.rcs-dark) .r-card-meta,body[data-theme="hnight"] .rcs-img:not(.rcs-dark) .r-card-meta,
 body[data-theme="camp"] .rcs-char:not(.rcs-dark) .r-card-meta,body[data-theme="hnight"] .rcs-char:not(.rcs-dark) .r-card-meta,
 body[data-theme="camp"] .rcs-img:not(.rcs-dark) .r-card-arrow,body[data-theme="hnight"] .rcs-img:not(.rcs-dark) .r-card-arrow,
+body[data-theme="camp"] .rcs-img:not(.rcs-dark) .rm-bpname,body[data-theme="hnight"] .rcs-img:not(.rcs-dark) .rm-bpname,body[data-theme="camp"] .rcs-img:not(.rcs-dark) .rm-cardprev-chev,body[data-theme="hnight"] .rcs-img:not(.rcs-dark) .rm-cardprev-chev,
+body[data-theme="camp"] .rcs-char:not(.rcs-dark) .rm-cardprev-name,body[data-theme="hnight"] .rcs-char:not(.rcs-dark) .rm-cardprev-name,body[data-theme="camp"] .rcs-char:not(.rcs-dark) .rm-bpname,body[data-theme="hnight"] .rcs-char:not(.rcs-dark) .rm-bpname,
 body[data-theme="camp"] .store-theme-card.rcs-img:not(.rcs-dark) .stc-sub,body[data-theme="hnight"] .store-theme-card.rcs-img:not(.rcs-dark) .stc-sub{color:rgba(51,41,31,.72)!important}
 .rcs-dark .r-card-meta,.rcs-dark .rm-cardprev-chev,.rcs-dark .r-card-arrow,.rcs-dark .rm-bpname{color:rgba(246,239,220,.72)!important}
 .rcs-dark .r-card-seal-letter{color:#f6efdc}
@@ -19256,6 +19258,12 @@ function _sealInner(mascotVal, roomName, photo){
 }
 
 let _mascotRoomId=null, _mascotRoomName='', _sealColor='terra', _sealSym='ini', _sealSet=null, _sealHad=false, _sealCustomPicked=false, _mySealByRoom={}, _cardSkin=null, _myCardSkinByRoom={}, _rmBaseTheme=null, _mySealPhotoByRoom={}, _sealPhoto=null, _myStickersByRoom={};
+/* '기본(첫 글자)으로 되돌리기' 버튼을 보일지 — 씰·프로필 사진·테마(카드 배경) 중 하나라도 기본이 아니면 보인다.
+   예전엔 열 때는 씰·사진만, 고를 때는 테마까지 봐서 '테마만 바꾼 방'은 다시 열면 버튼이 사라졌다 [2026-10-28] */
+function _rmSyncClearBtn(){
+  _sealHad=!!(_sealSet||_sealCustomPicked||(_sealPhoto&&_sealPhoto.url)||_cardSkin);
+  const clr=document.getElementById('rmClearBtn'); if(clr)clr.style.display=_sealHad?'block':'none';
+}
 function openRoomMascotForRoom(roomId){
   const room=(_myRooms||[]).find(function(r){return r.id===roomId})
     || ((_currentRoom&&_currentRoom.id===roomId)?_currentRoom:null);
@@ -19273,6 +19281,7 @@ function openRoomMascotForRoom(roomId){
   const _pn=document.getElementById('rmPrevRoomName'); if(_pn)_pn.textContent=_mascotRoomName||'방';
   _cardSkin=_myCardSkinByRoom[room.id]||null;
   _sealPhoto=_roomSealPhoto(room.id);
+  _sealHad=!!p||!!(_sealPhoto&&_sealPhoto.url)||!!_cardSkin;
   _rmBaseTheme=_currentRoomTheme||_myTheme||'vintage';   // 편집 취소 시 되돌릴 기준 테마
   _rmTab = _sealSet ? 'prem' : 'basic';   // 저장된 게 세트면 프리미엄 탭에서 시작
   _rmSyncSeg();
@@ -19361,7 +19370,7 @@ function renderRoomMascotPicker(){
       + '</div>';
     g.innerHTML=swatches+'<div class="rm-field-label">문양</div><div class="rm-symrow">'+symBtns+'</div>'+themeColors;
   }
-  const clr=document.getElementById('rmClearBtn'); if(clr)clr.style.display=_sealHad?'block':'none';
+  _rmSyncClearBtn();
 }
 function _setDisplayName(k){ if(_isCustomSkin(k)){ var cu=_customThemeOf(k); return (cu&&cu.name)||'내 테마'; } return (typeof CARD_SKINS!=='undefined'&&CARD_SKINS[k]&&CARD_SKINS[k].name)||(SEAL_SETS[k]&&SEAL_SETS[k].name)||k; }
 /* 내가 올린 사진만 지운다(themes/<내 id>/ 경로) */
@@ -19381,6 +19390,7 @@ function pickUnifiedSet(k){
     return;
   }
   _sealSet=k; _cardSkin=k;
+  _sealPhoto=null;   // 내 테마에서 온 프로필 사진은 다른 테마를 고르면 함께 비운다(안 그러면 사진이 씰보다 먼저 보여 씰이 안 바뀜) [2026-10-28]
   try{ _preloadSkinScene(k); }catch(_){}   // 선택 즉시 배경씬 프리로드 → 저장·입장 시 즉시 표시
   const g=document.getElementById('rmGroups');
   if(g) g.querySelectorAll('.rm-uset').forEach(function(b){
@@ -19455,6 +19465,7 @@ function pickCardSkin(k){
   }
   _sealSet=null;   // 무료 기본 테마 색 선택 = 프리미엄 세트 해제(무료 모드)
   _cardSkin=k||null;
+  _sealPhoto=null;   // 내 테마의 프로필 사진도 해제 [2026-10-28]
   try{ _preloadSkinScene(k); }catch(_){}   // 선택 즉시 배경씬 프리로드 → 저장·입장 시 즉시 표시
   const g=document.getElementById('rmGroups');
   if(g){
@@ -19477,9 +19488,10 @@ function pickSealColor(c){ _sealColor=c; _rmPickCustom(); _autoSaveMascot(); }
 function pickSealSym(sy){ _sealSym=sy; _rmPickCustom(); _autoSaveMascot(); }
 function _rmPickCustom(){
   _sealSet=null;
+  _sealPhoto=null;   // 색·문양을 고르면 내 테마의 프로필 사진은 해제 [2026-10-28]
   _sealCustomPicked=true;   // 색/문양을 실제로 만졌음 → 미리보기 중립→색상으로 즉시 전환
   // 커스텀 프로필(색+문양) 선택 = 무료 모드 → 프리미엄 카드 스킨은 해제(무료 테마 색은 유지)
-  if(_cardSkin && CARD_SKINS[_cardSkin] && !CARD_SKINS[_cardSkin].free) _cardSkin=null;
+  if(_cardSkin && ((CARD_SKINS[_cardSkin] && !CARD_SKINS[_cardSkin].free) || _isCustomSkin(_cardSkin))) _cardSkin=null;
   const g=document.getElementById('rmGroups');
   if(!g||!g.querySelector('.rm-sw')){ renderRoomMascotPicker(); return; }
   g.querySelectorAll('.rm-uset.on,.rm-set.on').forEach(function(b){ b.classList.remove('on'); });
@@ -19522,8 +19534,7 @@ function _autoSaveMascot(){
   if(_mascotRoomId) _mySealPhotoByRoom[_mascotRoomId]=_sealPhoto||null;
   // 로컬 맵 즉시 반영 → 곧바로 닫아도 applyRoomThemeFor가 최신값을 읽음. DB 쓰기만 디바운스.
   if(_mascotRoomId){ _mySealByRoom[_mascotRoomId]=sealVal; _myCardSkinByRoom[_mascotRoomId]=skin||null; }
-  _sealHad=!!(sealVal||skin||_sealPhoto);
-  const clr=document.getElementById('rmClearBtn'); if(clr)clr.style.display=_sealHad?'block':'none';
+  _rmSyncClearBtn();
   clearTimeout(_autoSaveMascotT);
   _autoSaveMascotT=setTimeout(function(){ _saveMascotValue(sealVal, skin, true); }, 220);
 }
@@ -19540,8 +19551,7 @@ async function _saveMascotValue(val, skin, keepOpen){
     try{ if(_myRooms) renderRooms(_myRooms,_roomCountMap); }catch(_){}
     try{ _syncRoomSetMascot(); }catch(_){}
     if(keepOpen){
-      _sealHad=!!(val||skin);
-      const clr=document.getElementById('rmClearBtn'); if(clr)clr.style.display=_sealHad?'block':'none';
+      _rmSyncClearBtn();
       if(val||skin){ try{ toast('저장되었습니다'); }catch(_){} }
     } else {
       toast(val?'방 프로필이 바뀌었어요':'기본으로 되돌렸어요');
