@@ -708,3 +708,12 @@
 - CSS 변수 `--hn-pumpkin`(호박 SVG data URI, 줄기·잎·세 덩이 몸통) — `body.rc-hnight .cal-cell.today .cal-day-num::before` 를 32×28 호박으로(동그라미 테두리 대신, `z-index:-1` + 숫자 `z-index:0` 로 숫자가 위), `::after` 숨김, 숫자 색 #2b1407 굵게. 주 보기 `.wk-day.today .wk-num span` 42×37 호박, 스토어 미리보기는 `_skpPhoneHTML` 상자에 `skp-<cls>` 클래스를 붙여 `.skp-rc-hnight .skp-d.t .n` 호박. 다른 테마는 그대로.
 - 검증(헤드리스): 월·주·미리보기에서 호박 위 숫자 읽힘, 초록 정원은 원래 동그라미.
 
+### 2026-10-28 — D-day 를 날짜 강조·스티커 창의 'D-day' 탭으로 옮김(초안 → 실제 적용)
+- 사용자 "디데이를 일정추가에서 말고 우리 날짜강조랑 스티커 추가하는 곳으로 넣고 싶은대 초안 만들어봐" → 초안 → 색은 "스토어에서 사용하기 누른 컬러를 사용할 수 있게끔" → "pwa에 아직 디데이가 반영 안된것 같아"(= 초안을 실제로 넣기, 질문으로 확인).
+- DB: 마이그레이션 `anniversaries_dday_tab` — `anniversaries` 에 `color` text, `on_cal` boolean(기본 false) 추가 + check(title 1~40자, kind countdown|since, color `#RRGGBB`|`c-이름`) `not valid`(옛 행 검사 안 함) + `room_id` 인덱스. RLS 는 원래 것(방 멤버 읽기·본인 넣기/고치기/지우기·관리자 전부) 그대로.
+- 저장 위치를 일정(events)이 아닌 이 표로 한 이유: 칩 줄에만 보일 D-day 를 일정으로 저장하면 D-day 를 모르는 2.0 앱 사용자에게 이상한 일정으로 보인다. '캘린더 칸에도 표시'는 일정 바가 아니라 그날 칸 라벨(공휴일 이름 자리)로.
+- 화면: 날짜 강조 관리 창(`#dhManageCard`) 탭에 모래시계 'D-day' + 패널 `#dhmPanelDday`(이 날짜의 D-day · 이 방의 D-day · '+ 이 날짜로 D-day 만들기', 무료면 탭 자물쇠·버튼 '프리미엄'), 만들기 창 `#ddxCard`(이름·날짜(기본 달력 고르기)·세는 법 D-day/N일째·매년 반복(D-day 일 때만)·캘린더 칸에도 표시·색 페이지·미리보기 칩·저장/지우기). 목록에서 일정으로 만든 D-day 를 누르면 그 일정 수정 창, 표 D-day 는 만들기 창(남이 만든 건 '만든 사람만 고칠 수 있어요').
+- 연결: `loadDdays` 가 `anniversaries`(color 있는 것만) 도 읽어 `_ddAll` 에 `src:'ann'` · `_ddSync` 멤버 탭 필터 제외 · `_ddayLabelOn` 에 `on_cal` 이름 라벨 · D-day 목록 시트 편집 버튼·빈 안내 문구 · 칩 줄 '+ D-day'/'+ 추가'(`_ddOpenAdd`) → 만들기 창. 일정 폼 D-day 줄은 이미 켠 일정을 고칠 때만(`_evDdayOrig`). 날짜 강조 창 진입 업셀 문구에 D-day 언급.
+- 옛 시험 행 3개(관리자, '킹유즈' 방)는 color 가 없어 화면에 안 나온다 — 지우지 않음.
+- 검증(헤드리스): 칩 3→4개·칸 라벨, 무료는 창 진입 시 구독 화면, 구독자 탭 목록·만들기(N일째·칸 표시·호박 팩 색)·저장 후 목록 갱신, 남의 D-day 고치기 막힘, 내 것 고치기+지우기 버튼, 새 일정 폼엔 D-day 줄 없음, 할로윈 나이트 어두운 화면·360px 최대 글씨 확인.
+

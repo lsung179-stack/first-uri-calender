@@ -1108,6 +1108,46 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 #dhmStickerGrid .ctb-stcell{padding:12px 8px 9px;border-radius:16px}
 #dhmStickerGrid .ctb-stcell span{font-size:calc(11.5px*var(--fsk,1))}
 #dhManageCard.rs-mode #dhmPanelSticker .dhm-add{flex:none}
+/* ── D-day 탭·만들기 창 (2026-10-28 사용자 "디데이를 일정추가에서 말고 우리 날짜강조랑 스티커 추가하는 곳으로") ── */
+.dhm-tab{position:relative}
+.dhm-tab-lock{position:absolute;right:-3px;top:-3px;width:15px;height:15px;border-radius:50%;background:#8b3a2a;color:#fff;font-size:calc(8px*var(--fsk,1));display:flex;align-items:center;justify-content:center}
+.dhm-tab-lock[hidden]{display:none}
+.ddx-intro{font-size:calc(12.5px*var(--fsk,1));color:var(--sub);line-height:1.55;margin:-4px 0 4px}
+.ddx-empty{padding:16px;border:1px dashed var(--border);border-radius:12px;text-align:center;color:var(--mute);font-size:calc(12.5px*var(--fsk,1))}
+.ddx-item{display:flex;align-items:center;gap:11px;width:100%;padding:11px 12px;background:var(--card);border:1px solid var(--borderL);border-radius:12px;font-family:inherit;text-align:left;cursor:pointer;color:inherit}
+.ddx-dot{width:10px;height:10px;border-radius:50%;flex:none}
+.ddx-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.ddx-t{display:block;font-size:calc(14px*var(--fsk,1));font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ddx-s{font-size:calc(11.5px*var(--fsk,1));color:var(--sub);margin-top:2px}
+.ddx-v{font-size:calc(15px*var(--fsk,1));font-weight:800;color:var(--accent);white-space:nowrap}
+.ddx-prem{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:99px;background:rgba(255,255,255,.22);font-size:calc(10.5px*var(--fsk,1));font-weight:800;vertical-align:1px}
+#ddxOverlay{z-index:1499}
+#ddxCard{z-index:1500;max-height:calc(100dvh - 40px);overflow-y:auto}
+#ddxCard .mo-title{text-align:center}
+#ddxCard .ev-label{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;font-size:calc(13px*var(--fsk,1));font-weight:700;color:var(--text);margin:14px 0 8px}
+#ddxCard .ev-label small{font-size:calc(11px*var(--fsk,1));font-weight:400;color:var(--sub)}
+.ddx-in{width:100%;box-sizing:border-box;padding:13px 14px;border:1px solid var(--border);border-radius:12px;background:var(--card);font-size:calc(15px*var(--fsk,1));font-family:inherit;color:var(--text)}
+.ddx-date{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--card);font-size:calc(15px*var(--fsk,1));font-weight:700;color:var(--text)}
+.ddx-date small{font-size:calc(12px*var(--fsk,1));font-weight:700;color:var(--accent);white-space:nowrap}
+.ddx-date input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;font-size:calc(16px*var(--fsk,1))}
+.ddx-seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ddx-seg button{padding:11px 6px;border-radius:12px;border:1px solid var(--border);background:var(--card);font-family:inherit;color:var(--sub);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.ddx-seg button b{font-size:calc(15px*var(--fsk,1));color:var(--text)}
+.ddx-seg button span{font-size:calc(11.5px*var(--fsk,1))}
+.ddx-seg button.on{border:2px solid var(--accent);background:var(--aP)}
+.ddx-row{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:12px 2px;border:0;border-bottom:1px solid var(--borderL);background:none;font-family:inherit;text-align:left;font-size:calc(14px*var(--fsk,1));color:var(--text);font-weight:600;cursor:pointer}
+.ddx-row small{display:block;font-size:calc(11.5px*var(--fsk,1));color:var(--sub);font-weight:400;margin-top:2px}
+.ddx-sw{width:44px;height:26px;border-radius:99px;background:var(--border);position:relative;flex:none;transition:background .15s}
+.ddx-sw::after{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .15s}
+.ddx-sw.on{background:var(--accent)}
+.ddx-sw.on::after{left:21px}
+.ddx-pv{margin-top:16px;padding:12px;border-radius:14px;background:var(--aP)}
+.ddx-pv-l{font-size:calc(11.5px*var(--fsk,1));color:var(--sub);font-weight:700;margin-bottom:8px}
+.ddx-pv .cal-dday-row{margin:0;padding:0}
+.ddx-pv-n{font-size:calc(12px*var(--fsk,1));color:var(--sub);margin-top:8px;line-height:1.5}
+.ddx-save{width:100%;padding:14px;margin-top:16px;border:none;border-radius:12px;background:var(--accent);color:var(--card);font-size:calc(15px*var(--fsk,1));font-weight:800;font-family:inherit;cursor:pointer}
+.ddx-save:disabled{opacity:.6}
+.ddx-del{width:100%;padding:12px;margin-top:8px;border:none;background:none;color:var(--sun);font-size:calc(13.5px*var(--fsk,1));font-weight:700;font-family:inherit;cursor:pointer}
 #dhManageCard.rs-mode .mo-actions{flex:none}
 .rc-decor .rc-sticker{position:absolute;aspect-ratio:1/1;background-repeat:no-repeat;background-position:center;background-size:contain;pointer-events:none}
 /* 스토어 '나만의 테마' 배너 — 이미지 없이 CSS만(외부 CDN 의존 0) */
@@ -5102,6 +5142,7 @@ try{var _cp=window.Capacitor&&window.Capacitor.getPlatform&&window.Capacitor.get
         <button type="button" class="dhm-tab" data-dhmtab="sticker" onclick="setDhmTab('sticker')" aria-label="스티커" title="스티커">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M14.4 3.4H6.6A2.6 2.6 0 0 0 4 6v12a2.6 2.6 0 0 0 2.6 2.6h5.1L20.6 12V6a2.6 2.6 0 0 0-2.6-2.6h-3.6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M11.7 20.6v-5a3.6 3.6 0 0 1 3.6-3.6h5.3" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="9" cy="8.6" r="1.3" fill="currentColor"/><circle cx="15" cy="8.6" r="1.3" fill="currentColor"/></svg>
         </button>
+        <button type="button" class="dhm-tab" data-dhmtab="dday" onclick="setDhmTab('dday')" aria-label="D-day" title="D-day"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 3.5h10M7 20.5h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 3.5v2.8c0 1.6.8 3 2.1 3.9L12 11.5l1.9-1.3A4.7 4.7 0 0 0 16 6.3V3.5M8 20.5v-2.8c0-1.6.8-3 2.1-3.9L12 12.5l1.9 1.3a4.7 4.7 0 0 1 2.1 3.9v2.8" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span class="dhm-tab-lock" id="dhmDdLock" hidden>🔒</span></button>
       </div>
       <button type="button" class="dhm-store" onclick="openStoreFromDhManage()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8.5h16l-1.1 10.1a1.6 1.6 0 0 1-1.6 1.4H6.7a1.6 1.6 0 0 1-1.6-1.4L4 8.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.7 11V7.8a3.3 3.3 0 0 1 6.6 0V11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
@@ -5119,6 +5160,7 @@ try{var _cp=window.Capacitor&&window.Capacitor.getPlatform&&window.Capacitor.get
     <div class="dhm-list" id="dhmOtherList"></div>
     <button type="button" class="dhm-add" onclick="openDhFromManage()">+ 날짜 강조 추가</button>
   </div>
+  <div id="dhmPanelDday" style="display:none"></div>
   <div id="dhmPanelSticker" style="display:none">
     <div class="dhm-sec">이 방 배경에 붙인 스티커</div>
     <div class="rs-mine" id="dhmStickerMine"></div>
@@ -5131,6 +5173,10 @@ try{var _cp=window.Capacitor&&window.Capacitor.getPlatform&&window.Capacitor.get
     <button class="mo-cancel" onclick="closeDhManage()">닫기</button>
   </div>
 </div>
+
+<!-- D-day 만들기·고치기 — 날짜 강조·스티커 창의 D-day 탭에서 연다(anniversaries, 2026-10-28) -->
+<div class="mo-overlay" id="ddxOverlay" onclick="closeDdx()"></div>
+<div class="mo-card" id="ddxCard"><div class="mo-handle"></div><div id="ddxBody"></div></div>
 
 <!-- 날짜 강조 전체 보기 — 내가 속한 모든 방의 강조를 방별로 [2026-08-19] -->
 <div class="mo-overlay" id="dhAllOverlay" onclick="closeDhAll()"></div>
@@ -12820,7 +12866,8 @@ function _ddViewKey(){ return (typeof _viewingMember!=='undefined'&&_viewingMemb
 function _ddSync(){
   const v=_ddViewKey(), me=_currentUser&&_currentUser.id;
   _ddView=v;
-  _ddays=_ddAll.filter(x=>v==='all'||x.members.includes(v)).map(x=>{
+  _ddays=_ddAll.filter(x=>x.src==='ann'||v==='all'||x.members.includes(v)).map(x=>{
+    if(x.src==='ann') return x;
     const r=(me&&x.byKey[me])||x.byKey[v]||x.byKey[x.members[0]]||{};
     return Object.assign({},x,{color:r.color,outline:r.outline,evId:r.evId||x.evId,date:r.date||x.date});
   });
@@ -12887,6 +12934,11 @@ function _ddayLabelOn(key){
   if(_ddLabelCache.k!==mk){
     const map={}, y=+key.slice(0,4), m=+key.slice(5,7)-1;
     const from=dateKey(y,m,1), to=dateKey(y,m,new Date(y,m+1,0).getDate());
+    _ddays.forEach(x=>{
+      if(x.src!=='ann'||!x.onCal) return;
+      const k=x.repeat_yearly?_ddYearly(x.date,y):x.date;
+      if(k>=from&&k<=to&&k>=x.date&&!map[k]) map[k]=_ddShort(x.title,6);
+    });
     const sinces=_ddays.filter(_ddIsSince);
     sinces.forEach(x=>_ddMilestones(x,from,to).forEach(ms=>{ if(!map[ms.key]) map[ms.key]=(sinces.length>1?_ddShort(x.title,3)+' ':'')+ms.label; }));
     _ddLabelCache={k:mk,map};
@@ -12911,6 +12963,13 @@ async function loadDdays(){
       .eq('room_id',room.id).not('dday','is',null).order('date',{ascending:true});
     if(seq!==_ddLoadSeq||!_currentRoom||_currentRoom.id!==room.id) return;
     if(error) throw error;
+    // D-day 탭(날짜 강조·스티커 창)에서 만든 D-day — 일정이 아니라 방에 하나씩(anniversaries). 색이 없는 옛 시험 행은 안 읽는다 [2026-10-28]
+    let ann=[];
+    try{
+      const ra=await supa.from('anniversaries').select('id,title,date,kind,repeat_yearly,color,on_cal,created_by,created_at').eq('room_id',room.id).not('color','is',null);
+      if(!ra.error) ann=ra.data||[];
+    }catch(_){}
+    if(seq!==_ddLoadSeq||!_currentRoom||_currentRoom.id!==room.id) return;
     const seen={}, out=[];
     (data||[]).forEach(r=>{
       const k=r.shared_id?('s:'+r.shared_id):(r.range_group_id?('g:'+r.range_group_id):('e:'+r.id));
@@ -12924,6 +12983,11 @@ async function loadDdays(){
       }
       // date 오름차순이라 멤버마다 첫 줄 = 기간의 첫날
       if(who&&!x.byKey[who]){ x.members.push(who); x.byKey[who]={evId:r.id,date:r.date,color:r.color,outline:r.bar_style==='outline'}; }
+    });
+    ann.forEach(a=>{
+      out.push({id:'a:'+a.id, annId:a.id, src:'ann', title:a.title||'D-day', date:a.date, members:[], byKey:{},
+        kind:a.kind==='since'?'since':'countdown', repeat_yearly:!!a.repeat_yearly, color:a.color, onCal:!!a.on_cal,
+        created_by:a.created_by, created_at:a.created_at});
     });
     out.sort((a,b)=>String(a.created_at||'')<String(b.created_at||'')?-1:1);
     const had=_ddays.length;
@@ -13028,7 +13092,7 @@ function _ddListHtml(){
   let h=`<div class="dd-head"><div class="mo-title">D-day</div><div class="dd-head-btns">${all.length>1?`<button type="button" class="dd-order-btn${re?' on':''}" onclick="_ddToggleReorder()">${re?'완료':'순서'}</button>`:''}${re?'':'<button type="button" class="dd-add-btn" onclick="_ddOpenAdd()">+ 추가</button>'}</div></div>`;
   if(re) h+='<div class="dd-hint">▲▼로 옮겨요 · 캘린더의 칩은 꾹 눌러 끌어도 돼요</div>';
   if(!all.length){
-    h+='<div class="dd-empty">일정을 추가할 때 <b>D-day</b> 를 켜면<br>캘린더 위 줄에 남은 날·지난 날로 보여요.<br>색은 일정 바 색 그대로예요.</div>';
+    h+='<div class="dd-empty">날짜 시트의 꼬리표 버튼 → <b>D-day</b> 탭에서<br>중요한 날을 만들면 캘린더 위 줄에<br>남은 날·함께한 날로 보여요.</div>';
   }else{
     h+='<div class="dd-list">'+all.map((it,i)=>{
       const x=it.x;
@@ -13043,7 +13107,9 @@ function _ddListHtml(){
       }else if(_ddIsUp(x)&&it.val.d<=0) sub=_ddFmt(x.date)+'부터';
       const side=re
         ?`<div class="dd-move"><button type="button" class="dd-mv" onclick="_ddMove('${_jsStr(x.id)}',-1)" aria-label="위로" ${i===0?'disabled':''}>${_DD_UP}</button><button type="button" class="dd-mv" onclick="_ddMove('${_jsStr(x.id)}',1)" aria-label="아래로" ${i===all.length-1?'disabled':''}>${_DD_DOWN}</button></div>`
-        :`<button type="button" class="dd-edit" onclick="_ddOpenEdit('${_jsStr(x.evId)}','${_jsStr(x.date)}')" aria-label="${escapeHtml(x.title)} 편집">${_DD_PEN}편집</button>`;
+        :(x.src==='ann'
+          ?`<button type="button" class="dd-edit" onclick="_ddxOpen('${_jsStr(x.annId)}')" aria-label="${escapeHtml(x.title)} 편집">${_DD_PEN}편집</button>`
+          :`<button type="button" class="dd-edit" onclick="_ddOpenEdit('${_jsStr(x.evId)}','${_jsStr(x.date)}')" aria-label="${escapeHtml(x.title)} 편집">${_DD_PEN}편집</button>`);
       const hex=_safeColor(colorHex(x.color));
       return `<div class="dd-card"><div class="dd-card-main"><div class="dd-card-t"><span class="dd-dot" style="background:${hex}"></span>${escapeHtml(x.title)}</div><div class="dd-card-s">${escapeHtml(sub)}</div>${note?`<div class="dd-card-n">${escapeHtml(note)}</div>`:''}</div><div class="dd-card-v">${it.val.v}</div>${side}</div>`;
     }).join('')+'</div>';
@@ -13062,12 +13128,143 @@ window._ddToggleReorder=_ddToggleReorder;
 /** + 추가 = 일정 추가 창을 D-day(남은 날) 켠 채로 */
 function _ddOpenAdd(){
   closeDdaySheet();
-  _selectedDate=_ddTodayKey();
-  openAddEvent();
-  _evDday='down';
-  setTimeout(()=>{ try{ renderEvDdayRow(); }catch(_){} },0);
+  _ddxOpen(null,{date:_selectedDate||_ddTodayKey()});
 }
 window._ddOpenAdd=_ddOpenAdd;
+
+/* ── D-day 탭(날짜 강조·스티커 창) + 만들기 창 [2026-10-28] ──
+   사용자 "디데이를 일정추가에서 말고 우리 날짜강조랑 스티커 추가하는 곳으로" → 초안 → "초안을 실제로 넣기".
+   여기서 만든 D-day 는 일정이 아니라 방에 하나씩 anniversaries 에 저장(만든 사람만 고치고 지움, 방 멤버는 모두 봄).
+   칩 줄에만 보이고, '캘린더 칸에도 표시'를 켜면 그날 칸에 이름 라벨. 만들기는 프리미엄, 고치기·지우기는 자유.
+   색 칸 = 일정 색상 칸과 같은 페이지(_colorPagesForRoom — 기본 12색 + 스토어에서 '사용하기' 한 팩, '이 방 색상' 묶음 그대로). */
+var _ddx=null;
+function _dhmDdRender(){
+  const panel=document.getElementById('dhmPanelDday'); if(!panel) return;
+  const prem=isEffectivePremium();
+  const lock=document.getElementById('dhmDdLock'); if(lock) lock.hidden=prem;
+  const today=_ddTodayKey(), sel=_dhmDate||_selectedDate||today, all=_ddOrdered(today);
+  const row=it=>{
+    const x=it.x, hex=_safeColor(colorHex(x.color));
+    const sub=_ddFmt(x.repeat_yearly?_ddNext(x,today):x.date)+(x.repeat_yearly?' · 매년':'')+(_ddIsSince(x)?' 부터':'')+(x.src==='ann'?'':' · 일정');
+    const tap=x.src==='ann'?`_ddxOpen('${_jsStr(x.annId)}')`:`closeDhManage();_ddOpenEdit('${_jsStr(x.evId)}','${_jsStr(x.date)}')`;
+    return `<button type="button" class="ddx-item" onclick="${tap}"><span class="ddx-dot" style="background:${hex}"></span><span class="ddx-main"><span class="ddx-t">${escapeHtml(x.title)}</span><span class="ddx-s">${escapeHtml(sub)}</span></span><span class="ddx-v">${escapeHtml(it.val.v)}</span></button>`;
+  };
+  const mine=all.filter(it=>it.x.date===sel), rest=all.filter(it=>it.x.date!==sel);
+  panel.innerHTML=`<div class="ddx-intro">중요한 날을 캘린더 맨 위에 띄워 두고 <b>남은 날·함께한 날</b>을 같이 세요.</div>
+    <div class="dhm-sec">${escapeHtml(_ddFmt(sel))}의 D-day</div>
+    <div class="dhm-list">${mine.length?mine.map(row).join(''):'<div class="ddx-empty">이 날짜엔 아직 D-day 가 없어요</div>'}</div>
+    <div class="dhm-sec dhm-sec-row"><span>이 방의 D-day · ${rest.length}</span>${all.length>1?'<button type="button" class="dhm-seclink" onclick="closeDhManage();openDdaySheet()">순서 바꾸기 ›</button>':''}</div>
+    <div class="dhm-list">${rest.length?rest.map(row).join(''):'<div class="ddx-empty">이 방엔 다른 D-day 가 없어요</div>'}</div>
+    <button type="button" class="dhm-add" onclick="_ddxOpen(null,{date:'${_jsStr(sel)}'})">+ 이 날짜로 D-day 만들기${prem?'':'<span class="ddx-prem">프리미엄</span>'}</button>`;
+}
+async function _ddxOpen(annId,opts){
+  opts=opts||{};
+  if(!_currentRoom||!_currentUser){ toast('방에 먼저 들어가 주세요'); return; }
+  if(!annId){
+    try{ await ensurePremiumLoaded(); }catch(_){}
+    if(!isEffectivePremium()){
+      showUpgradeModal({ message:'D-day로 그날까지 함께 세어 볼까요?', feature:'프리미엄이면 중요한 날을 캘린더 맨 위에 띄워 남은 날·함께한 날을 셀 수 있어요.', key:'feature:dday' });
+      return;
+    }
+    const d=(opts.date&&/^\d{4}-\d{2}-\d{2}$/.test(opts.date))?opts.date:_ddTodayKey();
+    _ddx={id:null,title:'',date:d,kind:'down',yearly:false,onCal:false,color:effectiveDefaultColor('ev')};
+  }else{
+    const x=_ddAll.find(v=>v.src==='ann'&&v.annId===annId);
+    if(!x){ toast('D-day 를 찾지 못했어요'); return; }
+    if(x.created_by!==_currentUser.id&&!isAdmin()){ toast('만든 사람만 고칠 수 있어요'); return; }
+    _ddx={id:annId,title:x.title,date:x.date,kind:x.kind==='since'?'since':'down',yearly:!!x.repeat_yearly,onCal:!!x.onCal,color:x.color};
+  }
+  _ddx.page=null;
+  _ddxRender();
+  document.getElementById('ddxOverlay').classList.add('on');
+  const cd=document.getElementById('ddxCard'); cd.classList.add('on'); cd.scrollTop=0;
+}
+window._ddxOpen=_ddxOpen;
+function closeDdx(){
+  document.getElementById('ddxOverlay').classList.remove('on');
+  document.getElementById('ddxCard').classList.remove('on');
+}
+window.closeDdx=closeDdx;
+function _ddxPreviewX(){ return {title:(_ddx.title||'').trim()||'D-day',date:_ddx.date,kind:_ddx.kind==='since'?'since':'countdown',repeat_yearly:_ddx.kind==='down'&&_ddx.yearly,color:_ddx.color}; }
+function _ddxPreviewHtml(){
+  const x=_ddxPreviewX(), v=_ddVal(x,_ddTodayKey()).v;
+  return `<div class="ddx-pv-l">캘린더 맨 위에 이렇게 보여요</div><div class="cal-dday-row"><span class="dd-chip dd-colored" style="${_ddChipStyle(x)}"><span class="dd-chip-t">${escapeHtml(x.title)}</span><b>${escapeHtml(v)}</b></span></div>`
+    +(_ddx.kind==='since'?'<div class="ddx-pv-n">100일·1주년 같은 기념일은 그날 칸에도 작게 표시돼요.</div>':'');
+}
+function _ddxRender(){
+  const b=document.getElementById('ddxBody'); if(!b||!_ddx) return;
+  const pages=_colorPagesForRoom(_ddx.color);
+  let pi=_ddx.page; if(pi==null){ pi=pages.findIndex(p=>p.colors.some(c=>c.key===_ddx.color)); if(pi<0) pi=0; }
+  const sw=(on,fn,t,sub)=>`<button type="button" class="ddx-row" role="switch" aria-checked="${on}" onclick="${fn}"><span>${t}<small>${sub}</small></span><span class="ddx-sw${on?' on':''}"></span></button>`;
+  b.innerHTML=`<div class="mo-title">${_ddx.id?'D-day 고치기':'D-day 만들기'}</div>
+    <div class="ev-label">이름</div>
+    <input class="ddx-in" id="ddxTitle" maxlength="40" placeholder="예) 우리 1주년, 여행 가는 날" value="${escapeHtml(_ddx.title)}" oninput="_ddx.title=this.value;document.getElementById('ddxPv').innerHTML=_ddxPreviewHtml()">
+    <div class="ev-label">날짜</div>
+    <label class="ddx-date"><span>${escapeHtml(_ddFmt(_ddx.date,true))}</span><small>바꾸기</small><input type="date" value="${escapeHtml(_ddx.date)}" onchange="if(this.value){_ddx.date=this.value;_ddxRender();}" aria-label="날짜 바꾸기"></label>
+    <div class="ev-label">세는 법</div>
+    <div class="ddx-seg"><button type="button" class="${_ddx.kind==='down'?'on':''}" onclick="_ddx.kind='down';_ddxRender()"><b>D-day</b><span>그날까지 남은 날</span></button><button type="button" class="${_ddx.kind==='since'?'on':''}" onclick="_ddx.kind='since';_ddxRender()"><b>N일째</b><span>그날부터 함께한 날</span></button></div>
+    ${_ddx.kind==='down'?sw(_ddx.yearly,"_ddx.yearly=!_ddx.yearly;_ddxRender()",'매년 반복','생일·기념일처럼 해마다 다시 세요'):''}
+    ${sw(_ddx.onCal,"_ddx.onCal=!_ddx.onCal;_ddxRender()",'캘린더 칸에도 표시','그날 칸에 이름이 작게 보여요')}
+    <div class="ev-label">색 <small>일정 색과 같아요 · 스토어에서 ‘사용하기’ 한 팩도 함께</small></div>
+    <div class="ev-color-pager-wrap"><div class="ev-color-pager" id="ddxPager">${pages.map(p=>`<div class="ev-color-page"><div class="ev-color-page-grid">${p.colors.map(c=>`<div class="ev-color-cell"><button type="button" class="ev-color${c.key===_ddx.color?' on':''}" style="background:${_safeColor(c.hex)}" onclick="_ddxColor('${_jsStr(c.key)}')" aria-label="${escapeHtml(colorLabelOf(c.key)||'색')}"></button><div class="ev-color-name">${escapeHtml(colorLabelOf(c.key)||'')}</div></div>`).join('')}</div></div>`).join('')}</div>
+      <div class="ev-color-pager-foot"><div class="ev-color-page-label" id="ddxPageLabel">${escapeHtml((pages[pi]||pages[0]).name)}</div><div class="ev-color-dots" id="ddxDots">${pages.map((p,i)=>`<span class="ev-color-dot${i===pi?' on':''}"></span>`).join('')}</div></div></div>
+    <div class="ddx-pv" id="ddxPv">${_ddxPreviewHtml()}</div>
+    <button type="button" class="ddx-save" id="ddxSave" onclick="_ddxSave()">저장</button>
+    ${_ddx.id?'<button type="button" class="ddx-del" onclick="_ddxDelete()">이 D-day 지우기</button>':''}
+    <div class="mo-actions"><button class="mo-cancel" onclick="closeDdx()">닫기</button></div>`;
+  const pg=document.getElementById('ddxPager');
+  if(pg){
+    requestAnimationFrame(()=>{ pg.scrollLeft=pg.clientWidth*pi; });
+    pg.onscroll=()=>{
+      const i=Math.round(pg.scrollLeft/Math.max(1,pg.clientWidth)); if(i===_ddx.page) return; _ddx.page=i;
+      const l=document.getElementById('ddxPageLabel'); if(l&&pages[i]) l.textContent=pages[i].name;
+      document.querySelectorAll('#ddxDots .ev-color-dot').forEach((d,k)=>d.classList.toggle('on',k===i));
+    };
+  }
+}
+function _ddxColor(k){
+  _ddx.color=k;
+  document.querySelectorAll('#ddxPager .ev-color').forEach(b=>b.classList.toggle('on',b.getAttribute('onclick')===`_ddxColor('${_jsStr(k)}')`));
+  const pv=document.getElementById('ddxPv'); if(pv) pv.innerHTML=_ddxPreviewHtml();
+}
+window._ddxColor=_ddxColor;
+async function _ddxSave(){
+  if(!_ddx||!_currentRoom||!_currentUser) return;
+  const title=(_ddx.title||'').trim();
+  if(!title){ toast('이름을 입력해 주세요'); try{ document.getElementById('ddxTitle').focus(); }catch(_){} return; }
+  if(!_ddx.id){ try{ await ensurePremiumLoaded(); }catch(_){} if(!isEffectivePremium()){ closeDdx(); _ddxOpen(null,{}); return; } }
+  const btn=document.getElementById('ddxSave'); if(btn){ btn.disabled=true; btn.textContent='저장 중…'; }
+  const row={title:title.slice(0,40),date:_ddx.date,kind:_ddx.kind==='since'?'since':'countdown',repeat_yearly:_ddx.kind==='down'&&!!_ddx.yearly,on_cal:!!_ddx.onCal,color:_ddx.color};
+  try{
+    const r=_ddx.id
+      ?await supa.from('anniversaries').update(row).eq('id',_ddx.id)
+      :await supa.from('anniversaries').insert(Object.assign({room_id:_currentRoom.id,created_by:_currentUser.id},row));
+    if(r.error) throw r.error;
+    const isNew=!_ddx.id;
+    closeDdx();
+    toast(isNew?'D-day 를 만들었어요':'D-day 를 고쳤어요');
+    try{ _audit(isNew?'dday.create':'dday.update',{meta:{kind:row.kind,on_cal:row.on_cal}}); }catch(_){}
+    await loadDdays();
+    _dhmDdRender();
+  }catch(e){
+    console.warn('D-day 저장 실패',e);
+    toast('저장하지 못했어요. 잠시 후 다시 시도해 주세요');
+    if(btn){ btn.disabled=false; btn.textContent='저장'; }
+  }
+}
+window._ddxSave=_ddxSave;
+async function _ddxDelete(){
+  if(!_ddx||!_ddx.id) return;
+  const ok=await vConfirm('이 D-day 를 지울까요? 방 사람들 화면에서도 사라져요.',{title:'D-day 지우기',okText:'지우기'});
+  if(!ok) return;
+  try{
+    const r=await supa.from('anniversaries').delete().eq('id',_ddx.id);
+    if(r.error) throw r.error;
+    closeDdx(); toast('D-day 를 지웠어요');
+    await loadDdays(); _dhmDdRender();
+  }catch(e){ console.warn('D-day 지우기 실패',e); toast('지우지 못했어요. 잠시 후 다시 시도해 주세요'); }
+}
+window._ddxDelete=_ddxDelete;
 /** 편집 = 그 일정 수정 창 */
 function _ddOpenEdit(evId,date){
   closeDdaySheet();
@@ -13078,6 +13275,7 @@ window._ddOpenEdit=_ddOpenEdit;
 
 /* ── 일정 폼의 D-day 줄 ── */
 var _evDday=null;   // null | 'down'(D-day) | 'since'(N일째)
+var _evDdayOrig=null;
 /** D-day 를 켤 수 있는 일정 — 하루·기간 + 반복 안 함/매년 */
 function _evDdayAllowed(){
   if(typeof _ddayOn!=='function'||!_ddayOn()) return false;
@@ -13105,7 +13303,7 @@ async function setEvDday(v){
 window.setEvDday=setEvDday;
 function renderEvDdayRow(){
   const row=document.getElementById('evDdayRow'); if(!row) return;
-  const ok=_evDdayAllowed();
+  const ok=_evDdayAllowed()&&!!_editingEvent&&!!_evDdayOrig;
   row.style.display=ok?'':'none';
   if(!ok) return;
   const v=_evDday;
@@ -14869,7 +15067,7 @@ function openAddEvent(){
   if(!_selectedDate){toast('날짜를 먼저 선택해주세요');return}
   closeMainModals();
   _editingEvent=null;
-  _evDday=null;
+  _evDday=null; _evDdayOrig=null;
   _editOrigColor=null;
   _selectedColor=effectiveDefaultColor('ev');   // 기본 색상(사용자 설정) — 없으면 빈티지 [2026-09-10]
   resetColorLabelEdit('ev');
@@ -14934,7 +15132,8 @@ async function openEditEvent(eventId){
   let ev=evs.find(e=>e.id===eventId);
   if(!ev)ev=Object.values(_events).flat().find(e=>e.id===eventId);
   if(!ev){toast('일정 정보를 찾지 못했어요');return}
-  _evDday=ev.dday==='since0'?'down':(ev.dday||null);   // 옛 'since0'(D+N)은 D-day 와 같은 표시라 합침
+  _evDday=ev.dday==='since0'?'down':(ev.dday||null);
+  _evDdayOrig=_evDday;   // D-day 줄은 이미 켠 일정을 고칠 때만 보인다(새로 만들기는 D-day 탭) [2026-10-28]   // 옛 'since0'(D+N)은 D-day 와 같은 표시라 합침
   // 편집 대상으로 열었던 날짜(반복 일정의 가상 발생일이면 origin의 실제 날짜와 다름)
   const viewDate=_selectedDate;
   _editOccurrenceScope=null;
@@ -25861,7 +26060,7 @@ async function openDhManage(dateKeyStr){
   if(!_canDh() && !(_ctbVisible()&&_canSticker())){   // 산 강조 테마나 스티커 묶음이 있으면 들어올 수 있음
     showUpgradeModal({
       message:'📌 특별한 날짜를 강조해볼까요?',
-      feature:'프리미엄이면 원하는 날짜(구간)에 나만의 제목을 붙여 표시할 수 있어요.'
+      feature:'프리미엄이면 원하는 날짜(구간)에 나만의 제목을 붙이고, D-day 로 그날까지 함께 셀 수 있어요.'
     });
     return;
   }
@@ -25890,6 +26089,10 @@ function setDhmTab(tab){
   if(p)p.style.display=(_dhmTab==='dh')?'':'none';
   const sp=document.getElementById('dhmPanelSticker');
   if(sp)sp.style.display=(_dhmTab==='sticker')?'':'none';
+  const dp=document.getElementById('dhmPanelDday');
+  if(dp)dp.style.display=(_dhmTab==='dday')?'':'none';
+  try{ const _dl=document.getElementById('dhmDdLock'); if(_dl) _dl.hidden=isEffectivePremium(); }catch(_){}
+  if(_dhmTab==='dday') _dhmDdRender();
   // 스티커 탭은 목록이 길다 → 카드를 고정 높이 세로배치로 바꿔 그리드만 스크롤하고
   // '달력에서 옮기기'·'닫기' 는 항상 보이게 한다(중첩 스크롤로 버튼이 잘리던 문제).
   const mc=document.getElementById('dhManageCard');
