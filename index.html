@@ -783,6 +783,7 @@ body.fs-on .r-card-name{white-space:normal;word-break:keep-all;overflow-wrap:any
 .prem-plan.selected .pp-desc{color:#6d5c4c}
 /* 들어온 이유 띠(잠긴 테마·기능에서 왔을 때) — 테마와 상관없이 크림 면·짙은 글씨 [2026-10-28] */
 .prem-ctx{display:flex;align-items:center;gap:12px;margin:12px 16px 4px;padding:10px 12px;border-radius:14px;background:#fbf2e0;border:1px solid rgba(176,135,66,.35)}
+.prem-ctx[hidden]{display:none}
 .pcx-img{width:76px;height:44px;flex:none;border-radius:10px;background:#1b1611 right center/cover no-repeat}
 .pcx-ic{width:44px;height:44px;flex:none;border-radius:12px;background:#f1dfbf;display:flex;align-items:center;justify-content:center;font-size:calc(20px*var(--fsk,1))}
 .pcx-t{min-width:0;display:flex;flex-direction:column;gap:2px}
@@ -5661,6 +5662,7 @@ try{var _cp=window.Capacitor&&window.Capacitor.getPlatform&&window.Capacitor.get
         <div class="prem-feature"><span class="pmf-ic">🐻</span><div class="pmf-body"><div class="pmf-name">캐릭터 이모지</div><div class="pmf-desc">일정에 콕 찍는 <b data-pc="emoji">10가지</b> 캐릭터 팩</div></div></div>
         <div class="prem-feature"><span class="pmf-ic">✍️</span><div class="pmf-body"><div class="pmf-name">글꼴</div><div class="pmf-desc">한글·영문 글꼴 <b data-pc="fonts">11가지</b> <span class="pmf-free">무료 기본 글꼴</span></div></div></div>
         <div class="prem-feature"><span class="pmf-ic">📌</span><div class="pmf-body"><div class="pmf-name">날짜 강조</div><div class="pmf-desc">날짜에 <b>내 제목</b>을 붙여 모두에게 · 테마 <span data-pc="dh">6</span>종</div></div></div>
+        <div class="prem-feature"><span class="pmf-ic">⏳</span><div class="pmf-body"><div class="pmf-name">D-day</div><div class="pmf-desc">일정을 캘린더 위에 <b>D-day·N일째</b>로 띄워 함께 세기</div></div></div>
         <div class="prem-feature"><span class="pmf-ic">🔲</span><div class="pmf-body"><div class="pmf-name">테두리 일정</div><div class="pmf-desc">색 채움 없이 <b>외곽선 스타일</b></div></div></div>
         <div class="prem-feature"><span class="pmf-ic">🏷️</span><div class="pmf-body"><div class="pmf-name">색상 라벨 이름</div><div class="pmf-desc">색마다 <b>이름 붙이기</b></div></div></div>
         <div class="pmf-group">기록 · 편의</div>
@@ -7221,7 +7223,7 @@ function closeAllModals(){
   document.querySelectorAll('.mo-overlay.on, .mo-card.on, .dp-card.on').forEach(el=>el.classList.remove('on'));
 }
 /* 메인 모달만 닫기 (memberPick, emojiPick는 부모 모달 위에 띄우는 경우라 제외) */
-function closeMainModals(){
+function closeMainModals(keep){
   ['createOverlay','createCard','joinOverlay','joinCard','evOverlay','evCard',
    'dpOverlay','dpCard','profileOverlay','profileCard','roomSetOverlay','roomSetCard',
    'storeCard','advCard','notifSetCard','annCard','annComposeOverlay','annComposeCard',
@@ -7229,7 +7231,7 @@ function closeMainModals(){
    'datePickerOverlay','datePickerCard','searchOverlay','searchCard',
    'csCard','leaveAccountOverlay','leaveAccountCard',
    'termsOverlay','termsCard','privacyOverlay','privacyCard']
-    .forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on')});
+    .forEach(id=>{ if(keep&&keep.indexOf(id)>=0) return; const el=document.getElementById(id);if(el)el.classList.remove('on')});
 }
 
 /* ── 뒤로가기 히스토리 (네이티브 하단 뒤로가기 버튼용) ── */
@@ -13067,7 +13069,22 @@ function _evDdayAllowed(){
 }
 function _evDdayEffective(){ return _evDdayAllowed()?(_evDday||null):null; }
 function _evDdayDate(){ return (_selectedMode==='range'&&_rangeStart)?_rangeStart:(_dayDate||_selectedDate); }
-function setEvDday(v){ _evDday=(v==='down'||v==='since')?v:null; renderEvDdayRow(); }
+async function setEvDday(v){
+  v=(v==='down'||v==='since')?v:null;
+  // D-day 는 프리미엄 기능 — 켜기만 막고 끄기는 자유(구독이 끝나도 이미 켠 일정은 '안 함'으로 돌릴 수 있게) [2026-10-28]
+  if(v&&!_evDday){
+    try{ await ensurePremiumLoaded(); }catch(_){}
+    if(!isEffectivePremium()){
+      showUpgradeModal({
+        message:'D-day로 그날까지 함께 세어 볼까요?',
+        feature:'프리미엄이면 일정을 캘린더 위에 D-day·N일째로 띄워 둘 수 있어요.',
+        key:'feature:dday'
+      });
+      return;
+    }
+  }
+  _evDday=v; renderEvDdayRow();
+}
 window.setEvDday=setEvDday;
 function renderEvDdayRow(){
   const row=document.getElementById('evDdayRow'); if(!row) return;
@@ -13075,6 +13092,7 @@ function renderEvDdayRow(){
   row.style.display=ok?'':'none';
   if(!ok) return;
   const v=_evDday;
+  try{ const h=row.querySelector('.ev-dd-hint'); if(h) h.textContent=isEffectivePremium()?'캘린더 위 줄에 표시해요':'캘린더 위 줄에 표시해요 · 프리미엄'; }catch(_){}
   row.querySelectorAll('.ev-dd-seg button').forEach(b=>{ const k=b.dataset.dd; const on=(k==='off'&&!v)||k===v; b.classList.toggle('on',on); b.setAttribute('aria-pressed',on?'true':'false'); });
   const pv=document.getElementById('evDdayPreview'); if(!pv) return;
   if(!v){ pv.innerHTML=''; return; }
@@ -23589,7 +23607,8 @@ function _premCtxHTML(ctx){
 function openPremiumSheet(src,ctx){
   try{ _audit('funnel.premium_view',{meta:{from:(typeof src==='string'?src:'')||'direct', ctx:(ctx&&ctx.key)||null}}); }catch(_){}
   try{ var pc=document.getElementById('premCtx'); if(pc){ var h=(!isEffectivePremium())?_premCtxHTML(ctx):''; pc.innerHTML=h; pc.hidden=!h; } }catch(_){}
-  closeMainModals();
+  // 잠긴 기능·코인 제안에서 왔으면 쓰던 일정 입력 창은 닫지 않는다 — 구독 화면(z 1300)이 그 위에 뜨고, 닫으면 입력하던 내용 그대로 [2026-10-28]
+  closeMainModals((src==='upsell'||src==='offer')?['evOverlay','evCard']:null);
   try{ _fillPremCounts(); }catch(_){}
   const prem=isEffectivePremium();
   const st=document.getElementById('premStatus');
