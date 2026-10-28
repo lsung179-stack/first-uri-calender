@@ -634,6 +634,17 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .store-camp-hero .sfh-eyebrow{color:#f2c14e;text-shadow:0 1px 4px rgba(4,10,28,.6)}
 .store-camp-hero .sfh-title{color:#fff;margin-bottom:6px;text-shadow:0 1px 6px rgba(4,10,28,.6)}
 .store-camp-hero .sfh-desc{color:rgba(240,244,252,.92);margin-bottom:0;text-shadow:0 1px 4px rgba(4,10,28,.6)}
+/* 할로윈 나이트·초록 정원 출시 히어로(2026-10-28) — 그림 왼쪽이 비어 있어 스크림 없이 글씨를 올린다. 두 장이 붙어 나오므로 간격을 좁힘 */
+.store-hn-hero,.store-gd-hero{margin-bottom:10px}
+.store-hn-hero{background-color:#0c0a09;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.store-hn-hero::before{background:linear-gradient(100deg,rgba(8,6,5,.6) 0%,rgba(8,6,5,.25) 46%,rgba(8,6,5,0) 70%)}
+.store-hn-hero .sfh-eyebrow{color:#f6a33c}
+.store-hn-hero .sfh-title{color:#f3e7d3}
+.store-gd-hero{background-color:#fbf6ea;box-shadow:0 6px 18px rgba(31,74,63,.16)}
+.store-gd-hero::before{background:none}
+.store-gd-hero .sfh-eyebrow{color:#2f9c80;text-shadow:none}
+.store-gd-hero .sfh-title{color:#1f4a3f;text-shadow:none}
+.store-gd-hero .sfh-desc{color:#4f6e64;text-shadow:none}
 /* 동물 캐릭터 이모지 출시 히어로 (이모지 탭 상단) — 실사/일러스트 동물 사진 배경, 따뜻한 스크림 */
 .store-emoji-hero{position:relative;overflow:hidden;border-radius:18px;min-height:138px;padding:20px 40% 20px 18px;margin-bottom:22px;background:#e8b774 center right/cover no-repeat;box-shadow:0 6px 16px rgba(120,72,30,.30)}
 .store-emoji-hero::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(100deg,rgba(92,52,20,.78) 0%,rgba(118,70,28,.54) 34%,rgba(140,88,40,.12) 62%,rgba(140,88,40,0) 82%)}
@@ -1450,6 +1461,52 @@ body.rc-camp .uni-nav[data-rci="notice"] .uni-nav-l::before{background-image:url
 body.rc-camp .uni-nav[data-rci="support"] .uni-nav-l::before{background-image:url("https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/ic_support.png")}
 body.rc-camp .uni-nav[data-rci="delroom"] .uni-nav-l::before{background-image:url("https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/ic_delroom.png")}
 body.rc-camp .uni-nav[data-rci="leave"] .uni-nav-l::before{background-image:url("https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/ic_leave.png")}
+/* 할로윈 나이트(hnight) 아이콘 세트 — 빈티지 실크스크린 할로윈 소품(유령의 집·박쥐 달력·빗자루 등), 크림 스티커 테두리 [2026-10-28] */
+body.rc-hnight .cal-tab[data-rci] .cal-tab-ico svg{display:none}
+body.rc-hnight .cal-tab[data-rci] .cal-tab-ico::after{display:none!important}
+body.rc-hnight .cal-tab[data-rci] .cal-tab-ico{background-repeat:no-repeat;background-position:center;background-size:contain}
+body.rc-hnight .cal-tab[data-rci="rooms"] .cal-tab-ico{background-image:url("https://first-uri-calender.vercel.app/themes/hnight/ic_rooms.png")}
+body.rc-hnight .cal-tab[data-rci="cal"] .cal-tab-ico{background-image:url("https://first-uri-calender.vercel.app/themes/hnight/ic_cal.png")}
+body.rc-hnight .cal-tab[data-rci="todo"] .cal-tab-ico{background-image:url("https://first-uri-calender.vercel.app/themes/hnight/ic_todo.png")}
+body.rc-hnight .cal-tab[data-rci="settings"] .cal-tab-ico{background-image:url("https://first-uri-calender.vercel.app/themes/hnight/ic_settings.png")}
+body.rc-hnight .cal-search-btn[data-rci] > svg,body.rc-hnight .cal-import-btn[data-rci] > svg{visibility:hidden}
+body.rc-hnight .cal-search-btn[data-rci],body.rc-hnight .cal-import-btn[data-rci]{background-repeat:no-repeat;background-position:center;background-size:28px}
+body.rc-hnight .cal-search-btn[data-rci="search"]{background-image:url("https://first-uri-calender.vercel.app/themes/hnight/ic_search.png")}
+body.rc-hnight .cal-import-btn[data-rci="cshare"]{background-image:url("https://first-uri-calender.vercel.app/themes/hnight/ic_cshare.png")}
+body.rc-hnight .cal-import-btn[data-rci="cimport"]{background-image:url("https://first-uri-calender.vercel.app/themes/hnight/ic_cimport.png")}
+body.rc-hnight .uni-nav[data-rci] .uni-nav-l > svg{display:none}
+body.rc-hnight .uni-nav[data-rci] .uni-nav-l::before{content:"";width:28px;height:28px;flex-shrink:0;background-repeat:no-repeat;background-position:center;background-size:contain}
+body.rc-hnight .uni-nav[data-rci="premium"] .uni-nav-l::before{background-image:url("https://first-uri-calender.vercel.app/themes/hnight/ic_premium.png")}
+body.rc-hnight .uni-nav[data-rci="store"] .uni-nav-l::before{background-image:url("https://first-uri-calender.vercel.app/themes/hnight/ic_store.png")}
+body.rc-hnight .uni-nav[data-rci="adv"] .uni-nav-l::before{background-image:url("https://first-uri-calender.vercel.app/themes/hnight/ic_adv.png")}
+body.rc-hnight .uni-nav[data-rci="notif"] .uni-nav-l::before{background-image:url("https://first-uri-calender.vercel.app/themes/hnight/ic_notif.png")}
+body.rc-hnight .uni-nav[data-rci="notice"] .uni-nav-l::before{background-image:url("https://first-uri-calender.vercel.app/themes/hnight/ic_notice.png")}
+body.rc-hnight .uni-nav[data-rci="support"] .uni-nav-l::before{background-image:url("https://first-uri-calender.vercel.app/themes/hnight/ic_support.png")}
+body.rc-hnight .uni-nav[data-rci="delroom"] .uni-nav-l::before{background-image:url("https://first-uri-calender.vercel.app/themes/hnight/ic_delroom.png")}
+body.rc-hnight .uni-nav[data-rci="leave"] .uni-nav-l::before{background-image:url("https://first-uri-calender.vercel.app/themes/hnight/ic_leave.png")}
+/* 초록 정원(garden) 아이콘 세트 — 짙은 청록 외곽선 플랫 정원 소품(온실·새싹 달력·물뿌리개 등) [2026-10-28] */
+body.rc-garden .cal-tab[data-rci] .cal-tab-ico svg{display:none}
+body.rc-garden .cal-tab[data-rci] .cal-tab-ico::after{display:none!important}
+body.rc-garden .cal-tab[data-rci] .cal-tab-ico{background-repeat:no-repeat;background-position:center;background-size:contain}
+body.rc-garden .cal-tab[data-rci="rooms"] .cal-tab-ico{background-image:url("https://first-uri-calender.vercel.app/themes/garden/ic_rooms.png")}
+body.rc-garden .cal-tab[data-rci="cal"] .cal-tab-ico{background-image:url("https://first-uri-calender.vercel.app/themes/garden/ic_cal.png")}
+body.rc-garden .cal-tab[data-rci="todo"] .cal-tab-ico{background-image:url("https://first-uri-calender.vercel.app/themes/garden/ic_todo.png")}
+body.rc-garden .cal-tab[data-rci="settings"] .cal-tab-ico{background-image:url("https://first-uri-calender.vercel.app/themes/garden/ic_settings.png")}
+body.rc-garden .cal-search-btn[data-rci] > svg,body.rc-garden .cal-import-btn[data-rci] > svg{visibility:hidden}
+body.rc-garden .cal-search-btn[data-rci],body.rc-garden .cal-import-btn[data-rci]{background-repeat:no-repeat;background-position:center;background-size:28px}
+body.rc-garden .cal-search-btn[data-rci="search"]{background-image:url("https://first-uri-calender.vercel.app/themes/garden/ic_search.png")}
+body.rc-garden .cal-import-btn[data-rci="cshare"]{background-image:url("https://first-uri-calender.vercel.app/themes/garden/ic_cshare.png")}
+body.rc-garden .cal-import-btn[data-rci="cimport"]{background-image:url("https://first-uri-calender.vercel.app/themes/garden/ic_cimport.png")}
+body.rc-garden .uni-nav[data-rci] .uni-nav-l > svg{display:none}
+body.rc-garden .uni-nav[data-rci] .uni-nav-l::before{content:"";width:28px;height:28px;flex-shrink:0;background-repeat:no-repeat;background-position:center;background-size:contain}
+body.rc-garden .uni-nav[data-rci="premium"] .uni-nav-l::before{background-image:url("https://first-uri-calender.vercel.app/themes/garden/ic_premium.png")}
+body.rc-garden .uni-nav[data-rci="store"] .uni-nav-l::before{background-image:url("https://first-uri-calender.vercel.app/themes/garden/ic_store.png")}
+body.rc-garden .uni-nav[data-rci="adv"] .uni-nav-l::before{background-image:url("https://first-uri-calender.vercel.app/themes/garden/ic_adv.png")}
+body.rc-garden .uni-nav[data-rci="notif"] .uni-nav-l::before{background-image:url("https://first-uri-calender.vercel.app/themes/garden/ic_notif.png")}
+body.rc-garden .uni-nav[data-rci="notice"] .uni-nav-l::before{background-image:url("https://first-uri-calender.vercel.app/themes/garden/ic_notice.png")}
+body.rc-garden .uni-nav[data-rci="support"] .uni-nav-l::before{background-image:url("https://first-uri-calender.vercel.app/themes/garden/ic_support.png")}
+body.rc-garden .uni-nav[data-rci="delroom"] .uni-nav-l::before{background-image:url("https://first-uri-calender.vercel.app/themes/garden/ic_delroom.png")}
+body.rc-garden .uni-nav[data-rci="leave"] .uni-nav-l::before{background-image:url("https://first-uri-calender.vercel.app/themes/garden/ic_leave.png")}
 /* 별밤 캠핑 — 앱 첫 어두운 팔레트. 크림/흰색이 하드코딩된 면 위에 var(--text)(달빛 흰색)가 올라가면 글자가 사라지므로
    그런 면만 한 톤 밝은 남색으로 바꾼다. 팔레트 기준(data-theme)으로 스코프 — 아이콘만 캠핑을 고른 조합엔 영향 없음 [2026-09-23] */
 body[data-theme="camp"] .wk-ev,
@@ -1489,6 +1546,51 @@ body[data-theme="camp"] button[onclick="pasteJoinCode()"]{color:var(--aL)!import
 /* 방 프로필의 무료 테마 칸(흰색·파스텔)은 밝은 면 그대로 — 이름 글씨만 짙게 */
 body[data-theme="camp"] .rm-skin[class*="rcs-t_"] .rm-skin-name{color:#33291f}
 body[data-theme="camp"] .uni-nav-prem{background:linear-gradient(135deg,#34528c,#2a4478)}
+/* 할로윈 나이트 — 두 번째 어두운 팔레트(먹색 바탕·호박 주황). 별밤 캠핑 보정 블록을 그대로 따른다: 하드코딩된 크림/흰 면은
+   한 톤 밝은 먹갈색으로, 주황 바탕 버튼 글씨는 흰색으로. 주황(accent)은 흰 글씨 대비 3.4 가 나오게 한 톤 깊게(#d96d18),
+   어두운 면 위 주황 글씨는 밝은 호박색(aL #f28a1e) [2026-10-28] */
+body[data-theme="hnight"] .wk-ev,
+body[data-theme="hnight"] .dp-item,
+body[data-theme="hnight"] .mp-item,
+body[data-theme="hnight"] .copy-option,
+body[data-theme="hnight"] .copy-source-item,
+body[data-theme="hnight"] .dhm-item,
+body[data-theme="hnight"] .dhm-empty,
+body[data-theme="hnight"] .rs-row,
+body[data-theme="hnight"] .rs-member-row,
+body[data-theme="hnight"] .rs-nav-row,
+body[data-theme="hnight"] .code-box,
+body[data-theme="hnight"] .oa-card,
+body[data-theme="hnight"] .oa-fbtn,
+body[data-theme="hnight"] .co-room-row,
+body[data-theme="hnight"] .co-cover-card,
+body[data-theme="hnight"] .co-ev-row,
+body[data-theme="hnight"] .co-month-nav,
+body[data-theme="hnight"] .co-ev-empty,
+body[data-theme="hnight"] .co-summary,
+body[data-theme="hnight"] .co-bank-card,
+body[data-theme="hnight"] .co-bank-guide,
+body[data-theme="hnight"] .co-pay-fixed,
+body[data-theme="hnight"] .co-btn-preview,
+body[data-theme="hnight"] .co-mn-btn,
+body[data-theme="hnight"] .co-yr-btn{background:#2b231d}
+body[data-theme="hnight"] .dp-btn{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18)}
+body[data-theme="hnight"] .dp-btn.del{border-color:rgba(242,138,30,.5)}
+body[data-theme="hnight"] .ev-multi-dow.sat,body[data-theme="hnight"] .ev-multi-day.sat{color:var(--sat)}
+body[data-theme="hnight"] .btn[style*="background:#fff"]{background:transparent!important}
+
+body[data-theme="hnight"] .uni-mini-btn,body[data-theme="hnight"] .dp-btn.del,body[data-theme="hnight"] .check-wrap{color:var(--aL)}
+/* 주황 바탕 버튼의 글씨는 원래 var(--card) — 여기선 먹갈색이 되므로 흰색으로 고정 */
+body[data-theme="hnight"] .in-app-banner,body[data-theme="hnight"] .cal-fab,body[data-theme="hnight"] .r-add-btn.on,body[data-theme="hnight"] .rs-packtab.on,body[data-theme="hnight"] .rs-bar-done,body[data-theme="hnight"] .ctb-head-btn,body[data-theme="hnight"] .cal-today-chip,body[data-theme="hnight"] .dp-add,body[data-theme="hnight"] .btn-danger,body[data-theme="hnight"] .ev-target-btn.on,body[data-theme="hnight"] .ev-mode-btn.on,body[data-theme="hnight"] .ev-md-date.on,body[data-theme="hnight"] .ev-multi-day.range-start,body[data-theme="hnight"] .ev-multi-day.range-end,body[data-theme="hnight"] .ev-multi-chip,body[data-theme="hnight"] .ev-multi-day.on,body[data-theme="hnight"] .ev-multi-day.rep-preview,body[data-theme="hnight"] .tt-apply.using,body[data-theme="hnight"] .dhm-add,body[data-theme="hnight"] .pf-name-save-btn,body[data-theme="hnight"] .tmc-cell.sel,body[data-theme="hnight"] .tmc-cell.range-start,body[data-theme="hnight"] .tmc-cell.range-end,body[data-theme="hnight"] .tmc-cell.range-one{color:#fff!important}
+body[data-theme="hnight"] button[onclick="pasteJoinCode()"]{color:var(--aL)!important;border-color:rgba(255,255,255,.25)!important}
+/* 방 프로필의 무료 테마 칸(흰색·파스텔)은 밝은 면 그대로 — 이름 글씨만 짙게 */
+body[data-theme="hnight"] .rm-skin[class*="rcs-t_"] .rm-skin-name{color:#33291f}
+body[data-theme="hnight"] .uni-nav-prem{background:linear-gradient(135deg,#3a2d24,#271f1a)}
+/* 할로윈 나이트·초록 정원 씬 — 그림 아래쪽(언덕·유령의 집 / 온실·꽃밭)이 바닥에 닿게 깔고 위쪽은 비워 둔다.
+   위 끝은 마스크로 바탕색에 스며들게(그림 하늘색과 바탕색이 조금 달라도 경계가 안 보이게) [2026-10-28] */
+body.rc-hnight .rc-decor .rc-bg.rc-bg-scene,body.rc-garden .rc-decor .rc-bg.rc-bg-scene{background-size:cover;background-position:center bottom;-webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 30%);mask-image:linear-gradient(to bottom,transparent 0%,#000 30%)}
+body.rc-hnight .rc-decor .rc-bg.rc-bg-scene{opacity:calc(.36*var(--bg-k,1))}
+body.rc-garden .rc-decor .rc-bg.rc-bg-scene{opacity:calc(.32*var(--bg-k,1))}
 /* 씬 자체가 남색 밤하늘이라 다른 테마(.4)보다 진하게 깔아도 글씨를 해치지 않는다 */
 /* 캐릭터(모닥불 앞 너구리·고슴도치)가 그림 아래쪽 70~92% 에 있어 기본 위치(30%)면 탭바 뒤로 숨는다(사용자 제보 2026-09-23).
    그림을 위로 끌어올려 캐릭터 무리가 화면 58~80% 에 오게 한다 — 위치 %가 100을 넘으면 그만큼 더 위로 올라간다.
@@ -3201,6 +3303,7 @@ body.align-right .cal-evbar{text-align:right}
 .uni-pal-txt small{font-size:calc(11px*var(--fsk,1));font-weight:500;color:var(--sub)}
 .uni-pal-dots{display:flex;gap:2px;margin-left:auto;margin-right:8px}.uni-pal-dots i{width:9px;height:9px;border-radius:50%}
 body[data-theme="camp"] .rpal-row{background:#2c4a82}
+body[data-theme="hnight"] .rpal-row{background:#2b231d}
 #stkDetailOverlay{z-index:1400}
 #stkDetailCard{z-index:1401;left:50%;right:auto;width:100%;max-width:430px;transform:translateX(-50%) translateY(100%)}
 #stkDetailCard.on{transform:translateX(-50%) translateY(0)}
@@ -3269,6 +3372,9 @@ body[data-theme="camp"] .rpal-row{background:#2c4a82}
 .skp-bg{transition:opacity .35s ease}
 .skp-phone .skp-bg.ld{opacity:0!important}
 .skp-bg.scene{background-repeat:no-repeat;background-position:center 38%;background-size:auto 116%;opacity:.4}
+.skp-phone.skp-bottom .skp-bg.scene{background-size:cover;background-position:center bottom;-webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 30%);mask-image:linear-gradient(to bottom,transparent 0%,#000 30%)}
+.skp-phone.skp-hnight .skp-bg.scene{opacity:.36}
+.skp-phone.skp-bottom:not(.skp-hnight) .skp-bg.scene{opacity:.32}
 .skp-phone.skp-camp .skp-bg.scene{opacity:.62;background-position:center 142%;-webkit-mask-image:linear-gradient(to bottom,#000 84%,transparent 93%);mask-image:linear-gradient(to bottom,#000 84%,transparent 93%)}
 .skp-char{position:absolute;left:50%;top:56%;width:86%;aspect-ratio:1;transform:translate(-50%,-50%);background:center/contain no-repeat;opacity:.17}
 .skp-in{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;padding:12px 9px 0}
@@ -3750,6 +3856,9 @@ body.fs-on .dd-card-s,body.fs-on .dd-card-n{white-space:normal;word-break:keep-a
 body[data-theme="camp"] .td-doneby{color:#a9d8a2;background:rgba(169,216,162,.14)}
 body[data-theme="camp"] .todo-card-done .td-doneby-name{color:#a9d8a2}
 body[data-theme="camp"] .cal-view-seg{background:rgba(255,255,255,.10)}
+body[data-theme="hnight"] .td-doneby{color:#a9d8a2;background:rgba(169,216,162,.14)}
+body[data-theme="hnight"] .todo-card-done .td-doneby-name{color:#a9d8a2}
+body[data-theme="hnight"] .cal-view-seg{background:rgba(255,255,255,.10)}
 .cal-fab{bottom:calc(86px + env(safe-area-inset-bottom))}
 .cal-today-btn{bottom:calc(86px + env(safe-area-inset-bottom))}
 .cal-cell{position:relative}
@@ -10585,6 +10694,11 @@ THEMES.daisy={bg:'#fdfaec',card:'#ffffff',text:'#33290f',sub:'#857239',mute:'#cb
    다른 팔레트는 모두 밝은 바탕이라 하드코딩된 흰 면·짙은 글자는 아래 body[data-theme="camp"] 블록에서 따로 손본다 [2026-09-23] */
 THEMES.camp={bg:'#1b3464',card:'#243f74',text:'#f2f4fa',sub:'#b4c0dc',mute:'#7d8cb4',accent:'#dd7437',aL:'#f0a070',aP:'#304d86',gold:'#f2c14e',border:'rgba(255,255,255,.16)',borderL:'rgba(255,255,255,.08)',sun:'#ff9a8f',sat:'#93b6ff',dotRGB:'221,116,55',
   'tabbar-bg':'rgba(20,39,76,.94)','tabbar-border':'rgba(255,255,255,.10)','tabbar-shadow':'0 6px 22px rgba(4,10,28,.45)','tabbar-filter':'none','tab-on-bg':'rgba(255,255,255,.09)'};
+/* 할로윈 나이트 — 두 번째 어두운 팔레트(먹색 바탕·호박 주황·크림 글자). 보정은 body[data-theme="hnight"] 블록 [2026-10-28] */
+THEMES.hnight={bg:'#14100d',card:'#1f1915',text:'#f3e7d3',sub:'#c2b19a',mute:'#80715f',accent:'#d96d18',aL:'#f28a1e',aP:'#2e251e',gold:'#f6c039',border:'rgba(243,231,211,.15)',borderL:'rgba(243,231,211,.07)',sun:'#ff8f6b',sat:'#93acd8',dotRGB:'217,109,24',
+  'tabbar-bg':'rgba(22,17,13,.94)','tabbar-border':'rgba(243,231,211,.10)','tabbar-shadow':'0 6px 22px rgba(0,0,0,.5)','tabbar-filter':'none','tab-on-bg':'rgba(242,138,30,.12)'};
+/* 초록 정원 — 크림 바탕·짙은 청록 포인트(정원 아이콘 외곽선 색과 맞춤) [2026-10-28] */
+THEMES.garden={bg:'#fbf8ee',card:'#ffffff',text:'#1f3d35',sub:'#5f7d73',mute:'#a5bdb3',accent:'#2f9c80',aL:'#77cbb4',aP:'#dcefe5',gold:'#c9952a',border:'rgba(47,156,128,.24)',borderL:'rgba(47,156,128,.12)',sun:'#d9604a',sat:'#4a86c8',dotRGB:'47,156,128'};
 THEMES.koi={bg:'#fdf3ef',card:'#ffffff',text:'#331e15',sub:'#8a5c4a',mute:'#c9a695',accent:'#d85f45',aL:'#e88c72',aP:'#f8d7ca',gold:'#b08742',border:'rgba(216,95,69,.24)',borderL:'rgba(216,95,69,.12)',sun:'#c8503a',sat:'#4880c0',dotRGB:'216,95,69'};
 
 /* 일정 색상 12가지 — 6 원색(선명) + 6 파스텔(부드러움). key는 호환성을 위해 유지 */
@@ -18979,6 +19093,8 @@ const SEAL_SETS={
   tulip:{name:'튤립',zoom:1.3,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/1e2491ea86a1dc61.png',svg:'<defs><radialGradient id="sg_tu" cx="34%" cy="28%" r="80%"><stop offset="0" stop-color="#f4dfa0"/><stop offset="1" stop-color="#e5bd62"/></radialGradient></defs><circle cx="24" cy="24" r="24" fill="url(#sg_tu)"/><circle cx="24" cy="24" r="21.7" fill="none" stroke="#9c742c" stroke-opacity=".33" stroke-width="1.4"/><circle cx="24" cy="24" r="20.5" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width=".8"/><path d="M24 15v20M15.5 19.5C17.5 25.5 20 30 24 33.5M32.5 19.5C30.5 25.5 28 30 24 33.5" fill="none" stroke="#6f9c53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><g transform="translate(19.2 36.5) rotate(32) scale(1)"><path d="M0 0Q2.6 -3.825 0 -8.5Q-2.6 -3.825 0 0Z" fill="#7ca75f" stroke="#527a3a" stroke-width="0.55" stroke-linecap="round" stroke-linejoin="round"/><path d="M0 -1.275V-7.225" stroke="#527a3a" stroke-width=".5" fill="none"/></g><g transform="translate(28.8 36.5) rotate(-32) scale(1)"><path d="M0 0Q2.6 -3.825 0 -8.5Q-2.6 -3.825 0 0Z" fill="#7ca75f" stroke="#527a3a" stroke-width="0.55" stroke-linecap="round" stroke-linejoin="round"/><path d="M0 -1.275V-7.225" stroke="#527a3a" stroke-width=".5" fill="none"/></g><g transform="translate(24 12.2) rotate(0) scale(1)"><path d="M-3 .5C-3-3.4-1.6-5.6 0-5.6 1.6-5.6 3-3.4 3 .5 2 1.9 1 2.6 0 2.6-1 2.6-2 1.9-3 .5Z" fill="#e2903f" stroke="#bd6b24" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M-1.2-4.9C-.6-5.5.6-5.5 1.2-4.9L.8 1.9H-.8Z" fill="#bd6b24" stroke-linecap="round" stroke-linejoin="round"/></g><g transform="translate(14.8 17.2) rotate(-16) scale(1)"><path d="M-3 .5C-3-3.4-1.6-5.6 0-5.6 1.6-5.6 3-3.4 3 .5 2 1.9 1 2.6 0 2.6-1 2.6-2 1.9-3 .5Z" fill="#d96a85" stroke="#b04a63" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M-1.2-4.9C-.6-5.5.6-5.5 1.2-4.9L.8 1.9H-.8Z" fill="#b04a63" stroke-linecap="round" stroke-linejoin="round"/></g><g transform="translate(33.2 17.2) rotate(16) scale(1)"><path d="M-3 .5C-3-3.4-1.6-5.6 0-5.6 1.6-5.6 3-3.4 3 .5 2 1.9 1 2.6 0 2.6-1 2.6-2 1.9-3 .5Z" fill="#e8b83f" stroke="#c29024" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M-1.2-4.9C-.6-5.5.6-5.5 1.2-4.9L.8 1.9H-.8Z" fill="#c29024" stroke-linecap="round" stroke-linejoin="round"/></g><circle cx="10.5" cy="29.5" r="0.8" fill="#fdf3da"/><circle cx="37.5" cy="29.5" r="0.8" fill="#fdf3da"/><circle cx="24" cy="41.5" r="0.8" fill="#fdf3da"/>'},
   snow:{name:'눈꽃',zoom:1.33,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/2200f1a6f4750334.png',svg:'<defs><radialGradient id="sg_sn" cx="34%" cy="28%" r="80%"><stop offset="0" stop-color="#d9e9f7"/><stop offset="1" stop-color="#a9c8e4"/></radialGradient></defs><circle cx="24" cy="24" r="24" fill="url(#sg_sn)"/><circle cx="24" cy="24" r="21.7" fill="none" stroke="#5a80a8" stroke-opacity=".33" stroke-width="1.4"/><circle cx="24" cy="24" r="20.5" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width=".8"/><g transform="translate(24 24) rotate(0) scale(1.18)"><g transform="translate(0 0) rotate(0) scale(1)"><path d="M0 0V-13.5" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M0 -5l-2.7-2.2M0 -5l2.7-2.2M0 -9.3l-2.3-1.9M0 -9.3l2.3-1.9" stroke="#fff" stroke-width="1.1" fill="none" stroke-linecap="round"/><circle cx="0" cy="-13.5" r="0.9" fill="#fff"/></g><g transform="translate(0 0) rotate(60) scale(1)"><path d="M0 0V-13.5" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M0 -5l-2.7-2.2M0 -5l2.7-2.2M0 -9.3l-2.3-1.9M0 -9.3l2.3-1.9" stroke="#fff" stroke-width="1.1" fill="none" stroke-linecap="round"/><circle cx="0" cy="-13.5" r="0.9" fill="#fff"/></g><g transform="translate(0 0) rotate(120) scale(1)"><path d="M0 0V-13.5" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M0 -5l-2.7-2.2M0 -5l2.7-2.2M0 -9.3l-2.3-1.9M0 -9.3l2.3-1.9" stroke="#fff" stroke-width="1.1" fill="none" stroke-linecap="round"/><circle cx="0" cy="-13.5" r="0.9" fill="#fff"/></g><g transform="translate(0 0) rotate(180) scale(1)"><path d="M0 0V-13.5" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M0 -5l-2.7-2.2M0 -5l2.7-2.2M0 -9.3l-2.3-1.9M0 -9.3l2.3-1.9" stroke="#fff" stroke-width="1.1" fill="none" stroke-linecap="round"/><circle cx="0" cy="-13.5" r="0.9" fill="#fff"/></g><g transform="translate(0 0) rotate(240) scale(1)"><path d="M0 0V-13.5" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M0 -5l-2.7-2.2M0 -5l2.7-2.2M0 -9.3l-2.3-1.9M0 -9.3l2.3-1.9" stroke="#fff" stroke-width="1.1" fill="none" stroke-linecap="round"/><circle cx="0" cy="-13.5" r="0.9" fill="#fff"/></g><g transform="translate(0 0) rotate(300) scale(1)"><path d="M0 0V-13.5" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M0 -5l-2.7-2.2M0 -5l2.7-2.2M0 -9.3l-2.3-1.9M0 -9.3l2.3-1.9" stroke="#fff" stroke-width="1.1" fill="none" stroke-linecap="round"/><circle cx="0" cy="-13.5" r="0.9" fill="#fff"/></g><circle cx="0" cy="0" r="2.1" fill="#fff" stroke="#9cc0de" stroke-width="0.5"/></g><g transform="translate(9.5 12.5) rotate(0) scale(0.9)"><path d="M0 -1.6L.45 -.45 1.6 0 .45 .45 0 1.6 -.45 .45 -1.6 0 -.45 -.45Z" fill="rgba(255,255,255,.9)" stroke-linecap="round" stroke-linejoin="round"/></g><g transform="translate(38 34) rotate(0) scale(0.9)"><path d="M0 -1.6L.45 -.45 1.6 0 .45 .45 0 1.6 -.45 .45 -1.6 0 -.45 -.45Z" fill="rgba(255,255,255,.9)" stroke-linecap="round" stroke-linejoin="round"/></g><circle cx="37" cy="11" r="0.75" fill="#fff"/><circle cx="10" cy="36" r="0.75" fill="#fff"/>'},
   camellia:{name:'동백',zoom:1.43,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/a83288cb6d4566c8.png',svg:'<defs><radialGradient id="sg_ca" cx="34%" cy="28%" r="80%"><stop offset="0" stop-color="#f7efdf"/><stop offset="1" stop-color="#e9d8b6"/></radialGradient></defs><circle cx="24" cy="24" r="24" fill="url(#sg_ca)"/><circle cx="24" cy="24" r="21.7" fill="none" stroke="#a2793d" stroke-opacity=".33" stroke-width="1.4"/><circle cx="24" cy="24" r="20.5" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width=".8"/><g transform="translate(11.5 33.5) rotate(-125) scale(1)"><path d="M0 0Q2.8 -3.375 0 -7.5Q-2.8 -3.375 0 0Z" fill="#4d7350" stroke="#33553a" stroke-width="0.55" stroke-linecap="round" stroke-linejoin="round"/><path d="M0 -1.125V-6.375" stroke="#33553a" stroke-width=".5" fill="none"/></g><g transform="translate(35.5 34.5) rotate(125) scale(1)"><path d="M0 0Q2.6 -3.15 0 -7Q-2.6 -3.15 0 0Z" fill="#4d7350" stroke="#33553a" stroke-width="0.55" stroke-linecap="round" stroke-linejoin="round"/><path d="M0 -1.05V-5.95" stroke="#33553a" stroke-width=".5" fill="none"/></g><g transform="translate(35 12) rotate(55) scale(1)"><path d="M0 0Q2.3 -2.7 0 -6Q-2.3 -2.7 0 0Z" fill="#4d7350" stroke="#33553a" stroke-width="0.55" stroke-linecap="round" stroke-linejoin="round"/><path d="M0 -0.8999999999999999V-5.1" stroke="#33553a" stroke-width=".5" fill="none"/></g><g transform="translate(23.4 23.4) rotate(0) scale(1)"><circle cx="3.429011037612589e-16" cy="-5.6" r="4.4" fill="#cf4b4b" stroke="#a12f2f" stroke-width="0.6"/><circle cx="4.3765146455453845" cy="-3.4937257415725624" r="4.4" fill="#cf4b4b" stroke="#a12f2f" stroke-width="0.6"/><circle cx="5.460836384111154" cy="1.2406715866690166" r="4.4" fill="#cf4b4b" stroke="#a12f2f" stroke-width="0.6"/><circle cx="2.4372941564850352" cy="5.041785119852283" r="4.4" fill="#cf4b4b" stroke="#a12f2f" stroke-width="0.6"/><circle cx="-2.4196801932911014" cy="5.0502621478686365" r="4.4" fill="#cf4b4b" stroke="#a12f2f" stroke-width="0.6"/><circle cx="-5.456472362797317" cy="1.2597259043256428" r="4.4" fill="#cf4b4b" stroke="#a12f2f" stroke-width="0.6"/><circle cx="-4.388683361024705" cy="-3.478427569558536" r="4.4" fill="#cf4b4b" stroke="#a12f2f" stroke-width="0.6"/><circle cx="0" cy="0" r="5.3" fill="#da5f57" stroke="#a12f2f" stroke-width="0.55"/><circle cx="0" cy="0" r="2.6" fill="#eec269" stroke="#c79b3f" stroke-width="0.4"/><circle cx="1.9" cy="0" r="0.85" fill="#eec269"/><circle cx="0.9500000000000002" cy="1.6454482671904334" r="0.85" fill="#eec269"/><circle cx="-0.9499999999999995" cy="1.6454482671904336" r="0.85" fill="#eec269"/><circle cx="-1.9" cy="2.326828918379971e-16" r="0.85" fill="#eec269"/><circle cx="-0.9500000000000008" cy="-1.645448267190433" r="0.85" fill="#eec269"/><circle cx="0.9500000000000002" cy="-1.6454482671904334" r="0.85" fill="#eec269"/></g><circle cx="11" cy="15.5" r="0.85" fill="#d98b8b"/><circle cx="38.5" cy="23.5" r="0.85" fill="#d98b8b"/>'},
+  hnight:{name:'할로윈 나이트',zoom:0.92,img:'https://first-uri-calender.vercel.app/themes/hnight/seal.png'},
+  garden:{name:'초록 정원',zoom:0.92,img:'https://first-uri-calender.vercel.app/themes/garden/seal.png'},
   camp:{name:'별밤 캠핑',zoom:0.92,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/seal.png'},
   mono:{name:'심플',zoom:0.85,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/9d6ab8e42977ef00.png'},
   koi:{name:'잉어',zoom:1.14,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/282ed97f997f886b.png',svg:'<defs><radialGradient id="sg_ko" cx="34%" cy="28%" r="80%"><stop offset="0" stop-color="#6d94a8"/><stop offset="1" stop-color="#456d82"/></radialGradient></defs><circle cx="24" cy="24" r="24" fill="url(#sg_ko)"/><circle cx="24" cy="24" r="21.7" fill="none" stroke="#24485c" stroke-opacity=".33" stroke-width="1.4"/><circle cx="24" cy="24" r="20.5" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width=".8"/><path d="M8 34.5a4.4 4.4 0 0 1 8.8 0M20 36.5a4 4 0 0 1 8 0M31.5 34.5a4.2 4.2 0 0 1 8.4 0" fill="none" stroke="rgba(247,240,222,.75)" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.2 34.5a2.2 2.2 0 0 1 4.4 0M22.1 36.5a1.9 1.9 0 0 1 3.8 0M33.7 34.5a2 2 0 0 1 4 0" fill="none" stroke="rgba(247,240,222,.5)" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 19C15.5 11.5 26 10.5 31.5 15.5l5.4-3.6-1.6 5.4 1.6 5.4-5.4-3.6C26 24.1 15.5 23.5 11 19Z" fill="#e69a55" stroke="#bd7231" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16.2" cy="17.4" r="1.15" fill="rgba(30,30,30,.65)"/><path d="M19.5 14.2c1.4 2.9 1.4 6.1 0 9M24.5 14.6c1.1 2.4 1.1 5.1 0 7.4" fill="none" stroke="rgba(120,60,20,.4)" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.5 11.8c1-.9 2.2-1.4 3.6-1.5-.5 1.3-1.4 2.2-2.7 2.7Z" fill="#e69a55" stroke="#bd7231" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M21.5 23.9c1 .9 2.2 1.4 3.6 1.5-.5-1.3-1.4-2.2-2.7-2.7Z" fill="#e69a55" stroke="#bd7231" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="9.5" r="0.8" fill="rgba(247,240,222,.7)"/><g transform="translate(38.5 9.5) rotate(0) scale(0.95)"><path d="M0 -1.6L.45 -.45 1.6 0 .45 .45 0 1.6 -.45 .45 -1.6 0 -.45 -.45Z" fill="rgba(247,240,222,.8)" stroke-linecap="round" stroke-linejoin="round"/></g>'},
@@ -19014,7 +19130,7 @@ SEAL_SETS.a_dino={name:'두두',zoom:1.05,img:'https://bgqzkkaslqchbovzrkao.supa
 SEAL_SETS.c_gaegu={name:'개구쟁이',zoom:1.2,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/2abc25ef321468c5.png'};
 SEAL_SETS.c_simsul={name:'심술이',zoom:1.2,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/ec9bea4763ae544a.png'};
 SEAL_SETS.c_kkalkal={name:'깔깔이',zoom:1.2,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/b30d18785edd29ea.png'};
-const SEAL_SET_ORDER=['camp', 'mono', 'a_cat', 'a_rabbit', 'a_bear', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'a_dino', 'c_gaegu', 'nabi', 'moon', 'daisy', 'star', 'koi'];   // 보리·호담·소녀·소년·눈꽃 제거(2026-07-23, 사용자 요청). 데이터는 잔존(레거시 저장값 렌더용)   // 구 전통 5종(plum·lotus·crane·camellia·chrysw)은 데이터만 잔존(레거시 저장값 렌더용)
+const SEAL_SET_ORDER=['hnight', 'garden', 'camp', 'mono', 'a_cat', 'a_rabbit', 'a_bear', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'a_dino', 'c_gaegu', 'nabi', 'moon', 'daisy', 'star', 'koi'];   // 보리·호담·소녀·소년·눈꽃 제거(2026-07-23, 사용자 요청). 데이터는 잔존(레거시 저장값 렌더용)   // 구 전통 5종(plum·lotus·crane·camellia·chrysw)은 데이터만 잔존(레거시 저장값 렌더용)
 /* ── 방 카드 배경 스킨 (members.card_skin, 마이그레이션 add_members_card_skin) — 무료 7 + 프리미엄 8 ── */
 const CARD_SKINS={
   butter:{name:'버터',free:true}, blush:{name:'블러쉬',free:true}, mint:{name:'민트',free:true},
@@ -19028,6 +19144,8 @@ const CARD_SKINS={
   tulip:{name:'튤립',img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/803238425456891b.jpg'},
   snow:{name:'눈꽃',img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/054406568dddd0b0.jpg'},
   camellia:{name:'동백',img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/eed5c9d5f920d6fc.jpg'},
+  hnight:{name:'할로윈 나이트',dark:true,img:'https://first-uri-calender.vercel.app/themes/hnight/card.jpg'},
+  garden:{name:'초록 정원',img:'https://first-uri-calender.vercel.app/themes/garden/card.jpg'},
   camp:{name:'별밤 캠핑',dark:true,img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/card.jpg'},
   mono:{name:'심플 블랙&화이트',img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/26dc61fa341e944e.jpg'},
   koi:{name:'잉어',img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/95d7551c33ea47fb.jpg'},
@@ -19076,7 +19194,7 @@ CARD_SKINS.a_dino={name:'두두',img:'https://bgqzkkaslqchbovzrkao.supabase.co/s
 CARD_SKINS.c_gaegu={name:'개구쟁이',img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/7a6187969f8bd5c9.jpg'};
 CARD_SKINS.c_simsul={name:'심술이',img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/e63cb6a448474daf.jpg'};
 CARD_SKINS.c_kkalkal={name:'깔깔이',img:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/72597fcc24f0167c.jpg'};
-const CARD_SKIN_PREM=['camp', 'mono', 'a_cat', 'a_rabbit', 'a_bear', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'a_dino', 'c_gaegu', 'nabi', 'moon', 'daisy', 'star', 'koi'];   // 보리·호담·소녀·소년·눈꽃 제거(2026-07-23, 사용자 요청). CARD_SKINS 데이터는 잔존
+const CARD_SKIN_PREM=['hnight', 'garden', 'camp', 'mono', 'a_cat', 'a_rabbit', 'a_bear', 'a_fox', 'a_monkey', 'a_mouse', 'a_chicken', 'a_dino', 'c_gaegu', 'nabi', 'moon', 'daisy', 'star', 'koi'];   // 보리·호담·소녀·소년·눈꽃 제거(2026-07-23, 사용자 요청). CARD_SKINS 데이터는 잔존
 function _cardSkinCls(k){ if(_isCustomSkin(k)) return ' rcs-img'; const sk=k&&CARD_SKINS[k]; if(!sk)return ''; if(sk.char) return ' rcs-char'+(sk.dark?' rcs-dark':''); if(sk.img) return ' rcs-img'+(sk.dark?' rcs-dark':''); return ' rcs-'+k+(sk.dark?' rcs-dark':''); }
 function _cardSkinStyle(k){ if(_isCustomSkin(k)){ var cu=_customThemeOf(k); return (cu&&cu.bg_url)?(' style="'+_ctCardBgStyle({url:cu.bg_url,x:cu.card_x,y:cu.card_y})+'"'):''; }
   const sk=k&&CARD_SKINS[k]; if(!sk)return '';
@@ -21110,6 +21228,11 @@ const STORE_THEMES=[
 ];
 /* 컬러 팩 — 각 팩 12색, 컨셉 유지하되 다양한 hue 분포 */
 const STORE_COLORS=[
+  /* 🎃 할로윈 나이트·🌿 초록 정원 테마 짝꿍 팩 (2026-10-28) — 기존 전 팩 hex 와 대조해 거의 같은 색은 조정함 */
+  {key:'halloween', name:'할로윈',   price:'₩2,900',
+   colors:['#F28A1E','#C45014','#F6C039','#DADBA9','#211A0F','#534239','#663FA0','#2E1A49','#7BA630','#2F5D3A','#992F30','#5E7FA6']},
+  {key:'greengarden', name:'초록 정원', price:'₩2,900',
+   colors:['#2F9C80','#77CBB4','#1A4F47','#BBE5B0','#EC7857','#F8CF59','#5B9BD5','#9C86CF','#DFAD6E','#E69E98','#A9C47F','#E1F2E9']},
   /* 🌴 여름 과일 톤 (2026 여름) */
   {key:'grape',     name:'포도',    price:'₩2,900',
    colors:['#F0E4F5','#DCC4EE','#C89AD8','#B27CCE','#9E58B8','#8438A8','#6E2E90','#4A1568','#86C464','#5C9A3A','#3E7A28','#2A5E1C']},
@@ -21291,6 +21414,19 @@ var ANIMAL_STICKER={
   'weather:cloud':'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/8d0083a2e8d1b1de.png',
   'weather:storm':'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/7bbc60a0bfadd60d.png',
   'weather:rainbow':'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/da8ca2eba02d7e74.png',
+  // 할로윈 나이트 캐릭터(호박이·부기)·초록 정원 캐릭터(무당이·팽이) 이모지 [2026-10-28]
+  'hobak:like':'https://first-uri-calender.vercel.app/themes/hnight/emo_like.png',
+  'hobak:love':'https://first-uri-calender.vercel.app/themes/hnight/emo_love.png',
+  'hobak:boo':'https://first-uri-calender.vercel.app/themes/hnight/emo_boo.png',
+  'hobak:lol':'https://first-uri-calender.vercel.app/themes/hnight/emo_lol.png',
+  'hobak:scared':'https://first-uri-calender.vercel.app/themes/hnight/emo_scared.png',
+  'hobak:treat':'https://first-uri-calender.vercel.app/themes/hnight/emo_treat.png',
+  'mudang:like':'https://first-uri-calender.vercel.app/themes/garden/emo_like.png',
+  'mudang:love':'https://first-uri-calender.vercel.app/themes/garden/emo_love.png',
+  'mudang:water':'https://first-uri-calender.vercel.app/themes/garden/emo_water.png',
+  'mudang:sleepy':'https://first-uri-calender.vercel.app/themes/garden/emo_sleepy.png',
+  'mudang:wow':'https://first-uri-calender.vercel.app/themes/garden/emo_wow.png',
+  'mudang:cheer':'https://first-uri-calender.vercel.app/themes/garden/emo_cheer.png',
   // 별밤 캠핑 테마 캐릭터(너굴이·도치) 이모지 [2026-09-23]
   'camp:like':'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/emo_like.png',
   'camp:love':'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/emo_love.png',
@@ -21314,7 +21450,7 @@ function preloadStoreAssets(){
     if(typeof FRUIT_HERO_IMG!=='undefined'&&FRUIT_HERO_IMG)urls.push(FRUIT_HERO_IMG);
     if(typeof EMOJI_HERO_IMG!=='undefined'&&EMOJI_HERO_IMG)urls.push(EMOJI_HERO_IMG);
     // (SEAL_HERO_IMG는 테마 탭 히어로 제거로 더 이상 화면에 안 뜸 → 프리로드 제외) [2026-08-19]
-    if(typeof CAMP_HERO_IMG!=='undefined'&&CAMP_HERO_IMG)urls.push(CAMP_HERO_IMG);
+    if(typeof HNIGHT_HERO_IMG!=='undefined')urls.push(HNIGHT_HERO_IMG,GARDEN_HERO_IMG);
     if(typeof SEAL_SETS!=='undefined'){ for(var sk in SEAL_SETS){ if(SEAL_SETS[sk]&&SEAL_SETS[sk].img)urls.push(SEAL_SETS[sk].img); } }
     if(typeof CARD_SKINS!=='undefined'){ for(var ck in CARD_SKINS){ var cs=CARD_SKINS[ck]; if(!cs)continue; ['img','char','scene'].forEach(function(f){ if(cs[f])urls.push(cs[f]); }); } }
     urls.forEach(function(u){ try{ var im=new Image(); im.decoding='async'; im.src=u; }catch(_){} });
@@ -21340,6 +21476,8 @@ const CHAR_EXPRESSIONS={
   calli:['yar','yaho','crazy','godlife','lucky','injeong'],
   weather:['sun','rain','snow','cloud','storm','rainbow'],
   camp:['like','love','yum','wow','sleepy','cheer'],
+  hobak:['like','love','boo','lol','scared','treat'],
+  mudang:['like','love','water','sleepy','wow','cheer'],
 };
 function charEmojiKeys(charKey){
   return (CHAR_EXPRESSIONS[charKey]||[]).map(e=>`${charKey}:${e}`);
@@ -21364,6 +21502,8 @@ function emojiDisplayName(em){
 
 /* 이모지 팩 — 8동물 캐릭터 팩 (각 팩 6개 고유 감정, 동물마다 그림체 다름) */
 const STORE_EMOJI=[
+  {key:'hobak', name:'장난은 호박이가, 비명은 부기가', desc:'할로윈 나이트 호박등·꼬마 유령', preview:['hobak:like','hobak:boo','hobak:lol','hobak:treat']},
+  {key:'mudang', name:'느릿느릿 정원 단짝, 무당이와 팽이', desc:'초록 정원 무당벌레·달팽이', preview:['mudang:like','mudang:love','mudang:water','mudang:wow']},
   {key:'camp', name:'모닥불 앞 단짝, 너굴이와 도치', desc:'별밤 캠핑 너구리·고슴도치', preview:['camp:like','camp:love','camp:yum','camp:cheer']},
   {key:'calli', name:'감정은 붓글씨로 대신함', desc:'먹붓 유행어 캘리', preview:['calli:yar','calli:yaho','calli:crazy','calli:lucky']},
   {key:'weather', name:'오늘 날씨: 대체로 귀여움', desc:'몽글몽글 날씨 친구', preview:['weather:sun','weather:rain','weather:snow','weather:rainbow']},
@@ -24175,10 +24315,15 @@ function renderStoreThemes(){
     </div>
     <div class="sch-art"><i class="sch-a1"></i><i class="sch-a2"></i><i class="sch-a3"></i></div>
   </div>`;
-  html+=`<div class="store-camp-hero" style="background-image:url('${CAMP_HERO_IMG}')" onclick="onStoreThemeItem('camp')">
-    <div class="sfh-eyebrow">NEW &middot; STARRY CAMPING</div>
-    <div class="sfh-title">별밤 캠핑</div>
-    <div class="sfh-desc">모닥불 앞에서 마시멜로 굽는 밤 &mdash; 앱 첫 밤하늘 테마</div>
+  html+=`<div class="store-camp-hero store-hn-hero" style="background-image:url('${HNIGHT_HERO_IMG}')" onclick="onStoreThemeItem('hnight')">
+    <div class="sfh-eyebrow">NEW &middot; HALLOWEEN NIGHT</div>
+    <div class="sfh-title">할로윈 나이트</div>
+    <div class="sfh-desc">보름달 아래 유령의 집 &mdash; 호박이와 부기가 지키는 10월 밤</div>
+  </div>
+  <div class="store-camp-hero store-gd-hero" style="background-image:url('${GARDEN_HERO_IMG}')" onclick="onStoreThemeItem('garden')">
+    <div class="sfh-eyebrow">NEW &middot; GREEN GARDEN</div>
+    <div class="sfh-title">초록 정원</div>
+    <div class="sfh-desc">별이 내려앉는 작은 온실 &mdash; 무당이와 팽이의 느긋한 정원</div>
   </div>`;
   html+=_ctbMyThemesHTML();
   html+='<div class="store-section-title">프로필 · 테마 <small>PREMIUM SET</small></div>';
@@ -24339,7 +24484,8 @@ function openSkinPreview(k){
   var nm=document.getElementById('skpName'); if(nm) nm.textContent=_setDisplayName(k);
   var ph=document.getElementById('skpPhone');
   if(ph){
-    ph.className='skp-phone'+((_skinCT(k)||{}).cls==='rc-camp'?' skp-camp':'');
+    var _skc=(_skinCT(k)||{}).cls;
+    ph.className='skp-phone'+(_skc==='rc-camp'?' skp-camp':'')+(_skc==='rc-hnight'?' skp-bottom skp-hnight':'')+(_skc==='rc-garden'?' skp-bottom':'');
     ph.innerHTML=_skpPhoneHTML(k);
     // 배경 그림을 아직 못 받았으면(스토어 열자마자 누른 경우) 색·달력부터 보여주고 그림은 받는 대로 부드럽게 나타나게
     try{
@@ -24389,6 +24535,8 @@ function openSealShowcase(){
   },180);
 }
 /* ── 컬러 팩 (곧 출시) ── */
+var HNIGHT_HERO_IMG='https://first-uri-calender.vercel.app/themes/hnight/banner.jpg';
+var GARDEN_HERO_IMG='https://first-uri-calender.vercel.app/themes/garden/banner.jpg';
 var CAMP_HERO_IMG='https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/banner.jpg';
 var SEAL_HERO_IMG='https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/7de0f3d079820415.jpg';
 var FRUIT_HERO_IMG='https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/d03abce97ca6700d.jpg';
@@ -25831,6 +25979,8 @@ const CHAR_META={
   dino:{name:'두두', identity:'크레용 낙서 공룡', desc:'좋아요·으르렁·빵터짐·사랑해요·삐짐·화이팅', labels:{like:'좋아요',roar:'으르렁',laugh:'빵터짐',love:'사랑해요',sulk:'삐짐',cheer:'화이팅'}},
   calli:{name:'붓글씨', identity:'먹붓 유행어 캘리', desc:'야르·야호·미쳤다·갓생·럭키비키·인정', labels:{yar:'야르',yaho:'야호',crazy:'미쳤다',godlife:'갓생',lucky:'럭키비키',injeong:'인정'}},
   weather:{name:'날씨', identity:'몽글몽글 날씨 친구', desc:'햇빛·비·눈·흐림·번개·무지개', labels:{sun:'햇빛',rain:'비',snow:'눈',cloud:'흐림',storm:'번개',rainbow:'무지개'}},
+  hobak:{name:'호박이&부기', identity:'할로윈 나이트 호박등·꼬마 유령', desc:'좋아요·좋아해·놀랐지·깔깔·무서워·사탕 줄게', labels:{like:'좋아요',love:'좋아해',boo:'놀랐지',lol:'깔깔',scared:'무서워',treat:'사탕 줄게'}},
+  mudang:{name:'무당이&팽이', identity:'초록 정원 무당벌레·달팽이', desc:'좋아요·좋아해·쑥쑥·잘자·우와·야호', labels:{like:'좋아요',love:'좋아해',water:'쑥쑥',sleepy:'잘자',wow:'우와',cheer:'야호'}},
   camp:{name:'너굴&도치', identity:'별밤 캠핑 너구리·고슴도치', desc:'좋아요·좋아해·냠냠·우와·잘자·짠', labels:{like:'좋아요',love:'좋아해',yum:'냠냠',wow:'우와',sleepy:'잘자',cheer:'짠'}},
 };
 
@@ -26011,6 +26161,10 @@ let _currentRoomTheme=null;
 /* 방 카드 스킨(캐릭터) → 자동 테마 + 마스코트 꾸미기 매핑.
    대표 1종(두두 공룡)만 우선 구현 — 다른 캐릭터는 여기에 추가하면 자동 확장. */
 const ROOM_CHAR_THEME={
+  // 할로윈 나이트 — 보름달 앞 언덕 위 유령의 집·죽은 나무·호박등(정면 풍경, 캐릭터 없음). 두 번째 어두운 테마 [2026-10-28]
+  hnight:{theme:'hnight', cls:'rc-hnight', mascot:'https://first-uri-calender.vercel.app/themes/hnight/seal.png', bgScene:'https://first-uri-calender.vercel.app/themes/hnight/scene.jpg', charInScene:true},
+  // 초록 정원 — 해 질 녘 언덕 위 작은 온실, 꽃밭에 별이 내려앉는 장면(언덕 아래에서 올려다봄) [2026-10-28]
+  garden:{theme:'garden', cls:'rc-garden', mascot:'https://first-uri-calender.vercel.app/themes/garden/seal.png', bgScene:'https://first-uri-calender.vercel.app/themes/garden/scene.jpg', charInScene:true},
   // 별밤 캠핑 — 남색 밤하늘 아래 모닥불 앞 너구리·고슴도치(마시멜로 굽기). 앱 첫 어두운 테마 [2026-09-23]
   camp:{theme:'camp', cls:'rc-camp', mascot:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/seal.png', bgScene:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/scene.jpg', charInScene:true},
   // mono(심플 블랙&화이트) — 2026-09-23 실수로 스토어에서 내렸다가 2026-09-25 복귀(사용자: 지우라던 건 출시 배너였음)
@@ -26460,6 +26614,20 @@ var CTB_STICKERS=[
   {k:'bubble',g:'daily',n:'말풍선',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/de68935d8e419a25.png'},
   {k:'plant',g:'daily',n:'화분',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/c6772a11b225510e.png'},
   {k:'moon',g:'sky',n:'달',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/ic/f2c2e9a0f2f11527.png'},
+  // 할로윈 나이트 묶음 — 유령의 집·사탕 바구니·박쥐 등 소품 다이컷(크림 테두리) [2026-10-28]
+  {k:'spooky_house',g:'spooky',n:'유령의 집',u:'https://first-uri-calender.vercel.app/themes/hnight/st_house.png'},
+  {k:'spooky_candy',g:'spooky',n:'사탕 바구니',u:'https://first-uri-calender.vercel.app/themes/hnight/st_candy.png'},
+  {k:'spooky_bats',g:'spooky',n:'박쥐 떼',u:'https://first-uri-calender.vercel.app/themes/hnight/st_bats.png'},
+  {k:'spooky_grave',g:'spooky',n:'비석과 거미',u:'https://first-uri-calender.vercel.app/themes/hnight/st_grave.png'},
+  {k:'spooky_hat',g:'spooky',n:'마녀 모자',u:'https://first-uri-calender.vercel.app/themes/hnight/st_hat.png'},
+  {k:'spooky_pumpkins',g:'spooky',n:'호박 삼총사',u:'https://first-uri-calender.vercel.app/themes/hnight/st_pumpkins.png'},
+  // 초록 정원 묶음 — 장미 아치·해바라기·별 유리병 등 정원 소품 다이컷 [2026-10-28]
+  {k:'garden_gate',g:'gardenday',n:'장미 아치',u:'https://first-uri-calender.vercel.app/themes/garden/st_gate.png'},
+  {k:'garden_sunflower',g:'gardenday',n:'해바라기',u:'https://first-uri-calender.vercel.app/themes/garden/st_sunflower.png'},
+  {k:'garden_starjar',g:'gardenday',n:'별 유리병',u:'https://first-uri-calender.vercel.app/themes/garden/st_starjar.png'},
+  {k:'garden_harvest',g:'gardenday',n:'수확 바구니',u:'https://first-uri-calender.vercel.app/themes/garden/st_harvest.png'},
+  {k:'garden_bench',g:'gardenday',n:'정원 벤치',u:'https://first-uri-calender.vercel.app/themes/garden/st_bench.png'},
+  {k:'garden_butterfly',g:'gardenday',n:'나비와 꽃',u:'https://first-uri-calender.vercel.app/themes/garden/st_butterfly.png'},
   // 별밤 캠핑 묶음 — 테마 캐릭터(너굴이·도치)와 캠핑 소품 다이컷 [2026-09-23]
   {k:'camp_fire',g:'campnight',n:'모닥불',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/st_fire.png'},
   {k:'camp_tent',g:'campnight',n:'텐트',u:'https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/st_tent.png'},
@@ -26769,6 +26937,8 @@ window.ctbPickBg=function(){ _ctbFileMode='bg'; var f=_ctbEl('ctbFile'); if(f){ 
    ⚠️ 무료 '기본 묶음' 은 없다 — 모든 묶음이 구독 또는 개별 구매(코인)여야 쓸 수 있다. [2026-09-23]
    ⚠️ 캐릭터 팩은 ANIMAL_STICKER/CHAR_META 를 그대로 빌려 쓴다(새로 만들지 않음). */
 var STICKER_BASE_PACKS=[
+  {k:'spooky',    n:'할로윈 나이트', d:'유령의 집·사탕 바구니·박쥐 떼 — 으스스하고 귀여운 10월 밤'},
+  {k:'gardenday', n:'초록 정원', d:'장미 아치·해바라기·별 유리병 — 느긋한 정원의 하루'},
   {k:'campnight', n:'별밤 캠핑', d:'모닥불·텐트·별똥별 — 너굴이와 도치의 캠핑하는 밤'},
   {k:'sky',       n:'하늘 한 조각', d:'해·달·별·구름·무지개로 반짝이는 하늘'},
   {k:'celebrate', n:'오늘은 축하해', d:'생일·기념일에 딱 맞는 하트·케이크·폭죽'},
