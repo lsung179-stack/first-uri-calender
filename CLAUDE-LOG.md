@@ -659,5 +659,16 @@
   - `showUpgradeModal` — '7일 무료 체험' 확인 창을 없애고 바로 구독 화면(이유 띠에 기능 이름), `funnel.upsell_view` 기록. `offerItem`(코인 구매 제안) 구독 버튼 '프리미엄으로 전부 쓰기' → '7일 무료로 전부 쓰기'(이유 띠 포함).
   - 테마 미리보기(`_skpRenderAct`): 주 버튼 '7일 무료로 이 테마 쓰기'(구독, 이유 띠에 그 테마 카드 그림), 코인은 보조 버튼 'N코인으로 소장하기'(순서 프리미엄→코인은 2026-09-27 지시 그대로).
   - 무료 사용자에게만: 설정 '프리미엄 구독' 줄에 '7일 무료' 배지 / 방 목록 맨 위 안내 카드(새 테마 씰 3개 + '테마 전부 7일 무료' + '써 보기', ✕ 누르면 7일 숨김 `uricalv2.premNudgeAt`, `funnel.nudge_close` 기록) / 스토어 위 '첫 7일 무료' 띠를 누르면 구독 화면('시작하기 ›'). 구독 상태가 바뀌면 `_syncPremEntries()`(배지·카드 정리).
-  - 구독 화면 자체 개편은 시안 단계(A 미리 보고 시작 · B 막힌 기능+비교표 · C 내 캘린더에 입혀 보기) — 사용자 선택 대기. 2.0 앱엔 아직 미적용.
+  - 구독 화면 자체 개편(시안 A/B/C)은 **보류** — 사용자 "구독페이지는 그냥 현안유지하고 넓히기만 하자"(2026-10-28). 지금 화면 그대로 둔다.
   - 검증(헤드리스, 무료 사용자): 방 목록 카드·설정 배지·스토어 띠·테마 미리보기 버튼·이유 띠가 있는 구독 화면(테마/잠긴 기능 두 경우) 확인, 카드 닫으면 사라짐, 콘솔 오류 없음.
+
+### 2026-10-28 — 2.0 앱(uri-calendar-app)에도 구독 화면 들어오는 길 넓히기 (uri-calendar-app `5d14602`)
+- 사용자 "구독페이지는 그냥 현안유지하고 넓히기만 하자" → "계속 작업해줘". 실제 사용자가 2.0 앱에 있어 PWA 와 같은 입구를 옮김(구독 화면 자체는 그대로).
+- `MonetizationFlows.openPremium(context, {from, ctx})` + `PremiumCtx`(title·sub·thumb·key) → `PremiumScreen(ctx:)` 맨 위 크림 띠(무료 사용자만). 다른 모듈은 `AppNav.premium(context, from, title:, sub:, thumb:, key:)`(= `AppNav.openPremiumFor`, 없으면 `openPremium`).
+- `showUpgrade` — '7일 무료 체험' 확인 창 없이 바로 구독 화면(`upgradeCtx`: 기능 문구 + '첫 7일은 무료로 전부 써 볼 수 있어요.'). 기록 `upsell_view` → `premium_view{from:upsell}`(`upsell_go`/`upsell_skip` 없어짐). `offerItem` 구독 버튼 '7일 무료로 전부 쓰기'.
+- 테마 미리보기 `_Acts`: 주 버튼 '7일 무료로 이 테마 쓰기'(띠에 테마 이름 + 카드 그림, from `theme_preview`), 코인은 보조 'N코인으로 소장하기'. 가격 없는 테마도 같은 버튼(예전 업셀 대신).
+- 설정 '프리미엄 구독' 줄 '7일 무료' 배지(구독 상태를 받은 뒤 무료일 때만), from `settings`. 스토어 '첫 7일 무료' 띠 누르면 구독 화면 + '시작하기 ›', from `store_banner`.
+- 방 목록 '내 방' 위 안내 카드 `PremNudge`(`AppSlots.premNudge`, monetization 모듈이 채움) — 씰 세트 순서 앞 3개 그림 + '테마 전부 7일 무료' / '스티커·이모지·글꼴까지' + '써 보기', ✕ = 7일 숨김(`uricalv2.premNudgeAt`, PWA 와 같은 키) + `nudge_close` 기록. 2.0 엔 새 테마가 없어 문구에서 '새 테마 2종'은 뺐다.
+- PWA 결제 흐름 기록 키를 2.0 과 맞춤: `funnel.premium_view`·`funnel.nudge_close` 의 meta `src` → `from`.
+- 검증: `flutter analyze` 0, 전체 테스트 838 통과, 관련 테스트 `FS_SCALE=1.4` 통과. 새 시험 `test/prem_nudge_test.dart`, 설정 배지 시험 추가, 업셀·코인 제안·테마 미리보기 시험을 새 흐름으로 고침. 별밤 캠핑 화면에서 띠·카드 글씨 보임 확인.
+

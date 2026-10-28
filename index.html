@@ -9064,7 +9064,7 @@ function _premNudgeHTML(){
 function onPremNudgeGo(){ openPremiumSheet('rooms_nudge'); }
 function onPremNudgeClose(){
   try{ localStorage.setItem('uricalv2.premNudgeAt',String(Date.now())); }catch(_){}
-  try{ _audit('funnel.nudge_close',{meta:{src:'rooms_nudge'}}); }catch(_){}
+  try{ _audit('funnel.nudge_close',{meta:{from:'rooms_nudge'}}); }catch(_){}
   var el=document.querySelector('.r-prem-nudge'); if(el) el.remove();
 }
 window.onPremNudgeGo=onPremNudgeGo; window.onPremNudgeClose=onPremNudgeClose;
@@ -23587,7 +23587,7 @@ function _premCtxHTML(ctx){
     +'<div class="pcx-t"><b>'+escapeHtml(ctx.title)+'</b>'+(ctx.sub?'<span>'+escapeHtml(ctx.sub)+'</span>':'')+'</div>';
 }
 function openPremiumSheet(src,ctx){
-  try{ _audit('funnel.premium_view',{meta:{src:(typeof src==='string'?src:'')||'direct', ctx:(ctx&&ctx.key)||null}}); }catch(_){}
+  try{ _audit('funnel.premium_view',{meta:{from:(typeof src==='string'?src:'')||'direct', ctx:(ctx&&ctx.key)||null}}); }catch(_){}
   try{ var pc=document.getElementById('premCtx'); if(pc){ var h=(!isEffectivePremium())?_premCtxHTML(ctx):''; pc.innerHTML=h; pc.hidden=!h; } }catch(_){}
   closeMainModals();
   try{ _fillPremCounts(); }catch(_){}
