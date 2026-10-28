@@ -639,6 +639,14 @@ body[data-theme="camp"] .store-theme-card.rcs-img:not(.rcs-dark) .stc-sub,body[d
 .sfh-desc{font-size:calc(12px*var(--fsk,1));color:rgba(255,255,255,.96);margin-bottom:12px;text-shadow:0 1px 4px rgba(10,45,85,.55)}
 .sfh-chips{display:flex;gap:6px;flex-wrap:wrap}
 .sfh-chip{font-size:calc(11px*var(--fsk,1));font-weight:700;color:#fff;background:rgba(255,255,255,.22);border-radius:99px;padding:5px 11px;backdrop-filter:blur(2px);text-shadow:0 1px 2px rgba(10,45,85,.4)}
+/* 새 컬러 팩 배너(호박·초록) — 왼쪽 짙은 호박 갈색 면에 글씨, 오른쪽 그림 [2026-10-28] */
+.store-cpack-hero{aspect-ratio:1200/509;min-height:0;display:flex;flex-direction:column;justify-content:center;padding:12px 56% 12px 16px;background-color:#0c0909;background-position:right center;box-shadow:0 6px 18px rgba(30,20,30,.28)}
+.store-cpack-hero::before{background:linear-gradient(100deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,.15) 34%,rgba(0,0,0,0) 48%)}
+.store-cpack-hero .sfh-eyebrow{color:#f6a33c;text-shadow:0 1px 4px rgba(0,0,0,.6);white-space:nowrap;letter-spacing:.1em;margin-bottom:6px}
+.store-cpack-hero .sfh-title{font-size:calc(18px*var(--fsk,1));line-height:1.3;margin-bottom:5px;text-shadow:0 1px 5px rgba(40,16,4,.6)}
+.store-cpack-hero .sfh-desc{font-size:calc(11px*var(--fsk,1));margin-bottom:0;text-shadow:0 1px 4px rgba(40,16,4,.6)}
+/* 그림 비율이 고정이라 배너 안 글씨는 1.1배까지만 커진다(더 크면 스티커와 겹침) */
+.store-cpack-hero{--fsk:min(var(--fsk-r,1),1.1)}
 /* 별밤 캠핑 출시 히어로 — 그림 오른쪽에 캐릭터, 왼쪽 밤하늘 위에 흰 글씨 [2026-09-23] */
 .store-camp-hero{position:relative;overflow:hidden;border-radius:18px;min-height:128px;padding:20px 44% 20px 18px;margin-bottom:16px;background:#1b3464 center right/cover no-repeat;box-shadow:0 6px 18px rgba(16,30,64,.32);cursor:pointer}
 .store-camp-hero::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(100deg,rgba(16,32,66,.82) 0%,rgba(16,32,66,.55) 42%,rgba(16,32,66,0) 72%)}
@@ -21541,7 +21549,7 @@ function preloadStoreAssets(){
   try{
     var urls=[];
     if(typeof ANIMAL_STICKER!=='undefined'){ for(var k in ANIMAL_STICKER){ if(ANIMAL_STICKER[k])urls.push(ANIMAL_STICKER[k]); } }
-    if(typeof FRUIT_HERO_IMG!=='undefined'&&FRUIT_HERO_IMG)urls.push(FRUIT_HERO_IMG);
+    if(typeof CPACK_HERO_IMG!=='undefined'&&CPACK_HERO_IMG)urls.push(CPACK_HERO_IMG);
     if(typeof EMOJI_HERO_IMG!=='undefined'&&EMOJI_HERO_IMG)urls.push(EMOJI_HERO_IMG);
     // (SEAL_HERO_IMG는 테마 탭 히어로 제거로 더 이상 화면에 안 뜸 → 프리로드 제외) [2026-08-19]
     if(typeof NEWTHEMES_HERO_IMG!=='undefined')urls.push(NEWTHEMES_HERO_IMG);
@@ -24644,15 +24652,15 @@ var HNIGHT_HERO_IMG='https://first-uri-calender.vercel.app/themes/hnight/banner.
 var GARDEN_HERO_IMG='https://first-uri-calender.vercel.app/themes/garden/banner.jpg';
 var CAMP_HERO_IMG='https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/banner.jpg';
 var SEAL_HERO_IMG='https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/7de0f3d079820415.jpg';
-var FRUIT_HERO_IMG='https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/d03abce97ca6700d.jpg';
+var CPACK_HERO_IMG='https://first-uri-calender.vercel.app/themes/colorpacks-banner.jpg';
 function renderStoreColors(){
   const body=document.getElementById('storeBody');
   if(!body)return;
-  let html=`<div class="store-fruit-hero" style="background-image:url('${FRUIT_HERO_IMG}')">
-    <div class="sfh-eyebrow">NEW · SUMMER COLORS</div>
-    <div class="sfh-title">여름 제철 과일<br>컬러 팩 출시</div>
-    <div class="sfh-desc">새콤달콤한 여름 색으로 우리 방 물들이기</div>
-    <div class="sfh-chips"><span class="sfh-chip">포도</span><span class="sfh-chip">수박</span><span class="sfh-chip">복숭아</span><span class="sfh-chip">메론</span></div>
+  // 새 컬러 팩 배너 — 할로윈(호박)·초록 정원(초록·연두) (2026-10-28, 여름 과일 배너 대체). 그림은 두 테마 스티커 그대로 모아 만듦
+  let html=`<div class="store-fruit-hero store-cpack-hero" style="background-image:url('${CPACK_HERO_IMG}')">
+    <div class="sfh-eyebrow">NEW · COLORS</div>
+    <div class="sfh-title">호박·초록<br>컬러 팩 출시</div>
+    <div class="sfh-desc">테마 짝꿍 색 12가지</div>
   </div>`;
   html+='<div class="store-section-title">컬러 팩 <small>COLOR PACK</small></div>';
   html+=`<div class="theme-grid-store">`;
