@@ -703,3 +703,8 @@
 - `_skpPhoneHTML`: `ct.cls==='rc-hnight'` 면 `<span class="skp-title skp-title-hn"><small>2026</small><b>October</b>` (`MONTH_NAMES_EN`), CSS `.skp-title-hn` = Jolly Lodger 24px·`--aL` 색·연도 자간(실제 캘린더 `.cal-month-name[data-en]::after` 와 같은 모양), 미리보기를 그릴 때 `_hnLoadFont()` 로 글꼴을 받는다(전엔 테마를 적용할 때만 받았음). 다른 테마는 그대로.
 - 검증(헤드리스): 할로윈 미리보기 '2026 / October', 초록 정원 '2026년 / 10월'.
 
+### 2026-10-28 — 할로윈 나이트 '오늘' 표시를 호박으로
+- 사용자 "할로윈테마 오늘 표시를 호박으로 해줘 대신 숫자는 보이게".
+- CSS 변수 `--hn-pumpkin`(호박 SVG data URI, 줄기·잎·세 덩이 몸통) — `body.rc-hnight .cal-cell.today .cal-day-num::before` 를 32×28 호박으로(동그라미 테두리 대신, `z-index:-1` + 숫자 `z-index:0` 로 숫자가 위), `::after` 숨김, 숫자 색 #2b1407 굵게. 주 보기 `.wk-day.today .wk-num span` 42×37 호박, 스토어 미리보기는 `_skpPhoneHTML` 상자에 `skp-<cls>` 클래스를 붙여 `.skp-rc-hnight .skp-d.t .n` 호박. 다른 테마는 그대로.
+- 검증(헤드리스): 월·주·미리보기에서 호박 위 숫자 읽힘, 초록 정원은 원래 동그라미.
+

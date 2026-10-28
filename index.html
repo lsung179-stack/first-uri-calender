@@ -1634,6 +1634,13 @@ body.rc-hnight .cal-month-name[data-en]::after{content:attr(data-en);display:blo
 #calendarScreen.week-mode .cal-month-name[data-en]::after{font-size:calc(26px*min(var(--fsk,1),1.15))}
 body.rc-hnight .cal-month-year[data-en]{font-size:0!important}
 body.rc-hnight .cal-month-year[data-en]::after{content:attr(data-en);font-size:calc(11px*min(var(--fsk,1),1.15));letter-spacing:.32em;padding-left:.32em;font-weight:700;color:var(--sub)}
+/* 할로윈 나이트 — '오늘' 표시를 동그라미 대신 호박으로(숫자는 호박 위에 짙은 갈색, 사용자 "오늘 표시를 호박으로 해줘 대신 숫자는 보이게") [2026-10-28] */
+:root{--hn-pumpkin:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 32'%3E%3Cpath d='M17 7.2c-.2-2.3.6-4.2 2.6-5.4' fill='none' stroke='%235b3a1a' stroke-width='2.6' stroke-linecap='round'/%3E%3Cpath d='M19.4 4.6c2.2-1.8 5-1.6 6.4.2-2 1.6-4.6 1.6-6.4-.2z' fill='%236f8f2c'/%3E%3Cellipse cx='10.6' cy='18.6' rx='9' ry='10.4' fill='%23d9600c' stroke='%237a2e0e' stroke-width='1.3'/%3E%3Cellipse cx='25.4' cy='18.6' rx='9' ry='10.4' fill='%23d9600c' stroke='%237a2e0e' stroke-width='1.3'/%3E%3Cellipse cx='18' cy='18.8' rx='9.4' ry='11.4' fill='%23f58a1f' stroke='%237a2e0e' stroke-width='1.3'/%3E%3C/svg%3E")}
+body.rc-hnight .cal-cell.today .cal-day-num{color:#2b1407;font-weight:800;z-index:0}
+body.rc-hnight .cal-cell.today .cal-day-num::before{width:32px;height:28px;border:0;border-radius:0;transform:translate(-50%,-58%);background:var(--hn-pumpkin) center/contain no-repeat;z-index:-1}
+body.rc-hnight .cal-cell.today .cal-day-num::after{display:none}
+body.rc-hnight .wk-day.today .wk-num span{width:42px;height:37px;border:0;border-radius:0;padding:7px 0 0;background:var(--hn-pumpkin) center/contain no-repeat;color:#2b1407;font-weight:800}
+.skp-rc-hnight .skp-d.t .n{width:22px;height:19px;border:0;border-radius:0;padding-top:3px;box-sizing:border-box;background:var(--hn-pumpkin) center/contain no-repeat;color:#2b1407}
 body.rc-garden .rc-decor .rc-bg.rc-bg-scene{opacity:calc(.32*var(--bg-k,1))}
 /* 씬 자체가 남색 밤하늘이라 다른 테마(.4)보다 진하게 깔아도 글씨를 해치지 않는다 */
 /* 캐릭터(모닥불 앞 너구리·고슴도치)가 그림 아래쪽 70~92% 에 있어 기본 위치(30%)면 탭바 뒤로 숨는다(사용자 제보 2026-09-23).
@@ -24565,7 +24572,7 @@ function _skpPhoneHTML(k){
     return '<span class="'+(tb[0]==='cal'?'on':'')+'"><i class="ic"'+(ic?' style=\'background-image:'+ic.replace(/'/g,'&#39;')+'\'':'')+'>'+(ic?'':_SKP_TAB_SVG[tb[0]])+'</i>'+tb[1]+'</span>';
   }).join('');
   var seal=ct.mascot?' style="background-image:url(&quot;'+escapeHtml(ct.mascot)+'&quot;)"':'';
-  return '<div class="skp-phone-inner" style="'+style+'">'
+  return '<div class="skp-phone-inner'+(ct.cls?' skp-'+escapeHtml(ct.cls):'')+'" style="'+style+'">'
     +'<div class="skp-decor">'+decor+'</div>'
     +'<div class="skp-in">'
     +'<div class="skp-head"><span class="skp-seal"'+seal+'></span>'
