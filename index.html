@@ -634,19 +634,15 @@ body.room-reordering .r-card{cursor:grabbing;-webkit-touch-callout:none}
 .store-camp-hero .sfh-eyebrow{color:#f2c14e;text-shadow:0 1px 4px rgba(4,10,28,.6)}
 .store-camp-hero .sfh-title{color:#fff;margin-bottom:6px;text-shadow:0 1px 6px rgba(4,10,28,.6)}
 .store-camp-hero .sfh-desc{color:rgba(240,244,252,.92);margin-bottom:0;text-shadow:0 1px 4px rgba(4,10,28,.6)}
-/* 할로윈 나이트·초록 정원 출시 히어로 — 한 장 통합(2026-10-28). 왼쪽 글씨, 오른쪽에 두 테마 배너를 카드처럼 겹쳐 놓음 */
-.store-new-hero{position:relative;overflow:hidden;display:flex;align-items:center;gap:8px;min-height:164px;padding:18px 12px 18px 18px;margin-bottom:16px;border-radius:18px;background:linear-gradient(120deg,#fbf5ea 0%,#f3eadb 100%);box-shadow:0 6px 18px rgba(60,40,20,.14);cursor:pointer}
-.snh-text{flex:1 1 48%;min-width:0;position:relative;z-index:2}
-.store-new-hero .sfh-eyebrow{color:#d96d18;text-shadow:none}
-.store-new-hero .sfh-title{color:#2a2119;text-shadow:none;margin-bottom:6px;font-size:calc(19px*var(--fsk,1));line-height:1.3}
-.store-new-hero .sfh-desc{color:#6d5c4c;text-shadow:none;margin-bottom:0}
-.snh-cards{position:relative;flex:0 0 50%;align-self:stretch;min-height:132px;margin:-6px -4px -6px 0}
-.snh-card{position:absolute;width:100%;aspect-ratio:720/305;right:0;border:2px solid #fff;border-radius:12px;padding:0;background:#111 right center/cover no-repeat;box-shadow:0 6px 14px rgba(0,0,0,.22);cursor:pointer;overflow:hidden}
-.snh-card span{position:absolute;left:8px;bottom:6px;font-size:calc(10.5px*var(--fsk,1));font-weight:800;padding:3px 8px;border-radius:99px;white-space:nowrap}
-.snh-hn{top:2px;right:6%;transform:rotate(-4deg);z-index:2}
-.snh-hn span{background:rgba(0,0,0,.72);color:#f6a33c}
-.snh-gd{bottom:2px;right:-2%;transform:rotate(3deg);background-color:#fcf6e9;z-index:3}
-.snh-gd span{background:rgba(255,255,255,.9);color:#1f7a63}
+/* 할로윈 나이트·초록 정원 출시 히어로 — 한 장의 그림에 두 테마를 섞음(2026-10-28). 왼쪽 검은 밤하늘 위에 흰 글씨,
+   그림 왼쪽 절반/오른쪽 절반을 누르면 각 테마 미리보기(글씨는 누름을 가로채지 않음) */
+.store-new-hero{position:relative;overflow:hidden;aspect-ratio:720/305;min-height:128px;margin-bottom:16px;border-radius:18px;background:#0b0a0c center/cover no-repeat;box-shadow:0 6px 18px rgba(30,20,30,.28)}
+.snh-zone{position:absolute;top:0;bottom:0;border:0;padding:0;margin:0;background:transparent;cursor:pointer;z-index:1}
+.snh-zl{left:0;width:50%}.snh-zr{right:0;width:50%}
+.snh-text{position:absolute;left:16px;top:56%;transform:translateY(-50%);max-width:38%;z-index:2;pointer-events:none}
+.store-new-hero .sfh-eyebrow{color:#f6a33c;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.store-new-hero .sfh-title{color:#fff6ea;text-shadow:0 1px 6px rgba(0,0,0,.6);margin-bottom:6px;font-size:calc(18px*var(--fsk,1));line-height:1.3}
+.store-new-hero .sfh-desc{color:rgba(255,246,234,.85);text-shadow:0 1px 4px rgba(0,0,0,.6);margin-bottom:0;font-size:calc(11px*var(--fsk,1))}
 /* 동물 캐릭터 이모지 출시 히어로 (이모지 탭 상단) — 실사/일러스트 동물 사진 배경, 따뜻한 스크림 */
 .store-emoji-hero{position:relative;overflow:hidden;border-radius:18px;min-height:138px;padding:20px 40% 20px 18px;margin-bottom:22px;background:#e8b774 center right/cover no-repeat;box-shadow:0 6px 16px rgba(120,72,30,.30)}
 .store-emoji-hero::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(100deg,rgba(92,52,20,.78) 0%,rgba(118,70,28,.54) 34%,rgba(140,88,40,.12) 62%,rgba(140,88,40,0) 82%)}
@@ -21452,7 +21448,7 @@ function preloadStoreAssets(){
     if(typeof FRUIT_HERO_IMG!=='undefined'&&FRUIT_HERO_IMG)urls.push(FRUIT_HERO_IMG);
     if(typeof EMOJI_HERO_IMG!=='undefined'&&EMOJI_HERO_IMG)urls.push(EMOJI_HERO_IMG);
     // (SEAL_HERO_IMG는 테마 탭 히어로 제거로 더 이상 화면에 안 뜸 → 프리로드 제외) [2026-08-19]
-    if(typeof HNIGHT_HERO_IMG!=='undefined')urls.push(HNIGHT_HERO_IMG,GARDEN_HERO_IMG);
+    if(typeof NEWTHEMES_HERO_IMG!=='undefined')urls.push(NEWTHEMES_HERO_IMG);
     if(typeof SEAL_SETS!=='undefined'){ for(var sk in SEAL_SETS){ if(SEAL_SETS[sk]&&SEAL_SETS[sk].img)urls.push(SEAL_SETS[sk].img); } }
     if(typeof CARD_SKINS!=='undefined'){ for(var ck in CARD_SKINS){ var cs=CARD_SKINS[ck]; if(!cs)continue; ['img','char','scene'].forEach(function(f){ if(cs[f])urls.push(cs[f]); }); } }
     urls.forEach(function(u){ try{ var im=new Image(); im.decoding='async'; im.src=u; }catch(_){} });
@@ -24317,16 +24313,15 @@ function renderStoreThemes(){
     </div>
     <div class="sch-art"><i class="sch-a1"></i><i class="sch-a2"></i><i class="sch-a3"></i></div>
   </div>`;
-  // 새 테마 출시 배너 — 두 테마를 한 장에(2026-10-28 사용자 "스토어에 배너를 하나로 통합해줘"). 카드를 누르면 그 테마 미리보기
-  html+=`<div class="store-new-hero" onclick="onStoreThemeItem('hnight')">
+  // 새 테마 출시 배너 — 두 테마를 한 장의 그림 안에 섞음(2026-10-28 사용자 "배너안에 두가지 테마를 자연스럽게 녹여봐").
+  // 왼쪽 밤(할로윈) → 오른쪽 정원으로 이어지는 그림이라, 누른 쪽 테마의 미리보기를 연다
+  html+=`<div class="store-new-hero" style="background-image:url('${NEWTHEMES_HERO_IMG}')">
+    <button type="button" class="snh-zone snh-zl" onclick="onStoreThemeItem('hnight')" aria-label="할로윈 나이트 미리보기"></button>
+    <button type="button" class="snh-zone snh-zr" onclick="onStoreThemeItem('garden')" aria-label="초록 정원 미리보기"></button>
     <div class="snh-text">
-      <div class="sfh-eyebrow">NEW &middot; 새 테마 2종</div>
+      <div class="sfh-eyebrow">NEW &middot; 새 테마</div>
       <div class="sfh-title">할로윈 나이트<br>&amp; 초록 정원</div>
-      <div class="sfh-desc">이모지·스티커·컬러 팩도 함께</div>
-    </div>
-    <div class="snh-cards">
-      <button type="button" class="snh-card snh-gd" style="background-image:url('${GARDEN_HERO_IMG}')" onclick="event.stopPropagation();onStoreThemeItem('garden')" aria-label="초록 정원 미리보기"><span>초록 정원</span></button>
-      <button type="button" class="snh-card snh-hn" style="background-image:url('${HNIGHT_HERO_IMG}')" onclick="event.stopPropagation();onStoreThemeItem('hnight')" aria-label="할로윈 나이트 미리보기"><span>할로윈 나이트</span></button>
+      <div class="sfh-desc">이모지·스티커·<br>컬러 팩도 함께</div>
     </div>
   </div>`;
   html+=_ctbMyThemesHTML();
@@ -24539,6 +24534,7 @@ function openSealShowcase(){
   },180);
 }
 /* ── 컬러 팩 (곧 출시) ── */
+var NEWTHEMES_HERO_IMG='https://first-uri-calender.vercel.app/themes/newthemes-banner.jpg';
 var HNIGHT_HERO_IMG='https://first-uri-calender.vercel.app/themes/hnight/banner.jpg';
 var GARDEN_HERO_IMG='https://first-uri-calender.vercel.app/themes/garden/banner.jpg';
 var CAMP_HERO_IMG='https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/banner.jpg';
