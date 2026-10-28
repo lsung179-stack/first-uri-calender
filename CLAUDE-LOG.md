@@ -698,3 +698,8 @@
 - `renderStoreColors` 맨 위 `.store-fruit-hero` 여름 과일 배너 → `.store-fruit-hero.store-cpack-hero`('NEW · COLORS / 호박·초록 컬러 팩 출시 / 테마 짝꿍 색 12가지'), `FRUIT_HERO_IMG` → `CPACK_HERO_IMG`(미리 받기 목록도). 그림 비율 고정이라 배너 안 글씨는 `--fsk:min(var(--fsk-r,1),1.1)` 로 1.1배까지만, 팩 이름 칩은 좁은 폰에서 잘려 뺌.
 - 검증(헤드리스): 폭 320·360·390·414 × 글씨 보통·크게·최대 — 잘림·겹침 없음.
 
+### 2026-10-28 — 스토어 테마 미리보기: 할로윈 나이트 달 이름도 영어 할로윈 글씨로
+- 사용자(미리보기 캡처) "미리보기 월 영어폰트로 바꾼걸로 적용시켜줘" — 미리보기 휴대폰 머리가 '2026년 10월' 그대로였다.
+- `_skpPhoneHTML`: `ct.cls==='rc-hnight'` 면 `<span class="skp-title skp-title-hn"><small>2026</small><b>October</b>` (`MONTH_NAMES_EN`), CSS `.skp-title-hn` = Jolly Lodger 24px·`--aL` 색·연도 자간(실제 캘린더 `.cal-month-name[data-en]::after` 와 같은 모양), 미리보기를 그릴 때 `_hnLoadFont()` 로 글꼴을 받는다(전엔 테마를 적용할 때만 받았음). 다른 테마는 그대로.
+- 검증(헤드리스): 할로윈 미리보기 '2026 / October', 초록 정원 '2026년 / 10월'.
+

@@ -3430,6 +3430,8 @@ body[data-theme="hnight"] .rpal-row{background:#2b231d}
 .skp-title{text-align:center;line-height:1.05}
 .skp-title small{display:block;font-size:calc(8.5px*var(--fsk,1));color:var(--sub)}
 .skp-title b{font-family:var(--ff-serif);font-size:calc(19px*var(--fsk,1));font-weight:700;color:var(--text)}
+.skp-title-hn small{letter-spacing:.32em;padding-left:.32em;font-weight:700}
+.skp-title-hn b{font-family:'Jolly Lodger','Noto Serif KR',serif;font-weight:400;font-size:calc(24px*var(--fsk,1));letter-spacing:.5px;color:var(--aL);white-space:nowrap}
 .skp-seg{display:flex;border-radius:99px;background:var(--aP);padding:2px;flex:none}
 .skp-seg i{font-style:normal;font-size:calc(8.5px*var(--fsk,1));font-weight:700;padding:2px 6px;border-radius:99px;color:var(--sub)}
 .skp-seg i.on{background:var(--accent);color:#fff}
@@ -24515,6 +24517,7 @@ var _SKP_TAB_SVG={
 };
 function _skpPhoneHTML(k){
   var ct=_skinCT(k)||{};
+  if(ct.cls==='rc-hnight'){ try{ _hnLoadFont(); }catch(_){} }   // 미리보기의 영어 달 이름 글꼴
   var themeKey=_cardSkinTheme(k)||'vintage';
   var t=THEMES[themeKey]||THEMES.vintage;
   // 이 상자 안에서만 쓰는 테마 변수(앱 전체 테마는 그대로)
@@ -24566,7 +24569,10 @@ function _skpPhoneHTML(k){
     +'<div class="skp-decor">'+decor+'</div>'
     +'<div class="skp-in">'
     +'<div class="skp-head"><span class="skp-seal"'+seal+'></span>'
-    +'<span class="skp-title"><small>'+y+'년</small><b>'+(m+1)+'월</b></span>'
+    +(ct.cls==='rc-hnight'
+      // 할로윈 나이트는 실제 캘린더처럼 달 이름을 영어 할로윈 글씨로 [2026-10-28]
+      ?'<span class="skp-title skp-title-hn"><small>'+y+'</small><b>'+escapeHtml(MONTH_NAMES_EN[m])+'</b></span>'
+      :'<span class="skp-title"><small>'+y+'년</small><b>'+(m+1)+'월</b></span>')
     +'<span class="skp-seg"><i class="on">월</i><i>주</i></span></div>'
     +'<div class="skp-dow">'+dowHTML+'</div>'
     +'<div class="skp-grid">'+grid+'</div>'
