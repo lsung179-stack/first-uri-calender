@@ -11518,8 +11518,8 @@ async function _wgFlushPendingTodos(){
     const isPrem=isEffectivePremium();
     // 현재 DB 상태 조회 후 뒤집기 (위젯이 무엇을 봤든 서버 기준으로 정확히 반영)
     let cur=[];
-    try{ const {data}=await supa.from('todos').select('id,is_done').in('id',flipIds); cur=data||[]; }catch(_){}
-    const curMap={}; cur.forEach(t=>{ curMap[String(t.id)]=!!t.is_done; });
+    try{ const {data}=await supa.from('todos').select('id,is_done,multi_group_id,start_date').in('id',flipIds); cur=data||[]; }catch(_){}
+    const curMap={}, rowMap={}; cur.forEach(t=>{ curMap[String(t.id)]=!!t.is_done; rowMap[String(t.id)]=t; });
     for(const id of flipIds){
       const turningOn=!curMap[id]; // 현재 상태의 반대
       const updates={
@@ -11528,7 +11528,12 @@ async function _wgFlushPendingTodos(){
         done_at:turningOn?new Date().toISOString():null,
         expires_at:(turningOn&&!isPrem)?new Date(Date.now()+FREE_LIMITS.doneTodoDays*86400000).toISOString():null
       };
-      try{ await supa.from('todos').update(updates).eq('id',id); }catch(_){}
+      // 여러 방에 함께 저장한 할 일이면 같은 날짜의 방별 복사본도 함께(앱 안 체크와 같은 규칙) [2026-10-28]
+      const r=rowMap[id];
+      try{
+        if(r&&r.multi_group_id&&r.start_date) await supa.from('todos').update(updates).eq('multi_group_id',r.multi_group_id).eq('start_date',r.start_date);
+        else await supa.from('todos').update(updates).eq('id',id);
+      }catch(_){}
     }
     // 앱 상태 재로드 + 위젯 재동기화
     try{ if(window.loadTodos) await window.loadTodos(); if(window.safeRender) window.safeRender(); }catch(_){}
@@ -29235,7 +29240,11 @@ async function toggleTodoDone(id){
     }
   }
   try{
-    const { error } = await supa.from('todos').update(updates).eq('id',id);
+    // 여러 방에 함께 저장한 할 일(multi_group_id)이면 내 방의 복사본 모두 같이 완료/해제 — 예전엔 이 방 것만 바뀌었다 [2026-10-28]
+    // ⚠️ multi_group_id 는 '여러 날' 할 일의 날짜별 행도 묶으므로 start_date 도 맞춰 이 날짜의 방별 복사본만(끌어 옮기기와 같은 규칙)
+    const { error } = (t.multi_group_id&&t.start_date)
+      ? await supa.from('todos').update(updates).eq('multi_group_id',t.multi_group_id).eq('start_date',t.start_date)
+      : await supa.from('todos').update(updates).eq('id',id);
     if(error){ toast('변경 실패: '+((error.message||'').slice(0,30))); await loadTodos(); safeRender(); }
     else{ _notifyTodo(turningOn?'done':'undone', t); }
   }catch(e){ toast('변경 실패'); await loadTodos(); safeRender(); }
