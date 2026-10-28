@@ -734,3 +734,12 @@
 - 다른 미니 달력 점검: 일정 하루·기간·여러 날·반복 종료일, 할 일 반복 종료일, 날짜 강조 기간은 모두 같은 `.ev-multi-cal` 모양이었지만 **일요일 시작으로 고정**돼 있었고, 할 일 미니 달력만 '주 시작 요일'(설정)을 따랐다 → 6개 그리기 함수의 `startDow` 를 `(첫날 요일 - getWeekStartPref() + 7) % 7` 로, 요일 머리줄은 `_syncMiniDows()`(모든 `.ev-multi-dows` 를 `_miniDowsHtml()` 로, `data-ws` 로 바뀔 때만)로 맞춤. 일/토 색은 실제 요일로 그대로.
 - 새 미니 달력을 만들 땐 `.ev-multi-cal` + `_miniDowsHtml()` + 같은 앞 꼬리 계산을 쓸 것.
 - 검증(헤드리스 390/360 × 보통/최대 글씨, 할로윈 나이트): 42칸·선택·달 넘김·고르면 접힘, 월요일 시작에서 2026년 11월 첫 칸 10/26·10월 첫 칸 9/28, 기존 45개 화면 오류 없음.
+
+### 2026-10-28 — D-day '캘린더 칸에도 표시' → 진짜 일정 바로 만들기
+- 사용자 "디데이 캘린더 칸에도 표시 누르면 그냥 일정바로 생성해줘" — 지금까진 그날 칸에 이름만 작게 나왔다.
+- DB: 마이그레이션 `anniversaries_event_link` — `anniversaries.event_id uuid references events(id) on delete set null` + 부분 인덱스.
+- `_ddxSave`: `on_cal` 이면 일정 한 줄(제목·날짜·D-day 색·`bar_style solid`, 매년이면 `repeat_type 'yearly'`+`recurring_yearly`, user_id=만든 사람)을 만들고 `event_id` 저장. 이미 있으면 그 일정을 덮어쓰고(누가 지워 없으면 새로), 끄면 그 일정을 지운다. D-day 저장이 실패하면 방금 만든 일정도 되돌림. 저장 뒤 `loadEvents()`.
+- `_ddxDelete`: D-day 를 지우면 묶인 일정도 지움.
+- 스위치 글: '캘린더에 일정으로도 표시 / 그날 칸에 일정 바로 함께 보여요'. `_ddayLabelOn` 이름 라벨은 event_id 없는 옛 on_cal 행(지금 1개)만 — 다시 저장하면 일정이 생긴다.
+- 만든 일정은 보통 일정이라 2.0 앱·위젯·알림에도 그대로 보인다. 캘린더에서 그 일정을 직접 고쳐도 D-day 쪽은 안 바뀐다(D-day 를 고치면 일정이 D-day 기준으로 다시 맞춰짐).
+- 검증(헤드리스, 쓰기 기록): 새로 만들기=일정 insert→D-day insert(event_id), 끄기=일정 delete+event_id null, 고치기=일정 update, 지우기=D-day·일정 delete. 360px 최대 글씨 스위치 줄 안 잘림.

@@ -12954,7 +12954,7 @@ function _ddayLabelOn(key){
     const map={}, y=+key.slice(0,4), m=+key.slice(5,7)-1;
     const from=dateKey(y,m,1), to=dateKey(y,m,new Date(y,m+1,0).getDate());
     _ddays.forEach(x=>{
-      if(x.src!=='ann'||!x.onCal) return;
+      if(x.src!=='ann'||!x.onCal||x.eventId) return;   // 일정 바가 있는 D-day 는 이름표 대신 바로 보인다(옛 행만 이름표)
       const k=x.repeat_yearly?_ddYearly(x.date,y):x.date;
       if(k>=from&&k<=to&&k>=x.date&&!map[k]) map[k]=_ddShort(x.title,6);
     });
@@ -12985,7 +12985,7 @@ async function loadDdays(){
     // D-day 탭(날짜 강조·스티커 창)에서 만든 D-day — 일정이 아니라 방에 하나씩(anniversaries). 색이 없는 옛 시험 행은 안 읽는다 [2026-10-28]
     let ann=[];
     try{
-      const ra=await supa.from('anniversaries').select('id,title,date,kind,repeat_yearly,color,on_cal,created_by,created_at').eq('room_id',room.id).not('color','is',null);
+      const ra=await supa.from('anniversaries').select('id,title,date,kind,repeat_yearly,color,on_cal,event_id,created_by,created_at').eq('room_id',room.id).not('color','is',null);
       if(!ra.error) ann=ra.data||[];
     }catch(_){}
     if(seq!==_ddLoadSeq||!_currentRoom||_currentRoom.id!==room.id) return;
@@ -13005,7 +13005,7 @@ async function loadDdays(){
     });
     ann.forEach(a=>{
       out.push({id:'a:'+a.id, annId:a.id, src:'ann', title:a.title||'D-day', date:a.date, members:[], byKey:{},
-        kind:a.kind==='since'?'since':'countdown', repeat_yearly:!!a.repeat_yearly, color:a.color, onCal:!!a.on_cal,
+        kind:a.kind==='since'?'since':'countdown', repeat_yearly:!!a.repeat_yearly, color:a.color, onCal:!!a.on_cal, eventId:a.event_id||null,
         created_by:a.created_by, created_at:a.created_at});
     });
     out.sort((a,b)=>String(a.created_at||'')<String(b.created_at||'')?-1:1);
@@ -13154,7 +13154,7 @@ window._ddOpenAdd=_ddOpenAdd;
 /* ── D-day 탭(날짜 강조·스티커 창) + 만들기 창 [2026-10-28] ──
    사용자 "디데이를 일정추가에서 말고 우리 날짜강조랑 스티커 추가하는 곳으로" → 초안 → "초안을 실제로 넣기".
    여기서 만든 D-day 는 일정이 아니라 방에 하나씩 anniversaries 에 저장(만든 사람만 고치고 지움, 방 멤버는 모두 봄).
-   칩 줄에만 보이고, '캘린더 칸에도 표시'를 켜면 그날 칸에 이름 라벨. 만들기는 프리미엄, 고치기·지우기는 자유.
+   칩 줄에만 보이고, '캘린더에 일정으로도 표시'를 켜면 진짜 일정 한 줄(event_id)을 만들어 그날 일정 바로 보임(옛 행은 이름 라벨). 만들기는 프리미엄, 고치기·지우기는 자유.
    색 칸 = 일정 색상 칸과 같은 페이지(_colorPagesForRoom — 기본 12색 + 스토어에서 '사용하기' 한 팩, '이 방 색상' 묶음 그대로). */
 var _ddx=null;
 function _dhmDdRender(){
@@ -13186,12 +13186,12 @@ async function _ddxOpen(annId,opts){
       return;
     }
     const d=(opts.date&&/^\d{4}-\d{2}-\d{2}$/.test(opts.date))?opts.date:_ddTodayKey();
-    _ddx={id:null,title:'',date:d,kind:'down',yearly:false,onCal:false,color:effectiveDefaultColor('ev')};
+    _ddx={id:null,title:'',date:d,kind:'down',yearly:false,onCal:false,eventId:null,color:effectiveDefaultColor('ev')};
   }else{
     const x=_ddAll.find(v=>v.src==='ann'&&v.annId===annId);
     if(!x){ toast('D-day 를 찾지 못했어요'); return; }
     if(x.created_by!==_currentUser.id&&!isAdmin()){ toast('만든 사람만 고칠 수 있어요'); return; }
-    _ddx={id:annId,title:x.title,date:x.date,kind:x.kind==='since'?'since':'down',yearly:!!x.repeat_yearly,onCal:!!x.onCal,color:x.color};
+    _ddx={id:annId,title:x.title,date:x.date,kind:x.kind==='since'?'since':'down',yearly:!!x.repeat_yearly,onCal:!!x.onCal,eventId:x.eventId||null,color:x.color};
   }
   _ddx.page=null;
   _ddxRender();
@@ -13224,7 +13224,7 @@ function _ddxRender(){
     <div class="ev-label">세는 법</div>
     <div class="ddx-seg"><button type="button" class="${_ddx.kind==='down'?'on':''}" onclick="_ddx.kind='down';_ddxRender()"><b>D-day</b><span>그날까지 남은 날</span></button><button type="button" class="${_ddx.kind==='since'?'on':''}" onclick="_ddx.kind='since';_ddxRender()"><b>N일째</b><span>그날부터 함께한 날</span></button></div>
     ${_ddx.kind==='down'?sw(_ddx.yearly,"_ddx.yearly=!_ddx.yearly;_ddxRender()",'매년 반복','생일·기념일처럼 해마다 다시 세요'):''}
-    ${sw(_ddx.onCal,"_ddx.onCal=!_ddx.onCal;_ddxRender()",'캘린더 칸에도 표시','그날 칸에 이름이 작게 보여요')}
+    ${sw(_ddx.onCal,"_ddx.onCal=!_ddx.onCal;_ddxRender()",'캘린더에 일정으로도 표시','그날 칸에 일정 바로 함께 보여요')}
     <div class="ev-label">색 <small>일정 색과 같아요 · 스토어에서 ‘사용하기’ 한 팩도 함께</small></div>
     <div class="ev-color-pager-wrap"><div class="ev-color-pager" id="ddxPager">${pages.map(p=>`<div class="ev-color-page"><div class="ev-color-page-grid">${p.colors.map(c=>`<div class="ev-color-cell"><button type="button" class="ev-color${c.key===_ddx.color?' on':''}" style="background:${_safeColor(c.hex)}" onclick="_ddxColor('${_jsStr(c.key)}')" aria-label="${escapeHtml(colorLabelOf(c.key)||'색')}"></button><div class="ev-color-name">${escapeHtml(colorLabelOf(c.key)||'')}</div></div>`).join('')}</div></div>`).join('')}</div>
       <div class="ev-color-pager-foot"><div class="ev-color-page-label" id="ddxPageLabel">${escapeHtml((pages[pi]||pages[0]).name)}</div><div class="ev-color-dots" id="ddxDots">${pages.map((p,i)=>`<span class="ev-color-dot${i===pi?' on':''}"></span>`).join('')}</div></div></div>
@@ -13278,19 +13278,42 @@ async function _ddxSave(){
   if(!_ddx.id){ try{ await ensurePremiumLoaded(); }catch(_){} if(!isEffectivePremium()){ closeDdx(); _ddxOpen(null,{}); return; } }
   const btn=document.getElementById('ddxSave'); if(btn){ btn.disabled=true; btn.textContent='저장 중…'; }
   const row={title:title.slice(0,40),date:_ddx.date,kind:_ddx.kind==='since'?'since':'countdown',repeat_yearly:_ddx.kind==='down'&&!!_ddx.yearly,on_cal:!!_ddx.onCal,color:_ddx.color};
+  let madeEv=null;
   try{
+    /* '캘린더에 일정으로도 표시' = 진짜 일정 한 줄(그날 일정 바)을 만들어 event_id 로 묶는다 — 끄면 그 일정을 지움. [2026-10-28] */
+    let evId=_ddx.eventId||null;
+    if(row.on_cal){
+      const evRow={title:row.title,date:row.date,color:row.color,repeat_type:row.repeat_yearly?'yearly':'none',recurring_yearly:row.repeat_yearly};
+      if(evId){
+        const u=await supa.from('events').update(evRow).eq('id',evId).select('id');
+        if(u.error||!(u.data&&u.data.length)) evId=null;   // 누가 그 일정을 지웠으면 새로 만든다
+      }
+      if(!evId){
+        const ins=await supa.from('events').insert(Object.assign({room_id:_currentRoom.id,user_id:_currentUser.id,bar_style:'solid'},evRow)).select('id').single();
+        if(ins.error) throw ins.error;
+        evId=madeEv=ins.data.id;
+      }
+    }else if(evId){
+      const d=await supa.from('events').delete().eq('id',evId);
+      if(d.error) console.warn('D-day 일정 지우기 실패',d.error);
+      evId=null;
+    }
+    row.event_id=evId;
     const r=_ddx.id
       ?await supa.from('anniversaries').update(row).eq('id',_ddx.id)
       :await supa.from('anniversaries').insert(Object.assign({room_id:_currentRoom.id,created_by:_currentUser.id},row));
     if(r.error) throw r.error;
+    madeEv=null;
     const isNew=!_ddx.id;
     closeDdx();
+    if(row.on_cal||_ddx.eventId){ try{ await loadEvents(); }catch(_){} }
     toast(isNew?'D-day 를 만들었어요':'D-day 를 고쳤어요');
     try{ _audit(isNew?'dday.create':'dday.update',{meta:{kind:row.kind,on_cal:row.on_cal}}); }catch(_){}
     await loadDdays();
     _dhmDdRender();
   }catch(e){
     console.warn('D-day 저장 실패',e);
+    if(madeEv){ try{ await supa.from('events').delete().eq('id',madeEv); }catch(_){} }   // D-day 저장이 실패하면 방금 만든 일정도 되돌림
     toast('저장하지 못했어요. 잠시 후 다시 시도해 주세요');
     if(btn){ btn.disabled=false; btn.textContent='저장'; }
   }
@@ -13301,8 +13324,10 @@ async function _ddxDelete(){
   const ok=await vConfirm('이 D-day 를 지울까요? 방 사람들 화면에서도 사라져요.',{title:'D-day 지우기',okText:'지우기'});
   if(!ok) return;
   try{
+    const evId=_ddx.eventId;
     const r=await supa.from('anniversaries').delete().eq('id',_ddx.id);
     if(r.error) throw r.error;
+    if(evId){ try{ await supa.from('events').delete().eq('id',evId); await loadEvents(); }catch(_){} }   // 함께 만든 일정 바도 지움
     closeDdx(); toast('D-day 를 지웠어요');
     await loadDdays(); _dhmDdRender();
   }catch(e){ console.warn('D-day 지우기 실패',e); toast('지우지 못했어요. 잠시 후 다시 시도해 주세요'); }
