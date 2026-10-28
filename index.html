@@ -769,6 +769,9 @@ body.fs-on .r-card-name{white-space:normal;word-break:keep-all;overflow-wrap:any
 .prem-plan{display:flex;align-items:center;gap:12px;width:100%;background:var(--bg);border:1px solid var(--borderL);border-radius:12px;padding:14px;margin-bottom:8px;cursor:pointer;font-family:inherit;text-align:left}
 .prem-plan:last-child{margin-bottom:0}
 .prem-plan.selected{background:linear-gradient(135deg,#fdf6e9,#f8ead0);border-color:#c9a04e;border-width:2px;box-shadow:0 4px 16px rgba(176,135,66,.2)}
+/* 선택된 플랜은 어느 테마에서나 크림 면 — 글씨는 테마 글자색(어두운 테마에선 밝은색)이 아니라 짙은 색으로 고정 [2026-10-28] */
+.prem-plan.selected .pp-name,.prem-plan.selected .pp-price{color:#2a2119}
+.prem-plan.selected .pp-desc{color:#6d5c4c}
 .pp-radio{width:22px;height:22px;border-radius:50%;border:2px solid var(--mute);flex-shrink:0;position:relative}
 .prem-plan.selected .pp-radio{border-color:var(--accent)}
 .prem-plan.selected .pp-radio::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--accent)}
