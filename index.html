@@ -12985,7 +12985,7 @@ async function loadDdays(){
     // D-day 탭(날짜 강조·스티커 창)에서 만든 D-day — 일정이 아니라 방에 하나씩(anniversaries). 색이 없는 옛 시험 행은 안 읽는다 [2026-10-28]
     let ann=[];
     try{
-      const ra=await supa.from('anniversaries').select('id,title,date,kind,repeat_yearly,color,on_cal,event_id,created_by,created_at').eq('room_id',room.id).not('color','is',null);
+      const ra=await supa.from('anniversaries').select('id,title,date,kind,repeat_yearly,color,bar_style,on_cal,event_id,created_by,created_at').eq('room_id',room.id).not('color','is',null);
       if(!ra.error) ann=ra.data||[];
     }catch(_){}
     if(seq!==_ddLoadSeq||!_currentRoom||_currentRoom.id!==room.id) return;
@@ -13005,7 +13005,7 @@ async function loadDdays(){
     });
     ann.forEach(a=>{
       out.push({id:'a:'+a.id, annId:a.id, src:'ann', title:a.title||'D-day', date:a.date, members:[], byKey:{},
-        kind:a.kind==='since'?'since':'countdown', repeat_yearly:!!a.repeat_yearly, color:a.color, onCal:!!a.on_cal, eventId:a.event_id||null,
+        kind:a.kind==='since'?'since':'countdown', repeat_yearly:!!a.repeat_yearly, color:a.color, outline:a.bar_style==='outline', onCal:!!a.on_cal, eventId:a.event_id||null,
         created_by:a.created_by, created_at:a.created_at});
     });
     out.sort((a,b)=>String(a.created_at||'')<String(b.created_at||'')?-1:1);
@@ -13018,6 +13018,8 @@ async function loadDdays(){
 }
 window.loadDdays=loadDdays;
 /** 칩·카드 색 = 일정 바 색(테두리만 일정이면 테두리) */
+/** 목록의 색 점 — 테두리만 D-day 는 속 빈 고리 */
+function _ddDotStyle(x){ const hex=_safeColor(colorHex(x.color)); return x.outline?`background:transparent;box-shadow:inset 0 0 0 2px ${hex}`:`background:${hex}`; }
 function _ddChipStyle(x){
   const hex=_safeColor(colorHex(x.color));
   if(x.outline) return `background:var(--card);color:var(--text);box-shadow:inset 0 0 0 1.5px ${hex}`;
@@ -13147,12 +13149,12 @@ function _ddListHtml(){
           ?`<button type="button" class="dd-edit" onclick="_ddxOpen('${_jsStr(x.annId)}')" aria-label="${escapeHtml(x.title)} 편집">${_DD_PEN}편집</button>`
           :`<button type="button" class="dd-edit" onclick="_ddOpenEdit('${_jsStr(x.evId)}','${_jsStr(x.date)}')" aria-label="${escapeHtml(x.title)} 편집">${_DD_PEN}편집</button>`);
       const hex=_safeColor(colorHex(x.color));
-      return `<div class="dd-card"><div class="dd-card-main"><div class="dd-card-t"><span class="dd-dot" style="background:${hex}"></span>${escapeHtml(x.title)}</div><div class="dd-card-s">${escapeHtml(sub)}</div>${note?`<div class="dd-card-n">${escapeHtml(note)}</div>`:''}</div><div class="dd-card-v">${it.val.v}</div>${side}</div>`;
+      return `<div class="dd-card"><div class="dd-card-main"><div class="dd-card-t"><span class="dd-dot" style="${_ddDotStyle(x)}"></span>${escapeHtml(x.title)}</div><div class="dd-card-s">${escapeHtml(sub)}</div>${note?`<div class="dd-card-n">${escapeHtml(note)}</div>`:''}</div><div class="dd-card-v">${it.val.v}</div>${side}</div>`;
     }).join('')+'</div>';
     const groups=all.filter(it=>_ddIsSince(it.x)).map(it=>({x:it.x,ms:_ddMilestones(it.x,shiftDateKey(today,1),shiftDateKey(today,3700)).slice(0,3)})).filter(g=>g.ms.length);
     if(!re&&groups.length){
       h+='<div class="dd-sec">다가오는 기념일</div>';
-      h+=groups.map(g=>`<div class="dd-mg"><div class="dd-mg-t"><span class="dd-dot" style="background:${_safeColor(colorHex(g.x.color))}"></span>${escapeHtml(g.x.title)}</div><div class="dd-mg-row">${g.ms.map((m,i)=>`<div class="dd-mg-c${i===0?' next':''}"><b>${m.label}</b><span>${escapeHtml(_ddFmtShort(m.key))}</span><em>D-${_ddDiff(today,m.key).toLocaleString()}</em></div>`).join('')}</div></div>`).join('');
+      h+=groups.map(g=>`<div class="dd-mg"><div class="dd-mg-t"><span class="dd-dot" style="${_ddDotStyle(g.x)}"></span>${escapeHtml(g.x.title)}</div><div class="dd-mg-row">${g.ms.map((m,i)=>`<div class="dd-mg-c${i===0?' next':''}"><b>${m.label}</b><span>${escapeHtml(_ddFmtShort(m.key))}</span><em>D-${_ddDiff(today,m.key).toLocaleString()}</em></div>`).join('')}</div></div>`).join('');
     }
   }
   h+=`<div class="mo-actions"><button class="mo-cancel" onclick="closeDdaySheet()">닫기</button></div>`;
@@ -13183,7 +13185,7 @@ function _dhmDdRender(){
     const x=it.x, hex=_safeColor(colorHex(x.color));
     const sub=_ddFmt(x.repeat_yearly?_ddNext(x,today):x.date)+(x.repeat_yearly?' · 매년':'')+(_ddIsSince(x)?' 부터':'')+(x.src==='ann'?'':' · 일정');
     const tap=x.src==='ann'?`_ddxOpen('${_jsStr(x.annId)}')`:`closeDhManage();_ddOpenEdit('${_jsStr(x.evId)}','${_jsStr(x.date)}')`;
-    return `<button type="button" class="ddx-item" onclick="${tap}"><span class="ddx-dot" style="background:${hex}"></span><span class="ddx-main"><span class="ddx-t">${escapeHtml(x.title)}</span><span class="ddx-s">${escapeHtml(sub)}</span></span><span class="ddx-v">${escapeHtml(it.val.v)}</span></button>`;
+    return `<button type="button" class="ddx-item" onclick="${tap}"><span class="ddx-dot" style="${_ddDotStyle(x)}"></span><span class="ddx-main"><span class="ddx-t">${escapeHtml(x.title)}</span><span class="ddx-s">${escapeHtml(sub)}</span></span><span class="ddx-v">${escapeHtml(it.val.v)}</span></button>`;
   };
   const mine=all.filter(it=>it.x.date===sel), rest=all.filter(it=>it.x.date!==sel);
   panel.innerHTML=`<div class="ddx-intro">중요한 날을 캘린더 맨 위에 띄워 두고 <b>남은 날·함께한 날</b>을 같이 세요.</div>
@@ -13203,12 +13205,12 @@ async function _ddxOpen(annId,opts){
       return;
     }
     const d=(opts.date&&/^\d{4}-\d{2}-\d{2}$/.test(opts.date))?opts.date:_ddTodayKey();
-    _ddx={id:null,title:'',date:d,kind:'down',yearly:false,onCal:false,eventId:null,color:effectiveDefaultColor('ev')};
+    _ddx={id:null,title:'',date:d,kind:'down',yearly:false,onCal:false,eventId:null,outline:false,color:effectiveDefaultColor('ev')};
   }else{
     const x=_ddAll.find(v=>v.src==='ann'&&v.annId===annId);
     if(!x){ toast('D-day 를 찾지 못했어요'); return; }
     if(x.created_by!==_currentUser.id&&!isAdmin()){ toast('만든 사람만 고칠 수 있어요'); return; }
-    _ddx={id:annId,title:x.title,date:x.date,kind:x.kind==='since'?'since':'down',yearly:!!x.repeat_yearly,onCal:!!x.onCal,eventId:x.eventId||null,color:x.color};
+    _ddx={id:annId,title:x.title,date:x.date,kind:x.kind==='since'?'since':'down',yearly:!!x.repeat_yearly,onCal:!!x.onCal,eventId:x.eventId||null,outline:!!x.outline,color:x.color};
   }
   _ddx.page=null;
   _ddxRender();
@@ -13221,7 +13223,7 @@ function closeDdx(){
   document.getElementById('ddxCard').classList.remove('on');
 }
 window.closeDdx=closeDdx;
-function _ddxPreviewX(){ return {title:(_ddx.title||'').trim()||'D-day',date:_ddx.date,kind:_ddx.kind==='since'?'since':'countdown',repeat_yearly:_ddx.kind==='down'&&_ddx.yearly,color:_ddx.color}; }
+function _ddxPreviewX(){ return {title:(_ddx.title||'').trim()||'D-day',date:_ddx.date,kind:_ddx.kind==='since'?'since':'countdown',repeat_yearly:_ddx.kind==='down'&&_ddx.yearly,color:_ddx.color,outline:!!_ddx.outline}; }
 function _ddxPreviewHtml(){
   const x=_ddxPreviewX(), v=_ddVal(x,_ddTodayKey()).v;
   return `<div class="ddx-pv-l">캘린더 맨 위에 이렇게 보여요</div><div class="cal-dday-row"><span class="dd-chip dd-colored" style="${_ddChipStyle(x)}"><span class="dd-chip-t">${escapeHtml(x.title)}</span><b>${escapeHtml(v)}</b></span></div>`
@@ -13241,6 +13243,7 @@ function _ddxRender(){
     <div class="ev-label">세는 법</div>
     <div class="ddx-seg"><button type="button" class="${_ddx.kind==='down'?'on':''}" onclick="_ddx.kind='down';_ddxRender()"><b>D-day</b><span>그날까지 남은 날</span></button><button type="button" class="${_ddx.kind==='since'?'on':''}" onclick="_ddx.kind='since';_ddxRender()"><b>N일째</b><span>그날부터 함께한 날</span></button></div>
     ${_ddx.kind==='down'?sw(_ddx.yearly,"_ddx.yearly=!_ddx.yearly;_ddxRender()",'매년 반복','생일·기념일처럼 해마다 다시 세요'):''}
+    ${sw(_ddx.outline,"_ddx.outline=!_ddx.outline;_ddxRender()",'테두리만 표시','색 채움 없이 외곽선으로')}
     ${sw(_ddx.onCal,"_ddx.onCal=!_ddx.onCal;_ddxRender()",'캘린더에 일정으로도 표시','그날 칸에 일정 바로 함께 보여요')}
     <div class="ev-label">색 <small>일정 색과 같아요 · 스토어에서 ‘사용하기’ 한 팩도 함께</small></div>
     <div class="ev-color-pager-wrap"><div class="ev-color-pager" id="ddxPager">${pages.map(p=>`<div class="ev-color-page"><div class="ev-color-page-grid">${p.colors.map(c=>`<div class="ev-color-cell"><button type="button" class="ev-color${c.key===_ddx.color?' on':''}" style="background:${_safeColor(c.hex)}" onclick="_ddxColor('${_jsStr(c.key)}')" aria-label="${escapeHtml(colorLabelOf(c.key)||'색')}"></button><div class="ev-color-name">${escapeHtml(colorLabelOf(c.key)||'')}</div></div>`).join('')}</div></div>`).join('')}</div>
@@ -13294,19 +13297,19 @@ async function _ddxSave(){
   if(!title){ toast('이름을 입력해 주세요'); try{ document.getElementById('ddxTitle').focus(); }catch(_){} return; }
   if(!_ddx.id){ try{ await ensurePremiumLoaded(); }catch(_){} if(!isEffectivePremium()){ closeDdx(); _ddxOpen(null,{}); return; } }
   const btn=document.getElementById('ddxSave'); if(btn){ btn.disabled=true; btn.textContent='저장 중…'; }
-  const row={title:title.slice(0,40),date:_ddx.date,kind:_ddx.kind==='since'?'since':'countdown',repeat_yearly:_ddx.kind==='down'&&!!_ddx.yearly,on_cal:!!_ddx.onCal,color:_ddx.color};
+  const row={title:title.slice(0,40),date:_ddx.date,kind:_ddx.kind==='since'?'since':'countdown',repeat_yearly:_ddx.kind==='down'&&!!_ddx.yearly,on_cal:!!_ddx.onCal,color:_ddx.color,bar_style:_ddx.outline?'outline':'solid'};
   let madeEv=null;
   try{
     /* '캘린더에 일정으로도 표시' = 진짜 일정 한 줄(그날 일정 바)을 만들어 event_id 로 묶는다 — 끄면 그 일정을 지움. [2026-10-28] */
     let evId=_ddx.eventId||null;
     if(row.on_cal){
-      const evRow={title:row.title,date:row.date,color:row.color,repeat_type:row.repeat_yearly?'yearly':'none',recurring_yearly:row.repeat_yearly};
+      const evRow={title:row.title,date:row.date,color:row.color,bar_style:row.bar_style,repeat_type:row.repeat_yearly?'yearly':'none',recurring_yearly:row.repeat_yearly};
       if(evId){
         const u=await supa.from('events').update(evRow).eq('id',evId).select('id');
         if(u.error||!(u.data&&u.data.length)) evId=null;   // 누가 그 일정을 지웠으면 새로 만든다
       }
       if(!evId){
-        const ins=await supa.from('events').insert(Object.assign({room_id:_currentRoom.id,user_id:_currentUser.id,bar_style:'solid'},evRow)).select('id').single();
+        const ins=await supa.from('events').insert(Object.assign({room_id:_currentRoom.id,user_id:_currentUser.id},evRow)).select('id').single();
         if(ins.error) throw ins.error;
         evId=madeEv=ins.data.id;
       }

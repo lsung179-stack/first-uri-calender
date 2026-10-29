@@ -748,3 +748,10 @@
 - 사용자(캡처: 'ㅕㅕ D-20' / 'ㅓㅠ 23일' 칩) "크기가 다른것 같은대" → "크기를 똑같이 맞춰줘". 재 보니 칩 높이·숫자 글자 높이는 같고(숫자 19px, '일'만 2px 더 큼) **너비**가 이름·숫자 길이만큼 달랐다.
 - `_ddEqualizeChips(el)`(`renderDdayRow` 끝에서): 칩들을 가장 넓은 칩 너비로 `min-width` — 단 **화면 폭의 40% 까지만**(이름이 아주 긴 칩 하나 때문에 모두 커지지 않게, 그 칩만 더 김). `.dd-chip` 에 `justify-content:center`. 글꼴 로딩 뒤·줄 크기 변화(`ResizeObserver` — 숨은 화면에서 그려져 너비 0 이던 경우, 화면 폭·글씨 크기 변경)에 다시 맞춤.
 - 검증(헤드리스 390, 보통·최대 글씨): 짧은 칩 모두 156px 로 같음, 긴 이름 칩만 242px.
+
+### 2026-10-29 — D-day 도 '테두리만 표시'(색 채움 없이 외곽선)
+- 사용자 "디데이도 색채움 없이 외각선으로 가능하게 해줘".
+- DB: 마이그레이션 `anniversaries_bar_style` — `anniversaries.bar_style text not null default 'solid'`, check `solid|outline`(events.bar_style 과 같은 값).
+- D-day 만들기 창에 스위치 '테두리만 표시 / 색 채움 없이 외곽선으로'(일정 폼과 같은 문구, `_ddx.outline`). 저장 시 `bar_style`, '캘린더에 일정으로도 표시' 로 만든 일정에도 같은 `bar_style`(일정 바도 테두리). `loadDdays` 가 읽어 `outline` → 칩은 기존 `_ddChipStyle` 테두리 모양(카드 배경 + 색 안쪽 테두리), 미리보기도 같음.
+- 목록 색 점(`.dd-dot`·`.ddx-dot`)은 `_ddDotStyle` — 테두리 D-day 는 속 빈 고리.
+- 검증(헤드리스): 칩 `box-shadow inset 1.5px` 테두리, 고칠 때 스위치 켜진 상태, 저장 시 일정 insert 에 `bar_style:'outline'`.
