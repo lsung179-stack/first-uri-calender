@@ -755,3 +755,12 @@
 - D-day 만들기 창에 스위치 '테두리만 표시 / 색 채움 없이 외곽선으로'(일정 폼과 같은 문구, `_ddx.outline`). 저장 시 `bar_style`, '캘린더에 일정으로도 표시' 로 만든 일정에도 같은 `bar_style`(일정 바도 테두리). `loadDdays` 가 읽어 `outline` → 칩은 기존 `_ddChipStyle` 테두리 모양(카드 배경 + 색 안쪽 테두리), 미리보기도 같음.
 - 목록 색 점(`.dd-dot`·`.ddx-dot`)은 `_ddDotStyle` — 테두리 D-day 는 속 빈 고리.
 - 검증(헤드리스): 칩 `box-shadow inset 1.5px` 테두리, 고칠 때 스위치 켜진 상태, 저장 시 일정 insert 에 `bar_style:'outline'`.
+
+### 2026-10-29 — 2.0 홈 위젯에 방 테마(색 + 배경 그림) 입히기 (uri-calendar-app `c1ff2dc`, 2.0.3 빌드부터)
+- 사용자 "이제 적용한테마가 위젯에도 동일하게 적용되도록 해줘" → 범위 질문에 "색 + 배경 그림" 선택. 그때까지 위젯은 테마와 상관없이 늘 빈티지 색이었다.
+- **payload**: 방마다 `theme` = `{k, bg, card, text, sub, mute, accent, sun, sat, dark, by, img}`(명세 08 §13.4 표에 추가). 해석은 앱 방 화면과 같은 `resolveRoomTheme`(store `widgetRoomThemeFor` — 카드 스킨 → 팔레트, 구독 끝난 유료 테마는 기본, 스킨 없으면 개인 테마, 옛 방 테마는 앱이 그 방에 마지막으로 적용한 값). `img` = 바탕색 위에 진하기(.4 · 캠핑 .62 · 커스텀 bg_opacity/100 × 고급 설정 '테마 배경' bgK)를 합쳐 구운 JPEG(가로 540, `wgSceneJpgRaw`, 성공만 캐시). 테마를 못 구하면 `theme` 키를 안 넣어 **예전 위젯 색 그대로**(옛 payload·시험 고정본과 같음).
+- 모듈 경계: store 모듈이 `AppHooks.widgetRoomTheme(roomId)` 를 채우고 widgets 모듈이 부른다. 방 테마·커스텀 테마·개인 테마·적용된 방 팔레트·구독 상태가 바뀌면 `AppHooks.requestWidgetSync`, '테마 배경' 진하기는 widgets 모듈이 `uiPrefsProvider.bgK` 를 듣는다.
+- **iOS**: `WGTheme`(모든 필드 옵셔널) + `WPal` 환경값(`@Environment(\.wpal)`) — 위젯 세 종류 루트에서 `.environment(\.wpal, WPal(entry.room?.theme))`, 하드코딩 색(cream/ink/terra/mutedBrown/sunRed/wk*) 전부 교체, 배경 `widgetBg` = 바탕색 + 그림(scaledToFill, by 로 위/가운데/아래). 테마가 있으면 토요일도 테마 토요일색(없으면 예전처럼 일반 색). 오프라인이라 컴파일은 못 함(괄호 균형만 확인) — 빌드 때 확인.
+- **Android**: 루트를 FrameLayout 으로 감싸 뒤에 `wg_bgimg`(기본 src = 원래 배경 드로어블) — 테마가 있으면 `WidgetTheme.applyBg` 가 위젯 크기 비율의 둥근 모서리 비트맵(바탕색 + 그림 cover, 긴 변 640px)을 넣는다. 글자색은 레이아웃 원래 textColor 로 분류한 역할표(`WidgetTheme.IDS`, 이름 없는 TextView 엔 `th_*` id 부여)로 한 번에, 상황별 색(오늘·선택 칩·달 이동·할 일 완료)은 각 코드가 `Theme` 값으로. 오늘 원·칩은 `tintBg`(API 31+, 테마 없으면 틴트 지움). **Robolectric android-all(API 34) jar 로 javac 컴파일 통과**(전엔 `/tmp/awstub` 손 스텁).
+- 시험: `widgets_theme_test`(해석·진하기·만료·payload 키) 추가, 전체 846개 통과 + analyze 깨끗.
+- 2.0 앱에 아직 없는 테마(할로윈 나이트·초록 정원)는 위젯에도 없다(2.0 앱에 테마를 넣으면 자동으로 따라옴).
