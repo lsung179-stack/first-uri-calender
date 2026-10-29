@@ -20,6 +20,7 @@
 //   1시간 전 알림에 나오고, 반복 일정만 있는 방은 '오늘 일정 없어요' 안내까지 받았다(사용자 이탈 점검).
 //   eventsOn() = 오늘 날짜 줄 + 오늘 이전에 시작한 반복 줄 중 오늘 발생하는 것(recur.ts — 앱과 같은 규칙, 실데이터 224개·2년치 대조 일치).
 //   1시간 전 알림은 reminder_sent_at 이 '오늘(KST)'이면 보낸 것으로 본다(반복 줄은 한 줄로 날마다 보내야 해서).
+// v22(2026-10-29): mode 'trial-end' — 무료 체험이 12~36시간 뒤 끝나는 사람에게 한 번 알림(subscriptions.trial_reminded_at), pg_cron 매일 11:17 KST.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -133,7 +134,8 @@ serve(async (req) => {
     if (mode === 'reminder') return await handleReminder(supa)
     if (mode === 'empty-rooms') return await handleEmptyRooms(supa)
     if (mode === 'birthday') return await handleBirthday(supa)
-    return json({ error: 'invalid mode (use daily, reminder, empty-rooms or birthday)' }, 400)
+    if (mode === 'trial-end') return await handleTrialEnd(supa)
+    return json({ error: 'invalid mode (use daily, reminder, empty-rooms, birthday or trial-end)' }, 400)
   } catch (e) {
     console.error('push-cron error:', e)
     return json({ error: (e as any)?.message ?? 'unknown' }, 500)
@@ -382,6 +384,41 @@ async function handleBirthday(supa: any) {
   }
 
   return json({ mode: 'birthday', birthdays: bdayUsers.length, recipients: recipCount, sent: totalSent, fcmSent: totalFcm })
+}
+
+/* 무료 체험 종료 하루 전 알림(v22, 2026-10-29 — 사용자 "구독 결제하게 만들 방법" 2번).
+   스토어 체험(period_type TRIAL, 실결제 환경)이 12~36시간 뒤 끝나는 사람에게 한 번만(subscriptions.trial_reminded_at).
+   자동 갱신을 이미 끈 사람(rc_last_event_type CANCELLATION)에겐 '다시 켜면 그대로' 문구. 결제·계정 안내라 카테고리 설정과 무관. */
+async function handleTrialEnd(supa: any) {
+  const now = Date.now()
+  const from = new Date(now + 12 * 3600e3).toISOString()
+  const to = new Date(now + 36 * 3600e3).toISOString()
+  const { data: rows } = await supa
+    .from('subscriptions')
+    .select('id, user_id, expires_at, rc_last_event_type, environment')
+    .eq('period_type', 'TRIAL')
+    .eq('status', 'active')
+    .gte('expires_at', from)
+    .lte('expires_at', to)
+    .is('trial_reminded_at', null)
+  const list = (rows ?? []).filter((r: any) => r.user_id && r.environment !== 'SANDBOX')
+  let totalSent = 0, totalFcm = 0
+  const seen = new Set<string>()
+  for (const r of list) {
+    if (seen.has(r.user_id)) continue
+    seen.add(r.user_id)
+    const cancelled = r.rc_last_event_type === 'CANCELLATION'
+    const title = '무료 체험이 내일 끝나요'
+    const body = cancelled
+      ? '꾸며 둔 테마·스티커·D-day는 구독을 다시 켜면 그대로 이어서 쓸 수 있어요.'
+      : '내일부터 정기 구독으로 이어져 테마·스티커·D-day를 계속 쓸 수 있어요. 원하지 않으면 스토어 구독 관리에서 해지할 수 있어요.'
+    const p = await pushToUser(supa, r.user_id, { title, body, url: '/', tag: `trial-end-${r.id}` })
+    totalSent += p.sent; totalFcm += p.fcmSent
+  }
+  if (list.length) {
+    await supa.from('subscriptions').update({ trial_reminded_at: new Date().toISOString() }).in('id', list.map((r: any) => r.id))
+  }
+  return json({ mode: 'trial-end', trials: list.length, users: seen.size, sent: totalSent, fcmSent: totalFcm })
 }
 
 async function handleReminder(supa: any) {

@@ -9131,6 +9131,31 @@ function _premNudgeHTML(){
     +'<button type="button" class="rpn-x" aria-label="닫기" onclick="event.stopPropagation();onPremNudgeClose()">✕</button></div>';
 }
 function onPremNudgeGo(){ openPremiumSheet('rooms_nudge'); }
+/* 가입 직후 한 번 — 7일 무료 체험 안내(사용자 2026-10-29 "구독 결제하게 만들 방법" → 2번 '가입 직후 체험 안내').
+   조건: 가입 14일 이내 · 무료 · 관리자 아님 · 이 계정에서 처음(기기별 uricalv2.trialWelcome.<uid>) · 다른 창이 안 떠 있을 때.
+   방에 처음 들어가 일정이 그려진 뒤 2.5초 — 구독 화면을 '들어온 이유' 띠와 함께 연다(닫으면 그만, 다시 안 뜸). */
+function _maybeTrialWelcome(){
+  try{
+    if(!_currentUser||(typeof isAdmin==='function'&&isAdmin())) return;
+    var k='uricalv2.trialWelcome.'+_currentUser.id;
+    if(localStorage.getItem(k)) return;
+    var made=Date.parse(_currentUser.created_at||'');
+    if(!made||Date.now()-made>14*864e5) return;
+    setTimeout(async function(){
+      try{
+        try{ await ensurePremiumLoaded(); }catch(_){}
+        if(isEffectivePremium()){ localStorage.setItem(k,'premium'); return; }
+        var cs=document.getElementById('calendarScreen');
+        if(!cs||!cs.classList.contains('show')) return;                 // 방을 벗어났으면 다음 입장 때
+        if(typeof _anySubSheetOpen==='function'&&_anySubSheetOpen()) return;   // 다른 창이 떠 있으면 다음 입장 때
+        if(_AD_OK_SHEET_IDS.some(function(id){ var e=document.getElementById(id); return e&&e.classList.contains('on'); })) return;   // 날짜 시트도
+        localStorage.setItem(k,String(Date.now()));
+        var st=SEAL_SETS&&SEAL_SETS.camp;
+        openPremiumSheet('welcome',{title:'환영해요! 7일 동안 전부 무료로 써 보세요',sub:'테마·스티커·D-day·광고 없는 화면까지 — 체험 중 언제든 해지할 수 있어요',img:(st&&st.img)||'',key:'welcome'});
+      }catch(_){}
+    },2500);
+  }catch(_){}
+}
 function onPremNudgeClose(){
   try{ localStorage.setItem('uricalv2.premNudgeAt',String(Date.now())); }catch(_){}
   try{ _audit('funnel.nudge_close',{meta:{from:'rooms_nudge'}}); }catch(_){}
@@ -9453,6 +9478,7 @@ function enterRoom(roomId){
   loadDateHighlights();
   loadEvents().then(()=>{
     _bootDone();   // 첫 입장: 일정이 그려졌으니 시작 로고를 걷는다
+    if(!jumpDate) _maybeTrialWelcome();   // 가입 직후 한 번: 7일 무료 체험 안내 [2026-10-29]
     if(jumpDate&&/^\d{4}-\d{2}-\d{2}$/.test(jumpDate)){
       try{
         const dt=parseDateKey(jumpDate);

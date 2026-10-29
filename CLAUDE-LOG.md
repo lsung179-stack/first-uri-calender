@@ -765,3 +765,10 @@
 - 시험: `widgets_theme_test`(해석·진하기·만료·payload 키) 추가, 전체 846개 통과 + analyze 깨끗.
 - 2.0 앱에 아직 없는 테마(할로윈 나이트·초록 정원)는 위젯에도 없다(2.0 앱에 테마를 넣으면 자동으로 따라옴).
 - (2026-10-29 추가) **실제로 그려 본 시험**(사용자 "실제로 테스트해봐 문제없는지"): ① `tool/widgets/render/payload_e2e_test.dart` — 진짜 카탈로그·테마 해석·서버 배경 그림 다운로드·합성으로 payload 생성(캠핑·고양이 그림 정상, 라벤더=그림 없음, 테마 없는 방=키 없음). ② `tool/widgets/render/run.sh` — 그 payload 를 **실제 Android 위젯 코드**로 5종(월·2주·오늘·다가오는 일정·이번 주) × 4개 방 그려 PNG(aapt2 + Robolectric 네이티브 그래픽, `dl.google.com` 막힘이라 androidx.test 최소 대체 클래스). 배경·글자색·오늘 원·칩·토요일 색 모두 정상. **발견·수정**: Android 테두리 일정은 테두리 없이 일정 색 글자만이라 어두운 테마에서 진한 색이 묻힘 → 어두운 테마면 흰색 쪽으로 섞음(`WidgetTheme.readable`, uri-calendar-app `c755390`). 한계: iOS 는 이 환경에서 컴파일·실행 불가, JPEG 압축(flutter_image_compress)은 기기에서만 동작(시험에선 PNG 대체 — 기기에선 더 가벼움).
+
+### 2026-10-29 — 구독 늘리기 2번: 가입 직후 7일 무료 체험 안내 + 체험 종료 하루 전 알림 (PWA·2.0·서버)
+- 사용자 "사람들을 구독 결제하게 만들 수 있는 방법이 없을까" → 데이터(가입 322·MAU 75·WAU 21, 실결제 구독 0·체험 0, 30일 구독 화면 8회·약 4명) 보고 제안한 6가지 중 "일단 2번 적용해줘".
+- **가입 직후 체험 안내**: 가입 14일 이내·무료·관리자 아님·이 계정에서 처음(기기 저장 `uricalv2.trialWelcome.<uid>`)·다른 창이 안 떠 있을 때, 방에 들어가 2.5초 뒤 구독 화면을 '들어온 이유' 띠("환영해요! 7일 동안 전부 무료로 써 보세요 / 테마·스티커·D-day·광고 없는 화면까지 — 체험 중 언제든 해지할 수 있어요")와 함께 연다. 닫으면 다시 안 뜸. 구독자면 표시만 하고 안 띄움. 기록 `funnel.premium_view` from `welcome`.
+  - PWA `_maybeTrialWelcome()`(enterRoom 의 loadEvents 뒤, 날짜 바로가기 입장이면 건너뜀). 헤드리스 확인: 처음=열림·두 번째=안 열림·오래된 계정=안 열림.
+  - 2.0 `lib/features/monetization/trial_welcome.dart`(`TrialWelcome.maybe`, `SessionHooks.afterEnterRoom`, 다른 창이 있으면(`Navigator.canPop`·구독 화면 열림) 다음 입장 때) + 시험 `trial_welcome_test`. 2.0.3 빌드부터.
+- **체험 종료 하루 전 알림**: push-cron **v22** mode `trial-end` — `subscriptions` 의 스토어 체험(period_type TRIAL·status active·SANDBOX 제외)이 12~36시간 뒤 끝나면 한 번 푸시(제목 '무료 체험이 내일 끝나요'). 자동 갱신 켜짐 = "내일부터 정기 구독으로 이어져… 원하지 않으면 스토어 구독 관리에서 해지", 이미 해지(CANCELLATION) = "구독을 다시 켜면 그대로". 결제 안내라 알림 카테고리 설정과 무관. 중복 방지 `subscriptions.trial_reminded_at`(마이그레이션 `subscriptions_trial_reminded_at`). pg_cron `push-trial-end` 매일 02:17 UTC(11:17 KST). 배포 후 1회 실행 200 OK(대상 0명).
