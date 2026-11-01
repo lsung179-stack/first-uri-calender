@@ -786,3 +786,4 @@
 - DB 마이그레이션 `shop_items_xmas_replaces_halloween`: skin xmas 30·color christmas 20·char nuni 20·sticker nuni 20·sticker xmasday 20 추가, 할로윈 5행 active=false(삭제 안 함).
 - 검증: 헤드리스로 월·주·설정·스토어·미리보기·컬러 탭 촬영, 콘솔 오류 없음, 스크립트 구문 OK.
 - ⚠️ 일반 사용자에게 보이려면 '배포하기'(deploy_version) 필요. 2.0 앱은 별도(아래 항목).
+- **2.0 앱(uri-calendar-app `dbd5e73`)**: 카탈로그 재생성(차이는 xmas·garden 추가분뿐 — 정원도 이번에 2.0 에 처음 들어감), palette `xmas`·`garden`, `sceneBottomOpacity`(cover·아래 정렬·위 30% 마스크 — 방 배경·미리보기·위젯 payload 진하기 .3/.32·기준 아래), 달력 머리(연도 숫자 초록 + 영어 달 이름 Mountains of Christmas, 넘치면 줄어들게 최대 폭 160/150)·오늘 리스(월 28px·주 42px), 스토어 위 배너 별밤 캠핑 → 화이트 크리스마스. 개수 시험 갱신. 테스트 전체 통과, 실제 글꼴을 넣어 월·주 화면을 그림으로 그려 확인(넘침 없음). 2.0.3 빌드부터 보인다.
