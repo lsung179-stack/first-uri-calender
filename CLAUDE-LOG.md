@@ -772,3 +772,17 @@
   - PWA `_maybeTrialWelcome()`(enterRoom 의 loadEvents 뒤, 날짜 바로가기 입장이면 건너뜀). 헤드리스 확인: 처음=열림·두 번째=안 열림·오래된 계정=안 열림.
   - 2.0 `lib/features/monetization/trial_welcome.dart`(`TrialWelcome.maybe`, `SessionHooks.afterEnterRoom`, 다른 창이 있으면(`Navigator.canPop`·구독 화면 열림) 다음 입장 때) + 시험 `trial_welcome_test`. 2.0.3 빌드부터.
 - **체험 종료 하루 전 알림**: push-cron **v22** mode `trial-end` — `subscriptions` 의 스토어 체험(period_type TRIAL·status active·SANDBOX 제외)이 12~36시간 뒤 끝나면 한 번 푸시(제목 '무료 체험이 내일 끝나요'). 자동 갱신 켜짐 = "내일부터 정기 구독으로 이어져… 원하지 않으면 스토어 구독 관리에서 해지", 이미 해지(CANCELLATION) = "구독을 다시 켜면 그대로". 결제 안내라 알림 카테고리 설정과 무관. 중복 방지 `subscriptions.trial_reminded_at`(마이그레이션 `subscriptions_trial_reminded_at`). pg_cron `push-trial-end` 매일 02:17 UTC(11:17 KST). 배포 후 1회 실행 200 OK(대상 0명).
+
+
+## 2026-11-01 할로윈 나이트 → 화이트 크리스마스 테마 교체 (사용자 "할로윈이 지나가버렸어 … 할로윈테마를 크리스마스테마로 변경해줘 … 누가봐도 이쁘고 사고싶을 정도의 퀄리티")
+- 사용자 선택: 분위기 '화이트 크리스마스'(눈 크림 #FBF6EE·호랑가시 빨강 #C8323A·전나무 초록 #2F6B4F·금빛 #C9A24A), 캐릭터 '눈사람 & 아기 루돌프', 범위 '웹 + 2.0 앱'.
+- 사전 확인: hnight/halloween/hobak/spooky **구매 0건**(user_unlocks), 쓰는 사람은 관리자 방 1개(members.seal `set:hnight`·card_skin `hnight`) → 관리자 본인 행만 `xmas` 로 바꿈. 사용자 일정·할 일은 손대지 않음.
+- 그림(Higgsfield nano banana pro, 캐릭터 시트 먼저 → 같은 시트를 참고 그림으로): 누니(빨간 털모자·금색 방울·빨강/초록 줄무늬 목도리·갈색 벙어리장갑 눈사람)·루디(크림 얼굴·빛나는 빨간 코·금방울 목걸이 아기 루돌프).
+  - 배경씬 `themes/xmas/scene.jpg` — **창가 의자에서 담요 덮은 루디가 창밖 눈사람 누니에게 손 흔드는 실내 풍경**(다른 테마와 겹치지 않는 '실내·창 너머' 구도). 위쪽에 같은 크림색 400px 를 덧대 750×1744 로 — 캘린더 날짜 뒤로 그림이 덜 올라오게(처음 시험에서 날짜 칸과 겹쳐 고침), 진하기 .3.
+  - 방 카드 card.jpg(트리 옆 선물 주고받기, 왼쪽은 그림 왼쪽 절반을 거울로 이어 1080×300), 씰 seal.png(빨간 테두리 원, 볼 맞댄 둘), 스토어 배너 banner.jpg(썰매), 아이콘 15개(눈 덮인 오두막=방목록·호랑가시 달력·체크리스트+지팡이사탕·진저브레드 톱니=설정·눈송이 돋보기·편지·양말·금별=프리미엄·선물상자=스토어·망치+지팡이사탕=고급설정·금방울=알림·두루마리=공지·코코아=문의·눈 덮인 휴지통·리스 문=나가기), 이모지 6개(`nuni:like/love/yay/lol/brr/gift`), 스티커 6개(`xmas_tree/wreath/globe/ginger/stocking/cocoa`, 묶음 `xmasday`). 흰 다이컷 테두리, 배경은 로컬에서 따냄(큰 회색 구멍 — 리스 가운데 — 은 투명).
+  - 컬러 팩 배너 `themes/colorpacks-xmas-banner.jpg`(전나무 바탕 + 팩 색 오너먼트 + 정원 새싹).
+- 코드(index.html): `THEMES.xmas`(밝은 팔레트, 토요일=전나무 초록), SEAL_SETS/CARD_SKINS/SEAL_SET_ORDER/CARD_SKIN_PREM/방 테마 `xmas`(cls `rc-xmas`), 아이콘 CSS `body.rc-xmas`, 달 이름 Mountains of Christmas(`_xmLoadFont`, 빨강), 연도 초록, 오늘 = 리스 SVG `--xm-wreath`(월·주·미리보기), 스토어 미리보기 `.skp-xmas`/`.skp-title-xm`, 방목록 프리미엄 안내 씰 `['xmas','garden','camp']`, 스토어 위 '새 테마' 배너를 화이트 크리스마스 한 장(`.snh-xmas`, 짙은 글씨)으로, 컬러 팩 배너 문구 '크리스마스·초록'. hnight 어두운 보정 CSS 전부 삭제(camp 만 남음).
+- 컬러 팩 `christmas`: #E1A3A3 #E13D58 #C82D38 #8A1928 #E0DBB8 #CD9F51 #8E5B3E #BBD1B2 #5C9968 #457350 #273F36 #9FBDD1 — 기존 전 팩·기본색(282색)과 CIEDE2000 ≥5.2, 팩 안 ≥8.5.
+- DB 마이그레이션 `shop_items_xmas_replaces_halloween`: skin xmas 30·color christmas 20·char nuni 20·sticker nuni 20·sticker xmasday 20 추가, 할로윈 5행 active=false(삭제 안 함).
+- 검증: 헤드리스로 월·주·설정·스토어·미리보기·컬러 탭 촬영, 콘솔 오류 없음, 스크립트 구문 OK.
+- ⚠️ 일반 사용자에게 보이려면 '배포하기'(deploy_version) 필요. 2.0 앱은 별도(아래 항목).
