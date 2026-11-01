@@ -1638,6 +1638,8 @@ body[data-theme="camp"] .uni-nav-prem{background:linear-gradient(135deg,#34528c,
    위 끝은 마스크로 바탕색에 스며들게(그림 하늘색과 바탕색이 조금 달라도 경계가 안 보이게) [2026-10-28] */
 body.rc-xmas .rc-decor .rc-bg.rc-bg-scene,body.rc-garden .rc-decor .rc-bg.rc-bg-scene{background-size:cover;background-position:center bottom;-webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 30%);mask-image:linear-gradient(to bottom,transparent 0%,#000 30%)}
 body.rc-xmas .rc-decor .rc-bg.rc-bg-scene{opacity:calc(.3*var(--bg-k,1))}
+/* 화이트 크리스마스는 그림 위쪽이 파란 겨울 하늘·설산이라(2026-11-01 사용자 '뒷배경도 꾸며봐') 위 끝 스며듦을 30%→14% 로 짧게 — 하늘이 보이게 */
+body.rc-xmas .rc-decor .rc-bg.rc-bg-scene{-webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 14%);mask-image:linear-gradient(to bottom,transparent 0%,#000 14%)}
 /* 화이트 크리스마스 — 달 이름을 영어 크리스마스 글씨(Mountains of Christmas)로, 연도는 숫자만. 글꼴은 테마를 쓸 때만 받는다(_xmLoadFont) [2026-11-01, 할로윈 글씨 대체] */
 body.rc-xmas .cal-month-name[data-en]{font-size:0!important;line-height:1;overflow:visible}
 body.rc-xmas .cal-month-name[data-en]::after{content:attr(data-en);display:block;font-family:'Mountains of Christmas','Noto Serif KR',serif;font-weight:700;font-size:calc(31px*min(var(--fsk,1),1.15));line-height:1.05;letter-spacing:.3px;color:var(--accent);white-space:nowrap}
@@ -3436,7 +3438,7 @@ body[data-theme="camp"] .rpal-row{background:#2c4a82}
 .skp-phone .skp-bg.ld{opacity:0!important}
 .skp-bg.scene{background-repeat:no-repeat;background-position:center 38%;background-size:auto 116%;opacity:.4}
 .skp-phone.skp-bottom .skp-bg.scene{background-size:cover;background-position:center bottom;-webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 30%);mask-image:linear-gradient(to bottom,transparent 0%,#000 30%)}
-.skp-phone.skp-xmas .skp-bg.scene{opacity:.3}
+.skp-phone.skp-xmas .skp-bg.scene{opacity:.3;-webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 14%);mask-image:linear-gradient(to bottom,transparent 0%,#000 14%)}
 .skp-phone.skp-bottom:not(.skp-xmas) .skp-bg.scene{opacity:.32}
 .skp-phone.skp-camp .skp-bg.scene{opacity:.62;background-position:center 142%;-webkit-mask-image:linear-gradient(to bottom,#000 84%,transparent 93%);mask-image:linear-gradient(to bottom,#000 84%,transparent 93%)}
 .skp-char{position:absolute;left:50%;top:56%;width:86%;aspect-ratio:1;transform:translate(-50%,-50%);background:center/contain no-repeat;opacity:.17}
@@ -26567,8 +26569,8 @@ let _currentRoomTheme=null;
 /* 방 카드 스킨(캐릭터) → 자동 테마 + 마스코트 꾸미기 매핑.
    대표 1종(두두 공룡)만 우선 구현 — 다른 캐릭터는 여기에 추가하면 자동 확장. */
 const ROOM_CHAR_THEME={
-  // 화이트 크리스마스 — 눈 내리는 작은 마을 광장, 루디가 누니 어깨에 올라 큰 트리에 마지막 장식을 다는 크리스마스이브(눈 지붕 오두막·가로등·선물) [2026-11-01, 실내 → 실외 시안 중 사용자 선택 '2번째 시안' — 새 주소 scene3.jpg 로 캐시 우회]
-  xmas:{theme:'xmas', cls:'rc-xmas', mascot:'https://first-uri-calender.vercel.app/themes/xmas/seal.png', bgScene:'https://first-uri-calender.vercel.app/themes/xmas/scene3.jpg', charInScene:true},
+  // 화이트 크리스마스 — 눈 내리는 작은 마을 광장, 루디가 누니 어깨에 올라 큰 트리에 마지막 장식을 다는 크리스마스이브. 뒤로 파란 겨울 하늘·눈 덮인 설산·먼 마을 교회·눈 숲 [2026-11-01, 사용자 '뒷배경도 꾸며봐' — scene4.jpg]
+  xmas:{theme:'xmas', cls:'rc-xmas', mascot:'https://first-uri-calender.vercel.app/themes/xmas/seal.png', bgScene:'https://first-uri-calender.vercel.app/themes/xmas/scene4.jpg', charInScene:true},
   // 초록 정원 — 해 질 녘 언덕 위 작은 온실, 꽃밭에 별이 내려앉는 장면(언덕 아래에서 올려다봄) [2026-10-28]
   garden:{theme:'garden', cls:'rc-garden', mascot:'https://first-uri-calender.vercel.app/themes/garden/seal.png', bgScene:'https://first-uri-calender.vercel.app/themes/garden/scene.jpg', charInScene:true},
   // 별밤 캠핑 — 남색 밤하늘 아래 모닥불 앞 너구리·고슴도치(마시멜로 굽기). 앱 첫 어두운 테마 [2026-09-23]
