@@ -1158,6 +1158,24 @@ body.grid-v .cal-events,body.grid-h .cal-events{position:relative;z-index:1}
 .ddx-save{width:100%;padding:14px;margin-top:16px;border:none;border-radius:12px;background:var(--accent);color:var(--card);font-size:calc(15px*var(--fsk,1));font-weight:800;font-family:inherit;cursor:pointer}
 .ddx-save:disabled{opacity:.6}
 .ddx-del{width:100%;padding:12px;margin-top:8px;border:none;background:none;color:var(--sun);font-size:calc(13.5px*var(--fsk,1));font-weight:700;font-family:inherit;cursor:pointer}
+/* D-day 함께할 멤버·어느 방에 [2026-11-04] */
+.ddx-mems{display:flex;flex-wrap:wrap;gap:6px}
+.ddx-mem{display:inline-flex;align-items:center;gap:6px;padding:4px 11px 4px 4px;border-radius:99px;border:1.5px solid var(--border);background:var(--card);font-family:inherit;font-size:calc(13px*var(--fsk,1));font-weight:600;color:var(--sub);cursor:pointer;white-space:nowrap}
+.ddx-mem.on{border-color:var(--accent);background:var(--aP);color:var(--text)}
+.ddx-mem-av{width:24px;height:24px;border-radius:50%;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;flex:none;color:#fff;font-size:calc(11px*var(--fsk,1));font-weight:700}
+.ddx-mem-av img{width:100%;height:100%;object-fit:cover;display:block}
+.ddx-mem.on .ddx-mem-av{box-shadow:0 0 0 2px var(--accent)}
+.ddx-seg3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.ddx-seg3 button{padding:10px 4px;border-radius:12px;border:1px solid var(--border);background:var(--card);font-family:inherit;font-size:calc(13px*var(--fsk,1));font-weight:700;color:var(--sub);cursor:pointer;white-space:nowrap}
+.ddx-seg3 button.on{border:2px solid var(--accent);background:var(--aP);color:var(--text)}
+.ddx-rooms{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.ddx-room{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--borderL);background:var(--card);font-size:calc(14px*var(--fsk,1));color:var(--text);cursor:pointer}
+.ddx-room input{width:18px;height:18px;flex:none;accent-color:var(--accent)}
+.ddx-room small{color:var(--sub);font-size:calc(11px*var(--fsk,1))}
+.ddx-hint{font-size:calc(11.5px*var(--fsk,1));color:var(--sub);line-height:1.5;margin-top:6px}
+.ddx-ro{padding:12px 14px;border-radius:12px;background:var(--aP);font-size:calc(14px*var(--fsk,1));color:var(--text);line-height:1.5}
+.ddx-ro b{display:block;font-size:calc(15px*var(--fsk,1))}
+.ddx-ro small{display:block;color:var(--sub);font-size:calc(12px*var(--fsk,1));margin-top:2px}
 #dhManageCard.rs-mode .mo-actions{flex:none}
 .rc-decor .rc-sticker{position:absolute;aspect-ratio:1/1;background-repeat:no-repeat;background-position:center;background-size:contain;pointer-events:none}
 /* 스토어 '나만의 테마' 배너 — 이미지 없이 CSS만(외부 CDN 의존 0) */
@@ -12874,7 +12892,7 @@ function _ddViewKey(){ return (typeof _viewingMember!=='undefined'&&_viewingMemb
 function _ddSync(){
   const v=_ddViewKey(), me=_currentUser&&_currentUser.id;
   _ddView=v;
-  _ddays=_ddAll.filter(x=>x.src==='ann'||v==='all'||x.members.includes(v)).map(x=>{
+  _ddays=_ddAll.filter(x=>v==='all'||(x.src==='ann'?(!x.memberKeys||!x.memberKeys.length||x.memberKeys.includes(v)):x.members.includes(v))).map(x=>{
     if(x.src==='ann') return x;
     const r=(me&&x.byKey[me])||x.byKey[v]||x.byKey[x.members[0]]||{};
     return Object.assign({},x,{color:r.color,outline:r.outline,evId:r.evId||x.evId,date:r.date||x.date});
@@ -12974,8 +12992,19 @@ async function loadDdays(){
     // D-day 탭(날짜 강조·스티커 창)에서 만든 D-day — 일정이 아니라 방에 하나씩(anniversaries). 색이 없는 옛 시험 행은 안 읽는다 [2026-10-28]
     let ann=[];
     try{
-      const ra=await supa.from('anniversaries').select('id,title,date,kind,repeat_yearly,color,bar_style,on_cal,event_id,created_by,created_at').eq('room_id',room.id).not('color','is',null);
+      // member_keys·group_id 는 2026-11-04 추가 — 아직 없는 서버면 옛 칸만 다시 읽는다
+      let ra=await supa.from('anniversaries').select('id,title,date,kind,repeat_yearly,color,bar_style,on_cal,event_id,created_by,created_at,member_keys,group_id').eq('room_id',room.id).not('color','is',null);
+      if(ra.error) ra=await supa.from('anniversaries').select('id,title,date,kind,repeat_yearly,color,bar_style,on_cal,event_id,created_by,created_at').eq('room_id',room.id).not('color','is',null);
       if(!ra.error) ann=ra.data||[];
+    }catch(_){}
+    // '나만 이 색으로 보기' — 내 색(anniversary_colors). 표가 없거나 실패하면 만든 사람 색 그대로
+    let myCol={};
+    try{
+      const ids=ann.map(a=>a.id);
+      if(ids.length&&_currentUser){
+        const rc=await supa.from('anniversary_colors').select('ann_id,color,bar_style').eq('user_id',_currentUser.id).in('ann_id',ids);
+        if(!rc.error) (rc.data||[]).forEach(c=>{ myCol[c.ann_id]=c; });
+      }
     }catch(_){}
     if(seq!==_ddLoadSeq||!_currentRoom||_currentRoom.id!==room.id) return;
     const seen={}, out=[];
@@ -12993,9 +13022,13 @@ async function loadDdays(){
       if(who&&!x.byKey[who]){ x.members.push(who); x.byKey[who]={evId:r.id,date:r.date,color:r.color,outline:r.bar_style==='outline'}; }
     });
     ann.forEach(a=>{
+      const mc=myCol[a.id];
       out.push({id:'a:'+a.id, annId:a.id, src:'ann', title:a.title||'D-day', date:a.date, members:[], byKey:{},
-        kind:a.kind==='since'?'since':'countdown', repeat_yearly:!!a.repeat_yearly, color:a.color, outline:a.bar_style==='outline', onCal:!!a.on_cal, eventId:a.event_id||null,
-        created_by:a.created_by, created_at:a.created_at});
+        kind:a.kind==='since'?'since':'countdown', repeat_yearly:!!a.repeat_yearly,
+        color:(mc&&mc.color)||a.color, outline:mc?mc.bar_style==='outline':a.bar_style==='outline',
+        baseColor:a.color, baseOutline:a.bar_style==='outline', myColor:!!mc,
+        memberKeys:Array.isArray(a.member_keys)&&a.member_keys.length?a.member_keys:null, groupId:a.group_id||null,
+        onCal:!!a.on_cal, eventId:a.event_id||null, created_by:a.created_by, created_at:a.created_at});
     });
     out.sort((a,b)=>String(a.created_at||'')<String(b.created_at||'')?-1:1);
     const had=_ddays.length;
@@ -13187,6 +13220,7 @@ function _dhmDdRender(){
 async function _ddxOpen(annId,opts){
   opts=opts||{};
   if(!_currentRoom||!_currentUser){ toast('방에 먼저 들어가 주세요'); return; }
+  const me=_currentUser.id;
   if(!annId){
     try{ await ensurePremiumLoaded(); }catch(_){}
     if(!isEffectivePremium()){
@@ -13194,18 +13228,38 @@ async function _ddxOpen(annId,opts){
       return;
     }
     const d=(opts.date&&/^\d{4}-\d{2}-\d{2}$/.test(opts.date))?opts.date:_ddTodayKey();
-    _ddx={id:null,title:'',date:d,kind:'down',yearly:false,onCal:false,eventId:null,outline:false,color:effectiveDefaultColor('ev')};
+    const c=effectiveDefaultColor('ev');
+    _ddx={id:null,owner:true,title:'',date:d,kind:'down',yearly:false,onCal:false,eventId:null,outline:false,color:c,origColor:c,origOutline:false,
+      members:[me],groupId:null,roomMode:'one',pickRooms:[]};
   }else{
     const x=_ddAll.find(v=>v.src==='ann'&&v.annId===annId);
     if(!x){ toast('D-day 를 찾지 못했어요'); return; }
-    if(x.created_by!==_currentUser.id&&!isAdmin()){ toast('만든 사람만 고칠 수 있어요'); return; }
-    _ddx={id:annId,title:x.title,date:x.date,kind:x.kind==='since'?'since':'down',yearly:!!x.repeat_yearly,onCal:!!x.onCal,eventId:x.eventId||null,outline:!!x.outline,color:x.color};
+    /* 만든 사람(또는 관리자)은 전부 고치고, 다른 멤버는 '나만 이 색으로 보기'로 자기 색만 바꾼다 — 일정과 같음 [2026-11-04] */
+    const owner=(x.created_by===me)||isAdmin();
+    _ddx={id:annId,owner,title:x.title,date:x.date,kind:x.kind==='since'?'since':'down',yearly:!!x.repeat_yearly,onCal:!!x.onCal,eventId:x.eventId||null,
+      outline:!!x.outline,color:x.color,origColor:x.color,origOutline:!!x.outline,myColor:!!x.myColor,
+      members:(x.memberKeys||[]).slice(),groupId:x.groupId||null,roomMode:'one',pickRooms:[]};
   }
   _ddx.page=null;
   _ddxRender();
   document.getElementById('ddxOverlay').classList.add('on');
   const cd=document.getElementById('ddxCard'); cd.classList.add('on'); cd.scrollTop=0;
 }
+/** 이 방에서 D-day 를 함께 볼 수 있는 멤버(가상 포함) — 키: 실제=user id, 가상='v-'+members.id */
+function _ddxMemberList(){
+  return (_visibleMembers()||[]).map(m=>({key:m.is_virtual?('v-'+m.member_id):m.user_id, m})).filter(o=>o.key);
+}
+function _ddxToggleMem(k){
+  const i=_ddx.members.indexOf(k);
+  if(i>=0){ if(_ddx.members.length<=1){ toast('한 명 이상 골라 주세요'); return; } _ddx.members.splice(i,1); }
+  else _ddx.members.push(k);
+  _ddxRender();
+}
+window._ddxToggleMem=_ddxToggleMem;
+function _ddxSetRoomMode(m){ _ddx.roomMode=m; _ddxRender(); }
+window._ddxSetRoomMode=_ddxSetRoomMode;
+function _ddxToggleRoom(rid,on){ const s=new Set(_ddx.pickRooms); if(on) s.add(rid); else s.delete(rid); _ddx.pickRooms=[...s]; }
+window._ddxToggleRoom=_ddxToggleRoom;
 window._ddxOpen=_ddxOpen;
 function closeDdx(){
   document.getElementById('ddxOverlay').classList.remove('on');
@@ -13223,6 +13277,35 @@ function _ddxRender(){
   const pages=_colorPagesForRoom(_ddx.color);
   let pi=_ddx.page; if(pi==null){ pi=pages.findIndex(p=>p.colors.some(c=>c.key===_ddx.color)); if(pi<0) pi=0; }
   const sw=(on,fn,t,sub)=>`<button type="button" class="ddx-row" role="switch" aria-checked="${on}" onclick="${fn}"><span>${t}<small>${sub}</small></span><span class="ddx-sw${on?' on':''}"></span></button>`;
+  const colorHtml=`<div class="ev-label">색 <small>일정 색과 같아요 · 스토어에서 ‘사용하기’ 한 팩도 함께</small></div>
+    <div class="ev-color-pager-wrap"><div class="ev-color-pager" id="ddxPager">${pages.map(p=>`<div class="ev-color-page"><div class="ev-color-page-grid">${p.colors.map(c=>`<div class="ev-color-cell"><button type="button" class="ev-color${c.key===_ddx.color?' on':''}" style="background:${_safeColor(c.hex)}" onclick="_ddxColor('${_jsStr(c.key)}')" aria-label="${escapeHtml(colorLabelOf(c.key)||'색')}"></button><div class="ev-color-name">${escapeHtml(colorLabelOf(c.key)||'')}</div></div>`).join('')}</div></div>`).join('')}</div>
+      <div class="ev-color-pager-foot"><div class="ev-color-page-label" id="ddxPageLabel">${escapeHtml((pages[pi]||pages[0]).name)}</div><div class="ev-color-dots" id="ddxDots">${pages.map((p,i)=>`<span class="ev-color-dot${i===pi?' on':''}"></span>`).join('')}</div></div></div>`;
+  if(!_ddx.owner){
+    // 다른 멤버가 만든 D-day — 내 화면의 색·테두리만(나만 이 색으로 보기) [2026-11-04]
+    b.innerHTML=`<div class="mo-title">내 D-day 색 바꾸기</div>
+      <div class="ddx-ro"><b>${escapeHtml(_ddx.title)}</b><small>${escapeHtml(_ddFmt(_ddx.date,true))}${_ddx.kind==='since'?' 부터':''}${_ddx.yearly?' · 매년':''}</small></div>
+      <div class="ddx-hint">이름·날짜는 만든 사람만 바꿀 수 있어요. 색은 <b>나만</b> 이 색으로 보여요.</div>
+      ${sw(_ddx.outline,"_ddx.outline=!_ddx.outline;_ddxRender()",'테두리만 표시','색 채움 없이 외곽선으로')}
+      ${colorHtml}
+      <div class="ddx-pv" id="ddxPv">${_ddxPreviewHtml()}</div>
+      <button type="button" class="ddx-save" id="ddxSave" onclick="_ddxSave()">나만 이 색으로 보기</button>
+      ${_ddx.myColor?'<button type="button" class="ddx-del" style="color:var(--sub)" onclick="_ddxResetMyColor()">만든 사람 색으로 되돌리기</button>':''}
+      <div class="mo-actions"><button class="mo-cancel" onclick="closeDdx()">닫기</button></div>`;
+    _ddxBindPager(pages,pi);
+    return;
+  }
+  const mems=_ddxMemberList(), me=_currentUser&&_currentUser.id;
+  const memHtml=mems.length>1?`<div class="ev-label">함께할 멤버 <small>고른 멤버의 프로필 탭에 보여요 · ‘전체’엔 모두 보여요</small></div>
+    <div class="ddx-mems">${mems.map(({key,m})=>{
+      const on=_ddx.members.includes(key), ini=(m.name||'?').trim().charAt(0).toUpperCase();
+      const av=m.avatar_url?`<span class="ddx-mem-av">${avImg(m.avatar_url,ini,'')}</span>`:`<span class="ddx-mem-av" style="background:${_safeColor(colorHex(m.color||'c-vintage'),'#8b5a3c')}">${escapeHtml(ini)}</span>`;
+      return `<button type="button" class="ddx-mem${on?' on':''}" aria-pressed="${on}" onclick="_ddxToggleMem('${_jsStr(key)}')">${av}<span>${escapeHtml(m.name||'멤버')}${key===me?' (나)':''}${m.is_virtual?' · 가상':''}</span></button>`;
+    }).join('')}</div>`:'';
+  const otherRooms=(_myRooms||[]).filter(r=>r.id!==_currentRoom.id);
+  const roomHtml=(!_ddx.id&&otherRooms.length)?`<div class="ev-label">어느 방에</div>
+    <div class="ddx-seg3">${[['one','이 방만'],['all','모든 방'],['pick','방 고르기']].map(([k,t])=>`<button type="button" class="${_ddx.roomMode===k?'on':''}" onclick="_ddxSetRoomMode('${k}')">${t}</button>`).join('')}</div>
+    ${_ddx.roomMode==='pick'?`<div class="ddx-rooms"><label class="ddx-room" style="opacity:.7"><input type="checkbox" checked disabled><span>${escapeHtml(_currentRoom.name||'이 방')} <small>(이 방)</small></span></label>${otherRooms.map(r=>`<label class="ddx-room"><input type="checkbox" ${_ddx.pickRooms.includes(r.id)?'checked':''} onchange="_ddxToggleRoom('${_jsStr(r.id)}',this.checked)"><span>${escapeHtml(r.name||'방')}</span></label>`).join('')}</div>`:''}
+    ${_ddx.roomMode!=='one'?'<div class="ddx-hint">다른 방엔 그 방에 있는 멤버만 함께로 들어가요(없으면 나만).</div>':''}`:'';
   b.innerHTML=`<div class="mo-title">${_ddx.id?'D-day 고치기':'D-day 만들기'}</div>
     <div class="ev-label">이름</div>
     <input class="ddx-in" id="ddxTitle" maxlength="40" placeholder="예) 우리 1주년, 여행 가는 날" value="${escapeHtml(_ddx.title)}" oninput="_ddx.title=this.value;document.getElementById('ddxPv').innerHTML=_ddxPreviewHtml()">
@@ -13234,13 +13317,16 @@ function _ddxRender(){
     ${_ddx.kind==='down'?sw(_ddx.yearly,"_ddx.yearly=!_ddx.yearly;_ddxRender()",'매년 반복','생일·기념일처럼 해마다 다시 세요'):''}
     ${sw(_ddx.outline,"_ddx.outline=!_ddx.outline;_ddxRender()",'테두리만 표시','색 채움 없이 외곽선으로')}
     ${sw(_ddx.onCal,"_ddx.onCal=!_ddx.onCal;_ddxRender()",'캘린더에 일정으로도 표시','그날 칸에 일정 바로 함께 보여요')}
-    <div class="ev-label">색 <small>일정 색과 같아요 · 스토어에서 ‘사용하기’ 한 팩도 함께</small></div>
-    <div class="ev-color-pager-wrap"><div class="ev-color-pager" id="ddxPager">${pages.map(p=>`<div class="ev-color-page"><div class="ev-color-page-grid">${p.colors.map(c=>`<div class="ev-color-cell"><button type="button" class="ev-color${c.key===_ddx.color?' on':''}" style="background:${_safeColor(c.hex)}" onclick="_ddxColor('${_jsStr(c.key)}')" aria-label="${escapeHtml(colorLabelOf(c.key)||'색')}"></button><div class="ev-color-name">${escapeHtml(colorLabelOf(c.key)||'')}</div></div>`).join('')}</div></div>`).join('')}</div>
-      <div class="ev-color-pager-foot"><div class="ev-color-page-label" id="ddxPageLabel">${escapeHtml((pages[pi]||pages[0]).name)}</div><div class="ev-color-dots" id="ddxDots">${pages.map((p,i)=>`<span class="ev-color-dot${i===pi?' on':''}"></span>`).join('')}</div></div></div>
+    ${memHtml}
+    ${roomHtml}
+    ${colorHtml}
     <div class="ddx-pv" id="ddxPv">${_ddxPreviewHtml()}</div>
     <button type="button" class="ddx-save" id="ddxSave" onclick="_ddxSave()">저장</button>
     ${_ddx.id?'<button type="button" class="ddx-del" onclick="_ddxDelete()">이 D-day 지우기</button>':''}
     <div class="mo-actions"><button class="mo-cancel" onclick="closeDdx()">닫기</button></div>`;
+  _ddxBindPager(pages,pi);
+}
+function _ddxBindPager(pages,pi){
   const pg=document.getElementById('ddxPager');
   if(pg){
     requestAnimationFrame(()=>{ pg.scrollLeft=pg.clientWidth*pi; });
@@ -13280,66 +13366,239 @@ function _ddxColor(k){
   const pv=document.getElementById('ddxPv'); if(pv) pv.innerHTML=_ddxPreviewHtml();
 }
 window._ddxColor=_ddxColor;
+/* 연결 일정(그날 일정 바) — 함께할 멤버가 2명 이상이면 함께 일정(멤버마다 한 줄, 같은 shared_id), 아니면 한 줄.
+   각 줄 색 = 그 사람의 '내 D-day 색'(있으면) → 아니면 D-day 색. 연결은 내 줄(없으면 첫 줄) id 로. [2026-11-04] */
+async function _ddxMakeEvents(rid,keys,f,colorOf){
+  const me=_currentUser.id, ks=(keys&&keys.length?keys:[me]);
+  const sid=ks.length>=2?genShared():null;
+  const rows=ks.map(k=>{ const c=colorOf(k); return _buildCoEventRow(k,{room_id:rid,title:f.title,date:f.date,color:c.color,bar_style:c.bar,
+    repeat_type:f.repeat_yearly?'yearly':'none',recurring_yearly:!!f.repeat_yearly,shared_id:sid}); });
+  const ins=await supa.from('events').insert(rows).select('id,user_id,virtual_member_id');
+  if(ins.error) throw ins.error;
+  const got=ins.data||[];
+  const mine=got.find(r=>r.user_id===me&&!r.virtual_member_id)||got[0];
+  return mine?mine.id:null;
+}
+/** 연결 일정의 모든 줄(함께면 같은 shared_id) */
+async function _ddxLinkedIds(evId){
+  if(!evId) return [];
+  try{
+    const r=await supa.from('events').select('id,shared_id').eq('id',evId).maybeSingle();
+    const sid=r&&r.data&&r.data.shared_id;
+    if(sid){ const g=await supa.from('events').select('id').eq('shared_id',sid); if(!g.error&&g.data&&g.data.length) return g.data.map(x=>x.id); }
+    return (r&&r.data)?[evId]:[];
+  }catch(_){ return [evId]; }
+}
+/** 다른 방에선 그 방에 있는 실제 멤버만 함께로(가상 멤버는 방마다 달라 뺌) — 남는 사람이 없으면 나 */
+async function _ddxMembersFor(roomIds,keys){
+  const out={}, me=_currentUser.id, real=[...new Set((keys||[]).filter(k=>typeof k==='string'&&!k.startsWith('v-')))];
+  const inRoom={};
+  try{
+    const r=await supa.from('members').select('room_id,user_id,is_virtual').in('room_id',roomIds);
+    (r.data||[]).forEach(m=>{ if(m.user_id&&!m.is_virtual) (inRoom[m.room_id]=inRoom[m.room_id]||new Set()).add(m.user_id); });
+  }catch(_){}
+  roomIds.forEach(rid=>{ const s=inRoom[rid]||new Set(); const kept=real.filter(u=>s.has(u)); out[rid]=kept.length?kept:[me]; });
+  return out;
+}
 async function _ddxSave(){
   if(!_ddx||!_currentRoom||!_currentUser) return;
+  const me=_currentUser.id, btn=document.getElementById('ddxSave');
+  const busy=on=>{ if(btn){ btn.disabled=on; btn.textContent=on?'저장 중…':(_ddx.owner?'저장':'나만 이 색으로 보기'); } };
+  const style=_ddx.outline?'outline':'solid';
+  // 만든 사람이 아니면 — 내 색만(나만 이 색으로 보기)
+  if(!_ddx.owner){
+    busy(true);
+    try{ await _ddxSaveMyColor([_ddx.id],_ddx.color,style); closeDdx(); toast('나만 이 색으로 보여요'); await loadDdays(); try{ await loadEvents(); }catch(_){} _dhmDdRender(); }
+    catch(e){ console.warn('D-day 색 저장 실패',e); toast('저장하지 못했어요. 잠시 후 다시 시도해 주세요'); busy(false); }
+    return;
+  }
   const title=(_ddx.title||'').trim();
   if(!title){ toast('이름을 입력해 주세요'); try{ document.getElementById('ddxTitle').focus(); }catch(_){} return; }
-  if(!_ddx.id){ try{ await ensurePremiumLoaded(); }catch(_){} if(!isEffectivePremium()){ closeDdx(); _ddxOpen(null,{}); return; } }
-  const btn=document.getElementById('ddxSave'); if(btn){ btn.disabled=true; btn.textContent='저장 중…'; }
-  const row={title:title.slice(0,40),date:_ddx.date,kind:_ddx.kind==='since'?'since':'countdown',repeat_yearly:_ddx.kind==='down'&&!!_ddx.yearly,on_cal:!!_ddx.onCal,color:_ddx.color,bar_style:_ddx.outline?'outline':'solid'};
-  let madeEv=null;
+  const isNew=!_ddx.id;
+  if(isNew){ try{ await ensurePremiumLoaded(); }catch(_){} if(!isEffectivePremium()){ closeDdx(); _ddxOpen(null,{}); return; } }
+  const members=(_ddx.members&&_ddx.members.length)?_ddx.members.slice():[me];
+  const f={title:title.slice(0,40),date:_ddx.date,kind:_ddx.kind==='since'?'since':'countdown',repeat_yearly:_ddx.kind==='down'&&!!_ddx.yearly,on_cal:!!_ddx.onCal};
+  // 색을 바꿨고 함께 보는 사람이 있으면 — 일정처럼 '나만 / 모두에게' 를 묻는다
+  let colorScope='all';
+  const colorChanged=!isNew&&(_ddx.color!==_ddx.origColor||!!_ddx.outline!==!!_ddx.origOutline);
+  if(colorChanged&&members.some(k=>k!==me)){
+    const pick=await askRecurringDelete('이 D-day 의 색을 바꿨어요.<br>어디에 적용할까요?',{title:'색상 적용 범위',oneLabel:'나만 이 색으로 보기',allLabel:'모두에게 적용'});
+    if(!pick) return;
+    colorScope=pick==='one'?'me':'all';
+  }
+  // 다른 방에도 있는 D-day 를 고치면 — 어느 방에 적용할지
+  let targets=null;
+  if(!isNew&&_ddx.groupId){
+    try{ const g=await supa.from('anniversaries').select('id,room_id,event_id,member_keys,color,bar_style').eq('group_id',_ddx.groupId); if(!g.error) targets=g.data||[]; }catch(_){}
+    if(targets&&targets.length>1){
+      const pick=await askRecurringDelete('이 D-day 는 다른 방에도 있어요.<br>어디에 적용할까요?',{title:'적용할 방',oneLabel:'이 방만',allLabel:'모든 방'});
+      if(!pick) return;
+      if(pick==='one') targets=targets.filter(t=>t.id===_ddx.id);
+    }else targets=null;
+  }
+  busy(true);
+  const made=[];   // 실패하면 되돌릴 새 일정·새 D-day
   try{
-    /* '캘린더에 일정으로도 표시' = 진짜 일정 한 줄(그날 일정 바)을 만들어 event_id 로 묶는다 — 끄면 그 일정을 지움. [2026-10-28] */
-    let evId=_ddx.eventId||null;
-    if(row.on_cal){
-      const evRow={title:row.title,date:row.date,color:row.color,bar_style:row.bar_style,repeat_type:row.repeat_yearly?'yearly':'none',recurring_yearly:row.repeat_yearly};
-      if(evId){
-        const u=await supa.from('events').update(evRow).eq('id',evId).select('id');
-        if(u.error||!(u.data&&u.data.length)) evId=null;   // 누가 그 일정을 지웠으면 새로 만든다
-      }
-      if(!evId){
-        const ins=await supa.from('events').insert(Object.assign({room_id:_currentRoom.id,user_id:_currentUser.id},evRow)).select('id').single();
+    if(isNew){
+      const rooms=_ddx.roomMode==='all'?(_myRooms||[]).map(r=>r.id):(_ddx.roomMode==='pick'?[_currentRoom.id,..._ddx.pickRooms]:[_currentRoom.id]);
+      const uniq=[...new Set(rooms)];
+      const gid=uniq.length>1?genShared():null;
+      const others=uniq.filter(r=>r!==_currentRoom.id);
+      const memFor=others.length?await _ddxMembersFor(others,members):{};
+      memFor[_currentRoom.id]=members;
+      for(const rid of uniq){
+        const keys=memFor[rid]||[me];
+        const row=Object.assign({room_id:rid,created_by:me,color:_ddx.color,bar_style:style,member_keys:keys,group_id:gid},f);
+        let ins=await supa.from('anniversaries').insert(row).select('id').single();
+        if(ins.error&&/member_keys|group_id/.test(ins.error.message||'')){   // 서버에 새 칸이 아직 없으면 옛 방식(이 방만·모두)으로
+          const old=Object.assign({},row); delete old.member_keys; delete old.group_id;
+          if(rid!==_currentRoom.id) continue;
+          ins=await supa.from('anniversaries').insert(old).select('id').single();
+        }
         if(ins.error) throw ins.error;
-        evId=madeEv=ins.data.id;
+        made.push({t:'ann',id:ins.data.id});
+        if(f.on_cal){
+          const evId=await _ddxMakeEvents(rid,keys,f,()=>({color:_ddx.color,bar:style}));
+          made.push({t:'ev',id:evId});
+          const u=await supa.from('anniversaries').update({event_id:evId}).eq('id',ins.data.id);
+          if(u.error) throw u.error;
+        }
       }
-    }else if(evId){
-      const d=await supa.from('events').delete().eq('id',evId);
-      if(d.error) console.warn('D-day 일정 지우기 실패',d.error);
-      evId=null;
+      made.length=0;
+      closeDdx();
+      toast(uniq.length>1?`D-day 를 ${uniq.length}개 방에 만들었어요`:'D-day 를 만들었어요');
+      try{ _audit('dday.create',{meta:{kind:f.kind,on_cal:f.on_cal,rooms:uniq.length,members:members.length}}); }catch(_){}
+    }else{
+      const list=targets||[{id:_ddx.id,room_id:_currentRoom.id,event_id:_ddx.eventId,member_keys:members,color:_ddx.origColor,bar_style:_ddx.origOutline?'outline':'solid'}];
+      // 다른 멤버들이 고른 색 — 연결 일정을 다시 만들 때 각자 색을 지키려고(모두에게 적용이면 지운다)
+      let picks={};
+      try{ const pc=await supa.from('anniversary_colors').select('ann_id,user_id,color,bar_style').in('ann_id',list.map(t=>t.id)); (pc.data||[]).forEach(c=>{ (picks[c.ann_id]=picks[c.ann_id]||{})[c.user_id]=c; }); }catch(_){}
+      if(colorScope==='all'&&colorChanged){
+        try{ await supa.from('anniversary_colors').delete().in('ann_id',list.map(t=>t.id)); }catch(_){}
+        picks={};
+      }
+      if(colorScope==='me'){ await _ddxSaveMyColor(list.map(t=>t.id),_ddx.color,style,true); list.forEach(t=>{ (picks[t.id]=picks[t.id]||{})[me]={color:_ddx.color,bar_style:style}; }); }
+      for(const t of list){
+        const keys=t.id===_ddx.id?members:((Array.isArray(t.member_keys)&&t.member_keys.length)?t.member_keys:[me]);
+        const base={color:colorScope==='all'?_ddx.color:(t.color||_ddx.origColor),bar:colorScope==='all'?style:(t.bar_style||'solid')};
+        const colorOf=k=>{ const p=picks[t.id]&&picks[t.id][k]; return p?{color:p.color,bar:p.bar_style}:base; };
+        // 연결 일정은 지우고 새로 만든다(멤버·날짜·반복이 바뀌어도 한 번에 맞게)
+        const oldIds=await _ddxLinkedIds(t.event_id);
+        let evId=null;
+        if(f.on_cal){ evId=await _ddxMakeEvents(t.room_id,keys,f,colorOf); made.push({t:'ev',id:evId}); }
+        const upd=Object.assign({},f,{event_id:evId});
+        if(colorScope==='all'){ upd.color=_ddx.color; upd.bar_style=style; }
+        if(t.id===_ddx.id) upd.member_keys=members;
+        let r=await supa.from('anniversaries').update(upd).eq('id',t.id);
+        if(r.error&&/member_keys/.test(r.error.message||'')){ delete upd.member_keys; r=await supa.from('anniversaries').update(upd).eq('id',t.id); }
+        if(r.error) throw r.error;
+        made.length=0;
+        if(oldIds.length){ const d=await supa.from('events').delete().in('id',oldIds); if(d.error) console.warn('D-day 옛 일정 지우기 실패',d.error); }
+      }
+      closeDdx();
+      toast(list.length>1?`${list.length}개 방의 D-day 를 고쳤어요`:'D-day 를 고쳤어요');
+      try{ _audit('dday.update',{meta:{kind:f.kind,on_cal:f.on_cal,rooms:list.length,color_scope:colorScope}}); }catch(_){}
     }
-    row.event_id=evId;
-    const r=_ddx.id
-      ?await supa.from('anniversaries').update(row).eq('id',_ddx.id)
-      :await supa.from('anniversaries').insert(Object.assign({room_id:_currentRoom.id,created_by:_currentUser.id},row));
-    if(r.error) throw r.error;
-    madeEv=null;
-    const isNew=!_ddx.id;
-    closeDdx();
-    if(row.on_cal||_ddx.eventId){ try{ await loadEvents(); }catch(_){} }
-    toast(isNew?'D-day 를 만들었어요':'D-day 를 고쳤어요');
-    try{ _audit(isNew?'dday.create':'dday.update',{meta:{kind:row.kind,on_cal:row.on_cal}}); }catch(_){}
+    try{ await loadEvents(); }catch(_){}
     await loadDdays();
     _dhmDdRender();
   }catch(e){
     console.warn('D-day 저장 실패',e);
-    if(madeEv){ try{ await supa.from('events').delete().eq('id',madeEv); }catch(_){} }   // D-day 저장이 실패하면 방금 만든 일정도 되돌림
+    for(const m of made.reverse()){ try{ await supa.from(m.t==='ev'?'events':'anniversaries').delete().eq('id',m.id); }catch(_){} }   // 반쯤 만든 것은 되돌림
     toast('저장하지 못했어요. 잠시 후 다시 시도해 주세요');
-    if(btn){ btn.disabled=false; btn.textContent='저장'; }
+    busy(false);
   }
 }
 window._ddxSave=_ddxSave;
-async function _ddxDelete(){
+/** '나만 이 색으로 보기' — 내 D-day 색 + (연결 일정이 있으면) 내 일정 줄 색도 */
+async function _ddxSaveMyColor(annIds,color,style,skipEvents){
+  const me=_currentUser.id;
+  const rows=annIds.map(id=>({ann_id:id,user_id:me,color,bar_style:style}));
+  const r=await supa.from('anniversary_colors').upsert(rows,{onConflict:'ann_id,user_id'});
+  if(r.error) throw r.error;
+  if(skipEvents) return;
+  for(const id of annIds){
+    const x=_ddAll.find(v=>v.annId===id); if(!x||!x.eventId) continue;
+    const ids=await _ddxLinkedIds(x.eventId);
+    if(ids.length){ try{ await supa.from('events').update({color,bar_style:style}).in('id',ids).eq('user_id',me).is('virtual_member_id',null); }catch(_){} }
+  }
+}
+async function _ddxResetMyColor(){
   if(!_ddx||!_ddx.id) return;
-  const ok=await vConfirm('이 D-day 를 지울까요? 방 사람들 화면에서도 사라져요.',{title:'D-day 지우기',okText:'지우기'});
-  if(!ok) return;
   try{
-    const evId=_ddx.eventId;
-    const r=await supa.from('anniversaries').delete().eq('id',_ddx.id);
+    await supa.from('anniversary_colors').delete().eq('ann_id',_ddx.id).eq('user_id',_currentUser.id);
+    const x=_ddAll.find(v=>v.annId===_ddx.id);
+    if(x&&x.eventId){ const ids=await _ddxLinkedIds(x.eventId); if(ids.length) await supa.from('events').update({color:x.baseColor,bar_style:x.baseOutline?'outline':'solid'}).in('id',ids).eq('user_id',_currentUser.id).is('virtual_member_id',null); }
+    closeDdx(); toast('만든 사람 색으로 되돌렸어요');
+    await loadDdays(); try{ await loadEvents(); }catch(_){}
+  }catch(e){ console.warn(e); toast('되돌리지 못했어요'); }
+}
+window._ddxResetMyColor=_ddxResetMyColor;
+/** D-day 지우기 — 다른 방에도 있으면 어디서 지울지 묻고, 연결 일정(함께면 모든 줄)도 함께 */
+async function _ddxDeleteRows(list){
+  for(const t of list){
+    const ids=await _ddxLinkedIds(t.event_id);
+    const r=await supa.from('anniversaries').delete().eq('id',t.id);
     if(r.error) throw r.error;
-    if(evId){ try{ await supa.from('events').delete().eq('id',evId); await loadEvents(); }catch(_){} }   // 함께 만든 일정 바도 지움
-    closeDdx(); toast('D-day 를 지웠어요');
+    if(ids.length){ try{ await supa.from('events').delete().in('id',ids); }catch(_){} }
+  }
+}
+async function _ddxDelete(){
+  if(!_ddx||!_ddx.id||!_ddx.owner) return;
+  let list=[{id:_ddx.id,event_id:_ddx.eventId}];
+  if(_ddx.groupId){
+    try{ const g=await supa.from('anniversaries').select('id,event_id').eq('group_id',_ddx.groupId); if(!g.error&&g.data&&g.data.length>1){
+      const pick=await askRecurringDelete('이 D-day 는 다른 방에도 있어요.<br>어디서 지울까요?',{title:'D-day 지우기',oneLabel:'이 방만',allLabel:'모든 방'});
+      if(!pick) return;
+      if(pick==='all') list=g.data;
+    } }catch(_){}
+    if(list.length===1){ const ok=await vConfirm('이 방의 D-day 를 지울까요? 방 사람들 화면에서도 사라져요.',{title:'D-day 지우기',okText:'지우기'}); if(!ok) return; }
+  }else{
+    const ok=await vConfirm('이 D-day 를 지울까요? 방 사람들 화면에서도 사라져요.',{title:'D-day 지우기',okText:'지우기'});
+    if(!ok) return;
+  }
+  try{
+    await _ddxDeleteRows(list);
+    closeDdx(); toast(list.length>1?`${list.length}개 방에서 D-day 를 지웠어요`:'D-day 를 지웠어요');
+    try{ await loadEvents(); }catch(_){}
     await loadDdays(); _dhmDdRender();
   }catch(e){ console.warn('D-day 지우기 실패',e); toast('지우지 못했어요. 잠시 후 다시 시도해 주세요'); }
+}
+/** 캘린더에서 D-day 와 연결된 일정을 지울 때 — '캘린더 표시만 / D-day 까지' 고르기 [2026-11-04, 사용자 "사용자가 선택할 수 있게"]
+    반환: true = 여기서 처리함(deleteEvent 는 그만), false = 연결 일정 아님 */
+async function _ddDeleteLinkedEvent(ev){
+  try{
+    const all=Object.values(_events||{}).flat();
+    const x=(_ddAll||[]).find(a=>{
+      if(a.src!=='ann'||!a.eventId) return false;
+      if(a.eventId===ev.id) return true;
+      const lr=all.find(e=>e.id===a.eventId);
+      return !!(lr&&lr.shared_id&&ev.shared_id&&lr.shared_id===ev.shared_id);
+    });
+    if(!x) return false;
+    const me=_currentUser&&_currentUser.id, owner=(x.created_by===me)||isAdmin();
+    let pick;
+    if(owner){
+      pick=await askRecurringDelete(`D-day ‘${escapeHtml(x.title)}’ 와 연결된 일정이에요.<br>어떻게 지울까요?`,{title:'D-day 일정 지우기',oneLabel:'캘린더 표시만 지우기',allLabel:'D-day 까지 지우기'});
+    }else{
+      pick=(await vConfirm(`D-day ‘${x.title}’ 와 연결된 일정이에요. 캘린더에서만 지울까요? D-day 는 그대로 남아요.`,{title:'D-day 일정 지우기',okText:'캘린더에서 지우기'}))?'one':null;
+    }
+    if(!pick) return true;
+    const ids=await _ddxLinkedIds(x.eventId);
+    if(pick==='all'){
+      await _ddxDeleteRows([{id:x.annId,event_id:x.eventId}]);
+      toast('D-day 와 일정을 지웠어요');
+    }else{
+      if(ids.length){ const d=await supa.from('events').delete().in('id',ids); if(d.error) throw d.error; }
+      if(owner){ try{ await supa.from('anniversaries').update({on_cal:false,event_id:null}).eq('id',x.annId); }catch(_){} }
+      toast('캘린더에서 지웠어요 · D-day 는 남아 있어요');
+    }
+    try{ _audit('dday.event_delete',{meta:{scope:pick}}); }catch(_){}
+    try{ const dc=document.getElementById('dpCard'); if(dc)dc.classList.remove('on'); const dov=document.getElementById('dpOverlay'); if(dov)dov.classList.remove('on'); }catch(_){}
+    await loadEvents();
+    if(_selectedDate) try{ openDateSheet(_selectedDate); }catch(_){}
+    return true;
+  }catch(e){ console.warn('D-day 연결 일정 지우기 실패',e); toast('지우지 못했어요. 잠시 후 다시 시도해 주세요'); return true; }
 }
 window._ddxDelete=_ddxDelete;
 /** 편집 = 그 일정 수정 창 */
@@ -18900,6 +19159,8 @@ async function deleteEvent(eventId){
   const evs=Object.values(_events).flat();
   const ev=evs.find(e=>e.id===eventId);
   if(!ev){toast('일정 정보를 찾지 못했어요');return}
+  // D-day 와 연결된 일정이면 '캘린더 표시만 / D-day 까지' 를 먼저 고른다 [2026-11-04]
+  if(await _ddDeleteLinkedEvent(ev)) return;
 
   // 기간(range) + 반복이 결합된 일정 — 기간 중 어느 날짜를 눌러 삭제하든 그 기간 전체(N일)를
   // 한 번에 삭제한다(반복 여부 판정보다 먼저 확인). 반복 필드는 기간의 첫 날짜(origin) row에만

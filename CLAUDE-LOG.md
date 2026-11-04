@@ -800,3 +800,10 @@
 - uri-calendar-app `pubspec.yaml` 2.0.3+1, `codemagic.yaml` 두 워크플로 APP_VERSION 2.0.3 (`00ec207`).
 - 점검: analyze 문제 없음·테스트 852 통과(11-02), 2.0.2 이후 새 플러그인은 `in_app_review` 하나, 아이폰에 보이는 글자에 Android·Google Play 문구 없음(약관의 `<and>` 구간은 iOS 에서 빠짐), 크리스마스 그림 Vercel 라이브(scene4.jpg 200), 서버 함수 buy_item·my_coin_balance·my_premium_status 있음.
 - ⚠️ `claim_fcm_token`(uri-calendar-app supabase/migrations/20261022) 은 아직 DB 에 없음 — 앱은 없으면 옛 방식으로 저장하므로 빌드는 문제없지만, '한 휴대폰에서 계정 바꾸면 알림이 새 계정으로' 는 적용해야 동작.
+
+## 2026-11-04 D-day 를 일정처럼 — 여러 방·함께할 멤버·나만 이 색으로 보기 + 연결 일정 지우기 선택 (사용자 "디데이를 생성할때 이방만 생성할건지 모든방에 생성할건지 방을 선택할건지 … 함께 멤버 선택 … 선택한 멤버의 프로필에만 표시 … 색상은 … 나만보기를 통해" · "캘린더에 표시만 지울지 아니면 디데이를 아예 없애버릴지 사용자가 선택")
+- 점검에서 찾은 문제 2개: ① 연결 일정을 달력에서 지우면 D-day 의 on_cal 이 켜진 채 남아 옛 이름 라벨이 다시 보임 ② 연결 일정을 달력에서 고치면(제목·날짜·색) D-day 칩은 옛 값 그대로(다른 멤버가 고치면 RLS 로 따라 고칠 수도 없음).
+- DB(마이그레이션 파일 `supabase/migrations/20261104_dday_members_rooms_colors.sql`, ⚠️ 적용은 사용자 승인 대기): anniversaries.member_keys·group_id + 인덱스, 표 anniversary_colors(RLS), 트리거 anniv_sync_from_event(위 ①② 해결 — 웹·2.0 어디서 고쳐도).
+- index.html: 만들기 창에 '함께할 멤버'(칩, 기본 나)·'어느 방에'(이 방만/모든 방/방 고르기, 새로 만들 때·방 2개↑), 만든 사람이 아니면 '내 D-day 색 바꾸기'(+ '만든 사람 색으로 되돌리기'), 저장 때 색 바꿨으면 '나만 이 색으로 보기/모두에게 적용', 묶음이면 '이 방만/모든 방', 지울 때도 '이 방만/모든 방'. 연결 일정 = 멤버 2명↑ 함께 일정(각 줄 색 = 그 사람의 내 색 → 없으면 D-day 색). 멤버 탭 필터(`_ddSync`): 고른 멤버 탭에만. deleteEvent 앞단 `_ddDeleteLinkedEvent` — 연결 일정(함께 줄 중 어느 것이든)이면 '캘린더 표시만 지우기 / D-day 까지 지우기'(만든 사람 아니면 캘린더에서만).
+- 시험: 데이터를 기억하는 가짜 서버로 22개 흐름(이 방만·모든 방 멤버 재매핑·멤버 탭·모두에게+모든 방 고치기·나만 이 색·다른 사람이 만든 D-day 색만·캘린더 표시만 지우기·D-day 까지(다른 멤버 줄을 눌러도)·묶음 모두 지우기·보통 일정 삭제는 그대로) 전부 통과, 창 화면 촬영 확인.
+- 2.0: 체험 안내 문구 '테마·스티커·D-day·…' → '테마·스티커·이모지·…'(2.0 엔 D-day 없음) + Play 권장 조치(모든 안드로이드 버전 edge-to-edge, 지원 중단된 windowLayoutInDisplayCutoutMode=shortEdges 제거) — uri-calendar-app `cbf8e78`.
