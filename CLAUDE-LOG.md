@@ -818,3 +818,7 @@
 - PWA(index.html): 창 안엔 일정 폼과 같은 '대상' 줄(`.ev-target-row` 혼자/함께 + `.ev-members-display` '함께: 나, 엄마 (탭하여 변경)')만. '함께'는 일정과 같은 멤버 고르기 창(`openMemberPick`, `_pickContext='dday'` — 나는 늘 포함·2명 이상, D-day 창 위로 뜨게 `#memberPickCard.rp-top`). 방은 저장할 때 일정과 같은 '어느 방에 추가할까요?'(`openRoomPick`, `_roomPickMode='dday'` → 확인하면 `_ddx.extraRooms` 로 `_ddxSave(true)`, 취소하면 D-day 창으로). 옛 칩·세그먼트 CSS(`.ddx-mems`·`.ddx-seg3`·`.ddx-rooms`)와 `_ddxToggleMem`·`_ddxSetRoomMode`·`_ddxToggleRoom` 지움.
 - 2.0(uri-calendar-app `7490d46`): 같은 방식 — 일정 폼의 `EvSegBtn`·`DashedBox`·`showEventMemberPick`·`showEventRoomPick` 을 그대로 쓴다. `DdxForm.roomMode/pickRooms` → `extraRooms`.
 - 시험: PWA 헤드리스 흐름 27개(멤버 고르기 창이 D-day 창 위로·취소하면 그대로·저장 → 방 고르기 창·취소하면 저장 안 됨 포함), 2.0 전체 880개 통과. appstore `www/` 동기화 안 함(스토어 앱은 2.0).
+
+## 2026-11-05 D-day 창 색 칸 맨 왼쪽 고리 잘림 (사용자 "색상 맨 왼쪽이 조금 잘려 수정해줘")
+- 원인: 고른 색 테두리 고리가 칸 밖으로 3px 나가는데(`.ev-color.on::after` inset -3px) 페이지 양옆 여백이 2px 라 가로 스크롤 상자에 잘림.
+- PWA: `#ddxCard .ev-color-page{padding:8px 4px}`(D-day 창만). 2.0(uri-calendar-app): `dday_editor.dart` 색 격자 양옆 여백 2 → 4. 두 앱 모두 화면 캡처로 고리 전체가 보이는 것 확인.
