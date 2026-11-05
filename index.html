@@ -640,11 +640,12 @@ body[data-theme="camp"] .store-theme-card.rcs-img:not(.rcs-dark) .stc-sub{color:
 .sfh-chips{display:flex;gap:6px;flex-wrap:wrap}
 .sfh-chip{font-size:calc(11px*var(--fsk,1));font-weight:700;color:#fff;background:rgba(255,255,255,.22);border-radius:99px;padding:5px 11px;backdrop-filter:blur(2px);text-shadow:0 1px 2px rgba(10,45,85,.4)}
 /* 새 컬러 팩 배너(호박·초록) — 왼쪽 짙은 호박 갈색 면에 글씨, 오른쪽 그림 [2026-10-28] */
-.store-cpack-hero{aspect-ratio:1200/509;min-height:0;display:flex;flex-direction:column;justify-content:center;padding:12px 56% 12px 16px;background-color:#22392f;background-position:right center;box-shadow:0 6px 18px rgba(30,20,30,.28)}
-.store-cpack-hero::before{background:linear-gradient(100deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,.15) 34%,rgba(0,0,0,0) 48%)}
-.store-cpack-hero .sfh-eyebrow{color:#e6c36a;text-shadow:0 1px 4px rgba(0,0,0,.6);white-space:nowrap;letter-spacing:.1em;margin-bottom:6px}
-.store-cpack-hero .sfh-title{font-size:calc(18px*var(--fsk,1));line-height:1.3;margin-bottom:5px;text-shadow:0 1px 5px rgba(40,16,4,.6)}
-.store-cpack-hero .sfh-desc{font-size:calc(11px*var(--fsk,1));margin-bottom:0;text-shadow:0 1px 4px rgba(40,16,4,.6)}
+.store-cpack-hero{aspect-ratio:1200/509;min-height:0;display:flex;flex-direction:column;justify-content:center;padding:12px 56% 12px 16px;background-color:#f4f7fa;background-position:right center;box-shadow:0 6px 18px rgba(120,24,40,.14)}
+/* 2026-11-05 밝은 눈 배너 — 왼쪽이 밝은 바탕이라 어둡게 덮지 않고 글씨를 짙게(그림자 없이) */
+.store-cpack-hero::before{background:none}
+.store-cpack-hero .sfh-eyebrow{color:#c8323a;text-shadow:none;white-space:nowrap;letter-spacing:.1em;margin-bottom:6px}
+.store-cpack-hero .sfh-title{font-size:calc(18px*var(--fsk,1));line-height:1.3;margin-bottom:5px;color:#2e2320;text-shadow:none}
+.store-cpack-hero .sfh-desc{font-size:calc(11px*var(--fsk,1));margin-bottom:0;color:#7a6a62;text-shadow:none}
 /* 그림 비율이 고정이라 배너 안 글씨는 1.1배까지만 커진다(더 크면 스티커와 겹침) */
 .store-cpack-hero{--fsk:min(var(--fsk-r,1),1.1)}
 /* 별밤 캠핑 출시 히어로 — 그림 오른쪽에 캐릭터, 왼쪽 밤하늘 위에 흰 글씨 [2026-09-23] */
@@ -21899,11 +21900,11 @@ const STORE_THEMES=[
 ];
 /* 컬러 팩 — 각 팩 12색, 컨셉 유지하되 다양한 hue 분포 */
 const STORE_COLORS=[
-  /* 🎄 화이트 크리스마스(2026-11-01, 할로윈 대체)·🌿 초록 정원(2026-10-28) 테마 짝꿍 팩 — 크리스마스는 2026-11-02 사용자 "좀 더 밝고 화사한 색상으로" →
-     포인세티아·체리 레드·캔디 핑크·딸기 우유·귤·금종·트리 그린·민트·하늘·눈송이·슈가플럼(짙은 갈색·먹초록 뺌).
+  /* 🎄 화이트 크리스마스(2026-11-01, 할로윈 대체)·🌿 초록 정원(2026-10-28) 테마 짝꿍 팩 — 크리스마스는 2026-11-05 사용자 "빨강,초록,눈 계열로" →
+     빨강 4(크리스마스 레드·밝은 레드·크랜베리·캔디 레드)·초록 4(트리·전나무·홀리·서리 민트)·눈 4(눈·얼음·은빛 서리·겨울 하늘).
      기존 전 팩·기본색과 CIEDE2000 5.2 이상, 팩 안끼리 8.5 이상 떨어지게 골랐다(사용자 '중복 색상 금지') */
   {key:'christmas', name:'크리스마스', price:'₩2,900',
-   colors:['#D60A41','#EC4662','#F750AE','#E689A8','#F47D15','#EAC95D','#0FBD77','#199F65','#7CDFAD','#77C9F9','#CCE0F5','#C4A2F6']},
+   colors:['#D01736','#EB4763','#6D172D','#FB7478','#1B7E5A','#1E574D','#3FA66E','#CDEADA','#D8E5F8','#C1DADE','#AEB8CB','#78B1E2']},
   {key:'greengarden', name:'초록 정원', price:'₩2,900',
    colors:['#F5FEBE','#CCF59B','#B8ED58','#9AD39E','#81D42D','#5FB674','#81AC17','#4AB416','#3F9020','#3F7E43','#255E32','#1C3F22']},
   /* 🌴 여름 과일 톤 (2026 여름) */
@@ -25224,7 +25225,7 @@ var NEWTHEMES_HERO_IMG='https://first-uri-calender.vercel.app/themes/xmas/banner
 var GARDEN_HERO_IMG='https://first-uri-calender.vercel.app/themes/garden/banner.jpg';
 var CAMP_HERO_IMG='https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/camp/banner.jpg';
 var SEAL_HERO_IMG='https://bgqzkkaslqchbovzrkao.supabase.co/storage/v1/object/public/theme-assets/bg/7de0f3d079820415.jpg';
-var CPACK_HERO_IMG='https://first-uri-calender.vercel.app/themes/colorpacks-xmas-banner.jpg';
+var CPACK_HERO_IMG='https://first-uri-calender.vercel.app/themes/colorpacks-xmas-banner2.jpg';   /* 2026-11-05 새 그림(밝은 눈 바탕 + 빨강·초록·눈 오너먼트) — 옛 파일은 캐시 화면용으로 남김 */
 function renderStoreColors(){
   const body=document.getElementById('storeBody');
   if(!body)return;
@@ -25232,7 +25233,7 @@ function renderStoreColors(){
   let html=`<div class="store-fruit-hero store-cpack-hero" style="background-image:url('${CPACK_HERO_IMG}')">
     <div class="sfh-eyebrow">NEW · COLORS</div>
     <div class="sfh-title">크리스마스·초록<br>컬러 팩 출시</div>
-    <div class="sfh-desc">테마 짝꿍 색 12가지</div>
+    <div class="sfh-desc">빨강·초록·눈 색 12가지</div>
   </div>`;
   html+='<div class="store-section-title">컬러 팩 <small>COLOR PACK</small></div>';
   html+=`<div class="theme-grid-store">`;
