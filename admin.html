@@ -1335,8 +1335,8 @@ function subFilter(k){_subFilter=k;_subPage=0;drawSubs(document.getElementById('
 /* ══ 코인·구매 탭 — 충전·광고 보상·코인으로 산 품목·환불·관리자 지급 내역 [2026-09-26] ══
    데이터: admin_coin_stats / admin_coin_ledger_page / admin_user_coin_detail (관리자만). 읽기 전용. */
 const COIN_PACK={coins_30:{coins:30,bonus:0,won:1500},coins_100:{coins:100,bonus:10,won:3900},coins_300:{coins:300,bonus:50,won:9900}};  // 원화 = 스토어 가격(수수료 떼기 전)
-const COIN_KIND={purchase:'충전',ad:'광고 보상',spend:'코인 사용',refund:'환불',grant:'관리자 지급',adjust:'관리자 차감'};
-const COIN_KIND_COLOR={purchase:'var(--st-paid)',ad:'var(--st-shipped)',spend:'var(--accent)',refund:'var(--st-pending)',grant:'var(--gold)',adjust:'var(--st-done)'};
+const COIN_KIND={purchase:'충전',ad:'광고 보상',invite:'친구 초대 보상',spend:'코인 사용',refund:'환불',grant:'관리자 지급',adjust:'관리자 차감'};
+const COIN_KIND_COLOR={purchase:'var(--st-paid)',ad:'var(--st-shipped)',invite:'var(--st-shipped)',spend:'var(--accent)',refund:'var(--st-pending)',grant:'var(--gold)',adjust:'var(--st-done)'};
 const ITEM_TYPE={skin:'테마',color:'컬러 팩',char:'이모지 팩',sticker:'스티커 묶음',font:'글꼴',dh:'날짜 강조'};
 const UNLOCK_SRC={coin:'코인 구매',admin:'관리자 지급',etc:'기타'};
 /* 품목 이름 — 앱의 _itemName 결과(2026-09-26 기준 판매 품목). 없으면 키를 그대로 */
@@ -1361,6 +1361,7 @@ function coinRowDesc(r){
   if(r.kind==='purchase'||r.kind==='refund'){ const s=storeLabel(r.note); return `${esc(packLabel(r.product_id))}${s?' · '+s:''}`; }
   if(r.kind==='spend') return itemLabel(r.ref);
   if(r.kind==='ad') return '동영상 광고 1편';
+  if(r.kind==='invite') return '초대 링크로 새 친구 입장';
   return esc(r.note||'-');
 }
 function coinDelta(d){ const v=Number(d||0); return `<b style="color:${v>=0?'var(--st-paid)':'var(--st-pending)'}">${v>=0?'+':''}${v.toLocaleString('ko-KR')}</b>`; }
@@ -1441,7 +1442,7 @@ async function drawCoins(m){
 
     <div class="page-sub" style="margin-top:20px;font-weight:700">📜 전체 거래 내역 (${total})</div>
     <div class="chips">
-      ${[['all','전체'],['purchase','충전'],['ad','광고 보상'],['spend','코인 사용'],['refund','환불'],['grant','관리자 지급']]
+      ${[['all','전체'],['purchase','충전'],['ad','광고 보상'],['invite','친구 초대'],['spend','코인 사용'],['refund','환불'],['grant','관리자 지급']]
         .map(([k,l])=>`<button class="chip${k===_coinKind?' on':''}" onclick="coinKind('${k}')">${l}</button>`).join('')}
     </div>
     <div class="head-row"><div class="search" style="flex:1"><input id="coinSearch" placeholder="이름·이메일·품목·상품 검색" value="${esc(_coinSearch)}"></div></div>

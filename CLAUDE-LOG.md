@@ -831,3 +831,10 @@
 ## 2026-11-05 광고 보고 코인 받기 1 → 5코인 (사용자 "코인 광고보기 보상을 5개로 늘리자 아무도 안 보네")
 - `app_config.ad_reward_coins` '1' → '5' (DB 즉시 반영, 앱 재빌드 불필요 — `credit_ad_reward` 가 적립 때 읽고, 두 앱 버튼의 '+N' 은 `my_ad_reward_status().coins` 를 그대로 보여 줌).
 - 하루 상한 `ad_reward_daily_cap`(10)은 **본 횟수** 기준(`coin_ledger` kind='ad' 줄 수)이라 그대로 두면 하루 최대 50코인. 바꾸기 전 기록: 광고 보상 7번·3명·마지막 11/03.
+
+## 2026-11-05 친구 초대 보상 30코인 + 스토어·코인 충전으로 가는 길 (사용자 "친구를 초대하면 코인 30개를 지급하고 스토어,코인구매를 둘러볼 수 있게끔 경로를 만들어줘")
+- 사용자 결정: 초대한 사람만 받음 · 초대 링크로 **새로 가입한(7일 이내)** 친구만 인정 · 받는 횟수 제한 없음.
+- DB(마이그레이션 `supabase/migrations/20261105_invite_reward_coins.sql`, ⚠️ 승인 창 시간 초과로 **아직 적용 안 됨**): `coin_ledger` kind 에 'invite' + ref 유일 인덱스, `app_config.invite_reward_coins`=30, `room_join_grants.invited_by`, `lookup_room_by_code(invite_code, p_by default null)`(권한 anon·authenticated 그대로), 트리거 `members_invite_reward` → `app_private.invite_reward_on_join()`(보상 실패해도 입장은 그대로, 알림 실패해도 코인은 남게 따로 감쌈).
+- 링크: 초대 공유 글의 주소에 `&by=<내 id>`(PWA `shareKakao`, 2.0 `rooms/logic/room_logic.dart`·`settings/logic/settings_logic.dart` `inviteUrl(by:)`), `r.html` 이 앱 주소(iOS `://join?code=`, 안드로이드 `login-callback?join=`, 대체 주소)로 그대로 넘김. 앱은 받은 by 를 60분 보관(`uricalv2.pendingJoinBy`, 같은 코드일 때만)했다가 입장 조회에 실어 보냄 — 서버가 옛 함수면 실패 → by 없이 다시(입장은 절대 안 막힘). 코드를 직접 입력해 들어오면 by 가 없어 방장이 받음.
+- 화면: 코인 정보를 읽은 뒤 안 본 초대 보상이 있으면 '친구 초대 보상' 창('친구가 내 초대 링크로 들어와서 30코인을 받았어요 🎉' — 여러 명이면 합계) → 스토어 둘러보기 / 코인 충전 · 내 코인 보기. 코인 창에 '🎁 친구 초대하고 코인 받기 +30'(누르면 초대 공유), PWA 설정 '카카오톡으로 초대' 버튼에 '친구 가입 시 +30코인' 배지, 알림 '친구 초대 보상'(코인 아이콘) 누르면 코인 창. 관리자 페이지 코인 탭에 '친구 초대 보상' 종류.
+- 시험: PWA 헤드리스(보관·불러오기·잘못된 id 무시·공유 주소 `&by=`·코인 창 줄·배지·보상 창 문구와 '스토어 둘러보기'), 2.0 단위 4개(링크 3가지에서 by 읽기·보관 60분·공유 글·문구) + 전체 884개 통과.
