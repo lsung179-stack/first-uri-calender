@@ -812,3 +812,9 @@
 - DB: 마이그레이션 `20261104_dday_members_rooms_colors.sql` 적용을 다시 시도했지만 Supabase 승인 창이 응답을 못 받아 시간 초과 — **아직 적용 안 됨**(두 앱 모두 옛 방식으로 동작: 이 방만·모든 멤버 탭·나만 이 색 저장 실패).
 - 2.0(uri-calendar-app `3111600`): 웹앱과 같은 D-day — 캘린더 위 칩 줄(같은 너비·꾹 눌러 끌어 순서·누르면 목록), 목록 창(순서 ▲▼·다가오는 기념일·편집), 만들기/고치기 창(이름·미니 달력·세는 법·매년·테두리·캘린더에 일정으로도·함께할 멤버·어느 방에·색·미리보기·지우기), 다른 사람이 만든 D-day 는 '내 D-day 색 바꾸기', 날짜 강조 창 'D-day' 탭(무료면 자물쇠), 날짜 칸 100일·n주년 라벨, 캘린더에서 연결 일정 지우면 '캘린더 표시만 / D-day 까지'. 일정에서 켠 D-day(events.dday)도 칩 줄에 보이고 편집은 그 일정 수정 창. 구독 화면 기능 목록·체험 안내에 D-day 다시 넣음.
 - 시험: 계산·흐름 21개(웹앱 T1~T10 과 같은 장면, 데이터를 기억하는 가짜 서버) + 화면 7개, 전체 880개 통과, 실제 글꼴로 그린 화면 확인. 실기기는 2.0.4 빌드 뒤.
+
+## 2026-11-05 D-day 창 '함께할 멤버'·'어느 방에'를 일정 만들기와 같게 (사용자 "함께멤버 저렇게하면 사람많을때 레이아웃이 엉망이 되잖아 일정생성할때랑 동일하게 만들어줘 어느 방에 할지도 동일하게")
+- 문제: D-day 만들기 창이 멤버를 칩으로 줄줄이 늘어놓고, 방도 '이 방만/모든 방/방 고르기' + 체크 목록을 창 안에 그려 사람·방이 많으면 창이 길고 어수선했다.
+- PWA(index.html): 창 안엔 일정 폼과 같은 '대상' 줄(`.ev-target-row` 혼자/함께 + `.ev-members-display` '함께: 나, 엄마 (탭하여 변경)')만. '함께'는 일정과 같은 멤버 고르기 창(`openMemberPick`, `_pickContext='dday'` — 나는 늘 포함·2명 이상, D-day 창 위로 뜨게 `#memberPickCard.rp-top`). 방은 저장할 때 일정과 같은 '어느 방에 추가할까요?'(`openRoomPick`, `_roomPickMode='dday'` → 확인하면 `_ddx.extraRooms` 로 `_ddxSave(true)`, 취소하면 D-day 창으로). 옛 칩·세그먼트 CSS(`.ddx-mems`·`.ddx-seg3`·`.ddx-rooms`)와 `_ddxToggleMem`·`_ddxSetRoomMode`·`_ddxToggleRoom` 지움.
+- 2.0(uri-calendar-app `7490d46`): 같은 방식 — 일정 폼의 `EvSegBtn`·`DashedBox`·`showEventMemberPick`·`showEventRoomPick` 을 그대로 쓴다. `DdxForm.roomMode/pickRooms` → `extraRooms`.
+- 시험: PWA 헤드리스 흐름 27개(멤버 고르기 창이 D-day 창 위로·취소하면 그대로·저장 → 방 고르기 창·취소하면 저장 안 됨 포함), 2.0 전체 880개 통과. appstore `www/` 동기화 안 함(스토어 앱은 2.0).
