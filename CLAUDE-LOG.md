@@ -841,3 +841,9 @@
 
 ## 2026-11-05 친구 초대 보상 — 되돌리는 시험 SQL (`supabase/tests/invite_reward_dryrun.sql`)
 - 마이그레이션 + 시험용 계정 5·방 2 + 입장 4가지(링크로 새 친구 → 멤버 +30 / 같은 친구 두 번째 방 → 없음 / 코드 직접 → 방장 +30 / 30일 된 계정 → 없음)를 한 DO 블록에서 돌리고 마지막에 일부러 오류를 내 전부 되돌린다(결과는 오류 메시지 `DRYRUN_RESULT {...}`). 이 세션에선 승인 창이 계속 시간 초과(5번)라 직접 실행용으로 저장 — DB 는 여전히 두 마이그레이션 모두 미적용.
+
+## 2026-11-07 D-day 확장·친구 초대 보상 DB 라이브 적용
+- 승인 창 시간 초과가 계속돼 사용자가 Supabase SQL 편집기에서 두 마이그레이션(`20261104_dday_members_rooms_colors.sql` → `20261105_invite_reward_coins.sql`)을 합친 내용을 직접 실행 — "Success. No rows returned". (처음엔 파일 경로를 붙여 넣어 `syntax error at or near "supabase"` — 파일 **내용**을 붙여 넣어야 함.)
+- 확인(읽기 전용): `lookup_room_by_code(invite_code text, p_by uuid)`, 트리거 `members_invite_reward`·`events_anniv_sync`·`events_anniv_unlink`, 표 `anniversary_colors`(RLS 켜짐·정책 4개), `anniversaries.member_keys`·`group_id`, `room_join_grants.invited_by`, `coin_ledger_kind_check` 에 'invite', `app_config.invite_reward_coins`='30'.
+- 되돌리는 시험(가짜 계정 5·방 2, 끝에 일부러 오류): 링크로 새 친구 → 초대한 멤버 +30 / 같은 친구 두 번째 방 → 없음 / 코드 직접 입력 → 방장 +30 / 30일 된 계정 → 없음, 알림 2건('친구 초대 보상 +30코인'). 시험 뒤 가짜 계정·방·invite 장부 0건 확인(전부 되돌아감).
+- 이제 두 앱(PWA·2.0)의 D-day 함께할 멤버·여러 방·나만 이 색, 친구 초대 보상이 서버와 함께 동작. PWA 일반 사용자는 '배포하기' 후, 2.0 은 2.0.4 빌드부터.
