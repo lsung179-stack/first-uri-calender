@@ -854,3 +854,6 @@
 - 고친 것: 다른 사람이 만든 D-day 의 **'만든 사람 색으로 되돌리기'** — 내 색을 지운 뒤 일정 색을 바꾸면 새 트리거가 내 색을 다시 저장해 되돌리기가 무효였음 → 일정 색을 먼저 되돌리고 내 색을 지움(PWA `_ddxResetMyColor`, 2.0 `DdActions.resetMyColor`).
 - 버전: 2.0 `pubspec` 2.0.4+1, codemagic 두 워크플로 `APP_VERSION` 2.0.4 (uri-calendar-app `e19c9d8`).
 - 남은 것: ① `claim_fcm_token`(uri-calendar-app `supabase/migrations/20261022_claim_fcm_token.sql`) 아직 미적용 — 한 휴대폰에서 다른 계정으로 바꿔 로그인하면 알림 주소가 넘어가지 않을 수 있음(앱은 옛 방식으로 저장 시도, 2.0.3 과 같은 상태). ② PWA `deploy_version` 이 2026-09-24 그대로 — 웹 일반 사용자는 그 뒤 변경을 못 보고 있음('배포하기' 필요).
+
+## 2026-11-07 claim_fcm_token 라이브 적용
+- 사용자가 SQL 편집기에서 uri-calendar-app `supabase/migrations/20261022_claim_fcm_token.sql` 실행. 확인: `claim_fcm_token(p_token, p_platform, p_user_agent)` 있음, anon 실행 불가·authenticated 실행 가능. 이제 한 휴대폰에서 계정을 바꿔 로그인하면 알림 주소가 새 계정으로 넘어간다(2.0 앱은 이미 이 함수를 부르게 돼 있어 재빌드 불필요).
