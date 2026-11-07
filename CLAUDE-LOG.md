@@ -847,3 +847,10 @@
 - 확인(읽기 전용): `lookup_room_by_code(invite_code text, p_by uuid)`, 트리거 `members_invite_reward`·`events_anniv_sync`·`events_anniv_unlink`, 표 `anniversary_colors`(RLS 켜짐·정책 4개), `anniversaries.member_keys`·`group_id`, `room_join_grants.invited_by`, `coin_ledger_kind_check` 에 'invite', `app_config.invite_reward_coins`='30'.
 - 되돌리는 시험(가짜 계정 5·방 2, 끝에 일부러 오류): 링크로 새 친구 → 초대한 멤버 +30 / 같은 친구 두 번째 방 → 없음 / 코드 직접 입력 → 방장 +30 / 30일 된 계정 → 없음, 알림 2건('친구 초대 보상 +30코인'). 시험 뒤 가짜 계정·방·invite 장부 0건 확인(전부 되돌아감).
 - 이제 두 앱(PWA·2.0)의 D-day 함께할 멤버·여러 방·나만 이 색, 친구 초대 보상이 서버와 함께 동작. PWA 일반 사용자는 '배포하기' 후, 2.0 은 2.0.4 빌드부터.
+
+## 2026-11-07 2.0.4 빌드 전 점검 (사용자 "빌드하기 전에 점검한번 쭉 해줘")
+- 2.0 앱(uri-calendar-app): `flutter analyze` 문제 0 · `flutter test` 884개 통과. 스토어 데이터(`store_gen.dart`)·카탈로그(크리스마스 팩 12색)가 index.html 과 같음. iOS 에 보이는 안드로이드·구글 플레이 문구 없음(약관의 것은 `<and>` 로 iOS 에서 숨김). 체험 안내·구독 화면에 D-day 문구 있음(2.0 에 D-day 가 들어와서 맞음).
+- 서버: D-day·초대 보상 칸·함수·트리거 모두 라이브, `app_config`(coin_public·dday_public true, 광고 보상 5·하루 10회, 초대 30, 광고 단위 4개) 정상, 크리스마스·정원 상품 판매 중(할로윈은 꺼짐), 초대 페이지 r.html 라이브가 `&by=` 를 앱으로 넘김. 보안 경고 중 새것은 트리거 함수 `anniv_sync_from_event` 의 실행 권한 경고뿐(트리거 함수라 직접 불러도 실행 안 됨 — 무해).
+- 고친 것: 다른 사람이 만든 D-day 의 **'만든 사람 색으로 되돌리기'** — 내 색을 지운 뒤 일정 색을 바꾸면 새 트리거가 내 색을 다시 저장해 되돌리기가 무효였음 → 일정 색을 먼저 되돌리고 내 색을 지움(PWA `_ddxResetMyColor`, 2.0 `DdActions.resetMyColor`).
+- 버전: 2.0 `pubspec` 2.0.4+1, codemagic 두 워크플로 `APP_VERSION` 2.0.4 (uri-calendar-app `e19c9d8`).
+- 남은 것: ① `claim_fcm_token`(uri-calendar-app `supabase/migrations/20261022_claim_fcm_token.sql`) 아직 미적용 — 한 휴대폰에서 다른 계정으로 바꿔 로그인하면 알림 주소가 넘어가지 않을 수 있음(앱은 옛 방식으로 저장 시도, 2.0.3 과 같은 상태). ② PWA `deploy_version` 이 2026-09-24 그대로 — 웹 일반 사용자는 그 뒤 변경을 못 보고 있음('배포하기' 필요).

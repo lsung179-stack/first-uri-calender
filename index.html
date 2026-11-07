@@ -13557,9 +13557,10 @@ async function _ddxSaveMyColor(annIds,color,style,skipEvents){
 async function _ddxResetMyColor(){
   if(!_ddx||!_ddx.id) return;
   try{
-    await supa.from('anniversary_colors').delete().eq('ann_id',_ddx.id).eq('user_id',_currentUser.id);
+    // 일정 줄 색을 먼저 되돌리고 내 색을 지운다 — DB 트리거(anniv_sync_from_event)가 일정 색이 바뀌면 내 색을 다시 저장하므로 순서가 거꾸로면 되살아남 [2026-11-07]
     const x=_ddAll.find(v=>v.annId===_ddx.id);
     if(x&&x.eventId){ const ids=await _ddxLinkedIds(x.eventId); if(ids.length) await supa.from('events').update({color:x.baseColor,bar_style:x.baseOutline?'outline':'solid'}).in('id',ids).eq('user_id',_currentUser.id).is('virtual_member_id',null); }
+    await supa.from('anniversary_colors').delete().eq('ann_id',_ddx.id).eq('user_id',_currentUser.id);
     closeDdx(); toast('만든 사람 색으로 되돌렸어요');
     await loadDdays(); try{ await loadEvents(); }catch(_){}
   }catch(e){ console.warn(e); toast('되돌리지 못했어요'); }
