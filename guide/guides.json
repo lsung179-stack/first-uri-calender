@@ -1,0 +1,627 @@
+{
+ "v": 1,
+ "groups": [
+  {
+   "name": "처음이라면",
+   "items": [
+    {
+     "id": "room",
+     "title": "방 만들기",
+     "icon": "🏠",
+     "summary": "가족·친구와 함께 쓸 방",
+     "steps": [
+      {
+       "img": "assets/guide/room_1.webp",
+       "caption": "방목록에서 + 를 눌러요",
+       "tap": {
+        "x": 0.6564,
+        "y": 0.077,
+        "w": 0.0923,
+        "h": 0.0427
+       }
+      },
+      {
+       "img": "assets/guide/room_2.webp",
+       "caption": "'방 만들기'를 눌러요",
+       "sub": "받은 코드가 있으면 '코드로 입장'",
+       "tap": {
+        "x": 0.4005,
+        "y": 0.1469,
+        "w": 0.1498,
+        "h": 0.0261
+       }
+      },
+      {
+       "img": "assets/guide/room_3.webp",
+       "caption": "방 이름을 정하고 만들어요",
+       "tap": {
+        "x": 0.5,
+        "y": 0.2364,
+        "w": 0.8974,
+        "h": 0.0628
+       }
+      }
+     ]
+    },
+    {
+     "id": "invite",
+     "title": "친구 초대 · 코인 받기",
+     "icon": "🎁",
+     "summary": "새 친구가 들어오면 30코인",
+     "steps": [
+      {
+       "img": "assets/guide/invite_1.webp",
+       "caption": "설정의 '카카오톡으로 초대'를 눌러요",
+       "sub": "방 코드를 알려 줘도 들어올 수 있어요",
+       "tap": {
+        "x": 0.5317,
+        "y": 0.5261,
+        "w": 0.7146,
+        "h": 0.0237
+       }
+      }
+     ]
+    },
+    {
+     "id": "event",
+     "title": "일정 만들기",
+     "icon": "🗓️",
+     "summary": "날짜를 눌러 일정을 넣어요",
+     "steps": [
+      {
+       "img": "assets/guide/event_1.webp",
+       "caption": "일정을 넣을 날짜를 눌러요",
+       "tap": {
+        "x": 0.5,
+        "y": 0.5178,
+        "w": 0.0368,
+        "h": 0.0237
+       }
+      },
+      {
+       "img": "assets/guide/event_2.webp",
+       "caption": "'+ 일정'을 눌러요",
+       "sub": "같은 창에서 할 일도 바로 만들 수 있어요",
+       "tap": {
+        "x": 0.2756,
+        "y": 0.9295,
+        "w": 0.3564,
+        "h": 0.0237
+       }
+      },
+      {
+       "img": "assets/guide/event_3.webp",
+       "caption": "제목을 쓰고, 필요하면 시간도 넣어요",
+       "sub": "시간은 비워 둬도 돼요",
+       "tap": {
+        "x": 0.7399,
+        "y": 0.4031,
+        "w": 0.1179,
+        "h": 0.0512
+       }
+      },
+      {
+       "img": "assets/guide/event_4.webp",
+       "caption": "색을 골라 일정을 구분해요",
+       "sub": "테두리만 표시로 은은하게 띄울 수도 있어요",
+       "tap": {
+        "x": 0.0869,
+        "y": 0.5862,
+        "w": 0.0508,
+        "h": 0.019
+       }
+      },
+      {
+       "img": "assets/guide/event_5.webp",
+       "caption": "'저장'을 눌러요",
+       "tap": {
+        "x": 0.5,
+        "y": 0.8608,
+        "w": 0.0675,
+        "h": 0.0249
+       }
+      },
+      {
+       "img": "assets/guide/event_6.webp",
+       "caption": "다른 방에도 넣고 싶으면 함께 골라요",
+       "sub": "이 방만 넣으려면 그대로 확인",
+       "tap": {
+        "x": 0.5,
+        "y": 0.8726,
+        "w": 0.0675,
+        "h": 0.0249
+       }
+      },
+      {
+       "img": "assets/guide/event_7.webp",
+       "caption": "캘린더에 바로 보여요",
+       "sub": "일정을 누르면 고치거나 지울 수 있어요",
+       "tap": {
+        "x": 0.5,
+        "y": 0.5545,
+        "w": 0.1143,
+        "h": 0.0142
+       }
+      }
+     ]
+    },
+    {
+     "id": "todo",
+     "title": "우리 할 일",
+     "icon": "✅",
+     "summary": "함께 챙길 일을 나누고 체크해요",
+     "steps": [
+      {
+       "img": "assets/guide/todo_1.webp",
+       "caption": "아래 '우리할일' 탭에서 모아 봐요",
+       "tap": {
+        "x": 0.6115,
+        "y": 0.9313,
+        "w": 0.0863,
+        "h": 0.0166
+       }
+      },
+      {
+       "img": "assets/guide/todo_2.webp",
+       "caption": "+ 버튼으로 새 할 일을 만들어요",
+       "tap": {
+        "x": 0.8667,
+        "y": 0.8246,
+        "w": 0.1436,
+        "h": 0.0664
+       }
+      },
+      {
+       "img": "assets/guide/todo_3.webp",
+       "caption": "제목과 날짜를 정하고 저장해요",
+       "sub": "담당 멤버를 정하면 그 사람 탭에 보여요",
+       "tap": {
+        "x": 0.5,
+        "y": 0.8726,
+        "w": 0.0675,
+        "h": 0.0249
+       }
+      },
+      {
+       "img": "assets/guide/todo_4.webp",
+       "caption": "다 하면 네모를 눌러 완료!",
+       "sub": "누가 완료했는지도 남아요",
+       "tap": {
+        "x": 0.1103,
+        "y": 0.266,
+        "w": 0.0564,
+        "h": 0.0273
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "일정 더 잘 쓰기",
+   "items": [
+    {
+     "id": "together",
+     "title": "함께하는 일정",
+     "icon": "👨‍👩‍👧",
+     "summary": "여러 멤버가 함께하는 일정을 한 번에",
+     "steps": [
+      {
+       "img": "assets/guide/together_1.webp",
+       "caption": "'대상'에서 '함께'를 눌러요",
+       "tap": {
+        "x": 0.7231,
+        "y": 0.5864,
+        "w": 0.0589,
+        "h": 0.0225
+       }
+      },
+      {
+       "img": "assets/guide/together_2.webp",
+       "caption": "함께할 멤버를 골라요",
+       "sub": "나는 항상 포함돼요",
+       "tap": {
+        "x": 0.5282,
+        "y": 0.6072,
+        "w": 0.6282,
+        "h": 0.0237
+       }
+      },
+      {
+       "img": "assets/guide/together_3.webp",
+       "caption": "'확인'을 눌러요",
+       "tap": {
+        "x": 0.5,
+        "y": 0.8726,
+        "w": 0.0675,
+        "h": 0.0249
+       }
+      },
+      {
+       "img": "assets/guide/together_4.webp",
+       "caption": "고른 멤버가 함께 표시돼요",
+       "sub": "멤버마다 자기 캘린더 탭에도 보여요",
+       "tap": {
+        "x": 0.5,
+        "y": 0.5863,
+        "w": 0.8154,
+        "h": 0.0201
+       }
+      }
+     ]
+    },
+    {
+     "id": "repeat",
+     "title": "반복 일정",
+     "icon": "🔁",
+     "summary": "매주·매월·매년 돌아오는 일정",
+     "steps": [
+      {
+       "img": "assets/guide/repeat_1.webp",
+       "caption": "'반복'의 '안 함'을 눌러요",
+       "tap": {
+        "x": 0.4821,
+        "y": 0.5865,
+        "w": 0.7539,
+        "h": 0.0249
+       }
+      },
+      {
+       "img": "assets/guide/repeat_2.webp",
+       "caption": "얼마나 자주 반복할지 골라요",
+       "sub": "음력 생일은 '음력'으로",
+       "tap": {
+        "x": 0.4372,
+        "y": 0.4994,
+        "w": 0.0589,
+        "h": 0.0225
+       }
+      },
+      {
+       "img": "assets/guide/repeat_3.webp",
+       "caption": "요일·끝나는 날을 정하고 '확인'",
+       "tap": {
+        "x": 0.6897,
+        "y": 0.7293,
+        "w": 0.0675,
+        "h": 0.0249
+       }
+      }
+     ]
+    },
+    {
+     "id": "member",
+     "title": "멤버별로 보기",
+     "icon": "👀",
+     "summary": "한 사람의 일정만 골라 봐요",
+     "steps": [
+      {
+       "img": "assets/guide/member_1.webp",
+       "caption": "위쪽 멤버 얼굴을 눌러요",
+       "tap": {
+        "x": 0.5462,
+        "y": 0.122,
+        "w": 0.0456,
+        "h": 0.0166
+       }
+      },
+      {
+       "img": "assets/guide/member_2.webp",
+       "caption": "그 멤버가 낀 일정만 보여요",
+       "sub": "'전체'를 누르면 다시 모두 보여요",
+       "tap": {
+        "x": 0.1077,
+        "y": 0.122,
+        "w": 0.0456,
+        "h": 0.0166
+       }
+      }
+     ]
+    },
+    {
+     "id": "week",
+     "title": "주간 보기",
+     "icon": "📆",
+     "summary": "한 주 일정을 자세히",
+     "steps": [
+      {
+       "img": "assets/guide/week_1.webp",
+       "caption": "오른쪽 위 '주'를 눌러요",
+       "tap": {
+        "x": 0.9351,
+        "y": 0.1659,
+        "w": 0.0272,
+        "h": 0.0166
+       }
+      },
+      {
+       "img": "assets/guide/week_2.webp",
+       "caption": "한 주 일정이 날짜별로 펼쳐져요",
+       "sub": "'월'을 누르면 다시 달력으로",
+       "tap": {
+        "x": 0.8668,
+        "y": 0.1736,
+        "w": 0.0272,
+        "h": 0.0166
+       }
+      }
+     ]
+    },
+    {
+     "id": "search",
+     "title": "일정 찾기",
+     "icon": "🔍",
+     "summary": "지난 일정도 금방",
+     "steps": [
+      {
+       "img": "assets/guide/search_1.webp",
+       "caption": "돋보기를 눌러요",
+       "tap": {
+        "x": 0.1551,
+        "y": 0.1659,
+        "w": 0.0744,
+        "h": 0.0344
+       }
+      },
+      {
+       "img": "assets/guide/search_2.webp",
+       "caption": "찾을 말을 쓰면 바로 나와요",
+       "tap": {
+        "x": 0.1961,
+        "y": 0.904,
+        "w": 0.1358,
+        "h": 0.0237
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "기념일 · 꾸미기",
+   "items": [
+    {
+     "id": "dday",
+     "title": "D-day",
+     "icon": "⏳",
+     "summary": "기념일까지 남은 날·함께한 날 세기",
+     "steps": [
+      {
+       "img": "assets/guide/dday_1.webp",
+       "caption": "기념일 날짜를 눌러요",
+       "tap": {
+        "x": 0.7799,
+        "y": 0.6268,
+        "w": 0.0398,
+        "h": 0.0237
+       }
+      },
+      {
+       "img": "assets/guide/dday_2.webp",
+       "caption": "오른쪽 꼬리표 버튼을 눌러요",
+       "tap": {
+        "x": 0.8923,
+        "y": 0.6286,
+        "w": 0.0923,
+        "h": 0.0427
+       }
+      },
+      {
+       "img": "assets/guide/dday_3.webp",
+       "caption": "세 번째 'D-day' 탭을 눌러요",
+       "tap": {
+        "x": 0.359,
+        "y": 0.5758,
+        "w": 0.1026,
+        "h": 0.0474
+       }
+      },
+      {
+       "img": "assets/guide/dday_4.webp",
+       "caption": "'이 날짜로 D-day 만들기'",
+       "tap": {
+        "x": 0.5,
+        "y": 0.8863,
+        "w": 0.3895,
+        "h": 0.0237
+       }
+      },
+      {
+       "img": "assets/guide/dday_5.webp",
+       "caption": "이름·세는 방식·색을 정하고 저장",
+       "sub": "함께할 멤버와 여러 방도 일정처럼 골라요",
+       "tap": {
+        "x": 0.5,
+        "y": 0.875,
+        "w": 0.0678,
+        "h": 0.0249
+       }
+      },
+      {
+       "img": "assets/guide/dday_6.webp",
+       "caption": "캘린더 위에 D-day가 떠요",
+       "sub": "누르면 목록·순서 바꾸기",
+       "tap": {
+        "x": 0.5308,
+        "y": 0.2156,
+        "w": 0.3231,
+        "h": 0.0403
+       }
+      }
+     ]
+    },
+    {
+     "id": "highlight",
+     "title": "날짜 강조 · 스티커",
+     "icon": "📌",
+     "summary": "특별한 날에 이름표를 붙여요",
+     "steps": [
+      {
+       "img": "assets/guide/highlight_1.webp",
+       "caption": "날짜를 누르고 꼬리표 버튼",
+       "tap": {
+        "x": 0.8923,
+        "y": 0.6286,
+        "w": 0.0923,
+        "h": 0.0427
+       }
+      },
+      {
+       "img": "assets/guide/highlight_2.webp",
+       "caption": "첫 번째 탭이 날짜 강조예요",
+       "sub": "두 번째는 스티커, 세 번째는 D-day",
+       "tap": {
+        "x": 0.1128,
+        "y": 0.3365,
+        "w": 0.1026,
+        "h": 0.0474
+       }
+      },
+      {
+       "img": "assets/guide/highlight_3.webp",
+       "caption": "'+ 날짜 강조 추가'를 눌러요",
+       "tap": {
+        "x": 0.5,
+        "y": 0.8863,
+        "w": 0.2421,
+        "h": 0.0237
+       }
+      },
+      {
+       "img": "assets/guide/highlight_4.webp",
+       "caption": "제목·기간·모양을 고르고 저장해요",
+       "sub": "방 멤버 모두에게 같이 보여요",
+       "tap": {
+        "x": 0.5,
+        "y": 0.8608,
+        "w": 0.0675,
+        "h": 0.0249
+       }
+      }
+     ]
+    },
+    {
+     "id": "store",
+     "title": "테마로 꾸미기",
+     "icon": "🎨",
+     "summary": "테마·컬러 팩·스티커로 우리 방을",
+     "steps": [
+      {
+       "img": "assets/guide/store_1.webp",
+       "caption": "설정에서 '스토어'를 눌러요",
+       "tap": {
+        "x": 0.5317,
+        "y": 0.5261,
+        "w": 0.7146,
+        "h": 0.0237
+       }
+      },
+      {
+       "img": "assets/guide/store_2.webp",
+       "caption": "위쪽 탭에서 테마·컬러·이모지·스티커를 골라 봐요",
+       "tap": {
+        "x": 0.1531,
+        "y": 0.2073,
+        "w": 0.0633,
+        "h": 0.0237
+       }
+      },
+      {
+       "img": "assets/guide/store_3.webp",
+       "caption": "마음에 드는 테마의 '꾸미기'를 눌러요",
+       "tap": {
+        "x": 0.8486,
+        "y": 0.5801,
+        "w": 0.0747,
+        "h": 0.0154
+       }
+      },
+      {
+       "img": "assets/guide/store_4.webp",
+       "caption": "미리 보고 우리 방에 적용해요",
+       "sub": "프리미엄이면 모두, 아니면 코인으로 하나씩"
+      }
+     ]
+    },
+    {
+     "id": "coin",
+     "title": "코인 모으기",
+     "icon": "🪙",
+     "summary": "광고 보기·친구 초대로 코인을",
+     "steps": [
+      {
+       "img": "assets/guide/coin_1.webp",
+       "caption": "스토어 오른쪽 위 코인을 눌러요",
+       "tap": {
+        "x": 0.7415,
+        "y": 0.077,
+        "w": 0.2196,
+        "h": 0.0355
+       }
+      },
+      {
+       "img": "assets/guide/coin_2.webp",
+       "caption": "코인을 충전하거나 무료로 모아요",
+       "sub": "친구가 내 링크로 가입하면 30코인",
+       "tap": {
+        "x": 0.3906,
+        "y": 0.7127,
+        "w": 0.3427,
+        "h": 0.0237
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "설정",
+   "items": [
+    {
+     "id": "notif",
+     "title": "알림 받기",
+     "icon": "🔔",
+     "summary": "아침 요약·미리 알림 고르기",
+     "steps": [
+      {
+       "img": "assets/guide/notif_1.webp",
+       "caption": "설정에서 '알림 설정'을 눌러요",
+       "tap": {
+        "x": 0.5317,
+        "y": 0.5261,
+        "w": 0.7146,
+        "h": 0.0237
+       }
+      },
+      {
+       "img": "assets/guide/notif_2.webp",
+       "caption": "받고 싶은 알림만 켜요"
+      }
+     ]
+    },
+    {
+     "id": "font",
+     "title": "글씨 크기 · 화면 설정",
+     "icon": "🔠",
+     "summary": "글씨를 크게, 배경을 진하게",
+     "steps": [
+      {
+       "img": "assets/guide/font_1.webp",
+       "caption": "설정에서 '고급 설정'을 눌러요",
+       "tap": {
+        "x": 0.5317,
+        "y": 0.5261,
+        "w": 0.7146,
+        "h": 0.0237
+       }
+      },
+      {
+       "img": "assets/guide/font_2.webp",
+       "caption": "글씨 크기와 테마 배경 진하기를 바꿔요"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

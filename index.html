@@ -3098,6 +3098,59 @@ body.align-right .cal-evbar{text-align:right}
 
 /* ═════════════════ 공지사항 ═════════════════ */
 /* 시트 (스토어와 같은 풀스크린 패턴) */
+/* ═════════════════ 기능 안내(설정 › 지원) — 실제 화면을 영상처럼 한 단계씩 [2026-11-09] ═════════════════ */
+#guideCard .gd-list{padding:14px 16px calc(28px + env(safe-area-inset-bottom))}
+.gd-loading{padding:40px 0;text-align:center;color:var(--sub);font-size:calc(13px*var(--fsk,1))}
+.gd-intro{display:flex;gap:12px;align-items:center;background:var(--aP);border:1px solid var(--borderL);border-radius:16px;padding:14px 16px}
+.gd-intro-ic{font-size:calc(26px*var(--fsk,1));flex:none}
+.gd-intro b{display:block;font-size:calc(14px*var(--fsk,1));font-weight:800;color:var(--text)}
+.gd-intro span{display:block;margin-top:3px;font-size:calc(12px*var(--fsk,1));color:var(--sub);line-height:1.45}
+.gd-group{margin:20px 4px 8px;font-size:calc(12px*var(--fsk,1));font-weight:800;color:var(--mute);letter-spacing:.6px}
+.gd-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:1px solid var(--borderL);border-radius:16px;padding:10px;margin:0 0 8px;cursor:pointer;font-family:inherit;color:inherit;transition:transform .12s}
+.gd-row:active{transform:scale(.98)}
+.gd-thumb{width:54px;height:72px;border-radius:10px;border:1px solid var(--borderL);background:var(--bg) center top/cover no-repeat;flex:none}
+.gd-row-b{flex:1;min-width:0;display:block}
+.gd-row-t{display:block;font-size:calc(15px*var(--fsk,1));font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gd-row-s{display:block;margin-top:3px;font-size:calc(12.5px*var(--fsk,1));color:var(--sub);line-height:1.4}
+.gd-row-m{display:block;margin-top:5px;font-size:calc(11px*var(--fsk,1));font-weight:700;color:var(--accent);white-space:nowrap}
+.gd-row-c{color:var(--mute);font-size:calc(22px*var(--fsk,1));font-weight:300;flex:none}
+.gd-play{display:none;flex:1;min-height:0;flex-direction:column}
+#guideCard.playing .gd-list{display:none}
+#guideCard.playing .gd-play{display:flex}
+.gd-step{padding:10px 18px 0;text-align:right;font-size:calc(11.5px*var(--fsk,1));color:var(--sub);font-weight:600}
+.gd-bars{display:flex;gap:4px;padding:6px 18px 10px}
+.gd-bar{flex:1;height:3.5px;border-radius:2px;background:var(--borderL);overflow:hidden}
+.gd-bar i{display:block;height:100%;width:0;background:var(--accent)}
+.gd-stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.gd-phone{position:relative;box-sizing:border-box;background:#2A1C14;border-radius:30px;padding:5px;box-shadow:0 8px 18px rgba(0,0,0,.2);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation;cursor:pointer}
+.gd-screen{position:relative;border-radius:25px;overflow:hidden;width:100%;height:100%;background:var(--bg)}
+.gd-screen img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .32s;pointer-events:none}
+.gd-screen img.on{opacity:1}
+.gd-spot{position:absolute;border-radius:12px;box-shadow:0 0 0 2.5px var(--accent),0 0 0 9999px rgba(0,0,0,.4);outline:1.6px solid #fff;outline-offset:-1.6px;pointer-events:none;opacity:0;transition:opacity .35s}
+.gd-ring,.gd-dot,.gd-hand{position:absolute;pointer-events:none;opacity:0;transition:opacity .35s}
+.gd-on .gd-spot,.gd-on .gd-ring,.gd-on .gd-dot,.gd-on .gd-hand{opacity:1}
+.gd-ring{border:2.4px solid rgba(255,255,255,.9);border-radius:50%;transform:translate(-50%,-50%);animation:gd-ring 1.4s linear infinite}
+.gd-ring.r2{animation-delay:-.7s}
+@keyframes gd-ring{from{transform:translate(-50%,-50%) scale(.55);border-color:rgba(255,255,255,.7)}to{transform:translate(-50%,-50%) scale(1.5);border-color:rgba(255,255,255,0)}}
+.gd-dot{width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;background:transparent;border:2.5px solid #fff;box-shadow:0 0 0 2px var(--accent),inset 0 0 0 2px var(--accent);box-sizing:border-box}
+.gd-dot.press{animation:gd-press .5s ease-out}
+@keyframes gd-press{45%{transform:scale(.75);box-shadow:0 0 0 14px rgba(255,255,255,.55)}100%{box-shadow:0 0 0 22px rgba(255,255,255,0)}}
+.gd-hand{font-size:30px;line-height:1;animation:gd-bob 1.4s ease-in-out infinite}
+@keyframes gd-bob{50%{transform:translateY(-4px)}}
+@media (prefers-reduced-motion: reduce){.gd-ring,.gd-hand{animation:none}}
+.gd-pause{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(42,28,20,.82);color:#fff;border-radius:20px;padding:8px 14px;font-size:calc(13px*var(--fsk,1));font-weight:700;display:none;white-space:nowrap;pointer-events:none}
+.gd-phone.paused .gd-pause{display:block}
+.gd-cap{flex:none;min-height:92px;padding:14px 22px 0;box-sizing:border-box}
+.gd-cap-t{display:flex;gap:10px;align-items:flex-start;font-size:calc(17px*var(--fsk,1));font-weight:800;color:var(--text);line-height:1.35}
+.gd-num{flex:none;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:calc(12px*var(--fsk,1));font-weight:800;margin-top:1px}
+.gd-cap-s{margin:4px 0 0 34px;font-size:calc(13px*var(--fsk,1));color:var(--sub);line-height:1.4}
+.gd-ctl{flex:none;display:flex;align-items:center;gap:10px;padding:4px 18px calc(14px + env(safe-area-inset-bottom))}
+.gd-btn{flex:1;height:46px;border-radius:14px;border:1px solid var(--border);background:var(--card);color:var(--text);font-family:inherit;font-size:calc(14px*var(--fsk,1));font-weight:700;cursor:pointer;white-space:nowrap}
+.gd-btn:disabled{opacity:.35;cursor:default}
+.gd-btn:active:not(:disabled){transform:scale(.97)}
+.gd-pp{flex:none;width:56px;height:56px;border-radius:50%;border:none;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.gd-pp svg{width:28px;height:28px}
+.gd-pp:active{transform:scale(.92)}
 .ann-card{
   position:fixed;left:0;right:0;bottom:0;top:0;background:var(--bg);
   z-index:1300;display:none;flex-direction:column;overflow:hidden;
@@ -5032,6 +5085,7 @@ try{var _cp=window.Capacitor&&window.Capacitor.getPlatform&&window.Capacitor.get
     <button class="uni-nav" data-rci="notif" onclick="openNotifSettings()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>알림 설정</span><span class="chev">›</span></button>
 
     <div class="uni-sec-label" style="margin-top:14px">지원</div>
+    <button class="uni-nav" data-rci="guide" onclick="openGuide()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/></svg>기능 안내</span><span class="chev">›</span></button>
     <button class="uni-nav" data-rci="notice" onclick="openAnnouncements()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l9 5V5L6 10H4a1 1 0 0 0-1 1z"/><path d="M18 8a4 4 0 0 1 0 8"/><path d="M7 14v4a1.5 1.5 0 0 0 3 0v-2.5"/></svg>공지사항</span><span class="chev">›</span></button>
     <button class="uni-nav" data-rci="support" onclick="openCustomerSupport()"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>고객센터</span><span class="chev">›</span></button>
 
@@ -6567,6 +6621,38 @@ try{var _cp=window.Capacitor&&window.Capacitor.getPlatform&&window.Capacitor.get
 
 <!-- 공지사항 -->
 <!-- 고급 설정 시트 (알림, 폰트 크기, 주 시작 요일, 일정 정렬) -->
+<!-- 기능 안내(설정 › 지원) — 목록 ↔ 재생 [2026-11-09 사용자 "실제화면을 보여주면서 어디로 들어가고 어떻게 사용하는지"] -->
+<div class="ann-card" id="guideCard">
+  <div class="ann-head">
+    <button class="ann-back" onclick="guideBack()" aria-label="뒤로">‹</button>
+    <div class="ann-title" id="guideTitle">기능 안내</div>
+    <button class="ann-head-btn" onclick="closeGuide()" aria-label="닫기">✕</button>
+  </div>
+  <div class="ann-body gd-list" id="guideList"></div>
+  <div class="gd-play" id="guidePlay">
+    <div class="gd-step" id="guideStepNo"></div>
+    <div class="gd-bars" id="guideBars"></div>
+    <div class="gd-stage" id="guideStage">
+      <div class="gd-phone" id="guidePhone">
+        <div class="gd-screen" id="guideScreen">
+          <img id="guideImgA" alt=""><img id="guideImgB" alt="">
+          <div class="gd-spot" id="guideSpot"></div>
+          <div class="gd-ring" id="guideRing1"></div><div class="gd-ring r2" id="guideRing2"></div>
+          <div class="gd-dot" id="guideDot"></div>
+          <div class="gd-hand" id="guideHand">👆</div>
+          <div class="gd-pause">잠깐 멈춤</div>
+        </div>
+      </div>
+    </div>
+    <div class="gd-cap" id="guideCap"></div>
+    <div class="gd-ctl">
+      <button class="gd-btn" id="guidePrevBtn" onclick="guidePrev()">‹ 이전</button>
+      <button class="gd-pp" id="guidePP" onclick="guideToggle()" aria-label="멈춤"></button>
+      <button class="gd-btn" id="guideNextBtn" onclick="guideNextBtn()">다음 ›</button>
+    </div>
+  </div>
+</div>
+
 <div class="ann-card" id="advCard">
   <div class="ann-head">
     <button class="ann-back" onclick="backFromAdvSettings()" aria-label="뒤로">‹</button>
@@ -7271,7 +7357,7 @@ function closeAllModals(){
 function closeMainModals(keep){
   ['createOverlay','createCard','joinOverlay','joinCard','evOverlay','evCard',
    'dpOverlay','dpCard','profileOverlay','profileCard','roomSetOverlay','roomSetCard',
-   'storeCard','advCard','notifSetCard','annCard','annComposeOverlay','annComposeCard',
+   'storeCard','advCard','notifSetCard','annCard','guideCard','annComposeOverlay','annComposeCard',
    'annMenuOverlay','annMenuCard','annPopupOverlay','annPopup',
    'datePickerOverlay','datePickerCard','searchOverlay','searchCard',
    'csCard','leaveAccountOverlay','leaveAccountCard',
@@ -8695,7 +8781,7 @@ async function hideAdBanner() {
    AdMob 배너는 OS 별도 레이어라 서브 화면 위에도 떠서 버튼/콘텐츠를 가린다.
    서브 시트가 열려 있으면 광고를 숨기고, 모두 닫히면 다시 표시한다.
    DOM의 .on 상태를 직접 보므로 닫는 경로가 어디든(닫기버튼·탭전환·뒤로) 항상 정합. */
-const _AD_HIDE_SHEET_IDS = ['premiumCard','storeCard','advCard','notifSetCard','annCard','csCard','evCard','todoAddCard','myOrdersCard','vcOverlay','upgOverlay','rdOverlay','evRepSheetOverlay','tdRepSheetOverlay','dhCard','dhAllCard','dhManageCard','dhThemeDetailCard','ctbCard','ctbStickerCard',
+const _AD_HIDE_SHEET_IDS = ['premiumCard','storeCard','advCard','notifSetCard','annCard','guideCard','csCard','evCard','todoAddCard','myOrdersCard','vcOverlay','upgOverlay','rdOverlay','evRepSheetOverlay','tdRepSheetOverlay','dhCard','dhAllCard','dhManageCard','dhThemeDetailCard','ctbCard','ctbStickerCard',
   /* 가운데 카드·아래 시트형 창 — 빠져 있어 폴드처럼 광고가 큰 기기에서 버튼이 광고에 가려졌다 [2026-09-26] */
   'onbOverlay','agreeSheet','annPopup','pgMpCard','photoViewOverlay'];
 /* 광고를 그대로 두는 시트 — 날짜 시트(그날 일정 목록): 자주 여는 화면이라 목록 아래에 배너를 보여준다 */
@@ -10304,6 +10390,7 @@ async function _checkMinAppVersion(){
       ['storeCard', function(){ closeStore(); }],
       ['advCard', function(){ backFromAdvSettings(); }],
       ['notifSetCard', function(){ closeNotifSettings(); }],
+      ['guideCard', function(){ guideBack(); }],
       ['myOrdersCard', function(){ closeMyOrders(); }],
       ['profileCard', function(){ closeProfile(); }],
       ['roomSetCard', function(){ closeRoomSettings(); }],
@@ -21733,6 +21820,211 @@ function syncBgKUI(valueOnly){
   pv.innerHTML=(hasBg?dec.outerHTML.replace(' id="rcDecor"',''):'')+`<div class="bgk-pv-cal">${cal}</div>`+(hasBg?'':'<div class="bgk-pv-none">이 방은 배경 그림이 없는 테마예요</div>');
   pv.querySelectorAll('.rc-sticker').forEach(el=>el.remove());
 }
+/* ═══════════════════════════════════
+   기능 안내(설정 › 지원) — 2.0 앱과 같은 안내(guide/guides.json + 실제 화면 그림 guide/*.webp).
+   그림·누를 곳 위치는 uri-calendar-app tool/guide 로 실제 앱 화면을 찍어 만든다(손으로 만들지 않음).
+   재생: 단계마다 2.6초+글자 수(3.2~6.2초), 끝 무렵 '톡' 누르는 모습 → 다음. 화면 오른쪽 탭 = 다음, 왼쪽 = 이전, 꾹 = 멈춤.
+   [2026-11-09 사용자 "설정에서 앱에 있는 기능들을 자세히 볼 수 있는 탭 … 실제화면을 보여주면서 어디로 들어가고 어떻게 사용하는지"]
+   ═══════════════════════════════════ */
+const GD_AR=390/844;
+const GD_ICON={
+  pause:'<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4.2" height="14" rx="1.2"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.2"/></svg>',
+  play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.2v13.6a1 1 0 0 0 1.5.86l11-6.8a1 1 0 0 0 0-1.72l-11-6.8A1 1 0 0 0 8 5.2z"/></svg>',
+  replay:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>'
+};
+let _gd=null, _gdItem=null, _gdI=0, _gdDur=0, _gdElapsed=0, _gdLast=0, _gdRaf=0;
+let _gdPaused=false, _gdHeld=false, _gdEnded=false, _gdPressed=false, _gdImgFlip=false, _gdHoldTimer=0, _gdWasHold=false;
+function _gdDurOf(st){
+  const n=(st.caption||'').length+((st.sub||'').length)*.6;
+  return Math.min(6200,Math.max(3200,2600+n*55));
+}
+async function _gdLoad(){
+  if(_gd) return _gd;
+  const r=await fetch('guide/guides.json',{cache:'no-cache'});
+  if(!r.ok) throw new Error('guide '+r.status);
+  const j=await r.json();
+  (j.groups||[]).forEach(g=>(g.items||[]).forEach(it=>(it.steps||[]).forEach(st=>{ st.img=String(st.img||'').replace(/^assets\/guide\//,'guide/'); })));
+  return _gd=j;
+}
+function _gdListHTML(g){
+  let h='<div class="gd-intro"><span class="gd-intro-ic">👆</span><div><b>어디를 누르면 되는지 보여 드려요</b><span>영상처럼 한 단계씩 넘어가요. 화면 오른쪽을 누르면 다음, 왼쪽은 이전, 꾹 누르면 잠깐 멈춰요.</span></div></div>';
+  (g.groups||[]).forEach((gr,gi)=>{
+    h+='<div class="gd-group">'+escapeHtml(gr.name||'')+'</div>';
+    (gr.items||[]).forEach((it,ii)=>{
+      const secs=Math.round((it.steps||[]).reduce((a,st)=>a+_gdDurOf(st),0)/1000);
+      const th=it.steps&&it.steps[0]?String(it.steps[0].img).replace(/[^\w\/.\-]/g,''):'';
+      h+='<button class="gd-row" onclick="openGuideItem('+gi+','+ii+')">'
+        +'<span class="gd-thumb" style="background-image:url(\''+th+'\')"></span>'
+        +'<span class="gd-row-b"><span class="gd-row-t">'+escapeHtml((it.icon||'')+' '+(it.title||''))+'</span>'
+        +'<span class="gd-row-s">'+escapeHtml(it.summary||'')+'</span>'
+        +'<span class="gd-row-m">▶ '+(it.steps||[]).length+'단계 · 약 '+secs+'초</span></span>'
+        +'<span class="gd-row-c">›</span></button>';
+    });
+  });
+  return h;
+}
+async function openGuide(){
+  closeMainModals();
+  const card=document.getElementById('guideCard');
+  _gdStop();
+  card.classList.remove('playing');
+  document.getElementById('guideTitle').textContent='기능 안내';
+  card.classList.add('on');
+  _subScreenEnter();
+  const list=document.getElementById('guideList');
+  list.scrollTop=0;
+  if(!_gd) list.innerHTML='<div class="gd-loading">불러오는 중…</div>';
+  try{ list.innerHTML=_gdListHTML(await _gdLoad()); }
+  catch(e){ console.warn('기능 안내 불러오기 실패',e); list.innerHTML='<div class="gd-loading">안내를 불러오지 못했어요. 잠시 후 다시 열어 주세요.</div>'; }
+  try{ _audit('guide.open',{}); }catch(_){}
+}
+window.openGuide=openGuide;
+function openGuideItem(gi,ii){
+  const it=_gd&&_gd.groups[gi]&&_gd.groups[gi].items[ii];
+  if(!it||!it.steps||!it.steps.length) return;
+  _gdItem=it; _gdPaused=false;
+  const card=document.getElementById('guideCard');
+  card.classList.add('playing');
+  document.getElementById('guideTitle').textContent=it.title||'기능 안내';
+  document.getElementById('guideBars').innerHTML=it.steps.map(()=>'<div class="gd-bar"><i></i></div>').join('');
+  ['guideImgA','guideImgB'].forEach(id=>{ const im=document.getElementById(id); im.classList.remove('on'); im.removeAttribute('src'); });
+  requestAnimationFrame(()=>{ _gdSize(); _gdGo(0); });
+  try{ _audit('guide.play',{meta:{id:it.id}}); }catch(_){}
+}
+window.openGuideItem=openGuideItem;
+function _gdSize(){
+  const stage=document.getElementById('guideStage'), ph=document.getElementById('guidePhone');
+  if(!stage||!ph) return;
+  const r=stage.getBoundingClientRect();
+  let h=r.height-6, w=h*GD_AR;
+  if(w>r.width-64){ w=r.width-64; h=w/GD_AR; }
+  ph.style.width=Math.round(w+10)+'px';
+  ph.style.height=Math.round(h+10)+'px';
+  if(_gdItem) _gdPlaceSpot();
+}
+function _gdPlaceSpot(){
+  const st=_gdItem&&_gdItem.steps[_gdI]; if(!st) return;
+  const scr=document.getElementById('guideScreen');
+  const t=st.tap;
+  scr.classList.toggle('gd-on',!!t);
+  if(!t) return;
+  const W=scr.clientWidth, H=scr.clientHeight;
+  const cx=t.x*W, cy=t.y*H;
+  const rw=Math.max(t.w*W,26)+12, rh=Math.max(t.h*H,26)+12;
+  const sp=document.getElementById('guideSpot');
+  sp.style.left=(cx-rw/2)+'px'; sp.style.top=(cy-rh/2)+'px'; sp.style.width=rw+'px'; sp.style.height=rh+'px';
+  const base=Math.min(Math.min(rw,rh)/2,22), d=base*2+20;
+  ['guideRing1','guideRing2'].forEach(id=>{ const e=document.getElementById(id); e.style.left=cx+'px'; e.style.top=cy+'px'; e.style.width=d+'px'; e.style.height=d+'px'; });
+  const dot=document.getElementById('guideDot'); dot.style.left=cx+'px'; dot.style.top=cy+'px';
+  const hand=document.getElementById('guideHand');
+  const below=cy+base+46<H;
+  hand.textContent=below?'👆':'👇';
+  hand.style.left=Math.max(0,Math.min(W-32,cx-12))+'px';
+  hand.style.top=(below?cy+base*.55+2:cy-base*.55-34)+'px';
+}
+function _gdGo(i){
+  if(!_gdItem) return;
+  const steps=_gdItem.steps;
+  _gdI=Math.max(0,Math.min(steps.length-1,i));
+  const st=steps[_gdI];
+  _gdEnded=false; _gdElapsed=0; _gdPressed=false; _gdDur=_gdDurOf(st);
+  // 그림 — 두 장을 번갈아 써서 부드럽게 바꾼다
+  _gdImgFlip=!_gdImgFlip;
+  const show=document.getElementById(_gdImgFlip?'guideImgA':'guideImgB'), hide=document.getElementById(_gdImgFlip?'guideImgB':'guideImgA');
+  show.onload=()=>{ show.classList.add('on'); hide.classList.remove('on'); };
+  show.src=st.img;
+  if(show.complete&&show.naturalWidth) show.onload();
+  const nx=steps[_gdI+1]; if(nx){ const pre=new Image(); pre.src=nx.img; }
+  _gdPlaceSpot();
+  // 설명
+  document.getElementById('guideStepNo').textContent=(_gdI+1)+' / '+steps.length+' 단계';
+  document.getElementById('guideCap').innerHTML='<div class="gd-cap-t"><span class="gd-num">'+(_gdI+1)+'</span><span>'+escapeHtml(st.caption||'')+'</span></div>'
+    +(st.sub?'<div class="gd-cap-s">'+escapeHtml(st.sub)+'</div>':'');
+  document.querySelectorAll('#guideBars .gd-bar i').forEach((b,k)=>{ b.style.width=(k<_gdI?100:0)+'%'; });
+  _gdButtons();
+  cancelAnimationFrame(_gdRaf);
+  _gdLast=performance.now();
+  _gdRaf=requestAnimationFrame(_gdTick);
+}
+function _gdTick(now){
+  if(!_gdItem) return;
+  if(!_gdPaused&&!_gdHeld&&!_gdEnded) _gdElapsed+=Math.min(100,now-_gdLast);
+  _gdLast=now;
+  const p=Math.min(1,_gdElapsed/_gdDur);
+  const bar=document.querySelectorAll('#guideBars .gd-bar i')[_gdI];
+  if(bar) bar.style.width=(_gdEnded?100:p*100)+'%';
+  if(p>.74&&!_gdPressed){
+    _gdPressed=true;
+    const dot=document.getElementById('guideDot');
+    dot.classList.remove('press'); void dot.offsetWidth; dot.classList.add('press');
+  }
+  if(p>=1&&!_gdEnded){ _gdNext(); return; }
+  _gdRaf=requestAnimationFrame(_gdTick);
+}
+function _gdNext(){
+  if(!_gdItem) return;
+  if(_gdI<_gdItem.steps.length-1){ _gdGo(_gdI+1); return; }
+  _gdEnded=true;
+  const bars=document.querySelectorAll('#guideBars .gd-bar i'); bars.forEach(b=>{ b.style.width='100%'; });
+  _gdButtons();
+}
+function _gdButtons(){
+  const prev=document.getElementById('guidePrevBtn'), next=document.getElementById('guideNextBtn'), pp=document.getElementById('guidePP');
+  prev.disabled=_gdI<=0;
+  next.textContent=_gdEnded?'닫기':(_gdI>=_gdItem.steps.length-1?'끝 ›':'다음 ›');
+  pp.innerHTML=_gdEnded?GD_ICON.replay:(_gdPaused?GD_ICON.play:GD_ICON.pause);
+  pp.setAttribute('aria-label',_gdEnded?'처음부터 다시 보기':(_gdPaused?'재생':'멈춤'));
+  document.getElementById('guidePhone').classList.toggle('paused',_gdPaused&&!_gdEnded);
+}
+function guidePrev(){ if(_gdItem) _gdGo(_gdI-1); }
+function guideNextBtn(){ if(!_gdItem) return; if(_gdEnded){ guideBack(); return; } _gdNext(); }
+function guideToggle(){
+  if(!_gdItem) return;
+  if(_gdEnded){ _gdPaused=false; _gdGo(0); return; }
+  _gdPaused=!_gdPaused; _gdLast=performance.now(); _gdButtons();
+}
+window.guidePrev=guidePrev; window.guideNextBtn=guideNextBtn; window.guideToggle=guideToggle;
+function _gdStop(){ cancelAnimationFrame(_gdRaf); _gdItem=null; _gdHeld=false; clearTimeout(_gdHoldTimer); }
+function guideBack(){
+  const card=document.getElementById('guideCard');
+  if(card.classList.contains('playing')){
+    _gdStop();
+    card.classList.remove('playing');
+    document.getElementById('guideTitle').textContent='기능 안내';
+    return;
+  }
+  closeGuide();
+}
+function closeGuide(){
+  _gdStop();
+  const card=document.getElementById('guideCard');
+  card.classList.remove('on','playing');
+  _subScreenExit();
+}
+window.guideBack=guideBack; window.closeGuide=closeGuide;
+// 화면 누르기: 오른쪽 = 다음, 왼쪽 = 이전, 꾹(0.35초) = 누르는 동안 멈춤
+(function(){
+  function init(){
+    const ph=document.getElementById('guidePhone'); if(!ph) return;
+    ph.addEventListener('pointerdown',function(){
+      _gdWasHold=false; clearTimeout(_gdHoldTimer);
+      _gdHoldTimer=setTimeout(function(){ _gdWasHold=true; _gdHeld=true; },350);
+    });
+    function up(e){
+      clearTimeout(_gdHoldTimer);
+      if(_gdWasHold){ _gdHeld=false; _gdLast=performance.now(); _gdWasHold=false; return; }
+      if(e.type!=='pointerup'||!_gdItem) return;
+      const r=ph.getBoundingClientRect();
+      if(e.clientX-r.left<r.width*.33) guidePrev(); else { if(_gdEnded) return; _gdNext(); }
+    }
+    ph.addEventListener('pointerup',up);
+    ph.addEventListener('pointercancel',up);
+    ph.addEventListener('pointerleave',function(){ if(_gdHeld){ _gdHeld=false; _gdLast=performance.now(); } clearTimeout(_gdHoldTimer); });
+    ph.addEventListener('contextmenu',function(e){ e.preventDefault(); });
+    window.addEventListener('resize',function(){ if(document.getElementById('guideCard').classList.contains('playing')) _gdSize(); });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+})();
 function openAdvSettings(){
   closeMainModals();
   advShowMenu();
