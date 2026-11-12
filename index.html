@@ -3136,7 +3136,13 @@ body.align-right .cal-evbar{text-align:right}
 .gd-play{display:none;flex:1;min-height:0;flex-direction:column}
 #guideCard.playing .gd-list{display:none}
 #guideCard.playing .gd-play{display:flex}
-.gd-step{padding:10px 18px 0;text-align:right;font-size:calc(11.5px*var(--fsk,1));color:var(--sub);font-weight:600}
+.gd-top{flex:none;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px 10px;padding:10px 18px 0}
+.gd-step{margin-left:auto;text-align:right;font-size:calc(11.5px*var(--fsk,1));color:var(--sub);font-weight:600;white-space:nowrap}
+/* 프리미엄 기능 안내 → 구독 화면으로 바로(무료 사용자에게만) */
+.gd-premcta{padding:6px 12px;border-radius:999px;background:color-mix(in srgb,var(--gold) 16%,transparent);border:1px solid color-mix(in srgb,var(--gold) 70%,transparent);color:var(--text);font-family:inherit;font-size:calc(12.5px*var(--fsk,1));font-weight:700;white-space:nowrap;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.gd-premcta:active{transform:scale(.97)}
+.gd-premcta[hidden]{display:none}
+#guideCard.gd-under{z-index:1299}
 .gd-bars{display:flex;gap:4px;padding:6px 18px 10px}
 .gd-bar{flex:1;height:3.5px;border-radius:2px;background:var(--borderL);overflow:hidden}
 .gd-bar i{display:block;height:100%;width:0;background:var(--accent)}
@@ -6660,7 +6666,7 @@ try{var _cp=window.Capacitor&&window.Capacitor.getPlatform&&window.Capacitor.get
   </div>
   <div class="ann-body gd-list" id="guideList"></div>
   <div class="gd-play" id="guidePlay">
-    <div class="gd-step" id="guideStepNo"></div>
+    <div class="gd-top"><button type="button" class="gd-premcta" id="guidePremCta" onclick="guideOpenPremium()" hidden>프리미엄 기능 · 7일 무료로 써 보기 ›</button><div class="gd-step" id="guideStepNo"></div></div>
     <div class="gd-bars" id="guideBars"></div>
     <div class="gd-stage" id="guideStage">
       <div class="gd-phone" id="guidePhone">
@@ -9216,6 +9222,7 @@ window.onPremNudgeGo=onPremNudgeGo; window.onPremNudgeClose=onPremNudgeClose;
 function _syncPremEntries(){
   try{ var b=document.getElementById('uniPremBadge'); if(b) b.hidden=!!(typeof isEffectivePremium==='function'&&isEffectivePremium()); }catch(_){}
   try{ var n=document.querySelector('.r-prem-nudge'); if(n&&!_premNudgeOn()) n.remove(); }catch(_){}
+  try{ _gdSyncPrem(); }catch(_){}
 }
 function renderRooms(rooms,countMap){
   const c=document.getElementById('roomsContent');
@@ -21941,7 +21948,8 @@ function _gdGo(i){
   const nx=steps[_gdI+1]; if(nx){ const pre=new Image(); pre.src=nx.img; }
   _gdPlaceSpot();
   // 설명
-  document.getElementById('guideStepNo').textContent=(_gdI+1)+' / '+steps.length+' 단계'+(_gdItem.premium?' · 프리미엄 기능':'');
+  const _cta=_gdSyncPrem();
+  document.getElementById('guideStepNo').textContent=(_gdI+1)+' / '+steps.length+' 단계'+(_gdItem.premium&&!_cta?' · 프리미엄 기능':'');
   document.getElementById('guideCap').innerHTML='<div class="gd-cap-t"><span class="gd-num">'+(_gdI+1)+'</span><span>'+escapeHtml(st.caption||'')+'</span></div>'
     +(st.sub?'<div class="gd-cap-s">'+escapeHtml(st.sub)+'</div>':'');
   document.querySelectorAll('#guideBars .gd-bar i').forEach((b,k)=>{ b.style.width=(k<_gdI?100:0)+'%'; });
@@ -21988,6 +21996,21 @@ function guideToggle(){
   _gdPaused=!_gdPaused; _gdLast=performance.now(); _gdButtons();
 }
 window.guidePrev=guidePrev; window.guideNextBtn=guideNextBtn; window.guideToggle=guideToggle;
+/* 프리미엄 기능 안내의 '7일 무료로 써 보기' — 무료 사용자에게만 보인다. 보이면 true */
+function _gdSyncPrem(){
+  const b=document.getElementById('guidePremCta'); if(!b) return false;
+  let show=false;
+  try{ show=!!(_gdItem&&_gdItem.premium&&!isEffectivePremium()); }catch(_){}
+  b.hidden=!show;
+  return show;
+}
+/* 안내를 멈춰 두고 구독 화면을 그 위에 — 닫으면 보던 안내로 돌아온다 */
+function guideOpenPremium(){
+  const it=_gdItem; if(!it) return;
+  if(!_gdEnded){ _gdPaused=true; _gdButtons(); }
+  openPremiumSheet('guide',{title:'프리미엄에서 쓸 수 있는 기능이에요',sub:(it.title||'')+' · 7일 동안 무료로 써 볼 수 있어요',img:(it.steps&&it.steps[0]&&it.steps[0].img)||'',key:'guide_'+(it.id||'')});
+}
+window.guideOpenPremium=guideOpenPremium;
 function _gdStop(){ cancelAnimationFrame(_gdRaf); _gdItem=null; _gdHeld=false; clearTimeout(_gdHoldTimer); }
 function guideBack(){
   const card=document.getElementById('guideCard');
@@ -22002,7 +22025,7 @@ function guideBack(){
 function closeGuide(){
   _gdStop();
   const card=document.getElementById('guideCard');
-  card.classList.remove('on','playing');
+  card.classList.remove('on','playing','gd-under');
   _subScreenExit();
 }
 window.guideBack=guideBack; window.closeGuide=closeGuide;
@@ -24562,7 +24585,11 @@ function openPremiumSheet(src,ctx){
   try{ _audit('funnel.premium_view',{meta:{from:(typeof src==='string'?src:'')||'direct', ctx:(ctx&&ctx.key)||null}}); }catch(_){}
   try{ var pc=document.getElementById('premCtx'); if(pc){ var h=(!isEffectivePremium())?_premCtxHTML(ctx):''; pc.innerHTML=h; pc.hidden=!h; } }catch(_){}
   // 잠긴 기능·코인 제안에서 왔으면 쓰던 일정 입력 창은 닫지 않는다 — 구독 화면(z 1300)이 그 위에 뜨고, 닫으면 입력하던 내용 그대로 [2026-10-28]
-  closeMainModals((src==='upsell'||src==='offer')?['evOverlay','evCard']:null);
+  // 기능 안내에서 왔으면 안내도 닫지 않고 아래에 둔다(같은 z 라 안내를 한 칸 내림) — 닫으면 보던 안내 그대로 [2026-11-12]
+  var _gc=document.getElementById('guideCard');
+  var _fromGuide=!!(_gc&&_gc.classList.contains('on')&&(src==='guide'||_gc.classList.contains('gd-under')));
+  if(_gc) _gc.classList.toggle('gd-under',_fromGuide);
+  closeMainModals((src==='upsell'||src==='offer')?['evOverlay','evCard']:(_fromGuide?['guideCard']:null));
   try{ _fillPremCounts(); }catch(_){}
   const prem=isEffectivePremium();
   const st=document.getElementById('premStatus');
@@ -24590,6 +24617,7 @@ function openPremiumSheet(src,ctx){
 }
 function closePremiumSheet(){
   document.getElementById('premiumCard').classList.remove('on');
+  try{ var _gc=document.getElementById('guideCard'); if(_gc){ _gc.classList.remove('gd-under'); _gdSyncPrem(); } }catch(_){}
   try{ showTabbar(); }catch(_){}
   _subScreenExit();
 }

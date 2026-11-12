@@ -909,3 +909,11 @@
 - 앞으로 환영·안내류 화면을 만들 때: 이모지 장식·기울인 목업·재생 동그라미·알약 줄 같은 장식을 쌓지 말고, 앱에 이미 있는 것(도장 로고·명조 제목·장식선·설정 줄)을 쓴다.
 - PWA: `#onbOverlay` 마크업·CSS 다시(`.onb-seal`·`.onb-deco`·`.onb-note`·`.onb-shot`·`.onb-list`/`.onb-row`·`.onb-glink`, 앞서 만든 `.onb-ph`·`.onb-fan`·`.onb-step`·`.onb-pills`·`.onb-gtile` 삭제), `_ONB_LAST=2`. `onbOpenGuide(id)` 는 그대로. 2.0: `onboarding.dart` 슬라이드 다시(`_Shot`·`_StartRow`, `last=2`), `openGuideFrom` 그대로.
 - 시험: PWA 헤드리스 16개 통과(3장·큰 글씨·작은 화면·줄 → '일정 만들기' 재생·뒤로 → 목록·전체 보기·보지 않기 기억), 2.0 analyze 0·전체 890개 통과, 실제 화면 캡처(390×844·SE 높이) 확인.
+
+## 2026-11-12 기능 안내 → 프리미엄 구독 화면 바로가기 (사용자 "기능안내에 프리미엄기능은 프리미엄 결제페이지로 바로 넘어갈수 있게 경로를 만들어줘")
+- 프리미엄 기능 안내(D-day · 날짜 강조·스티커 · 테마로 꾸미기)의 재생 화면 맨 위에 금색 알약 단추 **'프리미엄 기능 · 7일 무료로 써 보기 ›'** — **무료 사용자에게만**. 구독자에겐 예전처럼 단계 표시 옆 '· 프리미엄 기능' 글자만, 무료 기능 안내엔 아무것도 없음.
+- 누르면 안내를 멈춰 두고 구독 화면을 그 위에 연다(맨 위 '들어온 이유' 띠: "프리미엄에서 쓸 수 있는 기능이에요 / <안내 이름> · 7일 동안 무료로 써 볼 수 있어요" + 그 안내 첫 화면 그림). 구독 화면을 닫으면 보던 안내로 돌아온다. 기록 `funnel.premium_view` meta.from=`guide`, ctx=`guide_<id>`.
+- PWA: `#guidePremCta`(`.gd-top` 줄 안, 단계 표시 왼쪽 — 좁으면 줄바꿈), `_gdSyncPrem()`(보일지 판단 — `_gdGo`·`closePremiumSheet`·`_syncPremEntries` 에서 부름), `guideOpenPremium()`. `openPremiumSheet` 은 src==='guide' 면 `guideCard` 를 닫지 않고 `.gd-under`(z 1299)로 한 칸 내려 구독 화면(같은 z 1300, DOM 은 앞)이 위에 보이게 — 결제 뒤 다시 그리느라 src 없이 불러도 `.gd-under` 가 있으면 유지. `closePremiumSheet`·`closeGuide` 가 `.gd-under` 를 뗀다.
+- 2.0: `guide_player.dart` 를 `Consumer` 로 감싸 `isPremiumProvider` 를 보고 `GuidePremiumCta` 표시, `GuidePlayerScreenState.openPremium()` = 멈춤 + `AppNav.premium(context, 'guide', title·sub·thumb·key)`.
+- 시험: PWA 헤드리스 12개(무료·D-day 에 단추 → 구독 화면이 안내 위에·이유 띠·안내 멈춤 → 닫으면 안내로·무료 기능엔 없음·구독자는 글자만·320px 큰 글씨에서 화면 안) + 환영 슬라이드 16개 다시 통과. 2.0 `guide_test` 에 단추 시험 추가, analyze 0·전체 891개 통과.
+- 환영 슬라이드 3장(같은 날)은 사용자 확인 "그대로 적용".
