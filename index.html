@@ -3914,33 +3914,70 @@ body.fs-on .dd-card-s,body.fs-on .dd-card-n{white-space:normal;word-break:keep-a
 @keyframes onbIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
 .onb-viewport{overflow-x:hidden;overflow-y:auto;width:100%;flex:1 1 auto;min-height:0;-webkit-overflow-scrolling:touch}
 .onb-track{display:flex;transition:transform .3s ease}
-.onb-slide{flex:0 0 100%;max-width:100%;box-sizing:border-box;padding:0 2px;min-height:min(344px,50vh);display:flex;flex-direction:column;align-items:center;justify-content:center}
-.onb-logo{width:96px;height:96px;border-radius:22px;margin-bottom:18px;box-shadow:0 6px 20px rgba(139,58,42,.18)}
-.onb-title{font-size:calc(21px*var(--fsk,1));font-weight:800;color:var(--text);line-height:1.42;margin-bottom:12px}
-.onb-desc{font-size:calc(13.5px*var(--fsk,1));color:var(--sub);line-height:1.65}
-.onb-cal{width:100%;background:var(--card);border-radius:14px;padding:11px 9px;margin-bottom:16px;box-shadow:0 3px 12px rgba(0,0,0,.06)}
-.onb-cal-tabs{display:flex;justify-content:center;gap:6px;margin-bottom:8px}
-.onb-cal-tab{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:calc(6.5px*var(--fsk,1));color:var(--sub);white-space:nowrap}
-.onb-tab-av{width:21px;height:21px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:calc(8px*var(--fsk,1));font-weight:700;color:#fff}
-.onb-tab-av.all{background:transparent;border:1.5px solid var(--mute);color:var(--mute);font-size:calc(10px*var(--fsk,1));letter-spacing:-1px}
-.onb-cal-head{text-align:center;margin-bottom:7px;line-height:1.1}
-.onb-cal-yr{display:block;font-size:calc(8px*var(--fsk,1));color:var(--mute);margin-bottom:1px}
-.onb-cal-mon{font-size:calc(15px*var(--fsk,1));font-weight:800;color:var(--text)}
-.onb-cal-week .sun{color:var(--sun)}
-.onb-cal-week .sat{color:var(--sat)}
-.onb-c i.sun{color:var(--sun)}
-.onb-c i.sat{color:var(--sat)}
-.onb-cal-week{display:grid;grid-template-columns:repeat(7,1fr);font-size:calc(8px*var(--fsk,1));color:var(--mute);margin-bottom:3px;text-align:center}
-.onb-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
-.onb-c{min-height:21px;display:flex;flex-direction:column;align-items:center;gap:1px;padding-top:1px}
-.onb-c.off{opacity:0}
-.onb-c i{font-size:calc(7.5px*var(--fsk,1));color:var(--sub);font-style:normal;line-height:1}
-.onb-c b{font-size:calc(6px*var(--fsk,1));font-weight:700;color:#3a2a1a;width:93%;border-radius:2px;padding:1px 0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;line-height:1.3}
-.onb-feats{display:flex;flex-direction:column;gap:13px;width:100%}
-.onb-feat{display:flex;gap:13px;align-items:flex-start;text-align:left}
-.onb-fic{font-size:calc(23px*var(--fsk,1));flex-shrink:0;line-height:1.2}
-.onb-ft{flex:1;min-width:0;font-size:calc(12.5px*var(--fsk,1));color:var(--sub);line-height:1.5}
-.onb-ft b{display:block;color:var(--text);font-size:calc(14px*var(--fsk,1));margin-bottom:2px}
+.onb-slide{flex:0 0 100%;max-width:100%;box-sizing:border-box;padding:0 2px;min-height:min(430px,58vh);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.onb-title{font-size:calc(21px*var(--fsk,1));font-weight:800;color:var(--text);line-height:1.38;margin-bottom:10px;text-wrap:balance}
+.onb-title-sm{font-size:calc(19px*var(--fsk,1));margin-bottom:4px}
+.onb-desc{font-size:calc(13.5px*var(--fsk,1));color:var(--sub);line-height:1.62;text-wrap:balance}
+.onb-desc-sm{font-size:calc(12.5px*var(--fsk,1));margin-bottom:14px}
+.onb-em{color:var(--accent);font-weight:800}
+.onb-card .onb-title,.onb-card .onb-desc,.onb-step>span:last-child{word-break:keep-all;overflow-wrap:anywhere}
+.onb-kicker{font-size:calc(11.5px*var(--fsk,1));font-weight:800;letter-spacing:.14em;color:var(--accent);margin:2px 0 6px}
+/* 실제 앱 화면을 휴대폰 위쪽만 살짝 보여 주는 틀 — 아래는 카드 바탕으로 스며든다 */
+.onb-ph{position:relative;flex:none;overflow:hidden;background:var(--card);border:4px solid #2b221d;border-bottom:none;border-radius:20px 20px 0 0;box-shadow:0 10px 26px rgba(58,36,24,.16)}
+.onb-ph img{display:block;width:100%;height:auto}
+.onb-ph::after{content:"";position:absolute;left:0;right:0;bottom:0;height:46%;background:linear-gradient(to bottom,rgba(0,0,0,0),var(--bg) 92%)}
+.onb-ph-lg{width:168px;height:208px;border-width:5px;border-radius:26px 26px 0 0}
+.onb-ph-md{width:108px;height:160px;border-radius:18px 18px 0 0}
+.onb-ph-sm{width:100%;height:118px;border-width:3px;border-radius:14px 14px 0 0;box-shadow:0 6px 16px rgba(58,36,24,.12)}
+.onb-hero{position:relative;margin-bottom:6px}
+.onb-hero-logo{position:absolute;right:-26px;bottom:18px;width:58px;height:58px;border-radius:50%;box-shadow:0 6px 18px rgba(139,58,42,.25);background:var(--bg)}
+.onb-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;width:100%;margin-bottom:16px}
+.onb-step{position:relative;display:flex;flex-direction:column;align-items:center;min-width:0}
+.onb-step b{font-size:calc(13px*var(--fsk,1));color:var(--text);margin-top:2px;white-space:nowrap}
+.onb-step>span:last-child{font-size:calc(10.5px*var(--fsk,1));color:var(--sub);line-height:1.4;margin-top:2px}
+.onb-step-n{position:relative;z-index:1;margin-top:-13px;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:calc(12px*var(--fsk,1));font-weight:800;line-height:24px;box-shadow:0 0 0 3px var(--bg)}
+.onb-fan{position:relative;width:250px;height:172px;margin-bottom:10px}
+.onb-fan .onb-ph{position:absolute;bottom:0;left:50%}
+.onb-fan-l{transform:translateX(-118%) rotate(-9deg);transform-origin:bottom right;opacity:.96}
+.onb-fan-r{transform:translateX(18%) rotate(9deg);transform-origin:bottom left;opacity:.96}
+.onb-fan-c{transform:translateX(-50%);z-index:1;height:172px!important}
+.onb-pills{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-bottom:14px}
+.onb-pills span{font-size:calc(11.5px*var(--fsk,1));font-weight:700;color:var(--text);background:var(--card);border:1px solid var(--borderL);border-radius:99px;padding:4px 10px;white-space:nowrap}
+.onb-gtiles{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+.onb-gtile{display:flex;flex-direction:column;gap:7px;padding:7px 7px 9px;background:var(--card);border:1px solid var(--borderL);border-radius:16px;font-family:inherit;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s}
+.onb-gtile:active{transform:scale(.97)}
+.onb-gtile:focus-visible,.onb-glink:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.onb-gtile b{font-size:calc(13px*var(--fsk,1));color:var(--text);padding:0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.onb-gthumb{position:relative;display:block;height:84px;border-radius:11px;overflow:hidden;background:var(--bg)}
+.onb-gthumb img{display:block;width:100%;height:auto}
+.onb-gthumb::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,rgba(43,34,29,0) 30%,rgba(43,34,29,.32))}
+.onb-gplay{position:absolute;z-index:1;left:50%;top:50%;width:32px;height:32px;margin:-16px 0 0 -16px;border-radius:50%;background:rgba(255,255,255,.94);box-shadow:0 3px 10px rgba(0,0,0,.2)}
+.onb-gplay::before{content:"";position:absolute;left:12px;top:9px;border-left:11px solid var(--accent);border-top:7px solid transparent;border-bottom:7px solid transparent}
+.onb-glink{margin-top:12px;padding:10px 12px;width:100%;background:none;border:1.5px dashed var(--aP);border-radius:14px;font-family:inherit;font-size:calc(13.5px*var(--fsk,1));font-weight:700;color:var(--accent);cursor:pointer}
+.onb-glink span{font-weight:600;color:var(--sub);margin-left:4px}
+.onb-slide{overflow:hidden}
+/* 좁은 화면 — 부채꼴 그림을 줄여 옆 장으로 비치지 않게 */
+@media (max-width:360px){
+  .onb-fan{width:206px;height:138px}
+  .onb-fan .onb-ph-md{width:88px;height:128px}
+  .onb-fan .onb-fan-c{height:138px!important}
+  .onb-hero-logo{right:-18px;width:50px;height:50px}
+}
+/* 낮은 화면(아이폰 SE 등) — 그림을 줄여 글이 스크롤 없이 보이게 */
+@media (max-height:680px){
+  .onb-card{padding:20px 20px 14px}
+  .onb-slide{min-height:0}
+  .onb-ph-lg{width:132px;height:150px}
+  .onb-ph-sm{height:86px}
+  .onb-fan{height:128px}
+  .onb-fan .onb-ph-md{height:118px}
+  .onb-fan .onb-fan-c{height:128px!important}
+  .onb-gthumb{height:62px}
+  .onb-gtile{gap:5px}
+  .onb-dots{margin:12px 0 9px}
+  .onb-dismiss{margin-bottom:10px}
+  .onb-next{padding:12px}
+}
 .onb-dots{display:flex;justify-content:center;gap:7px;margin:16px 0 12px;flex:none}
 .onb-dot{width:7px;height:7px;border-radius:50%;background:var(--mute);opacity:.4;transition:.25s}
 .onb-dot.on{background:var(--accent);opacity:1;width:22px;border-radius:4px}
@@ -6889,80 +6926,53 @@ try{var _cp=window.Capacitor&&window.Capacitor.getPlatform&&window.Capacitor.get
   </div>
 </div>
 
-<!-- 신규 가입 온보딩 (슬라이드 3장) -->
-<div class="onb-overlay" id="onbOverlay" role="dialog" aria-modal="true">
+<!-- 신규 가입 온보딩 (슬라이드 4장, 2026-11-12 새로 — 실제 앱 화면 그림 + 마지막 장에서 기능 안내로 바로) -->
+<div class="onb-overlay" id="onbOverlay" role="dialog" aria-modal="true" aria-label="우리 캘린더 소개">
   <div class="onb-card">
     <div class="onb-viewport" ontouchstart="onbTouchStart(event)" ontouchend="onbTouchEnd(event)">
       <div class="onb-track" id="onbTrack">
         <div class="onb-slide" data-onb="0">
-          <img src="icon-192.png" alt="우리 캘린더" class="onb-logo">
-          <div class="onb-title">우리 캘린더에<br>오신 것을 환영해요</div>
-          <div class="onb-desc">소중한 사람들과 일정을 함께 나누는<br>따뜻한 공유 캘린더예요.<br>서로의 하루를 한눈에 확인해요.</div>
+          <div class="onb-hero">
+            <div class="onb-ph onb-ph-lg"><img data-src="guide/event_1.webp" alt=""></div>
+            <img src="icon-192.png" alt="" class="onb-hero-logo">
+          </div>
+          <div class="onb-kicker">우리 캘린더</div>
+          <div class="onb-title">함께 쓰는 캘린더에<br>오신 것을 환영해요</div>
+          <div class="onb-desc">가족·친구와 일정을 한곳에 모아요.<br>"그날 뭐 해?" 묻지 않아도<br>서로의 하루가 한눈에 보여요.</div>
         </div>
         <div class="onb-slide" data-onb="1">
-          <div class="onb-cal">
-            <div class="onb-cal-tabs">
-              <span class="onb-cal-tab"><span class="onb-tab-av all">··</span>전체</span>
-              <span class="onb-cal-tab"><span class="onb-tab-av" style="background:#3a342e">나</span>나</span>
-              <span class="onb-cal-tab"><span class="onb-tab-av" style="background:#8b5a3c">친</span>친구1</span>
-              <span class="onb-cal-tab"><span class="onb-tab-av" style="background:#5a7d4a">친</span>친구2</span>
-              <span class="onb-cal-tab"><span class="onb-tab-av" style="background:#a64a3a">친</span>친구3</span>
-            </div>
-            <div class="onb-cal-head"><span class="onb-cal-yr">2026년</span><span class="onb-cal-mon">5월</span></div>
-            <div class="onb-cal-week"><span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span></div>
-            <div class="onb-cal-grid">
-              <div class="onb-c off"></div><div class="onb-c off"></div><div class="onb-c off"></div><div class="onb-c off"></div><div class="onb-c off"></div>
-              <div class="onb-c"><i>1</i></div>
-              <div class="onb-c"><i class="sat">2</i><b style="background:#f3c7d6">헬스</b></div>
-              <div class="onb-c"><i class="sun">3</i></div>
-              <div class="onb-c"><i>4</i></div>
-              <div class="onb-c"><i class="sun">5</i><b style="background:#cbe6c8">가족</b></div>
-              <div class="onb-c"><i>6</i></div>
-              <div class="onb-c"><i>7</i></div>
-              <div class="onb-c"><i>8</i><b style="background:#c5d9f0">여행</b></div>
-              <div class="onb-c"><i class="sat">9</i><b style="background:#c5d9f0">&nbsp;</b></div>
-              <div class="onb-c"><i class="sun">10</i></div>
-              <div class="onb-c"><i>11</i></div>
-              <div class="onb-c"><i>12</i><b style="background:#f3c7d6">데이트</b></div>
-              <div class="onb-c"><i>13</i></div>
-              <div class="onb-c"><i>14</i><b style="background:#ffe8a3">회의</b></div>
-              <div class="onb-c"><i>15</i></div>
-              <div class="onb-c"><i class="sat">16</i><b style="background:#d5c5e8">러닝</b></div>
-              <div class="onb-c"><i class="sun">17</i></div>
-              <div class="onb-c"><i>18</i></div>
-              <div class="onb-c"><i>19</i></div>
-              <div class="onb-c"><i>20</i><b style="background:#f5b596">치과</b></div>
-              <div class="onb-c"><i>21</i></div>
-              <div class="onb-c"><i>22</i></div>
-              <div class="onb-c"><i class="sat">23</i></div>
-              <div class="onb-c"><i class="sun">24</i><b style="background:#cbe6c8">등산</b></div>
-              <div class="onb-c"><i class="sun">25</i></div>
-              <div class="onb-c"><i>26</i></div>
-              <div class="onb-c"><i>27</i><b style="background:#f5b596">저녁</b></div>
-              <div class="onb-c"><i>28</i></div>
-              <div class="onb-c"><i>29</i></div>
-              <div class="onb-c"><i class="sat">30</i></div>
-              <div class="onb-c"><i class="sun">31</i></div>
-              <div class="onb-c off"></div><div class="onb-c off"></div><div class="onb-c off"></div><div class="onb-c off"></div><div class="onb-c off"></div><div class="onb-c off"></div>
-            </div>
+          <div class="onb-steps">
+            <div class="onb-step"><div class="onb-ph onb-ph-sm"><img data-src="guide/room_3.webp" alt=""></div><span class="onb-step-n">1</span><b>방 만들기</b><span>가족·모임마다<br>방을 하나씩</span></div>
+            <div class="onb-step"><div class="onb-ph onb-ph-sm"><img data-src="guide/invite_1.webp" alt=""></div><span class="onb-step-n">2</span><b>초대하기</b><span>카카오톡이나<br>초대 코드로</span></div>
+            <div class="onb-step"><div class="onb-ph onb-ph-sm"><img data-src="guide/event_1.webp" alt=""></div><span class="onb-step-n">3</span><b>함께 보기</b><span>각자 넣은 일정이<br>멤버 색으로</span></div>
           </div>
-          <div class="onb-title">이제 일정, 묻지 말고<br>직접 확인하세요!</div>
-          <div class="onb-desc">친구·가족·동료와 일정을 공유하면,<br>약속 전 "그날 뭐해?" 물어볼 필요 없어요.</div>
+          <div class="onb-title">세 단계면 시작해요</div>
+          <div class="onb-desc">방을 만들고 초대하면 끝이에요.<br>누가 넣은 일정인지 색으로 바로 알 수 있어요.</div>
         </div>
         <div class="onb-slide" data-onb="2">
-          <div class="onb-title" style="margin-bottom:16px">이렇게 사용해요</div>
-          <div class="onb-feats">
-            <div class="onb-feat"><span class="onb-fic">🏠</span><div class="onb-ft"><b>방 만들기 · 초대</b>가족·친구·동료와 함께할 방을 만들고, 초대코드나 카카오톡으로 초대해요.</div></div>
-            <div class="onb-feat"><span class="onb-fic">✏️</span><div class="onb-ft"><b>간편한 일정 등록</b>날짜를 탭해 추가하고, 하루·기간·매년 반복까지 자유롭게 설정해요.</div></div>
-            <div class="onb-feat"><span class="onb-fic">👥</span><div class="onb-ft"><b>함께 일정</b>여러 멤버가 참여하는 약속을 만들고, 멤버별 색으로 한눈에 구분해요.</div></div>
-            <div class="onb-feat"><span class="onb-fic">🔔</span><div class="onb-ft"><b>알림 받기</b>새 일정과 다가오는 약속을 푸시 알림으로 놓치지 않아요.</div></div>
-            <div class="onb-feat"><span class="onb-fic">😊</span><div class="onb-ft"><b>이모지 반응</b>서로의 일정에 이모지로 마음을 표현하며 소통해요.</div></div>
-            <div class="onb-feat"><span class="onb-fic">🎨</span><div class="onb-ft"><b>7일 무료체험 · 꾸미기</b>전통 문양 프로필로 방을 꾸미고, 스토어의 테마·글꼴로 캘린더를 꾸며보세요. 첫 7일은 전부 무료예요.</div></div>
+          <div class="onb-fan">
+            <div class="onb-ph onb-ph-md onb-fan-l"><img data-src="guide/todo_4.webp" alt=""></div>
+            <div class="onb-ph onb-ph-md onb-fan-r"><img data-src="guide/store_4.webp" alt=""></div>
+            <div class="onb-ph onb-ph-md onb-fan-c"><img data-src="guide/dday_1.webp" alt=""></div>
           </div>
+          <div class="onb-pills"><span>✅ 우리 할 일</span><span>⏳ D-day</span><span>🎨 테마 꾸미기</span></div>
+          <div class="onb-title">할 일도, 기념일도, 꾸미기도</div>
+          <div class="onb-desc">함께 챙길 일은 체크하고,<br>기념일은 D-day로 세어 봐요.<br><b class="onb-em">처음 7일은 프리미엄 기능까지 전부 무료</b>예요.</div>
+        </div>
+        <div class="onb-slide onb-slide-guide" data-onb="3">
+          <div class="onb-title onb-title-sm">처음이라면, 따라 해 보세요</div>
+          <div class="onb-desc onb-desc-sm">실제 화면으로 어디를 누르는지 보여 드려요</div>
+          <div class="onb-gtiles">
+            <button type="button" class="onb-gtile" onclick="onbOpenGuide('room')"><span class="onb-gthumb"><img data-src="guide/room_1.webp" alt=""><i class="onb-gplay" aria-hidden="true"></i></span><b>🏠 방 만들기</b></button>
+            <button type="button" class="onb-gtile" onclick="onbOpenGuide('invite')"><span class="onb-gthumb"><img data-src="guide/invite_1.webp" alt=""><i class="onb-gplay" aria-hidden="true"></i></span><b>🎁 친구 초대</b></button>
+            <button type="button" class="onb-gtile" onclick="onbOpenGuide('event')"><span class="onb-gthumb"><img data-src="guide/event_1.webp" alt=""><i class="onb-gplay" aria-hidden="true"></i></span><b>🗓️ 일정 만들기</b></button>
+            <button type="button" class="onb-gtile" onclick="onbOpenGuide('todo')"><span class="onb-gthumb"><img data-src="guide/todo_1.webp" alt=""><i class="onb-gplay" aria-hidden="true"></i></span><b>✅ 우리 할 일</b></button>
+          </div>
+          <button type="button" class="onb-glink" onclick="onbOpenGuide()">기능 안내 전체 보기<span id="onbGuideCount"></span> ›</button>
         </div>
       </div>
     </div>
-    <div class="onb-dots" id="onbDots"><span class="onb-dot on"></span><span class="onb-dot"></span><span class="onb-dot"></span></div>
+    <div class="onb-dots" id="onbDots"><span class="onb-dot on"></span><span class="onb-dot"></span><span class="onb-dot"></span><span class="onb-dot"></span></div>
     <label class="onb-dismiss"><input type="checkbox" id="onbDismiss">다음부터 보지 않기</label>
     <button class="onb-next" id="onbNextBtn" onclick="onbNext()">다음</button>
   </div>
@@ -21647,10 +21657,10 @@ function closeAnnouncementPopup(){
   if(_agreeAfterAnnPopup){_agreeAfterAnnPopup=false;checkAgreement();}
 }
 
-/* ===== 신규 가입 온보딩 (슬라이드 3장, 첫 가입자에게 1회) ===== */
+/* ===== 신규 가입 온보딩 (슬라이드 4장 — 마지막 장에서 기능 안내로 바로, 2026-11-12) ===== */
 let _onbIdx=0;
 let _onbShownThisSession=false;
-const _ONB_LAST=2;
+const _ONB_LAST=3;
 function maybeShowOnboarding(){
   try{
     if(localStorage.getItem('uricalv2.onboarded'))return;        // '그만 보기' 선택한 사람
@@ -21663,6 +21673,12 @@ function maybeShowOnboarding(){
 }
 function showOnboarding(){
   _onbIdx=0; renderOnb();
+  // 그림은 처음 열 때만 받는다(안 보는 사람은 내려받지 않게)
+  document.querySelectorAll('#onbOverlay img[data-src]').forEach(im=>{ im.src=im.getAttribute('data-src'); im.removeAttribute('data-src'); });
+  _gdLoad().then(g=>{
+    let n=0; (g.groups||[]).forEach(gr=>{ n+=(gr.items||[]).length; });
+    const c=document.getElementById('onbGuideCount'); if(c&&n) c.textContent='· '+n+'가지';
+  }).catch(()=>{});
   const ov=document.getElementById('onbOverlay');
   if(ov)ov.classList.add('on');
   try{ _subScreenEnter(); }catch(_){}   // 광고가 '시작하기' 버튼을 가리지 않게 [2026-09-26]
@@ -21692,6 +21708,18 @@ function closeOnboarding(){
   const ov=document.getElementById('onbOverlay'); if(ov)ov.classList.remove('on');
   try{ _subScreenExit(); }catch(_){}
 }
+/* 환영 슬라이드 → 기능 안내. id 가 있으면 그 안내를 바로 재생, 없으면 목록. 뒤로 가면 목록 → 닫기 */
+async function onbOpenGuide(id){
+  try{ _audit('onboarding.guide',{meta:{id:id||'all'}}); }catch(_){}
+  closeOnboarding();
+  await openGuide();
+  if(!id||!_gd) return;
+  (_gd.groups||[]).some((gr,gi)=>(gr.items||[]).some((it,ii)=>{
+    if(it.id!==id) return false;
+    openGuideItem(gi,ii); return true;
+  }));
+}
+window.onbOpenGuide=onbOpenGuide;
 
 function annPopupSeeAll(){
   _agreeAfterAnnPopup=false;  // 전체 보기로 가니 동의는 다음 진입 때

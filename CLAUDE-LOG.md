@@ -888,3 +888,15 @@
 - 후보 7개(휴대폰+재생, 휴대폰+누를 곳, 재생 원+반짝, 화면 두 장 등)를 설정 줄 크기로 나란히 그려 비교 후 선택.
 - PWA `index.html` 설정 '지원'의 `data-rci="guide"` 줄 SVG, 2.0 `lib/features/settings/ui/settings_widgets.dart` `SettingsIcons.guide`(채움은 `#000` — srcIn 으로 테마 색이 입혀짐). 테마별 PNG 아이콘(18종)은 그대로.
 - 시험: 2.0 실제 설정 화면 캡처로 확인, guide·settings 테스트 65개 통과, analyze 0.
+
+## 2026-11-12 환영 슬라이드 새로(4장) + 기능 안내 바로가기 (사용자 "환영슬라이드를 업그레이드 하고 환영슬라이드에 기능 안내페이지로 갈 수 있게끔 경로를 만들어줘")
+- 예전 3장(로고+글 / 손으로 그린 5월 달력 / 기능 6가지 글 목록)이 글 위주라 밋밋했다 → **실제 앱 화면 그림**(기능 안내 캡처 `guide/*.webp`, 2.0 `assets/guide/`)을 휴대폰 위쪽만 보이는 틀(아래는 카드 바탕으로 스며듦)에 넣어 4장으로.
+  1. 환영 — 실제 달력 화면 + 앱 도장, "함께 쓰는 캘린더에 오신 것을 환영해요"
+  2. 세 단계 — ① 방 만들기(room_3) ② 초대하기(invite_1) ③ 함께 보기(event_1), "세 단계면 시작해요"
+  3. 할 일·D-day·테마 화면 세 장 부채꼴 + 알약 3개, "처음 7일은 프리미엄 기능까지 전부 무료"
+  4. **"처음이라면, 따라 해 보세요"** — 바로가기 4칸(방 만들기·친구 초대·일정 만들기·우리 할 일, 첫 화면 미리보기 + ▶)을 누르면 환영 창을 닫고 **그 안내를 바로 재생**(뒤로 가면 기능 안내 목록), 아래 '기능 안내 전체 보기 · 15가지 ›'는 목록으로. 마지막 장 버튼은 그대로 '시작하기'.
+- '다음부터 보지 않기'는 바로가기로 나가도 체크했으면 기억(closeOnboarding/close 를 거침). 바깥 탭·뒤로가기로 안 닫히는 규칙·표시 조건(`uricalv2.onboarded`, 실행마다 1회)은 그대로.
+- PWA: `#onbOverlay` 마크업·`.onb-*` CSS 새로(옛 `.onb-cal`·`.onb-feat` 삭제), `_ONB_LAST=3`, `showOnboarding` 이 그때 그림을 받고(`data-src`) 안내 개수를 채움, `onbOpenGuide(id)`(→ `openGuide()` 후 id 로 `openGuideItem`, audit `onboarding.guide`). 좁은 화면(≤360px)·낮은 화면(≤680px) 크기 따로, 한글 단어 단위 줄바꿈(`word-break:keep-all`), 글씨 크기 배율 `--fsk` 사용.
+- 2.0: `onboarding.dart` 슬라이드 새로(`_PhonePeek`·`_Step`·`_Fan`·`_Pill`·`_GuideTile`, 옛 `_MiniCal`·`_Feats` 삭제, `last=3`), `OnboardingCardState.openGuide([id])`, 기능 안내 쪽에 `openGuideFrom(context, id:)`(guide_screen.dart — 목록을 띄우고 id 면 그 위에 재생). 낮은 화면(<680) 그림 축소, 그림자는 위·옆으로만(아래로 떨어지면 회색 띠).
+- 시험: PWA 헤드리스 16개 통과(4장 넘김·시작하기로 닫힘·그림 로드·'15가지'·큰 글씨·작은 화면·바로가기 → '일정 만들기' 재생·뒤로 → 목록·전체 보기 → 15개·보지 않기 기억·페이지 오류 없음). 2.0 `auth_ui_test` 에 바로가기/전체 보기 시험 추가, analyze 0·전체 890개 통과, 실제 화면 캡처(390×844·SE 높이) 확인 — `tool/guide/onboarding_shots_test.dart`(첫 가입 흐름 전체 찍기 도구, 같은 날 추가).
+- 웹 일반 사용자에게 보이려면 '배포하기'(deploy_version), 2.0 은 다음 빌드부터.
