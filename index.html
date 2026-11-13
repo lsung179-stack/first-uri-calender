@@ -8820,7 +8820,20 @@ function _subScreenExit(){
   // (입력 창 위에 떴던 시간·반복 고르기 창을 닫으면 입력 창 맨 위 광고를 다시 보여야 해서 _adWant 로 판단)
   setTimeout(function(){
     try{ if(_adWant()) showAdBannerIfNeeded(); }catch(_){}  // 프리미엄이면 _adWant 가 null
+    _healTabbar();
   }, 0);
+}
+/* 탭바 되살리기 — 열린 창이 하나도 없는데 탭바가 숨은 채로 남아 있으면 지금 화면 기준으로 다시 보인다.
+   (일정 입력 창 → '이 방 색상' → '컬러 팩 더 보기' 처럼 입력 창이 정식 닫기 함수 없이 닫히고 스토어로 넘어가면
+   탭바가 영영 숨어 있던 사고, 2026-11-13 사용자 제보) 방 스티커 편집 중엔 일부러 숨기므로 그대로 둔다. */
+function _healTabbar(){
+  try{
+    var bar=document.getElementById('calTabbar');
+    if(!bar||!bar.classList.contains('tabbar-gone')) return;
+    if(typeof _rsEdit!=='undefined'&&_rsEdit) return;
+    if(_anySubSheetOpen()) return;
+    _syncTabbarNow();
+  }catch(_){}
 }
 
 /* ── 프리미엄 상태 ── 로그인 시 1회 로드, 모든 제한 체크는 _isPremium 하나로 판단 */
@@ -32018,6 +32031,7 @@ window.todoFabAdd=todoFabAdd;
 window.calTabSwitch=calTabSwitch;
 window.showTabbar=showTabbar;
 window.hideTabbar=hideTabbar;
+window._syncTabbarNow=_syncTabbarNow;   // 바깥(_healTabbar·뒤로가기 _restoreChrome)에서도 부를 수 있게 — 없으면 typeof 검사에 막혀 탭바 복원이 조용히 빠졌다 [2026-11-13]
 window.updateTodoBadge=updateTodoBadge;
 window.openTodoScreen=openTodoScreen;
 window.setTodoFilter=setTodoFilter;

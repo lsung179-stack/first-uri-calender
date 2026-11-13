@@ -934,3 +934,14 @@
 - 캡처: uri-calendar-app `tool/guide/guide_capture_test.dart` 'palette'(컬러 팩 3개 가진 상태, myPrefs r1), `pack.py` GROUPS 에 추가. PWA `guide/` 에도 복사(목록이 guides.json 을 읽으므로 index.html 코드는 그대로).
 - 함께 고침: '이 방에서 쓸 색' 창의 묶음 이름 칸이 52px 라 '크리스마스'가 '크리스…'로 잘렸다 → 68px(PWA 는 `calc(68px*var(--fsk,1))`, 최대 34%) — '캔디 스카이'까지 다 보임(390·320 큰 글씨·430 최대 글씨 확인).
 - 시험: 2.0 analyze 0·891개 통과, PWA 헤드리스(안내 목록 16개·palette 재생·프리미엄 단추 없음·이름 칸 3가지 크기) + 환영 슬라이드 16개·프리미엄 단추 12개 다시 통과.
+
+## 2026-11-13 하단 탭이 사라지던 것 고침 (사용자 제보 "일정에서 이 방색상 누르고 컬러팩 더 보기눌러서 스토어 들어갔다가 나오니까 없어진거 같아")
+- **웹(PWA) 원인(확인)**: 일정 입력 창을 열면 탭바를 숨기고(`openAddEvent` 래퍼 → `hideTabbar`), 정식으로 닫을 때만 되살린다(`closeEventModal` 래퍼 → `showTabbar`). 그런데 '이 방 색상' → '컬러 팩 더 보기'는 `openStore()` → `closeMainModals()` 로 입력 창을 `.on` 만 떼고 닫아 되살리기가 빠지고, `closeStore()` 도 탭바를 건드리지 않아 **숨김이 그대로 남았다**. 헤드리스로 재현 → 고친 뒤 통과.
+  - 고침: `_subScreenExit()`(모든 창이 닫힐 때 부름)가 한 틱 뒤 **`_healTabbar()`** — 열린 창이 하나도 없고(`_anySubSheetOpen()`), 방 스티커 편집 중(`_rsEdit`)이 아니면 `_syncTabbarNow()` 로 지금 화면 기준 복원.
+  - 함께 고침: `_syncTabbarNow` 가 V2 확장 블록(IIFE) 안에만 있어 밖에서 안 보였다 → `window._syncTabbarNow` 로 내보냄. 뒤로가기 처리의 `_restoreChrome` 도 `typeof _syncTabbarNow==='function'` 검사에 막혀 그동안 조용히 `showTabbar`(이것도 전역)로만 돌던 것 — 이제 제대로 지금 화면 기준.
+- **2.0**: 같은 길을 실제 화면으로 시험하니 탭바는 돌아왔지만 **스토어 위에 날짜 시트가 다시 떠 있었다**(입력 창이 스토어로 넘어가며 닫혀도 '취소'로 보고 날짜 시트로 복귀). 기기에서 탭바가 남은 경우까지 막으려고 같은 안전장치를 넣음:
+  - `UriRouteObserver` 에 닫힘 알림(`addChangeListener` — didPop·didRemove·didReplace) + `uriTopRoute()`(맨 위 화면).
+  - `MainShell`: 루트에 메인 화면만 남았는데(`!nav.canPop()`) 탭바가 숨은 채면 되살림. 방 스티커 편집은 `TabbarHiddenNotifier.pinned`(startEdit/endEdit·방 바뀔 때)로 예외.
+  - 일정·할 일 입력 창: 열기 직전 맨 위 화면을 기억해 두고, 닫힌 뒤 **그 화면이 그대로 맨 위일 때만** 날짜 시트로 돌아간다(스토어 등으로 넘어갔으면 안 띄움).
+  - 시험 `tool/guide/tabbar_heal_test.dart`(실제 MainShell): ① 입력 창 → 이 방 색상 → 컬러 팩 더 보기 → 스토어 위 날짜 시트 없음·닫으면 탭바 보임(고치기 전엔 날짜 시트가 떠 있어 실패) ② 남은 숨김도 시트 하나 닫히면 되살아남·스티커 편집 중엔 유지 ③ 그냥 '취소'는 예전처럼 날짜 시트로.
+- 시험: PWA 탭바 6개 + 환영 슬라이드 16·프리미엄 단추 12·주요 화면 27개 다시 통과, 2.0 analyze 0·891개 + 기능 안내 캡처 16개 통과.
