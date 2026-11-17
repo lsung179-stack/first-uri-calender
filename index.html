@@ -6699,7 +6699,7 @@ try{var _cp=window.Capacitor&&window.Capacitor.getPlatform&&window.Capacitor.get
     <!-- 종류 목록(2026-10-26 사용자 "고급설정에 종류가 많아서 좀 복잡해 … 종류가 뜨고 해당 종류를 누르고 들어가서 설정") — 누르면 그 종류 화면(advPane) -->
     <div class="adv-menu" id="advMenu">
       <button class="uni-nav adv-item" onclick="advOpen('font')"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l6-16 6 16"/><path d="M6.5 14h7"/><path d="M17 20l2.5-6.5L22 20"/><path d="M18 18h3"/></svg><span class="adv-item-t"><b>글씨 크기</b><small id="advSubFont">100%</small></span></span><span class="chev">›</span></button>
-      <button class="uni-nav adv-item" id="advItemDday" onclick="advOpen('dday')" style="display:none"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="10" rx="5"/><path d="M8 12h3M14 10.5v3"/></svg><span class="adv-item-t"><b>D-day 크기</b><small id="advSubDday">100%</small></span></span><span class="chev">›</span></button>
+      <button class="uni-nav adv-item" id="advItemDday" onclick="advOpen('dday')" style="display:none"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="10" rx="5"/><path d="M8 12h3M14 10.5v3"/></svg><span class="adv-item-t"><b>D-day</b><small id="advSubDday">100%</small></span></span><span class="chev">›</span></button>
       <button class="uni-nav adv-item" onclick="advOpen('bg')"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="15.5" cy="8.5" r="1.5"/></svg><span class="adv-item-t"><b>테마 배경</b><small id="advSubBg">테마 기본</small></span></span><span class="chev">›</span></button>
       <button class="uni-nav adv-item" onclick="advOpen('cal')"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="adv-item-t"><b>달력 보기</b><small id="advSubCal">주 시작 요일 · 첫 화면</small></span></span><span class="chev">›</span></button>
       <button class="uni-nav adv-item" onclick="advOpen('ev')"><span class="uni-nav-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h13"/></svg><span class="adv-item-t"><b>일정 표시</b><small id="advSubEv">정렬 · 격자선</small></span></span><span class="chev">›</span></button>
@@ -6723,7 +6723,15 @@ try{var _cp=window.Capacitor&&window.Capacitor.getPlatform&&window.Capacitor.get
       </div>
     </div>
     </div>
-    <div class="adv-pane" data-pane="dday" data-title="D-day 크기" hidden>
+    <div class="adv-pane" data-pane="dday" data-title="D-day" hidden>
+    <div class="rs-section">
+      <div class="rs-section-title">캘린더 위 D-day 칸</div>
+      <div class="dm-row" id="ddRowPrefRow">
+        <button class="dm-btn" data-ddrow="show" onclick="onDdRowSelect('show')">표시</button>
+        <button class="dm-btn" data-ddrow="hide" onclick="onDdRowSelect('hide')">숨김</button>
+      </div>
+      <div style="font-size:calc(11.5px*var(--fsk,1));color:var(--sub);margin-top:7px">숨겨도 날짜를 누르고 꼬리표 버튼 › D-day 탭에서 볼 수 있어요</div>
+    </div>
     <div class="rs-section">
       <div class="rs-section-title">캘린더 위 D-day 크기</div>
       <div class="gop-row">
@@ -9236,6 +9244,7 @@ function _syncPremEntries(){
   try{ var b=document.getElementById('uniPremBadge'); if(b) b.hidden=!!(typeof isEffectivePremium==='function'&&isEffectivePremium()); }catch(_){}
   try{ var n=document.querySelector('.r-prem-nudge'); if(n&&!_premNudgeOn()) n.remove(); }catch(_){}
   try{ _gdSyncPrem(); }catch(_){}
+  try{ if(!getDdRowPref()) renderDdayRow(); }catch(_){}   // D-day 칸 기본값이 프리미엄 여부를 따른다
 }
 function renderRooms(rooms,countMap){
   const c=document.getElementById('roomsContent');
@@ -13219,7 +13228,7 @@ function _ddBindChipDrag(el){
 function renderDdayRow(){
   const el=document.getElementById('calDdayRow'); if(!el) return;
   if(_ddView!==_ddViewKey()) _ddSync();
-  if(!_currentRoom||!_ddayOn()){ el.hidden=true; el.innerHTML=''; return; }
+  if(!_currentRoom||!_ddayOn()||!_ddRowVisible()){ el.hidden=true; el.innerHTML=''; return; }
   if(_ddDrag&&_ddDrag.on) return;   // 끄는 중엔 다시 그리지 않는다
   const items=_ddOrdered(_ddTodayKey());
   el.innerHTML=items.length
@@ -21769,7 +21778,7 @@ function advOpen(k){
   document.getElementById('advMenu').hidden=true;
   document.querySelectorAll('#advCard .adv-pane').forEach(p=>{ p.hidden=(p!==pane); });
   const t=document.getElementById('advTitle'); if(t) t.textContent=pane.dataset.title||'고급 설정';
-  if(k==='dday') syncDdScaleUI();
+  if(k==='dday'){ syncDdRowUI(); syncDdScaleUI(); }
   if(k==='bg') syncBgKUI();
   const body=document.querySelector('#advCard .ann-body'); if(body) body.scrollTop=0;
 }
@@ -21785,7 +21794,7 @@ function advShowMenu(){
 function advSyncSubs(){
   const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
   try{ set('advSubFont',_fontScalePct(getFontScale())+'%'); }catch(_){}
-  try{ set('advSubDday',Math.round(getDdScale()*100)+'%'); }catch(_){}
+  try{ set('advSubDday',_ddRowVisible()?('표시 · '+Math.round(getDdScale()*100)+'%'):'숨김'); }catch(_){}
   try{ const b=getBgK(); set('advSubBg',b===1?'테마 기본':(b===0?'끔':Math.round(b*100)+'%')); }catch(_){}
   try{ set('advSubCal',(getWeekStartPref()===1?'월요일':'일요일')+' 시작 · 첫 화면 '+(getDefaultViewPref()==='me'?'내 일정':'전체')); }catch(_){}
   try{
@@ -21795,6 +21804,25 @@ function advSyncSubs(){
   }catch(_){}
   const dd=document.getElementById('advItemDday');
   if(dd) dd.style.display=(typeof _ddayOn==='function'&&_ddayOn())?'':'none';
+}
+/* 캘린더 위 D-day 칸 표시/숨김 — 기기에만(uricalv2.ddRow 'show'|'hide'). 정한 적 없으면 프리미엄=표시 · 무료=숨김
+   (2026-11-17 사용자 "화면 상단에 d-day칸 고급설정에서 숨김/표시 처리 할 수 있게 해주고 무료사용자에겐 숨김을 기본으로") */
+function getDdRowPref(){ try{ const v=localStorage.getItem('uricalv2.ddRow'); return (v==='show'||v==='hide')?v:null; }catch(_){ return null; } }
+function _ddRowVisible(){
+  const v=getDdRowPref();
+  if(v) return v==='show';
+  try{ return !!isEffectivePremium(); }catch(_){ return false; }
+}
+function onDdRowSelect(v){
+  try{ localStorage.setItem('uricalv2.ddRow',v==='show'?'show':'hide'); }catch(_){}
+  syncDdRowUI();
+  try{ renderDdayRow(); }catch(_){}
+  try{ advSyncSubs(); }catch(_){}
+}
+window.onDdRowSelect=onDdRowSelect;
+function syncDdRowUI(){
+  const on=_ddRowVisible();
+  document.querySelectorAll('#ddRowPrefRow .dm-btn').forEach(b=>b.classList.toggle('on',(b.dataset.ddrow==='show')===on));
 }
 /* D-day 칩 크기 */
 function getDdScale(){ try{ const k=parseFloat(localStorage.getItem('uricalv2.ddScale')); return isFinite(k)?Math.max(0.8,Math.min(1.6,k)):1; }catch(_){ return 1; } }
