@@ -957,3 +957,9 @@
 - 숨겨도 D-day 자체는 그대로 — 날짜를 누르고 꼬리표 버튼 › D-day 탭에서 보고 만들 수 있다(문구로 안내).
 - PWA: `getDdRowPref`·`_ddRowVisible`·`onDdRowSelect`·`syncDdRowUI`, `renderDdayRow` 맨 앞 조건에 추가, `advOpen('dday')` 가 버튼 상태 맞춤. 2.0: `PrefKeys.ddRow`, `ddRowPrefProvider`·`ddRowVisibleProvider`(lib/app/ddays.dart), `DdayChipRow` 가 확인, 고급 설정 목록에 'D-day'(D-day 공개일 때만, PWA 처럼) → `AdvDdayScreen`(2.0 은 크기 슬라이더 화면이 아직 없어 표시/숨김만).
 - 시험: PWA 헤드리스 12개(무료 기본 숨김·프리미엄 기본 표시·상태 바뀌면 따라감·고른 값 우선·목록 요약·창 버튼) + 기존 묶음 전부 다시 통과. 2.0 `tool/guide/dday_row_pref_test.dart`(실제 화면 4개) + analyze 0·891개·기능 안내 캡처 16개·탭바 3개 통과.
+
+### 2026-11-18 무료 사용자도 방의 D-day 는 보이게
+- 사용자: "무료사용자는 유료사용자가 등록한 디데이를 볼 수 있게는 만들어줘 무료사용자는 못 만들어서 그렇지".
+- 기본값 바꿈: 고급 설정에서 정한 적 없으면 **프리미엄=표시 · 무료=이 방(지금 보는 멤버 탭)에 보일 D-day 가 있을 때만 표시**. 비어 있을 때 나오던 '+ D-day' 칸은 무료에겐 안 보인다(만들 수 없으니). 직접 '표시'/'숨김'을 고르면 그 값이 우선(무료가 '표시'를 고르면 빈 방에서도 '+ D-day' — 누르면 구독 안내, 예전과 같음).
+- PWA: `_ddRowVisible(hasItems)`(안 주면 `_ddOrdered` 로 판단), `renderDdayRow` 가 칩 목록을 먼저 만든 뒤 `_ddRowVisible(items.length>0)` 로 판단. D-day 를 다 불러오면 `loadDdays` 가 다시 그려서 늦게 와도 나타난다. 2.0: `ddRowVisibleProvider` = 고른 값 ?? (프리미엄 || `ddaysViewProvider` 비어 있지 않음).
+- 시험: 2.0 `tool/guide/dday_row_pref_test.dart` 6개(무료+D-day 있음 → 보임·'+ D-day' 없음 / 무료+없음 → 칸 없음 / 프리미엄+없음 → '+ D-day' / 고른 값 우선 / 고급 설정), 하네스 `pumpGuideApp(noDdays:)` 추가. PWA 헤드리스 17개 + 기본 점검 27개 통과.

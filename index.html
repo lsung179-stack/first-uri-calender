@@ -13228,9 +13228,11 @@ function _ddBindChipDrag(el){
 function renderDdayRow(){
   const el=document.getElementById('calDdayRow'); if(!el) return;
   if(_ddView!==_ddViewKey()) _ddSync();
-  if(!_currentRoom||!_ddayOn()||!_ddRowVisible()){ el.hidden=true; el.innerHTML=''; return; }
+  if(!_currentRoom||!_ddayOn()){ el.hidden=true; el.innerHTML=''; return; }
   if(_ddDrag&&_ddDrag.on) return;   // 끄는 중엔 다시 그리지 않는다
   const items=_ddOrdered(_ddTodayKey());
+  // 숨김을 골랐거나, 무료(정한 적 없음)인데 이 방에 보일 D-day 가 없으면 — 칸 자체를 그리지 않는다('+ D-day' 도 안 보임)
+  if(!_ddRowVisible(items.length>0)){ el.hidden=true; el.innerHTML=''; return; }
   el.innerHTML=items.length
     ?items.map(it=>`<button type="button" class="dd-chip dd-colored" data-id="${escapeHtml(it.x.id)}" style="${_ddChipStyle(it.x)}" onclick="_ddChipTap()"><span class="dd-chip-t">${escapeHtml(it.x.title)}</span><b>${it.val.v}</b></button>`).join('')
     :`<button type="button" class="dd-chip add" onclick="_ddOpenAdd()">+ D-day</button>`;
@@ -21805,13 +21807,17 @@ function advSyncSubs(){
   const dd=document.getElementById('advItemDday');
   if(dd) dd.style.display=(typeof _ddayOn==='function'&&_ddayOn())?'':'none';
 }
-/* 캘린더 위 D-day 칸 표시/숨김 — 기기에만(uricalv2.ddRow 'show'|'hide'). 정한 적 없으면 프리미엄=표시 · 무료=숨김
-   (2026-11-17 사용자 "화면 상단에 d-day칸 고급설정에서 숨김/표시 처리 할 수 있게 해주고 무료사용자에겐 숨김을 기본으로") */
+/* 캘린더 위 D-day 칸 표시/숨김 — 기기에만(uricalv2.ddRow 'show'|'hide'). 정한 적 없으면 프리미엄=표시 · 무료=방에 D-day 가 있을 때만
+   (2026-11-17 사용자 "화면 상단에 d-day칸 고급설정에서 숨김/표시 처리 할 수 있게 해주고 무료사용자에겐 숨김을 기본으로",
+    2026-11-18 "무료사용자는 유료사용자가 등록한 디데이를 볼 수 있게는 만들어줘 무료사용자는 못 만들어서 그렇지") */
 function getDdRowPref(){ try{ const v=localStorage.getItem('uricalv2.ddRow'); return (v==='show'||v==='hide')?v:null; }catch(_){ return null; } }
-function _ddRowVisible(){
+/** hasItems = 지금 칩 줄에 보일 D-day 가 있는지(안 주면 이 방 D-day 전체로 판단) */
+function _ddRowVisible(hasItems){
   const v=getDdRowPref();
   if(v) return v==='show';
-  try{ return !!isEffectivePremium(); }catch(_){ return false; }
+  try{ if(isEffectivePremium()) return true; }catch(_){}
+  if(hasItems===undefined){ try{ hasItems=_ddOrdered(_ddTodayKey()).length>0; }catch(_){ hasItems=false; } }
+  return !!hasItems;
 }
 function onDdRowSelect(v){
   try{ localStorage.setItem('uricalv2.ddRow',v==='show'?'show':'hide'); }catch(_){}
