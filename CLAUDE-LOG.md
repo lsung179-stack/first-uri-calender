@@ -979,3 +979,10 @@
 ### 2026-11-19 (2.0) 카드 모서리 테두리 잘림 — 앱 전체
 - 사용자(스토어 컬러 탭 '빈티지' 사용 중 카드): "초록색 외곽 테두리 상단 우측이랑 좌측이 잘려보여 다른곳들도 모두 확인해서 수정해줘". 원인: `Container(decoration: 둥근 모서리+border, clipBehavior: Clip.antiAlias)` 는 테두리를 **바탕에** 그리고 안쪽 내용을 **바깥** 둥근 선으로 잘라, 모서리에서 내용(위쪽 색 칸·사진)이 테두리 곡선을 덮었다.
 - 고침: 같은 꼴 12곳 모두 테두리를 `foregroundDecoration`(내용 위)으로 옮김 — 스토어 컬러 팩 카드·텍스트 테마 카드, 내 테마 만들기 무대·미리보기·사진 칸, 방 프로필 미리보기 카드, 날짜 시트 사진 칸, 이모지 고르기 칸, 기능 안내 목록 미리보기, 설정 네이티브 광고 상자, 방 목록 프리미엄 안내 도장, 네이버 안내 그림. **앞으로 둥근 테두리 상자에 clipBehavior 를 줄 땐 테두리를 foregroundDecoration 에 둘 것.** PWA 는 CSS(overflow 는 테두리 안쪽에서 자름)라 해당 없음. uri-calendar-app `d98eeeb`, 전체 891개 통과.
+
+### 2026-11-19 (2.0.5) Firebase Analytics — Google Ads 앱 캠페인 전환 신호
+- 사용자: "안드로이드 광고 켜는법"(앱 홍보 광고 = Google Ads 앱 캠페인 안내) → "Firebase Analytics 2.0.5에 넣어줘".
+- 2.0: `firebase_analytics ^12.6.1`(firebase_core 4.15.0→4.15.2 함께). `lib/core/analytics.dart` — Firebase 가 준비 안 되면(iOS plist 없음·웹·디버그) 조용히 꺼짐, 값은 글자·숫자만·100자, 이벤트 이름 영문·숫자·_ 40자. 연결: MonetizationModule(첫 화면 `Analytics.init`, 로그인 직후 `sign_up` — `isFreshSignup` 10분, 일정 추가 `event_create`·`first_event`), `funnel()` 이 모든 단계를 같은 이름으로, 방 만들기 `room_create`(create_room_screen), 입장 `join_group`(join_room_screen=code, auth/invite.dart=invite), 초대 공유 `share`(rooms/ui/invite.dart·settings_actions.dart). 사용자 식별값은 보내지 않음.
+- 개인정보처리방침(privacy.html·index.html·legal_text.dart 같은 문구): 자동 수집에 '앱 이용 기록'·'광고 식별자', 위탁에 Google(Analytics for Firebase·AdMob — **AdMob 은 그동안 처리방침에 빠져 있었음**), 국외 이전 Google LLC(통계 최대 14개월), 권리에 '광고 식별자 거부', 처리방침 시행일 2026-11-19(약관은 그대로).
+- 시험 `test/analytics_test.dart` 5개, 전체 896개 통과. uri-calendar-app `0d3df5e`.
+- **사용자 콘솔 작업 필요**: Firebase 콘솔 프로젝트(uri-calendar)에 Google Analytics 켜기 → Google Ads 와 Firebase 연결 → 전환으로 `sign_up`·`room_create`·`first_event` 가져오기 → Play Console 데이터 보안 양식에 '앱 활동(앱 상호작용)'·'기기 ID' 분석 목적 추가. 데이터 보유 기간은 Analytics 설정에서 14개월로.
