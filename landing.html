@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>우리 캘린더 — 가족·연인·모임이 함께 쓰는 캘린더</title>
-<meta name="description" content="방마다 따로, 일정은 함께. 가족·연인·모임마다 방을 만들어 일정을 같이 보는 공유 캘린더. 함께 일정, 홈 화면 위젯, D-day까지 무료로 시작하세요.">
+<meta name="description" content="방마다 따로, 일정은 함께. 가족·연인·모임마다 방을 만들어 일정을 같이 보는 공유 캘린더. 무료로 시작하세요.">
 <meta name="theme-color" content="#f4ebda">
 <meta property="og:type" content="website">
 <meta property="og:title" content="우리 캘린더 — “언제 돼?” 묻지 말고 확인하세요">
@@ -16,174 +16,96 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@600;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@700;800&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#f4ebda; --bg2:#ede0c8; --card:#fbf6ec; --ink:#3a2418; --sub:#75604f; --mute:#9a8574;
   --brick:#8b3a2a; --gold:#b08742; --line:rgba(58,36,24,.12); --bezel:#2b201a;
   --serif:'Hahmlet','Noto Serif KR',serif; --sans:'Noto Sans KR',system-ui,-apple-system,sans-serif;
-  --wrap:1080px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
-body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.7;word-break:keep-all;overflow-x:hidden}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.65;word-break:keep-all;overflow-x:hidden}
 img,video{display:block;max-width:100%;height:auto}
 a{color:inherit}
 :focus-visible{outline:3px solid var(--gold);outline-offset:3px;border-radius:6px}
-.wrap{max-width:var(--wrap);margin:0 auto;padding:0 22px}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
 
-.top{position:sticky;top:0;z-index:20;background:rgba(244,235,218,.88);backdrop-filter:saturate(1.2) blur(10px);-webkit-backdrop-filter:saturate(1.2) blur(10px);border-bottom:1px solid var(--line)}
-.top .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
-.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-family:var(--serif);font-weight:700;font-size:18px}
-.brand img{width:34px;height:34px;border-radius:50%}
-.top-cta{font-size:14px;font-weight:700;text-decoration:none;color:#fff;background:var(--brick);padding:8px 16px;border-radius:999px;white-space:nowrap}
+.top{position:sticky;top:0;z-index:20;background:rgba(244,235,218,.9);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;height:56px}
+.brand{display:flex;align-items:center;gap:9px;text-decoration:none;font-family:var(--serif);font-weight:700;font-size:17px}
+.brand img{width:30px;height:30px;border-radius:50%}
+.top-cta{font-size:13.5px;font-weight:700;text-decoration:none;color:#fff;background:var(--brick);padding:7px 15px;border-radius:999px;white-space:nowrap}
 
-.deco{display:flex;align-items:center;justify-content:center;gap:10px;color:var(--gold)}
-.deco::before,.deco::after{content:"";height:1.5px;width:44px;background:currentColor;opacity:.8}
-.deco i{width:8px;height:8px;background:currentColor;transform:rotate(45deg);display:block}
-.deco.left{justify-content:flex-start}
-.deco.left::before{display:none}
-
-.hero{padding:40px 0 64px}
-.hero .wrap{display:grid;gap:36px;align-items:center}
-.eyebrow{display:inline-block;font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--brick);background:rgba(139,58,42,.08);padding:6px 12px;border-radius:999px}
-h1{font-family:var(--serif);font-weight:800;font-size:clamp(34px,8.6vw,58px);line-height:1.22;letter-spacing:-.01em;margin:18px 0;text-wrap:balance}
-h1 em{font-style:normal;color:var(--brick)}
-.lead{font-size:17px;color:var(--sub);max-width:30em}
-.stores{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
-.store{display:flex;align-items:center;gap:10px;min-width:176px;padding:11px 18px;border-radius:14px;background:var(--ink);color:#fff;text-decoration:none;transition:transform .15s}
-.store:hover{transform:translateY(-2px)}
-.store svg{width:24px;height:24px;flex:none}
-.store small{display:block;font-size:11px;opacity:.75;line-height:1.2}
-.store b{display:block;font-size:17px;line-height:1.25;letter-spacing:-.01em}
-.stores.light .store{background:#fff;color:var(--ink)}
-.note{margin-top:14px;font-size:13.5px;color:var(--mute)}
-.note b{color:var(--brick);font-weight:700}
-
-.hero-art{position:relative;display:flex;justify-content:center;padding:10px 0 34px}
-.hero-art .phone{width:min(290px,70vw)}
-.hero-art .float{position:absolute;left:max(0px,calc(50% - 205px));bottom:0;width:min(190px,46vw);border-radius:22px;box-shadow:0 18px 40px rgba(60,35,20,.25);animation:bob 4.8s ease-in-out infinite}
-
-.phone{position:relative;border:10px solid var(--bezel);border-radius:46px;overflow:hidden;background:#fff;box-shadow:0 2px 4px rgba(40,25,15,.1),0 30px 60px rgba(60,35,20,.22);aspect-ratio:600/1298;flex:none}
+/* 휴대폰 틀 — 얇은 테두리 */
+.phone{border:5px solid var(--bezel);border-radius:34px;overflow:hidden;background:#fff;aspect-ratio:600/1298;box-shadow:0 2px 4px rgba(40,25,15,.08),0 22px 46px rgba(60,35,20,.2)}
 .phone img{width:100%;height:100%;object-fit:cover}
-.phone .swap{position:absolute;inset:0;opacity:0;transition:opacity .45s}
-.phone .swap.on{opacity:1}
 
-section{padding:84px 0}
-.sec-head{text-align:center;margin-bottom:44px}
-.kicker{font-family:var(--serif);font-weight:700;color:var(--gold);font-size:15px;letter-spacing:.02em}
-h2{font-family:var(--serif);font-weight:800;font-size:clamp(28px,6.4vw,42px);line-height:1.3;letter-spacing:-.01em;margin-top:10px;text-wrap:balance}
-h2 em{font-style:normal;color:var(--brick)}
-h3{font-family:var(--serif);font-weight:700;font-size:21px;line-height:1.4}
-.sec-head p{color:var(--sub);margin:14px auto 0;max-width:32em}
+/* 첫 화면 */
+.hero{padding:34px 0 50px}
+.hero .wrap{display:grid;gap:30px;align-items:center}
+.eyebrow{display:inline-block;font-size:12.5px;font-weight:700;letter-spacing:.08em;color:var(--brick);background:rgba(139,58,42,.08);padding:5px 11px;border-radius:999px}
+h1{font-family:var(--serif);font-weight:800;font-size:clamp(32px,8.4vw,54px);line-height:1.22;margin:14px 0 12px;text-wrap:balance}
+h1 em,h2 em{font-style:normal;color:var(--brick)}
+.lead{font-size:16.5px;color:var(--sub);max-width:28em}
+.stores{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.store{display:flex;align-items:center;gap:10px;min-width:168px;padding:10px 17px;border-radius:13px;background:var(--ink);color:#fff;text-decoration:none}
+.store svg{width:22px;height:22px;flex:none}
+.store small{display:block;font-size:10.5px;opacity:.75;line-height:1.2}
+.store b{display:block;font-size:16.5px;line-height:1.25}
+.stores.light .store{background:#fff;color:var(--ink)}
+.note{margin-top:12px;font-size:13.5px;color:var(--mute)}
+.note b{color:var(--brick)}
+.hero .phone{width:min(250px,62vw);margin:0 auto}
+
+/* 핵심 — 휴대폰에선 옆으로 넘기기 */
+section{padding:56px 0}
 .band{background:var(--bg2)}
+.head{text-align:center;margin-bottom:26px}
+h2{font-family:var(--serif);font-weight:800;font-size:clamp(25px,6vw,36px);line-height:1.3;text-wrap:balance}
+.head p{color:var(--sub);margin-top:8px;font-size:15px}
+.cards{display:grid;grid-auto-flow:column;grid-auto-columns:76%;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 20px 14px;margin:0 -20px;scrollbar-width:none}
+.cards::-webkit-scrollbar{display:none}
+.card{scroll-snap-align:center;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:18px 16px 0;display:flex;flex-direction:column;overflow:hidden}
+.card h3{font-family:var(--serif);font-weight:700;font-size:19px;line-height:1.35}
+.card p{color:var(--sub);font-size:14px;margin:5px 0 14px}
+.card .phone{width:78%;margin:auto auto 0;border-bottom:0;border-radius:28px 28px 0 0;aspect-ratio:600/900}
+.card .phone img{object-position:top}
+.swipe{text-align:center;font-size:12.5px;color:var(--mute);margin-top:4px}
 
-.steps{display:grid;gap:40px}
-.step{text-align:center}
-.step .phone{width:min(220px,58vw);margin:0 auto 22px}
-.num{display:inline-flex;width:28px;height:28px;border-radius:50%;background:var(--brick);color:#fff;font-weight:800;font-size:14px;align-items:center;justify-content:center;margin-bottom:8px}
-.step p{color:var(--sub);font-size:15px;margin-top:6px}
-
-.feature{display:grid;gap:34px;align-items:center}
-.feature + .feature{margin-top:96px}
-.feature .art{display:flex;justify-content:center}
-.feature .art .phone{width:min(270px,66vw)}
-.feature h3{font-size:clamp(24px,5.4vw,32px);font-weight:800;margin:12px 0 14px}
-.feature h3 em{font-style:normal;color:var(--brick)}
-.feature p{color:var(--sub);font-size:16.5px}
-.ticks{list-style:none;margin-top:18px;display:grid;gap:8px}
-.ticks li{position:relative;padding-left:22px;font-size:15.5px}
-.ticks li::before{content:"";position:absolute;left:2px;top:.62em;width:8px;height:8px;background:var(--gold);transform:rotate(45deg)}
-
-.seg{display:inline-flex;gap:6px;margin-top:22px;background:var(--card);border:1px solid var(--line);padding:5px;border-radius:999px}
-.seg button{font:inherit;font-size:14.5px;font-weight:700;border:0;background:transparent;color:var(--sub);padding:7px 16px 7px 8px;border-radius:999px;cursor:pointer;display:flex;align-items:center;gap:8px}
-.seg button .dot{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:11.5px;font-weight:800}
-.seg button[aria-pressed="true"]{background:var(--brick);color:#fff}
-
-.widgets{display:grid;gap:40px;align-items:center}
-.widgets .phone{width:min(290px,70vw);margin:0 auto}
-.wgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.wgrid figure{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:12px}
-.wgrid img{border-radius:16px;width:100%;box-shadow:0 6px 16px rgba(60,35,20,.12)}
-.wgrid figcaption{font-size:13px;color:var(--sub);text-align:center;margin-top:9px;font-weight:500}
-.wgrid .wide{grid-column:1 / -1}
-
-.cards{display:grid;gap:18px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:24px 22px 0;overflow:hidden;display:flex;flex-direction:column}
-.card p{color:var(--sub);font-size:15px;margin:8px 0 20px}
-.card .peek{margin:auto auto 0;width:min(230px,70%);border:9px solid var(--bezel);border-bottom:0;border-radius:36px 36px 0 0;overflow:hidden;aspect-ratio:600/760}
-.card .peek img{width:100%;height:auto}
-
-.video-row{display:grid;gap:34px;align-items:center}
-.reel{width:min(300px,74vw);margin:0 auto;border-radius:28px;overflow:hidden;box-shadow:0 30px 60px rgba(60,35,20,.22);background:#000;aspect-ratio:9/16}
+/* 영상 */
+.video-row{display:grid;gap:22px;align-items:center;text-align:center}
+.reel{width:min(250px,64vw);margin:0 auto;border-radius:22px;overflow:hidden;background:#000;aspect-ratio:9/16;box-shadow:0 22px 46px rgba(60,35,20,.2)}
 .reel video{width:100%;height:100%;object-fit:cover}
 
-.plans{display:grid;gap:18px}
-.plan{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:26px 24px}
-.plan.prem{background:var(--brick);color:#fff;border-color:transparent}
-.plan .tag{font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--brick)}
-.plan.prem .tag{color:#f3d9a8}
-.plan h3{font-size:26px;margin:4px 0 6px}
-.plan .sub{font-size:14.5px;color:var(--sub)}
-.plan.prem .sub{color:rgba(255,255,255,.82)}
-.plan ul{list-style:none;margin-top:18px;display:grid;gap:9px}
-.plan li{display:flex;gap:10px;font-size:15px;line-height:1.5}
-.plan li::before{content:"";flex:none;width:7px;height:7px;margin-top:.55em;background:var(--gold);transform:rotate(45deg)}
-.plan.prem li::before{background:#f3d9a8}
-.plan li small{color:var(--mute);font-size:13px}
-
-.faq{max-width:760px;margin:0 auto;display:grid;gap:12px}
-.faq details{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:0 20px}
-.faq summary{cursor:pointer;list-style:none;font-weight:700;font-size:16.5px;padding:18px 28px 18px 0;position:relative}
-.faq summary::-webkit-details-marker{display:none}
-.faq summary::after{content:"";position:absolute;right:4px;top:50%;width:10px;height:10px;border-right:2px solid var(--brick);border-bottom:2px solid var(--brick);transform:translateY(-70%) rotate(45deg);transition:transform .2s}
-.faq details[open] summary::after{transform:translateY(-30%) rotate(-135deg)}
-.faq details p{color:var(--sub);font-size:15.5px;padding:0 0 18px}
-
-.final{padding:30px 0 90px}
-.final-box{background:var(--brick);color:#fff;border-radius:32px;padding:54px 24px;text-align:center;position:relative;overflow:hidden}
-.final-box::before{content:"";position:absolute;inset:12px;border:1px dashed rgba(243,217,168,.45);border-radius:24px;pointer-events:none}
-.final-box img.seal{width:84px;height:84px;margin:0 auto 18px;border-radius:50%;background:#fbf6ec;padding:4px;object-fit:contain}
+/* 마지막 */
+.final{padding:10px 0 56px}
+.final-box{background:var(--brick);color:#fff;border-radius:28px;padding:40px 22px;text-align:center}
 .final-box h2{color:#fff}
-.final-box p{color:rgba(255,255,255,.85);margin-top:12px}
+.final-box p{color:rgba(255,255,255,.85);margin-top:8px;font-size:15px}
 .final-box .stores{justify-content:center}
 .final-box .note{color:rgba(255,255,255,.75)}
 
-footer{border-top:1px solid var(--line);padding:36px 0 50px;text-align:center;font-size:13.5px;color:var(--mute)}
-footer nav{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:center;margin:14px 0 10px}
+footer{border-top:1px solid var(--line);padding:26px 0 40px;text-align:center;font-size:13px;color:var(--mute)}
+footer nav{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:center;margin-bottom:8px}
 footer a{color:var(--brick);font-weight:700;text-decoration:none}
 
-.js .reveal{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s ease}
-.js .reveal.in{opacity:1;transform:none}
-@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-@media (prefers-reduced-motion:reduce){
-  html{scroll-behavior:auto}
-  .js .reveal{opacity:1;transform:none;transition:none}
-  .hero-art .float{animation:none}
-}
-
 @media (min-width:860px){
-  .hero{padding:72px 0 96px}
-  .hero .wrap{grid-template-columns:1.05fr .95fr;gap:30px}
-  .hero-art .phone{width:300px}
-  .hero-art .float{left:auto;right:calc(50% + 70px);bottom:-6px;width:250px}
-  section{padding:110px 0}
-  .steps{grid-template-columns:repeat(3,1fr)}
-  .feature{grid-template-columns:1fr 1fr;gap:64px}
-  .feature.flip .art{order:2}
-  .widgets{grid-template-columns:.9fr 1.1fr;gap:56px}
-  .cards{grid-template-columns:repeat(3,1fr)}
-  .video-row{grid-template-columns:1fr 1fr;gap:64px}
-  .plans{grid-template-columns:1fr 1fr;max-width:900px;margin:0 auto}
+  .hero{padding:60px 0 70px}
+  .hero .wrap{grid-template-columns:1.1fr .9fr;gap:40px}
+  .hero .phone{width:270px}
+  section{padding:76px 0}
+  .cards{grid-auto-flow:row;grid-template-columns:repeat(4,1fr);overflow:visible;margin:0;padding:0}
+  .swipe{display:none}
+  .video-row{grid-template-columns:auto 1fr;text-align:left;gap:48px;max-width:760px;margin:0 auto}
 }
 </style>
 </head>
 <body>
-<script>document.body.classList.add('js')</script>
 
 <header class="top">
   <div class="wrap">
-    <a class="brand" href="#top" aria-label="우리 캘린더 맨 위로"><img src="icon-192.png" alt="" width="34" height="34">우리 캘린더</a>
+    <a class="brand" href="#top" aria-label="우리 캘린더 맨 위로"><img src="icon-192.png" alt="" width="30" height="30">우리 캘린더</a>
     <a class="top-cta" href="#download">무료로 시작하기</a>
   </div>
 </header>
@@ -194,10 +116,10 @@ footer a{color:var(--brick);font-weight:700;text-decoration:none}
       <div>
         <span class="eyebrow">가족 · 연인 · 모임</span>
         <h1>“언제 돼?”<br><em>묻지 말고</em> 확인하세요.</h1>
-        <p class="lead">방마다 따로, 일정은 함께. 가족방·데이트방·모임방을 만들고 링크 하나로 초대하면 서로의 일정이 한 화면에 모여요.</p>
+        <p class="lead">방마다 따로, 일정은 함께. 링크 하나로 초대하면 서로의 일정이 한 화면에 모여요.</p>
         <div class="stores" data-stores>
           <a class="store" data-os="ios" href="https://apps.apple.com/app/id6773996160" rel="noopener">
-            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.37 12.6c-.03-2.6 2.12-3.85 2.22-3.91-1.21-1.77-3.09-2.01-3.76-2.04-1.6-.16-3.12.94-3.93.94-.82 0-2.06-.92-3.39-.9-1.74.03-3.35 1.02-4.250 2.58-1.82 3.15-.46 7.8 1.3 10.36.87 1.25 1.9 2.65 3.24 2.6 1.31-.05 1.8-.84 3.37-.84 1.57 0 2.02.84 3.39.81 1.4-.02 2.29-1.27 3.14-2.53.99-1.45 1.4-2.86 1.42-2.93-.03-.01-2.720-1.04-2.75-4.14zM13.8 4.96c.71-.87 1.2-2.07 1.06-3.27-1.03.04-2.28.69-3.01 1.55-.66.76-1.24 1.99-1.09 3.16 1.15.09 2.32-.58 3.04-1.44z"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.37 12.6c-.03-2.6 2.12-3.85 2.22-3.91-1.21-1.77-3.09-2.01-3.76-2.04-1.6-.16-3.12.94-3.93.94-.82 0-2.06-.92-3.39-.9-1.74.03-3.35 1.02-4.25 2.58-1.82 3.15-.46 7.8 1.3 10.36.87 1.25 1.9 2.65 3.24 2.6 1.31-.05 1.8-.84 3.37-.84 1.57 0 2.02.84 3.39.81 1.4-.02 2.29-1.27 3.14-2.53.99-1.45 1.4-2.86 1.42-2.93-.03-.01-2.72-1.04-2.75-4.14zM13.8 4.96c.71-.87 1.2-2.07 1.06-3.27-1.03.04-2.28.69-3.01 1.55-.66.76-1.24 1.99-1.09 3.16 1.15.09 2.32-.58 3.04-1.44z"/></svg>
             <span><small>다운로드</small><b>App Store</b></span>
           </a>
           <a class="store" data-os="android" href="https://play.google.com/store/apps/details?id=app.vercel.first_uri_calender.twa" rel="noopener">
@@ -205,235 +127,63 @@ footer a{color:var(--brick);font-weight:700;text-decoration:none}
             <span><small>다운로드</small><b>Google Play</b></span>
           </a>
         </div>
-        <p class="note">무료로 시작해요 · <b>프리미엄 7일 무료 체험</b> · 아이폰·갤럭시 함께 써요</p>
+        <p class="note">무료로 시작 · <b>프리미엄 7일 무료 체험</b> · 아이폰·갤럭시 함께</p>
       </div>
-      <div class="hero-art">
-        <div class="phone"><img src="lp/event_7.webp" alt="우리 캘린더 달력 화면 — 가족 멤버별 색으로 일정이 표시된 11월 달력" width="600" height="1298" fetchpriority="high"></div>
-        <img class="float" src="lp/w-combo.webp" alt="홈 화면 위젯 — 다가오는 일정과 이달 달력" width="660" height="680">
-      </div>
+      <div class="phone"><img src="lp/event_7.webp" alt="우리 캘린더 달력 화면 — 가족 멤버별 색으로 일정이 표시된 11월 달력" width="600" height="1298" fetchpriority="high"></div>
     </div>
   </section>
 
   <section class="band">
     <div class="wrap">
-      <div class="sec-head reveal">
-        <div class="kicker">이렇게 시작해요</div>
-        <h2>세 번만 누르면<br><em>같이 쓰는 달력</em> 완성</h2>
-      </div>
-      <div class="steps">
-        <div class="step reveal">
-          <div class="phone"><img src="lp/room_2.webp" alt="방목록의 + 메뉴에서 방 만들기" width="600" height="1298" loading="lazy"></div>
-          <span class="num">1</span>
-          <h3>방 만들기</h3>
-          <p>‘우리 가족’, ‘부부 데이트’처럼<br>이름만 정하면 끝</p>
-        </div>
-        <div class="step reveal">
-          <div class="phone"><img src="lp/invite_1.webp" alt="설정의 카카오톡으로 초대 버튼" width="600" height="1298" loading="lazy"></div>
-          <span class="num">2</span>
-          <h3>카톡으로 초대</h3>
-          <p>링크를 누르면 앱이 열리고<br>바로 같은 방으로</p>
-        </div>
-        <div class="step reveal">
-          <div class="phone"><img src="lp/together_3.webp" alt="함께할 멤버 선택 화면" width="600" height="1298" loading="lazy"></div>
-          <span class="num">3</span>
-          <h3>함께 일정 넣기</h3>
-          <p>같이 할 사람을 고르면<br>모두의 달력에 동시에</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section>
-    <div class="wrap">
-      <div class="feature reveal">
-        <div class="art"><div class="phone"><img src="lp/room_1.webp" alt="방 목록 — 우리 가족, 지민이네 반 모임, 부부 데이트" width="600" height="1298" loading="lazy"></div></div>
-        <div>
-          <div class="deco left"><i></i></div>
-          <h3>방을 <em>여러 개</em>,<br>일정은 섞이지 않게</h3>
-          <p>가족 일정, 아이 반 모임, 둘만의 데이트. 방마다 멤버도 일정도 따로라 필요한 사람에게 필요한 일정만 보여요.</p>
-          <ul class="ticks">
-            <li>방을 여러 개 만들고 순서도 내 마음대로</li>
-            <li>방 코드나 카톡 링크로 누구든 초대</li>
-            <li>방마다 다른 테마로 한눈에 구분</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="feature flip reveal">
-        <div class="art"><div class="phone"><img src="lp/together_4.webp" alt="새 일정 추가 — 대상 '함께'를 고른 화면" width="600" height="1298" loading="lazy"></div></div>
-        <div>
-          <div class="deco left"><i></i></div>
-          <h3><em>함께 일정</em>으로<br>한 번에 모두에게</h3>
-          <p>가족 외식, 김장하는 날처럼 같이 하는 일은 ‘함께’를 눌러 사람만 고르세요. 한 번 넣으면 고른 멤버 모두의 달력에 들어가요.</p>
-          <ul class="ticks">
-            <li>각자 원하는 색으로 따로 볼 수 있어요</li>
-            <li>누가 만들었는지 이름표로 표시</li>
-            <li>미리 알림은 멤버마다 따로</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="feature reveal">
-        <div class="art"><div class="phone"><img src="lp/event_6.webp" alt="어느 방에 추가할까요? — 여러 방을 고르는 화면" width="600" height="1298" loading="lazy"></div></div>
-        <div>
-          <div class="deco left"><i></i></div>
-          <h3>여러 방에<br><em>한 번에</em> 공유</h3>
-          <p>할머니 생신은 가족방에도, 부부방에도. 저장할 때 방만 골라 주면 같은 일정이 여러 방에 함께 들어가요.</p>
-        </div>
-      </div>
-
-      <div class="feature flip reveal" id="member">
-        <div class="art">
-          <div class="phone">
-            <img src="lp/member_1.webp" alt="전체 멤버 일정이 보이는 달력" width="600" height="1298" loading="lazy">
-            <img class="swap" src="lp/member_2.webp" alt="지민의 일정만 보이는 달력" width="600" height="1298" loading="lazy">
-          </div>
-        </div>
-        <div>
-          <div class="deco left"><i></i></div>
-          <h3>사람을 누르면<br>그 사람 일정만 <em>쏙</em></h3>
-          <p>위쪽 얼굴을 누르면 그 멤버가 낀 일정만 남아요. 아이 학원·시험 일정만 따로 보고 싶을 때 딱이에요. 아래 버튼으로 직접 바꿔 보세요.</p>
-          <div class="seg" role="group" aria-label="달력 보기 바꾸기">
-            <button type="button" aria-pressed="true" data-view="all"><span class="dot" style="background:#b8a48c">전</span>전체</button>
-            <button type="button" aria-pressed="false" data-view="kid"><span class="dot" style="background:#6b8f4e">지</span>지민만</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="band">
-    <div class="wrap">
-      <div class="sec-head reveal">
-        <div class="kicker">홈 화면 위젯</div>
-        <h2>앱을 안 열어도<br><em>오늘 일정</em>이 보여요</h2>
-        <p>작은 크기부터 한 달 달력까지. 방 테마 색을 그대로 따라가서 홈 화면도 예뻐져요.</p>
-      </div>
-      <div class="widgets">
-        <div class="phone reveal"><img src="lp/home.webp" alt="홈 화면에 놓인 우리 캘린더 위젯 세 개" width="600" height="1298" loading="lazy"></div>
-        <div class="wgrid reveal">
-          <figure><img src="lp/w-today.webp" alt="오늘 위젯" width="320" height="320" loading="lazy"><figcaption>오늘</figcaption></figure>
-          <figure><img src="lp/w-month-lav.webp" alt="한 달 위젯 — 라벤더 테마" width="660" height="680" loading="lazy"><figcaption>한 달 · 라벤더 테마</figcaption></figure>
-          <figure class="wide"><img src="lp/w-twoweek.webp" alt="2주 위젯" width="660" height="320" loading="lazy"><figcaption>2주</figcaption></figure>
-          <figure><img src="lp/w-week.webp" alt="이번 주 위젯" width="660" height="680" loading="lazy"><figcaption>이번 주</figcaption></figure>
-          <figure><img src="lp/w-combo-camp.webp" alt="일정과 달력 위젯 — 별밤 캠핑 테마" width="660" height="680" loading="lazy"><figcaption>일정 + 달력 · 별밤 캠핑</figcaption></figure>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section>
-    <div class="wrap">
-      <div class="sec-head reveal">
-        <div class="kicker">그리고 더</div>
-        <h2>우리 가족에 꼭 필요한 것만<br><em>알차게</em></h2>
+      <div class="head">
+        <h2>이것만 알면 <em>충분해요</em></h2>
       </div>
       <div class="cards">
-        <article class="card reveal">
-          <h3>D-day · 기념일</h3>
-          <p>생일·기념일까지 남은 날, 함께한 날을 달력 위에 띄워요. 100일·n주년도 알아서.</p>
-          <div class="peek"><img src="lp/dday_4.webp" alt="D-day 목록 — 생일, 크리스마스, 결혼 기념일" width="600" height="1298" loading="lazy"></div>
+        <article class="card">
+          <h3>방을 여러 개</h3>
+          <p>가족·모임·연인, 방마다 따로라 일정이 섞이지 않아요.</p>
+          <div class="phone"><img src="lp/room_1.webp" alt="방 목록 — 우리 가족, 지민이네 반 모임, 부부 데이트" width="600" height="1298" loading="lazy"></div>
         </article>
-        <article class="card reveal">
-          <h3>우리 할 일</h3>
-          <p>장보기·숙제처럼 챙길 일을 함께. 누가 끝냈는지도 남아요.</p>
-          <div class="peek"><img src="lp/todo_1.webp" alt="우리 할 일 목록 화면" width="600" height="1298" loading="lazy"></div>
+        <article class="card">
+          <h3>함께 일정</h3>
+          <p>같이 할 사람만 고르면 모두의 달력에 한 번에.</p>
+          <div class="phone"><img src="lp/together_3.webp" alt="함께할 멤버 선택 화면" width="600" height="1298" loading="lazy"></div>
         </article>
-        <article class="card reveal">
-          <h3>주간 보기 · 알림</h3>
-          <p>한 주를 날짜별로 자세히. 아침 요약과 미리 알림으로 놓치지 않게.</p>
-          <div class="peek"><img src="lp/week_2.webp" alt="주간 보기 화면" width="600" height="1298" loading="lazy"></div>
+        <article class="card">
+          <h3>사람별로 보기</h3>
+          <p>얼굴을 누르면 그 사람 일정만 쏙 모아 봐요.</p>
+          <div class="phone"><img src="lp/member_2.webp" alt="지민의 일정만 보이는 달력" width="600" height="1298" loading="lazy"></div>
+        </article>
+        <article class="card">
+          <h3>홈 화면 위젯</h3>
+          <p>앱을 안 열어도 오늘 일정이 바로 보여요.</p>
+          <div class="phone"><img src="lp/home.webp" alt="홈 화면에 놓인 우리 캘린더 위젯" width="600" height="1298" loading="lazy"></div>
         </article>
       </div>
-
-      <div class="feature reveal" style="margin-top:110px">
-        <div class="art"><div class="phone"><img src="lp/store_4.webp" alt="화이트 크리스마스 테마 미리보기" width="600" height="1298" loading="lazy"></div></div>
-        <div>
-          <div class="deco left"><i></i></div>
-          <h3>계절마다 바꾸는<br><em>우리 방 꾸미기</em></h3>
-          <p>화이트 크리스마스, 초록 정원, 별밤 캠핑… 테마를 고르면 달력 배경·글씨·위젯까지 한 번에 바뀌어요. 스티커와 컬러 팩, 내 사진으로 만드는 나만의 테마도 있어요.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="band">
-    <div class="wrap video-row">
-      <div class="reel reveal">
-        <video src="lp/reel.mp4" poster="lp/reel-poster.webp" muted playsinline loop preload="none" controls aria-label="우리 캘린더 소개 영상 25초"></video>
-      </div>
-      <div class="reveal">
-        <div class="kicker">25초 둘러보기</div>
-        <h2>방 만들고, 함께 넣고,<br><em>위젯으로 확인</em>까지</h2>
-        <p style="color:var(--sub);margin-top:14px">실제 앱 화면 그대로예요. 소리를 켜고 보면 더 좋아요.</p>
-      </div>
+      <p class="swipe">옆으로 넘겨 보세요 →</p>
     </div>
   </section>
 
   <section>
-    <div class="wrap">
-      <div class="sec-head reveal">
-        <div class="kicker">요금</div>
-        <h2>기본은 <em>무료</em>,<br>더 꾸미고 싶을 땐 프리미엄</h2>
-        <p>처음이라면 프리미엄을 7일 동안 무료로 써 보세요.</p>
+    <div class="wrap video-row">
+      <div class="reel">
+        <video src="lp/reel.mp4" poster="lp/reel-poster.webp" muted playsinline loop preload="none" controls aria-label="우리 캘린더 소개 영상 25초"></video>
       </div>
-      <div class="plans">
-        <div class="plan reveal">
-          <div class="tag">무료</div>
-          <h3>함께 쓰는 기본</h3>
-          <div class="sub">계속 무료</div>
-          <ul>
-            <li><span>방 만들기·초대, 함께 일정, 여러 방 공유</span></li>
-            <li><span>홈 화면 위젯 · 주간 보기 · 알림</span></li>
-            <li><span>다른 멤버가 만든 D-day 보기</span></li>
-            <li><span>일정 사진 1장 <small>(30일 보관)</small></span></li>
-            <li><span>진행 중 할 일 5개 <small>(완료는 7일 보관)</small></span></li>
-            <li><span>기본 테마 · 기본 글꼴</span></li>
-          </ul>
-        </div>
-        <div class="plan prem reveal">
-          <div class="tag">프리미엄 · 7일 무료 체험</div>
-          <h3>마음껏 꾸미고 기록</h3>
-          <div class="sub">무료 기능에 더해</div>
-          <ul>
-            <li><span>D-day 만들기 — 남은 날·함께한 날 세기</span></li>
-            <li><span>모든 테마·스티커·컬러 팩·캐릭터 이모지·글꼴</span></li>
-            <li><span>사진·스티커로 만드는 나만의 테마</span></li>
-            <li><span>날짜 강조 · 테두리 일정 · 색상 라벨 이름</span></li>
-            <li><span>일정 사진 5장 · 사진 평생 보관</span></li>
-            <li><span>할 일 무제한 · 완료 기록 평생 보관</span></li>
-            <li><span>광고 없이 깔끔하게</span></li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="band">
-    <div class="wrap">
-      <div class="sec-head reveal">
-        <div class="kicker">자주 묻는 질문</div>
-        <h2>궁금한 점이 있나요?</h2>
-      </div>
-      <div class="faq reveal">
-        <details><summary>정말 무료로 쓸 수 있나요?</summary><p>네. 방 만들기, 초대, 함께 일정, 위젯, 알림 같은 기본 기능은 모두 무료예요. 테마·D-day 만들기 같은 꾸미기 기능은 프리미엄이고, 처음 7일은 무료로 써 볼 수 있어요.</p></details>
-        <details><summary>가족이 아이폰과 갤럭시를 섞어 써도 되나요?</summary><p>네, 같은 방에서 함께 쓸 수 있어요. 아이폰은 App Store, 갤럭시는 Google Play에서 받으면 돼요.</p></details>
-        <details><summary>초대는 어떻게 하나요?</summary><p>설정에서 ‘카카오톡으로 초대’를 누르거나 방 코드를 알려 주세요. 받은 사람이 링크를 누르면 앱이 열리고 바로 그 방에 들어와요.</p></details>
-        <details><summary>다른 사람이 내 일정을 다 볼 수 있나요?</summary><p>일정은 그 방 멤버에게만 보여요. 방을 나눠 쓰면 가족방 일정은 가족에게만, 데이트방 일정은 둘에게만 보여요.</p></details>
-        <details><summary>휴대폰에 있던 일정도 가져올 수 있나요?</summary><p>네. 설정의 ‘휴대폰 캘린더 불러오기’에서 휴대폰 캘린더의 일정을 골라 원하는 방으로 가져올 수 있어요.</p></details>
+      <div>
+        <h2>25초로 <em>둘러보기</em></h2>
+        <p style="color:var(--sub);margin-top:8px;font-size:15px">실제 앱 화면 그대로예요.</p>
       </div>
     </div>
   </section>
 
   <section class="final">
     <div class="wrap">
-      <div class="final-box reveal">
-        <img class="seal" src="welcome-logo.png" alt="" width="84" height="84">
-        <h2>오늘부터, 우리 일정은<br>한 곳에서</h2>
-        <p>설치하고 방 하나만 만들면 끝. 사랑하는 사람을 초대해 보세요.</p>
+      <div class="final-box">
+        <h2>오늘부터 우리 일정은<br>한 곳에서</h2>
+        <p>방 하나 만들고 링크만 보내면 끝.</p>
         <div class="stores light" data-stores>
           <a class="store" data-os="ios" href="https://apps.apple.com/app/id6773996160" rel="noopener">
-            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.37 12.6c-.03-2.6 2.12-3.85 2.22-3.91-1.21-1.77-3.09-2.01-3.76-2.04-1.6-.16-3.12.94-3.930.94-.82 0-2.06-.92-3.39-.9-1.74.03-3.35 1.02-4.25 2.58-1.82 3.15-.46 7.8 1.3 10.36.87 1.25 1.9 2.65 3.24 2.6 1.31-.05 1.8-.84 3.37-.84 1.57 0 2.02.84 3.39.81 1.4-.02 2.29-1.27 3.14-2.53.99-1.45 1.4-2.86 1.42-2.93-.03-.01-2.72-1.04-2.75-4.14zM13.8 4.96c.71-.87 1.2-2.07 1.06-3.27-1.03.04-2.28.69-3.01 1.55-.66.76-1.24 1.99-1.09 3.16 1.15.09 2.32-.58 3.04-1.44z"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.37 12.6c-.03-2.6 2.12-3.85 2.22-3.91-1.21-1.77-3.09-2.01-3.76-2.04-1.6-.16-3.12.94-3.93.94-.82 0-2.06-.92-3.39-.9-1.74.03-3.35 1.02-4.25 2.58-1.82 3.15-.46 7.8 1.3 10.36.87 1.25 1.9 2.65 3.24 2.6 1.31-.05 1.8-.84 3.37-.84 1.57 0 2.02.84 3.39.81 1.4-.02 2.29-1.27 3.14-2.53.99-1.45 1.4-2.86 1.42-2.93-.03-.01-2.72-1.04-2.75-4.14zM13.8 4.96c.71-.87 1.2-2.07 1.06-3.27-1.03.04-2.28.69-3.01 1.55-.66.76-1.24 1.99-1.09 3.16 1.15.09 2.32-.58 3.04-1.44z"/></svg>
             <span><small>다운로드</small><b>App Store</b></span>
           </a>
           <a class="store" data-os="android" href="https://play.google.com/store/apps/details?id=app.vercel.first_uri_calender.twa" rel="noopener">
@@ -449,13 +199,12 @@ footer a{color:var(--brick);font-weight:700;text-decoration:none}
 
 <footer>
   <div class="wrap">
-    <div class="deco"><i></i></div>
     <nav aria-label="바닥글">
       <a href="privacy.html">개인정보처리방침</a>
       <a href="terms.html">이용약관</a>
       <a href="support.html">고객센터 · 문의</a>
     </nav>
-    <div>가족·연인·모임이 함께 쓰는 캘린더 · © 2026 우리 캘린더</div>
+    <div>© 2026 우리 캘린더</div>
   </div>
 </footer>
 
@@ -473,27 +222,10 @@ footer a{color:var(--brick);font-weight:700;text-decoration:none}
     var link = document.querySelector('[data-os="' + os + '"]');
     if (top && link) { top.href = link.href; top.rel = 'noopener'; }
   }
-
-  // 사람별 보기 전환
-  var swap = document.querySelector('#member .phone .swap');
-  var btns = document.querySelectorAll('#member .seg button');
-  btns.forEach(function(b){
-    b.addEventListener('click', function(){
-      btns.forEach(function(x){ x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
-      if (swap) swap.classList.toggle('on', b.getAttribute('data-view') === 'kid');
-    });
-  });
-
-  // 나타나기 · 영상은 화면에 보일 때만 재생
-  var els = document.querySelectorAll('.reveal');
-  if (!('IntersectionObserver' in window)) { els.forEach(function(e){ e.classList.add('in'); }); return; }
-  var io = new IntersectionObserver(function(es){
-    es.forEach(function(e){ if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
-  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
-  els.forEach(function(e){ io.observe(e); });
-  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // 영상은 화면에 보일 때만 재생
   var v = document.querySelector('.reel video');
-  if (v && !reduce) {
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (v && !reduce && 'IntersectionObserver' in window) {
     new IntersectionObserver(function(es){
       es.forEach(function(e){ if (e.isIntersecting) { var p = v.play(); if (p && p.catch) p.catch(function(){}); } else { v.pause(); } });
     }, { threshold: 0.5 }).observe(v);
