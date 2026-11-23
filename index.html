@@ -13233,6 +13233,9 @@ function renderDdayRow(){
   const items=_ddOrdered(_ddTodayKey());
   // 숨김을 골랐거나, 무료(정한 적 없음)인데 이 방에 보일 D-day 가 없으면 — 칸 자체를 그리지 않는다('+ D-day' 도 안 보임)
   if(!_ddRowVisible(items.length>0)){ el.hidden=true; el.innerHTML=''; return; }
+  // 무료는 D-day 를 만들 수 없으니 빈 '+ D-day' 칸도 그리지 않는다(고급 설정에서 '표시'를 골랐어도) [2026-11-23]
+  let _ddPrem=false; try{ _ddPrem=isEffectivePremium(); }catch(_){}
+  if(!items.length&&!_ddPrem){ el.hidden=true; el.innerHTML=''; return; }
   el.innerHTML=items.length
     ?items.map(it=>`<button type="button" class="dd-chip dd-colored" data-id="${escapeHtml(it.x.id)}" style="${_ddChipStyle(it.x)}" onclick="_ddChipTap()"><span class="dd-chip-t">${escapeHtml(it.x.title)}</span><b>${it.val.v}</b></button>`).join('')
     :`<button type="button" class="dd-chip add" onclick="_ddOpenAdd()">+ D-day</button>`;
@@ -13716,7 +13719,7 @@ async function _ddDeleteLinkedEvent(ev){
     const me=_currentUser&&_currentUser.id, owner=(x.created_by===me)||isAdmin();
     let pick;
     if(owner){
-      pick=await askRecurringDelete(`D-day ‘${escapeHtml(x.title)}’에 연결된 일정이에요.<br>어떻게 지울까요?`,{title:'D-day 일정 지우기',oneLabel:'캘린더 표시만 지우기',allLabel:'D-day 까지 지우기'});
+      pick=await askRecurringDelete(`D-day ‘${escapeHtml(x.title)}’에 연결된 일정이에요.<br>어떻게 지울까요?`,{title:'D-day 일정 지우기',oneLabel:'캘린더 표시만 지우기',allLabel:'D-day까지 지우기'});
     }else{
       pick=(await vConfirm(`D-day ‘${x.title}’에 연결된 일정이에요. 캘린더에서만 지울까요? D-day는 그대로 남아요.`,{title:'D-day 일정 지우기',okText:'캘린더에서 지우기'}))?'one':null;
     }
@@ -24661,6 +24664,8 @@ function openPremiumSheet(src,ctx){
     }
   }
   if(btn) btn.textContent = prem ? '이미 이용 중이에요' : '7일 무료로 시작하기';
+  // 이미 구독 중이면 '첫 7일 무료 체험' 안내 줄은 숨긴다 [2026-11-23]
+  try{ const tv=document.querySelector('#premiumCard .prem-cta-value'); if(tv) tv.style.display = prem ? 'none' : ''; }catch(_){}
   try{ _updateTrialCta(); }catch(_){}
   selectPlan(_premSelectedPlan);
   try{ hideTabbar(); }catch(_){}

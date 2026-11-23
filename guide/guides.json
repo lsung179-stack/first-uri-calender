@@ -12,7 +12,7 @@
      "steps": [
       {
        "img": "assets/guide/room_1.webp",
-       "caption": "방목록에서 + 를 눌러요",
+       "caption": "방목록에서 +를 눌러요",
        "tap": {
         "x": 0.6564,
         "y": 0.077,
@@ -506,7 +506,7 @@
      "id": "store",
      "title": "테마로 꾸미기",
      "icon": "🎨",
-     "summary": "테마·컬러 팩·스티커로 우리 방을",
+     "summary": "테마·컬러 팩·스티커로 우리 방 꾸미기",
      "steps": [
       {
        "img": "assets/guide/store_1.webp",
@@ -601,7 +601,7 @@
      "id": "coin",
      "title": "코인 모으기",
      "icon": "🪙",
-     "summary": "광고 보기·친구 초대로 코인을",
+     "summary": "광고 보기·친구 초대로 코인 모으기",
      "steps": [
       {
        "img": "assets/guide/coin_1.webp",
@@ -618,9 +618,9 @@
        "caption": "코인을 충전하거나 무료로 모아요",
        "sub": "친구가 내 링크로 가입하면 30코인",
        "tap": {
-        "x": 0.3906,
+        "x": 0.3925,
         "y": 0.7316,
-        "w": 0.3427,
+        "w": 0.3465,
         "h": 0.0237
        }
       }
