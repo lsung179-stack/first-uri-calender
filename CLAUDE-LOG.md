@@ -1039,3 +1039,8 @@
 - 새 도구: `tool/visual/stress_data.dart`(사용자 같은 일정 — 테두리만 월~금 매주, 주 경계 넘는 함께 기간, 하루 4개, 테두리 기간이 주 경계 넘음, 함께+테두리 기간, 긴 제목) → `tool/visual/visual_stress_test.dart`(앱 달력 390·360폭·월요일 시작·주간 보기·날짜 시트를 build/visual/ 에 PNG), 위젯 `WG_STRESS=1 [WG_WS=1] bash tool/widgets/render/run.sh`(Android 5종 × 4개 방 테마). **달력·위젯 그리기를 바꾸면 이 둘을 돌려 그림을 직접 볼 것.**
 - 찾아 고친 것: ① 앱 — 기간의 마지막 날이 주 첫 칸(일요일)에 걸리면 'end' 라 제목 없는 막대만 보임 → 주 첫 칸에선 제목(`month_layout.eventBar`, 시험 추가·고치기 전엔 실패 확인). ② 위젯(iOS `runs`·Android `buildRuns`) — 여러 날 일정이 달 전체에서 한 줄만 써서, 앞 주에서 넘친(+1) 기간이 다음 주 빈 줄에도 계속 +1 → 주마다 잘라 줄을 따로(잘린 조각은 `realStart/realEnd` 로 이어짐·함께 띠 유지). ③ Android 위젯 — 테두리만 일정 글자가 일정 색 그대로라 연한 색은 안 보임 → 테마 글자색(iOS·앱과 같음).
 - 확인했지만 그대로 둔 것: 칸 경계의 아주 얇은 색 차이(반 픽셀, 눈에 안 보임), Android '+N' 배지가 마지막 줄 위에 겹침(위젯이 스크롤돼 첫 주가 잘리는 걸 막으려고 일부러 겹쳐 그림, iOS 도 같은 방식). iOS 위젯은 여기서 그려 볼 수 없어 코드만 맞추고 괄호 균형 확인.
+
+## 2026-11-25 2.0.5 iOS 빌드 실패 — Firebase 패키지 버전 어긋남(uri-calendar-app `85f9092`)
+- Codemagic iOS 'IPA 빌드' 실패: `firebase_core-4.15.2 depends on firebase-ios-sdk 12.19.3 and firebase_messaging-16.7.0 depends on 12.19.0`. 2.0.5 에 넣은 통계(firebase_analytics 12.6.1)가 firebase_core 를 4.15.0 → 4.15.2 로 올렸는데 메시징은 그대로였다(Swift Package Manager 는 Firebase SDK 를 '정확히 이 버전'으로 묶어 하나라도 다르면 실패).
+- 고침: firebase_messaging ^16.7.1(SDK 12.19.3). 셋(core·analytics·messaging) 모두 12.19.3 인 것과 다른 패키지에 Firebase SDK 를 묶는 곳이 없는 것 확인(광고 google_mobile_ads 9.1.0 은 2.0.4 와 같음). 전체 시험 통과.
+- **규칙: Firebase 패키지(firebase_*)는 하나를 올리면 나머지도 같은 FlutterFire 릴리스로 함께 올리고, pub 캐시의 `ios/*/Package.swift` 에서 firebase-ios-sdk 버전이 모두 같은지 확인할 것.**
