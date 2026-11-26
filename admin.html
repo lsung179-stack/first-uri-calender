@@ -1154,7 +1154,7 @@ function drawSubGrantModal(){
   body.innerHTML=`
     ${!_subGrantUser?`
       <div class="sg-label">1. 대상 검색</div>
-      <input id="subUserSearch" placeholder="이름 또는 이메일 (2글자 이상)" autocomplete="off">
+      <input id="subUserSearch" placeholder="이름 또는 이메일" autocomplete="off">
       <div id="subUserResults" class="sg-results"></div>
     `:`
       <div class="sg-user">
@@ -1231,7 +1231,8 @@ let _subSearchTm=null;
 function onSubUserSearch(e){
   const q=e.target.value.trim();
   clearTimeout(_subSearchTm);
-  if(q.length<2){document.getElementById('subUserResults').innerHTML='';return;}
+  // 한 글자 이름(예: '현')도 찾는다 — 예전엔 2글자 미만이면 검색을 안 했다(2026-11-26)
+  if(q.length<1){document.getElementById('subUserResults').innerHTML='';return;}
   _subSearchTm=setTimeout(async()=>{
     // [보안 2차] 관리자 전용 RPC(이름·이메일 검색, 이메일은 auth.users 기준)
     const {data,error}=await supa.rpc('admin_search_users',{p_q:q,p_limit:10});
@@ -1240,7 +1241,7 @@ function onSubUserSearch(e){
     if(!data||!data.length){box.innerHTML='<div class="sg-noresult">결과 없음</div>';return;}
     box.innerHTML=data.map(u=>`<button class="sg-result" onclick="pickSubUser(${esc(JSON.stringify(u))})">
       <span class="sg-result-name">${esc(u.name||'(이름 없음)')}</span>
-      <span class="sg-result-email">${esc(u.email||'')}</span>
+      <span class="sg-result-email">${esc([u.email||'', u.joined_at?('가입 '+fmtDay(u.joined_at)):'', u.provider||''].filter(Boolean).join(' · '))}</span>
     </button>`).join('');
   },300);
 }
