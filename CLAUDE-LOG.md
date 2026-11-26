@@ -1044,3 +1044,11 @@
 - Codemagic iOS 'IPA 빌드' 실패: `firebase_core-4.15.2 depends on firebase-ios-sdk 12.19.3 and firebase_messaging-16.7.0 depends on 12.19.0`. 2.0.5 에 넣은 통계(firebase_analytics 12.6.1)가 firebase_core 를 4.15.0 → 4.15.2 로 올렸는데 메시징은 그대로였다(Swift Package Manager 는 Firebase SDK 를 '정확히 이 버전'으로 묶어 하나라도 다르면 실패).
 - 고침: firebase_messaging ^16.7.1(SDK 12.19.3). 셋(core·analytics·messaging) 모두 12.19.3 인 것과 다른 패키지에 Firebase SDK 를 묶는 곳이 없는 것 확인(광고 google_mobile_ads 9.1.0 은 2.0.4 와 같음). 전체 시험 통과.
 - **규칙: Firebase 패키지(firebase_*)는 하나를 올리면 나머지도 같은 FlutterFire 릴리스로 함께 올리고, pub 캐시의 `ios/*/Package.swift` 에서 firebase-ios-sdk 버전이 모두 같은지 확인할 것.**
+
+## 2026-11-26 다른 방 가져오기에 D-day + 오류 검토(이모지 반쪽) (2.0, uri-calendar-app `b79e2ba`)
+- 사용자 "다른방 일정 가져오기에 디데이도 포함시켜줘" + "오류도 검토해봐"(관리자 에러 탭 'string is not well-formed UTF-16').
+- **가져오기 D-day**(`lib/features/rooms/ui/import_events.dart` + `room_logic.dart` `buildImportDdays`·`importDdayRow`·`importDdayEventRows`): 2단계 맨 위 'D-day' 칸 = 원본 방에서 **내가 만든** D-day(색 없는 옛 시험 행 제외), 이 방에 같은 이름·날짜가 있으면 '이미 있음' 회색·해제. 색·테두리·지난 날/남은 날·매년·'캘린더에도 표시' 그대로 — 캘린더 표시면 D-day 만들기와 같은 연결 일정(멤버 2명↑이면 함께 일정, 연결은 내 줄)을 새로 만든다. 함께할 멤버 = 원본의 실제 멤버 중 이 방에도 있는 사람(없으면 나, 가상 멤버는 뺌), group_id 는 없음(따로 고치는 복사본). **무료면 '프리미엄에서 가져올 수 있어요' 잠금**(D-day 만들기가 프리미엄이라). 원본 D-day 의 연결 일정은 일정 목록에서 빼 두 번 생기지 않게. 완료 토스트 '일정 N개 · D-day M개 가져왔어요'. PWA(index.html `#importCard`)는 그대로(일정만).
+- **가져오기 버그 2개(같이 고침)**: ① 기간·여러 날 일정을 날마다 반복 줄로 복사(반복 설정이 모든 날 줄에) → 회차가 겹쳐 보였다 → 반복은 첫날 줄에만. ② 지워 둔·따로 고친 회차(`repeat_except`)를 안 가져와 되살아났다 → 함께 복사.
+- **오류 'string is not well-formed UTF-16'**(iPhone·갤럭시 3명 8번, 전부 같은 자리): 2.0.4 위젯 방 배지가 방 이름 첫 글자를 `substring(0,1)` 로 잘라 이모지로 시작하는 방 이름이면 반쪽 문자를 그리다 실패 — **2.0.5 에서 이미 고침**(`runes.first`). 같은 종류를 전부 찾아 **글자 자르기 17곳을 `Utf16LengthLimit.cut`(이모지 반쪽을 안 남김)으로**: 위젯 제목 `jsSlice`(두 곳)·D-day 짧은 이름 `ddShort`·이름표 8자·토스트 메시지 40자·D-day 이름 40자 저장 등. 첫 글자 뽑기(아바타·씰)는 이미 모두 `runes.first`. 시험 `test/text_cut_test.dart`, 위젯 payload 동등성은 지금 앱 기록의 반쪽 이모지(`\udXXX`)만 무시.
+- 다른 오류: 11/19 iPhone 1건 그림 캐시 DB 'unable to open database file'(백그라운드에서 iOS 가 파일을 잠깐 잠근 것으로 보임, 한 번뿐·기능 영향 없음) — 지켜보기만.
+- 눈으로 확인: `tool/visual/visual_stress_test.dart` 에 가져오기 화면(프리미엄·무료) 추가 — 처음엔 D-day 칸 때문에 '가져오기' 단추가 화면 밖으로 밀려 스크롤 높이를 줄임(그림으로 보고 찾음). 하네스에 `serverHook`(표·조건마다 다른 가짜 답).
