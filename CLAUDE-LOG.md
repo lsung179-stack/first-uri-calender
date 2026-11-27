@@ -1130,3 +1130,11 @@
 
 ## 2026-11-27 D-day 위젯 — '함께한 날' 날짜 표기
 - 사용자 "(월)부터 이렇게 되있는게 뭔가 부자연스러운대 다른 방안 없나?" → 'N일째' D-day 아랫줄을 '2025년 6월 23일 (월)부터' → '2025. 6. 23 ~' → 사용자 "2025.6.23(월) 이렇게 해줘" 로 **'2025.6.23(월)'**(늘 연도까지, 띄어쓰기 없음). Android `DdayWidgetProvider.sinceDate`·iOS `ddDateLine`. 위젯 편집 목록 줄 설명에도 같은 글자. 다른 D-day 는 '12월 9일 (수)' 그대로.
+
+## 2026-11-27 기능 안내에 '홈 화면 위젯' 추가(2.0)
+- 사용자 "위젯 추가,사용 하는방법도 기능안내에 넣어줘" → uri-calendar-app `e3fcdb1`. 설정 › 기능 안내 '설정' 칸 맨 위 '홈 화면 위젯'(🧩, 달력·D-day를 홈 화면에).
+- iPhone 9단계(홈 화면 꾹 → 편집 → 위젯 추가 → '우리 캘린더' → 크기 고르기 → 놓기 → D-day 위젯 꾹 '위젯 편집' → 보일 D-day 고르기 → 쓰는 법), Android 7단계(홈 화면 꾹 → 위젯 → 우리 캘린더 → 놓기 → D-day 위젯 꾹 → 체크해서 고르기(1번 크게·2~4번 오른쪽·완료) → 쓰는 법).
+- `GuideStep.platform` + `parseGuides(raw, platform:)` + `guidePlatform()` — 다른 휴대폰 단계는 아예 안 보인다(심사 2.3.10 대비, 시험 '홈 화면 위젯 안내 — 휴대폰마다 그 휴대폰 단계만').
+- 그림: `tool/guide/widget_guide/scenes.html`(장면 `?s=<id>`, 누를 곳 `id="tap"`) → `make.js`(390×844 ×2 찍고 `assets/guide/widget_N.webp` 600px + `widget.json`) → `pack.py` 가 '설정' 묶음에 넣음. 안의 위젯 그림은 렌더 도구 `WG_GUIDE=1`(방 이름 우리 가족·회사·친구들·동네, 기본 테마). 16장 280KB.
+- 확인: `GUIDE_SHOT=… flutter test test/guide_test.dart --plain-name "재생 그림"` 로 실제 재생 화면에서 누를 곳 테두리·문구 확인, 전체 시험 1631개 통과.
+- PWA 는 홈 위젯이 없어 넣지 않음.
