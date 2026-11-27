@@ -1094,3 +1094,9 @@
 - 렌더 도구에 유형별 보기(`WG_DDAY_SHOW=1 bash tool/widgets/render/run.sh` → `and_ddshow_*.png`: 남은 날·오늘·지난 날·N일째·기념일 당일·100일 당일·매년·테두리만·긴 제목, 넓게 2장).
 - 사용자 "고쳐줘": ① 별밤 캠핑처럼 배경 그림이 복잡한 테마에서 목록 날짜가 그림에 묻힘 → D-day 위젯만 그림 위에 바탕색 50%(iOS `widgetBg(wash: DD_WASH)`·`WidgetBgView.wash`, Android `WidgetTheme.applyBg(…, wash)`·`DdayWidgetProvider.DD_WASH`). ② 남은 날·지난 날 D-day 의 그날엔 '오늘이에요' 한 줄(`ddMilestoneLine`/`milestoneLine`).
 - 어떤 D-day 를 보일지: iOS 는 위젯 꾹 → 위젯 편집 → 방·D-day, Android 는 큰 숫자 탭 = 다음 / 넓게면 목록 줄 탭 = 그것. 고르지 않으면 가장 가까운(오늘·앞으로 올 날 중 가까운 순) D-day.
+
+## 2026-11-27 D-day 위젯 — 꾹 눌러 편집에서 D-day 고르기 (uri-calendar-app 다음 커밋)
+- 사용자 "그냥 위젯을 꾹 눌러서 편집을 누르면 내가 등록한 D-day 가 쭉 뜨고 그중에 내가 하나 고르면 그게 적용되는 방식이 편리하지 않아?? D-N 인지 N일 인지는 애초에 디데이 등록할때 설정을 하니까".
+- iOS: 방 → D-day 두 단계를 'D-day' 하나로(`DdayEntity` id = '방id|D-day id', 제목 '크리스마스 · D-28' + 아래 방 이름, `allDdayEntities()`·`ddPick`). 방 프로필의 방 바꾸기 버튼은 뺌(방은 고른 D-day 가 정함).
+- Android: `DdayConfigActivity`(코드로 그린 크림 대화 상자 — '가장 가까운 D-day' + 방별 D-day 줄[색 막대·제목·날짜·값·✓]), provider `android:configure` + `widgetFeatures="reconfigurable|configuration_optional"`(12+ 는 놓을 때 건너뛰고 꾹 → 위젯 설정으로), 11 이하는 놓을 때 뜨지만 뒤로 가도 위젯은 놓임(처음부터 RESULT_OK). 위젯 맨 위 방 이름 줄(`dd_head`) 탭으로도 열림. 매니페스트 주입(exported, APPWIDGET_CONFIGURE)·codemagic 검사 목록 추가. 큰 숫자 탭으로 넘기기·`ACTION_PICK_DDAY` 는 없앰(다른 탭 = 앱 열기).
+- 확인: 렌더 도구가 고르기 화면도 그린다(`and_ddconfig.png`) — 첫 그림에서 대화 상자 제목 줄(패키지 이름)이 보여 `FEATURE_NO_TITLE`.
