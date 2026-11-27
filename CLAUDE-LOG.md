@@ -1151,3 +1151,7 @@
 - 수정: `outlineBarH => barH`(테두리 1.5 는 바 안쪽에 그림, 글자는 `barTextTop` 으로 가운데). 같은 줄 높이 맞춤(laneH)은 그대로. 시험 기대값 16.7 → 13.7.
 - 확인: `tool/visual/visual_stress_test.dart` month_390 — 9시반퇴근·부산 바 높이 같음, 전체 시험 1631개 통과. uri-calendar-app `3aeeb2d`, 다음 빌드(2.0.6)부터.
 - PWA(index.html)는 바꾸지 않음(+3px 그대로).
+
+## 2026-11-27 2.0.6 빌드 (uri-calendar-app `c355564`)
+- 사용자 "빌드할게". pubspec `2.0.6+1`, codemagic 두 워크플로 `APP_VERSION` 2.0.6. 빌드 전 analyze 0·전체 시험 1631개 통과, iOS 위젯 Swift 괄호 균형 확인(이 환경엔 Swift 컴파일러 없음).
+- 출시 자료: App Store 는 2.0.5 이후(D-day 위젯·기능 안내 위젯·일정 바 글자 가운데/이모지·테두리 바 높이·가져오기 D-day·오류 수정), Play 는 2.0.4 이후 전부(2.0.5 내용 — 기능 안내·환영 슬라이드·반복 기간 일정 범위 묻기·D-day 칸 숨기기·한글 줄바꿈·네이버 안내 등 포함).
