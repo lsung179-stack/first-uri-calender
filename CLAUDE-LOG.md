@@ -1107,3 +1107,9 @@
 - iOS: `DdayQuery` 를 `EntityStringQuery` 로(위젯 편집 목록에 검색 칸이 생김 — 제목·방 이름), 목록은 최근 만든 순, 줄 = 제목 + 'D-28 · 12월 25일 (금) · 매년 · 우리집'.
 - Android `DdayConfigActivity`: 방별 묶음 대신 최근 만든 순 한 줄 목록 + 'D-day 검색' 칸(`fill(query)`), 줄 아래 날짜 · 방 이름, 값 색은 이 화면 크림 바탕에서 읽히게(`onCream` — 어두운 방의 ink 는 여기서 흐렸다). 검색 결과 없으면 '찾는 D-day가 없어요'.
 - 렌더 도구: 고르기 화면 기본 + 검색('우리') 두 장.
+
+## 2026-11-27 홈 위젯 종류 정리 — 3종 (uri-calendar-app 다음 커밋)
+- 사용자 "위젯 종류를 좀 줄이자" → 질문에 '3종으로'(우리 캘린더 + 이번 주 + D-day) 선택.
+- iOS: `ComboWidget`(UriCombo, 다가오는 일정+미니 달력)·`ComboView`·`MiniMonth`·`UpRun`·`ShiftComboMonthIntent`·`COMBO_MONTH_KEY` 삭제(이번 주 위젯 도우미 `wkShortTime`·`wkShift`·`Color.wk*` 는 처음 지울 때 같이 빠져 다시 넣음 — 지운 정의마다 남은 참조를 확인할 것). `kIosWidgetKinds` = UriCalendar·UriWeek·UriDday.
+- Android: `ComboWidgetProvider`·`ComboMiniService`·`MiniMonthFactory`·`widget_combo`·`widget_mini_cell`·옛 info/미리보기 삭제. `TodayWidgetProvider`→`TodayLayout`, `TwoWeekWidgetProvider`→`TwoWeekLayout`(화면만 그리는 도우미, receiver 없음), `UriCalendarWidgetProvider` 가 크기로 고른다(`sizeOf`, 리사이즈하면 다시 그림), 월 info 의 최소 크기를 110dp 로. 매니페스트 주입 receiver 3종·service 2종, codemagic 검사, `kAndroidWidgetProviders` 3개.
+- 확인: 렌더 도구로 같은 위젯을 오늘·2주·한 달 크기로 그려 봄. 전체 시험 1628개 통과.
