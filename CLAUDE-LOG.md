@@ -1080,3 +1080,12 @@
 
 ## 2026-11-27 2.0.5 출시 상태 기록
 - 사용자: "지금 플레이스토어는 2.0.5버전 업데이트를 못했고 앱스토어는 했어 그러니까 다음 빌드때는 플레이스토어는 2.0.6으로 바로 건너뛸게". CLAUDE.md 버전 줄에 기록 — 2.0.6 출시 노트는 Play 는 2.0.4 이후 전부, App Store 는 2.0.5 이후만.
+
+## 2026-11-27 홈 화면 D-day 위젯 (uri-calendar-app `d12f510`)
+- 사용자 "위젯도 이제 하나 만들건대 디데이 위젯 만들어줘 원석 디데이 해둔거 참고해서 … 똑같이 만들어라는건 아니야 우리캘린더 특성에 맞게" (참고 = 다른 앱의 흰 바탕 'D+11 / 2026.11.17(화) / 원석🐻💕' 작은 위젯).
+- 모양: 작게 = 방 프로필·이름 / 큰 숫자(D-day 색을 방 바탕에서 읽히게 한 ink) / D-day 색 막대(테두리만이면 속 빈 막대) / 제목 / 날짜('N일째'는 '…부터', 매년은 '· 매년') / 'N일째'면 다음 기념일('4,400일까지 D-16', 오늘이 그날이면 '오늘 12주년이에요'). 중간(넓게) = 왼쪽 그 D-day + 오른쪽 다른 D-day 3개(색 막대·제목·날짜·값). 방 테마 바탕·배경 그림·글자색. D-day 없으면 '아직 D-day가 없어요'.
+- 고르기: iOS 위젯 편집(방 → 그 방 D-day 목록 '크리스마스 · D-28'), 안 고르면 가장 가까운 것(앱 ddSorted 순). Android 는 편집 화면이 없어 큰 숫자 탭 = 다음 D-day, 목록 줄 탭 = 그 D-day 크게(`ACTION_PICK_DDAY`, 위젯마다 기억). 방 프로필 탭 = 방 바꾸기(방 하나면 앱 열기), 나머지 = 앱 열기.
+- 데이터: `widget_payload.dart` `WidgetDdayDb`(events dday·anniversaries·anniversary_colors) → 방마다 `ddays`, 큰 숫자 색 `ink` = `ddInkFor(c, 방 bg)`. D-day 가 없으면 키를 넣지 않아 옛 위젯·동등성 시험 그대로. `widgets_module` 이 `ddaysProvider.rev` 가 바뀌면 위젯 동기화.
+- 계산: 날짜는 시간대와 무관한 '1970년부터 날 수'로(Java·Swift 같은 식). 앱 `ddVal` 과 240가지(윤년 2/29·매년·since·since0·지난 날) 같음을 확인.
+- 등록: Android 매니페스트 주입(`inject_android_widget.sh` receiver 6종)·codemagic 검사 목록·`kAndroidWidgetProviders`/`kIosWidgetKinds`(+`UriDday`)·위젯 고르기 미리보기 `widget_preview_dday.png`(렌더 도구로 찍음).
+- 확인: Android 렌더 도구(`tool/widgets/render/run.sh`)에 D-day 장면(4개 방 × 작게/넓게 + 'N일째' 고른 모습) — 첫 렌더에서 넓은 레이아웃의 `<View>` 구분선 때문에 위젯이 안 그려지는 것을 잡아 FrameLayout 으로. iOS 는 컴파일할 수 없어 괄호 균형만(다음 Codemagic 빌드에서 확인). 전체 시험 1628개 통과.
