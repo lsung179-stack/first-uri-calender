@@ -1144,3 +1144,10 @@
 - 흐름: 질문('일정 볼 때마다 / 앱 열지 마세요' — 처음 '일정 하나 보려고 / 매번 앱 여세요?'에서 사용자 요청으로 바꿈) → '홈 화면 위젯으로 한눈에 확인하세요'(다가오는 일정+달력·오늘·2주) → 한 달·이번 주 → 프로필 누르면 다른 방(캠핑 테마로 바뀜) → '중요한 날까지 며칠? D-day 위젯으로 바로'(중간·작게 — 사용자 "NEW 가 아니라 원래 있었던 걸로", NEW 표시 뺌) → 위젯 편집에서 D-day 콕콕 고르기 → 로고·'App Store · Play 스토어에서 무료'.
 - 위젯 그림은 전부 실제 Android 위젯 코드 렌더: uri-calendar-app `WG_REEL=1 OUT=/tmp/wgrender/reel bash tool/widgets/render/run.sh`(가족 방 수진·민준·지민 + '우리 둘' 라벤더 + '캠핑 모임' 캠핑 테마), 영상은 `tool/widgets/reel/render.py`(Pillow — 시스템 Pillow 가 깨져 있어 venv 에 설치해 씀). uri-calendar-app `7124ebc`.
 - 영상 파일은 저장소에 넣지 않음(홍보 페이지 영상은 그대로 `lp/reel.mp4`).
+
+## 2026-11-27 2.0 달력 — '테두리만' 바 높이를 보통 바와 같게
+- 사용자 (12월 달력 화면) "9시반 기간일정블럭 크기랑 강볼카 생일 일정블럭 크기랑 달라서 이상해 두개 크기를 동일하게 맞춰줘".
+- 원인: `CalMetrics.outlineBarH = barLine + 2 + 3`(PWA CSS 의 1.5px 테두리 위아래를 그대로 옮김) → 보통 바보다 3px 높았다.
+- 수정: `outlineBarH => barH`(테두리 1.5 는 바 안쪽에 그림, 글자는 `barTextTop` 으로 가운데). 같은 줄 높이 맞춤(laneH)은 그대로. 시험 기대값 16.7 → 13.7.
+- 확인: `tool/visual/visual_stress_test.dart` month_390 — 9시반퇴근·부산 바 높이 같음, 전체 시험 1631개 통과. uri-calendar-app `3aeeb2d`, 다음 빌드(2.0.6)부터.
+- PWA(index.html)는 바꾸지 않음(+3px 그대로).
