@@ -1070,7 +1070,7 @@
 - 고침: 새 `lib/core/ui/emoji_fit.dart` — `emojiFitSpan`(이모지 덩어리만 0.86배, ZWJ 가족·국기·키캡 포함), `fixedStrut`(줄 높이 고정), `barTextTop`(한글 몸통 가운데 = 기준선 위 0.34em 이 바 가운데에 오게, 글꼴별 기준선은 '가' 로 한 번 재어 캐시). `cell_view.dart` 바 글자(넘치는 제목 포함)·`dd_common.dart` D-day 칩 제목/값에 적용.
 - 확인: `tool/visual/stress_data.dart` 에 이모지 제목 4개, `visual_stress_test` 에 컬러 이모지 글꼴 로드 + 'D-day 칩' 장면(`guideDdayOverride`). Pretendard 로 재 보니 글자 가운데가 바 가운데와 0.5px 이내. 안드로이드 위젯 렌더(WG_STRESS)도 이모지 제목으로 봤는데 크게 어긋나지 않아 위젯은 그대로. 전체 시험 1626개 통과.
 
-## 2026-11-27 일정 바 글자 — 글자 크기·글꼴 바꿔도 가운데, 함께 흰 띠 (uri-calendar-app 다음 커밋)
+## 2026-11-27 일정 바 글자 — 글자 크기·글꼴 바꿔도 가운데, 함께 흰 띠 (uri-calendar-app `99076c4`)
 - 사용자 "고급설정에서 텍스트 크기 조정을 하더라도 중앙정렬을 잘 시켜줘 함께일정 흰띠도 잘 정렬하고".
 - 글꼴 6가지(주아·나눔펜·고운바탕·도현·개구·검은고딕)를 받아 재 보니 한글 몸통 가운데가 기준선 위 0.25(개구)~0.40em(고운바탕) — 고정값 0.34 로는 글꼴에 따라 1pt 넘게 어긋난다.
 - `emoji_fit.dart`: `hangulMid(style)` — 그 글꼴·굵기로 '한글가나' 를 100px 로 한 번 그려 잉크 위·아래를 재 캐시(받는 글꼴은 `GoogleFonts.pendingFonts()` 뒤), 다 재면 `emojiFitTick` 을 올려 바(`EventBarView`)·D-day 칩이 다시 그린다. 못 재면 0.34. Pretendard 는 0.35.
