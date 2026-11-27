@@ -1089,3 +1089,8 @@
 - 계산: 날짜는 시간대와 무관한 '1970년부터 날 수'로(Java·Swift 같은 식). 앱 `ddVal` 과 240가지(윤년 2/29·매년·since·since0·지난 날) 같음을 확인.
 - 등록: Android 매니페스트 주입(`inject_android_widget.sh` receiver 6종)·codemagic 검사 목록·`kAndroidWidgetProviders`/`kIosWidgetKinds`(+`UriDday`)·위젯 고르기 미리보기 `widget_preview_dday.png`(렌더 도구로 찍음).
 - 확인: Android 렌더 도구(`tool/widgets/render/run.sh`)에 D-day 장면(4개 방 × 작게/넓게 + 'N일째' 고른 모습) — 첫 렌더에서 넓은 레이아웃의 `<View>` 구분선 때문에 위젯이 안 그려지는 것을 잡아 FrameLayout 으로. iOS 는 컴파일할 수 없어 괄호 균형만(다음 Codemagic 빌드에서 확인). 전체 시험 1628개 통과.
+
+## 2026-11-27 D-day 위젯 다듬기 (uri-calendar-app `7f41b9b`·다음 커밋)
+- 렌더 도구에 유형별 보기(`WG_DDAY_SHOW=1 bash tool/widgets/render/run.sh` → `and_ddshow_*.png`: 남은 날·오늘·지난 날·N일째·기념일 당일·100일 당일·매년·테두리만·긴 제목, 넓게 2장).
+- 사용자 "고쳐줘": ① 별밤 캠핑처럼 배경 그림이 복잡한 테마에서 목록 날짜가 그림에 묻힘 → D-day 위젯만 그림 위에 바탕색 50%(iOS `widgetBg(wash: DD_WASH)`·`WidgetBgView.wash`, Android `WidgetTheme.applyBg(…, wash)`·`DdayWidgetProvider.DD_WASH`). ② 남은 날·지난 날 D-day 의 그날엔 '오늘이에요' 한 줄(`ddMilestoneLine`/`milestoneLine`).
+- 어떤 D-day 를 보일지: iOS 는 위젯 꾹 → 위젯 편집 → 방·D-day, Android 는 큰 숫자 탭 = 다음 / 넓게면 목록 줄 탭 = 그것. 고르지 않으면 가장 가까운(오늘·앞으로 올 날 중 가까운 순) D-day.
