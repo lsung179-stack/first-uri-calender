@@ -1138,3 +1138,9 @@
 - 그림: `tool/guide/widget_guide/scenes.html`(장면 `?s=<id>`, 누를 곳 `id="tap"`) → `make.js`(390×844 ×2 찍고 `assets/guide/widget_N.webp` 600px + `widget.json`) → `pack.py` 가 '설정' 묶음에 넣음. 안의 위젯 그림은 렌더 도구 `WG_GUIDE=1`(방 이름 우리 가족·회사·친구들·동네, 기본 테마). 16장 280KB.
 - 확인: `GUIDE_SHOT=… flutter test test/guide_test.dart --plain-name "재생 그림"` 로 실제 재생 화면에서 누를 곳 테두리·문구 확인, 전체 시험 1631개 통과.
 - PWA 는 홈 위젯이 없어 넣지 않음.
+
+## 2026-11-27 인스타 릴스 — 홈 화면 위젯 홍보(24초)
+- 사용자 "인스타에 올릴 위젯홍보 릴스영상 만들어줘". 1080×1920·30fps·24초, 배경음악은 11-20 릴스와 같은 연주곡(끝 1.7초 줄임).
+- 흐름: 질문('일정 하나 보려고 / 매번 앱 여세요?') → 홈 화면 위젯(다가오는 일정+달력·오늘·2주) → 한 달·이번 주 → 프로필 누르면 다른 방(캠핑 테마로 바뀜) → NEW D-day 위젯(중간·작게) → 위젯 편집에서 D-day 콕콕 고르기 → 로고·'App Store · Play 스토어에서 무료'.
+- 위젯 그림은 전부 실제 Android 위젯 코드 렌더: uri-calendar-app `WG_REEL=1 OUT=/tmp/wgrender/reel bash tool/widgets/render/run.sh`(가족 방 수진·민준·지민 + '우리 둘' 라벤더 + '캠핑 모임' 캠핑 테마), 영상은 `tool/widgets/reel/render.py`(Pillow — 시스템 Pillow 가 깨져 있어 venv 에 설치해 씀). uri-calendar-app `7124ebc`.
+- 영상 파일은 저장소에 넣지 않음(홍보 페이지 영상은 그대로 `lp/reel.mp4`).
