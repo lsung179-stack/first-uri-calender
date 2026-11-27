@@ -1100,3 +1100,10 @@
 - iOS: 방 → D-day 두 단계를 'D-day' 하나로(`DdayEntity` id = '방id|D-day id', 제목 '크리스마스 · D-28' + 아래 방 이름, `allDdayEntities()`·`ddPick`). 방 프로필의 방 바꾸기 버튼은 뺌(방은 고른 D-day 가 정함).
 - Android: `DdayConfigActivity`(코드로 그린 크림 대화 상자 — '가장 가까운 D-day' + 방별 D-day 줄[색 막대·제목·날짜·값·✓]), provider `android:configure` + `widgetFeatures="reconfigurable|configuration_optional"`(12+ 는 놓을 때 건너뛰고 꾹 → 위젯 설정으로), 11 이하는 놓을 때 뜨지만 뒤로 가도 위젯은 놓임(처음부터 RESULT_OK). 위젯 맨 위 방 이름 줄(`dd_head`) 탭으로도 열림. 매니페스트 주입(exported, APPWIDGET_CONFIGURE)·codemagic 검사 목록 추가. 큰 숫자 탭으로 넘기기·`ACTION_PICK_DDAY` 는 없앰(다른 탭 = 앱 열기).
 - 확인: 렌더 도구가 고르기 화면도 그린다(`and_ddconfig.png`) — 첫 그림에서 대화 상자 제목 줄(패키지 이름)이 보여 `FEATURE_NO_TITLE`.
+
+## 2026-11-27 D-day 위젯 고르기 — 최근 만든 순 + 검색 (uri-calendar-app 다음 커밋)
+- 사용자 "너무 많으면 찾기 힘드니까 최근 등록된 디데이 순으로 나열하고 검색기능도 포함해줘 사진처럼"(다른 앱의 iOS 'D-day 선택' 목록 + 아래 검색 칸 캡처).
+- 위젯 데이터 D-day 에 `ca`(만든 시각, 없으면 '') — 시험 `widgets_dday_payload_test` 에 확인 추가.
+- iOS: `DdayQuery` 를 `EntityStringQuery` 로(위젯 편집 목록에 검색 칸이 생김 — 제목·방 이름), 목록은 최근 만든 순, 줄 = 제목 + 'D-28 · 12월 25일 (금) · 매년 · 우리집'.
+- Android `DdayConfigActivity`: 방별 묶음 대신 최근 만든 순 한 줄 목록 + 'D-day 검색' 칸(`fill(query)`), 줄 아래 날짜 · 방 이름, 값 색은 이 화면 크림 바탕에서 읽히게(`onCream` — 어두운 방의 ink 는 여기서 흐렸다). 검색 결과 없으면 '찾는 D-day가 없어요'.
+- 렌더 도구: 고르기 화면 기본 + 검색('우리') 두 장.
