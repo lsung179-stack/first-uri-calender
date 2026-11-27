@@ -1113,3 +1113,8 @@
 - iOS: `ComboWidget`(UriCombo, 다가오는 일정+미니 달력)·`ComboView`·`MiniMonth`·`UpRun`·`ShiftComboMonthIntent`·`COMBO_MONTH_KEY` 삭제(이번 주 위젯 도우미 `wkShortTime`·`wkShift`·`Color.wk*` 는 처음 지울 때 같이 빠져 다시 넣음 — 지운 정의마다 남은 참조를 확인할 것). `kIosWidgetKinds` = UriCalendar·UriWeek·UriDday.
 - Android: `ComboWidgetProvider`·`ComboMiniService`·`MiniMonthFactory`·`widget_combo`·`widget_mini_cell`·옛 info/미리보기 삭제. `TodayWidgetProvider`→`TodayLayout`, `TwoWeekWidgetProvider`→`TwoWeekLayout`(화면만 그리는 도우미, receiver 없음), `UriCalendarWidgetProvider` 가 크기로 고른다(`sizeOf`, 리사이즈하면 다시 그림), 월 info 의 최소 크기를 110dp 로. 매니페스트 주입 receiver 3종·service 2종, codemagic 검사, `kAndroidWidgetProviders` 3개.
 - 확인: 렌더 도구로 같은 위젯을 오늘·2주·한 달 크기로 그려 봄. 전체 시험 1628개 통과.
+
+## 2026-11-27 위젯 정리 되돌림 → D-day 위젯만 작게 (uri-calendar-app `9fc93e1` 되돌림 + 다음 커밋)
+- 사용자 "아니아니 기존위젯은 그대로 두고 디데이 위젯을 줄이자는 말이었는대" — 바로 앞 '위젯 종류를 좀 줄이자'를 전체 위젯 정리로 잘못 알아들어 질문(3종/2종/Android만)까지 했던 것. `git revert 39af1c4`(9fc93e1)로 다른 위젯 전부 원래대로(30dd8ea 와 같은 상태 확인).
+- D-day 위젯만 작은 크기 하나로: iOS `supportedFamilies([.systemSmall])`·`DdayListRow` 삭제, Android `widget_dday_wide` 삭제·`isWide` 없앰·info 최대 260dp, 렌더 도구·codemagic 검사 맞춤. 전체 시험 1628개 통과.
+- 교훈: 짧은 요청이 바로 앞 작업(D-day 위젯)에 대한 말일 수 있다 — 범위가 큰 해석이면 먼저 확인할 것.
